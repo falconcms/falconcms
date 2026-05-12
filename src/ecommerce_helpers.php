@@ -29,3 +29,30 @@ if (!function_exists('update_shop_option')) {
         return update_cms_option($key, $value);
     }
 }
+
+if (!function_exists('is_lazy_shop_page')) {
+    function is_lazy_shop_page($post) {
+        if (!$post) return false;
+        $id = (int) get_shop_option('shop_shop_page_id');
+        if (!$id) return false;
+        return ($post->id == $id || (isset($post->origin_id) && $post->origin_id == $id));
+    }
+}
+
+if (!function_exists('is_lazy_cart_page')) {
+    function is_lazy_cart_page($post) {
+        if (!$post) return false;
+        $id = (int) get_shop_option('shop_cart_page_id');
+        if (!$id) return false;
+        return ($post->id == $id || (isset($post->origin_id) && $post->origin_id == $id));
+    }
+}
+
+if (!function_exists('is_lazy_checkout_page')) {
+    function is_lazy_checkout_page($post) {
+        if (!$post) return false;
+        $id = (int) get_shop_option('shop_checkout_page_id');
+        if (!$id) return false;
+        return ($post->id == $id || (isset($post->origin_id) && $post->origin_id == $id));
+    }
+}

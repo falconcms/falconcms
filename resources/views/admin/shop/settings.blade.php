@@ -591,7 +591,7 @@
                                                     }
                                                 ">
                                                     <select :name="'shipping_zones['+index+'][countries][]'" multiple class="wp-input w-full">
-                                                        @foreach($countries as $code => $country)
+                                                        @foreach($allowedCountries as $code => $country)
                                                             <option value="{{ $code }}">{{ $country }}</option>
                                                         @endforeach
                                                     </select>
@@ -1071,6 +1071,7 @@
                                                             @endforeach
                                                         </select>
                                                     </div>
+                                                    <p class="text-[11px] text-[#646970] mt-1 italic">Select specific products that this coupon can be applied to. If left empty, the coupon will apply to all products in the cart.</p>
                                                 </div>
 
                                                 <div class="space-y-2">
@@ -1097,6 +1098,7 @@
                                                             @endforeach
                                                         </select>
                                                     </div>
+                                                    <p class="text-[11px] text-[#646970] mt-1 italic">Select specific product categories that this coupon can be applied to. The discount will only be applied to items belonging to these categories.</p>
                                                 </div>
                                             </div>
                                         </div>

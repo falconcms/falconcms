@@ -325,6 +325,8 @@ class PostController extends Controller
             if (array_key_exists($key, $postData)) {
                 $productData[$key] = $postData[$key];
                 unset($postData[$key]);
+            } elseif ($key === 'manage_stock' && $type === 'product') {
+                $productData[$key] = 0;
             }
         }
 
@@ -625,6 +627,8 @@ class PostController extends Controller
             if (array_key_exists($key, $postData)) {
                 $productData[$key] = $postData[$key];
                 unset($postData[$key]);
+            } elseif ($key === 'manage_stock' && $post->type === 'product') {
+                $productData[$key] = 0;
             }
         }
 

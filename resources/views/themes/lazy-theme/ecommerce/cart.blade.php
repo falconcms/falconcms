@@ -43,7 +43,9 @@
                                         <a href="{{ route('shop.cart.remove', $key) }}" class="text-gray-400 hover:text-red-500 text-xl">&times;</a>
                                     </td>
                                     <td class="p-4 border border-gray-100 w-24">
-                                        <img src="{{ get_lazy_image_url($item['thumbnail']) }}" alt="{{ $item['name'] }}" class="w-16 h-16 object-cover border border-gray-100">
+                                        <a href="{{ route('frontend.show', ['typeOrSlug' => 'product', 'slug' => $item['slug']]) }}">
+                                            <img src="{{ get_lazy_image_url($item['thumbnail']) }}" alt="{{ $item['name'] }}" class="w-16 h-16 object-cover border border-gray-100">
+                                        </a>
                                     </td>
                                     <td class="p-4 border border-gray-100 font-bold text-primary">
                                         <a href="{{ get_lazy_permalink($item) }}">{{ $item['name'] }}</a>
@@ -95,11 +97,32 @@
                             </tr>
                             <tr class="border-b border-gray-100">
                                 <th class="p-4 bg-gray-50 text-left font-bold text-gray-700">Shipping</th>
-                                <td class="p-4 text-sm" id="cart-shipping">
-                                    @if(get_lazy_cart_shipping() > 0)
-                                        Flat rate: <span class="font-bold text-gray-900">{{ lazy_price_format(get_lazy_cart_shipping()) }}</span>
-                                    @else
-                                        <span class="font-bold text-gray-900">Free shipping</span>
+                                <td class="p-4 text-sm" id="cart-shipping-cell">
+                                    <div id="cart-shipping">
+                                        @php $shipDetails = get_lazy_cart_shipping_details(session()->get('lazy_shipping_country')); @endphp
+                                        @if($shipDetails['cost'] > 0)
+                                            {{ $shipDetails['label'] }}: <span class="font-bold text-gray-900">{{ lazy_price_format($shipDetails['cost']) }}</span>
+                                        @else
+                                            <span class="font-bold text-gray-900">{{ $shipDetails['label'] }}</span>
+                                        @endif
+                                    </div>
+                                    
+                                    @if(get_shop_option('shop_calc_enable_cart_estimator', '1') === '1')
+                                    <div class="mt-4 pt-4 border-t border-gray-100">
+                                        <a href="javascript:void(0)" onclick="document.getElementById('shipping-estimator').classList.toggle('hidden')" class="text-primary hover:underline text-[13px] font-semibold flex items-center gap-1">
+                                            <i data-lucide="truck" class="w-3 h-3"></i>
+                                            Calculate shipping
+                                        </a>
+                                        <div id="shipping-estimator" class="hidden mt-3 space-y-3">
+                                            <select id="shipping_country" class="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary">
+                                                <option value="">Select a country...</option>
+                                                @foreach(\Acme\CmsDashboard\Services\EcommerceData::getCountries() as $code => $name)
+                                                    <option value="{{ $code }}" {{ session()->get('lazy_shipping_country') === $code ? 'selected' : '' }}>{{ $name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="button" onclick="updateShipping()" class="w-full bg-gray-100 text-gray-700 py-2 text-[12px] font-bold hover:bg-gray-200 transition-all uppercase tracking-wider">Update totals</button>
+                                        </div>
+                                    </div>
                                     @endif
                                 </td>
                             </tr>
@@ -215,6 +238,41 @@ function applyCoupon() {
         console.error('Coupon Error:', error);
         msgDiv.innerHTML = error.message.substring(0, 100) || 'Error applying coupon.';
         msgDiv.className = 'mt-2 text-xs text-rose-600';
+    });
+}
+
+function updateShipping() {
+    const country = document.getElementById('shipping_country').value;
+    const shippingDiv = document.getElementById('cart-shipping');
+    const totalDiv = document.getElementById('cart-total');
+    
+    if(!country) return;
+    
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Updating...';
+    btn.disabled = true;
+
+    fetch('{{ route('shop.cart.shipping.update') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ country: country })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            shippingDiv.innerHTML = data.shipping;
+            totalDiv.innerHTML = data.total;
+        }
+    })
+    .catch(error => console.error('Shipping Error:', error))
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     });
 }
 </script>

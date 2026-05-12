@@ -25,7 +25,7 @@
                 </div>
                 <div>
                     <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total</span>
-                    <strong class="text-[#1363df] font-bold">{{ lazy_price_format($order->total) }}</strong>
+                    <strong class="text-[#1363df] font-bold">{{ lazy_price_format($order->total, $order) }}</strong>
                 </div>
                 <div>
                     <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Payment Method</span>
@@ -50,7 +50,7 @@
                                 {{ $item->product_name }} <strong class="text-[#2c3338]">× {{ $item->quantity }}</strong>
                             </td>
                             <td class="py-4 text-right font-medium">
-                                {{ lazy_price_format($item->subtotal) }}
+                                {{ lazy_price_format($item->subtotal, $order) }}
                             </td>
                         </tr>
                         @endforeach
@@ -58,27 +58,27 @@
                     <tfoot class="text-[#515151]">
                         <tr>
                             <td class="pt-6 pb-3 font-bold">Subtotal:</td>
-                            <td class="pt-6 pb-3 text-right font-bold">{{ lazy_price_format($order->subtotal) }}</td>
+                            <td class="pt-6 pb-3 text-right font-bold">{{ lazy_price_format($order->subtotal, $order) }}</td>
                         </tr>
                         <tr>
                             <td class="py-3 font-bold">Shipping:</td>
-                            <td class="py-3 text-right font-bold">{{ lazy_price_format($order->shipping_total) }}</td>
+                            <td class="py-3 text-right font-bold">{{ lazy_price_format($order->shipping_total, $order) }}</td>
                         </tr>
                         @if($order->tax_total > 0)
                         <tr>
                             <td class="py-3 font-bold">Tax:</td>
-                            <td class="py-3 text-right font-bold">{{ lazy_price_format($order->tax_total) }}</td>
+                            <td class="py-3 text-right font-bold">{{ lazy_price_format($order->tax_total, $order) }}</td>
                         </tr>
                         @endif
                         @if($order->coupon_code)
                         <tr>
                             <td class="py-3 font-bold text-emerald-700 text-sm">Coupons ({{ $order->coupon_code }}):</td>
-                            <td class="py-3 text-right font-bold text-emerald-700">{{ lazy_price_format($order->discount_total) }}</td>
+                            <td class="py-3 text-right font-bold text-emerald-700">{{ lazy_price_format($order->discount_total, $order) }}</td>
                         </tr>
                         @endif
                         <tr class="text-[#2c3338] text-lg border-t border-gray-100">
                             <td class="pt-4 font-black">Total:</td>
-                            <td class="pt-4 text-right font-black text-[#1363df]">{{ lazy_price_format($order->total) }}</td>
+                            <td class="pt-4 text-right font-black text-[#1363df]">{{ lazy_price_format($order->total, $order) }}</td>
                         </tr>
                     </tfoot>
                 </table>

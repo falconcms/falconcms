@@ -75,12 +75,30 @@
                 
                 <div class="text-[24px] font-medium text-gray-900 mb-6 flex items-center gap-3">
                     @if($post->shopData && $post->shopData->sale_price)
-                        <span class="line-through text-gray-300 font-normal">${{ number_format($post->shopData->price, 2) }}</span>
-                        <span class="text-gray-900 font-bold">${{ number_format($post->shopData->sale_price, 2) }}</span>
+                        <span class="line-through text-gray-300 font-normal">{{ lazy_price_format($post->shopData->price) }}</span>
+                        <span class="text-gray-900 font-bold">{{ lazy_price_format($post->shopData->sale_price) }}</span>
                     @else
-                        <span class="text-gray-900 font-bold">${{ number_format($post->shopData->price ?? 0, 2) }}</span>
+                        <span class="text-gray-900 font-bold">{{ lazy_price_format($post->shopData->price ?? 0) }}</span>
                     @endif
                 </div>
+
+                @if($post->shopData && $post->shopData->manage_stock)
+                <div class="mb-6 -mt-4">
+                    @if($post->shopData->stock_quantity <= 0)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Out of Stock
+                        </span>
+                    @elseif($post->shopData->stock_quantity <= 5)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            {{ $post->shopData->stock_quantity }} {{ $post->shopData->stock_quantity == 1 ? 'item' : 'items' }} in stock
+                        </span>
+                    @else
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                            {{ $post->shopData->stock_quantity }} items in stock
+                        </span>
+                    @endif
+                </div>
+                @endif
                 
                 <div class="text-[15px] text-gray-600 mb-8 leading-relaxed">
                     {{ $post->excerpt ?: get_lazy_excerpt($post, 250) }}
@@ -512,10 +530,10 @@
                     </h3>
                     <div class="text-[14px] font-medium text-gray-900 mb-4">
                         @if($item->shopData && $item->shopData->sale_price)
-                            <span class="line-through text-gray-300 font-normal mr-1">${{ number_format($item->shopData->price, 2) }}</span>
-                            <span>${{ number_format($item->shopData->sale_price, 2) }}</span>
+                            <span class="line-through text-gray-300 font-normal mr-1">{{ lazy_price_format($item->shopData->price) }}</span>
+                            <span>{{ lazy_price_format($item->shopData->sale_price) }}</span>
                         @else
-                            <span>${{ number_format($item->shopData->price ?? 0, 2) }}</span>
+                            <span>{{ lazy_price_format($item->shopData->price ?? 0) }}</span>
                         @endif
                     </div>
                     <button class="w-full bg-[#1363df] text-white py-2.5 rounded-sm text-[12px] font-bold uppercase hover:bg-[#005ba6] transition-colors">

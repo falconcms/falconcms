@@ -63,7 +63,7 @@
                             </span>
                         </td>
                         <td class="wp-table-cell font-bold">
-                            {{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->total, 2) }}
+                            {{ lazy_price_format($order->total, $order) }}
                         </td>
                         <td class="wp-table-cell text-right">
                             <div class="flex justify-end space-x-2">

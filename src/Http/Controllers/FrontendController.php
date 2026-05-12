@@ -13,24 +13,35 @@ use Acme\CmsDashboard\Models\Tag;
 
 class FrontendController extends Controller
 {
-    protected function resolveThemeView($view)
+    protected function resolveThemeView($view, $fallback = null)
     {
         $activeTheme = get_cms_option('active_theme', 'lazy-theme');
         
-        // 1. Try App-level theme: themes.{activeTheme}.{view}
+        // 1. Try App-level theme
         $appView = "themes.{$activeTheme}.{$view}";
         if (view()->exists($appView)) {
             return $appView;
         }
 
-        // 2. Try Package-level theme: cms-dashboard::themes.{activeTheme}.{view}
+        // 2. Try Package-level theme
         $packageView = "cms-dashboard::themes.{$activeTheme}.{$view}";
         if (view()->exists($packageView)) {
             return $packageView;
         }
 
         // 3. Fallback to Lazy Theme (Package)
-        return "cms-dashboard::themes.lazy-theme.{$view}";
+        $lazyView = "cms-dashboard::themes.lazy-theme.{$view}";
+        if (view()->exists($lazyView)) {
+            return $lazyView;
+        }
+
+        // 4. If still not found and we have a fallback, try resolving the fallback
+        if ($fallback && $fallback !== $view) {
+            return $this->resolveThemeView($fallback);
+        }
+
+        // Final desperation: Return the lazyView name anyway, but it might still fail if even the base doesn't exist
+        return $lazyView;
     }
 
     public function index($locale = null)
@@ -307,26 +318,76 @@ class FrontendController extends Controller
             return redirect('/', 301);
         }
 
-        $viewName = ($post->type === 'page') ? 'page' : 'single';
-        
-        // Try to find a type-specific view first (e.g. single-product)
+        // 1. Determine base view name (page or single)
+        $baseView = ($post->type === 'page') ? 'page' : 'single';
+        $viewName = $baseView;
+
+        // 2. If it's a Custom Post Type, try single-{type} first
         if ($post->type !== 'page' && $post->type !== 'post') {
-            $typeView = "single-{$post->type}";
-            $resolvedTypeView = $this->resolveThemeView($typeView);
-            // Check if resolveThemeView actually found the type-specific one or fell back
-            // resolveThemeView falls back to lazy-theme.single if not found
-            if (!str_ends_with($resolvedTypeView, 'lazy-theme.single')) {
-                $viewName = $typeView;
-            }
+            $viewName = "single-{$post->type}";
         }
 
-        $view = $this->resolveThemeView($viewName);
+        // 3. Resolve the view with fallback to baseView
+        $view = $this->resolveThemeView($viewName, $baseView);
         
+        // 4. Final override check for slug-specific view (e.g. themes/lazy-theme/my-custom-page-slug.blade.php)
         if (preg_match('/^[a-z0-9-]+$/', $post->slug) && view()->exists($post->slug)) {
             $view = $post->slug;
         }
 
         view()->share('current_post', $post);
+
+        // Check if this page is assigned as a special Shop Page
+        $shopPageId = get_shop_option('shop_shop_page_id');
+        $cartPageId = get_shop_option('shop_cart_page_id');
+        $checkoutPageId = get_shop_option('shop_checkout_page_id');
+
+        if ($post->id == $shopPageId) {
+            $postsQuery = Post::where('type', 'product')
+                ->where('lang_code', app()->getLocale())
+                ->where('status', 'published');
+
+            $orderby = request('orderby', 'latest');
+            switch ($orderby) {
+                case 'price':
+                    $postsQuery->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
+                        ->orderByRaw('COALESCE(shop_products.sale_price, shop_products.price) ASC')
+                        ->select('posts.*');
+                    break;
+                case 'price-desc':
+                    $postsQuery->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
+                        ->orderByRaw('COALESCE(shop_products.sale_price, shop_products.price) DESC')
+                        ->select('posts.*');
+                    break;
+                case 'rating':
+                    $postsQuery->withCount(['reviews as average_rating' => function($query) {
+                        $query->select(\Illuminate\Support\Facades\DB::raw('avg(rating)'));
+                    }])->orderBy('average_rating', 'desc');
+                    break;
+                case 'popularity':
+                    $postsQuery->withCount('reviews')->orderBy('reviews_count', 'desc');
+                    break;
+                case 'latest':
+                default:
+                    $postsQuery->latest();
+                    break;
+            }
+
+            $posts = $postsQuery->paginate(12)->withQueryString();
+            $title = $post->title;
+            $type = 'Shop';
+            return view($this->resolveThemeView('archive-product', 'archive'), compact('posts', 'title', 'type', 'post'));
+        }
+
+        if ($post->id == $cartPageId) {
+            $cart = session()->get('lazy_cart', []);
+            return view($this->resolveThemeView('ecommerce.cart'), compact('cart', 'post'));
+        }
+
+        if ($post->id == $checkoutPageId) {
+            $cart = session()->get('lazy_cart', []);
+            return view($this->resolveThemeView('ecommerce.checkout'), compact('cart', 'post'));
+        }
 
         return view($view, compact('post'));
     }

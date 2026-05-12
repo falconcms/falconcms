@@ -55,16 +55,27 @@
                 
                 <div class="text-2xl font-medium text-gray-900 mb-6 border-b border-gray-100 pb-6">
                     @if($post->sale_price)
-                        <span class="line-through text-gray-400 text-lg mr-2">${{ number_format($post->price, 2) }}</span>
-                        <span class="text-blue-600">${{ number_format($post->sale_price, 2) }}</span>
+                        <span class="line-through text-gray-400 text-lg mr-2">{{ lazy_price_format($post->price) }}</span>
+                        <span class="text-blue-600">{{ lazy_price_format($post->sale_price) }}</span>
                     @else
-                        <span class="text-blue-600">${{ number_format($post->price ?? 0, 2) }}</span>
+                        <span class="text-blue-600">{{ lazy_price_format($post->price ?? 0) }}</span>
                     @endif
                 </div>
+
+                @if($post->shopData && $post->shopData->manage_stock)
+                <div class="mb-6 -mt-4">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        {{ $post->shopData->stock_quantity }} in stock
+                    </span>
+                </div>
+                @endif
                 
-                @if($post->excerpt)
+                @php
+                    $shortDescription = !empty($post->shopData->short_description) ? $post->shopData->short_description : $post->excerpt;
+                @endphp
+                @if($shortDescription)
                 <div class="prose text-gray-600 mb-8">
-                    {{ $post->excerpt }}
+                    {!! $shortDescription !!}
                 </div>
                 @endif
 

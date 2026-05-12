@@ -77,10 +77,10 @@
                         </h2>
                         <div class="text-[#333] font-bold text-[14px] mb-3">
                             @if($product->shopData && $product->shopData->sale_price)
-                                <span class="line-through text-[#a5a5a5] font-normal mr-1.5">${{ number_format($product->shopData->price, 2) }}</span>
-                                <span>${{ number_format($product->shopData->sale_price, 2) }}</span>
+                                <span class="line-through text-[#a5a5a5] font-normal mr-1.5">{{ lazy_price_format($product->shopData->price) }}</span>
+                                <span>{{ lazy_price_format($product->shopData->sale_price) }}</span>
                             @else
-                                <span>${{ number_format($product->shopData->price ?? 0, 2) }}</span>
+                                <span>{{ lazy_price_format($product->shopData->price ?? 0) }}</span>
                             @endif
                         </div>
                         <div class="mt-auto flex flex-wrap gap-2">

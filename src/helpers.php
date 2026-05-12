@@ -772,7 +772,7 @@ if (!function_exists('lazy_translate')) {
 
 if (!function_exists('get_lazy_shop_url')) {
     function get_lazy_shop_url() {
-        $pageId = get_cms_option('shop_page_id');
+        $pageId = get_shop_option('shop_shop_page_id');
         if ($pageId) {
             $page = \Acme\CmsDashboard\Models\Post::find($pageId);
             if ($page) return get_lazy_permalink($page);
@@ -783,25 +783,58 @@ if (!function_exists('get_lazy_shop_url')) {
 
 if (!function_exists('get_lazy_cart_url')) {
     function get_lazy_cart_url() {
+        $pageId = get_shop_option('shop_cart_page_id');
+        if ($pageId) {
+            $page = \Acme\CmsDashboard\Models\Post::find($pageId);
+            if ($page) return get_lazy_permalink($page);
+        }
         return route('shop.cart');
     }
 }
 
 if (!function_exists('get_lazy_checkout_url')) {
     function get_lazy_checkout_url() {
+        $pageId = get_shop_option('shop_checkout_page_id');
+        if ($pageId) {
+            $page = \Acme\CmsDashboard\Models\Post::find($pageId);
+            if ($page) return get_lazy_permalink($page);
+        }
         return route('shop.checkout');
     }
 }
 
 if (!function_exists('lazy_price_format')) {
-    function lazy_price_format($price) {
-        $symbol = get_cms_option('shop_currency_symbol', '$');
-        $position = get_cms_option('shop_currency_position', 'left');
-        $decimals = (int) get_cms_option('shop_price_decimals', 2);
+    function lazy_price_format($price, $order = null) {
+        if ($order && is_object($order) && isset($order->currency_symbol)) {
+            $symbol = $order->currency_symbol;
+            $position = $order->currency_position ?? 'left';
+            $decimals = (int) ($order->decimals ?? 2);
+            $thousandSep = $order->thousand_separator ?? ',';
+            $decimalSep = $order->decimal_separator ?? '.';
+        } else {
+            $currencyCode = get_shop_option('shop_currency', 'USD');
+            $symbol = \Acme\CmsDashboard\Services\EcommerceData::getCurrencySymbol($currencyCode);
+            
+            $position = get_shop_option('shop_currency_pos', 'left');
+            $decimals = (int) get_shop_option('shop_num_decimals', 2);
+            $thousandSep = get_shop_option('shop_thousand_sep', ',');
+            $decimalSep = get_shop_option('shop_decimal_sep', '.');
+        }
         
-        $formatted = number_format((float)$price, $decimals);
+        $formatted = number_format((float)$price, $decimals, $decimalSep, $thousandSep);
         
-        return $position === 'left' ? $symbol . $formatted : $formatted . $symbol;
+        switch ($position) {
+            case 'left':
+                return $symbol . $formatted;
+            case 'right':
+                return $formatted . $symbol;
+            case 'left_space':
+                return $symbol . ' ' . $formatted;
+            case 'right_space':
+                return $formatted . ' ' . $symbol;
+            default:
+                return $symbol . $formatted;
+        }
     }
 }
 
@@ -829,8 +862,98 @@ if (!function_exists('get_lazy_cart_subtotal')) {
 }
 
 if (!function_exists('get_lazy_cart_shipping')) {
-    function get_lazy_cart_shipping() {
-        return (float) get_cms_option('shop_flat_rate_cost', 0);
+    /**
+     * Calculate shipping cost based on subtotal, quantity, and location.
+     * @param string|null $country Customer country code
+     * @return float
+     */
+    function get_lazy_cart_shipping($country = null) {
+        $details = get_lazy_cart_shipping_details($country);
+        return $details['cost'];
+    }
+}
+
+if (!function_exists('get_lazy_cart_shipping_details')) {
+    function get_lazy_cart_shipping_details($country = null) {
+        $subtotal = get_lazy_cart_subtotal();
+        $cart = session()->get('lazy_cart', []);
+        $itemCount = 0;
+        foreach ($cart as $item) {
+            $itemCount += ($item['quantity'] ?? 0);
+        }
+
+        // 1. Check Global Free Shipping Threshold
+        $globalFreeThreshold = (float) get_shop_option('shop_free_shipping_threshold', 0);
+        if ($globalFreeThreshold > 0 && $subtotal >= $globalFreeThreshold) {
+            return ['cost' => 0, 'label' => 'Free shipping'];
+        }
+
+        // 2. Advanced Shipping Zones
+        $zones = get_shop_option('shop_shipping_zones', []);
+        
+        // Find matching zone if country is provided
+        $matchedZone = null;
+        if ($country) {
+            $normalizedCountry = str_replace('—', '-', $country);
+            foreach ($zones as $zone) {
+                $zoneCountries = (array)($zone['countries'] ?? []);
+                $normalizedZoneCountries = array_map(fn($c) => str_replace('—', '-', $c), $zoneCountries);
+
+                if (in_array($normalizedCountry, $normalizedZoneCountries)) {
+                    $matchedZone = $zone;
+                    break;
+                }
+
+                if (strpos($normalizedCountry, ' - ') !== false) {
+                    $parts = explode(' - ', $normalizedCountry);
+                    $parentCountry = trim($parts[0]);
+                    if (in_array($parentCountry, $normalizedZoneCountries)) {
+                        $matchedZone = $zone;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($matchedZone) {
+            $zoneName = $matchedZone['name'] ?? 'Shipping';
+            
+            // Check zone-specific free shipping
+            $zoneFreeThreshold = (float) ($matchedZone['free_threshold'] ?? 0);
+            if ($zoneFreeThreshold > 0 && $subtotal >= $zoneFreeThreshold) {
+                return ['cost' => 0, 'label' => 'Free shipping (' . $zoneName . ')'];
+            }
+
+            $baseCost = (float) ($matchedZone['cost'] ?? 0);
+            $type = $matchedZone['type'] ?? 'order';
+
+            if ($type === 'item' && !empty($matchedZone['rules'])) {
+                $ruleCost = 0;
+                $matchedRule = false;
+                foreach ($matchedZone['rules'] as $rule) {
+                    $min = (int) ($rule['min'] ?? 0);
+                    $max = ($rule['max'] === '' || $rule['max'] === null) ? PHP_INT_MAX : (int) $rule['max'];
+                    
+                    if ($itemCount >= $min && $itemCount <= $max) {
+                        $ruleCost = (float) ($rule['cost'] ?? 0);
+                        $matchedRule = true;
+                        break;
+                    }
+                }
+                return [
+                    'cost' => $matchedRule ? $ruleCost : $baseCost,
+                    'label' => $zoneName
+                ];
+            }
+
+            return ['cost' => $baseCost, 'label' => $zoneName];
+        }
+
+        // 3. Fallback to Global Flat Rate
+        return [
+            'cost' => (float) get_shop_option('shop_flat_rate_cost', 0),
+            'label' => 'Flat rate'
+        ];
     }
 }
 
@@ -845,32 +968,122 @@ if (!function_exists('get_lazy_cart_tax')) {
 
 if (!function_exists('get_lazy_cart_total')) {
     function get_lazy_cart_total() {
+        $cart = session()->get('lazy_cart', []);
         $subtotal = get_lazy_cart_subtotal();
-        $shipping = get_lazy_cart_shipping();
+        $shipping = get_lazy_cart_shipping(session()->get('lazy_shipping_country'));
         $tax = get_lazy_cart_tax();
         
         $coupons = session()->get('lazy_coupons', []);
         $totalDiscount = 0;
-        $currentSubtotal = $subtotal;
+        $currentCart = $cart; // For sequential calculation if needed
         $isSequential = (int)get_shop_option('shop_coupon_stacking_policy', '1') == 1;
+        $subtotal = get_lazy_cart_subtotal();
+        $currentSubtotal = $subtotal;
 
         foreach ($coupons as $coupon) {
-            $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
-            $calcBase = $isSequential ? $currentSubtotal : $subtotal;
-            
-            if (($coupon['type'] ?? 'percent') === 'fixed_cart' || ($coupon['type'] ?? 'percent') === 'fixed') {
-                $discount = $amount;
-            } else {
-                $discount = $calcBase * ($amount / 100);
-            }
-            
+            $discount = get_lazy_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
             $totalDiscount += $discount;
-            if ($isSequential) {
-                $currentSubtotal -= $discount;
-            }
+            $currentSubtotal -= $discount;
         }
         
         return max(0, $subtotal + $shipping + $tax - $totalDiscount);
+    }
+}
+
+if (!function_exists('get_lazy_coupon_discount_amount')) {
+    function get_lazy_coupon_discount_amount($coupon, $cart, $calcBaseSubtotal = null) {
+        $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
+        $couponType = $coupon['type'] ?? 'percent';
+        $products = (array) ($coupon['products'] ?? []);
+        $categories = (array) ($coupon['categories'] ?? []);
+        
+        // If NO restrictions, apply to the whole provided subtotal
+        if (empty($products) && empty($categories)) {
+            $base = $calcBaseSubtotal ?? get_lazy_cart_subtotal();
+            if ($couponType === 'percent') {
+                return $base * ($amount / 100);
+            }
+            return min($amount, $base);
+        }
+
+        // Fetch origin IDs for restricted products and categories for robust matching
+        $restrictedProductOriginIds = [];
+        if (!empty($products)) {
+            $restrictedProductOriginIds = \Illuminate\Support\Facades\DB::table('posts')
+                ->whereIn('id', $products)
+                ->selectRaw('COALESCE(origin_id, id) as identity')
+                ->pluck('identity')
+                ->toArray();
+        }
+
+        $restrictedCategoryOriginIds = [];
+        if (!empty($categories)) {
+            $restrictedCategoryOriginIds = \Illuminate\Support\Facades\DB::table('taxonomy_terms')
+                ->whereIn('id', $categories)
+                ->selectRaw('COALESCE(origin_id, id) as identity')
+                ->pluck('identity')
+                ->toArray();
+        }
+
+        // Calculate discount
+        $totalDiscount = 0;
+        $eligibleSubtotal = 0;
+
+        foreach ($cart as $item) {
+            $productId = $item['id'] ?? 0;
+            if (!$productId) continue;
+
+            // Check Product Eligibility
+            $matchProduct = false;
+            if (!empty($restrictedProductOriginIds)) {
+                $itemIdentity = \Illuminate\Support\Facades\DB::table('posts')
+                    ->where('id', $productId)
+                    ->selectRaw('COALESCE(origin_id, id) as identity')
+                    ->value('identity');
+                $matchProduct = in_array($itemIdentity, $restrictedProductOriginIds);
+            }
+            
+            // Check Category Eligibility
+            $matchCategory = false;
+            if (!empty($restrictedCategoryOriginIds)) {
+                $itemCategoryIdentities = \Illuminate\Support\Facades\DB::table('post_taxonomy_term')
+                    ->join('taxonomy_terms', 'post_taxonomy_term.taxonomy_term_id', '=', 'taxonomy_terms.id')
+                    ->where('post_taxonomy_term.post_id', $productId)
+                    ->where('taxonomy_terms.taxonomy_slug', 'product_cat')
+                    ->selectRaw('COALESCE(taxonomy_terms.origin_id, taxonomy_terms.id) as identity')
+                    ->pluck('identity')
+                    ->toArray();
+                $matchCategory = !empty(array_intersect($itemCategoryIdentities, $restrictedCategoryOriginIds));
+            }
+
+            $isEligible = false;
+            if (empty($restrictedProductOriginIds) && empty($restrictedCategoryOriginIds)) {
+                $isEligible = true;
+            } else {
+                $isEligible = $matchProduct || $matchCategory;
+            }
+
+            if ($isEligible) {
+                $qty = (int) ($item['quantity'] ?? 1);
+                $price = (float) ($item['sale_price'] ?? $item['price']);
+                
+                if ($couponType === 'percent') {
+                    $eligibleSubtotal += $price * $qty;
+                } elseif ($couponType === 'fixed_product') {
+                    $totalDiscount += $amount * $qty;
+                } else { // fixed_cart
+                    $eligibleSubtotal += $price * $qty;
+                }
+            }
+        }
+
+        if ($couponType === 'percent') {
+            return $eligibleSubtotal * ($amount / 100);
+        } elseif ($couponType === 'fixed_product') {
+            return $totalDiscount;
+        } else { // fixed_cart
+            return min($amount, $eligibleSubtotal);
+        }
     }
 }
 

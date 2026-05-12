@@ -49,8 +49,9 @@
                     <div class="space-y-1.5 mb-4">
                         <label class="text-[14px] font-bold text-[#2c3338]">Country / Region <span class="text-red-600">*</span></label>
                         <select name="billing_country" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] bg-white focus:border-[#1363df] outline-none cursor-pointer">
+                            @php $selectedCountry = old('billing_country', session('lazy_shipping_country')); @endphp
                             @foreach(\Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates() as $code => $name)
-                                <option value="{{ $code }}" {{ old('billing_country') == $code ? 'selected' : '' }}>{{ $name }}</option>
+                                <option value="{{ $code }}" {{ $selectedCountry == $code ? 'selected' : '' }}>{{ $name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -112,8 +113,9 @@
                         <div class="space-y-1.5">
                             <label class="text-[14px] font-bold text-[#2c3338]">Country / Region <span class="text-red-600">*</span></label>
                             <select name="shipping_country" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] bg-white focus:border-[#1363df] outline-none">
+                                @php $selectedShipCountry = old('shipping_country', session('lazy_shipping_country')); @endphp
                                 @foreach(\Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates() as $code => $name)
-                                    <option value="{{ $code }}" {{ old('shipping_country') == $code ? 'selected' : '' }}>{{ $name }}</option>
+                                    <option value="{{ $code }}" {{ $selectedShipCountry == $code ? 'selected' : '' }}>{{ $name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -161,7 +163,7 @@
                             @foreach($cart as $item)
                                 <tr class="border-b border-[#eee]">
                                     <td class="p-4 text-[#515151]">
-                                        {{ $item['name'] }} <span class="font-bold text-[#2c3338]">× {{ $item['quantity'] }}</span>
+                                        <a href="{{ route('frontend.show', ['typeOrSlug' => 'product', 'slug' => $item['slug']]) }}" class="hover:text-[#1363df] transition-colors">{{ $item['name'] }}</a> <span class="font-bold text-[#2c3338]">× {{ $item['quantity'] }}</span>
                                     </td>
                                     <td class="p-4 text-right font-medium text-[#2c3338]">
                                         {{ lazy_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
@@ -177,7 +179,8 @@
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-[#2c3338]">Shipping</th>
                                 <td class="text-right p-4 text-[#515151]" id="checkout-shipping">
-                                    Flat rate: <span class="font-bold text-[#2c3338]">{{ get_lazy_cart_shipping() > 0 ? lazy_price_format(get_lazy_cart_shipping()) : 'Free' }}</span>
+                                    @php $shipDetails = get_lazy_cart_shipping_details(session('lazy_shipping_country')); @endphp
+                                    {{ $shipDetails['label'] }}: <span class="font-bold text-[#2c3338]">{{ $shipDetails['cost'] > 0 ? lazy_price_format($shipDetails['cost']) : 'Free' }}</span>
                                 </td>
                             </tr>
 
@@ -328,6 +331,45 @@ function applyCoupon() {
 
 document.addEventListener('DOMContentLoaded', function() {
     const checkoutForm = document.querySelector('form[action="{{ route('shop.place-order') }}"]');
+    
+    // Dynamic Shipping Update on Country Change
+    const billingCountry = document.querySelector('select[name="billing_country"]');
+    const shippingCountry = document.querySelector('select[name="shipping_country"]');
+    const shipToDifferent = document.getElementById('ship-different');
+
+    function refreshCheckoutShipping() {
+        const country = (shipToDifferent && shipToDifferent.checked) ? (shippingCountry ? shippingCountry.value : '') : (billingCountry ? billingCountry.value : '');
+        if(!country) return;
+
+        const shippingText = document.getElementById('checkout-shipping');
+        const totalText = document.getElementById('checkout-total');
+
+        fetch('{{ route('shop.cart.shipping.update') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ country: country })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                if(shippingText) shippingText.innerHTML = data.shipping;
+                if(totalText) totalText.innerHTML = data.total;
+            }
+        })
+        .catch(error => console.error('Checkout Shipping Error:', error));
+    }
+
+    if(billingCountry) billingCountry.addEventListener('change', refreshCheckoutShipping);
+    if(shippingCountry) shippingCountry.addEventListener('change', refreshCheckoutShipping);
+    if(shipToDifferent) shipToDifferent.addEventListener('change', refreshCheckoutShipping);
+
+    // Initial check on load
+    refreshCheckoutShipping();
+
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
             e.preventDefault();

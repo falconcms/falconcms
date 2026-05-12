@@ -46,9 +46,9 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="wp-table-cell text-center">{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($item->price, 2) }}</td>
+                                    <td class="wp-table-cell text-center">{{ lazy_price_format($item->price, $order) }}</td>
                                     <td class="wp-table-cell text-center">× {{ $item->quantity }}</td>
-                                    <td class="wp-table-cell text-right font-semibold">{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($item->subtotal, 2) }}</td>
+                                    <td class="wp-table-cell text-right font-semibold">{{ lazy_price_format($item->subtotal, $order) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -62,14 +62,22 @@
                                             <span class="font-semibold">{{ strtoupper($order->payment_method) }}</span>
                                         </div>
                                     @endif
+
+                                    @if(isset($order->shipping_method) && $order->shipping_method)
+                                        <div class="text-[11px] font-bold uppercase text-[#8c8f94] mt-4 mb-1">Shipping Method</div>
+                                        <div class="flex items-center text-[#1d2327]">
+                                            <span class="material-symbols-outlined text-[18px] mr-1">local_shipping</span>
+                                            <span class="font-semibold">{{ $order->shipping_method }}</span>
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-3 py-2 text-right text-[#646970]">Subtotal:</td>
-                                <td class="px-3 py-2 text-right font-semibold">{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->subtotal, 2) }}</td>
+                                <td class="px-3 py-2 text-right font-semibold">{{ lazy_price_format($order->subtotal, $order) }}</td>
                             </tr>
                             @if($order->shipping_total > 0)
                                 <tr>
                                     <td class="px-3 py-2 text-right text-[#646970]">Shipping:</td>
-                                    <td class="px-3 py-2 text-right font-semibold">{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->shipping_total, 2) }}</td>
+                                    <td class="px-3 py-2 text-right font-semibold">{{ lazy_price_format($order->shipping_total, $order) }}</td>
                                 </tr>
                             @else
                                 <tr>
@@ -80,18 +88,18 @@
                             @if($order->tax_total > 0)
                                 <tr>
                                     <td class="px-3 py-2 text-right text-[#646970]">Tax:</td>
-                                    <td class="px-3 py-2 text-right font-semibold">{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->tax_total, 2) }}</td>
+                                    <td class="px-3 py-2 text-right font-semibold">{{ lazy_price_format($order->tax_total, $order) }}</td>
                                 </tr>
                             @endif
                             @if($order->coupon_code)
                                 <tr>
                                     <td class="px-3 py-2 text-right text-emerald-700 font-bold">Coupons ({{ $order->coupon_code }}):</td>
-                                    <td class="px-3 py-2 text-right font-bold text-emerald-700">-{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->discount_total, 2) }}</td>
+                                    <td class="px-3 py-2 text-right font-bold text-emerald-700">-{{ lazy_price_format($order->discount_total, $order) }}</td>
                                 </tr>
                             @endif
                             <tr class="bg-[#f6f7f7]">
                                 <td class="px-3 py-3 text-right font-bold text-[15px]">Total:</td>
-                                <td class="px-3 py-3 text-right font-bold text-[18px] text-[#2271b1]">{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->total, 2) }}</td>
+                                <td class="px-3 py-3 text-right font-bold text-[18px] text-[#2271b1]">{{ lazy_price_format($order->total, $order) }}</td>
                             </tr>
                         </tfoot>
                     </table>

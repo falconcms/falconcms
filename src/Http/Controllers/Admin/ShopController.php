@@ -68,12 +68,30 @@ class ShopController extends Controller
 
     public function settings()
     {
-        $countries = \Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates();
+        $countries = \Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates(false);
+        $allowedCountries = \Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates(true);
         $currencies = \Acme\CmsDashboard\Services\EcommerceData::getCurrencies();
+        $frontPageId    = get_cms_option('page_on_front');
+        $shopPageId     = get_shop_option('shop_shop_page_id');
+        $cartPageId     = get_shop_option('shop_cart_page_id');
+        $checkoutPageId = get_shop_option('shop_checkout_page_id');
+
         $pages = \Illuminate\Support\Facades\DB::table('posts')
             ->where('type', 'page')
-            ->where('status', 'published')
-            ->get(['id', 'title']);
+            ->get(['id', 'title', 'status']);
+
+        foreach ($pages as $page) {
+            $labels = [];
+            if ($page->id == $frontPageId) $labels[] = 'Front Page';
+            if ($page->id == $shopPageId) $labels[] = 'Shop Page';
+            if ($page->id == $cartPageId) $labels[] = 'Cart Page';
+            if ($page->id == $checkoutPageId) $labels[] = 'Checkout Page';
+            if ($page->status == 'draft') $labels[] = 'Draft';
+            
+            if (!empty($labels)) {
+                $page->title .= ' — ' . implode(', ', $labels);
+            }
+        }
 
         $products = \Illuminate\Support\Facades\DB::table('posts')
             ->where('type', 'product')
@@ -84,7 +102,7 @@ class ShopController extends Controller
             ->where('taxonomy_slug', 'product_cat')
             ->get(['id', 'name']);
 
-        return view('cms-dashboard::admin.shop.settings', compact('countries', 'currencies', 'pages', 'products', 'categories'));
+        return view('cms-dashboard::admin.shop.settings', compact('countries', 'allowedCountries', 'currencies', 'pages', 'products', 'categories'));
     }
 
     public function saveSettings(Request $request)
@@ -111,7 +129,13 @@ class ShopController extends Controller
         // 2. Save everything else
         $skip = array_merge(['_token', 'active_tab'], array_keys($toggles));
         foreach ($request->except($skip) as $key => $value) {
-            update_shop_option('shop_' . $key, $value);
+            $optKey = 'shop_' . $key;
+            update_shop_option($optKey, $value);
+            
+            // Ensure global settings take precedence by deleting localized overrides
+            \Illuminate\Support\Facades\DB::table('cms_settings')
+                ->where('key', 'like', $optKey . '_%')
+                ->delete();
         }
 
         if ($request->has('active_tab')) {

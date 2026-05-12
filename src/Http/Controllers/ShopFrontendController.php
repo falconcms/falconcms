@@ -26,6 +26,7 @@ class ShopFrontendController extends Controller
 
     public function cart()
     {
+        $this->validateCartItems();
         $this->revalidateCoupon();
         $cart = Session::get('lazy_cart', []);
         return view($this->resolveThemeView('cart'), compact('cart'));
@@ -47,13 +48,17 @@ class ShopFrontendController extends Controller
             $currentInCart = isset($cart[$cartKey]) ? $cart[$cartKey]['quantity'] : 0;
             
             if (($currentInCart + $quantity) > $shopData->stock_quantity) {
+                $errorMsg = $shopData->stock_quantity <= 0 
+                    ? 'Sorry, this product is currently out of stock.' 
+                    : 'Sorry, only ' . $shopData->stock_quantity . ' items available in stock.';
+
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Sorry, only ' . $shopData->stock_quantity . ' items available in stock.'
+                        'message' => $errorMsg
                     ], 422);
                 }
-                return redirect()->back()->with('error', 'Sorry, only ' . $shopData->stock_quantity . ' items available in stock.');
+                return redirect()->back()->with('error', $errorMsg);
             }
         }
 
@@ -87,7 +92,7 @@ class ShopFrontendController extends Controller
             ]);
         }
 
-        return redirect()->route('shop.cart')->with('success', 'Product added to cart!');
+        return redirect()->to(get_lazy_cart_url())->with('success', 'Product added to cart!');
     }
 
     public function updateCart(Request $request)
@@ -106,6 +111,7 @@ class ShopFrontendController extends Controller
         }
 
         Session::put('lazy_cart', $cart);
+        $this->validateCartItems();
         $this->revalidateCoupon();
 
         if ($request->ajax()) {
@@ -200,30 +206,8 @@ class ShopFrontendController extends Controller
 
             // 4. Product/Category Restrictions
             $cart = Session::get('lazy_cart', []);
-            $hasEligibleProduct = true;
-            
-            if (!empty($coupon['products']) || !empty($coupon['categories'])) {
-                $hasEligibleProduct = false;
-                foreach ($cart as $item) {
-                    $productId = $item['id'] ?? 0;
-                    if (!$productId) continue;
-
-                    $productCategories = \Illuminate\Support\Facades\DB::table('post_taxonomy_term')
-                        ->where('post_id', $productId)
-                        ->pluck('taxonomy_term_id')
-                        ->toArray();
-
-                    $isProductEligible = empty($coupon['products']) || in_array($productId, (array)$coupon['products']);
-                    $isCategoryEligible = empty($coupon['categories']) || !empty(array_intersect($productCategories, (array)$coupon['categories']));
-
-                    if ($isProductEligible && $isCategoryEligible) {
-                        $hasEligibleProduct = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!$hasEligibleProduct) {
+            $discount = get_lazy_coupon_discount_amount($coupon, $cart);
+            if ($discount <= 0) {
                 return $this->couponResponse(false, 'This coupon is not valid for the products in your cart.', $request);
             }
 
@@ -231,7 +215,9 @@ class ShopFrontendController extends Controller
             $appliedCoupons[] = [
                 'code' => $coupon['code'],
                 'type' => $coupon['type'] ?? 'percent',
-                'amount' => $coupon['amount'] ?? ($coupon['discount'] ?? 0)
+                'amount' => $coupon['amount'] ?? ($coupon['discount'] ?? 0),
+                'products' => $coupon['products'] ?? [],
+                'categories' => $coupon['categories'] ?? []
             ];
             
             Session::put('lazy_coupons', $appliedCoupons);
@@ -273,28 +259,28 @@ class ShopFrontendController extends Controller
         $coupons = Session::get('lazy_coupons', []);
         if (empty($coupons)) return '';
         
+        $cart = Session::get('lazy_cart', []);
+        $isSequential = (int)get_shop_option('shop_coupon_stacking_policy', '1') == 1;
         $subtotal = get_lazy_cart_subtotal();
         $currentSubtotal = $subtotal;
-        $isSequential = get_shop_option('shop_calc_coupons_sequentially', '0') === '1';
+        
         $html = '';
-
         foreach ($coupons as $coupon) {
-            $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
-            $calcBase = $isSequential ? $currentSubtotal : $subtotal;
-            $discount = ($coupon['type'] ?? 'percent') === 'percent' ? $calcBase * ($amount / 100) : $amount;
-            
-            $html .= '
-                <tr class="coupon-row bg-emerald-50/5 border-b border-gray-100">
-                    <th class="p-4 bg-gray-50 text-left font-bold text-emerald-700 w-1/3 whitespace-nowrap">
-                        <div class="flex items-center gap-2">
-                            Coupon: ' . $coupon['code'] . '
-                            <a href="' . route('shop.cart.coupon.remove') . '?code=' . urlencode($coupon['code']) . '" class="text-rose-500 hover:text-rose-700 text-[10px] font-normal">[Remove]</a>
-                        </div>
-                    </th>
-                    <td class="p-4 font-bold text-emerald-700">-' . lazy_price_format($discount) . '</td>
-                </tr>';
-            
+            $discount = get_lazy_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
             $currentSubtotal -= $discount;
+
+            if ($discount > 0) {
+                $html .= '
+                    <tr class="coupon-row bg-emerald-50/5 border-b border-gray-100">
+                        <th class="p-4 bg-gray-50 text-left font-bold text-emerald-700 w-1/3 whitespace-nowrap">
+                            <div class="flex items-center gap-2">
+                                Coupon: ' . $coupon['code'] . '
+                                <a href="' . route('shop.cart.coupon.remove') . '?code=' . urlencode($coupon['code']) . '" class="text-rose-500 hover:text-rose-700 text-[10px] font-normal">[Remove]</a>
+                            </div>
+                        </th>
+                        <td class="p-4 font-bold text-emerald-700">-' . lazy_price_format($discount) . '</td>
+                    </tr>';
+            }
         }
 
         return $html;
@@ -381,29 +367,18 @@ class ShopFrontendController extends Controller
                 continue;
             }
 
-            // Check Product Restrictions
-            if (!empty($couponData['products']) || !empty($couponData['categories'])) {
-                $cart = Session::get('lazy_cart', []);
-                $hasEligibleProduct = false;
-                foreach ($cart as $item) {
-                    $productId = $item['id'] ?? 0;
-                    $productCategories = \Illuminate\Support\Facades\DB::table('post_taxonomy_term')
-                        ->where('post_id', $productId)
-                        ->pluck('taxonomy_term_id')
-                        ->toArray();
+            // Check Product/Category Restrictions
+            $cart = Session::get('lazy_cart', []);
+            $discount = get_lazy_coupon_discount_amount($couponData, $cart);
+            if ($discount <= 0) continue;
 
-                    $isProductEligible = empty($couponData['products']) || in_array($productId, (array)$couponData['products']);
-                    $isCategoryEligible = empty($couponData['categories']) || !empty(array_intersect($productCategories, (array)$couponData['categories']));
-
-                    if ($isProductEligible && $isCategoryEligible) {
-                        $hasEligibleProduct = true;
-                        break;
-                    }
-                }
-                if (!$hasEligibleProduct) continue;
-            }
-
-            $newCoupons[] = $applied;
+            $newCoupons[] = [
+                'code' => $couponData['code'],
+                'type' => $couponData['type'] ?? 'percent',
+                'amount' => $couponData['amount'] ?? ($couponData['discount'] ?? 0),
+                'products' => $couponData['products'] ?? [],
+                'categories' => $couponData['categories'] ?? []
+            ];
         }
 
         // Wipe if coupons are disabled globally
@@ -432,6 +407,7 @@ class ShopFrontendController extends Controller
 
     public function checkout()
     {
+        $this->validateCartItems();
         $this->revalidateCoupon();
         $cart = Session::get('lazy_cart', []);
         if (empty($cart)) {
@@ -492,8 +468,11 @@ class ShopFrontendController extends Controller
             return redirect()->route('shop.cart')->with('error', 'Your cart is empty!');
         }
 
+        $shippingCountry = $request->has('ship_to_different_address') ? $request->shipping_country : $request->billing_country;
+        Session::put('lazy_shipping_country', $shippingCountry);
+
         $subtotal = get_lazy_cart_subtotal();
-        $shipping = get_lazy_cart_shipping();
+        $shipping = get_lazy_cart_shipping($shippingCountry);
         $tax = get_lazy_cart_tax();
         $total = get_lazy_cart_total();
 
@@ -531,7 +510,15 @@ class ShopFrontendController extends Controller
             'postcode' => $request->billing_postcode,
             'country' => $request->billing_country,
             'payment_method' => $request->payment_method,
+            'shipping_method' => get_lazy_cart_shipping_details($shippingCountry)['label'],
             'customer_note' => $request->order_comments,
+            // Snapshot currency settings for historical accuracy
+            'currency' => get_shop_option('shop_currency', 'USD'),
+            'currency_symbol' => \Acme\CmsDashboard\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD')),
+            'currency_position' => get_shop_option('shop_currency_pos', 'left'),
+            'thousand_separator' => get_shop_option('shop_thousand_sep', ','),
+            'decimal_separator' => get_shop_option('shop_decimal_sep', '.'),
+            'decimals' => (int) get_shop_option('shop_num_decimals', 2),
         ];
 
         if ($request->has('ship_to_different_address')) {
@@ -556,6 +543,12 @@ class ShopFrontendController extends Controller
                 'price' => $item['sale_price'] ?? $item['price'],
                 'subtotal' => ($item['sale_price'] ?? $item['price']) * $item['quantity'],
             ]);
+
+            // Decrement Stock
+            $product = Product::with('shopData')->find($item['id']);
+            if ($product && $product->shopData && $product->shopData->manage_stock) {
+                $product->shopData->decrement('stock_quantity', $item['quantity']);
+            }
         }
 
         Session::forget('lazy_cart');
@@ -630,5 +623,68 @@ class ShopFrontendController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Ensures all items in cart are still valid and in stock
+     */
+    private function validateCartItems()
+    {
+        $cart = Session::get('lazy_cart', []);
+        if (empty($cart)) return;
+
+        $productIds = array_column($cart, 'id');
+        // Fetch all products in cart with their shopData
+        $products = Product::with('shopData')->whereIn('id', $productIds)->get()->keyBy('id');
+
+        $updated = false;
+        foreach ($cart as $key => $item) {
+            $productId = $item['id'];
+            
+            // 1. Check if product exists and is published
+            if (!isset($products[$productId])) {
+                unset($cart[$key]);
+                $updated = true;
+                continue;
+            }
+
+            $product = $products[$productId];
+            $shopData = $product->shopData;
+
+            // 2. Check Stock
+            if ($shopData) {
+                if ($shopData->stock_status === 'outofstock' || ($shopData->manage_stock && $shopData->stock_quantity <= 0)) {
+                    unset($cart[$key]);
+                    $updated = true;
+                    continue;
+                }
+                
+                // Adjust quantity if it exceeds available stock
+                if ($shopData->manage_stock && $item['quantity'] > $shopData->stock_quantity) {
+                    $cart[$key]['quantity'] = $shopData->stock_quantity;
+                    $updated = true;
+                }
+            }
+        }
+
+        if ($updated) {
+            \Illuminate\Support\Facades\Session::put('lazy_cart', $cart);
+            \Illuminate\Support\Facades\Session::save();
+        }
+    }
+
+    public function updateShipping(\Illuminate\Http\Request $request)
+    {
+        $country = $request->input('country');
+        \Illuminate\Support\Facades\Session::put('lazy_shipping_country', $country);
+        $shippingDetails = get_lazy_cart_shipping_details($country);
+        $shippingCost = $shippingDetails['cost'];
+        $total = get_lazy_cart_total();
+        
+        return response()->json([
+            'success' => true,
+            'shipping' => $shippingCost > 0 ? $shippingDetails['label'] . ': ' . lazy_price_format($shippingCost) : $shippingDetails['label'],
+            'total' => lazy_price_format($total)
+        ]);
     }
 }

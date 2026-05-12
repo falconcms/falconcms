@@ -39,7 +39,7 @@
                                 $allowedFormats = is_array($allowedRaw) ? $allowedRaw : json_decode($allowedRaw, true);
                                 $accept = !empty($allowedFormats) ? '.' . implode(',.', $allowedFormats) : '';
                             @endphp
-                            <input type="file" id="media-upload-input" class="hidden" {!! $accept ? 'accept="'.$accept.'"' : '' !!}>
+                            <input type="file" id="media-upload-input" class="hidden" multiple {!! $accept ? 'accept="'.$accept.'"' : '' !!}>
                             
                             <h3 class="text-[20px] font-normal text-[#1d2327] mb-2">Drop files to upload</h3>
                             <p class="text-[#646970] mb-4">or</p>
@@ -192,21 +192,18 @@
 
         // Upload Logic
         const fileInput = document.getElementById('media-upload-input');
+        const uploadView = document.getElementById('media-upload-view');
+        const dropZone = uploadView.querySelector('.border-2.border-dashed');
         let isUploading = false;
 
-        fileInput.addEventListener('change', function() {
-            if (!this.files.length || isUploading) return;
+        async function handleUpload(filesList) {
+            if (!filesList || !filesList.length || isUploading) return;
             
             isUploading = true;
-            const file = this.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('_token', '{{ csrf_token() }}');
-
-            // Switch to library view without re-triggering loadLibrary if we're already uploading
-            const libraryTab = document.querySelector('[data-target="media-library-view"]');
+            const files = Array.from(filesList);
             
-            // UI state updates
+            // UI state updates to switch to library
+            const libraryTab = document.querySelector('[data-target="media-library-view"]');
             document.querySelectorAll('.media-modal-tab-btn').forEach(b => {
                 b.classList.remove('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
                 b.classList.add('border-l-transparent', 'text-[#2271b1]');
@@ -219,34 +216,56 @@
             
             document.getElementById('media-loading-spinner').classList.remove('hidden');
 
-            fetch("{{ route('admin.media.store') }}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('_token', '{{ csrf_token() }}');
+
+                try {
+                    const res = await fetch("{{ route('admin.media.store') }}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const isJson = res.headers.get('content-type')?.includes('application/json');
+                    const data = isJson ? await res.json() : null;
+                    
+                    if (!res.ok || !data || !data.success) {
+                        console.error('Upload Error:', data || await res.text());
+                    }
+                } catch (err) {
+                    console.error('Fetch Error:', err);
                 }
-            })
-            .then(async res => {
-                const isJson = res.headers.get('content-type')?.includes('application/json');
-                const data = isJson ? await res.json() : null;
-                
-                if (res.ok && data && data.success) {
-                    loadLibrary();
-                } else {
-                    console.error('Upload Error:', data || await res.text());
-                    alert('Upload failed: ' + (data?.message || 'Check console for details.'));
-                }
-            })
-            .catch(err => {
-                console.error('Fetch Error:', err);
-                alert('Network error or server unavailable.');
-            })
-            .finally(() => {
-                document.getElementById('media-loading-spinner').classList.add('hidden');
-                isUploading = false;
-                fileInput.value = ''; // Always clear to allow re-selecting same file
-            });
+            }
+
+            loadLibrary();
+            document.getElementById('media-loading-spinner').classList.add('hidden');
+            isUploading = false;
+            fileInput.value = '';
+        }
+
+        fileInput.addEventListener('change', function() {
+            handleUpload(this.files);
+        });
+
+        // Drag & Drop
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('border-[#2271b1]', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('dragleave', e => {
+            dropZone.classList.remove('border-[#2271b1]', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('border-[#2271b1]', 'bg-blue-50');
+            handleUpload(e.dataTransfer.files);
         });
 
         // Library Logic
