@@ -30,10 +30,11 @@
                     @else
                         <div class="absolute inset-0 flex items-center justify-center text-gray-400">No Image</div>
                     @endif
-                    @if($post->shopData && $post->shopData->stock_status === 'outofstock')
-                        <span class="absolute top-4 left-4 bg-red-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-sm uppercase tracking-wider shadow-lg z-10">Out of Stock</span>
-                    @elseif($post->sale_price)
-                        <span class="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded">Sale!</span>
+                    @if(!$post->is_in_stock)
+                        <span class="absolute top-4 right-4 bg-red-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-sm uppercase tracking-wider shadow-lg z-10">Out of Stock</span>
+                    @endif
+                    @if($post->sale_price)
+                        <span class="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded z-10">Sale!</span>
                     @endif
                 </div>
                 
@@ -81,6 +82,13 @@
                 </div>
                 @endif
 
+                @if(!$post->is_in_stock)
+                <div class="mb-10 pb-10 border-b border-gray-100">
+                    <button disabled class="w-full bg-gray-400 text-white font-bold h-12 rounded cursor-not-allowed uppercase text-sm tracking-wider">
+                        Out of stock
+                    </button>
+                </div>
+                @else
                 <form action="{{ route('shop.cart.add') }}" method="POST" class="mb-10 flex items-center gap-4 border-b border-gray-100 pb-10">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $post->id }}">
@@ -95,6 +103,7 @@
                         Add to Cart
                     </button>
                 </form>
+                @endif
 
                 <div class="text-sm text-gray-500 space-y-2">
                     @if($post->sku)

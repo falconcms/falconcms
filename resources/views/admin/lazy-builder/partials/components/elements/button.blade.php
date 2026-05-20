@@ -3,12 +3,12 @@
      :class="[el.settings.cssClass || '', 'button-container-' + el.id]"
      :id="el.settings.cssId || undefined"
      :style="[
-         { 
+         {
             display: 'flex',
             width: '100%',
-            justifyContent: el.settings.textAlign === 'left' ? 'flex-start' : (el.settings.textAlign === 'right' ? 'flex-end' : 'center'),
-            marginTop: getUnitVal(el.settings.marginTop ?? 10, 'px'),
-            marginBottom: getUnitVal(el.settings.marginBottom ?? 10, 'px')
+            justifyContent: (getResponsiveVal(el.settings, 'textAlign', device) || 'center') === 'left' ? 'flex-start' : ((getResponsiveVal(el.settings, 'textAlign', device) || 'center') === 'right' ? 'flex-end' : 'center'),
+            marginTop: getUnitVal(getResponsiveVal(el.settings, 'marginTop', device) ?? 10, 'px'),
+            marginBottom: getUnitVal(getResponsiveVal(el.settings, 'marginBottom', device) ?? 10, 'px')
          },
          getCanvasVisibilityStyle(el.settings)
      ]">
@@ -20,26 +20,26 @@
        :style="{
            display: el.settings.buttonSpan ? 'block' : 'inline-block',
            width: el.settings.buttonSpan ? '100%' : 'auto',
-           paddingTop: getUnitVal(el.settings.paddingTop, 'px'),
-           paddingBottom: getUnitVal(el.settings.paddingBottom, 'px'),
-           paddingLeft: getUnitVal(el.settings.paddingLeft, 'px'),
-           paddingRight: getUnitVal(el.settings.paddingRight, 'px'),
+           paddingTop: getUnitVal(getResponsiveVal(el.settings, 'paddingTop', device), 'px'),
+           paddingBottom: getUnitVal(getResponsiveVal(el.settings, 'paddingBottom', device), 'px'),
+           paddingLeft: getUnitVal(getResponsiveVal(el.settings, 'paddingLeft', device), 'px'),
+           paddingRight: getUnitVal(getResponsiveVal(el.settings, 'paddingRight', device), 'px'),
            marginTop: getUnitVal(el.settings.marginTopInner ?? 0, 'px'),
            marginBottom: getUnitVal(el.settings.marginBottomInner ?? 0, 'px'),
-           marginLeft: getUnitVal(el.settings.marginLeft ?? 0, 'px'),
-           marginRight: getUnitVal(el.settings.marginRight ?? 0, 'px'),
-           backgroundColor: (el.settings.buttonStyle === 'custom' && el.settings.bgGradientStartColor && el.settings.bgGradientEndColor) ? 'transparent' : (el.isHovered ? (el.settings.hoverBgColor || '#007cc0') : (el.settings.bgColor || '#0091ea')),
-           backgroundImage: (el.settings.buttonStyle === 'custom' && el.settings.bgGradientStartColor && el.settings.bgGradientEndColor) 
-                ? (el.isHovered 
-                    ? (el.settings.bgGradientType === 'radial' 
-                        ? `radial-gradient(circle at center, ${el.settings.bgGradientHoverStartColor || el.settings.bgGradientStartColor} ${el.settings.bgGradientStartPosition ?? 0}%, ${el.settings.bgGradientHoverEndColor || el.settings.bgGradientEndColor} ${el.settings.bgGradientEndPosition ?? 100}%)`
-                        : `linear-gradient(${el.settings.bgGradientAngle ?? 180}deg, ${el.settings.bgGradientHoverStartColor || el.settings.bgGradientStartColor} ${el.settings.bgGradientStartPosition ?? 0}%, ${el.settings.bgGradientHoverEndColor || el.settings.bgGradientHoverEndColor} ${el.settings.bgGradientEndPosition ?? 100}%)`)
-                    : (el.settings.bgGradientType === 'radial' 
-                        ? `radial-gradient(circle at center, ${el.settings.bgGradientStartColor} ${el.settings.bgGradientStartPosition ?? 0}%, ${el.settings.bgGradientEndColor} ${el.settings.bgGradientEndPosition ?? 100}%)`
-                        : `linear-gradient(${el.settings.bgGradientAngle ?? 180}deg, ${el.settings.bgGradientStartColor} ${el.settings.bgGradientStartPosition ?? 0}%, ${el.settings.bgGradientEndColor} ${el.settings.bgGradientEndPosition ?? 100}%)`)
+           marginLeft: getUnitVal(getResponsiveVal(el.settings, 'marginLeft', device) ?? 0, 'px'),
+           marginRight: getUnitVal(getResponsiveVal(el.settings, 'marginRight', device) ?? 0, 'px'),
+           backgroundColor: (el.settings.buttonStyle === 'custom' && el.settings.bgGradientStartColor && el.settings.bgGradientEndColor) ? 'transparent' : (el.isHovered ? hexToRgba(el.settings.hoverBgColor || '#007cc0', el.settings.hoverBgColorOpacity) : hexToRgba(el.settings.bgColor || '#0091ea', el.settings.bgColorOpacity)),
+           backgroundImage: (el.settings.buttonStyle === 'custom' && el.settings.bgGradientStartColor && el.settings.bgGradientEndColor)
+                ? (el.isHovered
+                    ? (el.settings.bgGradientType === 'radial'
+                        ? `radial-gradient(circle at center, ${hexToRgba(el.settings.bgGradientHoverStartColor || el.settings.bgGradientStartColor, el.settings.bgGradientHoverStartOpacity ?? el.settings.bgGradientStartOpacity)} ${el.settings.bgGradientStartPosition ?? 0}%, ${hexToRgba(el.settings.bgGradientHoverEndColor || el.settings.bgGradientEndColor, el.settings.bgGradientHoverEndOpacity ?? el.settings.bgGradientEndOpacity)} ${el.settings.bgGradientEndPosition ?? 100}%)`
+                        : `linear-gradient(${el.settings.bgGradientAngle ?? 180}deg, ${hexToRgba(el.settings.bgGradientHoverStartColor || el.settings.bgGradientStartColor, el.settings.bgGradientHoverStartOpacity ?? el.settings.bgGradientStartOpacity)} ${el.settings.bgGradientStartPosition ?? 0}%, ${hexToRgba(el.settings.bgGradientHoverEndColor || el.settings.bgGradientEndColor, el.settings.bgGradientHoverEndOpacity ?? el.settings.bgGradientEndOpacity)} ${el.settings.bgGradientEndPosition ?? 100}%)`)
+                    : (el.settings.bgGradientType === 'radial'
+                        ? `radial-gradient(circle at center, ${hexToRgba(el.settings.bgGradientStartColor, el.settings.bgGradientStartOpacity)} ${el.settings.bgGradientStartPosition ?? 0}%, ${hexToRgba(el.settings.bgGradientEndColor, el.settings.bgGradientEndOpacity)} ${el.settings.bgGradientEndPosition ?? 100}%)`
+                        : `linear-gradient(${el.settings.bgGradientAngle ?? 180}deg, ${hexToRgba(el.settings.bgGradientStartColor, el.settings.bgGradientStartOpacity)} ${el.settings.bgGradientStartPosition ?? 0}%, ${hexToRgba(el.settings.bgGradientEndColor, el.settings.bgGradientEndOpacity)} ${el.settings.bgGradientEndPosition ?? 100}%)`)
                 )
                 : 'none',
-           color: el.isHovered ? (el.settings.hoverColor || '#ffffff') : (el.settings.color || '#ffffff'),
+           color: el.isHovered ? hexToRgba(el.settings.hoverColor || '#ffffff', el.settings.hoverColorOpacity) : hexToRgba(el.settings.color || '#ffffff', el.settings.colorOpacity),
            borderRadius: getUnitVal(el.settings.borderRadius ?? 5, 'px'),
            borderTopWidth: getUnitVal(el.settings.borderSizeTop ?? 0, 'px'),
            borderRightWidth: getUnitVal(el.settings.borderSizeRight ?? 0, 'px'),

@@ -56,3 +56,23 @@ if (!function_exists('is_lazy_checkout_page')) {
         return ($post->id == $id || (isset($post->origin_id) && $post->origin_id == $id));
     }
 }
+
+if (!function_exists('is_lazy_account_page')) {
+    function is_lazy_account_page($post) {
+        if (!$post) return false;
+        $id = (int) get_shop_option('shop_account_page_id');
+        if (!$id) return false;
+        return ($post->id == $id || (isset($post->origin_id) && $post->origin_id == $id));
+    }
+}
+
+if (!function_exists('get_lazy_account_url')) {
+    function get_lazy_account_url() {
+        $id = (int) get_shop_option('shop_account_page_id');
+        if ($id) {
+            $post = \Acme\CmsDashboard\Models\Post::find($id);
+            if ($post) return get_lazy_permalink($post);
+        }
+        return url('/page/account');
+    }
+}

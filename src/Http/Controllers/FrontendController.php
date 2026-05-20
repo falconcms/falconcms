@@ -347,6 +347,7 @@ class FrontendController extends Controller
         $shopPageId = get_shop_option('shop_shop_page_id');
         $cartPageId = get_shop_option('shop_cart_page_id');
         $checkoutPageId = get_shop_option('shop_checkout_page_id');
+        $accountPageId = get_shop_option('shop_account_page_id');
 
         if ($post->id == $shopPageId) {
             $postsQuery = Post::where('type', 'product')
@@ -393,6 +394,15 @@ class FrontendController extends Controller
         if ($post->id == $checkoutPageId) {
             $cart = session()->get('lazy_cart', []);
             return view($this->resolveThemeView('ecommerce.checkout'), compact('cart', 'post'));
+        }
+
+        if ($post->id == $accountPageId) {
+            if (!auth()->check()) {
+                session()->put('url.intended', url()->current());
+                return redirect()->route('admin.login')->with('error', 'Please login to view your account details.');
+            }
+            $orders = \Acme\CmsDashboard\Models\Order::with(['items.product'])->where('user_id', auth()->id())->latest()->get();
+            return view($this->resolveThemeView('ecommerce.account'), compact('orders', 'post'));
         }
 
         return view($view, compact('post'));

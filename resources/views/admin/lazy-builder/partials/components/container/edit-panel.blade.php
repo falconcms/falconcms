@@ -120,7 +120,7 @@
             <select v-model="{{ $base }}.settings[device === 'desktop' ? 'height' : 'height_' + device]" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                 <option value="auto">Auto</option>
                 <option value="full">Full Height</option>
-                <option value="custom">Custom</option>
+                <option value="custom">Min Height</option>
             </select>
             <div v-if="getResponsiveVal({{ $base }}.settings, 'height', device) === 'custom'" class="mt-2">
                 <input type="text" v-model="{{ $base }}.settings[device === 'desktop' ? 'customHeight' : 'customHeight_' + device]" :placeholder="getResponsiveVal({{ $base }}.settings, 'customHeight', device) || 'e.g. 400px, 50vh'" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
@@ -899,7 +899,7 @@
                         <div class="flex gap-2 items-center">
                             <div class="checkerboard rounded overflow-hidden w-8 h-8 flex-shrink-0 border border-slate-200">
                                 <div @click="openColorPicker($event, {{ $base }}.settings, device === 'desktop' ? 'bgColor' : 'bgColor_' + device, device === 'desktop' ? 'bgColorOpacity' : 'bgColorOpacity_' + device, getResponsiveVal({{ $base }}.settings, 'bgColor', device))"
-                                     :style="{ backgroundColor: hexToRgba({{ $base }}.settings[device === 'desktop' ? 'bgColor' : 'bgColor_' + device], {{ $base }}.settings[device === 'desktop' ? 'bgColorOpacity' : 'bgColorOpacity_' + device] !== undefined ? {{ $base }}.settings[device === 'desktop' ? 'bgColorOpacity' : 'bgColorOpacity_' + device] : 1) }"
+                                     :style="{ backgroundColor: hexToRgba(getResponsiveVal({{ $base }}.settings, 'bgColor', device), getResponsiveVal({{ $base }}.settings, 'bgColorOpacity', device) !== undefined ? getResponsiveVal({{ $base }}.settings, 'bgColorOpacity', device) : 1) }"
                                      class="w-full h-full cursor-pointer"></div>
                             </div>
                         </div>
@@ -1005,31 +1005,50 @@
 
                 <!-- 3. Image Tab Content -->
                 <div v-show="{{ $base }}.settings.bgType === 'image'" class="space-y-4 border border-slate-100 rounded-md p-2">
-                    <div v-if="{{ $base }}.settings.bgImage" class="relative group">
-                        <img :src="{{ $base }}.settings.bgImage" class="w-full h-[120px] object-cover rounded border border-slate-200">
-                        <div class="flex justify-center gap-2 mt-2">
-                            <button @click="{{ $base }}.settings.bgImage = ''" class="px-3 py-1.5 text-[11px] font-bold border border-slate-200 rounded text-[#444] hover:bg-slate-50 transition-colors">Remove</button>
-                            <button @click="openMediaModal('bgImage')" class="px-3 py-1.5 text-[11px] font-bold bg-[#0091ea] text-white rounded hover:bg-[#007cc0] transition-colors">Edit</button>
+                    <!-- Image Selection -->
+                    <div class="border-b border-slate-100 pb-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Background Image</label>
+                            <div class="flex gap-1 items-center">
+                                <div class="relative inline-block">
+                                    <button @click="activeResponsiveMenu = activeResponsiveMenu === 'ctnBgImage' ? null : 'ctnBgImage'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
+                                        <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
+                                        <i class="fa fa-caret-down text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div v-show="activeResponsiveMenu === 'ctnBgImage'" class="absolute right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 flex gap-0.5 p-1 min-w-max">
+                                        <button @click="device = 'desktop'; activeResponsiveMenu = null" :class="device === 'desktop' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Large (Desktop)"><i class="fa fa-desktop text-[11px]"></i></button>
+                                        <button @click="device = 'tablet'; activeResponsiveMenu = null" :class="device === 'tablet' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Medium (Tablet)"><i class="fa fa-tablet-alt text-[11px]"></i></button>
+                                        <button @click="device = 'mobile'; activeResponsiveMenu = null" :class="device === 'mobile' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Small (Mobile)"><i class="fa fa-mobile-alt text-[11px]"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="getResponsiveVal({{ $base }}.settings, 'bgImage', device)" class="relative group">
+                            <img :src="getResponsiveVal({{ $base }}.settings, 'bgImage', device)" class="w-full h-[120px] object-cover rounded border border-slate-200">
+                            <div class="flex justify-center gap-2 mt-2">
+                                <button @click="setResponsiveVal({{ $base }}.settings, 'bgImage', device, '')" class="px-3 py-1.5 text-[11px] font-bold border border-slate-200 rounded text-[#444] hover:bg-slate-50 transition-colors">Remove</button>
+                                <button @click="openMediaModal(device === 'desktop' ? 'bgImage' : 'bgImage_' + device)" class="px-3 py-1.5 text-[11px] font-bold bg-[#0091ea] text-white rounded hover:bg-[#007cc0] transition-colors">Edit</button>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <button @click="openMediaModal(device === 'desktop' ? 'bgImage' : 'bgImage_' + device)" class="w-full h-[80px] border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors rounded flex flex-col items-center justify-center gap-1">
+                                <i class="fa fa-plus text-[#0091ea] text-lg"></i>
+                            </button>
                         </div>
                     </div>
-                    <div v-else>
-                        <button @click="openMediaModal('bgImage')" class="w-full h-[80px] border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors rounded flex flex-col items-center justify-center gap-1">
-                            <i class="fa fa-plus text-[#0091ea] text-lg"></i>
-                        </button>
-                    </div>
 
-                    <template v-if="{{ $base }}.settings.bgImage">
+                    <template v-if="getResponsiveVal({{ $base }}.settings, 'bgImage', device)">
                         <!-- Skip Lazy Loading -->
                         <div class="border-b border-slate-100 pb-3">
                             <div class="flex justify-between items-center mb-2">
                                 <label class="text-[11px] font-bold text-[#444]">Skip Lazy Loading</label>
                             </div>
                             <div class="flex bg-slate-100 rounded overflow-hidden w-[100px]">
-                                <button @click="{{ $base }}.settings.bgImageSkipLazy = true" 
-                                        :class="{{ $base }}.settings.bgImageSkipLazy ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-200'"
+                                <button @click="{{ $base }}.settings[device === 'desktop' ? 'bgImageSkipLazy' : 'bgImageSkipLazy_' + device] = true"
+                                        :class="{{ $base }}.settings[device === 'desktop' ? 'bgImageSkipLazy' : 'bgImageSkipLazy_' + device] ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-200'"
                                         class="flex-1 py-1 text-[10px] font-medium transition-colors">Yes</button>
-                                <button @click="{{ $base }}.settings.bgImageSkipLazy = false" 
-                                        :class="!{{ $base }}.settings.bgImageSkipLazy ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-200'"
+                                <button @click="{{ $base }}.settings[device === 'desktop' ? 'bgImageSkipLazy' : 'bgImageSkipLazy_' + device] = false"
+                                        :class="!{{ $base }}.settings[device === 'desktop' ? 'bgImageSkipLazy' : 'bgImageSkipLazy_' + device] ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-200'"
                                         class="flex-1 py-1 text-[10px] font-medium transition-colors">No</button>
                             </div>
                         </div>
@@ -1061,7 +1080,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <select v-model="{{ $base }}.settings[device === 'desktop' ? 'bgImagePosition' : 'bgImagePosition_' + device]" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <select :value="getResponsiveVal({{ $base }}.settings, 'bgImagePosition', device) || 'center center'"
+                                    @change="setResponsiveVal({{ $base }}.settings, 'bgImagePosition', device, $event.target.value)"
+                                    class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                                 <option value="top left">Top Left</option>
                                 <option value="top center">Top Center</option>
                                 <option value="top right">Top Right</option>
@@ -1101,7 +1122,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <select v-model="{{ $base }}.settings[device === 'desktop' ? 'bgImageRepeat' : 'bgImageRepeat_' + device]" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <select :value="getResponsiveVal({{ $base }}.settings, 'bgImageRepeat', device) || 'no-repeat'"
+                                    @change="setResponsiveVal({{ $base }}.settings, 'bgImageRepeat', device, $event.target.value)"
+                                    class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                                 <option value="no-repeat">No Repeat</option>
                                 <option value="repeat">Repeat</option>
                                 <option value="repeat-x">Repeat X</option>
@@ -1136,7 +1159,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <select v-model="{{ $base }}.settings[device === 'desktop' ? 'bgImageSize' : 'bgImageSize_' + device]" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <select :value="getResponsiveVal({{ $base }}.settings, 'bgImageSize', device) || 'cover'"
+                                    @change="setResponsiveVal({{ $base }}.settings, 'bgImageSize', device, $event.target.value)"
+                                    class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                                 <option value="auto">Default</option>
                                 <option value="cover">Cover</option>
                                 <option value="contain">Contain</option>
@@ -1196,7 +1221,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <select v-model="{{ $base }}.settings[device === 'desktop' ? 'bgImageBlendMode' : 'bgImageBlendMode_' + device]" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <select :value="getResponsiveVal({{ $base }}.settings, 'bgImageBlendMode', device) || 'normal'"
+                                    @change="setResponsiveVal({{ $base }}.settings, 'bgImageBlendMode', device, $event.target.value)"
+                                    class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                                 <option value="normal">Disabled</option>
                                 <option value="multiply">Multiply</option>
                                 <option value="screen">Screen</option>
@@ -1270,13 +1297,43 @@
             <!-- Z-Index & Overflow -->
             <div class="border-t border-slate-100 pt-4 space-y-4">
                 <div>
-                    <label class="text-[11px] font-bold text-[#444] block mb-2">Z-Index</label>
-                    <input type="number" v-model.number="{{ $base }}.settings.zIndex" placeholder="auto"
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-[11px] font-bold text-[#444]">Z-Index</label>
+                        <div class="relative inline-block">
+                            <button @click="activeResponsiveMenu = activeResponsiveMenu === 'ctnZIndex' ? null : 'ctnZIndex'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
+                                <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
+                                <i class="fa fa-caret-down text-[8px] text-slate-400"></i>
+                            </button>
+                            <div v-show="activeResponsiveMenu === 'ctnZIndex'" class="absolute right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 flex gap-0.5 p-1 min-w-max">
+                                <button @click="device = 'desktop'; activeResponsiveMenu = null" :class="device === 'desktop' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Large (Desktop)"><i class="fa fa-desktop text-[11px]"></i></button>
+                                <button @click="device = 'tablet'; activeResponsiveMenu = null" :class="device === 'tablet' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Medium (Tablet)"><i class="fa fa-tablet-alt text-[11px]"></i></button>
+                                <button @click="device = 'mobile'; activeResponsiveMenu = null" :class="device === 'mobile' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Small (Mobile)"><i class="fa fa-mobile-alt text-[11px]"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="number"
+                           :value="getResponsiveVal({{ $base }}.settings, 'zIndex', device)"
+                           @input="setResponsiveVal({{ $base }}.settings, 'zIndex', device, $event.target.value === '' ? null : Number($event.target.value))"
+                           placeholder="auto"
                            class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                 </div>
                 <div>
-                    <label class="text-[11px] font-bold text-[#444] block mb-2">Overflow</label>
-                    <select v-model="{{ $base }}.settings.overflow"
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-[11px] font-bold text-[#444]">Overflow</label>
+                        <div class="relative inline-block">
+                            <button @click="activeResponsiveMenu = activeResponsiveMenu === 'ctnOverflow' ? null : 'ctnOverflow'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
+                                <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
+                                <i class="fa fa-caret-down text-[8px] text-slate-400"></i>
+                            </button>
+                            <div v-show="activeResponsiveMenu === 'ctnOverflow'" class="absolute right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 flex gap-0.5 p-1 min-w-max">
+                                <button @click="device = 'desktop'; activeResponsiveMenu = null" :class="device === 'desktop' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Large (Desktop)"><i class="fa fa-desktop text-[11px]"></i></button>
+                                <button @click="device = 'tablet'; activeResponsiveMenu = null" :class="device === 'tablet' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Medium (Tablet)"><i class="fa fa-tablet-alt text-[11px]"></i></button>
+                                <button @click="device = 'mobile'; activeResponsiveMenu = null" :class="device === 'mobile' ? 'bg-[#0091ea] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Small (Mobile)"><i class="fa fa-mobile-alt text-[11px]"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <select :value="getResponsiveVal({{ $base }}.settings, 'overflow', device) || 'default'"
+                            @change="setResponsiveVal({{ $base }}.settings, 'overflow', device, $event.target.value)"
                             class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                         <option value="default">Default</option>
                         <option value="hidden">Hidden</option>

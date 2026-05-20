@@ -7,8 +7,51 @@
     if (!($v['tablet']  ?? true)) $visibilityClasses .= ' lazy-hide-tablet';
     if (!($v['desktop'] ?? true)) $visibilityClasses .= ' lazy-hide-desktop';
 
+    $bpSm  = (int) get_cms_option('theme_small_screen_breakpoint',  '800');
+    $bpMed = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');
+    $bpSm1 = $bpSm + 1;
+
+    $titleRespId = 'lte-' . ($el['id'] ?? str_replace('.', '', uniqid('', true)));
+
+    $getRespVal = function(string $prop, string $dev) use ($s): ?string {
+        if ($dev === 'mobile') {
+            if (isset($s[$prop . '_mobile']) && $s[$prop . '_mobile'] !== '') return (string)$s[$prop . '_mobile'];
+            if (isset($s[$prop . '_tablet']) && $s[$prop . '_tablet'] !== '') return (string)$s[$prop . '_tablet'];
+        } elseif ($dev === 'tablet') {
+            if (isset($s[$prop . '_tablet']) && $s[$prop . '_tablet'] !== '') return (string)$s[$prop . '_tablet'];
+        }
+        return null;
+    };
+
+    $respCss = '';
+    foreach ([
+        ['tablet', "@media(min-width:{$bpSm1}px) and (max-width:{$bpMed}px)"],
+        ['mobile', "@media(max-width:{$bpSm}px)"],
+    ] as [$rDev, $rMq]) {
+        $rWrapperRules = [];
+        $rHeadingRules = [];
+        $rAlign = $getRespVal('textAlign', $rDev);
+        if ($rAlign !== null) {
+            $rWrapperRules[] = "text-align:{$rAlign}!important";
+            $rHeadingRules[] = "text-align:{$rAlign}!important";
+        }
+        foreach (['marginTop', 'marginRight', 'marginBottom', 'marginLeft'] as $mProp) {
+            $mVal = $getRespVal($mProp, $rDev);
+            if ($mVal !== null) {
+                $cssProp = strtolower(preg_replace('/([A-Z])/', '-$1', $mProp));
+                $rWrapperRules[] = "{$cssProp}:{$mVal}px!important";
+            }
+        }
+        if (!empty($rWrapperRules)) {
+            $respCss .= "{$rMq}{.{$titleRespId}{" . implode(';', $rWrapperRules) . "}}";
+        }
+        if (!empty($rHeadingRules)) {
+            $respCss .= "{$rMq}{.{$titleRespId} .main-title{" . implode(';', $rHeadingRules) . "}}";
+        }
+    }
+
     $wrapperStyles = [
-        'max-width: 100%',
+        'align-self: stretch',
         'text-align: ' . ($s['textAlign'] ?? 'center'),
         'padding-top: ' . ($s['paddingTop'] ?? 20) . 'px',
         'padding-bottom: ' . ($s['paddingBottom'] ?? 20) . 'px',
@@ -125,8 +168,11 @@
     @endif
 </style>
 @endif
+@if($respCss)
+<style>{!! $respCss !!}</style>
+@endif
 
-<div class="element-title-wrapper {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
+<div class="element-title-wrapper {{ $titleRespId }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
      @if(!empty($s['cssId'])) id="{{ $s['cssId'] }}" @endif
      style="{{ implode('; ', $wrapperStyles) }}">
 

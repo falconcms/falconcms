@@ -134,7 +134,8 @@
             if (!empty($s['contentAlignV'])) $innerStyles[] = 'align-items: '     . $s['contentAlignV'];
         } else {
             if (!empty($s['contentAlignV'])) $innerStyles[] = 'justify-content: ' . $s['contentAlignV'];
-            if (!empty($s['contentAlignH'])) $innerStyles[] = 'align-items: '     . $s['contentAlignH'];
+            // align-items for column mode is emitted to $colCss below with !important
+            // so that @media responsive overrides can take effect
         }
     } elseif ($contentLayout === 'block') {
         $innerStyles[] = 'display: block';
@@ -158,20 +159,23 @@
         return "rgba($r, $g, $b, $opacity)";
     };
 
-    // Background Logic
-    if (!empty($s['bgColor'])) {
+    // Background Logic — bgType determines which layer is active
+    $bgType = $s['bgType'] ?? 'color';
+
+    // BG Color — only when bgType is 'color'
+    if ($bgType === 'color' && !empty($s['bgColor'])) {
         $innerStyles[] = "background-color: " . $hexToRgba($s['bgColor'], $s['bgColorOpacity'] ?? 1);
     }
 
     $bgImages = [];
-    if (!empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
+    // Gradient — only when bgType is 'gradient'
+    if ($bgType === 'gradient' && !empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
         $gType = $s['bgGradientType'] ?? 'linear';
         $angle = $s['bgGradientAngle'] ?? 180;
         $start = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? 1);
         $end   = $hexToRgba($s['bgGradientEndColor'],   $s['bgGradientEndOpacity']   ?? 1);
         $startPos = $s['bgGradientStartPosition'] ?? 0;
         $endPos = $s['bgGradientEndPosition'] ?? 100;
-
         if ($gType === 'linear') {
             $bgImages[] = "linear-gradient({$angle}deg, {$start} {$startPos}%, {$end} {$endPos}%)";
         } else {
@@ -179,7 +183,8 @@
         }
     }
 
-    if (!empty($s['bgImage'])) {
+    // BG Image — works when bgType is 'image' or 'gradient' (not 'color')
+    if ($bgType !== 'color' && !empty($s['bgImage'])) {
         $bgImages[] = "url('{$s['bgImage']}')";
         $innerStyles[] = "background-position: " . ($s['bgImagePosition'] ?? 'center center');
         $innerStyles[] = "background-repeat: " . ($s['bgImageRepeat'] ?? 'no-repeat');
@@ -220,6 +225,7 @@
     }
     if (!empty($s['zIndex']))   $outerStyles[] = 'z-index: ' . $s['zIndex'];
     if (!empty($s['overflow']) && $s['overflow'] !== 'default') $innerStyles[] = 'overflow: ' . $s['overflow'];
+    if (!empty($s['maxHeight'])) $innerStyles[] = 'max-height: ' . $s['maxHeight'];
 
     // Per-column responsive CSS for default-alignment columns
     $colCss = '';
@@ -288,6 +294,17 @@
     $rBpMed = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');
     $rBpSm1 = $rBp + 1;
     $rInnerSel = ".{$colCid}>.lazy-column-inner,.{$colCid}>a>.lazy-column-inner";
+
+    // Base column-mode align-items in stylesheet so @media rules below can override it
+    if ($contentLayout !== 'row' && $contentLayout !== 'block' && !empty($s['contentAlignH'])) {
+        $colCss .= "{$rInnerSel}{align-items:{$s['contentAlignH']}!important}";
+        // Explicit tablet rule so theme tablet CSS can't override per-column alignment
+        $tabAlignH = (isset($s['contentAlignH_tablet']) && $s['contentAlignH_tablet'] !== '')
+            ? $s['contentAlignH_tablet']
+            : $s['contentAlignH'];
+        $colCss .= "@media(min-width:{$rBpSm1}px) and (max-width:{$rBpMed}px){{$rInnerSel}{align-items:{$tabAlignH}!important}}";
+    }
+
     $getColRespOvr = function(string $prop, string $dev) use ($s): ?string {
         if ($dev === 'mobile') {
             if (isset($s[$prop . '_mobile']) && $s[$prop . '_mobile'] !== '') return (string)$s[$prop . '_mobile'];
@@ -319,6 +336,129 @@
                 if ($rAlignH) $rInner[] = "align-items:{$rAlignH}!important";
             }
         }
+        // Responsive margin (outer element) — !important needed to override inline styles
+        foreach (['marginTop', 'marginBottom'] as $mProp) {
+            $mVal = $getColRespOvr($mProp, $rDev);
+            if ($mVal !== null) {
+                $mUnit = $getColRespOvr($mProp . 'Unit', $rDev) ?? ($s[$mProp . 'Unit'] ?? 'px');
+                $rOuter[] = strtolower(preg_replace('/([A-Z])/', '-$1', $mProp)) . ':' . $mVal . $mUnit . '!important';
+            }
+        }
+        // Responsive padding + marginLeft/Right (inner element) — !important needed to override inline styles
+        foreach (['paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight', 'marginLeft', 'marginRight'] as $pProp) {
+            $pVal = $getColRespOvr($pProp, $rDev);
+            if ($pVal !== null) {
+                $pUnit = $getColRespOvr($pProp . 'Unit', $rDev) ?? ($s[$pProp . 'Unit'] ?? 'px');
+                $rInner[] = strtolower(preg_replace('/([A-Z])/', '-$1', $pProp)) . ':' . $pVal . $pUnit . '!important';
+            }
+        }
+        // Responsive background color (only when bgType is 'color')
+        if ($bgType === 'color') {
+            $rBgColor   = $getColRespOvr('bgColor', $rDev);
+            $rBgOpacity = $getColRespOvr('bgColorOpacity', $rDev);
+            if ($rBgColor !== null || $rBgOpacity !== null) {
+                $effColor   = $rBgColor   ?? ($s['bgColor']   ?? '');
+                $effOpacity = $rBgOpacity !== null ? (float)$rBgOpacity : ($s['bgColorOpacity'] ?? 1);
+                if ($effColor) $rInner[] = 'background-color:' . $hexToRgba($effColor, $effOpacity) . '!important';
+            }
+        }
+        // Responsive background image properties (position, repeat, size, blend)
+        if ($bgType !== 'color') {
+            foreach ([
+                ['bgImagePosition', 'background-position'],
+                ['bgImageRepeat',   'background-repeat'],
+                ['bgImageSize',     'background-size'],
+                ['bgImageBlendMode','background-blend-mode'],
+            ] as [$bgProp, $bgCss]) {
+                $bgVal = $getColRespOvr($bgProp, $rDev);
+                if ($bgVal !== null) $rInner[] = "{$bgCss}:{$bgVal}!important";
+            }
+            // Responsive background image URL (bgImage_tablet / bgImage_mobile)
+            $rBgImg = $getColRespOvr('bgImage', $rDev);
+            if ($rBgImg !== null) {
+                $rBgImgParts = [];
+                // Preserve gradient overlay if bgType is 'gradient'
+                if ($bgType === 'gradient' && !empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
+                    $gType = $s['bgGradientType'] ?? 'linear';
+                    $gAng  = $s['bgGradientAngle'] ?? 180;
+                    $gS    = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? 1);
+                    $gE    = $hexToRgba($s['bgGradientEndColor'],   $s['bgGradientEndOpacity']   ?? 1);
+                    $gSP   = $s['bgGradientStartPosition'] ?? 0;
+                    $gEP   = $s['bgGradientEndPosition']   ?? 100;
+                    $rBgImgParts[] = $gType === 'linear'
+                        ? "linear-gradient({$gAng}deg, {$gS} {$gSP}%, {$gE} {$gEP}%)"
+                        : "radial-gradient(circle at center, {$gS} {$gSP}%, {$gE} {$gEP}%)";
+                }
+                $rBgImgParts[] = "url('{$rBgImg}')";
+                $rInner[] = 'background-image:' . implode(', ', $rBgImgParts) . '!important';
+            }
+        }
+        // Responsive border size (inner)
+        foreach (['Top' => 'top', 'Right' => 'right', 'Bottom' => 'bottom', 'Left' => 'left'] as $bSide => $bCss) {
+            $bVal = $getColRespOvr('borderSize' . $bSide, $rDev);
+            if ($bVal !== null) {
+                $rInner[] = "border-{$bCss}-width:{$bVal}px!important";
+                $rInner[] = "border-style:solid!important";
+            }
+        }
+        // Responsive border color (inner)
+        $rBorderColor = $getColRespOvr('borderColor', $rDev);
+        if ($rBorderColor !== null) $rInner[] = "border-color:{$rBorderColor}!important";
+        // Responsive border radius (inner)
+        foreach ([
+            'TopLeft'     => 'top-left',
+            'TopRight'    => 'top-right',
+            'BottomRight' => 'bottom-right',
+            'BottomLeft'  => 'bottom-left',
+        ] as $rKey => $rCss) {
+            $rRad = $getColRespOvr('borderRadius' . $rKey, $rDev);
+            if ($rRad !== null) {
+                $rUnit = $getColRespOvr('borderRadius' . $rKey . 'Unit', $rDev) ?? ($s['borderRadius' . $rKey . 'Unit'] ?? 'px');
+                $rInner[] = "border-{$rCss}-radius:{$rRad}{$rUnit}!important";
+            }
+        }
+        // Responsive box shadow — boolean needs direct check (false !== '' in PHP but (string)false === '')
+        $bsShadowOvr = null;
+        if ($rDev === 'mobile') {
+            if (isset($s['boxShadow_mobile'])) $bsShadowOvr = $s['boxShadow_mobile'];
+            elseif (isset($s['boxShadow_tablet'])) $bsShadowOvr = $s['boxShadow_tablet'];
+        } elseif ($rDev === 'tablet') {
+            if (isset($s['boxShadow_tablet'])) $bsShadowOvr = $s['boxShadow_tablet'];
+        }
+        if ($bsShadowOvr !== null) {
+            if ($bsShadowOvr) {
+                $bsH  = intval($getColRespOvr('boxShadowPositionHorizontal', $rDev) ?? ($s['boxShadowPositionHorizontal'] ?? 0));
+                $bsV  = intval($getColRespOvr('boxShadowPositionVertical',   $rDev) ?? ($s['boxShadowPositionVertical']   ?? 0));
+                $bsBl = intval($getColRespOvr('boxShadowBlurRadius',         $rDev) ?? ($s['boxShadowBlurRadius']         ?? 0));
+                $bsSp = intval($getColRespOvr('boxShadowSpreadRadius',       $rDev) ?? ($s['boxShadowSpreadRadius']       ?? 0));
+                $bsC  = $getColRespOvr('boxShadowColor', $rDev) ?? ($s['boxShadowColor'] ?? '#000000');
+                $bsIn = ($getColRespOvr('boxShadowStyle', $rDev) ?? ($s['boxShadowStyle'] ?? '')) === 'inner' ? 'inset ' : '';
+                $rInner[] = "box-shadow:{$bsIn}{$bsH}px {$bsV}px {$bsBl}px {$bsSp}px {$bsC}!important";
+            } else {
+                $rInner[] = "box-shadow:none!important";
+            }
+        } elseif (!empty($s['boxShadow'])) {
+            $bsSubChanged = false;
+            foreach (['boxShadowPositionHorizontal', 'boxShadowPositionVertical', 'boxShadowBlurRadius', 'boxShadowSpreadRadius', 'boxShadowColor', 'boxShadowStyle'] as $bsSub) {
+                if ($getColRespOvr($bsSub, $rDev) !== null) { $bsSubChanged = true; break; }
+            }
+            if ($bsSubChanged) {
+                $bsH  = intval($getColRespOvr('boxShadowPositionHorizontal', $rDev) ?? ($s['boxShadowPositionHorizontal'] ?? 0));
+                $bsV  = intval($getColRespOvr('boxShadowPositionVertical',   $rDev) ?? ($s['boxShadowPositionVertical']   ?? 0));
+                $bsBl = intval($getColRespOvr('boxShadowBlurRadius',         $rDev) ?? ($s['boxShadowBlurRadius']         ?? 0));
+                $bsSp = intval($getColRespOvr('boxShadowSpreadRadius',       $rDev) ?? ($s['boxShadowSpreadRadius']       ?? 0));
+                $bsC  = $getColRespOvr('boxShadowColor', $rDev) ?? ($s['boxShadowColor'] ?? '#000000');
+                $bsIn = ($getColRespOvr('boxShadowStyle', $rDev) ?? ($s['boxShadowStyle'] ?? '')) === 'inner' ? 'inset ' : '';
+                $rInner[] = "box-shadow:{$bsIn}{$bsH}px {$bsV}px {$bsBl}px {$bsSp}px {$bsC}!important";
+            }
+        }
+        // Responsive z-index (outer)
+        $rZIdx = $getColRespOvr('zIndex', $rDev);
+        if ($rZIdx !== null) $rOuter[] = "z-index:{$rZIdx}!important";
+        // Responsive overflow (inner)
+        $rOvf = $getColRespOvr('overflow', $rDev);
+        if ($rOvf !== null && $rOvf !== 'default') $rInner[] = "overflow:{$rOvf}!important";
+
         if ($rOuter || $rInner) {
             $colCss .= "{$rMq}{";
             if ($rOuter) $colCss .= ".{$colCid}{" . implode(';', $rOuter) . "}";
@@ -350,6 +490,24 @@
         }
     }
 
+    // Responsive width overrides (per-column)
+    $basisTablet = $column['basis_tablet'] ?? null;
+    $basisMobile = $column['basis_mobile'] ?? null;
+    if ($basisTablet !== null && $basisTablet !== '') {
+        $gapSub = $totalCols > 1 ? ($gapVal * ($totalCols - 1)) / $totalCols : 0;
+        if ($basisTablet === 'auto') { $tabFb = 'auto'; $tabMw = 'none'; }
+        elseif (strpos((string)$basisTablet, '%') !== false) { $tabFb = $totalCols > 1 ? "calc({$basisTablet} - {$gapSub}px)" : $basisTablet; $tabMw = $tabFb; }
+        else { $tabFb = $totalCols > 1 ? "calc({$basisTablet}% - {$gapSub}px)" : "{$basisTablet}%"; $tabMw = $tabFb; }
+        $colCss .= "@media(min-width:{$rBpSm1}px) and (max-width:{$rBpMed}px){.{$colCid}{flex-basis:{$tabFb}!important;max-width:{$tabMw}!important;width:{$tabFb}!important}}";
+    }
+    if ($basisMobile !== null && $basisMobile !== '') {
+        $gapSub = $totalCols > 1 ? ($gapVal * ($totalCols - 1)) / $totalCols : 0;
+        if ($basisMobile === 'auto') { $mobFb = 'auto'; $mobMw = 'none'; }
+        elseif (strpos((string)$basisMobile, '%') !== false) { $mobFb = $totalCols > 1 ? "calc({$basisMobile} - {$gapSub}px)" : $basisMobile; $mobMw = $mobFb; }
+        else { $mobFb = $totalCols > 1 ? "calc({$basisMobile}% - {$gapSub}px)" : "{$basisMobile}%"; $mobMw = $mobFb; }
+        $colCss .= "@media(max-width:{$rBp}px){.lazy-column.{$colCid}{flex-basis:{$mobFb}!important;max-width:{$mobMw}!important;width:{$mobFb}!important}}";
+    }
+
     $htmlTag = $s['htmlTag'] ?? 'div';
     $link = !empty($s['linkUrl']) ? $s['linkUrl'] : null;
 @endphp
@@ -370,26 +528,9 @@
 
     <div class="lazy-column-inner" style="{{ implode('; ', $innerStyles) }}">
         @if(!empty($column['elements']))
+            @php $__customBuilderDefs = apply_lazy_filters('lazy_builder_elements', []); @endphp
             @foreach($column['elements'] as $el)
-                @if($el['type'] === 'heading')
-                    @include('cms-dashboard::frontend.builder.elements.heading', ['el' => $el])
-                @elseif($el['type'] === 'title')
-                    @include('cms-dashboard::frontend.builder.elements.title', ['el' => $el])
-                @elseif($el['type'] === 'text')
-                    @include('cms-dashboard::frontend.builder.elements.text', ['el' => $el])
-                @elseif($el['type'] === 'image')
-                    @include('cms-dashboard::frontend.builder.elements.image', ['el' => $el])
-                @elseif($el['type'] === 'text_block')
-                    @include('cms-dashboard::frontend.builder.elements.text-block', ['el' => $el])
-                @elseif($el['type'] === 'button')
-                    @include('cms-dashboard::frontend.builder.elements.button', ['el' => $el])
-                @elseif($el['type'] === 'menu')
-                    @include('cms-dashboard::frontend.builder.elements.menu', ['el' => $el])
-                @elseif($el['type'] === 'spacer')
-                    @include('cms-dashboard::frontend.builder.elements.spacer', ['el' => $el])
-                @elseif($el['type'] === 'video')
-                    @include('cms-dashboard::frontend.builder.elements.video', ['el' => $el])
-                @elseif($el['type'] === 'row')
+                @if($el['type'] === 'row')
                     @if($contentLayout === 'row')
                         <div style="flex-basis: 100%; width: 100%; height: 0; overflow: hidden;"></div>
                     @endif
@@ -399,14 +540,21 @@
                     @endif
                 @else
                     @php
-                        $customBuilderDefs = apply_lazy_filters('lazy_builder_elements', []);
-                        $customBuilderDef  = $customBuilderDefs[$el['type']] ?? null;
+                        $__elType    = $el['type'];
+                        $__viewBase  = 'cms-dashboard::frontend.builder.elements.';
+                        $__viewExact = $__viewBase . $__elType;
+                        $__viewDash  = $__viewBase . str_replace('_', '-', $__elType);
+                        $__elView    = \Illuminate\Support\Facades\View::exists($__viewExact) ? $__viewExact
+                                     : (\Illuminate\Support\Facades\View::exists($__viewDash) ? $__viewDash : null);
+                        $__customDef = $__customBuilderDefs[$__elType] ?? null;
                     @endphp
-                    @if($customBuilderDef)
-                        @if(!empty($customBuilderDef['template']))
-                            @include($customBuilderDef['template'], ['el' => $el, 's' => $el['settings'] ?? []])
+                    @if($__elView)
+                        @include($__elView, ['el' => $el])
+                    @elseif($__customDef)
+                        @if(!empty($__customDef['template']))
+                            @include($__customDef['template'], ['el' => $el, 's' => $el['settings'] ?? []])
                         @else
-                            @include('cms-dashboard::frontend.builder.elements.custom', ['el' => $el, 'customDef' => $customBuilderDef])
+                            @include('cms-dashboard::frontend.builder.elements.custom', ['el' => $el, 'customDef' => $__customDef])
                         @endif
                     @endif
                 @endif

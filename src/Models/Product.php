@@ -44,4 +44,18 @@ class Product extends Post
     {
         return $this->shopData?->stock_status ?? 'instock';
     }
+
+    public function getIsInStockAttribute()
+    {
+        if (!$this->shopData) {
+            return true;
+        }
+        if ($this->shopData->stock_status === 'outofstock') {
+            return false;
+        }
+        if ($this->shopData->manage_stock && (int) $this->shopData->stock_quantity <= 0) {
+            return false;
+        }
+        return true;
+    }
 }

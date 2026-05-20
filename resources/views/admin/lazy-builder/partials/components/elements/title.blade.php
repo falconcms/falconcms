@@ -3,16 +3,16 @@
      :class="[el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"
      :style="[
-         { textAlign: el.settings.textAlign || 'center' },
+         { textAlign: getResponsiveVal(el.settings, 'textAlign', device) || 'center', width: '100%' },
          getCanvasVisibilityStyle(el.settings)
      ]">
     <div :style="{
         paddingTop: getUnitVal(el.settings.paddingTop, el.settings.paddingTopUnit),
         paddingBottom: getUnitVal(el.settings.paddingBottom, el.settings.paddingBottomUnit),
-        marginTop: getUnitVal(el.settings.marginTop, 'px'),
-        marginRight: getUnitVal(el.settings.marginRight, 'px'),
-        marginBottom: getUnitVal(el.settings.marginBottom, 'px'),
-        marginLeft: getUnitVal(el.settings.marginLeft, 'px'),
+        marginTop: getUnitVal(getResponsiveVal(el.settings, 'marginTop', device), 'px'),
+        marginRight: getUnitVal(getResponsiveVal(el.settings, 'marginRight', device), 'px'),
+        marginBottom: getUnitVal(getResponsiveVal(el.settings, 'marginBottom', device), 'px'),
+        marginLeft: getUnitVal(getResponsiveVal(el.settings, 'marginLeft', device), 'px'),
     }">
         <a :href="el.settings.useLink && el.settings.linkUrl
                     ? (el.settings.linkUrl.match(/^(https?:\/\/|\/\/|\/|#|tel:|mailto:)/i)
@@ -51,7 +51,7 @@
                         : 'none',
                     webkitBackgroundClip: !el.settings.useLink && el.settings.useGradient ? 'text' : 'unset',
                     backgroundClip: !el.settings.useLink && el.settings.useGradient ? 'text' : 'unset',
-                    textAlign: el.settings.textAlign || 'center',
+                    textAlign: getResponsiveVal(el.settings, 'textAlign', device) || 'center',
                     fontFamily: el.settings.fontFamily || 'inherit',
                     fontSize: getUnitVal(el.settings.fontSize || 36, el.settings.fontSizeUnit || 'px'),
                     fontWeight: el.settings.fontWeight || '800',
@@ -90,10 +90,10 @@
                      : 'none',
                  marginTop: getUnitVal(el.settings.separatorSpacing ?? 20, 'px'),
                  marginBottom: '0',
-                 marginLeft: el.settings.textAlign === 'center' ? 'auto'
-                     : (el.settings.textAlign === 'right' ? 'auto' : '0'),
-                 marginRight: el.settings.textAlign === 'right' ? '0'
-                     : (el.settings.textAlign === 'center' ? 'auto' : '0'),
+                 marginLeft: getResponsiveVal(el.settings, 'textAlign', device) === 'center' ? 'auto'
+                     : (getResponsiveVal(el.settings, 'textAlign', device) === 'right' ? 'auto' : '0'),
+                 marginRight: getResponsiveVal(el.settings, 'textAlign', device) === 'right' ? '0'
+                     : (getResponsiveVal(el.settings, 'textAlign', device) === 'center' ? 'auto' : '0'),
                  borderRadius: el.settings.separator === 'default' ? '10px' : '0'
              }"
              class="title-divider"></div>

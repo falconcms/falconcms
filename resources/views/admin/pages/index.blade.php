@@ -111,6 +111,7 @@
                             @if(is_lazy_shop_page($item)) <span class="font-normal text-[#646970]"> — Shop Page</span> @endif
                             @if(is_lazy_cart_page($item)) <span class="font-normal text-[#646970]"> — Cart Page</span> @endif
                             @if(is_lazy_checkout_page($item)) <span class="font-normal text-[#646970]"> — Checkout Page</span> @endif
+                            @if(is_lazy_account_page($item)) <span class="font-normal text-[#646970]"> — Account Page</span> @endif
                             @if($item->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif
                         </strong>
                         <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">

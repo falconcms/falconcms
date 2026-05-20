@@ -1,7 +1,7 @@
 <!-- Columns Loop -->
 <div v-for="(column, coli) in container.columns" :key="column.id"
      class="column-outer relative"
-     :class="[(column.settings.hoverType && column.settings.hoverType !== 'none') ? 'hover-effect-' + column.settings.hoverType : '', getVisibilityClasses(column.settings)]"
+     :class="['col-' + column.id, (column.settings.hoverType && column.settings.hoverType !== 'none') ? 'hover-effect-' + column.settings.hoverType : '', getVisibilityClasses(column.settings)]"
      :style="columnOuterStyle(container, column, container.columns.length)">
 
     
@@ -33,7 +33,7 @@
                 </div>
                 
                 <div class="flex items-center overflow-hidden max-w-0 opacity-0 group-hover/panel:max-w-[200px] group-hover/panel:opacity-100 transition-all duration-300">
-                    <div class="column-label whitespace-nowrap">@{{ formatBasisToFraction(column.basis) }}</div>
+                    <div class="column-label whitespace-nowrap">@{{ formatBasisToFraction(device === 'desktop' ? column.basis : (column['basis_' + device] || column.basis)) }}</div>
                     <div class="panel-btn" @click.stop="duplicateColumn(ci, coli)"><i class="fa fa-copy"></i><div class="lazy-tooltip">Duplicate</div></div>
                     <div class="panel-btn"><i class="fa fa-hdd"></i><div class="lazy-tooltip">Save</div></div>
                     <div class="panel-btn" @click.stop="container.columns.splice(coli, 1)"><i class="fa fa-trash-alt"></i><div class="lazy-tooltip">Delete</div></div>
@@ -143,7 +143,7 @@
         <div class="relative group/el mb-2"
              @click.stop="setEditingContext('element', ci, coli, eli)"
              :class="[
-                (column.settings.contentLayout === 'row' && el.type !== 'row') ? '' : 'w-full',
+                (column.settings.contentLayout === 'row' && el.type !== 'row') ? '' : (getResponsiveVal(column.settings, 'contentAlignH', device) && getResponsiveVal(column.settings, 'contentAlignH', device) !== 'stretch' && el.type !== 'title' && el.type !== 'menu' && el.type !== 'text_block' && el.type !== 'special_text' && el.type !== 'button' ? '' : 'w-full'),
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
              ]"

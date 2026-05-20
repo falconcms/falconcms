@@ -4,7 +4,7 @@
         <div class="flex justify-between items-center mb-3">
             <label class="text-[12px] font-bold text-[#333]">Alignment</label>
             <div class="flex gap-1 items-center">
-                <button @click="editingElement.settings.textAlign = ''" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                <button @click="setResponsiveVal(editingElement.settings, 'textAlign', device, '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
                     <i class="fa fa-undo text-[10px]"></i>
                 </button>
                 <div class="relative inline-block">
@@ -27,14 +27,14 @@
             </div>
         </div>
         <div class="flex bg-slate-50 border border-slate-100 rounded overflow-hidden">
-            <button @click="editingElement.settings.textAlign = 'left'"
-                    :class="editingElement.settings.textAlign === 'left' ? 'bg-[#0091ea] text-white' : 'text-slate-400'"
+            <button @click="setResponsiveVal(editingElement.settings, 'textAlign', device, 'left')"
+                    :class="getResponsiveVal(editingElement.settings, 'textAlign', device) === 'left' ? 'bg-[#0091ea] text-white' : 'text-slate-400'"
                     class="flex-1 py-2 text-[11px] font-bold border-r border-slate-200 last:border-r-0 transition-all">Left</button>
-            <button @click="editingElement.settings.textAlign = 'center'"
-                    :class="(editingElement.settings.textAlign === 'center' || !editingElement.settings.textAlign) ? 'bg-[#0091ea] text-white' : 'text-slate-400'"
+            <button @click="setResponsiveVal(editingElement.settings, 'textAlign', device, 'center')"
+                    :class="(getResponsiveVal(editingElement.settings, 'textAlign', device) === 'center' || !getResponsiveVal(editingElement.settings, 'textAlign', device)) ? 'bg-[#0091ea] text-white' : 'text-slate-400'"
                     class="flex-1 py-2 text-[11px] font-bold border-r border-slate-200 last:border-r-0 transition-all">Center</button>
-            <button @click="editingElement.settings.textAlign = 'right'"
-                    :class="editingElement.settings.textAlign === 'right' ? 'bg-[#0091ea] text-white' : 'text-slate-400'"
+            <button @click="setResponsiveVal(editingElement.settings, 'textAlign', device, 'right')"
+                    :class="getResponsiveVal(editingElement.settings, 'textAlign', device) === 'right' ? 'bg-[#0091ea] text-white' : 'text-slate-400'"
                     class="flex-1 py-2 text-[11px] font-bold border-r border-slate-200 last:border-r-0 transition-all">Right</button>
         </div>
     </div>
@@ -276,7 +276,7 @@
         <div class="flex justify-between items-center mb-3">
             <label class="text-[12px] font-bold text-[#333]">Margin</label>
             <div class="flex gap-1 items-center">
-                <button @click="['Top','Right','Bottom','Left'].forEach(s => editingElement.settings['margin' + s] = '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                <button @click="['Top','Right','Bottom','Left'].forEach(s => setResponsiveVal(editingElement.settings, 'margin' + s, device, ''))" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
                     <i class="fa fa-undo text-[10px]"></i>
                 </button>
                 <div class="relative inline-block">
@@ -301,19 +301,19 @@
         <div class="grid grid-cols-4 gap-2">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Top</label>
-                <input type="text" v-model="editingElement.settings.marginTop" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'marginTop' : 'marginTop_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Right</label>
-                <input type="text" v-model="editingElement.settings.marginRight" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'marginRight' : 'marginRight_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Bottom</label>
-                <input type="text" v-model="editingElement.settings.marginBottom" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'marginBottom' : 'marginBottom_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Left</label>
-                <input type="text" v-model="editingElement.settings.marginLeft" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'marginLeft' : 'marginLeft_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
         </div>
     </div>

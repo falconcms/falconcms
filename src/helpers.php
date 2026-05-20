@@ -96,7 +96,7 @@ if (!function_exists('get_lazy_header')) {
 
         if ($header) {
             $content = get_lazy_content($header->content);
-            return '<header class="lazy-builder-header">' . $content . '</header>';
+            return '<header class="lazy-builder-header" style="position:sticky;top:0;z-index:100;width:100%;">' . $content . '</header>';
         }
 
         return null;

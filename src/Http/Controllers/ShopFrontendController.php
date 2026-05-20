@@ -476,6 +476,57 @@ class ShopFrontendController extends Controller
 
         $request->validate($rules, [], $attributes);
 
+        // Account creation & Guest checkout validation
+        if (!auth()->check()) {
+            $guestEnabled = get_shop_option('shop_checkout_guest_enable', '1') === '1';
+            $createAcc = $request->input('create_account') == '1';
+
+            if (!$guestEnabled && !$createAcc) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Guest checkout is disabled. Please login or create an account.'
+                    ]);
+                }
+                return redirect()->back()->with('error', 'Guest checkout is disabled. Please login or create an account.');
+            }
+
+            if ($createAcc) {
+                $request->validate([
+                    'account_password' => 'required|min:6'
+                ], [
+                    'account_password.required' => 'Please enter a password to create your account.'
+                ]);
+
+                $existingUser = \App\Models\User::where('email', $request->billing_email)->first();
+                if ($existingUser) {
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'An account with this email already exists. Please login.'
+                        ]);
+                    }
+                    return redirect()->back()->with('error', 'An account with this email already exists. Please login.');
+                }
+
+                $newUser = \App\Models\User::create([
+                    'name' => trim($request->billing_first_name . ' ' . $request->billing_last_name),
+                    'email' => $request->billing_email,
+                    'password' => \Illuminate\Support\Facades\Hash::make($request->account_password),
+                ]);
+
+                $customerRole = \Acme\CmsDashboard\Models\Role::firstOrCreate(
+                    ['slug' => 'customer'],
+                    ['name' => 'Customer', 'description' => 'Customer who registered via store checkout or account.']
+                );
+                if ($customerRole) {
+                    $newUser->update(['role_id' => $customerRole->id]);
+                }
+
+                auth()->login($newUser);
+            }
+        }
+
         $cart = Session::get('lazy_cart', []);
         if (empty($cart)) {
             return redirect()->route('shop.cart')->with('error', 'Your cart is empty!');
@@ -569,6 +620,21 @@ class ShopFrontendController extends Controller
                 if ($product && $product->shopData && $product->shopData->manage_stock) {
                     $product->shopData->decrement('stock_quantity', $item['quantity']);
                 }
+            }
+        }
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($order, 'placed'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} email failed: " . $e->getMessage());
+        }
+
+        $adminRecipient = get_shop_option('shop_email_admin_recipient');
+        if (!empty($adminRecipient)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($adminRecipient)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($order, 'placed', 'New Order Received'));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} admin email failed: " . $e->getMessage());
             }
         }
 

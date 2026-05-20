@@ -1,5 +1,5 @@
 <script>
-    const { createApp, ref, reactive, computed, onMounted, watch } = Vue;
+    const { createApp, ref, reactive, computed, onMounted, watch, watchEffect } = Vue;
 
     createApp({
         setup() {
@@ -387,6 +387,8 @@
                                     const total = item.columns.length;
                                     item.columns.forEach(col => {
                                         if (!col.basis) col.basis = (100 / total) + '%';
+                                        if (col.basis_tablet === undefined) col.basis_tablet = null;
+                                        if (col.basis_mobile === undefined) col.basis_mobile = null;
                                         if (!col.settings) col.settings = makeColumnSettings();
                                         
                                         // Merge defaults for missing column settings
@@ -544,6 +546,9 @@
                 borderRadiusBottomRight: '', borderRadiusBottomLeft: '',
                 boxShadow: false, boxShadowPositionVertical: 0, boxShadowPositionHorizontal: 0,
                 boxShadowBlurRadius: 0, boxShadowSpreadRadius: 0, boxShadowColor: '#000000', boxShadowStyle: 'outer',
+                sticky: false, stickyDesktop: true, stickyTablet: true, stickyMobile: true,
+                stickyOffset: 0, stickyZIndex: 99,
+                zIndex: null, overflow: 'default',
                 ...overrides
             });
 
@@ -646,6 +651,8 @@
                     return {
                         id: uid(),
                         basis: ((num / den) * 100).toFixed(2) + '%',
+                        basis_tablet: null,
+                        basis_mobile: null,
                         settings: makeColumnSettings(),
                         elements: []
                     };
@@ -707,11 +714,11 @@
             };
 
             const addColumn = (ci) => {
-                layout.value[ci].columns.push({ id: uid(), basis: '100%', settings: makeColumnSettings(), elements: [] });
+                layout.value[ci].columns.push({ id: uid(), basis: '100%', basis_tablet: null, basis_mobile: null, settings: makeColumnSettings(), elements: [] });
             };
 
             const addNestedColumn = (ci, coli, eli) => {
-                layout.value[ci].columns[coli].elements[eli].columns.push({ id: uid(), basis: '100%', settings: makeColumnSettings(), elements: [] });
+                layout.value[ci].columns[coli].elements[eli].columns.push({ id: uid(), basis: '100%', basis_tablet: null, basis_mobile: null, settings: makeColumnSettings(), elements: [] });
             };
 
             const shouldShowGuide = (type, ci, coli = null, eli = null, ncoli = null) => {
@@ -1285,7 +1292,11 @@
 
             const updateBasis = (val) => {
                 if (editingColumn.value) {
-                    editingColumn.value.basis = val;
+                    if (device.value === 'desktop') {
+                        editingColumn.value.basis = val;
+                    } else {
+                        editingColumn.value['basis_' + device.value] = val;
+                    }
                 }
             };
 
@@ -1325,12 +1336,13 @@
                     boxShadowStr = `${inset}${s.boxShadowPositionHorizontal || 0}px ${s.boxShadowPositionVertical || 0}px ${s.boxShadowBlurRadius || 0}px ${s.boxShadowSpreadRadius || 0}px ${s.boxShadowColor || '#000000'}`;
                 }
 
+                const bgType = s.bgType || 'color';
                 let responsiveBgColor = getResponsiveVal(s, 'bgColor', dev) || s.bgColor;
                 let responsiveBgOpacity = getResponsiveVal(s, 'bgColorOpacity', dev);
-                let bgStyle = hexToRgba(responsiveBgColor, responsiveBgOpacity !== undefined ? responsiveBgOpacity : 1);
+                let bgStyle = bgType === 'color' ? hexToRgba(responsiveBgColor, responsiveBgOpacity !== undefined ? responsiveBgOpacity : 1) : undefined;
                 let bgImages = [];
 
-                if (s.bgGradientStartColor && s.bgGradientEndColor) {
+                if (bgType === 'gradient' && s.bgGradientStartColor && s.bgGradientEndColor) {
                     const start = hexToRgba(s.bgGradientStartColor, s.bgGradientStartOpacity !== undefined ? s.bgGradientStartOpacity : 1);
                     const end = hexToRgba(s.bgGradientEndColor, s.bgGradientEndOpacity !== undefined ? s.bgGradientEndOpacity : 1);
 
@@ -1341,11 +1353,12 @@
                     }
                 }
 
-                if (s.bgImage) {
-                    bgImages.push(`url('${s.bgImage}')`);
+                const rBgImage = bgType !== 'color' ? (getResponsiveVal(s, 'bgImage', dev) || s.bgImage) : null;
+                if (rBgImage) {
+                    bgImages.push(`url('${rBgImage}')`);
                 }
 
-                let bgImageStr = bgImages.length > 0 ? bgImages.join(', ') : 'none';
+                let bgImageStr = bgImages.length > 0 ? bgImages.join(', ') : undefined;
 
                 let pt = getResponsiveVal(s, 'paddingTop', dev);
                 let pb = getResponsiveVal(s, 'paddingBottom', dev);
@@ -1382,15 +1395,15 @@
                     borderTopRightRadius: getUnitVal(s.borderRadiusTopRight, s.borderRadiusTopRightUnit) || '0px',
                     borderBottomRightRadius: getUnitVal(s.borderRadiusBottomRight, s.borderRadiusBottomRightUnit) || '0px',
                     borderBottomLeftRadius: getUnitVal(s.borderRadiusBottomLeft, s.borderRadiusBottomLeftUnit) || '0px',
-                    zIndex: s.zIndex || 'auto',
-                    overflow: s.overflow && s.overflow !== 'default' ? s.overflow : 'visible',
+                    zIndex: getResponsiveVal(s, 'zIndex', dev) || s.zIndex || 'auto',
+                    overflow: (() => { const rv = getResponsiveVal(s, 'overflow', dev) || s.overflow; return rv && rv !== 'default' ? rv : 'visible'; })(),
                     backgroundColor: bgStyle,
-                    backgroundImage: bgImageStr ? bgImageStr : 'none',
-                    backgroundPosition: s.bgImage ? bgPos : undefined,
-                    backgroundRepeat: s.bgImage ? bgRep : undefined,
-                    backgroundSize: s.bgImage ? bgSz : undefined,
-                    backgroundAttachment: s.bgImage && s.bgImageParallax === 'fixed' ? 'fixed' : undefined,
-                    backgroundBlendMode: s.bgImage && bgBlend !== 'normal' ? bgBlend : undefined,
+                    backgroundImage: bgImageStr || undefined,
+                    backgroundPosition: rBgImage ? bgPos : undefined,
+                    backgroundRepeat: rBgImage ? bgRep : undefined,
+                    backgroundSize: rBgImage ? bgSz : undefined,
+                    backgroundAttachment: rBgImage && s.bgImageParallax === 'fixed' ? 'fixed' : undefined,
+                    backgroundBlendMode: rBgImage && bgBlend !== 'normal' ? bgBlend : undefined,
                     minHeight: (() => {
                         const rh = getResponsiveVal(s, 'height', dev) || 'auto';
                         if (rh === 'full') return '100vh';
@@ -1437,7 +1450,7 @@
                     width: '100%',
                     flexGrow: 1,
                     flexShrink: 0,
-                    overflow: s.overflow && s.overflow !== 'default' ? s.overflow : undefined,
+                    overflow: (() => { const rv = getResponsiveVal(s, 'overflow', device.value) || s.overflow; return rv && rv !== 'default' ? rv : undefined; })(),
                     minHeight: innerHeight === '100%' ? '100%' : innerMinHeight,
                     maxHeight: s.maxHeight || undefined,
                     height: 'auto',
@@ -1453,7 +1466,11 @@
             const columnOuterStyle = (container, column, count) => {
                 const s = column.settings;
                 const containerAlign = getResponsiveVal(container?.settings || {}, 'alignItems', device.value) || 'stretch';
-                const basis = column.basis || (100 / count) + '%';
+                const basis = device.value === 'mobile'
+                    ? (column.basis_mobile || '100%')
+                    : device.value === 'tablet'
+                    ? (column.basis_tablet || column.basis || (100 / count) + '%')
+                    : (column.basis || (100 / count) + '%');
                 
                 let flexBasis;
                 const gap = parseInt(container.settings.columnGap || '20px');
@@ -1494,9 +1511,9 @@
                     maxHeight: getUnitVal(s.maxHeight, s.maxHeightUnit) || undefined,
                     paddingLeft: pLeft,
                     paddingRight: pRight,
-                    marginTop: getUnitVal(s.marginTop, s.marginTopUnit),
-                    marginBottom: getUnitVal(s.marginBottom, s.marginBottomUnit),
-                    zIndex: s.zIndex || 'auto',
+                    marginTop: getUnitVal(getResponsiveVal(s, 'marginTop', device.value), getResponsiveVal(s, 'marginTopUnit', device.value) || s.marginTopUnit || 'px'),
+                    marginBottom: getUnitVal(getResponsiveVal(s, 'marginBottom', device.value), getResponsiveVal(s, 'marginBottomUnit', device.value) || s.marginBottomUnit || 'px'),
+                    zIndex: getResponsiveVal(s, 'zIndex', device.value) || s.zIndex || 'auto',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'stretch',
@@ -1522,8 +1539,8 @@
                     if (s.visibility.desktop === false) style.opacity = isPreview.value ? 0 : 0.5;
                     if (s.visibility.tablet === false) style.opacity = isPreview.value ? 0 : 0.5;
                     if (s.visibility.mobile === false) style.opacity = isPreview.value ? 0 : 0.5;
-                    // In real frontend, we'd use classes like 'hidden md:block'. 
-                    // In builder, we'll just dim them if they are hidden on the current "hypothetical" device, 
+                    // In real frontend, we'd use classes like 'hidden md:block'.
+                    // In builder, we'll just dim them if they are hidden on the current "hypothetical" device,
                     // or just pass the settings for the frontend to handle.
                 }
 
@@ -1536,15 +1553,16 @@
                 const pTop = Number(s.paddingTop) || 0;
                 const pBottom = Number(s.paddingBottom) || 0;
                 
+                const rBoxShadow = getResponsiveVal(s, 'boxShadow', device.value);
                 let shadowStr = 'none';
-                if (s.boxShadow) {
-                    const x = s.boxShadowPositionHorizontal || 0;
-                    const y = s.boxShadowPositionVertical || 0;
-                    const b = s.boxShadowBlurRadius || 10;
-                    const sp = s.boxShadowSpreadRadius || 0;
-                    const c = s.boxShadowColor || 'rgba(0,0,0,0.1)';
-                    const inst = s.boxShadowStyle === 'inner' ? 'inset ' : '';
-                    shadowStr = `${inst}${x}px ${y}px ${b}px ${sp}px ${c}`;
+                if (rBoxShadow) {
+                    const inst = (getResponsiveVal(s, 'boxShadowStyle', device.value) || s.boxShadowStyle) === 'inner' ? 'inset ' : '';
+                    const x  = getResponsiveVal(s, 'boxShadowPositionHorizontal', device.value) ?? s.boxShadowPositionHorizontal ?? 0;
+                    const y  = getResponsiveVal(s, 'boxShadowPositionVertical',   device.value) ?? s.boxShadowPositionVertical   ?? 0;
+                    const b  = getResponsiveVal(s, 'boxShadowBlurRadius',         device.value) ?? s.boxShadowBlurRadius         ?? 10;
+                    const sp = getResponsiveVal(s, 'boxShadowSpreadRadius',       device.value) ?? s.boxShadowSpreadRadius       ?? 0;
+                    const sc = getResponsiveVal(s, 'boxShadowColor',              device.value) || s.boxShadowColor || '#000000';
+                    shadowStr = `${inst}${x}px ${y}px ${b}px ${sp}px ${sc}`;
                 }
 
                 const elements = column.elements || [];
@@ -1555,31 +1573,38 @@
                 const containerHeight = getResponsiveVal(container?.settings || {}, 'height', device.value) || 'auto';
                 const hasDefinedHeight = containerHeight === 'full' || containerHeight === 'custom';
 
+                const rPT  = getResponsiveVal(s, 'paddingTop',       device.value); const rPTU  = getResponsiveVal(s, 'paddingTopUnit',    device.value) || s.paddingTopUnit    || 'px';
+                const rPB  = getResponsiveVal(s, 'paddingBottom',    device.value); const rPBU  = getResponsiveVal(s, 'paddingBottomUnit', device.value) || s.paddingBottomUnit || 'px';
+                const rPL  = getResponsiveVal(s, 'paddingLeft',      device.value); const rPLU  = getResponsiveVal(s, 'paddingLeftUnit',   device.value) || s.paddingLeftUnit   || 'px';
+                const rPR  = getResponsiveVal(s, 'paddingRight',     device.value); const rPRU  = getResponsiveVal(s, 'paddingRightUnit',  device.value) || s.paddingRightUnit  || 'px';
+                const rML  = getResponsiveVal(s, 'marginLeft',       device.value); const rMLU  = getResponsiveVal(s, 'marginLeftUnit',    device.value) || s.marginLeftUnit    || 'px';
+                const rMR  = getResponsiveVal(s, 'marginRight',      device.value); const rMRU  = getResponsiveVal(s, 'marginRightUnit',   device.value) || s.marginRightUnit   || 'px';
                 const style = {
-                    backgroundColor: s.bgColor || 'transparent',
+                    backgroundColor: (!s.bgType || s.bgType === 'color') ? (s.bgColor || 'transparent') : 'transparent',
                     color: s.textColor || 'inherit',
-                    paddingTop: getUnitVal(s.paddingTop, s.paddingTopUnit),
-                    paddingLeft: getUnitVal(s.paddingLeft, s.paddingLeftUnit),
-                    paddingRight: getUnitVal(s.paddingRight, s.paddingRightUnit),
-                    marginLeft: getUnitVal(s.marginLeft, s.marginLeftUnit),
-                    marginRight: getUnitVal(s.marginRight, s.marginRightUnit),
-                    minHeight: isEmpty ? `calc(100px + ${getUnitVal(s.paddingTop, s.paddingTopUnit) || '0px'} + ${getUnitVal(s.paddingBottom, s.paddingBottomUnit) || '0px'})` : 'auto',
+                    paddingTop:    getUnitVal(rPT,  rPTU),
+                    paddingLeft:   getUnitVal(rPL,  rPLU),
+                    paddingRight:  getUnitVal(rPR,  rPRU),
+                    marginLeft:    getUnitVal(rML,  rMLU),
+                    marginRight:   getUnitVal(rMR,  rMRU),
+                    minHeight: isEmpty ? `calc(100px + ${getUnitVal(rPT, rPTU) || '0px'} + ${getUnitVal(rPB, rPBU) || '0px'})` : 'auto',
+                    maxHeight: s.maxHeight || undefined,
                     height: 'auto',
-                    paddingBottom: getUnitVal(s.paddingBottom, s.paddingBottomUnit),
+                    paddingBottom: getUnitVal(rPB,  rPBU),
                     flex: isStretch ? '1 1 auto' : '0 1 auto',
                     display: 'flex',
                     flexDirection: 'column',
-                    borderTopWidth: getUnitVal(s.borderSizeTop) || '0px',
-                    borderBottomWidth: getUnitVal(s.borderSizeBottom) || '0px',
-                    borderLeftWidth: getUnitVal(s.borderSizeLeft) || '0px',
-                    borderRightWidth: getUnitVal(s.borderSizeRight) || '0px',
+                    borderTopWidth: getUnitVal(getResponsiveVal(s, 'borderSizeTop', device.value) ?? s.borderSizeTop) || '0px',
+                    borderBottomWidth: getUnitVal(getResponsiveVal(s, 'borderSizeBottom', device.value) ?? s.borderSizeBottom) || '0px',
+                    borderLeftWidth: getUnitVal(getResponsiveVal(s, 'borderSizeLeft', device.value) ?? s.borderSizeLeft) || '0px',
+                    borderRightWidth: getUnitVal(getResponsiveVal(s, 'borderSizeRight', device.value) ?? s.borderSizeRight) || '0px',
                     borderStyle: 'solid',
-                    borderColor: s.borderColor || '#eee',
+                    borderColor: getResponsiveVal(s, 'borderColor', device.value) || s.borderColor || '#eee',
                     boxSizing: 'border-box',
-                    borderTopLeftRadius: getUnitVal(s.borderRadiusTopLeft, s.borderRadiusTopLeftUnit),
-                    borderTopRightRadius: getUnitVal(s.borderRadiusTopRight, s.borderRadiusTopRightUnit),
-                    borderBottomRightRadius: getUnitVal(s.borderRadiusBottomRight, s.borderRadiusBottomRightUnit),
-                    borderBottomLeftRadius: getUnitVal(s.borderRadiusBottomLeft, s.borderRadiusBottomLeftUnit),
+                    borderTopLeftRadius: getUnitVal(getResponsiveVal(s, 'borderRadiusTopLeft', device.value) ?? s.borderRadiusTopLeft, getResponsiveVal(s, 'borderRadiusTopLeftUnit', device.value) || s.borderRadiusTopLeftUnit),
+                    borderTopRightRadius: getUnitVal(getResponsiveVal(s, 'borderRadiusTopRight', device.value) ?? s.borderRadiusTopRight, getResponsiveVal(s, 'borderRadiusTopRightUnit', device.value) || s.borderRadiusTopRightUnit),
+                    borderBottomRightRadius: getUnitVal(getResponsiveVal(s, 'borderRadiusBottomRight', device.value) ?? s.borderRadiusBottomRight, getResponsiveVal(s, 'borderRadiusBottomRightUnit', device.value) || s.borderRadiusBottomRightUnit),
+                    borderBottomLeftRadius: getUnitVal(getResponsiveVal(s, 'borderRadiusBottomLeft', device.value) ?? s.borderRadiusBottomLeft, getResponsiveVal(s, 'borderRadiusBottomLeftUnit', device.value) || s.borderRadiusBottomLeftUnit),
                     boxShadow: shadowStr,
                     fontSize: getUnitVal(s.fontSize, s.fontSizeUnit),
                     fontWeight: s.fontWeight || undefined,
@@ -1610,18 +1635,24 @@
                     }
                 }
                 
-                if (s.overflow) style.overflow = s.overflow;
+                const rOverflow = getResponsiveVal(s, 'overflow', device.value) || s.overflow;
+                if (rOverflow && rOverflow !== 'default') style.overflow = rOverflow;
 
-                // Layered Background Logic
+                // Layered Background Logic (bgType controls which layer is active)
+                const bgType     = s.bgType || 'color';
+                const rBgColor   = getResponsiveVal(s, 'bgColor',       device.value);
+                const rBgOpacity = getResponsiveVal(s, 'bgColorOpacity', device.value);
+                const activeBgImage = getResponsiveVal(s, 'bgImage', device.value);
                 let bgImages = [];
-                if (s.bgGradientStartColor && s.bgGradientEndColor) {
+
+                // Gradient — only when bgType is 'gradient'
+                if (bgType === 'gradient' && s.bgGradientStartColor && s.bgGradientEndColor) {
                     const gType = s.bgGradientType || 'linear';
                     const angle = s.bgGradientAngle !== undefined ? s.bgGradientAngle + 'deg' : '180deg';
                     const start = hexToRgba(s.bgGradientStartColor, s.bgGradientStartOpacity !== undefined ? s.bgGradientStartOpacity : 1);
                     const end = hexToRgba(s.bgGradientEndColor, s.bgGradientEndOpacity !== undefined ? s.bgGradientEndOpacity : 1);
                     const startPos = s.bgGradientStartPosition !== undefined ? s.bgGradientStartPosition + '%' : '0%';
                     const endPos = s.bgGradientEndPosition !== undefined ? s.bgGradientEndPosition + '%' : '100%';
-
                     if (gType === 'linear') {
                         bgImages.push(`linear-gradient(${angle}, ${start} ${startPos}, ${end} ${endPos})`);
                     } else {
@@ -1629,21 +1660,24 @@
                     }
                 }
 
-                if (s.bgImage) {
-                    bgImages.push(`url('${s.bgImage}')`);
-                    style.backgroundPosition = s.bgImagePosition || 'center center';
-                    style.backgroundRepeat = s.bgImageRepeat || 'no-repeat';
-                    style.backgroundSize = s.bgImageSize || 'cover';
+                // BG Image — works when bgType is 'image' or 'gradient' (not 'color')
+                if (activeBgImage && bgType !== 'color') {
+                    bgImages.push(`url('${activeBgImage}')`);
+                    style.backgroundPosition   = getResponsiveVal(s, 'bgImagePosition',  device.value) || 'center center';
+                    style.backgroundRepeat     = getResponsiveVal(s, 'bgImageRepeat',    device.value) || 'no-repeat';
+                    style.backgroundSize       = getResponsiveVal(s, 'bgImageSize',      device.value) || 'cover';
                     style.backgroundAttachment = s.bgImageParallax === 'fixed' ? 'fixed' : 'scroll';
-                    style.backgroundBlendMode = s.bgImageBlendMode || 'normal';
+                    style.backgroundBlendMode  = getResponsiveVal(s, 'bgImageBlendMode', device.value) || 'normal';
                 }
 
                 if (bgImages.length > 0) {
                     style.backgroundImage = bgImages.join(', ');
                 }
-                
-                if (s.bgColor) {
-                    style.backgroundColor = hexToRgba(s.bgColor, s.bgColorOpacity !== undefined ? s.bgColorOpacity : 1);
+
+                // BG Color — only when bgType is 'color'
+                if (bgType === 'color' && rBgColor) {
+                    const rOpacityVal = (rBgOpacity !== undefined && rBgOpacity !== null && rBgOpacity !== '') ? rBgOpacity : 1;
+                    style.backgroundColor = hexToRgba(rBgColor, rOpacityVal);
                 }
 
                 return style;
@@ -1692,7 +1726,7 @@
                     },
                     columns: layoutConfig.split('-').map((part, idx) => {
                         const [num, den] = part.split('/');
-                        return { id: uid(), basis: ((num / den) * 100).toFixed(2) + '%', settings: makeColumnSettings(), elements: [] };
+                        return { id: uid(), basis: ((num / den) * 100).toFixed(2) + '%', basis_tablet: null, basis_mobile: null, settings: makeColumnSettings(), elements: [] };
                     })
                 };
 
@@ -1827,6 +1861,38 @@
 
 
 
+            // Inject per-column mobile width CSS using .canvas-container.mobile .column-outer.col-{id}
+            // (specificity 0,3,0) to override the global .canvas-container.mobile .column-outer (0,2,0) rule
+            (() => {
+                const styleEl = document.createElement('style');
+                styleEl.id = 'lazy-canvas-col-widths';
+                document.head.appendChild(styleEl);
+
+                const traverseColumns = (items, result = []) => {
+                    items?.forEach(item => {
+                        if (item.columns) {
+                            item.columns.forEach(col => {
+                                result.push(col);
+                                if (col.elements) traverseColumns(col.elements, result);
+                            });
+                        }
+                    });
+                    return result;
+                };
+
+                watchEffect(() => {
+                    let css = '';
+                    traverseColumns(layout.value).forEach(col => {
+                        const mobileBasis = col.basis_mobile || col.basis_tablet;
+                        if (!mobileBasis) return;
+                        const effective = col.basis_mobile || col.basis_tablet || col.basis || '100%';
+                        const mw = effective === 'auto' ? 'none' : effective;
+                        css += `.canvas-container.mobile .column-outer.col-${col.id}{flex-basis:${effective}!important;max-width:${mw}!important;width:${effective}!important;}`;
+                    });
+                    styleEl.textContent = css;
+                });
+            })();
+
             return {
                 layout, isPreview, isSaving, isDirty, activeTab, activePanelTab, activeColPanelTab, device, activeResponsiveMenu, availableElements,
                 activeCi, editingCi, activeColi, activeColCi, editingContext,
@@ -1835,7 +1901,7 @@
                 showElementModal, elementModalTab, elementModalRestricted, elementModalAllowedTabs, openElementModal, selectNestedLayout,
                 editingColumn, editingElement,
                 addContainer, addColumn, addNestedColumn, addElement, duplicateContainer, duplicateColumn, duplicateElement, duplicateNestedColumn, duplicateNestedRow, duplicateNestedElement, saveLayout, openMediaModal, openColorPicker,
-                isDragging, dragType, dragSource, dragCi, dragColi, dragEli, dragNcoli, startDrag,
+                isDragging, isColumnDrag, dragType, dragSource, dragCi, dragColi, dragEli, dragNcoli, startDrag,
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal,
                 getVisibilityClasses, getCanvasVisibilityStyle, getResponsiveVal, setResponsiveVal, resetResponsiveVal,

@@ -593,11 +593,11 @@
 
     /* Builder-Specific Canvas Device Overrides (Simulating Media Queries) */
     .canvas-container.mobile .lazy-hide-mobile { display: none !important; }
-    .canvas-container.mobile .lazy-column, 
+    .canvas-container.mobile .lazy-column,
     .canvas-container.mobile .column-outer {
-        flex-basis: 100% !important;
-        max-width: 100% !important;
-        width: 100% !important;
+        flex-basis: 100%;
+        max-width: 100%;
+        width: 100%;
     }
     
     .canvas-container.tablet .lazy-hide-tablet { display: none !important; }

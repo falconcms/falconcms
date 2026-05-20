@@ -46,6 +46,7 @@ class SystemSyncSeeder extends Seeder
             ['name' => 'Contributor', 'slug' => 'contributor', 'description' => 'Can write and manage their own posts but cannot publish them.'],
             ['name' => 'Subscriber', 'slug' => 'subscriber', 'description' => 'Can only manage their profile.'],
             ['name' => 'User', 'slug' => 'user', 'description' => 'Standard user with content management access.'],
+            ['name' => 'Customer', 'slug' => 'customer', 'description' => 'Customer who registered via store checkout or account.'],
         ];
 
         foreach ($roles as $roleData) {
@@ -85,6 +86,7 @@ class SystemSyncSeeder extends Seeder
             'author'        => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
             'contributor'   => ['access_dashboard', 'manage_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
             'subscriber'    => ['access_dashboard', 'manage_users', 'access_your_profile'],
+            'customer'      => ['access_dashboard', 'manage_users', 'access_your_profile'],
             'user'          => [
                 'access_dashboard', 
                 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts',

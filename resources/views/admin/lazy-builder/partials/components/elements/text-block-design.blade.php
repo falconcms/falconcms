@@ -4,7 +4,7 @@
         <div class="flex justify-between items-center mb-3">
             <label class="text-[12px] font-bold text-[#333] uppercase">MARGIN</label>
             <div class="flex gap-1 items-center">
-                <button @click="['Top','Right','Bottom','Left'].forEach(s => editingElement.settings['margin' + s] = '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                <button @click="['Top','Right','Bottom','Left'].forEach(s => setResponsiveVal(editingElement.settings, 'margin' + s, device, ''))" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
                     <i class="fa fa-undo text-[10px]"></i>
                 </button>
                 <div class="relative inline-block">
@@ -29,19 +29,19 @@
         <div class="grid grid-cols-4 gap-2">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Top</label>
-                <input type="text" v-model="editingElement.settings.marginTop" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'marginTop' : 'marginTop_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Right</label>
-                <input type="text" v-model="editingElement.settings.marginRight" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'marginRight' : 'marginRight_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Bottom</label>
-                <input type="text" v-model="editingElement.settings.marginBottom" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'marginBottom' : 'marginBottom_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Left</label>
-                <input type="text" v-model="editingElement.settings.marginLeft" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'marginLeft' : 'marginLeft_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
         </div>
     </div>
@@ -51,7 +51,7 @@
         <div class="flex justify-between items-center mb-3">
             <label class="text-[12px] font-bold text-[#333] uppercase">PADDING</label>
             <div class="flex gap-1 items-center">
-                <button @click="['Top','Right','Bottom','Left'].forEach(s => editingElement.settings['padding' + s] = '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                <button @click="['Top','Right','Bottom','Left'].forEach(s => setResponsiveVal(editingElement.settings, 'padding' + s, device, ''))" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
                     <i class="fa fa-undo text-[10px]"></i>
                 </button>
                 <div class="relative inline-block">
@@ -76,19 +76,19 @@
         <div class="grid grid-cols-4 gap-2">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Top</label>
-                <input type="text" v-model="editingElement.settings.paddingTop" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'paddingTop' : 'paddingTop_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Right</label>
-                <input type="text" v-model="editingElement.settings.paddingRight" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'paddingRight' : 'paddingRight_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Bottom</label>
-                <input type="text" v-model="editingElement.settings.paddingBottom" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'paddingBottom' : 'paddingBottom_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Left</label>
-                <input type="text" v-model="editingElement.settings.paddingLeft" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" v-model="editingElement.settings[device === 'desktop' ? 'paddingLeft' : 'paddingLeft_' + device]" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
         </div>
     </div>

@@ -3,52 +3,37 @@
      :class="[el.settings.cssClass || '', 'text-block-container-' + el.id]"
      :id="el.settings.cssId || undefined"
      :style="[
-         { 
+         {
+            width: '100%',
             maxWidth: '100%',
-            textAlign: el.settings.textAlign || 'center',
-            paddingTop: (el.settings.paddingTop ?? 10) + 'px',
-            paddingRight: (el.settings.paddingRight ?? 0) + 'px',
-            paddingBottom: (el.settings.paddingBottom ?? 10) + 'px',
-            paddingLeft: (el.settings.paddingLeft ?? 0) + 'px',
-            marginTop: (el.settings.marginTop ?? 0) + 'px',
-            marginRight: (el.settings.marginRight ?? 0) + 'px',
-            marginBottom: (el.settings.marginBottom ?? 0) + 'px',
-            marginLeft: (el.settings.marginLeft ?? 0) + 'px',
-            // Typography on wrapper
-            color: (el.isHovered && el.settings.hoverColor) ? el.settings.hoverColor : (el.settings.color || '#333333'),
-            fontFamily: el.settings.fontFamily || 'inherit',
-            fontSize: getUnitVal(el.settings.fontSize || 16, el.settings.fontSizeUnit || 'px'),
-            fontWeight: el.settings.fontWeight || '400',
-            lineHeight: el.settings.lineHeight || '1.5',
-            letterSpacing: (el.settings.letterSpacing || 0) + 'px',
-            textTransform: el.settings.textTransform || 'none'
+            paddingTop: (getResponsiveVal(el.settings, 'paddingTop', device) ?? 10) + 'px',
+            paddingRight: (getResponsiveVal(el.settings, 'paddingRight', device) ?? 0) + 'px',
+            paddingBottom: (getResponsiveVal(el.settings, 'paddingBottom', device) ?? 10) + 'px',
+            paddingLeft: (getResponsiveVal(el.settings, 'paddingLeft', device) ?? 0) + 'px',
+            marginTop: (getResponsiveVal(el.settings, 'marginTop', device) ?? 0) + 'px',
+            marginRight: (getResponsiveVal(el.settings, 'marginRight', device) ?? 0) + 'px',
+            marginBottom: (getResponsiveVal(el.settings, 'marginBottom', device) ?? 0) + 'px',
+            marginLeft: (getResponsiveVal(el.settings, 'marginLeft', device) ?? 0) + 'px',
          },
          getCanvasVisibilityStyle(el.settings)
      ]">
-    <div class="text-block-content" 
+    <div class="text-block-content"
        v-html="el.settings.content || 'your content is here...'"
        @mouseenter="el.isHovered = true"
        @mouseleave="el.isHovered = false"
-       :style="{
-           textAlign: 'inherit',
-           margin: '0',
-           width: '100%',
-           transition: 'color 0.3s ease',
-           color: 'inherit'
-       }">
+       style="margin: 0; width: 100%; transition: color 0.3s ease; display: block;">
     </div>
-    <div v-if="false"></div> <!-- Just to have a sibling for the style if needed -->
     <component is="style">
-        .text-block-container-@{{ el.id }} .text-block-content { 
-            text-align: inherit !important; 
-            color: inherit !important; 
-            font-size: inherit !important; 
-            font-family: inherit !important; 
-            font-weight: inherit !important; 
-            line-height: inherit !important; 
-            letter-spacing: inherit !important; 
-            text-transform: inherit !important; 
-            margin: 0 !important; 
+        .text-block-container-@{{ el.id }} .text-block-content {
+            text-align: @{{ getResponsiveVal(el.settings, 'textAlign', device) || 'center' }} !important;
+            color: @{{ (el.isHovered && el.settings.hoverColor) ? el.settings.hoverColor : (el.settings.color || '#333333') }} !important;
+            font-family: @{{ el.settings.fontFamily || 'inherit' }} !important;
+            font-size: @{{ getUnitVal(el.settings.fontSize || 16, el.settings.fontSizeUnit || 'px') }} !important;
+            font-weight: @{{ el.settings.fontWeight || '400' }} !important;
+            line-height: @{{ el.settings.lineHeight || '1.5' }} !important;
+            letter-spacing: @{{ (el.settings.letterSpacing || 0) + 'px' }} !important;
+            text-transform: @{{ el.settings.textTransform || 'none' }} !important;
+            margin: 0 !important;
         }
         .text-block-container-@{{ el.id }} ul { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; }
         .text-block-container-@{{ el.id }} ol { list-style-type: decimal !important; margin-left: 20px !important; margin-bottom: 15px !important; }

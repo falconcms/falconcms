@@ -37,7 +37,19 @@ class ShopController extends Controller
 
         if (strpos($action, 'status_') === 0) {
             $status = str_replace('status_', '', $action);
-            Order::whereIn('id', $ids)->update(['status' => $status]);
+            $orders = Order::whereIn('id', $ids)->get();
+            foreach ($orders as $o) {
+                if ($o->status !== $status) {
+                    $oldStatus = $o->status;
+                    $o->update(['status' => $status]);
+                    $this->handleInventoryStatusChange($o, $oldStatus, $status);
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($o->customer_email)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($o, 'status_updated'));
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error("Order #{$o->order_number} bulk status email failed: " . $e->getMessage());
+                    }
+                }
+            }
             return back()->with('success', 'Orders status updated successfully.');
         }
 
@@ -68,36 +80,70 @@ class ShopController extends Controller
 
     public function orderUpdateStatus(Request $request, $id)
     {
-        $order = Order::with('items.product.shopData')->findOrFail($id);
+        $order = Order::with(['items.product.shopData', 'items.variation'])->findOrFail($id);
         $oldStatus = $order->status;
         $newStatus = $request->status;
 
-        $order->update(['status' => $newStatus]);
+        if ($oldStatus !== $newStatus) {
+            $order->update(['status' => $newStatus]);
+            $this->handleInventoryStatusChange($order, $oldStatus, $newStatus);
 
-        // Inventory Logic
-        if ($oldStatus !== 'completed' && $newStatus === 'completed') {
-            // Decrement Stock
-            foreach ($order->items as $item) {
-                if ($item->product && $item->product->shopData) {
-                    $shopData = $item->product->shopData;
-                    if ($shopData->manage_stock) {
-                        $shopData->decrement('stock_quantity', $item->quantity);
-                    }
+            if ($oldStatus !== $newStatus) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($order, 'status_updated'));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} status email failed: " . $e->getMessage());
                 }
             }
-        } elseif ($oldStatus === 'completed' && in_array($newStatus, ['cancelled', 'refunded', 'failed'])) {
-            // Restock
+        }
+
+        return redirect()->back()->with('success', 'Order status updated successfully.');
+    }
+
+    private function handleInventoryStatusChange(Order $order, $oldStatus, $newStatus)
+    {
+        // Statuses that represent active stock holding
+        $activeStatuses = ['pending', 'processing', 'completed', 'on-hold'];
+        // Statuses where stock is returned to inventory
+        $inactiveStatuses = ['cancelled', 'refunded', 'failed'];
+
+        $wasActive = in_array($oldStatus, $activeStatuses);
+        $isInactive = in_array($newStatus, $inactiveStatuses);
+
+        $wasInactive = in_array($oldStatus, $inactiveStatuses);
+        $isActive = in_array($newStatus, $activeStatuses);
+
+        $order->loadMissing(['items.product.shopData', 'items.variation']);
+
+        if ($wasActive && $isInactive) {
+            // Restock (Restore Inventory)
             foreach ($order->items as $item) {
-                if ($item->product && $item->product->shopData) {
+                if ($item->variation) {
+                    if ($item->variation->manage_stock) {
+                        $item->variation->increment('stock_quantity', $item->quantity);
+                    }
+                } elseif ($item->product && $item->product->shopData) {
                     $shopData = $item->product->shopData;
                     if ($shopData->manage_stock) {
                         $shopData->increment('stock_quantity', $item->quantity);
                     }
                 }
             }
+        } elseif ($wasInactive && $isActive) {
+            // Deduct Stock
+            foreach ($order->items as $item) {
+                if ($item->variation) {
+                    if ($item->variation->manage_stock) {
+                        $item->variation->decrement('stock_quantity', $item->quantity);
+                    }
+                } elseif ($item->product && $item->product->shopData) {
+                    $shopData = $item->product->shopData;
+                    if ($shopData->manage_stock) {
+                        $shopData->decrement('stock_quantity', $item->quantity);
+                    }
+                }
+            }
         }
-
-        return redirect()->back()->with('success', 'Order status updated successfully.');
     }
 
     public function settings()
@@ -109,6 +155,7 @@ class ShopController extends Controller
         $shopPageId     = get_shop_option('shop_shop_page_id');
         $cartPageId     = get_shop_option('shop_cart_page_id');
         $checkoutPageId = get_shop_option('shop_checkout_page_id');
+        $accountPageId  = get_shop_option('shop_account_page_id');
 
         $pages = \Illuminate\Support\Facades\DB::table('posts')
             ->where('type', 'page')
@@ -120,6 +167,7 @@ class ShopController extends Controller
             if ($page->id == $shopPageId) $labels[] = 'Shop Page';
             if ($page->id == $cartPageId) $labels[] = 'Cart Page';
             if ($page->id == $checkoutPageId) $labels[] = 'Checkout Page';
+            if ($page->id == $accountPageId) $labels[] = 'Account Page';
             if ($page->status == 'draft') $labels[] = 'Draft';
             
             if (!empty($labels)) {

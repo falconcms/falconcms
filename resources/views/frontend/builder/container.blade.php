@@ -20,10 +20,12 @@
         return "rgba($r, $g, $b, $opacity)";
     };
 
+    $bgType = $s['bgType'] ?? 'color';
+
     // Gradient and/or image as layered background-image (gradient on top, image below)
     // These have no responsive controls, so they remain inline.
     $bgImages = [];
-    if (!empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
+    if ($bgType === 'gradient' && !empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
         $gType    = $s['bgGradientType'] ?? 'linear';
         $angle    = $s['bgGradientAngle'] ?? 180;
         $startPos = $s['bgGradientStartPosition'] ?? 0;
@@ -36,7 +38,7 @@
             $bgImages[] = "radial-gradient(circle at center, {$start} {$startPos}%, {$end} {$endPos}%)";
         }
     }
-    if (!empty($s['bgImage'])) {
+    if ($bgType !== 'color' && !empty($s['bgImage'])) {
         $bgImages[] = "url('{$s['bgImage']}')";
         // background-attachment has no responsive control — keep inline
         $containerStyles[] = "background-attachment: " . (($s['bgImageParallax'] ?? 'none') === 'fixed' ? 'fixed' : 'scroll');
@@ -81,7 +83,7 @@
     if ($heightMode !== 'auto') {
         $heightVal  = $heightMode === 'full' ? '100vh' : ($s['customHeight'] ?? 'auto');
         $minHeightVal = $heightVal;
-        $heightCss  = $heightVal;
+        $heightCss  = 'auto';
     } else {
         $minHeightVal = !empty($s['minHeight']) ? $s['minHeight'] : ($hasContent ? '8px' : '100px');
         $heightCss    = 'auto';
@@ -150,7 +152,7 @@
     };
 
     // Build per-device rule arrays (all overrides use !important to beat desktop base)
-    $buildRules = function(string $dev) use ($s, $hasOvr, $getResVal, $heightRules, $isNestedRow, $hexToRgba): array {
+    $buildRules = function(string $dev) use ($s, $hasOvr, $getResVal, $heightRules, $isNestedRow, $hexToRgba, $bgType): array {
         $inner = []; $outer = [];
         if ($hasOvr('alignItems', $dev))
             $inner[] = 'align-items:' . $getResVal('alignItems', $dev) . '!important';
@@ -177,19 +179,40 @@
         if ($hasOvr('columnGap', $dev) && ($_cgv = $getResVal('columnGap', $dev)) !== null)
             $outer[] = '--lc-col-gap:' . $_cgv . '!important';
         // Background tab responsive properties
-        if ($hasOvr('bgColor', $dev) || $hasOvr('bgColorOpacity', $dev)) {
+        if ($bgType === 'color' && ($hasOvr('bgColor', $dev) || $hasOvr('bgColorOpacity', $dev))) {
             $_col = $getResVal('bgColor', $dev);
             $_opa = $getResVal('bgColorOpacity', $dev) ?? 1;
             if (!empty($_col)) $outer[] = 'background-color:' . $hexToRgba($_col, $_opa) . '!important';
         }
-        if ($hasOvr('bgImageSize', $dev) && ($_bsv = $getResVal('bgImageSize', $dev)) !== null)
+        if ($bgType !== 'color' && $hasOvr('bgImageSize', $dev) && ($_bsv = $getResVal('bgImageSize', $dev)) !== null)
             $outer[] = 'background-size:' . $_bsv . '!important';
-        if ($hasOvr('bgImagePosition', $dev) && ($_bpv = $getResVal('bgImagePosition', $dev)) !== null)
+        if ($bgType !== 'color' && $hasOvr('bgImagePosition', $dev) && ($_bpv = $getResVal('bgImagePosition', $dev)) !== null)
             $outer[] = 'background-position:' . $_bpv . '!important';
-        if ($hasOvr('bgImageRepeat', $dev) && ($_brv = $getResVal('bgImageRepeat', $dev)) !== null)
+        if ($bgType !== 'color' && $hasOvr('bgImageRepeat', $dev) && ($_brv = $getResVal('bgImageRepeat', $dev)) !== null)
             $outer[] = 'background-repeat:' . $_brv . '!important';
-        if ($hasOvr('bgImageBlendMode', $dev) && ($_bmv = $getResVal('bgImageBlendMode', $dev)) !== null && $_bmv !== 'normal')
+        if ($bgType !== 'color' && $hasOvr('bgImageBlendMode', $dev) && ($_bmv = $getResVal('bgImageBlendMode', $dev)) !== null && $_bmv !== 'normal')
             $outer[] = 'background-blend-mode:' . $_bmv . '!important';
+        if ($bgType !== 'color' && $hasOvr('bgImage', $dev)) {
+            $_rImg = $getResVal('bgImage', $dev);
+            $_bgParts = [];
+            if (!empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
+                $_gType = $s['bgGradientType'] ?? 'linear';
+                $_gAng  = $s['bgGradientAngle'] ?? 180;
+                $_gS    = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? $s['bgColorOpacity'] ?? 1);
+                $_gE    = $hexToRgba($s['bgGradientEndColor'],   $s['bgGradientEndOpacity']   ?? $s['bgColorOpacity'] ?? 1);
+                $_gSP   = $s['bgGradientStartPosition'] ?? 0;
+                $_gEP   = $s['bgGradientEndPosition']   ?? 100;
+                $_bgParts[] = $_gType === 'linear'
+                    ? "linear-gradient({$_gAng}deg, {$_gS} {$_gSP}%, {$_gE} {$_gEP}%)"
+                    : "radial-gradient(circle at center, {$_gS} {$_gSP}%, {$_gE} {$_gEP}%)";
+            }
+            if (!empty($_rImg)) $_bgParts[] = "url('{$_rImg}')";
+            $outer[] = 'background-image:' . (!empty($_bgParts) ? implode(', ', $_bgParts) : 'none') . '!important';
+        }
+        if ($hasOvr('zIndex', $dev) && ($_zv = $getResVal('zIndex', $dev)) !== null)
+            $outer[] = 'z-index:' . $_zv . '!important';
+        if ($hasOvr('overflow', $dev) && ($_ov = $getResVal('overflow', $dev)) !== null && $_ov !== 'default')
+            $outer[] = 'overflow:' . $_ov . '!important';
         return [$inner, $outer];
     };
     [$ti, $to] = $buildRules('tablet');
@@ -207,9 +230,9 @@
 
     // Desktop base: background tab properties (moved out of inline for responsive override support)
     $dBgCss = '';
-    if (!empty($s['bgColor']))
+    if ($bgType === 'color' && !empty($s['bgColor']))
         $dBgCss .= 'background-color:' . $hexToRgba($s['bgColor'], $s['bgColorOpacity'] ?? 1) . ';';
-    if (!empty($s['bgImage'])) {
+    if ($bgType !== 'color' && !empty($s['bgImage'])) {
         $dBgCss .= 'background-size:'     . ($s['bgImageSize']     ?? 'cover') . ';';
         $dBgCss .= 'background-position:' . ($s['bgImagePosition'] ?? 'center center') . ';';
         $dBgCss .= 'background-repeat:'   . ($s['bgImageRepeat']   ?? 'no-repeat') . ';';
@@ -234,15 +257,15 @@
         $stickyDesktop = $s['stickyDesktop'] ?? true;
         $stickyTablet  = $s['stickyTablet']  ?? true;
         $stickyMobile  = $s['stickyMobile']  ?? true;
-        $sOn  = "position:sticky;top:{$stickyOffset}px;z-index:{$stickyZIndex};";
+        $sOn  = "position:sticky!important;top:{$stickyOffset}px!important;z-index:{$stickyZIndex}!important;";
         $sOff = "position:static!important;top:auto!important;z-index:auto!important;";
         if ($stickyDesktop) $css .= ".{$cid}{{$sOn}}";
         if ($stickyTablet !== $stickyDesktop) {
-            $rule = $stickyTablet ? str_replace(';', '!important;', $sOn) : $sOff;
+            $rule = $stickyTablet ? $sOn : $sOff;
             $css .= "@media(min-width:{$bpSmall1}px) and (max-width:{$bpMedium}px){.{$cid}{{$rule}}}";
         }
         if ($stickyMobile !== $stickyTablet) {
-            $rule = $stickyMobile ? str_replace(';', '!important;', $sOn) : $sOff;
+            $rule = $stickyMobile ? $sOn : $sOff;
             $css .= "@media(max-width:{$bpSmall}px){.{$cid}{{$rule}}}";
         }
     }

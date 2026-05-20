@@ -56,6 +56,7 @@ class UpdateLazyCms extends Command
             ['title' => 'Shop', 'slug' => 'product'],
             ['title' => 'Cart', 'slug' => 'cart'],
             ['title' => 'Checkout', 'slug' => 'checkout'],
+            ['title' => 'Account', 'slug' => 'account'],
         ];
 
         $adminId = \App\Models\User::first()->id ?? 1;

@@ -49,9 +49,10 @@
                         <img id="main-product-image" src="{{ asset('assets/images/placeholder.jpg') }}" alt="Placeholder" class="w-full h-auto object-cover mix-blend-multiply opacity-70">
                     @endif
                     
-                    @if($post->shopData && $post->shopData->stock_status === 'outofstock')
-                        <span class="absolute top-4 left-4 bg-red-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-sm uppercase tracking-wider shadow-lg z-10">Out of Stock</span>
-                    @elseif($post->shopData && $post->shopData->sale_price)
+                    @if(!$post->is_in_stock)
+                        <span class="absolute top-4 right-4 bg-red-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-sm uppercase tracking-wider shadow-lg z-10">Out of Stock</span>
+                    @endif
+                    @if($post->shopData && $post->shopData->sale_price)
                         <span class="absolute top-4 left-4 bg-white text-gray-700 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm uppercase z-10">Sale!</span>
                     @endif
                 </div>
@@ -106,6 +107,13 @@
                     {{ $post->excerpt ?: get_lazy_excerpt($post, 250) }}
                 </div>
 
+                @if(!$post->is_in_stock)
+                <div class="mb-10 pb-8 border-b border-gray-100">
+                    <button disabled class="w-full md:w-auto bg-gray-400 text-white px-8 h-11 rounded-sm font-bold text-[14px] cursor-not-allowed uppercase">
+                        Out of stock
+                    </button>
+                </div>
+                @else
                 <form id="add-to-cart-form" action="{{ route('shop.cart.add') }}" method="POST" class="flex items-center gap-4 mb-10 pb-8 border-b border-gray-100">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $post->id }}">
@@ -118,6 +126,7 @@
                         <span>Add to cart</span>
                     </button>
                 </form>
+                @endif
 
                 <div class="text-[13px] text-gray-500 space-y-2">
                     @if($post->shopData && $post->shopData->sku)
@@ -519,8 +528,11 @@
                         <a href="{{ get_lazy_permalink($item) }}">
                             <img src="{{ str_starts_with($item->featured_image, 'http') ? $item->featured_image : asset('storage/'.$item->featured_image) }}" class="w-full h-full object-cover">
                         </a>
+                        @if(!$item->is_in_stock)
+                            <span class="absolute top-3 right-3 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm shadow-md uppercase z-10">Out of Stock</span>
+                        @endif
                         @if($item->shopData && $item->shopData->sale_price)
-                            <span class="absolute top-3 left-3 bg-white text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Sale!</span>
+                            <span class="absolute top-3 left-3 bg-white text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase z-10">Sale!</span>
                         @endif
                     </div>
                     <div class="text-[12px] text-gray-400 mb-1">
@@ -538,7 +550,11 @@
                             <span>{{ lazy_price_format($item->shopData->price ?? 0) }}</span>
                         @endif
                     </div>
-                    @if($item->shopData && $item->shopData->product_type === 'variable')
+                    @if(!$item->is_in_stock)
+                        <button disabled class="w-full bg-gray-400 text-white py-2.5 rounded-sm text-[12px] font-bold uppercase cursor-not-allowed">
+                            Out of stock
+                        </button>
+                    @elseif($item->shopData && $item->shopData->product_type === 'variable')
                         <a href="{{ get_lazy_permalink($item) }}" class="block w-full text-center bg-[#1363df] text-white py-2.5 rounded-sm text-[12px] font-bold uppercase hover:bg-[#005ba6] transition-colors">
                             Select Options
                         </a>

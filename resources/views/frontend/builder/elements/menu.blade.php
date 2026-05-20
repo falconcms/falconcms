@@ -201,8 +201,11 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 <div id="{{ $customId }}" class="element-menu menu-{{ $elId }} {{ $visibilityClasses }} {{ $customClass }}" style="{{ $wrapperStyle }}">
     @if($menuId && count($menuItems) > 0)
         <!-- Desktop Nav -->
+        @php
+            $isDistributing = $layout === 'horizontal' && in_array($s['justification'] ?? 'flex-start', ['space-between', 'space-around', 'space-evenly']);
+        @endphp
         <nav class="lazy-desktop-nav" style="display: {{ $isMobileView ? 'none' : 'flex' }}; width: 100%; align-items: {{ $s['alignItems'] ?? 'center' }}; justify-content: {{ $s['justification'] ?? 'flex-start' }}; min-height: {{ ($s['minHeight'] ?? '') !== '' ? $s['minHeight'].'px' : '60px' }};">
-            <ul class="lazy-menu-list" style="display: flex; width: 100%; flex-direction: {{ $layout === 'horizontal' ? 'row' : 'column' }}; align-items: {{ $s['alignItems'] ?? 'center' }}; justify-content: {{ $s['justification'] ?? 'flex-start' }}; gap: {{ $layout === 'horizontal' ? (($s['justification'] ?? '') === 'space-between' ? '0' : ($s['itemSpacing'] ?? 25) . 'px') : ($s['itemSpacing'] ?? 10) . 'px' }};">
+            <ul class="lazy-menu-list" style="display: flex; width: 100%; flex-direction: {{ $layout === 'horizontal' ? 'row' : 'column' }}; align-items: {{ $s['alignItems'] ?? 'center' }}; justify-content: {{ $s['justification'] ?? 'flex-start' }}; gap: {{ $layout === 'horizontal' ? (in_array($s['justification'] ?? '', ['space-between', 'space-around', 'space-evenly']) ? '0' : ($s['itemSpacing'] ?? 25) . 'px') : ($s['itemSpacing'] ?? 10) . 'px' }};">
                 @php renderLazyMenuItemsResponsive($menuItems, $grouped, $mainLinkStyle, $subLinkStyle, false, $elId, $s); @endphp
             </ul>
         </nav>
@@ -262,7 +265,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         flex-direction: {{ $layout === 'horizontal' ? 'row' : 'column' }};
         align-items: {{ $s['alignItems'] ?? 'center' }};
         justify-content: {{ $s['justification'] ?? 'flex-start' }};
-        gap: {{ $layout === 'horizontal' ? (($s['justification'] ?? '') === 'space-between' ? '0' : ($s['itemSpacing'] ?? 25) . 'px') : ($s['itemSpacing'] ?? 10) . 'px' }};
+        gap: {{ $layout === 'horizontal' ? (in_array($s['justification'] ?? '', ['space-between', 'space-around', 'space-evenly']) ? '0' : ($s['itemSpacing'] ?? 25) . 'px') : ($s['itemSpacing'] ?? 10) . 'px' }};
     }
     .menu-{{ $elId }} .lazy-menu-item { position: relative; }
     @php
@@ -348,7 +351,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     }
     
     /* MOBILE STYLES */
-    .menu-{{ $elId }} .lazy-mobile-wrapper { display: none; width: 100%; }
+    .menu-{{ $elId }} .lazy-mobile-wrapper { display: none; width: 100%; position: relative; }
     .menu-{{ $elId }} .lazy-mobile-trigger { border: none; cursor: pointer; display: flex; align-items: center; border-radius: 4px; box-sizing: border-box; -webkit-appearance: none; appearance: none; line-height: 1; }
     .menu-{{ $elId }} .lazy-mobile-nav { 
         display: none; background: {{ $s['mobileMenuBgColor'] ?? '#fff' }}; width: 100%; 
@@ -461,7 +464,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         .menu-{{ $elId }} .lazy-desktop-nav { display: none !important; }
         .menu-{{ $elId }} .lazy-mobile-wrapper { display: flex !important; flex-wrap: wrap; }
         @if(($s['mobileMenuExpandMode'] ?? 'full-width-static') === 'full-width-absolute')
-            .menu-{{ $elId }} .lazy-mobile-nav { position: absolute; top: 100%; left: 0; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+            .menu-{{ $elId }} .lazy-mobile-nav { position: absolute; top: 100%; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         @endif
     }
     
@@ -477,11 +480,25 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         if (!nav) return;
 
         const isSidebar = {{ json_encode(($s['mobileMenuExpandMode'] ?? '') === 'sidebar') }};
+        const isFwa = {{ json_encode(($s['mobileMenuExpandMode'] ?? '') === 'full-width-absolute') }};
         const closeBtn = nav.querySelector('.lazy-sidebar-close');
+
+        const positionFwaNav = () => {
+            if (!isFwa) return;
+            const wrapper = nav.parentElement;
+            const row = nav.closest('.lazy-container') || nav.closest('.container-row');
+            if (!row || !wrapper) return;
+            const nr = wrapper.getBoundingClientRect();
+            const rr = row.getBoundingClientRect();
+            nav.style.left  = (rr.left - nr.left) + 'px';
+            nav.style.right = (nr.right - rr.right) + 'px';
+            nav.style.width = 'auto';
+        };
 
         const toggleMenu = (active) => {
             const isActive = active !== undefined ? active : nav.classList.toggle('active');
             if (active !== undefined) nav.classList.toggle('active', isActive);
+            if (isActive) positionFwaNav();
 
             if (overlay) overlay.classList.toggle('active', isActive);
             if (trigger) {
@@ -493,6 +510,9 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
                 document.body.style.overflow = isActive ? 'hidden' : '';
             }
         };
+
+        // Position FWA nav on load if already active (expanded mode or pre-opened)
+        if (nav.classList.contains('active')) positionFwaNav();
 
         if (trigger) {
             trigger.addEventListener('click', function(e) {

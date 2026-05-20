@@ -7,9 +7,10 @@
             marginTop: getUnitVal(el.settings.marginTop ?? 0, 'px'),
             marginBottom: getUnitVal(el.settings.marginBottom ?? 0, 'px'),
             minHeight: getUnitVal(el.settings.minHeight, 'px'),
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: (device === 'mobile' || device === 'tablet') ? (el.settings.mobileMenuTriggerHorizontalAlign || 'center') : (el.settings.alignItems || 'center')
+            alignItems: (device === 'mobile' || device === 'tablet') ? (el.settings.mobileMenuTriggerHorizontalAlign || 'center') : 'stretch'
          },
          getCanvasVisibilityStyle(el.settings)
      ]">
@@ -27,7 +28,10 @@
 
     <!-- CSS hover for desktop submenu visibility (supplements JS events for builder canvas compatibility) -->
     <component :is="'style'" v-if="device === 'desktop'"
+        :key="'menu-style-' + el.id + '-' + (el.settings.justification || 'flex-start') + '-' + (el.settings.submenuDirection || 'left') + '-' + (el.settings.submenuSpace || 10) + '-' + (el.settings.subSubMenuDirection || 'right') + '-' + (el.settings.subSubMenuOffset ?? 5) + '-' + (el.settings.submenuTextColorHover || '#0091ea')"
         :innerHTML="
+            '.menu-container-' + el.id + ' .lazy-menu-nav { justify-content: ' + (el.settings.justification || 'flex-start') + '!important; }' +
+            '.menu-container-' + el.id + ' .lazy-menu-list { justify-content: ' + (el.settings.justification || 'flex-start') + '!important; }' +
             '.menu-container-' + el.id + ' .lazy-menu-list > .admin-menu-item:hover > .admin-submenu {' +
             'opacity:1!important;visibility:visible!important;' +
             'transform:' + (el.settings.submenuDirection === 'center' ? 'translateX(-50%) ' : '') + 'translateY(' + (el.settings.submenuSpace || 10) + 'px)!important;}' +
@@ -38,9 +42,25 @@
         ">
     </component>
 
+    <!-- Full Width Absolute: overflow visible so dropdown can extend beyond column bounds -->
+    <component :is="'style'"
+        v-if="el.settings.mobileMenuExpandMode === 'full-width-absolute' && el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)"
+        :innerHTML="
+            '.column-outer:has(.menu-container-' + el.id + ') { overflow: visible !important; }' +
+            '.column-inner:has(.menu-container-' + el.id + ') { overflow: visible !important; }' +
+            '.group\\/el:has(.menu-container-' + el.id + ') { overflow: visible !important; }' +
+            '.menu-container-' + el.id + ' { overflow: visible !important; }' +
+            '.menu-container-' + el.id + ' .lazy-menu-nav { overflow: visible !important; }'
+        ">
+    </component>
+
     <nav class="lazy-menu-nav w-full border border-dashed border-transparent hover:border-slate-200 transition-all rounded relative"
-         :class="{'p-1': device === 'desktop', 'p-0': device !== 'desktop'}"
-         :style="device !== 'desktop' ? {
+         :class="{'p-1': (el.settings.mobileCollapseBreakpoint === 'none' || ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) < ({mobile:1,tablet:2,desktop:3}[device]||1)), 'p-0': (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1))}"
+         @vue:mounted="(v) => { const n=v.el; if(!n) return; const r=n.closest('.container-row'); if(!r) return; const W=n.ownerDocument&&n.ownerDocument.defaultView; const _c=()=>{ if(el.settings.mobileMenuExpandMode!=='full-width-absolute') return; let l=0,e=n; while(e&&e!==r){l+=e.offsetLeft;e=e.offsetParent;} const nl=-l,nr=-(r.offsetWidth-l-n.offsetWidth); if(el._fwaLeft!==nl||el._fwaRight!==nr){el._fwaLeft=nl;el._fwaRight=nr;} }; _c(); if(W&&W.ResizeObserver&&!n._fwaObs){n._fwaObs=new W.ResizeObserver(_c);n._fwaObs.observe(r);} }"
+         @vue:before-unmount="(v) => { if(v.el&&v.el._fwaObs){v.el._fwaObs.disconnect();delete v.el._fwaObs;} }"
+         @vue:updated="(v) => { const n=v.el; if(!n||el.settings.mobileMenuExpandMode!=='full-width-absolute') return; const r=n.closest('.container-row'); if(!r) return; if(!n._fwaObs){ const W=n.ownerDocument&&n.ownerDocument.defaultView; if(W&&W.ResizeObserver){ const _c=()=>{ if(el.settings.mobileMenuExpandMode!=='full-width-absolute') return; let l=0,e=n;while(e&&e!==r){l+=e.offsetLeft;e=e.offsetParent;} const nl=-l,nr=-(r.offsetWidth-l-n.offsetWidth); if(el._fwaLeft!==nl||el._fwaRight!==nr){el._fwaLeft=nl;el._fwaRight=nr;} }; n._fwaObs=new W.ResizeObserver(_c); n._fwaObs.observe(r); } } let l=0,e=n; while(e&&e!==r){l+=e.offsetLeft;e=e.offsetParent;} const nl=-l,nr=-(r.offsetWidth-l-n.offsetWidth); if(el._fwaLeft!==nl||el._fwaRight!==nr){el._fwaLeft=nl;el._fwaRight=nr;} }"
+         @mouseenter="(ev) => { if(el.settings.mobileMenuExpandMode==='full-width-absolute'){const n=ev.currentTarget;const r=n.closest('.container-row');if(r){let l=0,e=n;while(e&&e!==r){l+=e.offsetLeft;e=e.offsetParent;}const nl=-l,nr=-(r.offsetWidth-l-n.offsetWidth);if(el._fwaLeft!==nl||el._fwaRight!==nr){el._fwaLeft=nl;el._fwaRight=nr;}}} }"
+         :style="(el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) ? {
              display: 'flex',
              flexDirection: 'column',
              alignItems: el.settings.mobileMenuTriggerHorizontalAlign || 'flex-start',
@@ -49,14 +69,15 @@
          } : {
              display: 'flex',
              alignItems: el.settings.alignItems || 'center',
+             justifyContent: el.settings.justification || 'flex-start',
              minHeight: getUnitVal(el.settings.minHeight || 60, 'px'),
              width: '100%'
          }">
         
         <!-- Mobile Trigger (Visible when device matches breakpoint and at least one icon is set) -->
-        <div v-if="device !== 'desktop' && (el.settings.mobileMenuTriggerExpandIcon || el.settings.mobileMenuTriggerCollapseIcon)"
+        <div v-if="(el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) && (el.settings.mobileMenuTriggerExpandIcon || el.settings.mobileMenuTriggerCollapseIcon)"
              class="mobile-menu-trigger-preview flex items-center cursor-pointer transition-all"
-             @click="el._mobileMenuOpen = !(el._mobileMenuOpen !== false && (el.settings.mobileMenuMode === 'expanded' || el._mobileMenuOpen === true))"
+             @click="el._mobileMenuOpen = !(el._mobileMenuOpen !== false && (el.settings.mobileMenuMode === 'expanded' || el._mobileMenuOpen === true)); if (el.settings.mobileMenuExpandMode === 'full-width-absolute') { const _n=$event.currentTarget.closest('.lazy-menu-nav'); const _r=_n&&_n.closest('.container-row'); if(_n&&_r){let l=0,e=_n;while(e&&e!==_r){l+=e.offsetLeft;e=e.offsetParent;}el._fwaLeft=-l;el._fwaRight=-((_r.offsetWidth-l)-_n.offsetWidth);} }"
              :style="{
                  paddingTop: getUnitVal(el.settings.mobileMenuTriggerPaddingTop ?? 10, 'px'),
                  paddingRight: getUnitVal(el.settings.mobileMenuTriggerPaddingRight ?? 15, 'px'),
@@ -77,37 +98,38 @@
 
         <!-- Menu List -->
         <ul class="lazy-menu-list m-0 p-0" 
-            v-if="device === 'desktop' || (el._mobileMenuOpen !== false && (el.settings.mobileMenuMode === 'expanded' || el._mobileMenuOpen === true))"
+            v-if="(el.settings.mobileCollapseBreakpoint === 'none' || ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) < ({mobile:1,tablet:2,desktop:3}[device]||1)) || (el._mobileMenuOpen !== false && (el.settings.mobileMenuMode === 'expanded' || el._mobileMenuOpen === true))"
             :class="[
-                {'flex': device === 'desktop', 'block': device !== 'desktop'},
+                {'flex': (el.settings.mobileCollapseBreakpoint === 'none' || ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) < ({mobile:1,tablet:2,desktop:3}[device]||1)), 'block': (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1))},
                 el.settings.mobileMenuExpandMode === 'sidebar' ? 'sidebar-preview' : ''
             ]"
             :style="{
-                flexDirection: device !== 'desktop' ? 'column' : (el.settings.layout === 'vertical' ? 'column' : 'row'),
+                display: (el.settings.mobileCollapseBreakpoint === 'none' || ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) < ({mobile:1,tablet:2,desktop:3}[device]||1)) ? 'flex' : 'block',
+                flexDirection: (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) ? 'column' : (el.settings.layout === 'vertical' ? 'column' : 'row'),
                 justifyContent: el.settings.justification || 'flex-start',
                 alignItems: el.settings.alignItems || 'center',
-                gap: (device === 'desktop' && el.settings.layout !== 'vertical') ? (['space-between', 'space-around', 'space-evenly'].includes(el.settings.justification) ? '0' : getUnitVal(el.settings.itemSpacing ?? 0, 'px')) : '0',
+                gap: ((el.settings.mobileCollapseBreakpoint === 'none' || ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) < ({mobile:1,tablet:2,desktop:3}[device]||1)) && el.settings.layout !== 'vertical') ? (['space-between', 'space-around', 'space-evenly'].includes(el.settings.justification) ? '0' : getUnitVal(el.settings.itemSpacing ?? 25, 'px')) : getUnitVal(el.settings.itemSpacing ?? 10, 'px'),
                 listStyle: 'none',
                 width: '100%',
                 '--submenu-space': (el.settings.submenuSpace || 10) + 'px',
-                backgroundColor: (device === 'mobile' || device === 'tablet') ? (el.settings.mobileMenuBgColor || '#ffffff') : 'transparent',
-                marginTop: (device === 'mobile' || device === 'tablet' && el.settings.mobileMenuExpandMode !== 'sidebar' && el.settings.mobileMenuExpandMode !== 'full-width-absolute') ? '5px' : '0',
-                boxShadow: (device === 'mobile' || device === 'tablet') ? '0 10px 15px -3px rgba(0,0,0,0.1)' : 'none',
-                ...( (device === 'mobile' || device === 'tablet') && el.settings.mobileMenuExpandMode === 'full-width-absolute' ? {
-                    position: 'absolute !important',
-                    top: 'calc(100% + 4px) !important',
-                    left: '0 !important',
-                    right: '0 !important',
-                    width: '100% !important',
-                    zIndex: '9999 !important',
+                backgroundColor: (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) ? (el.settings.mobileMenuBgColor || '#ffffff') : 'transparent',
+                marginTop: (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1) && el.settings.mobileMenuExpandMode !== 'sidebar' && el.settings.mobileMenuExpandMode !== 'full-width-absolute') ? '5px' : '0',
+                boxShadow: (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) ? '0 10px 15px -3px rgba(0,0,0,0.1)' : 'none',
+                ...( (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) && el.settings.mobileMenuExpandMode === 'full-width-absolute' ? {
+                    position: 'absolute',
+                    top: 'calc(100% + 4px)',
+                    left: (el._fwaLeft ?? 0) + 'px',
+                    right: (el._fwaRight ?? 0) + 'px',
+                    width: 'auto',
+                    zIndex: '9999',
                 } : {} ),
-                ...(device !== 'desktop' && el.settings.mobileMenuExpandMode === 'sidebar' ? {
+                ...((el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) && el.settings.mobileMenuExpandMode === 'sidebar' ? {
                     borderLeft: el.settings.mobileMenuSidebarSide === 'right' ? '4px solid #0091ea' : 'none',
                     borderRight: el.settings.mobileMenuSidebarSide === 'left' ? '4px solid #0091ea' : 'none',
                 } : {})
             }">
             
-            <li v-if="device !== 'desktop' && el.settings.mobileMenuExpandMode === 'sidebar'"
+            <li v-if="(el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) && el.settings.mobileMenuExpandMode === 'sidebar'"
                 class="sidebar-header-preview border-b border-slate-100 p-4 flex items-center justify-between"
                 :style="{ backgroundColor: el.settings.mobileMenuBgColor || '#ffffff' }">
                 <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">@{{ el.settings.mobileMenuTriggerText || 'Menu' }}</span>
@@ -146,10 +168,10 @@
                               "border-bottom: " + (el.settings.mobileSeparatorEnabled === "no" ? "none" : ("1px solid " + (el.settings.mobileMenuSeparatorColor || "rgba(0,0,0,0.05)"))) + " !important; text-decoration: none !important;") : {
                                color: el._hoveredIdx === idx ? (el.settings.itemColorHover || "#0091ea") : (el.settings.itemColor || "#333"),
                                backgroundColor: el._hoveredIdx === idx ? (el.settings.itemBgColorHover || "transparent") : (el.settings.itemBgColor || "transparent"),
-                               paddingTop: getUnitVal(el.settings.itemPaddingTop ?? 0, "px"),
-                               paddingRight: getUnitVal(el.settings.itemPaddingRight ?? 0, "px"),
-                               paddingBottom: getUnitVal(el.settings.itemPaddingBottom ?? 0, "px"),
-                               paddingLeft: getUnitVal(el.settings.itemPaddingLeft ?? 0, "px"),
+                               paddingTop: getUnitVal(el.settings.itemPaddingTop ?? 10, "px"),
+                               paddingRight: getUnitVal(el.settings.itemPaddingRight ?? 15, "px"),
+                               paddingBottom: getUnitVal(el.settings.itemPaddingBottom ?? 10, "px"),
+                               paddingLeft: getUnitVal(el.settings.itemPaddingLeft ?? 15, "px"),
                                borderRadius: getUnitVal(el.settings.itemBorderRadius || 0, "px"),
                                borderStyle: "solid",
                                borderTopWidth: getUnitVal(el._hoveredIdx === idx ? (el.settings.itemBorderSizeTopHover ?? el.settings.itemBorderSizeTop ?? 0) : (el.settings.itemBorderSizeTop ?? 0), "px"),

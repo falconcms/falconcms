@@ -23,14 +23,14 @@
             <div>
                 <div class="flex justify-between items-center mb-1.5">
                     <label class="text-[9px] font-bold text-slate-400 uppercase block">BG Color</label>
-                    <button @click="editingElement.settings.bgColor = ''" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
+                    <button @click="clearColorField(editingElement.settings, 'bgColor', 'bgColorOpacity')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
                         <i class="fa fa-undo text-[10px]"></i>
                     </button>
                 </div>
                 <div class="flex gap-2 items-center">
                     <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                         @click="openColorPicker($event, editingElement.settings, 'bgColor')">
-                        <div :style="{ backgroundColor: editingElement.settings.bgColor }" class="w-full h-full rounded-full"></div>
+                         @click="openColorPicker($event, editingElement.settings, 'bgColor', 'bgColorOpacity')">
+                        <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgColor, editingElement.settings.bgColorOpacity) }" class="w-full h-full rounded-full"></div>
                     </div>
                     <input type="text" v-model="editingElement.settings.bgColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                 </div>
@@ -38,14 +38,14 @@
             <div>
                 <div class="flex justify-between items-center mb-1.5">
                     <label class="text-[9px] font-bold text-slate-400 uppercase block">Text Color</label>
-                    <button @click="editingElement.settings.color = ''" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
+                    <button @click="clearColorField(editingElement.settings, 'color', 'colorOpacity')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
                         <i class="fa fa-undo text-[10px]"></i>
                     </button>
                 </div>
                 <div class="flex gap-2 items-center">
                     <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                         @click="openColorPicker($event, editingElement.settings, 'color')">
-                        <div :style="{ backgroundColor: editingElement.settings.color }" class="w-full h-full rounded-full"></div>
+                         @click="openColorPicker($event, editingElement.settings, 'color', 'colorOpacity')">
+                        <div :style="{ backgroundColor: hexToRgba(editingElement.settings.color, editingElement.settings.colorOpacity) }" class="w-full h-full rounded-full"></div>
                     </div>
                     <input type="text" v-model="editingElement.settings.color" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                 </div>
@@ -70,8 +70,8 @@
             </div>
             <div class="flex gap-2 items-center">
                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                     @click="openColorPicker($event, editingElement.settings, 'bgGradientStartColor')">
-                    <div :style="{ backgroundColor: editingElement.settings.bgGradientStartColor }" class="w-full h-full rounded-full"></div>
+                     @click="openColorPicker($event, editingElement.settings, 'bgGradientStartColor', 'bgGradientStartOpacity')">
+                    <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgGradientStartColor, editingElement.settings.bgGradientStartOpacity) }" class="w-full h-full rounded-full"></div>
                 </div>
                 <input type="text" v-model="editingElement.settings.bgGradientStartColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
             </div>
@@ -88,8 +88,8 @@
             </div>
             <div class="flex gap-2 items-center">
                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                     @click="openColorPicker($event, editingElement.settings, 'bgGradientEndColor')">
-                    <div :style="{ backgroundColor: editingElement.settings.bgGradientEndColor }" class="w-full h-full rounded-full"></div>
+                     @click="openColorPicker($event, editingElement.settings, 'bgGradientEndColor', 'bgGradientEndOpacity')">
+                    <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgGradientEndColor, editingElement.settings.bgGradientEndOpacity) }" class="w-full h-full rounded-full"></div>
                 </div>
                 <input type="text" v-model="editingElement.settings.bgGradientEndColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
             </div>
@@ -146,14 +146,14 @@
         <div>
             <div class="flex justify-between items-center mb-1.5">
                 <label class="text-[9px] font-bold text-slate-400 uppercase block">Text Hover Color</label>
-                <button @click="editingElement.settings.hoverColor = ''" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
+                <button @click="clearColorField(editingElement.settings, 'hoverColor', 'hoverColorOpacity')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
                     <i class="fa fa-undo text-[10px]"></i>
                 </button>
             </div>
             <div class="flex gap-2 items-center">
                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                     @click="openColorPicker($event, editingElement.settings, 'hoverColor')">
-                    <div :style="{ backgroundColor: editingElement.settings.hoverColor }" class="w-full h-full rounded-full"></div>
+                     @click="openColorPicker($event, editingElement.settings, 'hoverColor', 'hoverColorOpacity')">
+                    <div :style="{ backgroundColor: hexToRgba(editingElement.settings.hoverColor, editingElement.settings.hoverColorOpacity) }" class="w-full h-full rounded-full"></div>
                 </div>
                 <input type="text" v-model="editingElement.settings.hoverColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
             </div>
@@ -163,14 +163,14 @@
         <div v-if="editingElement.settings.buttonStyle !== 'custom'">
             <div class="flex justify-between items-center mb-1.5">
                 <label class="text-[9px] font-bold text-slate-400 uppercase block">BG Hover Color (Solid)</label>
-                <button @click="editingElement.settings.hoverBgColor = ''" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
+                <button @click="clearColorField(editingElement.settings, 'hoverBgColor', 'hoverBgColorOpacity')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
                     <i class="fa fa-undo text-[10px]"></i>
                 </button>
             </div>
             <div class="flex gap-2 items-center">
                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                     @click="openColorPicker($event, editingElement.settings, 'hoverBgColor')">
-                    <div :style="{ backgroundColor: editingElement.settings.hoverBgColor }" class="w-full h-full rounded-full"></div>
+                     @click="openColorPicker($event, editingElement.settings, 'hoverBgColor', 'hoverBgColorOpacity')">
+                    <div :style="{ backgroundColor: hexToRgba(editingElement.settings.hoverBgColor, editingElement.settings.hoverBgColorOpacity) }" class="w-full h-full rounded-full"></div>
                 </div>
                 <input type="text" v-model="editingElement.settings.hoverBgColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
             </div>
@@ -187,8 +187,8 @@
                 </div>
                 <div class="flex gap-2 items-center">
                     <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                         @click="openColorPicker($event, editingElement.settings, 'bgGradientHoverStartColor')">
-                        <div :style="{ backgroundColor: editingElement.settings.bgGradientHoverStartColor }" class="w-full h-full rounded-full"></div>
+                         @click="openColorPicker($event, editingElement.settings, 'bgGradientHoverStartColor', 'bgGradientHoverStartOpacity')">
+                        <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgGradientHoverStartColor, editingElement.settings.bgGradientHoverStartOpacity) }" class="w-full h-full rounded-full"></div>
                     </div>
                     <input type="text" v-model="editingElement.settings.bgGradientHoverStartColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                 </div>
@@ -202,8 +202,8 @@
                 </div>
                 <div class="flex gap-2 items-center">
                     <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                         @click="openColorPicker($event, editingElement.settings, 'bgGradientHoverEndColor')">
-                        <div :style="{ backgroundColor: editingElement.settings.bgGradientHoverEndColor }" class="w-full h-full rounded-full"></div>
+                         @click="openColorPicker($event, editingElement.settings, 'bgGradientHoverEndColor', 'bgGradientHoverEndOpacity')">
+                        <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgGradientHoverEndColor, editingElement.settings.bgGradientHoverEndOpacity) }" class="w-full h-full rounded-full"></div>
                     </div>
                     <input type="text" v-model="editingElement.settings.bgGradientHoverEndColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                 </div>
@@ -216,7 +216,7 @@
         <div class="flex justify-between items-center mb-3">
             <label class="text-[12px] font-bold text-[#333] uppercase">MARGIN</label>
             <div class="flex gap-1 items-center">
-                <button @click="['Top','Right','Bottom','Left'].forEach(s => editingElement.settings['margin' + s] = '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                <button @click="['Top','Right','Bottom','Left'].forEach(s => setResponsiveVal(editingElement.settings, 'margin' + s, device, ''))" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
                     <i class="fa fa-undo text-[10px]"></i>
                 </button>
                 <div class="relative inline-block">
@@ -241,19 +241,19 @@
         <div class="grid grid-cols-4 gap-2">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Top</label>
-                <input type="text" v-model="editingElement.settings.marginTop" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" :value="getResponsiveVal(editingElement.settings, 'marginTop', device) ?? ''" @input="setResponsiveVal(editingElement.settings, 'marginTop', device, $event.target.value)" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Right</label>
-                <input type="text" v-model="editingElement.settings.marginRight" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" :value="getResponsiveVal(editingElement.settings, 'marginRight', device) ?? ''" @input="setResponsiveVal(editingElement.settings, 'marginRight', device, $event.target.value)" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Bottom</label>
-                <input type="text" v-model="editingElement.settings.marginBottom" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" :value="getResponsiveVal(editingElement.settings, 'marginBottom', device) ?? ''" @input="setResponsiveVal(editingElement.settings, 'marginBottom', device, $event.target.value)" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Left</label>
-                <input type="text" v-model="editingElement.settings.marginLeft" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" :value="getResponsiveVal(editingElement.settings, 'marginLeft', device) ?? ''" @input="setResponsiveVal(editingElement.settings, 'marginLeft', device, $event.target.value)" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
         </div>
     </div>
@@ -263,7 +263,7 @@
         <div class="flex justify-between items-center mb-3">
             <label class="text-[12px] font-bold text-[#333] uppercase">PADDING</label>
             <div class="flex gap-1 items-center">
-                <button @click="['Top','Right','Bottom','Left'].forEach(s => editingElement.settings['padding' + s] = '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                <button @click="['Top','Right','Bottom','Left'].forEach(s => setResponsiveVal(editingElement.settings, 'padding' + s, device, ''))" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
                     <i class="fa fa-undo text-[10px]"></i>
                 </button>
                 <div class="relative inline-block">
@@ -288,19 +288,19 @@
         <div class="grid grid-cols-4 gap-2">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Top</label>
-                <input type="text" v-model="editingElement.settings.paddingTop" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" :value="getResponsiveVal(editingElement.settings, 'paddingTop', device) ?? ''" @input="setResponsiveVal(editingElement.settings, 'paddingTop', device, $event.target.value)" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Right</label>
-                <input type="text" v-model="editingElement.settings.paddingRight" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" :value="getResponsiveVal(editingElement.settings, 'paddingRight', device) ?? ''" @input="setResponsiveVal(editingElement.settings, 'paddingRight', device, $event.target.value)" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Bottom</label>
-                <input type="text" v-model="editingElement.settings.paddingBottom" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" :value="getResponsiveVal(editingElement.settings, 'paddingBottom', device) ?? ''" @input="setResponsiveVal(editingElement.settings, 'paddingBottom', device, $event.target.value)" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Left</label>
-                <input type="text" v-model="editingElement.settings.paddingLeft" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+                <input type="text" :value="getResponsiveVal(editingElement.settings, 'paddingLeft', device) ?? ''" @input="setResponsiveVal(editingElement.settings, 'paddingLeft', device, $event.target.value)" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
             </div>
         </div>
     </div>
@@ -414,14 +414,14 @@
          class="pt-4 border-t border-slate-50">
         <div class="flex justify-between items-center mb-1.5">
             <label class="text-[9px] font-bold text-slate-400 uppercase block">Border Color</label>
-            <button @click="editingElement.settings.borderColor = ''" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
+            <button @click="clearColorField(editingElement.settings, 'borderColor', 'borderColorOpacity')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
                 <i class="fa fa-undo text-[10px]"></i>
             </button>
         </div>
         <div class="flex gap-2 items-center">
             <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                 @click="openColorPicker($event, editingElement.settings, 'borderColor')">
-                <div :style="{ backgroundColor: editingElement.settings.borderColor }" class="w-full h-full rounded-full"></div>
+                 @click="openColorPicker($event, editingElement.settings, 'borderColor', 'borderColorOpacity')">
+                <div :style="{ backgroundColor: hexToRgba(editingElement.settings.borderColor, editingElement.settings.borderColorOpacity) }" class="w-full h-full rounded-full"></div>
             </div>
             <input type="text" v-model="editingElement.settings.borderColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
         </div>

@@ -136,4 +136,38 @@ class Post extends Model
     {
         return $this->hasMany(Review::class, 'post_id')->whereNull('parent_id')->where('is_approved', true);
     }
+
+    public function getPriceAttribute()
+    {
+        return $this->shopData?->price ?? 0;
+    }
+
+    public function getSalePriceAttribute()
+    {
+        return $this->shopData?->sale_price;
+    }
+
+    public function getSkuAttribute()
+    {
+        return $this->shopData?->sku;
+    }
+
+    public function getStockStatusAttribute()
+    {
+        return $this->shopData?->stock_status ?? 'instock';
+    }
+
+    public function getIsInStockAttribute()
+    {
+        if (!$this->shopData) {
+            return true;
+        }
+        if ($this->shopData->stock_status === 'outofstock') {
+            return false;
+        }
+        if ($this->shopData->manage_stock && (int) $this->shopData->stock_quantity <= 0) {
+            return false;
+        }
+        return true;
+    }
 }

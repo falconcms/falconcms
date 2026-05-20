@@ -269,6 +269,19 @@
                             </select>
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">Account page</label>
+                        </th>
+                        <td>
+                            <select name="account_page_id" id="account_page_id" class="wp-input w-[400px]">
+                                <option value="">Select a page...</option>
+                                @foreach($pages as $page)
+                                    <option value="{{ $page->id }}" {{ get_shop_option('shop_account_page_id') == $page->id ? 'selected' : '' }}>{{ $page->title }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                    </tr>
 
                     <!-- Measurements -->
                     <tr><td colspan="2"><h3 class="text-[16px] font-semibold text-[#1d2327] mb-2">Measurements</h3></td></tr>
@@ -1130,6 +1143,95 @@
                                     <strong>Pro Tip:</strong> Use 'Usage Limit' to prevent abuse. Setting it to '1' ensures a customer can only use a specific code once. Combine with 'Min Spend' for high-value promotions.
                                 </div>
                             </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Email and Account Tab -->
+            <div x-show="tab === 'emails_accounts'" x-transition>
+                <table class="w-full border-separate border-spacing-y-6">
+                    <!-- Guest & Account Checkout -->
+                    <tr><td colspan="2"><h3 class="text-[16px] font-semibold text-[#1d2327] mb-2">Account creation & checkout</h3></td></tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">Guest checkout</label>
+                        </th>
+                        <td>
+                            <div class="space-y-3">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="checkout_guest_enable" value="0">
+                                    <input type="checkbox" name="checkout_guest_enable" value="1" {{ get_shop_option('shop_checkout_guest_enable', '1') === '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
+                                    <span class="text-[14px]">Allow customers to place orders without an account</span>
+                                </label>
+                                <br>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="checkout_login_enable" value="0">
+                                    <input type="checkbox" name="checkout_login_enable" value="1" {{ get_shop_option('shop_checkout_login_enable', '1') === '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
+                                    <span class="text-[14px]">Allow customers to log into an existing account during checkout</span>
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">Account creation</label>
+                        </th>
+                        <td>
+                            <div class="space-y-3">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="checkout_create_account" value="0">
+                                    <input type="checkbox" name="checkout_create_account" value="1" {{ get_shop_option('shop_checkout_create_account', '1') === '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
+                                    <span class="text-[14px]">Allow customers to create an account during checkout</span>
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Email Settings -->
+                    <tr><td colspan="2"><h3 class="text-[16px] font-semibold text-[#1d2327] mt-8 mb-2">Email sender options</h3></td></tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">"From" name</label>
+                        </th>
+                        <td>
+                            <input type="text" name="email_from_name" value="{{ get_shop_option('shop_email_from_name', config('app.name', 'Lazy Panda Shop')) }}" class="wp-input w-[400px] h-8 shadow-sm">
+                            <p class="text-[12px] text-[#646970] mt-1">How the sender name appears in outgoing transactional emails.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">"From" address</label>
+                        </th>
+                        <td>
+                            <input type="email" name="email_from_address" value="{{ get_shop_option('shop_email_from_address', 'store@' . request()->getHost()) }}" class="wp-input w-[400px] h-8 shadow-sm">
+                            <p class="text-[12px] text-[#646970] mt-1">How the sender email appears in outgoing transactional emails.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">Admin notification email</label>
+                        </th>
+                        <td>
+                            <input type="email" name="email_admin_recipient" value="{{ get_shop_option('shop_email_admin_recipient', auth()->user()->email ?? '') }}" class="wp-input w-[400px] h-8 shadow-sm">
+                            <p class="text-[12px] text-[#646970] mt-1">Recipient email address for new order notifications and low stock alerts.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">Email header image URL</label>
+                        </th>
+                        <td>
+                            <input type="text" name="email_header_image" value="{{ get_shop_option('shop_email_header_image') }}" class="wp-input w-[400px] h-8 shadow-sm" placeholder="https://example.com/logo.png">
+                            <p class="text-[12px] text-[#646970] mt-1">URL to an image you want to show at the top of order emails.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">Email footer text</label>
+                        </th>
+                        <td>
+                            <input type="text" name="email_footer_text" value="{{ get_shop_option('shop_email_footer_text', 'Thank you for shopping with us!') }}" class="wp-input w-[400px] h-8 shadow-sm">
                         </td>
                     </tr>
                 </table>

@@ -55,6 +55,9 @@
                         @else
                             <img src="{{ asset('assets/images/placeholder.jpg') }}" alt="Placeholder" class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-70">
                         @endif
+                        @if(!$product->is_in_stock)
+                            <span class="absolute top-3 right-3 bg-red-600 text-white text-[11px] font-bold px-3 py-1 rounded-sm shadow-md uppercase tracking-wider z-10">Out of Stock</span>
+                        @endif
                         @if($product->shopData && $product->shopData->sale_price)
                             <span class="absolute top-3 left-3 bg-white text-[#555] text-[11px] font-medium px-2.5 py-0.5 rounded-full shadow-sm z-10">Sale!</span>
                         @endif
@@ -81,7 +84,11 @@
                             @endif
                         </div>
                         <div class="mt-auto flex flex-wrap gap-2">
-                            @if($product->shopData && $product->shopData->product_type === 'variable')
+                            @if(!$product->is_in_stock)
+                                <button disabled class="w-full text-center bg-gray-400 text-white cursor-not-allowed px-4 py-2.5 rounded-[3px] text-[13px] font-semibold uppercase tracking-wider">
+                                    Out of stock
+                                </button>
+                            @elseif($product->shopData && $product->shopData->product_type === 'variable')
                                 <a href="{{ get_lazy_permalink($product) }}" class="w-full text-center bg-[#1363df] text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-[#005ba6] transition-colors duration-200">
                                     Select Options
                                 </a>
