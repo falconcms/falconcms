@@ -191,14 +191,15 @@ class DashboardController extends Controller
             $hasError = true;
         }
 
-        // Step 2: lazy:update (migrations, assets, cache clear)
-        try {
-            \Illuminate\Support\Facades\Artisan::call('lazy:update');
-            $steps[] = ['label' => 'php artisan lazy:update', 'output' => trim(\Illuminate\Support\Facades\Artisan::output()), 'ok' => true];
-        } catch (\Exception $e) {
-            $steps[] = ['label' => 'php artisan lazy:update', 'output' => $e->getMessage(), 'ok' => false];
-            $hasError = true;
-        }
+        // Step 2: lazy:update — run as a subprocess so the freshly downloaded code
+        // is used. Artisan::call() would re-use the old in-memory ServiceProvider
+        // loaded before composer update ran, causing "command does not exist".
+        $phpBin     = PHP_BINARY;
+        $artisan    = base_path('artisan');
+        $lazyCmd    = escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' lazy:update --no-ansi 2>&1';
+        exec($lazyCmd, $lazyOut, $lazyExit);
+        $steps[] = ['label' => 'php artisan lazy:update', 'output' => trim(implode("\n", $lazyOut)), 'ok' => $lazyExit === 0];
+        if ($lazyExit !== 0) $hasError = true;
 
         cache()->forget('lazy_cms_update_check');
 
