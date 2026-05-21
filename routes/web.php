@@ -104,9 +104,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
             $inc = array_values(array_filter(is_array($s['taxonomy_include'] ?? '') ? $s['taxonomy_include'] : explode(',', $s['taxonomy_include'] ?? '')));
             $exc = array_values(array_filter(is_array($s['taxonomy_exclude'] ?? '') ? $s['taxonomy_exclude'] : explode(',', $s['taxonomy_exclude'] ?? '')));
             if ($postType === 'post' && $taxSlug === 'category') {
-                if (!empty($inc)) $queryArgs['category'] = implode(',', $inc);
+                if (!empty($inc)) $queryArgs['category']         = implode(',', $inc);
+                if (!empty($exc)) $queryArgs['category_exclude'] = implode(',', $exc);
             } elseif ($postType === 'post' && $taxSlug === 'tag') {
-                if (!empty($inc)) $queryArgs['tag'] = implode(',', $inc);
+                if (!empty($inc)) $queryArgs['tag']         = implode(',', $inc);
+                if (!empty($exc)) $queryArgs['tag_exclude'] = implode(',', $exc);
             } else {
                 $queryArgs['taxonomy_slug'] = $taxSlug;
                 if (!empty($inc)) $queryArgs['taxonomy_include'] = $inc;

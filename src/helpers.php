@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\DB;
 
 if (!defined('LAZY_CMS_VERSION')) {
-    define('LAZY_CMS_VERSION', '5.9.6');
+    define('LAZY_CMS_VERSION', '5.9.7');
 }
 
 if (!function_exists('lazy_check_update')) {
@@ -348,7 +348,9 @@ if (!function_exists('get_lazy_posts')) {
             'orderby'          => 'created_at',
             'status'           => 'published',
             'category'         => null,
+            'category_exclude' => null,
             'tag'              => null,
+            'tag_exclude'      => null,
             'has_categories'   => false,
             'has_tags'         => false,
             'author'           => null,
@@ -393,6 +395,14 @@ if (!function_exists('get_lazy_posts')) {
                 $query->has('taxonomyTerms');
             }
         }
+        if ($args['category_exclude']) {
+            $catExSlugs = is_array($args['category_exclude']) ? $args['category_exclude'] : array_filter(explode(',', $args['category_exclude']));
+            if (!empty($catExSlugs)) {
+                $query->whereDoesntHave('categories', function($q) use ($catExSlugs) {
+                    $q->whereIn('slug', $catExSlugs);
+                });
+            }
+        }
         if ($args['tag']) {
             $tagSlugs = is_array($args['tag']) ? $args['tag'] : array_filter(explode(',', $args['tag']));
             $query->whereHas('tags', function($q) use ($tagSlugs) {
@@ -403,6 +413,14 @@ if (!function_exists('get_lazy_posts')) {
                 $query->has('tags');
             } else {
                 $query->has('taxonomyTerms');
+            }
+        }
+        if ($args['tag_exclude']) {
+            $tagExSlugs = is_array($args['tag_exclude']) ? $args['tag_exclude'] : array_filter(explode(',', $args['tag_exclude']));
+            if (!empty($tagExSlugs)) {
+                $query->whereDoesntHave('tags', function($q) use ($tagExSlugs) {
+                    $q->whereIn('slug', $tagExSlugs);
+                });
             }
         }
         if ($args['author']) {

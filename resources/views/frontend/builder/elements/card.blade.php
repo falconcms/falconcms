@@ -61,13 +61,12 @@
         $include = array_values(array_filter(is_array($s['taxonomy_include'] ?? '') ? $s['taxonomy_include'] : explode(',', $s['taxonomy_include'] ?? '')));
         $exclude = array_values(array_filter(is_array($s['taxonomy_exclude'] ?? '') ? $s['taxonomy_exclude'] : explode(',', $s['taxonomy_exclude'] ?? '')));
         if ($postType === 'post' && $taxSlug === 'category') {
-            // Standard post categories via categories relationship
-            if (!empty($include)) $queryArgs['category'] = implode(',', $include);
+            if (!empty($include)) $queryArgs['category']         = implode(',', $include);
+            if (!empty($exclude)) $queryArgs['category_exclude'] = implode(',', $exclude);
         } elseif ($postType === 'post' && $taxSlug === 'tag') {
-            // Standard post tags via tags relationship
-            if (!empty($include)) $queryArgs['tag'] = implode(',', $include);
+            if (!empty($include)) $queryArgs['tag']         = implode(',', $include);
+            if (!empty($exclude)) $queryArgs['tag_exclude'] = implode(',', $exclude);
         } else {
-            // All other post types or custom taxonomies: use TaxonomyTerm relationship
             $queryArgs['taxonomy_slug'] = $taxSlug;
             if (!empty($include)) $queryArgs['taxonomy_include'] = $include;
             if (!empty($exclude)) $queryArgs['taxonomy_exclude'] = $exclude;
@@ -174,6 +173,10 @@
         $gCss .= "@media(min-width:{$bpSm1}px) and (max-width:{$bpMed}px){#{$gridId}{grid-template-columns:repeat({$colsTablet},1fr)}}";
         $gCss .= "@media(max-width:{$bpSm}px){#{$gridId}{grid-template-columns:repeat({$colsMobile},1fr)}}";
     }
+    // Strip the builder's default horizontal column gap padding so Column Spacing is the sole gap control.
+    // Vertical padding (top/bottom) is intentionally preserved for content breathing room.
+    $gCss .= "#{$gridId} .lazy-column{padding-left:0!important;padding-right:0!important}";
+    $gCss .= "#{$gridId} .lazy-column-inner{padding-left:0!important;padding-right:0!important}";
 @endphp
 <style>
 {!! $gCss !!}
