@@ -113,7 +113,7 @@
      style="{{ $wrapperStyle }}">
     @if($url)
         @if($linkUrl)
-            <a href="{{ $linkUrl }}" target="{{ $target }}" style="{{ $elemStyle }}overflow:hidden;">
+            <a href="{{ $linkUrl }}" target="{{ $target }}" style="{{ $elemStyle }}overflow:hidden;text-decoration:none;">
                 <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $imgStyle }}">
             </a>
         @else

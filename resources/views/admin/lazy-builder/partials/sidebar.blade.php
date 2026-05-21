@@ -872,7 +872,7 @@
                                                 <svg v-if="cardPreviewCache[editingElement.id]?.loading" class="animate-spin h-3 w-3 text-[#0091ea]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                                             </label>
                                             <select :key="'tsinc-' + editingElement.settings.taxonomy_slug"
-                                                    v-tomselect="{ value: editingElement.settings.taxonomy_include, onChange: v => editingElement.settings.taxonomy_include = v, placeholder: 'Select to include…' }"
+                                                    v-tomselect="{ value: editingElement.settings.taxonomy_include, onChange: v => { editingElement.settings.taxonomy_include = v; fetchCardPreview(editingElement); }, placeholder: 'Select to include…' }"
                                                     multiple class="w-full">
                                                 <option v-for="term in lazyTaxonomyTerms[editingElement.settings.taxonomy_slug]" :key="term.id" :value="term.slug">@{{ term.name }}</option>
                                             </select>
@@ -882,7 +882,7 @@
                                                 Exclude @{{ lazyTaxonomies.find(t => t.slug === editingElement.settings.taxonomy_slug)?.name || 'Terms' }}
                                             </label>
                                             <select :key="'tsexc-' + editingElement.settings.taxonomy_slug"
-                                                    v-tomselect="{ value: editingElement.settings.taxonomy_exclude, onChange: v => editingElement.settings.taxonomy_exclude = v, placeholder: 'Select to exclude…' }"
+                                                    v-tomselect="{ value: editingElement.settings.taxonomy_exclude, onChange: v => { editingElement.settings.taxonomy_exclude = v; fetchCardPreview(editingElement); }, placeholder: 'Select to exclude…' }"
                                                     multiple class="w-full">
                                                 <option v-for="term in lazyTaxonomyTerms[editingElement.settings.taxonomy_slug]" :key="term.id" :value="term.slug">@{{ term.name }}</option>
                                             </select>

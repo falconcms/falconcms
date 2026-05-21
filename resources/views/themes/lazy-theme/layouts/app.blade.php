@@ -65,14 +65,14 @@
     <link href="{{ $googleFontsUrl }}" rel="stylesheet">
     
     <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/font-awesome.all.min.css') }}">
+
     <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
     <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="{{ asset('vendor/cms-dashboard/js/alpine.min.js') }}"></script>
     <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/sweetalert2.all.min.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -263,7 +263,7 @@
 @endif
 
     <!-- Scripts -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/lucide.min.js') }}"></script>
     <script>
         lucide.createIcons();
     </script>

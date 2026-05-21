@@ -18,19 +18,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/font-awesome.all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
 
     <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
-    <script>
-        if (typeof tailwind === 'undefined') {
-            document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
-        }
-    </script>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/pickr.classic.min.css') }}"/>
+    <script src="{{ asset('vendor/cms-dashboard/js/pickr.min.js') }}"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/tinymce.min.js') }}"></script>
+    <script>if(window.tinymce) tinymce.baseURL='https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';</script>
 
     <script>
         window.builderBreakpoints = {
@@ -134,11 +130,6 @@
     @include('cms-dashboard::components.admin.media-modal')
 
     <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
-    <script>
-        if (typeof Vue === 'undefined') {
-            document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.js"><\/script>');
-        }
-    </script>
 
     @include('cms-dashboard::admin.lazy-builder.partials.scripts')
 </body>

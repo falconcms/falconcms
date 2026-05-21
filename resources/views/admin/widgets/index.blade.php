@@ -194,7 +194,7 @@
 
 <div class="toast-container" id="toast-container"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="{{ asset('vendor/cms-dashboard/js/sortable.min.js') }}"></script>
 <script>
     function showToast(message, type = 'success') {
         const container = document.getElementById('toast-container');

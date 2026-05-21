@@ -103,7 +103,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/chart.min.js') }}"></script>
     <script>
         // Traffic Chart
         const trafficCtx = document.getElementById('trafficChart').getContext('2d');

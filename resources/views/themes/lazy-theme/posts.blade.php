@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dramas') | {{ get_cms_option('site_title', 'Lazy CMS') }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
 </head>
 <body class="bg-gray-900 text-white p-10">
     <h1 class="text-4xl font-bold mb-10 text-center">Featured Dramas </h1>

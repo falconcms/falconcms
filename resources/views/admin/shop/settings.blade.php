@@ -1244,8 +1244,8 @@
     </div>
 
     @push('scripts')
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <link href="{{ asset('vendor/cms-dashboard/css/tom-select.default.min.css') }}" rel="stylesheet">
+    <script src="{{ asset('vendor/cms-dashboard/js/tom-select.complete.min.js') }}"></script>
     <style>
         .ts-wrapper.wp-input {
             padding: 0 !important;

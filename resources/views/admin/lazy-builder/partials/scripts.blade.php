@@ -1427,22 +1427,6 @@
                 _cardPreviewTimer = setTimeout(() => fetchCardPreview(el), 600);
             }, { deep: true });
 
-            // Dedicated watchers for taxonomy_include/exclude arrays — TomSelect replaces
-            // the array reference on each change, which may not reliably fire the deep
-            // settings watcher above. These catch every add/remove reliably.
-            watch(() => editingElement.value?.settings?.taxonomy_include?.slice(), () => {
-                const el = editingElement.value;
-                if (!el || el.type !== 'card') return;
-                clearTimeout(_cardPreviewTimer);
-                _cardPreviewTimer = setTimeout(() => fetchCardPreview(el), 600);
-            });
-            watch(() => editingElement.value?.settings?.taxonomy_exclude?.slice(), () => {
-                const el = editingElement.value;
-                if (!el || el.type !== 'card') return;
-                clearTimeout(_cardPreviewTimer);
-                _cardPreviewTimer = setTimeout(() => fetchCardPreview(el), 600);
-            });
-
             // When a card element is selected, fill in any missing numeric defaults so
             // sliders (range inputs) start at the correct position instead of browser default.
             watch(() => editingElement.value, (el) => {

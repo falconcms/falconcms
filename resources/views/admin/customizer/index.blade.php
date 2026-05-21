@@ -520,8 +520,8 @@
 </div>
 
 @push('scripts')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@melloware/coloris/dist/coloris.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@melloware/coloris/dist/coloris.min.js"></script>
+<link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/coloris.min.css') }}">
+<script src="{{ asset('vendor/cms-dashboard/js/coloris.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 <script>
 // Monaco Configuration

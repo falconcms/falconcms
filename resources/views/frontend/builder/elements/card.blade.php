@@ -97,8 +97,7 @@
     $colSpacing   = max(0, (int)($s['column_spacing'] ?? 24));
     $rowSpacing   = max(0, (int)($s['row_spacing']    ?? 24));
     $cardAlign  = $s['card_alignment'] ?? 'stretch';
-    // Map legacy values
-    $alignMap   = ['left' => 'flex-start', 'right' => 'flex-end', 'start' => 'flex-start', 'end' => 'flex-end'];
+    $alignMap   = ['start' => 'flex-start', 'end' => 'flex-end', 'left' => 'flex-start', 'right' => 'flex-end'];
     $cardAlign  = $alignMap[$cardAlign] ?? $cardAlign;
     $alignItems = in_array($cardAlign, ['flex-start','center','flex-end','stretch']) ? $cardAlign : 'stretch';
     $bpSm         = (int) get_cms_option('theme_small_screen_breakpoint',  '800');
@@ -169,9 +168,26 @@
         $gCss .= "@media(max-width:{$bpSm}px){#{$gridId}>*{flex:0 0 calc(100%/{$colsMobile} - {$colSpacing}px*({$colsMobile}-1)/{$colsMobile})}}";
     } else {
         // grid or list (list already forced $cols=1)
-        $gCss  = "#{$gridId}{display:grid;grid-template-columns:repeat({$cols},1fr);column-gap:{$colSpacing}px;row-gap:{$rowSpacing}px;align-items:{$alignItems}}";
-        $gCss .= "@media(min-width:{$bpSm1}px) and (max-width:{$bpMed}px){#{$gridId}{grid-template-columns:repeat({$colsTablet},1fr)}}";
-        $gCss .= "@media(max-width:{$bpSm}px){#{$gridId}{grid-template-columns:repeat({$colsMobile},1fr)}}";
+        // Compute explicit px/% values in PHP to produce simple, unambiguous CSS calc()
+        $bD  = round(100 / $cols,        6);
+        $bT  = round(100 / $colsTablet,  6);
+        $bM  = round(100 / $colsMobile,  6);
+        $gD  = $cols        > 1 ? round($colSpacing * ($cols        - 1) / $cols,        4) : 0;
+        $gT  = $colsTablet  > 1 ? round($colSpacing * ($colsTablet  - 1) / $colsTablet,  4) : 0;
+        $gM  = $colsMobile  > 1 ? round($colSpacing * ($colsMobile  - 1) / $colsMobile,  4) : 0;
+        $wD  = $gD  > 0 ? "calc({$bD}% - {$gD}px)"  : "{$bD}%";
+        $wT  = $gT  > 0 ? "calc({$bT}% - {$gT}px)"  : "{$bT}%";
+        $wM  = $gM  > 0 ? "calc({$bM}% - {$gM}px)"  : "{$bM}%";
+        $gCss  = "#{$gridId}{display:flex;flex-wrap:wrap;gap:{$rowSpacing}px {$colSpacing}px;align-items:{$alignItems}}";
+        $gCss .= "#{$gridId}>*{flex:0 0 {$wD};min-width:0;box-sizing:border-box}";
+        $gCss .= "@media(min-width:{$bpSm1}px) and (max-width:{$bpMed}px){#{$gridId}>*{flex-basis:{$wT}}}";
+        $gCss .= "@media(max-width:{$bpSm}px){#{$gridId}>*{flex-basis:{$wM}}}";
+        if ($alignItems === 'stretch') {
+            $gCss .= "#{$gridId}>div{display:flex;flex-direction:column}";
+            $gCss .= "#{$gridId}>div>.lazy-container{flex:1}";
+            $gCss .= "#{$gridId} article.lazy-post-card{display:flex;flex-direction:column}";
+            $gCss .= "#{$gridId} article.lazy-post-card>div{flex:1}";
+        }
     }
     $gCss .= "#{$gridId} .container-custom{padding-left:0!important;padding-right:0!important}";
 @endphp

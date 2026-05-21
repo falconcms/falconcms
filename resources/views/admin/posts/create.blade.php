@@ -431,7 +431,8 @@
         </div>
     </form>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/tinymce.min.js') }}"></script>
+    <script>if(window.tinymce) tinymce.baseURL='https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';</script>
     <script>
         tinymce.init({
             selector: '#wp-editor',

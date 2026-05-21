@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\DB;
 
 if (!defined('LAZY_CMS_VERSION')) {
-    define('LAZY_CMS_VERSION', '5.9.8');
+    define('LAZY_CMS_VERSION', '5.9.9');
 }
 
 if (!function_exists('lazy_check_update')) {
@@ -461,14 +461,10 @@ if (!function_exists('get_lazy_posts')) {
             $query->orderBy($safeOrderby, $args['order']);
         }
 
-        if ((int)$args['offset'] > 0) {
-            $query->skip((int)$args['offset']);
-        }
-
         if ($args['paginate']) {
             return $query->paginate($args['limit'], ['*'], $args['page_name'] ?? 'page');
         }
-        return $query->limit($args['limit'])->get();
+        return $query->limit($args['limit'])->offset((int)$args['offset'])->get();
     }
 }
 

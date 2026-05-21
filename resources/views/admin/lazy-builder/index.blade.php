@@ -14,26 +14,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/font-awesome.all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
 
-    <!-- Tailwind (Corrected Paths) -->
+    <!-- Tailwind -->
     <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
-    <script>
-        // Fallback to CDN if local fails
-        if (typeof tailwind === 'undefined') {
-            document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
-        }
-    </script>
 
     <!-- Pickr Color Picker -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/pickr.classic.min.css') }}"/>
+    <script src="{{ asset('vendor/cms-dashboard/js/pickr.min.js') }}"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/tinymce.min.js') }}"></script>
+    <script>if(window.tinymce) tinymce.baseURL='https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';</script>
 
     <!-- Tom Select -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.default.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/tom-select.default.min.css') }}">
+    <script src="{{ asset('vendor/cms-dashboard/js/tom-select.complete.min.js') }}"></script>
     <style>
         .ts-wrapper { font-size: 13px; }
         .ts-control { border-color: #e2e8f0 !important; border-radius: 6px !important; padding: 4px 8px !important; min-height: 36px; box-shadow: none !important; }
@@ -207,12 +202,6 @@
 
     <!-- Scripts (Corrected Paths) -->
     <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
-    <script>
-        // Fallback to CDN if local fails
-        if (typeof Vue === 'undefined') {
-            document.write('<script src="https://unpkg.com/vue@3/dist/vue.global.js"><\/script>');
-        }
-    </script>
     
     @include('cms-dashboard::admin.lazy-builder.partials.scripts')
 </body>
