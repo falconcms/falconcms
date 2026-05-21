@@ -7,18 +7,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $lazyBuilder = Menu::where('title', 'Lazy Builder')
-            ->where('route', 'admin.lazy-builder.sections')
-            ->first();
-
-        if ($lazyBuilder) {
-            $lazyBuilder->update([
-                'parent_id' => null,
-                'group'     => 'Main',
-                'icon'      => 'view_quilt',
-                'order'     => 42,
-            ]);
-        }
+        // Lazy Builder promotion is now handled by MenuSeeder — no-op here.
     }
 
     public function down(): void
