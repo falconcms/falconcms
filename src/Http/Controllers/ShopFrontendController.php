@@ -638,6 +638,7 @@ class ShopFrontendController extends Controller
                 $product = Product::with('shopData')->find($item['id']);
                 if ($product && $product->shopData && $product->shopData->manage_stock) {
                     $product->shopData->decrement('stock_quantity', $item['quantity']);
+                    $this->maybeNotifyStock($product->title ?? 'Product', (int) $product->shopData->fresh()->stock_quantity);
                 }
             }
         }
@@ -945,12 +946,48 @@ class ShopFrontendController extends Controller
         return view($this->resolveThemeView('confirmation'), compact('order'));
     }
 
+    /**
+     * Email the store admin when a product crosses the low/out-of-stock threshold
+     * after a sale. Controlled by the Inventory settings (Shop → Settings → Products).
+     * Fully guarded: a mail failure must never break checkout.
+     */
+    private function maybeNotifyStock(string $name, int $qty): void
+    {
+        try {
+            $admin = get_shop_option('shop_email_admin_recipient') ?: get_shop_option('shop_email_from_address');
+            if (!$admin) return;
+            $out = (int) get_shop_option('shop_out_of_stock_threshold', '0');
+            $low = (int) get_shop_option('shop_low_stock_threshold', '2');
+            if ($qty <= $out && get_shop_option('shop_notification_no_stock', '1') === '1') {
+                \Illuminate\Support\Facades\Mail::raw("Product \"{$name}\" is now OUT OF STOCK (remaining: {$qty}).", function ($m) use ($admin, $name) {
+                    $m->to($admin)->subject('Out of stock: ' . $name);
+                });
+            } elseif ($qty <= $low && get_shop_option('shop_notification_low_stock', '1') === '1') {
+                \Illuminate\Support\Facades\Mail::raw("Product \"{$name}\" is running LOW on stock (remaining: {$qty}).", function ($m) use ($admin, $name) {
+                    $m->to($admin)->subject('Low stock: ' . $name);
+                });
+            }
+        } catch (\Throwable $e) {
+            // Notifications are best-effort; ignore failures.
+        }
+    }
+
     public function storeReview(Request $request)
     {
+        // Respect the "Enable reviews" shop setting (Shop → Settings → Products).
+        if (get_shop_option('shop_enable_reviews', '1') !== '1') {
+            return $request->ajax()
+                ? response()->json(['success' => false, 'message' => 'Reviews are currently disabled.'], 403)
+                : back()->with('error', 'Reviews are currently disabled.');
+        }
+
+        // Rating is only required when star ratings are enabled.
+        $ratingOn = get_shop_option('shop_enable_review_rating', '1') === '1';
+
         $validated = $request->validate([
             'post_id' => 'required|exists:posts,id',
             'parent_id' => 'nullable|exists:shop_reviews,id',
-            'rating' => 'required|integer|min:1|max:5',
+            'rating' => ($ratingOn ? 'required' : 'nullable') . '|integer|min:1|max:5',
             'comment' => 'required|string|min:3',
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
@@ -981,7 +1018,7 @@ class ShopFrontendController extends Controller
             'user_id' => $userId,
             'name' => $name,
             'email' => $email,
-            'rating' => $validated['rating'],
+            'rating' => $ratingOn ? ($validated['rating'] ?? 0) : 0,
             'comment' => $validated['comment'],
             'is_approved' => $isApproved
         ]);

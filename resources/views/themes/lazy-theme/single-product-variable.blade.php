@@ -275,11 +275,17 @@
         </div>
 
         <!-- Tabs Section -->
+        @php
+            $reviewsOn = get_shop_option('shop_enable_reviews', '1') === '1';
+            $ratingOn  = get_shop_option('shop_enable_review_rating', '1') === '1';
+        @endphp
         <div class="mt-16 border-t border-gray-100 pt-10">
             <div class="flex gap-8 mb-8 border-b border-gray-100 tab-headers">
                 <button @click="activeTab = 'description'" :class="activeTab === 'description' ? 'text-gray-900 border-gray-900' : 'text-gray-400 border-transparent'" class="pb-4 text-[14px] font-bold uppercase border-b-2 transition-all">Description</button>
                 <button @click="activeTab = 'info'" :class="activeTab === 'info' ? 'text-gray-900 border-gray-900' : 'text-gray-400 border-transparent'" class="pb-4 text-[14px] font-bold uppercase border-b-2 transition-all">Additional information</button>
+                @if($reviewsOn)
                 <button @click="activeTab = 'reviews'" :class="activeTab === 'reviews' ? 'text-gray-900 border-gray-900' : 'text-gray-400 border-transparent'" class="pb-4 text-[14px] font-bold uppercase border-b-2 transition-all">Reviews ({{ $post->reviews()->count() }})</button>
+                @endif
             </div>
             
             <div x-show="activeTab === 'description'" class="prose max-w-none text-gray-600 text-[15px] leading-relaxed">
@@ -292,13 +298,13 @@
                         @if($post->shopData && $post->shopData->weight)
                         <tr class="border-b border-gray-100">
                             <th class="text-left py-3 w-1/4 text-gray-800 font-bold uppercase text-[12px]">Weight</th>
-                            <td class="py-3 text-gray-600">{{ $post->shopData->weight }} kg</td>
+                            <td class="py-3 text-gray-600">{{ $post->shopData->weight }} {{ get_shop_option('shop_weight_unit', 'kg') }}</td>
                         </tr>
                         @endif
                         @if($post->shopData && $post->shopData->dimensions)
                         <tr class="border-b border-gray-100">
                             <th class="text-left py-3 w-1/4 text-gray-800 font-bold uppercase text-[12px]">Dimensions</th>
-                            <td class="py-3 text-gray-600">{{ $post->shopData->dimensions }}</td>
+                            <td class="py-3 text-gray-600">{{ $post->shopData->dimensions }} {{ get_shop_option('shop_dimensions_unit', 'cm') }}</td>
                         </tr>
                         @endif
                         <tr class="border-b border-gray-100">
@@ -313,6 +319,7 @@
                 </table>
             </div>
 
+            @if($reviewsOn)
             <div x-show="activeTab === 'reviews'" x-cloak>
                 @if(session('success'))
                     <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-sm mb-6 text-[14px]">
@@ -325,7 +332,7 @@
                     <div class="space-y-8">
                         <h3 class="text-[18px] font-bold text-gray-900 mb-6 flex items-center gap-3">
                             Reviews ({{ $post->reviews->count() }})
-                            @if($post->reviews->count() > 0)
+                            @if($ratingOn && $post->reviews->count() > 0)
                                 @php $avgRating = round($post->reviews->avg('rating'), 1); @endphp
                                 <div class="flex items-center gap-1 border-l border-gray-200 pl-3">
                                     <div class="flex items-center gap-0.5">
@@ -400,9 +407,10 @@
                             <input type="hidden" name="post_id" value="{{ $post->id }}">
                             <input type="hidden" name="parent_id" id="parent_id" value="">
                             
-                            <div id="rating-container">
+                            <div id="rating-container" @unless($ratingOn) style="display:none" @endunless>
+                                <input type="hidden" name="rating" id="rating-value" value="{{ $ratingOn ? '5' : '' }}">
+                                @if($ratingOn)
                                 <label class="block text-[13px] font-bold text-gray-700 uppercase mb-2">Your rating *</label>
-                                <input type="hidden" name="rating" id="rating-value" value="5">
                                 <div class="flex gap-1 text-gray-300 rating-stars">
                                     @for($i=1; $i<=5; $i++)
                                         <button type="button" onclick="setRating({{ $i }})" class="star-btn transition-colors {{ $i <= 5 ? 'text-yellow-400' : '' }}" data-value="{{ $i }}">
@@ -410,6 +418,7 @@
                                         </button>
                                     @endfor
                                 </div>
+                                @endif
                             </div>
 
                             <div>
@@ -437,6 +446,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         </div>
 
         <!-- Related Products Section -->

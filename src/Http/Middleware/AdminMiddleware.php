@@ -50,9 +50,8 @@ class AdminMiddleware
         if (!$userRoleSlug && $user->role_id) {
             $userRoleSlug = \Illuminate\Support\Facades\DB::table('roles')->where('id', $user->role_id)->value('slug');
         }
-        $isAdmin = in_array($userRoleSlug, ['super-admin', 'administrator', 'admin']) 
-                || in_array($user->role_id, [1, 6])
-                || in_array($user->email, ['admin@admin.com', 'tareq@poronto.com']);
+        $isAdmin = in_array($userRoleSlug, ['super-admin', 'administrator', 'admin'])
+                || in_array($user->role_id, [1, 6]);
 
         if (!$isAdmin) {
             if (!$this->canUserAccessUrl($request, $user)) {

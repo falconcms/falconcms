@@ -16,11 +16,8 @@ trait HasCmsPermissions
 
     public function isAdmin(): bool
     {
-        // 1. Direct ID check (1=Admin, 6=SuperAdmin)
+        // Fast path: the seeded admin roles (1 = administrator, 6 = super-admin).
         if (in_array($this->role_id, [1, 6])) return true;
-        
-        // 2. Email fallback
-        if (in_array($this->email, ['admin@admin.com', 'tareq@poronto.com'])) return true;
 
         if (!$this->role_id) return false;
 
@@ -36,12 +33,6 @@ trait HasCmsPermissions
     public function hasPermission(string $permission): bool
     {
         if (!$this->role_id) return false;
-
-        // Debug Log (Temporarily write to scratch)
-        try {
-            $log = "User ID: " . $this->id . " | Role ID: " . $this->role_id . " | Checking: " . $permission . "\n";
-            file_put_contents('brain/08f1e3fb-d47d-4e90-afc3-af4e4bbf6500/scratch/perm_debug.log', $log, FILE_APPEND);
-        } catch (\Exception $e) {}
 
         if ($this->isAdmin()) {
             return true;
