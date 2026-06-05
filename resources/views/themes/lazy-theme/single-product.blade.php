@@ -110,9 +110,11 @@
                     </div>
                 @endif
                 
+                @if(!empty($post->shopData->short_description))
                 <div class="text-[15px] text-gray-600 mb-8 leading-relaxed">
-                    {{ $post->excerpt ?: get_lazy_excerpt($post, 250) }}
+                    {!! $post->shopData->short_description !!}
                 </div>
+                @endif
 
                 @if(!$post->is_in_stock)
                 <div class="mb-10 pb-8 border-b border-gray-100">

@@ -27,8 +27,11 @@ return new class extends Migration
         Schema::create('shop_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('post_id')->constrained('posts')->cascadeOnDelete();
+            $table->string('type')->default('simple');            // simple | variable
+            $table->json('attributes_data')->nullable();          // selected attribute values
             $table->decimal('price', 15, 2)->default(0)->index();
             $table->decimal('sale_price', 15, 2)->nullable()->index();
+            $table->timestamp('sale_ends_at')->nullable();
             $table->string('sku')->nullable()->index();
             $table->integer('stock_quantity')->default(0);
             $table->string('stock_status')->default('instock')->index(); // instock, outofstock, onbackorder
@@ -62,11 +65,37 @@ return new class extends Migration
             $table->string('state')->nullable();
             $table->string('postcode');
             $table->string('country');
-            
+
+            // Separate shipping address (optional — falls back to billing when empty)
+            $table->string('shipping_first_name')->nullable();
+            $table->string('shipping_last_name')->nullable();
+            $table->text('shipping_address_line_1')->nullable();
+            $table->text('shipping_address_line_2')->nullable();
+            $table->string('shipping_city')->nullable();
+            $table->string('shipping_state')->nullable();
+            $table->string('shipping_postcode')->nullable();
+            $table->string('shipping_country')->nullable();
+
             $table->string('payment_method')->nullable();
             $table->string('transaction_id')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->text('customer_note')->nullable();
+
+            // Merged from former add-column migrations (currency, refunds, shipping, tracking, read-state)
+            $table->string('currency')->nullable();
+            $table->string('currency_symbol')->nullable();
+            $table->string('currency_position')->nullable();
+            $table->string('thousand_separator')->nullable();
+            $table->string('decimal_separator')->nullable();
+            $table->integer('decimals')->default(2);
+            $table->decimal('refunded_amount', 12, 2)->default(0);
+            $table->json('refund_log')->nullable();
+            $table->string('shipping_method')->nullable();
+            $table->string('tracking_number')->nullable();
+            $table->string('tracking_carrier')->nullable();
+            $table->string('tracking_url')->nullable();
+            $table->boolean('is_read')->default(false);
+
             $table->timestamps();
             $table->softDeletes();
         });
@@ -76,12 +105,34 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
             $table->foreignId('product_id')->nullable()->constrained('posts')->nullOnDelete();
-            $table->string('product_name'); 
+            $table->unsignedBigInteger('variation_id')->nullable(); // chosen variation for variable products
+            $table->string('product_name');
             $table->integer('quantity');
             $table->decimal('price', 15, 2);
             $table->decimal('subtotal', 15, 2);
-            $table->json('meta')->nullable(); 
+            $table->json('meta')->nullable();
             $table->timestamps();
+        });
+
+        // Variations for variable products (merged from former app migrations).
+        Schema::create('shop_product_variations', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('product_id'); // shop_products.id
+            $table->json('attributes_data');           // e.g. {"Color":"Red","Size":"S"}
+            $table->decimal('price', 10, 2)->nullable();
+            $table->decimal('sale_price', 10, 2)->nullable();
+            $table->string('sku')->nullable();
+            $table->decimal('weight', 8, 2)->nullable();
+            $table->decimal('length', 8, 2)->nullable();
+            $table->decimal('width', 8, 2)->nullable();
+            $table->decimal('height', 8, 2)->nullable();
+            $table->integer('stock_quantity')->default(0);
+            $table->string('stock_status')->default('instock');
+            $table->boolean('manage_stock')->default(false);
+            $table->string('image')->nullable();
+            $table->timestamps();
+
+            $table->foreign('product_id')->references('id')->on('shop_products')->onDelete('cascade');
         });
 
         // 5. Register Product Taxonomies

@@ -39,7 +39,13 @@ class SeedLazyCms extends Command
                 '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\LanguageSeeder',
                 '--force' => true
             ]);
-            
+
+            $this->info('Step 3: Creating default pages & sample content...');
+            $this->call('db:seed', [
+                '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\DefaultContentSeeder',
+                '--force' => true
+            ]);
+
             $this->info('Lazy CMS seeding completed successfully!');
         } catch (\Exception $e) {
             $this->error('Seeding failed: ' . $e->getMessage());

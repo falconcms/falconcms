@@ -119,8 +119,8 @@
                 </div>
                 @endif
                 
-                @if(in_array('excerpt', $supports))
-                <!-- Excerpt -->
+                @if(in_array('excerpt', $supports) && $type !== 'product')
+                <!-- Excerpt (products use the dedicated Product Short Description field instead) -->
                 <div class="wp-metabox mt-6 mb-6">
                     <div class="wp-metabox-header"><span>Excerpt</span></div>
                     <div class="wp-metabox-content">

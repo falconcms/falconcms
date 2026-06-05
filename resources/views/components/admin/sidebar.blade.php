@@ -1,10 +1,15 @@
 <div id="adminmenuwrap" class="fixed top-8 left-0 bottom-0 w-40 bg-[#1d2327] overflow-y-auto overflow-x-hidden text-[#c3c4c7] z-40 pb-10 custom-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
+    @php
+        // Defined once up front so it is always available below — even when there are no
+        // menu groups yet (e.g. a freshly-migrated database before seeding).
+        $user = auth()->user();
+        $isAdmin = $user ? $user->isAdmin() : false;
+    @endphp
     <ul class="pt-0">
         @foreach($menuGroups as $groupName => $menus)
             @php
-                $user = auth()->user();
                 // Multiple-roles aware: admin if ANY of the user's roles is admin/super-admin.
-                $isAdmin = $user->isAdmin();
+                $isAdmin = $user ? $user->isAdmin() : false;
                 
                 $visibleMenus = $menus->filter(function($menu) use ($getPermission, $isAdmin, $user) {
                     if ($isAdmin) return true;

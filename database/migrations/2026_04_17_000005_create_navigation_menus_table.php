@@ -29,6 +29,9 @@ return new class extends Migration
             $table->unsignedBigInteger('object_id')->nullable(); // post_id, category_id
             $table->string('target')->default('_self');
             $table->string('classes')->nullable();
+            // Merged from former add_icon_to_navigation_menu_items migration
+            $table->string('icon')->nullable();
+            $table->boolean('show_only_icon')->default(false);
             $table->integer('order')->default(0);
             $table->timestamps();
         });

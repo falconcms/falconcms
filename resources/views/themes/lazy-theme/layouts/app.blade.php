@@ -21,6 +21,18 @@
         $textColor = get_cms_option('theme_text_color', '#1d2327');
         $linkColor = get_cms_option('theme_link_color', '#0091ea');
         $linkHoverColor = get_cms_option('theme_link_hover_color', '#007ac1');
+        // Button hover colour = a darker shade of the primary colour. Buttons use white text,
+        // so hovering must keep a dark-enough background (the link-hover colour was unsuitable
+        // for button backgrounds). Derived from the customizer primary colour, so it stays dynamic.
+        $primaryHover = (function ($hex) {
+            $hex = ltrim((string) $hex, '#');
+            if (strlen($hex) === 3) { $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2]; }
+            if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) { return '#0a74c4'; }
+            $r = max(0, hexdec(substr($hex, 0, 2)) - 26);
+            $g = max(0, hexdec(substr($hex, 2, 2)) - 26);
+            $b = max(0, hexdec(substr($hex, 4, 2)) - 26);
+            return sprintf('#%02x%02x%02x', $r, $g, $b);
+        })($primaryColor);
         $headingColor = get_cms_option('theme_heading_color', '#1d2327');
         $siteWidth = get_cms_option('theme_site_width', '1240px');
         $favicon = get_cms_option('theme_site_favicon');
@@ -81,7 +93,7 @@
                 extend: {
                     colors: {
                         primary: '{{ $primaryColor }}',
-                        'primary-hover': '{{ $linkHoverColor }}',
+                        'primary-hover': '{{ $primaryHover }}',
                         secondary: '{{ $secondaryColor }}',
                         heading: '{{ $headingColor }}',
                         body: '{{ $textColor }}',
@@ -99,7 +111,7 @@
     <style>
         :root {
             --primary: {{ $primaryColor }};
-            --primary-hover: {{ $linkHoverColor }};
+            --primary-hover: {{ $primaryHover }};
             --text-main: {{ $textColor }};
             --text-heading: {{ $headingColor }};
             --text-muted: #666666;

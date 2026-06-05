@@ -546,7 +546,7 @@
 <div class="wp-metabox mt-6 mb-6">
     <div class="wp-metabox-header"><span>Product Short Description</span></div>
     <div class="wp-metabox-content p-4">
-        <textarea name="short_description" rows="3" class="wp-input w-full p-2" placeholder="Brief summary of the product...">{{ old('short_description', $post->short_description ?? '') }}</textarea>
+        <textarea name="short_description" rows="3" class="wp-input w-full p-2" placeholder="Brief summary of the product...">{{ old('short_description', optional($post->shopData)->short_description ?? '') }}</textarea>
         <p class="text-[#646970] text-[12px] mt-2 italic">This concise summary will appear next to the product image on the single product page.</p>
     </div>
 </div>

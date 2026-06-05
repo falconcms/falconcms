@@ -156,9 +156,11 @@
                     </template>
                 </div>
 
+                @if(!empty($post->shopData->short_description))
                 <div class="text-[15px] text-gray-600 mb-8 leading-relaxed">
-                    {{ $post->excerpt ?: get_lazy_excerpt($post, 250) }}
+                    {!! $post->shopData->short_description !!}
                 </div>
+                @endif
 
                 <!-- Variations Selection -->
                 <div class="space-y-8 mb-10 p-6 bg-[#fcfcfc] border border-gray-100 rounded-sm shadow-sm">

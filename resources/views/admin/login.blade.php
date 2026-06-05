@@ -40,7 +40,7 @@
             <a href="{{ route('admin.password.request') }}" class="hover:text-[#2271b1]">Lost your password?</a>
         </p>
         <p class="mt-2 text-[13px] text-[#3c434a]">
-            <a href="{{ url('/') }}" class="hover:text-[#2271b1]">← Go to {{ get_cms_option('site_title', '{{ get_cms_option('site_title', 'Lazy CMS') }}') }}</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2271b1]">← Go to {{ get_cms_option('site_title', 'Lazy CMS') }}</a>
         </p>
     </div>
 </body>
