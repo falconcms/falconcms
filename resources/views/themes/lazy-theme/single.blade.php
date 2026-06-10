@@ -36,13 +36,30 @@
             {!! get_lazy_content($post->content) !!}
         </div>
 
-        {{-- Tags, share, related and comments at the bottom (outside the builder layout) --}}
+        {{-- Categories, tags, share, related and comments at the bottom (outside the builder layout) --}}
         <div class="container-custom py-16">
-            @if($post->tags->isNotEmpty())
+            @php
+                $isProduct   = $post->type === 'product';
+                $catRoute    = $isProduct ? 'frontend.product_category' : 'frontend.category';
+                $tagRoute    = $isProduct ? 'frontend.product_tag'      : 'frontend.tag';
+                $postCatsCt  = $isProduct ? ($post->productCategories ?? collect()) : ($post->categories ?? collect());
+                $postTagsCt  = $isProduct ? ($post->productTags       ?? collect()) : ($post->tags       ?? collect());
+            @endphp
+            @if($postCatsCt->isNotEmpty())
+                <div class="mt-8 pt-8 border-t border-slate-100 flex items-center gap-3 flex-wrap">
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-400 mr-2">Categories:</span>
+                    @foreach($postCatsCt as $cat)
+                        <a href="{{ route($catRoute, $cat->slug) }}" class="px-4 py-2 bg-slate-50 hover:bg-primary hover:text-white text-slate-600 text-xs font-bold rounded-lg transition-all">
+                            {{ $cat->name }}
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+            @if($postTagsCt->isNotEmpty())
                 <div class="mt-8 pt-8 border-t border-slate-100 flex items-center gap-3 flex-wrap">
                     <span class="text-xs font-black uppercase tracking-widest text-slate-400 mr-2">Tags:</span>
-                    @foreach($post->tags as $tag)
-                        <a href="{{ route('frontend.tag', $tag->slug) }}" class="px-4 py-2 bg-slate-50 hover:bg-primary hover:text-white text-slate-600 text-xs font-bold rounded-lg transition-all">
+                    @foreach($postTagsCt as $tag)
+                        <a href="{{ route($tagRoute, $tag->slug) }}" class="px-4 py-2 bg-slate-50 hover:bg-primary hover:text-white text-slate-600 text-xs font-bold rounded-lg transition-all">
                             #{{ $tag->name }}
                         </a>
                     @endforeach
@@ -83,9 +100,20 @@
                                 </span>
                                 @endif
                                 @if($sCats)
+                                @php
+                                    $isProductPost   = $post->type === 'product';
+                                    $firstCat        = $isProductPost
+                                        ? ($post->productCategories->first() ?? null)
+                                        : ($post->categories->first() ?? null);
+                                    $catArchiveRoute = $isProductPost ? 'frontend.product_category' : 'frontend.category';
+                                @endphp
                                 <span class="flex items-center gap-2">
                                     <i data-lucide="folder" class="w-4 h-4 text-primary"></i>
-                                    <span class="font-bold text-slate-600">{{ $post->categories->first()->name ?? 'Uncategorized' }}</span>
+                                    @if($firstCat)
+                                        <a href="{{ route($catArchiveRoute, $firstCat->slug) }}" class="font-bold text-slate-600 hover:text-primary transition-colors">{{ $firstCat->name }}</a>
+                                    @else
+                                        <span class="font-bold text-slate-600">Uncategorized</span>
+                                    @endif
                                 </span>
                                 @endif
                             </div>
@@ -113,11 +141,16 @@
                         </div>
 
                         <!-- Tags -->
-                        @if($post->tags->isNotEmpty())
+                        @php
+                            $isProductPost2 = $post->type === 'product';
+                            $postTagsNB     = $isProductPost2 ? ($post->productTags ?? collect()) : ($post->tags ?? collect());
+                            $tagRouteNB     = $isProductPost2 ? 'frontend.product_tag' : 'frontend.tag';
+                        @endphp
+                        @if($postTagsNB->isNotEmpty())
                             <div class="mt-16 pt-8 border-t border-slate-100 flex items-center gap-3 flex-wrap">
                                 <span class="text-xs font-black uppercase tracking-widest text-slate-400 mr-2">Tags:</span>
-                                @foreach($post->tags as $tag)
-                                    <a href="{{ route('frontend.tag', $tag->slug) }}" class="px-4 py-2 bg-slate-50 hover:bg-primary hover:text-white text-slate-600 text-xs font-bold rounded-lg transition-all">
+                                @foreach($postTagsNB as $tag)
+                                    <a href="{{ route($tagRouteNB, $tag->slug) }}" class="px-4 py-2 bg-slate-50 hover:bg-primary hover:text-white text-slate-600 text-xs font-bold rounded-lg transition-all">
                                         #{{ $tag->name }}
                                     </a>
                                 @endforeach

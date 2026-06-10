@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\DB;
 
 if (!defined('LAZY_CMS_VERSION')) {
-    define('LAZY_CMS_VERSION', '5.16.2');
+    define('LAZY_CMS_VERSION', '5.16.3');
 }
 
 if (!function_exists('lazy_cms_installed_version')) {
@@ -132,6 +132,27 @@ if (!function_exists('cms_timezone')) {
         } catch (\Throwable $e) {
         }
         return config('app.timezone') ?: 'UTC';
+    }
+}
+
+if (!function_exists('cms_now')) {
+    /** Current time in the CMS timezone. Use for display and for building day-boundary queries. */
+    function cms_now(): \Illuminate\Support\Carbon
+    {
+        return \Illuminate\Support\Carbon::now(cms_timezone());
+    }
+}
+
+if (!function_exists('cms_date')) {
+    /**
+     * Format a datetime in the CMS timezone.
+     * Accepts Carbon, DateTime, or a date string. Returns '—' for null/empty.
+     */
+    function cms_date($dt, string $format = 'M j, Y H:i'): string
+    {
+        if (!$dt) return '—';
+        $c = $dt instanceof \Carbon\Carbon ? $dt : \Illuminate\Support\Carbon::parse($dt);
+        return $c->timezone(cms_timezone())->format($format);
     }
 }
 
@@ -920,6 +941,184 @@ if (!function_exists('apply_lazy_filters')) {
     }
 }
 
+if (!function_exists('has_lazy_action')) {
+    function has_lazy_action($tag) {
+        return \Acme\CmsDashboard\Core\HookManager::getInstance()->hasAction($tag);
+    }
+}
+
+if (!function_exists('has_lazy_filter')) {
+    function has_lazy_filter($tag) {
+        return \Acme\CmsDashboard\Core\HookManager::getInstance()->hasFilter($tag);
+    }
+}
+
+if (!function_exists('lazy_render_product_field')) {
+    function lazy_render_product_field(array $field): string
+    {
+        $type        = $field['type']          ?? 'text';
+        $name        = $field['name']          ?? '';
+        $label       = $field['label']         ?? '';
+        $placeholder = $field['placeholder']   ?? '';
+        $required    = !empty($field['required']);
+        $value       = $field['value']         ?? '';
+        $class       = $field['class']         ?? '';
+        $rows        = (int)($field['rows']    ?? 3);
+        $min         = $field['min']           ?? null;
+        $max         = $field['max']           ?? null;
+        $options     = $field['options']       ?? [];
+        $hint        = $field['hint']          ?? '';
+
+        // wrapper: HTML tag ('div', 'li', 'p', 'span', false = no wrapper)
+        $wrapperTag   = $field['wrapper']       ?? 'div';
+        $wrapperClass = $field['wrapper_class'] ?? 'mb-4';
+        // extra attributes on the wrapper element (e.g. 'data-foo="bar"')
+        $wrapperAttrs = $field['wrapper_attrs'] ?? '';
+
+        $baseInput = 'w-full border border-gray-300 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-gray-500 ' . $class;
+        $req       = $required ? ' required' : '';
+        $reqStar   = $required ? '<span class="text-red-500 ml-0.5">*</span>' : '';
+
+        $inner = '';
+
+        switch ($type) {
+            case 'textarea':
+                if ($label) {
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                }
+                $inner .= '<textarea name="' . e($name) . '" rows="' . $rows . '" placeholder="' . e($placeholder) . '" class="' . e($baseInput) . '"' . $req . '>' . e($value) . '</textarea>';
+                break;
+
+            case 'select':
+                if ($label) {
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                }
+                $inner .= '<select name="' . e($name) . '" class="' . e($baseInput) . '"' . $req . '>';
+                if ($placeholder) {
+                    $inner .= '<option value="">' . e($placeholder) . '</option>';
+                }
+                foreach ($options as $optVal => $optLabel) {
+                    $selected = ($value == $optVal) ? ' selected' : '';
+                    $inner .= '<option value="' . e($optVal) . '"' . $selected . '>' . e($optLabel) . '</option>';
+                }
+                $inner .= '</select>';
+                break;
+
+            case 'radio':
+                if ($label) {
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                }
+                $inner .= '<div class="flex flex-wrap gap-3 mt-1">';
+                foreach ($options as $optVal => $optLabel) {
+                    $checked = ($value == $optVal) ? ' checked' : '';
+                    $inner .= '<label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">';
+                    $inner .= '<input type="radio" name="' . e($name) . '" value="' . e($optVal) . '"' . $checked . $req . ' class="accent-primary">';
+                    $inner .= e($optLabel) . '</label>';
+                }
+                $inner .= '</div>';
+                break;
+
+            case 'checkbox':
+                $checked = !empty($field['checked']) ? ' checked' : '';
+                $inner .= '<label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">';
+                $inner .= '<input type="checkbox" name="' . e($name) . '" value="' . e($value ?: '1') . '"' . $checked . ' class="accent-primary">';
+                $inner .= e($label) . $reqStar . '</label>';
+                break;
+
+            case 'number':
+                if ($label) {
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                }
+                $minAttr = $min !== null ? ' min="' . e($min) . '"' : '';
+                $maxAttr = $max !== null ? ' max="' . e($max) . '"' : '';
+                $inner .= '<input type="number" name="' . e($name) . '" value="' . e($value) . '" placeholder="' . e($placeholder) . '" class="' . e($baseInput) . '"' . $minAttr . $maxAttr . $req . '>';
+                break;
+
+            case 'hidden':
+                return '<input type="hidden" name="' . e($name) . '" value="' . e($value) . '">';
+
+            case 'raw':
+                // 'content' key — raw HTML, trusted developer input
+                $inner = $field['content'] ?? '';
+                break;
+
+            default: // text, email, tel, url, date, etc.
+                if ($label) {
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                }
+                $minAttr = $min !== null ? ' minlength="' . e($min) . '"' : '';
+                $maxAttr = $max !== null ? ' maxlength="' . e($max) . '"' : '';
+                $inner .= '<input type="' . e($type) . '" name="' . e($name) . '" value="' . e($value) . '" placeholder="' . e($placeholder) . '" class="' . e($baseInput) . '"' . $minAttr . $maxAttr . $req . '>';
+                break;
+        }
+
+        if ($hint) {
+            $inner .= '<p class="text-xs text-gray-400 mt-1">' . e($hint) . '</p>';
+        }
+
+        // No wrapper
+        if (!$wrapperTag) {
+            return $inner;
+        }
+
+        $tag = preg_replace('/[^a-z0-9]/', '', strtolower($wrapperTag));
+        return '<' . $tag . ($wrapperClass ? ' class="' . e($wrapperClass) . '"' : '') . ($wrapperAttrs ? ' ' . $wrapperAttrs : '') . '>'
+            . $inner
+            . '</' . $tag . '>';
+    }
+}
+
+if (!function_exists('lazy_render_product_fields')) {
+    function lazy_render_product_fields(array $fields): void
+    {
+        foreach ($fields as $field) {
+            echo lazy_render_product_field($field);
+        }
+    }
+}
+
+if (!function_exists('lazy_render_item_custom_fields')) {
+    /**
+     * Render custom fields for a cart session item (array) or an OrderItem model.
+     * Context labels can be overridden via the lazy_custom_field_labels filter.
+     *
+     * @param  array|object  $item      Cart array item OR OrderItem model
+     * @param  string        $context   'cart' | 'checkout' | 'confirmation' | 'admin'
+     * @param  string        $wrapClass CSS class on the wrapper div
+     * @return string
+     */
+    function lazy_render_item_custom_fields($item, string $context = 'cart', string $wrapClass = 'mt-1.5 space-y-0.5'): string
+    {
+        // Support both cart session array and OrderItem model
+        if (is_array($item)) {
+            $customFields = $item['meta']['custom_fields'] ?? [];
+        } else {
+            $meta = is_array($item->meta) ? $item->meta : (json_decode($item->meta ?? '{}', true) ?? []);
+            $customFields = $meta['custom_fields'] ?? [];
+        }
+
+        $customFields = apply_lazy_filters('lazy_item_custom_fields_display', $customFields, $item, $context);
+
+        if (empty($customFields)) return '';
+
+        // Allow label overrides via filter
+        $labels = apply_lazy_filters('lazy_custom_field_labels', [], $context);
+
+        $html = '<div class="' . e($wrapClass) . '">';
+        foreach ($customFields as $key => $value) {
+            if ((string)$value === '') continue;
+            $label = $labels[$key] ?? ucwords(str_replace('_', ' ', $key));
+            $html .= '<div class="text-[11px] text-gray-500 leading-snug">'
+                   . '<span class="font-semibold text-gray-700">' . e($label) . ':</span> '
+                   . e($value)
+                   . '</div>';
+        }
+        $html .= '</div>';
+
+        return $html;
+    }
+}
+
 if (!function_exists('lazy_normalize_custom_fields')) {
     /**
      * Normalize a custom builder element definition (registered via lazy_builder_elements)
@@ -1031,38 +1230,136 @@ if (!function_exists('lazy_normalize_custom_fields')) {
 
 if (!function_exists('lazy_resolve_dynamic_value')) {
     /**
-     * Resolve a custom element dynamic-source token (post_title, post_url, …) to a real value
-     * using the current post context. Returns '' when unresolvable.
+     * Resolve a dynamic-source key to a real value using the current post context.
+     * $config may include: date_type, date_format, before, after, fallback,
+     *                      excerpt_length, acpt_slug
      */
-    function lazy_resolve_dynamic_value(string $source, $post = null)
+    function lazy_resolve_dynamic_value(string $source, $post = null, array $config = [])
     {
         if ($post === null) {
-            $shared = view()->getShared();
-            $post = $shared['post'] ?? null;
+            try { $shared = view()->getShared(); $post = $shared['post'] ?? null; } catch (\Throwable $e) {}
         }
 
+        $before   = $config['before']   ?? '';
+        $after    = $config['after']    ?? '';
+        $fallback = $config['fallback'] ?? '';
+
+        $val = '';
         switch ($source) {
             case 'site_name':
-                return function_exists('get_cms_option') ? get_cms_option('site_name', config('app.name', '')) : config('app.name', '');
+            case 'site_title':
+                $val = function_exists('get_cms_option') ? (string) get_cms_option('site_title', get_cms_option('site_name', config('app.name', ''))) : config('app.name', '');
+                break;
+            case 'site_tagline':
+                $val = function_exists('get_cms_option') ? (string) get_cms_option('site_description', '') : '';
+                break;
+            case 'site_url':
+                $val = config('app.url', '');
+                break;
             case 'post_title':
-                return $post->title ?? '';
+                $val = $post->title ?? '';
+                break;
             case 'post_url':
-                return ($post && function_exists('get_lazy_permalink')) ? get_lazy_permalink($post) : ($post->slug ?? '#');
+                $val = ($post && function_exists('get_lazy_permalink')) ? get_lazy_permalink($post) : ($post->slug ?? '');
+                break;
             case 'post_excerpt':
-                if (!$post) return '';
-                return $post->excerpt ?? (function_exists('get_lazy_excerpt') ? get_lazy_excerpt($post) : '');
+                if (!$post) break;
+                $ex = $post->excerpt ?? '';
+                if (!$ex && function_exists('get_lazy_excerpt')) $ex = get_lazy_excerpt($post);
+                $length = max(1, (int)($config['excerpt_length'] ?? 150));
+                if (!$ex) {
+                    $raw = strip_tags($post->content ?? '');
+                    $rawTrimmed = ltrim($raw);
+                    if ($rawTrimmed && $rawTrimmed[0] !== '[' && $rawTrimmed[0] !== '{') {
+                        $ex = \Illuminate\Support\Str::limit($rawTrimmed, $length);
+                    }
+                } else {
+                    $ex = \Illuminate\Support\Str::limit(strip_tags($ex), $length);
+                }
+                $val = $ex ? strip_tags($ex) : '';
+                break;
             case 'post_date':
-                return ($post && isset($post->created_at)) ? $post->created_at->format('F j, Y') : '';
+                $dateType   = $config['date_type']   ?? 'published';
+                $dateFormat = $config['date_format']  ?? 'M j, Y';
+                if (!$dateFormat) $dateFormat = 'M j, Y';
+                $d = $dateType === 'modified'
+                    ? ($post->updated_at ?? null)
+                    : ($post->published_at ?? $post->created_at ?? null);
+                $val = ($post && $d) ? \Carbon\Carbon::parse($d)->format($dateFormat) : '';
+                break;
+            case 'post_reading_time':
+                if (!$post) break;
+                $words = str_word_count(strip_tags($post->content ?? ''));
+                $val = max(1, (int)ceil($words / 200)) . ' min read';
+                break;
+            case 'post_id':
+                $val = $post ? (string)($post->id ?? '') : '';
+                break;
+            case 'post_type':
+                $val = $post->type ?? '';
+                break;
+            case 'post_comment_count':
+                if (!$post) break;
+                $val = (string)(isset($post->comments_count) ? $post->comments_count : (method_exists($post, 'comments') ? $post->comments()->count() : 0));
+                break;
             case 'post_author':
-                return $post->author->name ?? ($post->user->name ?? '');
+            case 'author_name':
+                $val = $post->user->name ?? ($post->author->name ?? '');
+                break;
+            case 'author_bio':
+                $val = $post->user->bio ?? ($post->user->description ?? '');
+                break;
+            case 'author_url':
+                $val = '';
+                break;
+            case 'author_avatar':
+                $av = $post->user->avatar ?? ($post->user->profile_photo_url ?? '');
+                if ($av && !str_starts_with($av, 'http') && !str_starts_with($av, '/storage')) {
+                    $av = '/storage/' . ltrim($av, '/');
+                }
+                $val = $av;
+                break;
             case 'featured_image':
-                if (!$post) return '';
+            case 'feature_image':
+                if (!$post) break;
                 $img = $post->featured_image ?? $post->thumbnail ?? '';
-                if ($img && !str_starts_with($img, 'http') && !str_starts_with($img, '/storage')) $img = '/storage/' . ltrim($img, '/');
-                return $img;
+                if ($img && !str_starts_with($img, 'http') && !str_starts_with($img, '/storage')) {
+                    $img = '/storage/' . ltrim($img, '/');
+                }
+                $val = $img;
+                break;
+            case 'current_date':
+                $dateFormat = $config['date_format'] ?? 'M j, Y';
+                if (!$dateFormat) $dateFormat = 'M j, Y';
+                $val = now()->format($dateFormat);
+                break;
+            case 'current_year':
+                $val = now()->format('Y');
+                break;
+            case 'user_name':
+                $val = auth()->check() ? (auth()->user()->name ?? '') : '';
+                break;
+            case 'acpt_custom':
+                $slug = $config['acpt_slug'] ?? '';
+                if ($slug) {
+                    $val = lazy_resolve_dynamic_value('acpt_' . $slug, $post);
+                }
+                break;
             default:
-                return '';
+                if (str_starts_with($source, 'acpt_') && $post) {
+                    $acptSlug = substr($source, 5);
+                    if (function_exists('get_acpt_field')) {
+                        $acptVal = get_acpt_field($post->id ?? null, $acptSlug);
+                        $val = is_string($acptVal) ? $acptVal : '';
+                    }
+                }
+                break;
         }
+
+        if ($val === '' || $val === null) {
+            return $fallback;
+        }
+        return $before . $val . $after;
     }
 }
 
@@ -1073,10 +1370,100 @@ if (!function_exists('lazy_apply_custom_dynamic')) {
      */
     function lazy_apply_custom_dynamic(array $settings, $post = null): array
     {
+        $config = [
+            'date_type'      => $settings['dynamic_date_type']      ?? 'published',
+            'date_format'    => $settings['dynamic_date_format']     ?? '',
+            'before'         => $settings['dynamic_before']          ?? '',
+            'after'          => $settings['dynamic_after']           ?? '',
+            'fallback'       => $settings['dynamic_fallback']        ?? '',
+            'excerpt_length' => (int)($settings['dynamic_excerpt_length'] ?? 150),
+            'acpt_slug'      => $settings['dynamic_acpt_slug']       ?? '',
+        ];
         foreach ($settings as $k => $v) {
             if (is_string($k) && str_ends_with($k, '_dynamic') && !empty($v)) {
                 $base = substr($k, 0, -strlen('_dynamic'));
-                $settings[$base] = lazy_resolve_dynamic_value($v, $post);
+                $settings[$base] = lazy_resolve_dynamic_value($v, $post, $config);
+            }
+        }
+        return $settings;
+    }
+}
+
+if (!function_exists('lazy_resolve_tokens')) {
+    function lazy_resolve_tokens(string $value, $post = null): string {
+        if (strpos($value, '{lazy:') === false) return $value;
+        return preg_replace_callback('/\{lazy:([^}]+)\}/', function ($m) use ($post) {
+            return lazy_resolve_token($m[1], $post);
+        }, $value);
+    }
+}
+
+if (!function_exists('lazy_resolve_token')) {
+    function lazy_resolve_token(string $token, $post = null): string {
+        if ($post === null) {
+            try { $post = view()->getShared()['post'] ?? null; } catch (\Throwable $e) {}
+        }
+        switch ($token) {
+            case 'post_title':
+                return $post->title ?? '';
+            case 'post_excerpt':
+                if (!$post) return '';
+                $ex = $post->excerpt ?? '';
+                if (!$ex && function_exists('get_lazy_excerpt')) $ex = get_lazy_excerpt($post);
+                if (!$ex) {
+                    $raw = strip_tags($post->content ?? '');
+                    $rawTrimmed = ltrim($raw);
+                    if ($rawTrimmed && $rawTrimmed[0] !== '[' && $rawTrimmed[0] !== '{') {
+                        $ex = \Illuminate\Support\Str::limit($rawTrimmed, 150);
+                    }
+                }
+                return $ex ? strip_tags($ex) : '';
+            case 'post_id':
+                return (string)($post->id ?? '');
+            case 'post_date':
+                $d = $post->created_at ?? ($post->published_at ?? null);
+                return $d ? \Carbon\Carbon::parse($d)->format('M j, Y') : '';
+            case 'post_type':
+                return $post->type ?? '';
+            case 'post_permalink':
+                if (!$post) return '';
+                return function_exists('get_lazy_permalink') ? get_lazy_permalink($post) : ($post->slug ?? '#');
+            case 'post_reading_time':
+                if (!$post) return '';
+                return max(1, (int) ceil(str_word_count(strip_tags($post->content ?? '')) / 200)) . ' min read';
+            case 'site_title':
+                return function_exists('get_cms_option') ? (string) get_cms_option('site_title', config('app.name', '')) : config('app.name', '');
+            case 'site_tagline':
+                return function_exists('get_cms_option') ? (string) get_cms_option('site_description', '') : '';
+            case 'current_date':
+                return now()->format('M j, Y');
+            case 'current_year':
+                return now()->format('Y');
+            case 'author_name':
+                return $post?->user?->name ?? ($post?->author?->name ?? '');
+            case 'user_name':
+                return auth()->check() ? auth()->user()->name : '';
+            default:
+                if (str_starts_with($token, 'acpt_') && $post) {
+                    $slug = substr($token, 5);
+                    try {
+                        $meta = \Acme\CmsDashboard\Models\PostMeta::where('post_id', $post->id)
+                            ->where('meta_key', $slug)->first();
+                        if ($meta) return (string) $meta->meta_value;
+                    } catch (\Throwable $e) {}
+                }
+                return '';
+        }
+    }
+}
+
+if (!function_exists('lazy_resolve_tokens_in_settings')) {
+    function lazy_resolve_tokens_in_settings(array $settings, $post = null): array {
+        foreach ($settings as $k => &$v) {
+            if (is_string($v) && strpos($v, '{lazy:') !== false) {
+                $v = lazy_resolve_tokens($v, $post);
+            } elseif (is_array($v)) {
+                $v = lazy_resolve_tokens_in_settings($v, $post);
             }
         }
         return $settings;
@@ -1932,6 +2319,169 @@ if (!function_exists('lazy_wishlist_product_ids')) {
 if (!function_exists('lazy_in_wishlist')) {
     function lazy_in_wishlist($productId): bool {
         return in_array((int) $productId, lazy_wishlist_product_ids(), true);
+    }
+}
+
+// ── Checkout Field System ──────────────────────────────────────────────────────
+
+if (!function_exists('lazy_standard_checkout_field_names')) {
+    /**
+     * Returns the field names that map to dedicated order columns.
+     * Any field NOT in this list is treated as a custom field and saved to order meta.
+     */
+    function lazy_standard_checkout_field_names(): array
+    {
+        return [
+            'billing_first_name', 'billing_last_name', 'billing_email', 'billing_phone',
+            'billing_address_1',  'billing_address_2',  'billing_city', 'billing_state',
+            'billing_postcode',   'billing_country',
+            'shipping_first_name', 'shipping_last_name',
+            'shipping_address_1',  'shipping_address_2',  'shipping_city', 'shipping_state',
+            'shipping_postcode',   'shipping_country',
+        ];
+    }
+}
+
+if (!function_exists('lazy_get_checkout_fields')) {
+    /**
+     * Returns the sorted field array for 'billing' or 'shipping'.
+     * Applies the lazy_billing_fields / lazy_shipping_fields filter so developers
+     * can add, remove, or reorder fields from functions.php.
+     *
+     * Field keys:
+     *   name        string   Input name attribute (required)
+     *   type        string   text|email|tel|number|password|date|select|country|textarea|checkbox|hidden
+     *   label       string|null  Label text; null = no label rendered
+     *   required    bool     Adds required rule in placeOrder validation
+     *   width       string   'half' = one column, 'full' = spans both columns (default full)
+     *   priority    int      Sort order (lower = earlier, default 10)
+     *   default     mixed    Default value if old() is empty
+     *   placeholder string   Input placeholder
+     *   options     array    key=>label pairs for select type
+     *   rows        int      Rows for textarea type
+     *   rules       string   Custom Laravel validation rule (overrides 'required' default)
+     *   class       string   Extra CSS classes on the field wrapper div
+     */
+    function lazy_get_checkout_fields(string $section): array
+    {
+        static $defaults = null;
+
+        if ($defaults === null) {
+            $user = auth()->user();
+            $defaults = [
+                'billing' => [
+                    ['name' => 'billing_first_name', 'type' => 'text',    'label' => 'First name',       'required' => true,  'width' => 'half', 'priority' => 10,  'default' => $user->first_name ?? ''],
+                    ['name' => 'billing_last_name',  'type' => 'text',    'label' => 'Last name',         'required' => true,  'width' => 'half', 'priority' => 20,  'default' => $user->last_name  ?? ''],
+                    ['name' => 'billing_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => session('lazy_shipping_country', '')],
+                    ['name' => 'billing_address_1',  'type' => 'text',    'label' => 'Street address',    'required' => true,  'width' => 'full', 'priority' => 40,  'placeholder' => 'House number and street name'],
+                    ['name' => 'billing_address_2',  'type' => 'text',    'label' => null,                'required' => false, 'width' => 'full', 'priority' => 50,  'placeholder' => 'Apartment, suite, unit, etc. (optional)'],
+                    ['name' => 'billing_city',       'type' => 'text',    'label' => 'Town / City',       'required' => true,  'width' => 'half', 'priority' => 60],
+                    ['name' => 'billing_state',      'type' => 'text',    'label' => 'State / Province',  'required' => true,  'width' => 'half', 'priority' => 70],
+                    ['name' => 'billing_postcode',   'type' => 'text',    'label' => 'ZIP Code',          'required' => true,  'width' => 'half', 'priority' => 80],
+                    ['name' => 'billing_phone',      'type' => 'tel',     'label' => 'Phone',             'required' => true,  'width' => 'half', 'priority' => 90],
+                    ['name' => 'billing_email',      'type' => 'email',   'label' => 'Email address',     'required' => true,  'width' => 'full', 'priority' => 100, 'default' => $user->email ?? ''],
+                ],
+                'shipping' => [
+                    ['name' => 'shipping_first_name', 'type' => 'text',    'label' => 'First name',       'required' => true,  'width' => 'half', 'priority' => 10],
+                    ['name' => 'shipping_last_name',  'type' => 'text',    'label' => 'Last name',         'required' => true,  'width' => 'half', 'priority' => 20],
+                    ['name' => 'shipping_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => session('lazy_shipping_country', '')],
+                    ['name' => 'shipping_address_1',  'type' => 'text',    'label' => 'Street address',    'required' => true,  'width' => 'full', 'priority' => 40,  'placeholder' => 'House number and street name'],
+                    ['name' => 'shipping_address_2',  'type' => 'text',    'label' => null,                'required' => false, 'width' => 'full', 'priority' => 50,  'placeholder' => 'Apartment, suite, unit, etc. (optional)'],
+                    ['name' => 'shipping_city',       'type' => 'text',    'label' => 'Town / City',       'required' => true,  'width' => 'half', 'priority' => 60],
+                    ['name' => 'shipping_state',      'type' => 'text',    'label' => 'State / Province',  'required' => true,  'width' => 'half', 'priority' => 70],
+                    ['name' => 'shipping_postcode',   'type' => 'text',    'label' => 'ZIP Code',          'required' => true,  'width' => 'half', 'priority' => 80],
+                ],
+            ];
+        }
+
+        $fields = $defaults[$section] ?? [];
+        $fields = apply_lazy_filters("lazy_{$section}_fields", $fields);
+        usort($fields, fn($a, $b) => ($a['priority'] ?? 10) <=> ($b['priority'] ?? 10));
+
+        return $fields;
+    }
+}
+
+if (!function_exists('lazy_render_checkout_field')) {
+    /**
+     * Renders a single checkout field inside the 2-column grid.
+     * Full-width fields receive md:col-span-2; half-width get one column.
+     */
+    function lazy_render_checkout_field(array $field): void
+    {
+        $name    = $field['name']         ?? '';
+        $type    = $field['type']         ?? 'text';
+        $label   = $field['label']        ?? null;
+        $req     = !empty($field['required']);
+        $width   = $field['width']        ?? 'full';
+        $default = $field['default']      ?? '';
+        $ph      = $field['placeholder']  ?? '';
+        $opts    = $field['options']       ?? [];
+        $class   = $field['class']        ?? '';
+
+        $value = old($name, $default);
+        $span  = $width === 'half' ? '' : 'md:col-span-2';
+        $inp   = 'w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none';
+
+        if ($type === 'hidden') {
+            echo '<input type="hidden" name="' . e($name) . '" value="' . e($value) . '">';
+            return;
+        }
+
+        echo '<div class="space-y-1.5 ' . $span . ($class ? ' ' . e($class) : '') . '">';
+
+        if ($label !== null && $label !== '') {
+            echo '<label class="text-[14px] font-bold text-heading">'
+               . e($label)
+               . ($req ? ' <span class="text-red-600">*</span>' : '')
+               . '</label>';
+        }
+
+        if ($type === 'country') {
+            $countries = \Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates();
+            echo '<select name="' . e($name) . '" class="' . $inp . ' bg-white cursor-pointer">';
+            foreach ($countries as $code => $cname) {
+                echo '<option value="' . e($code) . '"' . ($value == $code ? ' selected' : '') . '>' . e($cname) . '</option>';
+            }
+            echo '</select>';
+        } elseif ($type === 'select') {
+            echo '<select name="' . e($name) . '" class="' . $inp . ' bg-white">';
+            if ($ph) {
+                echo '<option value="">' . e($ph) . '</option>';
+            }
+            foreach ($opts as $k => $v) {
+                echo '<option value="' . e($k) . '"' . ($value == $k ? ' selected' : '') . '>' . e($v) . '</option>';
+            }
+            echo '</select>';
+        } elseif ($type === 'textarea') {
+            $rows = (int) ($field['rows'] ?? 3);
+            echo '<textarea name="' . e($name) . '" rows="' . $rows . '" placeholder="' . e($ph) . '" class="' . $inp . ' resize-none">' . e($value) . '</textarea>';
+        } elseif ($type === 'checkbox') {
+            echo '<label class="flex items-center gap-2 cursor-pointer text-[14px] text-body">'
+               . '<input type="checkbox" name="' . e($name) . '" value="1" class="w-4 h-4 border-[#ddd] rounded text-primary focus:ring-0"' . ($value ? ' checked' : '') . '>'
+               . ($label !== null ? e($label) : '')
+               . '</label>';
+        } else {
+            echo '<input type="' . e($type) . '" name="' . e($name) . '" value="' . e($value) . '" placeholder="' . e($ph) . '" class="' . $inp . '">';
+        }
+
+        echo '</div>';
+    }
+}
+
+if (!function_exists('lazy_render_checkout_fields')) {
+    /**
+     * Renders all checkout fields inside a responsive 2-column grid.
+     * Call with the output of lazy_get_checkout_fields().
+     */
+    function lazy_render_checkout_fields(array $fields): void
+    {
+        if (empty($fields)) return;
+        echo '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+        foreach ($fields as $field) {
+            lazy_render_checkout_field($field);
+        }
+        echo '</div>';
     }
 }
 

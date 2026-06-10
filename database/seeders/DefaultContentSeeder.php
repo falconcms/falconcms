@@ -22,6 +22,11 @@ class DefaultContentSeeder extends Seeder
             DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value, 'updated_at' => now()]);
         }
 
+        // ── Default timezone — only set if not already configured ────────────
+        if (!DB::table('cms_settings')->where('key', 'timezone')->exists()) {
+            DB::table('cms_settings')->insert(['key' => 'timezone', 'value' => 'Asia/Dhaka', 'created_at' => now(), 'updated_at' => now()]);
+        }
+
         // ── Storefront pages (+ link them in shop settings) ──────────────────
         $pages = [
             ['title' => 'Shop',     'slug' => 'product',  'setting' => 'shop_shop_page_id'],

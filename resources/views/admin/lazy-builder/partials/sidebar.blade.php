@@ -244,9 +244,26 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Content</label>
+                                        <button @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'text', $event)"
+                                                class="w-6 h-6 flex items-center justify-center rounded border transition-all"
+                                                :class="editingElement.settings.dynamic_source ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
+                                            <i class="fa fa-database text-[10px]"></i>
+                                        </button>
                                     </div>
-                                    <div class="builder-rich-editor-wrapper border border-slate-200 rounded overflow-hidden focus-within:border-[#0091ea] transition-all">
-                                        <textarea :id="'rich-editor-' + editingElement.id + '-content'" 
+                                    <div v-show="editingElement.settings.dynamic_source"
+                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
+                                         @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'text', $event)">
+                                        <div class="flex items-center gap-2">
+                                            <i :class="['fa', getDynSrcDef(editingElement.settings.dynamic_source).icon, 'text-[#0091ea] text-sm']"></i>
+                                            <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingElement.settings.dynamic_source).label }}</span>
+                                        </div>
+                                        <button @click.stop="editingElement.settings.dynamic_source = ''"
+                                                class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
+                                            <i class="fa fa-times text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                    <div v-show="!editingElement.settings.dynamic_source" class="builder-rich-editor-wrapper border border-slate-200 rounded overflow-hidden focus-within:border-[#0091ea] transition-all">
+                                        <textarea :id="'rich-editor-' + editingElement.id + '-content'"
                                                   class="builder-rich-editor w-full p-3 text-[13px] min-h-[200px] focus:outline-none"
                                                   v-model="editingElement.settings.content"></textarea>
                                     </div>
@@ -340,19 +357,20 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Title</label>
-                                        <button @click="editingElement.settings.dynamic_source = (editingElement.settings.dynamic_source === 'post_title' ? '' : 'post_title')"
+                                        <button @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'text', $event)"
                                                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
-                                                :class="editingElement.settings.dynamic_source === 'post_title' ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
+                                                :class="editingElement.settings.dynamic_source ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
                                             <i class="fa fa-database text-[10px]"></i>
                                         </button>
                                     </div>
-                                    <div v-if="editingElement.settings.dynamic_source === 'post_title'"
-                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg">
+                                    <div v-if="editingElement.settings.dynamic_source"
+                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
+                                         @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'text', $event)">
                                         <div class="flex items-center gap-2">
-                                            <i class="fa fa-heading text-[#0091ea] text-sm"></i>
-                                            <span class="text-[12px] font-bold text-[#0091ea]">Post Title</span>
+                                            <i :class="['fa', getDynSrcDef(editingElement.settings.dynamic_source).icon, 'text-[#0091ea] text-sm']"></i>
+                                            <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingElement.settings.dynamic_source).label }}</span>
                                         </div>
-                                        <button @click="editingElement.settings.dynamic_source = ''"
+                                        <button @click.stop="editingElement.settings.dynamic_source = ''"
                                                 class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
                                             <i class="fa fa-times text-[10px]"></i>
                                         </button>
@@ -382,19 +400,20 @@
                                 <div v-if="editingElement.settings.useLink">
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Link URL</label>
-                                        <button @click="editingElement.settings.link_dynamic_source = (editingElement.settings.link_dynamic_source === 'post_url' ? '' : 'post_url')"
+                                        <button @click.stop="openDynSrcMenu(editingElement.settings, 'link_dynamic_source', 'link', $event)"
                                                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
-                                                :class="editingElement.settings.link_dynamic_source === 'post_url' ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
+                                                :class="editingElement.settings.link_dynamic_source ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
                                             <i class="fa fa-database text-[10px]"></i>
                                         </button>
                                     </div>
-                                    <div v-if="editingElement.settings.link_dynamic_source === 'post_url'"
-                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg">
+                                    <div v-if="editingElement.settings.link_dynamic_source"
+                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
+                                         @click.stop="openDynSrcMenu(editingElement.settings, 'link_dynamic_source', 'link', $event)">
                                         <div class="flex items-center gap-2">
-                                            <i class="fa fa-link text-[#0091ea] text-sm"></i>
-                                            <span class="text-[12px] font-bold text-[#0091ea]">Post URL</span>
+                                            <i :class="['fa', getDynSrcDef(editingElement.settings.link_dynamic_source).icon, 'text-[#0091ea] text-sm']"></i>
+                                            <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingElement.settings.link_dynamic_source).label }}</span>
                                         </div>
-                                        <button @click="editingElement.settings.link_dynamic_source = ''"
+                                        <button @click.stop="editingElement.settings.link_dynamic_source = ''"
                                                 class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
                                             <i class="fa fa-times text-[10px]"></i>
                                         </button>
@@ -410,7 +429,7 @@
                                 </div>
 
                                 <!-- Link Target -->
-                                <div v-if="editingElement.settings.useLink && (editingElement.settings.linkUrl || editingElement.settings.link_dynamic_source === 'post_url')">
+                                <div v-if="editingElement.settings.useLink && (editingElement.settings.linkUrl || editingElement.settings.link_dynamic_source)">
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Link Target</label>
                                     </div>
@@ -476,19 +495,20 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Button Text</label>
-                                        <button @click="editingElement.settings.dynamic_source = (editingElement.settings.dynamic_source === 'post_title' ? '' : 'post_title')"
+                                        <button @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'text', $event)"
                                                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
-                                                :class="editingElement.settings.dynamic_source === 'post_title' ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
+                                                :class="editingElement.settings.dynamic_source ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
                                             <i class="fa fa-database text-[10px]"></i>
                                         </button>
                                     </div>
-                                    <div v-if="editingElement.settings.dynamic_source === 'post_title'"
-                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg">
+                                    <div v-if="editingElement.settings.dynamic_source"
+                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
+                                         @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'text', $event)">
                                         <div class="flex items-center gap-2">
-                                            <i class="fa fa-heading text-[#0091ea] text-sm"></i>
-                                            <span class="text-[12px] font-bold text-[#0091ea]">Post Title</span>
+                                            <i :class="['fa', getDynSrcDef(editingElement.settings.dynamic_source).icon, 'text-[#0091ea] text-sm']"></i>
+                                            <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingElement.settings.dynamic_source).label }}</span>
                                         </div>
-                                        <button @click="editingElement.settings.dynamic_source = ''"
+                                        <button @click.stop="editingElement.settings.dynamic_source = ''"
                                                 class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
                                             <i class="fa fa-times text-[10px]"></i>
                                         </button>
@@ -501,19 +521,20 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Link URL</label>
-                                        <button @click="editingElement.settings.link_dynamic_source = (editingElement.settings.link_dynamic_source === 'post_url' ? '' : 'post_url')"
+                                        <button @click.stop="openDynSrcMenu(editingElement.settings, 'link_dynamic_source', 'link', $event)"
                                                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
-                                                :class="editingElement.settings.link_dynamic_source === 'post_url' ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
+                                                :class="editingElement.settings.link_dynamic_source ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
                                             <i class="fa fa-database text-[10px]"></i>
                                         </button>
                                     </div>
-                                    <div v-if="editingElement.settings.link_dynamic_source === 'post_url'"
-                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg">
+                                    <div v-if="editingElement.settings.link_dynamic_source"
+                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
+                                         @click.stop="openDynSrcMenu(editingElement.settings, 'link_dynamic_source', 'link', $event)">
                                         <div class="flex items-center gap-2">
-                                            <i class="fa fa-link text-[#0091ea] text-sm"></i>
-                                            <span class="text-[12px] font-bold text-[#0091ea]">Post URL</span>
+                                            <i :class="['fa', getDynSrcDef(editingElement.settings.link_dynamic_source).icon, 'text-[#0091ea] text-sm']"></i>
+                                            <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingElement.settings.link_dynamic_source).label }}</span>
                                         </div>
-                                        <button @click="editingElement.settings.link_dynamic_source = ''"
+                                        <button @click.stop="editingElement.settings.link_dynamic_source = ''"
                                                 class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
                                             <i class="fa fa-times text-[10px]"></i>
                                         </button>
@@ -529,7 +550,7 @@
                                 </div>
 
                                 <!-- Link Target -->
-                                <div v-if="editingElement.settings.linkUrl || editingElement.settings.link_dynamic_source === 'post_url'">
+                                <div v-if="editingElement.settings.linkUrl || editingElement.settings.link_dynamic_source">
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Link Target</label>
                                     </div>
@@ -635,20 +656,21 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Image</label>
-                                        <button @click="editingElement.settings.dynamic_source = (editingElement.settings.dynamic_source === 'feature_image' ? '' : 'feature_image')"
+                                        <button @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'image', $event)"
                                                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
-                                                :class="editingElement.settings.dynamic_source === 'feature_image' ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
+                                                :class="editingElement.settings.dynamic_source ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
                                             <i class="fa fa-database text-[10px]"></i>
                                         </button>
                                     </div>
-                                    <!-- Feature Image active state -->
-                                    <div v-if="editingElement.settings.dynamic_source === 'feature_image'"
-                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg">
+                                    <!-- Dynamic source active state -->
+                                    <div v-if="editingElement.settings.dynamic_source"
+                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
+                                         @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'image', $event)">
                                         <div class="flex items-center gap-2">
-                                            <i class="fa fa-image text-[#0091ea] text-sm"></i>
-                                            <span class="text-[12px] font-bold text-[#0091ea]">Feature Image</span>
+                                            <i :class="['fa', getDynSrcDef(editingElement.settings.dynamic_source).icon, 'text-[#0091ea] text-sm']"></i>
+                                            <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingElement.settings.dynamic_source).label }}</span>
                                         </div>
-                                        <button @click="editingElement.settings.dynamic_source = ''"
+                                        <button @click.stop="editingElement.settings.dynamic_source = ''"
                                                 class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
                                             <i class="fa fa-times text-[10px]"></i>
                                         </button>
@@ -722,6 +744,7 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Alt Text</label>
+                                        <button type="button" @click.stop="openDynMenu(editingElement.settings, 'alt', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
                                     </div>
                                     <input type="text" v-model="editingElement.settings.alt"
                                            placeholder="Image description..."
@@ -732,19 +755,20 @@
                                 <div>
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Link URL</label>
-                                        <button @click="editingElement.settings.link_dynamic_source = (editingElement.settings.link_dynamic_source === 'post_url' ? '' : 'post_url')"
+                                        <button @click.stop="openDynSrcMenu(editingElement.settings, 'link_dynamic_source', 'link', $event)"
                                                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
-                                                :class="editingElement.settings.link_dynamic_source === 'post_url' ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
+                                                :class="editingElement.settings.link_dynamic_source ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'">
                                             <i class="fa fa-database text-[10px]"></i>
                                         </button>
                                     </div>
-                                    <div v-if="editingElement.settings.link_dynamic_source === 'post_url'"
-                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg">
+                                    <div v-if="editingElement.settings.link_dynamic_source"
+                                         class="flex items-center justify-between px-3 py-2.5 bg-[#0091ea]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
+                                         @click.stop="openDynSrcMenu(editingElement.settings, 'link_dynamic_source', 'link', $event)">
                                         <div class="flex items-center gap-2">
-                                            <i class="fa fa-link text-[#0091ea] text-sm"></i>
-                                            <span class="text-[12px] font-bold text-[#0091ea]">Post URL</span>
+                                            <i :class="['fa', getDynSrcDef(editingElement.settings.link_dynamic_source).icon, 'text-[#0091ea] text-sm']"></i>
+                                            <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingElement.settings.link_dynamic_source).label }}</span>
                                         </div>
-                                        <button @click="editingElement.settings.link_dynamic_source = ''"
+                                        <button @click.stop="editingElement.settings.link_dynamic_source = ''"
                                                 class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
                                             <i class="fa fa-times text-[10px]"></i>
                                         </button>
@@ -760,7 +784,7 @@
                                 </div>
 
                                 <!-- Link Target -->
-                                <div v-if="editingElement.settings.linkUrl || editingElement.settings.link_dynamic_source === 'post_url'">
+                                <div v-if="editingElement.settings.linkUrl || editingElement.settings.link_dynamic_source">
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Link Target</label>
                                     </div>
@@ -1321,21 +1345,30 @@
 
                                 <!-- Title -->
                                 <div>
-                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Title</label>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-[12px] font-bold text-[#333]">Title</label>
+                                        <button type="button" @click.stop="openDynMenu(editingElement.settings, 'title', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                    </div>
                                     <input type="text" v-model="editingElement.settings.title"
                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                 </div>
 
                                 <!-- Description -->
                                 <div>
-                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Description</label>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-[12px] font-bold text-[#333]">Description</label>
+                                        <button type="button" @click.stop="openDynMenu(editingElement.settings, 'description', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                    </div>
                                     <textarea v-model="editingElement.settings.description" rows="3"
                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea] resize-y"></textarea>
                                 </div>
 
                                 <!-- Link URL -->
                                 <div>
-                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Link URL</label>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-[12px] font-bold text-[#333]">Link URL</label>
+                                        <button type="button" @click.stop="openDynMenu(editingElement.settings, 'linkUrl', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                    </div>
                                     <input type="text" v-model="editingElement.settings.linkUrl"
                                            placeholder="https://"
                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
@@ -1423,7 +1456,10 @@
                                             <!-- Expanded Edit Area -->
                                             <div v-if="activeAccordionItem === idx" class="p-3 space-y-3 border-t border-slate-100">
                                                 <div>
-                                                    <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Title</label>
+                                                    <div class="flex justify-between items-center mb-1">
+                                                        <label class="text-[9px] font-bold text-slate-400 uppercase">Title</label>
+                                                        <button type="button" @click.stop="openDynMenu(item, 'title', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                                    </div>
                                                     <input type="text" v-model="item.title"
                                                            class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
                                                 </div>
@@ -1616,12 +1652,18 @@
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Text</label>
+                                                    <div class="flex justify-between items-center mb-1">
+                                                        <label class="text-[9px] font-bold text-slate-400 uppercase">Text</label>
+                                                        <button type="button" @click.stop="openDynMenu(item, 'text', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                                    </div>
                                                     <input type="text" v-model="item.text"
                                                            class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
                                                 </div>
                                                 <div>
-                                                    <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Link (optional)</label>
+                                                    <div class="flex justify-between items-center mb-1">
+                                                        <label class="text-[9px] font-bold text-slate-400 uppercase">Link (optional)</label>
+                                                        <button type="button" @click.stop="openDynMenu(item, 'link', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                                    </div>
                                                     <input type="text" v-model="item.link" placeholder="https://..."
                                                            class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
                                                 </div>
@@ -1718,7 +1760,10 @@
                                             <!-- Expanded Edit Area -->
                                             <div v-if="activeTabsItem === idx" class="p-3 space-y-3 border-t border-slate-100">
                                                 <div>
-                                                    <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Label</label>
+                                                    <div class="flex justify-between items-center mb-1">
+                                                        <label class="text-[9px] font-bold text-slate-400 uppercase">Label</label>
+                                                        <button type="button" @click.stop="openDynMenu(item, 'label', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                                    </div>
                                                     <input type="text" v-model="item.label"
                                                            class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
                                                 </div>
@@ -1908,6 +1953,189 @@
 
                             </div>
 
+                            <!-- ══ POST META ELEMENT ══ -->
+                            <div v-else-if="editingElement?.type === 'post_meta'" class="space-y-6">
+
+                                <!-- Meta Items — Reorderable list -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-3">Meta Items &amp; Order</label>
+                                    <p class="text-[11px] text-slate-400 mb-3">Use ↑↓ to reorder. Frontend renders in the same order.</p>
+                                    <div class="space-y-1.5">
+                                        <div v-for="(key, idx) in (editingElement.settings.metaOrder || ['categories','tags','author','date','reading_time'])" :key="key"
+                                             class="border border-slate-200 rounded-md overflow-hidden bg-white">
+
+                                            <!-- Row header -->
+                                            <div class="flex items-center gap-2 px-2 py-2">
+                                                <!-- Up / Down -->
+                                                <div class="flex flex-col gap-0.5 flex-shrink-0">
+                                                    <button type="button"
+                                                            @click="idx > 0 && (editingElement.settings.metaOrder = (() => { const a = [...(editingElement.settings.metaOrder||['categories','tags','author','date','reading_time'])]; a.splice(idx-1,0,a.splice(idx,1)[0]); return a; })())"
+                                                            :class="idx === 0 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-[#0091ea] hover:text-white'"
+                                                            class="w-5 h-4 rounded text-[9px] flex items-center justify-center bg-slate-100 text-slate-500 transition-colors">
+                                                        <i class="fa fa-caret-up"></i>
+                                                    </button>
+                                                    <button type="button"
+                                                            @click="idx < ((editingElement.settings.metaOrder||[]).length-1) && (editingElement.settings.metaOrder = (() => { const a = [...(editingElement.settings.metaOrder||['categories','tags','author','date','reading_time'])]; a.splice(idx+1,0,a.splice(idx,1)[0]); return a; })())"
+                                                            :class="idx === (editingElement.settings.metaOrder||[]).length-1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-[#0091ea] hover:text-white'"
+                                                            class="w-5 h-4 rounded text-[9px] flex items-center justify-center bg-slate-100 text-slate-500 transition-colors">
+                                                        <i class="fa fa-caret-down"></i>
+                                                    </button>
+                                                </div>
+
+                                                <!-- Show checkbox -->
+                                                <input type="checkbox" class="accent-[#0091ea] w-4 h-4 flex-shrink-0"
+                                                       :checked="key==='categories' ? editingElement.settings.showCategories!==false : (key==='tags' ? !!editingElement.settings.showTags : (key==='author' ? editingElement.settings.showAuthor!==false : (key==='date' ? editingElement.settings.showDate!==false : !!editingElement.settings.showReadingTime)))"
+                                                       @change="key==='categories' ? editingElement.settings.showCategories=$event.target.checked : (key==='tags' ? editingElement.settings.showTags=$event.target.checked : (key==='author' ? editingElement.settings.showAuthor=$event.target.checked : (key==='date' ? editingElement.settings.showDate=$event.target.checked : editingElement.settings.showReadingTime=$event.target.checked)))">
+
+                                                <!-- Icon + Label -->
+                                                <i :class="key==='categories'?'fa fa-folder-open':(key==='tags'?'fa fa-tags':(key==='author'?'fa fa-user':(key==='date'?'fa fa-calendar':'fa fa-clock')))"
+                                                   class="text-slate-400 text-[12px] w-4 text-center flex-shrink-0"></i>
+                                                <span class="text-[13px] text-slate-700 font-medium">
+                                                    @{{ key==='categories'?'Categories':(key==='tags'?'Tags':(key==='author'?'Author':(key==='date'?'Publish Date':'Reading Time'))) }}
+                                                </span>
+                                            </div>
+
+                                            <!-- Sub-options: Categories -->
+                                            <template v-if="key==='categories' && editingElement.settings.showCategories!==false">
+                                                <div class="px-3 pb-2.5 pt-1.5 border-t border-slate-100 bg-slate-50/60 space-y-2">
+                                                    <div>
+                                                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Taxonomy Slug</label>
+                                                        <input type="text" v-model="editingElement.settings.categoryTaxonomy" placeholder="category"
+                                                               class="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] text-slate-600 bg-white focus:outline-none focus:border-[#0091ea]">
+                                                        <p class="text-[10px] text-slate-400 mt-1">e.g. <code>category</code>, <code>product-category</code></p>
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Max Categories</label>
+                                                        <input type="number" v-model.number="editingElement.settings.limitCategories"
+                                                               placeholder="All" min="1" max="20"
+                                                               class="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] text-slate-600 bg-white focus:outline-none focus:border-[#0091ea]">
+                                                        <p class="text-[10px] text-slate-400 mt-1">Leave empty to show all</p>
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <!-- Sub-options: Tags -->
+                                            <template v-if="key==='tags' && editingElement.settings.showTags">
+                                                <div class="px-3 pb-2.5 pt-1.5 border-t border-slate-100 bg-slate-50/60 space-y-2">
+                                                    <div>
+                                                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Taxonomy Slug</label>
+                                                        <input type="text" v-model="editingElement.settings.tagTaxonomy" placeholder="tag"
+                                                               class="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] text-slate-600 bg-white focus:outline-none focus:border-[#0091ea]">
+                                                        <p class="text-[10px] text-slate-400 mt-1">e.g. <code>tag</code>, <code>product-tag</code></p>
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Max Tags</label>
+                                                        <input type="number" v-model.number="editingElement.settings.limitTags"
+                                                               placeholder="All" min="1" max="20"
+                                                               class="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] text-slate-600 bg-white focus:outline-none focus:border-[#0091ea]">
+                                                        <p class="text-[10px] text-slate-400 mt-1">Leave empty to show all</p>
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <!-- Sub-options: Date format -->
+                                            <template v-if="key==='date' && editingElement.settings.showDate!==false">
+                                                <div class="px-3 pb-2.5 pt-1.5 border-t border-slate-100 bg-slate-50/60">
+                                                    <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Date Format</label>
+                                                    <select v-model="editingElement.settings.dateFormat"
+                                                            class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] text-slate-600 bg-white focus:outline-none focus:border-[#0091ea]">
+                                                        <option value="M j, Y">Jan 9, 2026</option>
+                                                        <option value="d M Y">09 Jan 2026</option>
+                                                        <option value="d/m/Y">09/01/2026</option>
+                                                        <option value="Y-m-d">2026-01-09</option>
+                                                        <option value="relative">Relative (2 days ago)</option>
+                                                    </select>
+                                                </div>
+                                            </template>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Layout -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Layout</label>
+                                    <div class="flex bg-slate-50 border border-slate-100 rounded p-1">
+                                        <button @click="editingElement.settings.layout = 'inline'"
+                                                :class="(editingElement.settings.layout || 'inline') === 'inline' ? 'bg-[#0091ea] text-white shadow-md' : 'bg-[#0091ea]/20 text-[#0091ea]'"
+                                                class="flex-1 py-1.5 text-[11px] font-black uppercase rounded transition-all">
+                                            <i class="fa fa-grip-horizontal mr-1"></i> Inline
+                                        </button>
+                                        <button @click="editingElement.settings.layout = 'stacked'"
+                                                :class="editingElement.settings.layout === 'stacked' ? 'bg-[#0091ea] text-white shadow-md' : 'bg-[#0091ea]/20 text-[#0091ea]'"
+                                                class="flex-1 py-1.5 text-[11px] font-black uppercase rounded transition-all">
+                                            <i class="fa fa-list mr-1"></i> Stacked
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Show Icons -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Show Icons</label>
+                                    <div class="flex bg-slate-50 border border-slate-100 rounded p-1 w-fit">
+                                        <button @click="editingElement.settings.showIcons = true"
+                                                :class="editingElement.settings.showIcons !== false ? 'bg-[#0091ea] text-white shadow-md' : 'bg-[#0091ea]/20 text-[#0091ea]'"
+                                                class="px-6 py-1.5 text-[11px] font-black uppercase rounded transition-all">Yes</button>
+                                        <button @click="editingElement.settings.showIcons = false"
+                                                :class="editingElement.settings.showIcons === false ? 'bg-[#0091ea] text-white shadow-md' : 'bg-[#0091ea]/20 text-[#0091ea]'"
+                                                class="px-6 py-1.5 text-[11px] font-black uppercase rounded transition-all">No</button>
+                                    </div>
+                                </div>
+
+                                <!-- Separator (inline only) -->
+                                <template v-if="(editingElement.settings.layout || 'inline') === 'inline'">
+                                    <div>
+                                        <label class="text-[12px] font-bold text-[#333] block mb-2">Separator</label>
+                                        <input type="text" v-model="editingElement.settings.separator" maxlength="5"
+                                               placeholder="·"
+                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                </template>
+
+                                <!-- Element Visibility -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">Element Visibility</label>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-1">
+                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
+                                                :class="editingElement.settings.visibility.mobile ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center">
+                                            <i class="fa fa-mobile-alt text-sm"></i>
+                                        </button>
+                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
+                                                :class="editingElement.settings.visibility.tablet ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center">
+                                            <i class="fa fa-tablet-alt text-sm"></i>
+                                        </button>
+                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
+                                                :class="editingElement.settings.visibility.desktop ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center">
+                                            <i class="fa fa-desktop text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- CSS Class & ID -->
+                                <div class="grid grid-cols-1 gap-6 pt-4 border-t border-slate-50">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <label class="text-[12px] font-bold text-[#333]">CSS Class</label>
+                                        </div>
+                                        <input type="text" v-model="editingElement.settings.cssClass"
+                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <label class="text-[12px] font-bold text-[#333]">CSS ID</label>
+                                        </div>
+                                        <input type="text" v-model="editingElement.settings.cssId"
+                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                </div>
+
+                            </div>
+
                             <!-- ══ VIDEO ELEMENT ══ -->
                             <div v-else-if="editingElement?.type === 'video'" class="space-y-6">
 
@@ -1930,7 +2158,10 @@
 
                                 <!-- YouTube / Vimeo URL input -->
                                 <div v-if="(editingElement.settings.videoSource || 'youtube') === 'youtube'">
-                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Video URL</label>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-[12px] font-bold text-[#333]">Video URL</label>
+                                        <button type="button" @click.stop="openDynMenu(editingElement.settings, 'url', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                    </div>
                                     <input type="text" v-model="editingElement.settings.url"
                                            placeholder="https://youtube.com/watch?v=... or vimeo.com/..."
                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
@@ -2219,7 +2450,10 @@
 
                                 <!-- Label -->
                                 <div>
-                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Label <span class="text-slate-400 font-normal">(optional)</span></label>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-[12px] font-bold text-[#333]">Label <span class="text-slate-400 font-normal">(optional)</span></label>
+                                        <button type="button" @click.stop="openDynMenu(editingElement.settings, 'label', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                    </div>
                                     <input type="text" v-model="editingElement.settings.label" placeholder="e.g. Based on 127 reviews"
                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                 </div>
@@ -2309,18 +2543,27 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label class="text-[12px] font-bold text-[#333] block mb-2">Prefix</label>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <label class="text-[12px] font-bold text-[#333]">Prefix</label>
+                                            <button type="button" @click.stop="openDynMenu(editingElement.settings, 'prefix', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                        </div>
                                         <input type="text" v-model="editingElement.settings.prefix" placeholder="e.g. $"
                                                class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                     </div>
                                     <div>
-                                        <label class="text-[12px] font-bold text-[#333] block mb-2">Suffix</label>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <label class="text-[12px] font-bold text-[#333]">Suffix</label>
+                                            <button type="button" @click.stop="openDynMenu(editingElement.settings, 'suffix', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                        </div>
                                         <input type="text" v-model="editingElement.settings.suffix" placeholder="e.g. +"
                                                class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Label (caption)</label>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-[12px] font-bold text-[#333]">Label (caption)</label>
+                                        <button type="button" @click.stop="openDynMenu(editingElement.settings, 'label', $event)" class="lazy-dyn-btn" title="Insert Dynamic Value"><i class="fa fa-bolt text-[9px]"></i></button>
+                                    </div>
                                     <input type="text" v-model="editingElement.settings.label" placeholder="e.g. Happy Clients"
                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                 </div>
@@ -3507,6 +3750,10 @@
                              <div v-else-if="editingElement?.type === 'post_content'" class="space-y-6">
                                  @include('cms-dashboard::admin.lazy-builder.partials.components.elements.post-content-design')
                              </div>
+                             <!-- Design Settings for Post Meta -->
+                             <div v-else-if="editingElement?.type === 'post_meta'" class="space-y-6">
+                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.post-meta-design')
+                             </div>
                              <!-- Custom Elements: design tab fields -->
                              @foreach($customElements ?? [] as $type => $custEl)
                              @if($type === 'text_block') @continue @endif
@@ -3576,4 +3823,166 @@
             </div>
         </div>
     </div>
+
+    <!-- ══ Dynamic Source Picker (database-icon / blue-pill system) ══ -->
+    <template v-if="dynSrcMenu.open">
+        <div class="fixed inset-0 z-[9998]" @click.stop="dynSrcMenu.open = false"></div>
+
+        <!-- ── Config panel: sub-fields for selected source ── -->
+        <div v-if="dynSrcMenu.showConfig"
+             class="fixed z-[9999] bg-white border border-slate-200 rounded-xl shadow-2xl"
+             style="width:270px"
+             :style="{ top: dynSrcMenu.y + 'px', left: dynSrcMenu.x + 'px' }"
+             @click.stop>
+            <div class="px-2.5 py-2.5 border-b border-slate-100 flex items-center gap-2">
+                <button @click="dynSrcMenu.showConfig = false"
+                        class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-100 flex-shrink-0 transition-all">
+                    <i class="fa fa-arrow-left text-[10px]"></i>
+                </button>
+                <div class="flex items-center gap-1.5 flex-1 min-w-0">
+                    <i :class="['fa', getDynSrcDef(dynSrcMenu.configKey).icon, 'text-[10px] text-[#0091ea] flex-shrink-0']"></i>
+                    <span class="text-[12px] font-bold text-slate-700 truncate">@{{ getDynSrcDef(dynSrcMenu.configKey).label }}</span>
+                </div>
+                <button @click="dynSrcMenu.open = false" class="text-slate-300 hover:text-slate-500 w-5 h-5 flex items-center justify-center flex-shrink-0">
+                    <i class="fa fa-times text-[9px]"></i>
+                </button>
+            </div>
+            <div class="p-3 space-y-3 overflow-y-auto" style="max-height:320px">
+                <template v-for="field in getDynSrcDef(dynSrcMenu.configKey).subFields" :key="field.key">
+                    <div>
+                        <label class="text-[10px] font-semibold text-slate-500 block mb-1 uppercase tracking-wide">@{{ field.label }}</label>
+                        <select v-if="field.type === 'select'"
+                                v-model="dynSrcMenu.settings[field.key]"
+                                class="w-full text-[12px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/20">
+                            <option v-for="opt in field.options" :key="opt.value" :value="opt.value">@{{ opt.label }}</option>
+                        </select>
+                        <input v-else-if="field.type === 'number'"
+                               type="number"
+                               v-model="dynSrcMenu.settings[field.key]"
+                               :placeholder="field.placeholder || ''"
+                               class="w-full text-[12px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/20">
+                        <input v-else
+                               type="text"
+                               v-model="dynSrcMenu.settings[field.key]"
+                               :placeholder="field.placeholder || ''"
+                               class="w-full text-[12px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/20">
+                        <p v-if="field.required && !dynSrcMenu.settings[field.key]"
+                           class="text-[10px] text-amber-500 mt-0.5">Required</p>
+                    </div>
+                </template>
+            </div>
+            <div class="border-t border-slate-100 p-2">
+                <button @click="clearDynSource()"
+                        class="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-red-400 hover:bg-red-50 rounded-lg transition-all">
+                    <i class="fa fa-times-circle text-[10px]"></i> Remove Dynamic
+                </button>
+            </div>
+        </div>
+
+        <!-- ── List panel: all options grouped ── -->
+        <div v-else
+             class="fixed z-[9999] bg-white border border-slate-200 rounded-xl shadow-2xl"
+             style="width:252px"
+             :style="{ top: dynSrcMenu.y + 'px', left: dynSrcMenu.x + 'px' }"
+             @click.stop>
+            <div class="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dynamic Source</span>
+                <button @click="dynSrcMenu.open = false" class="text-slate-300 hover:text-slate-500 w-5 h-5 flex items-center justify-center">
+                    <i class="fa fa-times text-[9px]"></i>
+                </button>
+            </div>
+            <div class="py-1 overflow-y-auto" style="max-height:330px">
+                <template v-for="group in getDynSrcGroups(dynSrcMenu.ctx)" :key="group.name">
+                    <div class="px-3 pt-2.5 pb-0.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider">@{{ group.name }}</div>
+                    <button v-for="opt in group.items" :key="opt.key"
+                            @click="selectDynSource(opt.key)"
+                            class="w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-all"
+                            :class="dynSrcMenu.settings?.[dynSrcMenu.sourceKey] === opt.key ? 'bg-[#0091ea]/10 text-[#0091ea]' : 'text-slate-600 hover:bg-slate-50'">
+                        <i :class="['fa', opt.icon, 'text-[10px] w-3.5 flex-shrink-0']"></i>
+                        <span class="text-[12px] font-medium flex-1">@{{ opt.label }}</span>
+                        <i v-if="opt.subFields && opt.subFields.length" class="fa fa-chevron-right text-[9px] text-slate-300 flex-shrink-0"></i>
+                        <i v-else-if="dynSrcMenu.settings?.[dynSrcMenu.sourceKey] === opt.key" class="fa fa-check text-[9px] text-[#0091ea] flex-shrink-0"></i>
+                    </button>
+                </template>
+            </div>
+            <div v-if="dynSrcMenu.settings?.[dynSrcMenu.sourceKey]" class="border-t border-slate-100 p-1.5">
+                <button @click="clearDynSource()"
+                        class="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-red-400 hover:bg-red-50 rounded-lg transition-all">
+                    <i class="fa fa-times-circle text-[10px]"></i> Remove Dynamic
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ══ Global Dynamic Value Picker Popover ══ -->
+    <template v-if="dynMenu.open">
+        <div class="fixed inset-0 z-[9998]" @click.stop="dynMenu.open = false"></div>
+        <div class="fixed z-[9999] bg-white border border-slate-200 rounded-xl shadow-2xl w-[272px]"
+             :style="{ top: dynMenu.y + 'px', left: dynMenu.x + 'px' }"
+             style="max-height:420px;overflow-y:auto;"
+             @click.stop>
+            <div class="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                    <i class="fa fa-bolt text-[#0091ea] text-[10px]"></i>
+                    <span class="text-[11px] font-bold text-slate-700">Dynamic Value</span>
+                </div>
+                <button @click="dynMenu.open = false" class="text-slate-300 hover:text-slate-500 w-5 h-5 flex items-center justify-center">
+                    <i class="fa fa-times text-[10px]"></i>
+                </button>
+            </div>
+            <div class="p-2.5 space-y-3">
+
+                <!-- Post / Page -->
+                <div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-1.5">Post / Page</div>
+                    <div class="grid grid-cols-2 gap-1">
+                        <button @click="insertDynToken('post_title')" class="dyn-token-btn">Post Title</button>
+                        <button @click="insertDynToken('post_excerpt')" class="dyn-token-btn">Excerpt</button>
+                        <button @click="insertDynToken('post_date')" class="dyn-token-btn">Post Date</button>
+                        <button @click="insertDynToken('post_id')" class="dyn-token-btn">Post ID</button>
+                        <button @click="insertDynToken('post_type')" class="dyn-token-btn">Post Type</button>
+                        <button @click="insertDynToken('post_permalink')" class="dyn-token-btn">Permalink</button>
+                        <button @click="insertDynToken('post_reading_time')" class="dyn-token-btn">Reading Time</button>
+                        <button @click="insertDynToken('author_name')" class="dyn-token-btn">Author Name</button>
+                    </div>
+                </div>
+
+                <!-- Site -->
+                <div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-1.5">Site</div>
+                    <div class="grid grid-cols-2 gap-1">
+                        <button @click="insertDynToken('site_title')" class="dyn-token-btn">Site Title</button>
+                        <button @click="insertDynToken('site_tagline')" class="dyn-token-btn">Tagline</button>
+                    </div>
+                </div>
+
+                <!-- Other -->
+                <div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-1.5">Other</div>
+                    <div class="grid grid-cols-2 gap-1">
+                        <button @click="insertDynToken('current_date')" class="dyn-token-btn">Current Date</button>
+                        <button @click="insertDynToken('current_year')" class="dyn-token-btn">Current Year</button>
+                        <button @click="insertDynToken('user_name')" class="dyn-token-btn">User Name</button>
+                    </div>
+                </div>
+
+                <!-- ACPT Custom Field -->
+                <div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 mb-1.5">ACPT Custom Field</div>
+                    <div class="flex gap-1">
+                        <input type="text" v-model="dynAcptSlug" placeholder="Field slug…"
+                               class="flex-1 border border-slate-200 rounded px-2 py-1.5 text-[11px] focus:outline-none focus:border-[#0091ea]"
+                               @keydown.enter.prevent="insertDynAcpt()">
+                        <button @click="insertDynAcpt()"
+                                :disabled="!dynAcptSlug.trim()"
+                                class="px-2.5 py-1.5 bg-[#0091ea] text-white rounded text-[10px] font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#007cc0] transition-colors">
+                            Insert
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Enter the ACPT field slug</p>
+                </div>
+
+            </div>
+        </div>
+    </template>
 </aside>

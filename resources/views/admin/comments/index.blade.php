@@ -103,7 +103,7 @@
                         @endif
                     </td>
                     <td class="wp-table-cell align-top text-[#2c3338] text-left w-40">
-                        <span class="text-[13px]">{{ $comment->created_at->format('Y/m/d \a\t g:i a') }}</span>
+                        <span class="text-[13px]">{{ cms_date($comment->created_at, 'Y/m/d \a\t g:i a') }}</span>
                     </td>
                 </tr>
             @empty

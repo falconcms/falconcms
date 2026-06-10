@@ -609,7 +609,12 @@
                         }
                     @endphp
                     @if($__elView && $__elShow)
-                        @php $__elAnimType = $el['settings']['anim_type'] ?? ''; @endphp
+                        @php
+                            if (!empty($el['settings']) && function_exists('lazy_resolve_tokens_in_settings')) {
+                                $el['settings'] = lazy_resolve_tokens_in_settings($el['settings'], $post ?? null);
+                            }
+                            $__elAnimType = $el['settings']['anim_type'] ?? '';
+                        @endphp
                         @if($__elAnimType)
                             <div class="lz-anim lz-anim-{{ $__elAnimType }}" style="width:100%" data-anim-duration="{{ $el['settings']['anim_duration'] ?? 600 }}" data-anim-delay="{{ $el['settings']['anim_delay'] ?? 0 }}" data-anim-easing="{{ $el['settings']['anim_easing'] ?? 'ease' }}">
                                 @include($__elView, ['el' => $el])

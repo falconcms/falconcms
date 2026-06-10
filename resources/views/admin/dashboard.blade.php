@@ -73,6 +73,7 @@
             </div>
         </div>
 
+        @if(auth()->user()->hasPermission('access_dashboard'))
         <!-- Info Boxes -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
             <div class="classic-card">
@@ -345,9 +346,17 @@
         </div>
         @endif
 
+        @else
+        {{-- User does not have dashboard access --}}
+        <div class="bg-white border border-[#c3c4c7] rounded p-6 text-[14px] text-[#646970]">
+            You do not have permission to view the dashboard overview.
+        </div>
+        @endif
+
     </div>
 
     @push('scripts')
+    @if(auth()->user()->hasPermission('access_dashboard'))
     <script src="{{ asset('vendor/cms-dashboard/js/chart.min.js') }}"></script>
     <script>
         const ctx = document.getElementById('impressionChart').getContext('2d');
@@ -460,5 +469,6 @@
         });
     </script>
     @endif
+    @endif {{-- access_dashboard permission --}}
     @endpush
 </x-cms-dashboard::layouts.admin>

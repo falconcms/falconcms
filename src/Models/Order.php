@@ -16,6 +16,7 @@ class Order extends Model
         'paid_at'          => 'datetime',
         'refunded_amount'  => 'decimal:2',
         'refund_log'       => 'array',
+        'meta'             => 'array',
     ];
 
     protected static function boot()

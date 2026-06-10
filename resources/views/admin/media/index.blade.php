@@ -159,7 +159,7 @@
                                 <div class="text-[11px] text-[#2271b1] hover:text-[#135e96] mt-1 cursor-pointer">Attach</div>
                             @endif
                         </td>
-                        <td class="p-2 align-top pt-3 text-[#646970]">{{ $item->created_at->format('Y/m/d') }}</td>
+                        <td class="p-2 align-top pt-3 text-[#646970]">{{ cms_date($item->created_at, 'Y/m/d') }}</td>
                     </tr>
                 @empty
                     <tr>

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 
 use Acme\CmsDashboard\Models\Category;
 use Acme\CmsDashboard\Models\Tag;
+use Acme\CmsDashboard\Models\TaxonomyTerm;
 
 
 class FrontendController extends Controller
@@ -98,35 +99,82 @@ class FrontendController extends Controller
             }
         } catch (\Exception $e) {}
         
-        $routeName = request()->route()->getName();
-        $items = collect();
-        $title = '';
+        $routeName       = request()->route()->getName();
+        $items           = collect();
+        $title           = '';
+        $archivePostType = 'post'; // 'post' or 'product'
 
-        if ($routeName === 'frontend.category') {
-            $slugs = explode('/', urldecode($slug));
+        if (in_array($routeName, ['frontend.category', 'frontend.category.locale'])) {
+            $slugs    = explode('/', urldecode($slug));
             $lastSlug = end($slugs);
-            $category = Category::where('slug', $lastSlug)->firstOrFail();
-            $postsQuery = $category->posts()->where('status', 'published');
-            $title = 'Category: ' . $category->name;
-        } elseif ($routeName === 'frontend.tag') {
-            $tag = Tag::where('slug', $slug)->firstOrFail();
-            $postsQuery = $tag->posts()->where('status', 'published');
-            $title = 'Tag: ' . $tag->name;
+            try {
+                $category   = Category::where('slug', $lastSlug)->firstOrFail();
+                $postsQuery = $category->posts()->where('status', 'published');
+                $title      = $category->name;
+            } catch (\Throwable $e) {
+                $term = TaxonomyTerm::where('slug', $lastSlug)->first();
+                abort_if(!$term, 404);
+                $postsQuery = $term->posts()->where('status', 'published');
+                $title      = $term->name;
+            }
+            $archivePostType = 'post';
+
+        } elseif (in_array($routeName, ['frontend.tag', 'frontend.tag.locale'])) {
+            $tagSlugs = explode('/', urldecode($slug));
+            $lastSlug = end($tagSlugs);
+            try {
+                $tag        = Tag::where('slug', $lastSlug)->firstOrFail();
+                $postsQuery = $tag->posts()->where('status', 'published');
+                $title      = $tag->name;
+            } catch (\Throwable $e) {
+                $term = TaxonomyTerm::where('slug', $lastSlug)->first();
+                abort_if(!$term, 404);
+                $postsQuery = $term->posts()->where('status', 'published');
+                $title      = $term->name;
+            }
+            $archivePostType = 'post';
+
         } elseif (in_array($routeName, ['frontend.product_category', 'frontend.product_category.locale'])) {
-            $slugs = explode('/', urldecode($slug));
+            $slugs    = explode('/', urldecode($slug));
             $lastSlug = end($slugs);
-            $category = \Acme\CmsDashboard\Models\ProductCategory::where('slug', $lastSlug)->firstOrFail();
-            $postsQuery = $category->posts()->where('status', 'published');
-            $title = $category->name;
+
+            // Try the dedicated ProductCategory table first, fall back to ACPT taxonomy_terms
+            try {
+                $category   = \Acme\CmsDashboard\Models\ProductCategory::where('slug', $lastSlug)->firstOrFail();
+                $postsQuery = $category->posts()->where('status', 'published');
+                $title      = $category->name;
+            } catch (\Throwable $e) {
+                $term = TaxonomyTerm::where('slug', $lastSlug)
+                    ->where('taxonomy_slug', 'like', 'product%')
+                    ->first();
+                abort_if(!$term, 404);
+                $postsQuery = $term->posts()->where('status', 'published');
+                $title      = $term->name;
+            }
+            $archivePostType = 'product';
+
         } elseif (in_array($routeName, ['frontend.product_tag', 'frontend.product_tag.locale'])) {
-            $tag = \Acme\CmsDashboard\Models\ProductTag::where('slug', $slug)->firstOrFail();
-            $postsQuery = $tag->posts()->where('status', 'published');
-            $title = $tag->name;
+            // Try the dedicated ProductTag table first, fall back to ACPT taxonomy_terms
+            try {
+                $tag        = \Acme\CmsDashboard\Models\ProductTag::where('slug', $slug)->firstOrFail();
+                $postsQuery = $tag->posts()->where('status', 'published');
+                $title      = $tag->name;
+            } catch (\Throwable $e) {
+                $term = TaxonomyTerm::where('slug', $slug)
+                    ->where(function ($q) {
+                        $q->where('taxonomy_slug', 'like', 'product%tag%')
+                          ->orWhere('taxonomy_slug', 'like', 'product%');
+                    })
+                    ->first();
+                abort_if(!$term, 404);
+                $postsQuery = $term->posts()->where('status', 'published');
+                $title      = $term->name;
+            }
+            $archivePostType = 'product';
         }
 
         if (isset($postsQuery)) {
-            // Dynamic Sorting Logic for Products in Archives
-            if (request()->has('orderby')) {
+            if (request()->has('orderby') && $archivePostType === 'product') {
                 $orderby = request('orderby', 'latest');
                 switch ($orderby) {
                     case 'price':
@@ -140,16 +188,14 @@ class FrontendController extends Controller
                             ->select('posts.*');
                         break;
                     case 'rating':
-                        $postsQuery->withCount(['reviews as average_rating' => function($query) {
-                            $query->select(\Illuminate\Support\Facades\DB::raw('avg(rating)'));
-                        }])->orderBy('average_rating', 'desc');
+                        $postsQuery->withCount(['reviews as average_rating' => fn ($q) => $q->select(\Illuminate\Support\Facades\DB::raw('avg(rating)'))])
+                            ->orderBy('average_rating', 'desc');
                         break;
                     case 'popularity':
                         $postsQuery->withCount('reviews')->orderBy('reviews_count', 'desc');
                         break;
-                    case 'latest':
+                    default:
                         $postsQuery->latest();
-                        break;
                 }
             } else {
                 $postsQuery->latest();
@@ -157,11 +203,31 @@ class FrontendController extends Controller
             $items = $postsQuery->paginate(12)->withQueryString();
         }
 
-        $type = ($routeName === 'frontend.category') ? 'Category' : 'Tag';
         return view($this->resolveThemeView('archive'), [
-            'posts' => $items,
-            'title' => $title,
-            'type' => $type
+            'posts'           => $items,
+            'title'           => $title,
+            'type'            => ucfirst($archivePostType),
+            'archivePostType' => $archivePostType,
+        ]);
+    }
+
+    public function authorArchive($id)
+    {
+        $user            = \App\Models\User::findOrFail($id);
+        $archivePostType = request('type', 'post');
+
+        $posts = Post::where('user_id', $id)
+            ->where('type', $archivePostType)
+            ->where('status', 'published')
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        return view($this->resolveThemeView('archive'), [
+            'posts'           => $posts,
+            'title'           => $user->name,
+            'type'            => 'Author',
+            'archivePostType' => $archivePostType,
         ]);
     }
 

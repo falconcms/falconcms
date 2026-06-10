@@ -83,8 +83,8 @@
                                 <input type="checkbox" name="log_ids[]" value="{{ $log->id }}" class="log-checkbox rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]">
                             </td>
                             <td class="wp-table-cell align-top">
-                                <span class="font-medium">{{ $log->created_at->format('Y/m/d') }}</span><br>
-                                <span class="text-[11px] text-[#646970]">{{ $log->created_at->format('g:i a') }}</span>
+                                <span class="font-medium">{{ cms_date($log->created_at, 'Y/m/d') }}</span><br>
+                                <span class="text-[11px] text-[#646970]">{{ cms_date($log->created_at, 'g:i a') }}</span>
                             </td>
                             <td class="wp-table-cell align-top">
                                 <div class="flex items-center gap-2">

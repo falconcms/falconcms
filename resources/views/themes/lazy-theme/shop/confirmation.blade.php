@@ -21,7 +21,7 @@
                 </div>
                 <div>
                     <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Date</span>
-                    <strong class="text-gray-900">{{ $order->created_at->format('M d, Y') }}</strong>
+                    <strong class="text-gray-900">{{ cms_date($order->created_at, 'M d, Y') }}</strong>
                 </div>
                 <div>
                     <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total</span>

@@ -20,7 +20,7 @@
     <div class="flex justify-between items-center mb-3">
         <label class="text-[12px] font-bold text-[#333]">{{ $fieldLabel }}</label>
         @if($allowDynamic)
-        <button @click="editingElement.settings.{{ $dynKey }} = (editingElement.settings.{{ $dynKey }} ? '' : 'post_title')"
+        <button @click.stop="openDynSrcMenu(editingElement.settings, '{{ $dynKey }}', 'text', $event)"
                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
                 :class="editingElement.settings.{{ $dynKey }} ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'"
                 title="Dynamic source">
@@ -31,7 +31,7 @@
     @if($allowDynamic)
     <template v-if="editingElement.settings.{{ $dynKey }}">
         <div class="mb-2">
-            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey])
+            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'text'])
         </div>
     </template>
     <input v-else type="text" v-model="editingElement.settings.{{ $fieldKey }}"
@@ -225,7 +225,7 @@
     <div class="flex justify-between items-center mb-3">
         <label class="text-[12px] font-bold text-[#333]">{{ $fieldLabel }}</label>
         @if($allowDynamic)
-        <button @click="editingElement.settings.{{ $dynKey }} = (editingElement.settings.{{ $dynKey }} ? '' : 'post_url')"
+        <button @click.stop="openDynSrcMenu(editingElement.settings, '{{ $dynKey }}', 'link', $event)"
                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
                 :class="editingElement.settings.{{ $dynKey }} ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'"
                 title="Dynamic source">
@@ -239,7 +239,7 @@
     @if($allowDynamic)
     <template v-if="editingElement.settings.{{ $dynKey }}">
         <div class="mb-2">
-            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey])
+            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'link'])
         </div>
     </template>
     <div v-else class="flex gap-2 items-center">
@@ -267,7 +267,7 @@
     <div class="flex justify-between items-center mb-3">
         <label class="text-[12px] font-bold text-[#333]">{{ $fieldLabel }}</label>
         @if($allowDynamic)
-        <button @click="editingElement.settings.{{ $dynKey }} = (editingElement.settings.{{ $dynKey }} ? '' : 'post_url')"
+        <button @click.stop="openDynSrcMenu(editingElement.settings, '{{ $dynKey }}', 'link', $event)"
                 class="w-6 h-6 flex items-center justify-center rounded border transition-all"
                 :class="editingElement.settings.{{ $dynKey }} ? 'bg-[#0091ea]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'"
                 title="Dynamic source">
@@ -278,7 +278,7 @@
     @if($allowDynamic)
     <template v-if="editingElement.settings.{{ $dynKey }}">
         <div class="mb-2">
-            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey])
+            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'link'])
         </div>
     </template>
     @endif

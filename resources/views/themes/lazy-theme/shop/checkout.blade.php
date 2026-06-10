@@ -86,6 +86,19 @@
                         <label class="text-[14px] font-bold text-[#2c3338]">Email address <span class="text-red-600">*</span></label>
                         <input type="email" name="billing_email" value="{{ old('billing_email', auth()->user()->email ?? '') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-[#1363df] outline-none">
                     </div>
+
+                    @guest
+                    <div class="mb-4 border border-[#ddd] rounded-[3px] p-4 bg-[#f9f9f9]">
+                        <p class="text-[13px] font-semibold text-[#2c3338] mb-3">Create an account</p>
+                        <p class="text-[13px] text-[#515151] mb-3">Set a password to create your account. You'll be able to track orders after checkout.</p>
+                        <input type="hidden" name="create_account" value="1">
+                        <div class="space-y-1.5">
+                            <label class="text-[14px] font-bold text-[#2c3338]">Password <span class="text-red-600">*</span></label>
+                            <input type="password" name="account_password" autocomplete="new-password" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-[#1363df] outline-none {{ $errors->has('account_password') ? 'border-red-400' : '' }}">
+                            @error('account_password')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                        </div>
+                    </div>
+                    @endguest
                 </div>
 
                 <!-- Right Column: Shipping Details -->
@@ -319,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.redirect) {
+                    if (window.clearCheckoutDraft) window.clearCheckoutDraft();
                     window.location.href = data.redirect;
                 } else if (data.errors) {
                     let errorList = '<ul class="text-left list-disc pl-5 space-y-1">';
@@ -349,6 +363,54 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // ── Checkout form persistence (localStorage) ───────────────────────────
+    (function () {
+        var KEY = 'lazy_checkout_draft';
+        var TEXT  = ['billing_first_name','billing_last_name','billing_email','billing_phone',
+                     'billing_address_1','billing_address_2','billing_city','billing_state','billing_postcode',
+                     'shipping_first_name','shipping_last_name',
+                     'shipping_address_1','shipping_address_2','shipping_city','shipping_state','shipping_postcode',
+                     'order_comments'];
+        var SEL   = ['billing_country','shipping_country'];
+
+        function save() {
+            var d = {};
+            TEXT.forEach(function(n){ var e=document.querySelector('[name="'+n+'"]'); if(e) d[n]=e.value; });
+            SEL.forEach(function(n){ var e=document.querySelector('[name="'+n+'"]'); if(e) d[n]=e.value; });
+            var cb=document.querySelector('[name="ship_to_different_address"]'); if(cb) d.ship_diff=cb.checked;
+            try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){}
+        }
+
+        function restore() {
+            var raw; try{ raw=localStorage.getItem(KEY); }catch(e){ return; }
+            if(!raw) return;
+            var d; try{ d=JSON.parse(raw); }catch(e){ return; }
+            TEXT.forEach(function(n){
+                if(!d[n]) return;
+                var e=document.querySelector('[name="'+n+'"]');
+                if(e && !e.value.trim()) e.value=d[n];
+            });
+            SEL.forEach(function(n){
+                if(!d[n]) return;
+                var e=document.querySelector('[name="'+n+'"]');
+                if(e && !e.value) { e.value=d[n]; e.dispatchEvent(new Event('change')); }
+            });
+            if(d.ship_diff) {
+                var cb=document.querySelector('[name="ship_to_different_address"]');
+                if(cb && !cb.checked){ cb.checked=true; var sf=document.getElementById('shipping-form'); if(sf) sf.style.display='block'; }
+            }
+        }
+
+        function clear() { try{ localStorage.removeItem(KEY); }catch(e){} }
+        window.clearCheckoutDraft = clear;
+
+        restore();
+        TEXT.concat(SEL).concat(['ship_to_different_address']).forEach(function(n){
+            var e=document.querySelector('[name="'+n+'"]');
+            if(e){ e.addEventListener('input', save); e.addEventListener('change', save); }
+        });
+    })();
 });
 </script>
 @endpush

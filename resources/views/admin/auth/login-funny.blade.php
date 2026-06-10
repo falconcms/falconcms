@@ -4,246 +4,302 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>The Legend Returns - Lazy CMS Login</title>
+    <title>Sign In — {{ get_cms_option('site_title', 'Lazy CMS') }}</title>
+    <link href="{{ asset('vendor/cms-dashboard/css/inter.css') }}" rel="stylesheet">
     <link href="{{ asset('vendor/cms-dashboard/css/funny-fonts.css') }}" rel="stylesheet">
     <style>
-        :root {
-            --primary: #f83a3a;
-            --secondary: #00d2ff;
-            --accent: #ff007a;
-            --bg: #0f172a;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             min-height: 100vh;
-            margin: 0;
-            overflow: hidden;
+            display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+            background: #f0f4f8;
+            background-image:
+                radial-gradient(ellipse at 15% 15%, rgba(0,145,234,.12) 0%, transparent 45%),
+                radial-gradient(ellipse at 85% 85%, rgba(248,58,58,.08) 0%, transparent 45%),
+                radial-gradient(ellipse at 80% 10%, rgba(255,184,0,.07) 0%, transparent 35%);
         }
 
-        .funny-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            padding: 50px;
-            border-radius: 40px;
-            border: 1px solid var(--glass-border);
-            width: 100%;
-            max-width: 420px;
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-            position: relative;
-        }
+        .funny-card { background: #fff; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.1), 0 1px 3px rgba(0,0,0,.06); width: 100%; max-width: 420px; padding: 2.5rem; text-align: center; }
 
-        h1 {
-            font-family: 'Jua', sans-serif;
-            font-size: 40px;
-            background: linear-gradient(to bottom, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0 0 5px 0;
-            letter-spacing: -1px;
-        }
+        .card-logo { margin-bottom: 1.5rem; }
+        .card-logo img { height: 40px; object-fit: contain; }
+        .card-logo-text { font-size: 1.25rem; font-weight: 800; color: #111827; letter-spacing: -.02em; }
+        .card-logo-accent { color: #0091ea; }
 
-        .subtitle {
-            color: #94a3b8;
-            font-size: 15px;
-            margin-bottom: 35px;
-        }
+        .funny-title { font-family: 'Jua', sans-serif; font-size: 2rem; color: #111827; letter-spacing: -.01em; margin-bottom: 4px; }
+        .funny-sub { font-size: .875rem; color: #6b7280; margin-bottom: 1.75rem; }
 
-        .form-group {
-            text-align: left;
-            margin-bottom: 25px;
-            position: relative;
-        }
+        .a-error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 11px 14px; font-size: .84rem; color: #b91c1c; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 18px; text-align: left; }
+        .a-success { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 11px 14px; font-size: .84rem; color: #166534; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
 
-        label {
-            display: block;
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #cbd5e1;
-            margin-bottom: 8px;
-            letter-spacing: 1.5px;
+        .lf-field-wrap { position: relative; }
+        .lf-input {
+            border: 1.5px solid #e5e7eb; border-radius: 10px;
+            padding: 1.25rem 14px .45rem; width: 100%;
+            font-size: .9rem; font-family: inherit; color: #111827;
+            background: #fafafa; display: block;
+            transition: border-color .15s, box-shadow .15s, background .15s;
         }
-
-        input {
-            width: 100%;
-            padding: 14px 18px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--glass-border);
-            border-radius: 18px;
-            color: #fff;
-            font-size: 15px;
-            font-family: inherit;
-            box-sizing: border-box;
-            transition: all 0.3s;
-            outline: none;
+        .lf-input:focus { outline: none; border-color: #0091ea; background: #fff; box-shadow: 0 0 0 3px rgba(0,145,234,.1); }
+        .lf-input.has-right-icon { padding-right: 44px; }
+        .lf-float-label {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            pointer-events: none; color: #9ca3af; font-size: .875rem; font-weight: 500; line-height: 1;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100% - 28px); z-index: 1;
+            transition: top .15s, transform .15s, color .15s, background-color .15s;
         }
-
-        input:focus {
-            background: rgba(0, 0, 0, 0.5);
-            border-color: var(--secondary);
+        .lf-field-wrap.lf-focused .lf-float-label,
+        .lf-field-wrap.lf-filled  .lf-float-label {
+            top: 0; transform: translateY(-50%) scale(.78); transform-origin: left center;
+            padding: 0 3px; background: #fff; color: #374151; max-width: none; overflow: visible;
         }
+        .lf-field-wrap.lf-focused .lf-float-label { color: #0091ea; }
 
-        .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 20px;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: rgba(255, 255, 255, 0.5);
-            padding: 0px;
-            line-height: 0;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            width: 50px;
-        }
+        .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9ca3af; padding: 0; line-height: 0; z-index: 10; }
+        .toggle-password:hover { color: #6b7280; }
 
-        .btn-funny-area {
-            height: 100px;
-            position: relative;
-            margin-top: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .remember-row { display: flex; align-items: center; gap: 8px; font-size: .875rem; color: #374151; cursor: pointer; }
+        .remember-row input { width: 15px; height: 15px; accent-color: #0091ea; cursor: pointer; }
 
+        /* Funny dancing button */
+        .btn-funny-area { height: 90px; position: relative; display: flex; align-items: center; justify-content: center; }
         #login-btn {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            color: white;
-            border: none;
-            padding: 14px 45px;
-            font-size: 19px;
-            font-weight: 800;
-            font-family: 'Outfit', sans-serif;
-            border-radius: 20px;
-            cursor: pointer;
-            box-shadow: 0 10px 25px rgba(248, 58, 58, 0.4);
+            background: linear-gradient(135deg, #f83a3a 0%, #ff007a 100%);
+            color: #fff; border: none; padding: 13px 40px;
+            font-size: 1rem; font-weight: 800; font-family: 'Outfit', 'Inter', sans-serif;
+            border-radius: 12px; cursor: pointer;
+            box-shadow: 0 8px 24px rgba(248,58,58,.3);
             white-space: nowrap;
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s;
-            position: relative;
-            z-index: 100;
-            will-change: transform;
+            transition: transform .5s cubic-bezier(.175,.885,.32,1.275), background .3s;
+            position: relative; z-index: 100; will-change: transform;
         }
 
-        .footer-text {
-            margin-top: 35px;
-            font-size: 14px;
-            color: #94a3b8;
-        }
+        /* Magic button */
+        .btn-magic { background: linear-gradient(135deg, #0091ea 0%, #6366f1 100%); color: #fff; border: none; padding: 13px; border-radius: 10px; font-weight: 700; font-size: .9rem; font-family: inherit; width: 100%; cursor: pointer; transition: opacity .2s; }
+        .btn-magic:disabled { opacity: .45; cursor: not-allowed; }
+        .btn-magic:not(:disabled):hover { opacity: .88; }
 
-        .footer-text a { color: var(--secondary); text-decoration: none; font-weight: 700; }
+        .email-status { font-size: .76rem; font-weight: 600; min-height: 14px; margin-top: 5px; text-align: left; }
+        .form-link { color: #0091ea; text-decoration: none; font-weight: 600; }
+        .form-link:hover { color: #007bc7; }
     </style>
 </head>
 <body>
     <div class="funny-card">
-        <h1>WELCOME BACK</h1>
-        <p class="subtitle">Securely enter your legendary portal 🌌</p>
 
-        <form action="{{ route('admin.login') }}" method="POST" id="funny-form">
-            @csrf
-            
-            <div class="form-group">
-                <label>Admin Email</label>
-                <input type="email" id="email" name="email" placeholder="legend@lazycms.com" required autocomplete="off">
-            </div>
+        <div class="card-logo">
+            @if(get_cms_option('theme_site_logo'))
+                <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'Lazy CMS') }}">
+            @else
+                <span class="card-logo-text">{{ get_cms_option('site_title', 'Lazy') }}<span class="card-logo-accent"> CMS</span></span>
+            @endif
+        </div>
 
-            <div class="form-group">
-                <label>Vault Access Key</label>
-                <div style="position: relative;">
-                    <input type="password" id="password" name="password" placeholder="••••••••" required style="padding-right: 55px;">
-                    <button type="button" class="toggle-password" data-target="password">
-                        <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                    </button>
-                </div>
-            </div>
+@php $magicEnabled = get_cms_option('magic_login_enabled'); @endphp
 
-            <div class="btn-funny-area">
-                <button type="submit" id="login-btn">Unlock Vault ✨</button>
-            </div>
-        </form>
+@if($magicEnabled && session('magic_sent'))
+        {{-- ── Magic link sent ── --}}
+        <h1 class="funny-title">CHECK INBOX</h1>
+        <p class="funny-sub">Your magic link is on its way</p>
+        <div class="a-success">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Magic link sent! It expires in 10 minutes.
+        </div>
+        <p style="font-size:.84rem;color:#6b7280">
+            Didn't receive it? <a href="{{ route('admin.login') }}" class="form-link">Try again</a>
+        </p>
 
-        @if(get_cms_option('users_can_register', '0') == '1')
-        <div class="footer-text">
-            Not a legend yet? <a href="{{ route('admin.register') }}">Join Us</a>
+@elseif($magicEnabled)
+        {{-- ── Magic login form ── --}}
+        <h1 class="funny-title">WELCOME BACK</h1>
+        <p class="funny-sub">Enter your email to get a magic sign-in link</p>
+
+        @if($errors->any())
+        <div class="a-error">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ $errors->first() }}
         </div>
         @endif
 
-        <div class="footer-text" style="margin-top: 15px;">
-            Forgot your access key? <a href="{{ route('admin.password.request') }}">Recover Here</a>
+        <form action="{{ route('admin.magic.request') }}" method="POST" style="display:flex;flex-direction:column;gap:1rem;text-align:left">
+            @csrf
+            <div>
+                <div class="lf-field-wrap">
+                    <input type="email" id="email" name="email" placeholder=" " class="lf-input" required autofocus
+                           value="{{ old('email') }}"
+                           pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+                           autocomplete="email">
+                    <label class="lf-float-label" for="email">Email address</label>
+                </div>
+                <div class="email-status" id="email-status"></div>
+            </div>
+            <button type="submit" id="magic-btn" class="btn-magic" disabled>Send Magic Link</button>
+        </form>
+
+@else
+        {{-- ── Standard password login ── --}}
+        <h1 class="funny-title">WELCOME BACK</h1>
+        <p class="funny-sub">Securely enter your portal</p>
+
+        @if($errors->any())
+        <div class="a-error">
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ $errors->first() }}
         </div>
+        @endif
+
+        <form action="{{ route('admin.login') }}" method="POST" id="funny-form" style="display:flex;flex-direction:column;gap:1rem;text-align:left">
+            @csrf
+            <div class="lf-field-wrap">
+                <input type="email" id="email" name="email" placeholder=" " class="lf-input" required autocomplete="off" value="{{ old('email') }}">
+                <label class="lf-float-label" for="email">Email address</label>
+            </div>
+            <div>
+                <div class="lf-field-wrap">
+                    <input type="password" id="password" name="password" placeholder=" " class="lf-input has-right-icon" required>
+                    <label class="lf-float-label" for="password">Password</label>
+                    <button type="button" class="toggle-password" data-target="password" tabindex="-1">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                </div>
+                <div style="text-align:right;margin-top:6px">
+                    <a href="{{ route('admin.password.request') }}" class="form-link" style="font-size:.78rem">Forgot password?</a>
+                </div>
+            </div>
+            <label class="remember-row">
+                <input type="checkbox" name="remember">
+                Remember me
+            </label>
+            <div class="btn-funny-area">
+                <button type="submit" id="login-btn">Unlock Portal</button>
+            </div>
+        </form>
+@endif
+
+        @if(get_cms_option('users_can_register', '0') == '1')
+        <p style="margin-top:1.25rem;font-size:.875rem;color:#6b7280;text-align:center">
+            Don't have an account?
+            <a href="{{ route('admin.register') }}" class="form-link">Create one</a>
+        </p>
+        @endif
+
     </div>
 
     <script>
-        const btn = document.getElementById('login-btn');
-        const emailInput = document.getElementById('email');
-        const pwdInput = document.getElementById('password');
-        
-        let isValidCreds = false;
-
-        async function verify() {
-            const email = emailInput.value;
-            const password = pwdInput.value;
-            if (email.length < 5 || password.length < 3) { isValidCreds = false; return; }
-            try {
-                const response = await fetch("{{ route('admin.login.check') }}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await response.json();
-                isValidCreds = data.valid;
-                if (isValidCreds) resetBtn();
-            } catch (err) { }
-        }
-
-        function resetBtn() {
-            btn.style.transform = 'translate(0, 0)';
-            btn.innerText = "Unlock Vault ✨";
-            btn.style.background = "linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)";
-        }
-
-        emailInput.addEventListener('input', () => { isValidCreds = false; verify(); });
-        pwdInput.addEventListener('input', () => { isValidCreds = false; verify(); });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isValidCreds) return;
-            const rect = btn.getBoundingClientRect();
-            const btnX = rect.left + rect.width / 2;
-            const btnY = rect.top + rect.height / 2;
-            const dist = Math.sqrt(Math.pow(e.clientX - btnX, 2) + Math.pow(e.clientY - btnY, 2));
-
-            if (dist < 110) {
-                const angle = Math.atan2(e.clientY - btnY, e.clientX - btnX) + Math.PI;
-                const moveDist = 150;
-                let targetX = Math.cos(angle) * moveDist;
-                let targetY = Math.sin(angle) * moveDist;
-                btn.style.transform = `translate(${targetX}px, ${targetY}px)`;
-                btn.innerText = "Don't Cheat! 😜";
-                btn.style.background = "#fbbf24";
-            }
+    (function () {
+        document.querySelectorAll('.lf-field-wrap').forEach(function (wrap) {
+            var inp = wrap.querySelector('.lf-input');
+            if (!inp) return;
+            function update() { wrap.classList.toggle('lf-filled', inp.value.trim() !== ''); }
+            inp.addEventListener('focus', function () { wrap.classList.add('lf-focused'); });
+            inp.addEventListener('blur',  function () { wrap.classList.remove('lf-focused'); update(); });
+            inp.addEventListener('input', update);
+            update();
         });
-
-        document.querySelectorAll('.toggle-password').forEach(b => {
-             b.addEventListener('click', function() {
-                const target = document.getElementById(this.getAttribute('data-target'));
-                const type = target.type === 'password' ? 'text' : 'password';
-                target.type = type;
-                this.style.color = type === 'text' ? 'var(--secondary)' : 'rgba(255, 255, 255, 0.5)';
+        document.querySelectorAll('.toggle-password').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var inp = document.getElementById(this.dataset.target);
+                inp.type = inp.type === 'password' ? 'text' : 'password';
+                this.style.color = inp.type === 'text' ? '#0091ea' : '#9ca3af';
             });
         });
+
+@if(!get_cms_option('magic_login_enabled'))
+        // Dancing button (only in standard login mode)
+        var btn        = document.getElementById('login-btn');
+        var emailInput = document.getElementById('email');
+        var pwdInput   = document.getElementById('password');
+        var isValidCreds = false;
+
+        async function verify() {
+            var email = emailInput.value, password = pwdInput.value;
+            if (email.length < 5 || password.length < 3) { isValidCreds = false; return; }
+            try {
+                var res  = await fetch("{{ route('admin.login.check') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ email: email, password: password })
+                });
+                var data = await res.json();
+                isValidCreds = data.valid;
+                if (isValidCreds) { btn.style.transform = 'translate(0,0)'; btn.textContent = 'Unlock Portal'; btn.style.background = 'linear-gradient(135deg,#f83a3a 0%,#ff007a 100%)'; }
+            } catch (e) {}
+        }
+
+        emailInput.addEventListener('input', function () { isValidCreds = false; verify(); });
+        pwdInput.addEventListener('input',   function () { isValidCreds = false; verify(); });
+
+        document.addEventListener('mousemove', function (e) {
+            if (isValidCreds) return;
+            var rect = btn.getBoundingClientRect();
+            var bx = rect.left + rect.width / 2, by = rect.top + rect.height / 2;
+            var dist = Math.sqrt(Math.pow(e.clientX - bx, 2) + Math.pow(e.clientY - by, 2));
+            if (dist < 110) {
+                var angle = Math.atan2(e.clientY - by, e.clientX - bx) + Math.PI;
+                btn.style.transform = 'translate(' + (Math.cos(angle) * 150) + 'px,' + (Math.sin(angle) * 150) + 'px)';
+                btn.textContent = "Don't Cheat!";
+                btn.style.background = '#fbbf24';
+            }
+        });
+@endif
+
+@if(get_cms_option('magic_login_enabled') && !session('magic_sent'))
+        // Real-time email check for magic login
+        var emailInp   = document.getElementById('email');
+        var statusEl   = document.getElementById('email-status');
+        var magicBtn   = document.getElementById('magic-btn');
+        var emailTimer = null;
+        var csrfToken  = document.querySelector('meta[name="csrf-token"]').content;
+
+        function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
+
+        function checkEmail(email) {
+            statusEl.textContent = 'Checking...';
+            statusEl.style.color = '#9ca3af';
+            magicBtn.disabled = true;
+
+            fetch("{{ route('shop.magic.email.check') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify({ email: email })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.exists) {
+                    statusEl.textContent = '✓ Account found — ready to send magic link';
+                    statusEl.style.color = '#16a34a';
+                    magicBtn.disabled = false;
+                } else {
+                    statusEl.textContent = '✗ No account found with this email';
+                    statusEl.style.color = '#dc2626';
+                    magicBtn.disabled = true;
+                }
+            })
+            .catch(function() { statusEl.textContent = ''; magicBtn.disabled = false; });
+        }
+
+        if (emailInp) {
+            emailInp.addEventListener('input', function() {
+                clearTimeout(emailTimer);
+                var val = this.value.trim();
+                statusEl.textContent = '';
+                magicBtn.disabled = true;
+                if (!val) return;
+                if (!isValidEmail(val)) {
+                    statusEl.textContent = 'Please enter a valid email address';
+                    statusEl.style.color = '#dc2626';
+                    return;
+                }
+                emailTimer = setTimeout(function() { checkEmail(val); }, 400);
+            });
+            if (emailInp.value.trim() && isValidEmail(emailInp.value.trim())) {
+                checkEmail(emailInp.value.trim());
+            }
+        }
+@endif
+    })();
     </script>
 </body>
 </html>

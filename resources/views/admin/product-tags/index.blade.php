@@ -116,7 +116,7 @@
                                     <a href="{{ route('admin.product-tags.edit', [$tag, 'type' => 'post']) }}" class="text-[#2271b1]">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                     <button type="button" onclick="confirmDeleteTag({{ $tag->id }})" class="text-[#b32d2e] hover:text-[#8a2424] cursor-pointer">Delete</button>
                                      <span class="text-[#c3c4c7]">|</span>
-                                    <a href="#" class="text-[#2271b1]">View</a>
+                                    <a href="{{ url('product-tag/' . $tag->slug) }}" target="_blank" class="text-[#2271b1]">View</a>
                                 </div>
                             </td>
                             <td class="wp-table-cell text-[#646970]">{{ $tag->description ?: '—' }}</td>

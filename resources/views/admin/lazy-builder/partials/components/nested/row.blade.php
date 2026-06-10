@@ -261,9 +261,10 @@
                             @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.menu')
                             @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.card')
                             @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.post-content')
+                            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.post-meta')
                             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
                             @php
-                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','icon_list','tabs','video','card','post_grid','post_content','row']";
+                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','row']";
                             @endphp
                             <div v-if="customElements[el.type] !== undefined && !{!! $builtInTypesNested !!}.includes(el.type)"
                                  :style="[{ width: '100%' }, getCustomElementRender(el).wrapperStyle, getCanvasVisibilityStyle(el.settings)]"

@@ -87,12 +87,13 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
-            
+
             // Re-check block just in case session/auth mismatch
             if ($user->is_blocked || ($user->blocked_until && $user->blocked_until->isFuture())) {
                 Auth::logout();
                 return back()->withErrors(['email' => 'Your account is restricted.'])->onlyInput('email');
             }
+
 
             // Reset attempts on successful login
             $user->update([
@@ -286,6 +287,87 @@ class LoginController extends Controller
         \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return redirect()->route('admin.login')->with('success', 'Your password has been reset successfully!');
+    }
+
+    public function requestAdminMagicLink(Request $request)
+    {
+        if (!get_cms_option('magic_login_enabled')) {
+            return back()->withErrors(['email' => 'Magic login is not enabled.']);
+        }
+
+        $request->validate(['email' => ['required', 'email:rfc,dns']]);
+
+        $email = strtolower(trim($request->email));
+        $user  = User::where('email', $email)->first();
+
+        if ($user && !$user->is_blocked && optional($user->role)->slug !== 'customer') {
+            \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+                ->where('email', $email)
+                ->whereNull('used_at')
+                ->delete();
+
+            $rawToken = \Illuminate\Support\Str::random(48);
+            $hash     = hash('sha256', $rawToken);
+
+            \Illuminate\Support\Facades\DB::table('magic_login_tokens')->insert([
+                'email'      => $email,
+                'token'      => $hash,
+                'expires_at' => now()->addMinutes(10),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $magicUrl = route('admin.magic.verify', ['token' => $rawToken]);
+
+            try {
+                Mail::to($email)->send(new \Acme\CmsDashboard\Mail\MagicLoginMail($magicUrl, $user->name));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Admin magic login mail failed: ' . $e->getMessage());
+                \Illuminate\Support\Facades\Log::info("Admin magic login link (mail failed) for {$email}: {$magicUrl}");
+            }
+        }
+
+        return back()->with('magic_sent', true);
+    }
+
+    public function verifyAdminMagicLink(Request $request, string $token)
+    {
+        if (BlockedIp::where('ip_address', $request->ip())->where('attempts', '>=', 5)->exists()) {
+            abort(403, 'Your IP has been blocked.');
+        }
+
+        $hash = hash('sha256', $token);
+
+        $row = \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+            ->where('token', $hash)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$row) {
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => 'This magic link is invalid or has expired. Please request a new one.']);
+        }
+
+        $user = User::where('email', $row->email)->first();
+
+        if (!$user || $user->is_blocked || optional($user->role)->slug === 'customer') {
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => 'Access denied for this account.']);
+        }
+
+        \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+            ->where('token', $hash)
+            ->update(['used_at' => now()]);
+
+        Auth::login($user, false);
+        $request->session()->regenerate();
+
+        $user->update(['login_attempts' => 0, 'blocked_until' => null, 'last_failed_login_ip' => null]);
+        BlockedIp::where('ip_address', $request->ip())->delete();
+
+        return redirect()->intended(route('admin.dashboard.index'));
     }
 
     public function logout(Request $request)

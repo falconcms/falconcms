@@ -62,7 +62,7 @@
                     <div>
                         <span class="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Order</span>
                         <div class="text-xl font-bold text-heading">#{{ $order->order_number }}</div>
-                        <div class="text-[13px] text-body mt-0.5">Placed on {{ $order->created_at->format('M d, Y') }}</div>
+                        <div class="text-[13px] text-body mt-0.5">Placed on {{ cms_date($order->created_at, 'M d, Y') }}</div>
                     </div>
                     <span class="px-3 py-1 rounded-full text-[12px] font-bold uppercase"
                           style="background:{{ $stColor }}1a;color:{{ $stColor }}">{{ $stLabel }}</span>
@@ -88,8 +88,8 @@
                         <div class="flex items-start">
                             {{-- Date --}}
                             <div class="hidden sm:flex flex-col items-end w-32 flex-shrink-0 pt-0.5 pr-4">
-                                <span class="text-[12px] text-gray-500 font-medium leading-tight">{{ $entry->created_at->format('d M Y') }}</span>
-                                <span class="text-[11px] text-gray-400 mt-0.5">{{ $entry->created_at->format('h:i a') }}</span>
+                                <span class="text-[12px] text-gray-500 font-medium leading-tight">{{ cms_date($entry->created_at, 'd M Y') }}</span>
+                                <span class="text-[11px] text-gray-400 mt-0.5">{{ cms_date($entry->created_at, 'h:i a') }}</span>
                             </div>
                             {{-- Icon + line --}}
                             <div class="flex flex-col items-center flex-shrink-0">
@@ -107,7 +107,7 @@
                             </div>
                             {{-- Content --}}
                             <div class="flex-1 pl-4 {{ $isLast ? 'pb-0' : 'pb-7' }} pt-0.5">
-                                <span class="sm:hidden text-[11px] text-gray-400 block mb-0.5">{{ $entry->created_at->format('d M Y, h:i a') }}</span>
+                                <span class="sm:hidden text-[11px] text-gray-400 block mb-0.5">{{ cms_date($entry->created_at, 'd M Y, h:i a') }}</span>
                                 <p class="font-bold text-heading text-[14px] leading-snug">{{ $eLabel }}</p>
                                 <p class="text-[13px] text-body mt-0.5 leading-relaxed">{{ $note }}</p>
                                 @if($showTrack)

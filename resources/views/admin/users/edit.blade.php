@@ -30,7 +30,7 @@
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="password_confirmation" class="text-[14px] font-semibold text-[#1d2327]">Confirm New Password</label></th>
                     <td><input type="password" name="password_confirmation" id="password_confirmation" class="wp-input w-[400px] h-8 shadow-sm" required></td>
                 </tr>
-                @if(auth()->user()->hasPermission('manage_users'))
+                @if(auth()->user()->isAdmin())
                 @php $userRoleIds = $user->cmsRoleIds(); @endphp
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label class="text-[14px] font-semibold text-[#1d2327]">Roles</label></th>

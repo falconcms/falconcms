@@ -5,7 +5,7 @@
                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
             </a>
             <h1 class="text-[23px] font-normal text-[#1d2327]">Order #{{ $order->order_number ?: $order->id }}</h1>
-            <span class="text-[#646970] text-[13px] mt-1">{{ $order->created_at->format('M d, Y \a\t H:i') }}</span>
+            <span class="text-[#646970] text-[13px] mt-1">{{ cms_date($order->created_at, 'M d, Y \a\t H:i') }}</span>
         </div>
         <div class="flex items-center space-x-2">
             @if(in_array($order->status, ['completed', 'partially-refunded']))
@@ -53,6 +53,7 @@
                                                     <div class="text-[11px] text-[#646970]">{{ $item->variation_details }}</div>
                                                 @endif
                                                 <div class="text-[11px] text-[#646970]">SKU: {{ $item->product->sku ?? 'N/A' }}</div>
+                                                <?php do_lazy_action('lazy_admin_order_item_meta', $item); ?>
                                             </div>
                                         </div>
                                     </td>
@@ -279,7 +280,7 @@
                                         <div>
                                             <div class="text-[13px] font-bold text-[#8c44db]">{{ lazy_price_format($entry['amount'] ?? 0, $order) }}</div>
                                             <div class="text-[11px] text-[#646970]">
-                                                {{ \Carbon\Carbon::parse($entry['at'] ?? now())->format('M d, Y · h:i A') }}
+                                                {{ cms_date($entry['at'] ?? now(), 'M d, Y · h:i A') }}
                                             </div>
                                             <div class="text-[10px] text-[#a7aaad]">
                                                 via {{ ucfirst($entry['gateway'] ?? 'manual') }} · by {{ $entry['by'] ?? 'Admin' }}
@@ -341,6 +342,26 @@
                                     @if($order->shipping_address_line_2) {{ $order->shipping_address_line_2 }}<br> @endif
                                     {{ $order->shipping_city }}, {{ $order->shipping_state }} {{ $order->shipping_postcode }}<br>
                                     {{ $order->shipping_country }}
+                                </div>
+                            </div>
+                        @endif
+
+                        @php $checkoutMeta = $order->meta['checkout_fields'] ?? []; @endphp
+                        @if(!empty($checkoutMeta))
+                            @php $coLabels = apply_lazy_filters('lazy_checkout_field_labels', []); @endphp
+                            <div class="pt-3 border-t border-[#f0f0f1]">
+                                <div class="text-[11px] font-bold uppercase text-[#8c8f94] mb-1.5">Additional Info</div>
+                                <div class="space-y-1">
+                                    @foreach($checkoutMeta as $coKey => $coVal)
+                                        @if($coVal)
+                                        <div class="text-[13px]">
+                                            <span class="font-semibold text-[#1d2327]">
+                                                {{ $coLabels[$coKey] ?? ucwords(str_replace('_', ' ', $coKey)) }}:
+                                            </span>
+                                            {{ $coVal }}
+                                        </div>
+                                        @endif
+                                    @endforeach
                                 </div>
                             </div>
                         @endif

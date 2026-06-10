@@ -3,21 +3,10 @@
 @section('title', $title ?? 'Archive')
 
 @section('content')
-<style>
-    /* WooCommerce-style Pagination Overrides */
-    nav[role="navigation"] { display: flex; align-items: center; justify-content: flex-start; margin-top: 2rem; }
-    nav[role="navigation"] > div:first-child { display: none; }
-    nav[role="navigation"] > div:last-child { display: flex; width: auto; }
-    nav[role="navigation"] .relative.inline-flex { 
-        padding: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
-        font-size: 14px; border-radius: 2px; margin-right: 6px; border: 1px solid #b3d4f0; color: {{ get_cms_option('theme_primary_color', '#0091ea') }}; background: white; text-decoration: none;
-    }
-    nav[role="navigation"] span[aria-current="page"] > span {
-        background-color: {{ get_cms_option('theme_primary_color', '#0091ea') }} !important; color: white !important; border-color: {{ get_cms_option('theme_primary_color', '#0091ea') }} !important; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-    }
-    nav[role="navigation"] a.relative:hover { background-color: #f0f6fc; }
-    nav[role="navigation"] svg { width: 16px; height: 16px; }
-</style>
+@php
+    $isProductArchive = ($archivePostType ?? 'post') === 'product';
+    $primaryColor     = get_cms_option('theme_primary_color', '#0091ea');
+@endphp
 
 <div class="bg-white py-12 min-h-screen font-sans">
     <div class="container-custom">
@@ -36,6 +25,7 @@
                     Showing all results
                 @endif
             </div>
+            @if($isProductArchive)
             <div>
                 <form action="" method="GET" id="sorting-form">
                     @if(request('s')) <input type="hidden" name="s" value="{{ request('s') }}"> @endif
@@ -43,15 +33,18 @@
                         <option value="latest" {{ request('orderby') == 'latest' ? 'selected' : '' }}>Default sorting</option>
                         <option value="popularity" {{ request('orderby') == 'popularity' ? 'selected' : '' }}>Sort by popularity</option>
                         <option value="rating" {{ request('orderby') == 'rating' ? 'selected' : '' }}>Sort by average rating</option>
-                        <option value="latest" {{ request('orderby') == 'latest' ? 'selected' : '' }}>Sort by latest</option>
                         <option value="price" {{ request('orderby') == 'price' ? 'selected' : '' }}>Sort by price: low to high</option>
                         <option value="price-desc" {{ request('orderby') == 'price-desc' ? 'selected' : '' }}>Sort by price: high to low</option>
                     </select>
                 </form>
             </div>
+            @endif
         </div>
 
         @if($posts->count() > 0)
+
+        {{-- ═══ PRODUCT ARCHIVE ═══ --}}
+        @if($isProductArchive)
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
             @foreach($posts as $product)
                 <div class="group flex flex-col">
@@ -68,7 +61,8 @@
                     <div class="flex flex-col flex-grow text-left px-1">
                         <div class="text-[12px] text-[#999] mb-0.5">
                             @php
-                                $cat = $product->productCategories->first() ?: $product->taxonomyTerms()->whereIn('taxonomy_slug', ['product_category', 'product_cat'])->first();
+                                $cat = null;
+                                try { $cat = $product->productCategories->first() ?: $product->taxonomyTerms()->whereIn('taxonomy_slug', ['product_category','product_cat'])->first(); } catch(\Throwable $e) {}
                             @endphp
                             {{ $cat->name ?? 'Product' }}
                         </div>
@@ -102,9 +96,156 @@
             @endforeach
         </div>
 
-        <div class="mt-8 flex justify-start">
-            {{ $posts->links() }}
+        {{-- ═══ POST / CPT / AUTHOR ARCHIVE ═══ --}}
+        @else
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            @foreach($posts as $postItem)
+            @php
+                $permalink  = get_lazy_permalink($postItem);
+                $imgSrc     = $postItem->featured_image ?? null;
+                if ($imgSrc && !str_starts_with($imgSrc, 'http')) $imgSrc = asset('storage/' . $imgSrc);
+                $rawContent = $postItem->content ?? '';
+                $trimmedC   = ltrim($rawContent);
+                $rawExcerpt = '';
+                if (!empty($trimmedC)) {
+                    if ($trimmedC[0] === '[' || $trimmedC[0] === '{') {
+                        try {
+                            $containers = json_decode($trimmedC, true) ?? [];
+                            $textParts  = [];
+                            $extractText = null;
+                            $extractText = function(array $elements) use (&$extractText, &$textParts) {
+                                foreach ($elements as $el) {
+                                    $type = $el['type'] ?? '';
+                                    $s    = $el['settings'] ?? [];
+                                    if (in_array($type, ['text_block', 'heading', 'title', 'special_text'])) {
+                                        $t = strip_tags($s['content'] ?? $s['text'] ?? '');
+                                        if ($t) $textParts[] = trim($t);
+                                    }
+                                    foreach ($el['rows'] ?? [] as $row) {
+                                        foreach ($row['columns'] ?? [] as $col) {
+                                            $extractText($col['elements'] ?? []);
+                                        }
+                                    }
+                                    foreach ($el['columns'] ?? [] as $col) {
+                                        $extractText($col['elements'] ?? []);
+                                    }
+                                }
+                            };
+                            $extractText($containers);
+                            $rawExcerpt = implode(' ', $textParts);
+                        } catch (\Throwable $e) {}
+                    } else {
+                        $rawExcerpt = strip_tags($rawContent);
+                    }
+                }
+                $excerpt    = !empty($postItem->excerpt)
+                    ? $postItem->excerpt
+                    : (mb_strlen($rawExcerpt) > 140 ? mb_substr($rawExcerpt, 0, 140) . '…' : $rawExcerpt);
+                $dateStr    = optional($postItem->published_at ?? $postItem->created_at)->format('M j, Y') ?? '';
+                $authorName = optional($postItem->user)->name ?? '';
+                $postCats   = $postItem->categories ?? collect();
+            @endphp
+            <article class="flex flex-col rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition-shadow duration-200">
+                <a href="{{ $permalink }}" class="block relative pt-[56%] overflow-hidden bg-gray-100">
+                    @if($imgSrc)
+                        <img src="{{ $imgSrc }}" alt="{{ $postItem->title }}"
+                             class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                    @else
+                        <div class="absolute inset-0 flex items-center justify-center bg-gray-100">
+                            <i class="fa fa-image text-3xl text-gray-300"></i>
+                        </div>
+                    @endif
+                </a>
+                <div class="flex flex-col flex-grow p-5">
+                    @if($postCats->isNotEmpty())
+                    <div class="flex flex-wrap gap-1 mb-2">
+                        @foreach($postCats->take(3) as $cat)
+                        <a href="{{ url('/category/' . ($cat->slug ?? '')) }}"
+                           style="color:{{ $primaryColor }};background:{{ $primaryColor }}18;text-decoration:none;"
+                           class="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">{{ $cat->name }}</a>
+                        @endforeach
+                    </div>
+                    @endif
+                    <h2 class="text-[17px] font-bold text-heading leading-snug mb-2">
+                        <a href="{{ $permalink }}" class="hover:text-primary transition-colors">{{ $postItem->title }}</a>
+                    </h2>
+                    @if($excerpt)
+                    <p class="text-[14px] text-gray-500 leading-relaxed mb-4 flex-grow">{{ $excerpt }}</p>
+                    @endif
+                    <div class="mt-auto pt-3 border-t border-gray-100 flex items-center gap-3 text-[13px] text-gray-400">
+                        @if($authorName)
+                        <span class="flex items-center gap-1">
+                            <i class="fa fa-user text-[11px] opacity-60"></i> {{ $authorName }}
+                        </span>
+                        @endif
+                        @if($dateStr)
+                        <span class="flex items-center gap-1">
+                            <i class="fa fa-calendar text-[11px] opacity-60"></i> {{ $dateStr }}
+                        </span>
+                        @endif
+                        <a href="{{ $permalink }}" class="ml-auto text-[12px] font-semibold" style="color:{{ $primaryColor }}">Read more →</a>
+                    </div>
+                </div>
+            </article>
+            @endforeach
         </div>
+        @endif
+
+        {{-- ═══ PAGINATION ═══ --}}
+        @if($posts->hasPages())
+        <div class="mt-10 flex items-center gap-1.5 flex-wrap">
+            {{-- Prev --}}
+            @if($posts->onFirstPage())
+                <span class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-gray-300 cursor-not-allowed select-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </span>
+            @else
+                <a href="{{ $posts->previousPageUrl() }}" class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-gray-500 hover:border-[{{ $primaryColor }}] hover:text-[{{ $primaryColor }}] transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </a>
+            @endif
+
+            {{-- Page numbers with ellipsis --}}
+            @php
+                $cur  = $posts->currentPage();
+                $last = $posts->lastPage();
+                $range = [];
+                for ($p = 1; $p <= $last; $p++) {
+                    if ($p === 1 || $p === $last || abs($p - $cur) <= 2) {
+                        $range[] = $p;
+                    }
+                }
+                $range = array_unique($range);
+                sort($range);
+            @endphp
+            @php $prevPage = null; @endphp
+            @foreach($range as $page)
+                @if($prevPage !== null && $page - $prevPage > 1)
+                    <span class="w-9 h-9 inline-flex items-center justify-center text-gray-400 text-[13px] select-none">…</span>
+                @endif
+                @if($page === $cur)
+                    <span class="w-9 h-9 inline-flex items-center justify-center rounded-[3px] text-[13px] font-semibold text-white select-none"
+                          style="background:{{ $primaryColor }};border:1px solid {{ $primaryColor }}">{{ $page }}</span>
+                @else
+                    <a href="{{ $posts->url($page) }}"
+                       class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-[13px] text-gray-600 hover:border-[{{ $primaryColor }}] hover:text-[{{ $primaryColor }}] transition-colors">{{ $page }}</a>
+                @endif
+                @php $prevPage = $page; @endphp
+            @endforeach
+
+            {{-- Next --}}
+            @if($posts->hasMorePages())
+                <a href="{{ $posts->nextPageUrl() }}" class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-gray-500 hover:border-[{{ $primaryColor }}] hover:text-[{{ $primaryColor }}] transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            @else
+                <span class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-gray-300 cursor-not-allowed select-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </span>
+            @endif
+        </div>
+        @endif
+
         @else
         <div class="bg-white p-10 text-center text-[#777]">
             <p class="text-lg mb-4">No results found.</p>
@@ -114,78 +255,37 @@
     </div>
 </div>
 
+@if($isProductArchive)
 <script>
 function addToCart(productId) {
-    const loadingSwal = Swal.fire({
-        title: 'Adding to cart...',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-
+    const loadingSwal = Swal.fire({ title: 'Adding to cart...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     fetch('{{ route('shop.cart.add') }}', {
         method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json', 
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest' },
         body: JSON.stringify({ product_id: productId, quantity: 1 })
     })
-    .then(res => {
-        if (!res.ok) {
-            return res.json().then(err => { throw err; });
-        }
-        return res.json();
-    })
+    .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e)))
     .then(data => {
         loadingSwal.close();
-        if(data.success) {
+        if (data.success) {
             Swal.fire({
-                title: 'Added!',
-                text: 'Product added to cart successfully.',
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonColor: '{{ get_cms_option('theme_primary_color', '#0091ea') }}',
-                confirmButtonText: 'View Cart',
-                cancelButtonText: 'Continue Shopping',
-                background: '#ffffff'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '{{ route('shop.cart') }}';
-                }
+                title: 'Added!', text: 'Product added to cart successfully.', icon: 'success',
+                showCancelButton: true, confirmButtonColor: '{{ $primaryColor }}',
+                confirmButtonText: 'View Cart', cancelButtonText: 'Continue Shopping', background: '#ffffff'
+            }).then(r => { if (r.isConfirmed) window.location.href = '{{ route('shop.cart') }}'; });
+            document.querySelectorAll('.cart-count-badge').forEach(b => {
+                b.textContent = data.cart_count;
+                b.classList.toggle('hidden', !data.cart_count);
             });
-            updateCartBadge(data.cart_count);
         } else {
-            Swal.fire({
-                title: 'Error',
-                text: data.message || 'Error adding to cart',
-                icon: 'error',
-                confirmButtonColor: '{{ get_cms_option('theme_primary_color', '#0091ea') }}'
-            });
+            Swal.fire({ title: 'Error', text: data.message || 'Error adding to cart', icon: 'error', confirmButtonColor: '{{ $primaryColor }}' });
         }
     })
-    .catch(err => {
+    .catch(() => {
         loadingSwal.close();
-        Swal.fire({
-            title: 'Error',
-            text: 'Could not add product to cart. Please try again.',
-            icon: 'error',
-            confirmButtonColor: '{{ get_cms_option('theme_primary_color', '#0091ea') }}'
-        });
-    });
-}
-
-function updateCartBadge(count) {
-    document.querySelectorAll('.cart-count-badge').forEach(badge => {
-        badge.textContent = count;
-        if(count > 0) {
-            badge.classList.remove('hidden');
-        } else {
-            badge.classList.add('hidden');
-        }
+        Swal.fire({ title: 'Error', text: 'Could not add product to cart.', icon: 'error', confirmButtonColor: '{{ $primaryColor }}' });
     });
 }
 </script>
+@endif
 @stop

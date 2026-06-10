@@ -138,10 +138,10 @@
                     <td class="wp-table-cell text-[#2c3338] text-left">
                         @if($item->trashed())
                             Last Modified<br>
-                            <span class="text-[#646970] text-[12px]">{{ $item->updated_at?->format('Y/m/d \a\t g:i a') }}</span>
+                            <span class="text-[#646970] text-[12px]">{{ $item->updated_at ? cms_date($item->updated_at, 'Y/m/d \a\t g:i a') : '' }}</span>
                         @else
                             {{ ucfirst($item->status) }}<br>
-                            <span class="text-[#646970] text-[12px]">{{ $item->created_at?->format('Y/m/d \a\t g:i a') }}</span>
+                            <span class="text-[#646970] text-[12px]">{{ $item->created_at ? cms_date($item->created_at, 'Y/m/d \a\t g:i a') : '' }}</span>
                         @endif
                     </td>
                 </tr>

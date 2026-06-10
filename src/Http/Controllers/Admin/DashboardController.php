@@ -263,8 +263,9 @@ class DashboardController extends Controller
         $data = $request->except('_token');
         
         // Handle Checkboxes
-        $data['users_can_register'] = $request->has('users_can_register') ? '1' : '0';
-        $data['allow_multi_device'] = $request->has('allow_multi_device') ? '1' : '0';
+        $data['users_can_register']  = $request->has('users_can_register') ? '1' : '0';
+        $data['allow_multi_device']  = $request->has('allow_multi_device') ? '1' : '0';
+        $data['magic_login_enabled'] = $request->has('magic_login_enabled') ? '1' : '0';
         
         // Only update these if we are on the page that contains them to avoid overwriting theme options
         if ($request->has('site_title')) {

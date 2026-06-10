@@ -240,6 +240,22 @@
                     </td>
                 </tr>
 
+                <!-- Magic Login -->
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Magic Login</label>
+                    </th>
+                    <td>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="magic_login_enabled" id="magic_login_enabled"
+                                class="w-4 h-4 mr-2"
+                                {{ ($settings['magic_login_enabled'] ?? '0') == '1' ? 'checked' : '' }}>
+                            <span class="text-[14px] text-[#1d2327]">Enable passwordless login via magic link (sent to email)</span>
+                        </label>
+                        <p class="text-[12px] text-[#646970] mt-1">When enabled, users can sign in without a password — both on the shop account page and the admin login form.</p>
+                    </td>
+                </tr>
+
                 <tr id="max-devices-row">
                     <th scope="row" class="w-[200px] text-left align-top pt-2">
                         <label for="max_devices" class="text-[14px] font-semibold text-[#1d2327]">Max devices allowed</label>

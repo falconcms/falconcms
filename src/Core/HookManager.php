@@ -81,4 +81,14 @@ class HookManager
         }
         return false;
     }
+
+    public function hasAction($tag)
+    {
+        return !empty($this->actions[$tag]);
+    }
+
+    public function hasFilter($tag)
+    {
+        return !empty($this->filters[$tag]);
+    }
 }

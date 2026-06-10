@@ -795,6 +795,11 @@
     .admin-menu-arrow { font-size: 9px; margin-left: 4px; transition: transform 0.2s; }
     .admin-menu-item:hover > .admin-menu-link .admin-menu-arrow { transform: rotate(180deg); }
 
+    /* Post Meta canvas — link hover uses CSS vars set on wrapper */
+    .post-meta-canvas-wrap .pm-canvas-link { color: var(--pm-tc, #6b7280); text-decoration: none; cursor: pointer; transition: color 0.15s; }
+    .post-meta-canvas-wrap .pm-g:hover .pm-canvas-link,
+    .post-meta-canvas-wrap .pm-g:hover i { color: var(--pm-lc, #374151); transition: color 0.15s; }
+
     /* Builder Tab Button Styles */
     .builder-tab-btn {
         transition: flex-grow 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;

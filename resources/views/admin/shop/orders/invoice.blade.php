@@ -234,9 +234,9 @@
                 </p>
             </div>
             <div class="invoice-details">
-                <h2>Invoice</h2>
+                <h2>{{ apply_lazy_filters('lazy_invoice_title', 'Invoice', $order) }}</h2>
                 <p>#{{ $order->order_number ?: $order->id }}</p>
-                <p>Date: {{ $order->created_at->format('M d, Y') }}</p>
+                <p>Date: {{ cms_date($order->created_at, 'M d, Y') }}</p>
                 <span class="inv-badge {{ $badgeClass }}">{{ $badgeText }}</span>
             </div>
         </header>
@@ -251,6 +251,18 @@
                 <p>{{ $order->country }}</p>
                 <p>Email: {{ $order->customer_email }}</p>
                 <p>Phone: {{ $order->customer_phone }}</p>
+                @php
+                    $invCheckoutMeta = $order->meta['checkout_fields'] ?? [];
+                    $invCoLabels     = apply_lazy_filters('lazy_checkout_field_labels', [], 'invoice');
+                @endphp
+                @foreach($invCheckoutMeta as $iKey => $iVal)
+                    @if($iVal)
+                    <p style="margin-top:4px">
+                        <strong>{{ $invCoLabels[$iKey] ?? ucwords(str_replace('_', ' ', $iKey)) }}:</strong>
+                        {{ $iVal }}
+                    </p>
+                    @endif
+                @endforeach
             </div>
             @if($order->shipping_address_line_1)
             <div class="address-box">
@@ -274,6 +286,7 @@
                 </tr>
             </thead>
             <tbody>
+                @php $invoiceLabels = apply_lazy_filters('lazy_custom_field_labels', [], 'invoice'); @endphp
                 @foreach($order->items as $item)
                 <tr>
                     <td>
@@ -281,6 +294,13 @@
                         @if($item->variation_details)
                             <div style="font-size: 11px; color: #6b7280;">{{ $item->variation_details }}</div>
                         @endif
+                        @foreach($item->meta['custom_fields'] ?? [] as $cfKey => $cfVal)
+                            @if($cfVal)
+                            <div style="font-size: 11px; color: #6b7280;">
+                                {{ $invoiceLabels[$cfKey] ?? ucwords(str_replace('_', ' ', $cfKey)) }}: {{ $cfVal }}
+                            </div>
+                            @endif
+                        @endforeach
                     </td>
                     <td style="text-align: center;">{{ lazy_price_format($item->price, $order) }}</td>
                     <td style="text-align: center;">{{ $item->quantity }}</td>

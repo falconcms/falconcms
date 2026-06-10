@@ -130,7 +130,7 @@
                                     <a href="{{ route('admin.product-categories.edit', [$cat, 'type' => 'post']) }}" class="text-[#2271b1]">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                     <button type="button" onclick="confirmDeleteCategory({{ $cat->id }})" class="text-[#b32d2e] hover:text-[#8a2424] cursor-pointer">Delete</button>
                                      <span class="text-[#c3c4c7]">|</span>
-                                    <a href="{{ url('category/' . $cat->path) }}" target="_blank" class="text-[#2271b1]">View</a>
+                                    <a href="{{ url('product-category/' . $cat->getFullSlugPath()) }}" target="_blank" class="text-[#2271b1]">View</a>
                                 </div>
                             </td>
                             <td class="wp-table-cell text-[#646970]">{{ $cat->description ?: '—' }}</td>

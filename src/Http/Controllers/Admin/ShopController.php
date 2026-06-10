@@ -11,22 +11,23 @@ class ShopController extends Controller
     public function overview(Request $request)
     {
         // Resolve the date range — preset or custom from/to.
+        $tz     = cms_timezone();
         $preset = $request->get('range', '30d');
-        $to     = $request->filled('to')   ? \Carbon\Carbon::parse($request->to)->endOfDay()   : now()->endOfDay();
+        $to     = $request->filled('to')   ? \Carbon\Carbon::parse($request->to, $tz)->endOfDay()->utc()   : cms_now()->endOfDay()->utc();
         $from   = null;
 
         if ($request->filled('from')) {
-            $from   = \Carbon\Carbon::parse($request->from)->startOfDay();
+            $from   = \Carbon\Carbon::parse($request->from, $tz)->startOfDay()->utc();
             $preset = 'custom';
         } else {
             switch ($preset) {
-                case 'today': $from = now()->startOfDay(); break;
-                case '7d':    $from = now()->subDays(6)->startOfDay(); break;
-                case 'month': $from = now()->startOfMonth(); break;
-                case 'year':  $from = now()->startOfYear(); break;
+                case 'today': $from = cms_now()->startOfDay()->utc(); break;
+                case '7d':    $from = cms_now()->subDays(6)->startOfDay()->utc(); break;
+                case 'month': $from = cms_now()->startOfMonth()->utc(); break;
+                case 'year':  $from = cms_now()->startOfYear()->utc(); break;
                 case 'all':   $from = null; break;
                 case '30d':
-                default:      $from = now()->subDays(29)->startOfDay(); $preset = '30d'; break;
+                default:      $from = cms_now()->subDays(29)->startOfDay()->utc(); $preset = '30d'; break;
             }
         }
 
@@ -230,7 +231,7 @@ class ShopController extends Controller
             $log = $order->refund_log ?? [];
             $log[] = [
                 'amount'  => round($refundAmount, 2),
-                'at'      => now()->toDateTimeString(),
+                'at'      => now()->utc()->toIso8601String(),
                 'by'      => optional(auth()->user())->name ?? 'Admin',
                 'gateway' => 'stripe',
                 'ref'     => $resp->json('id'),

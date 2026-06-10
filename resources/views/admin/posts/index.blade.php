@@ -128,6 +128,9 @@
                 @if(!in_array('tags', $overriddenTaxonomies) && ($type ?? 'post') === 'post')
                     <th class="wp-table-header text-left">Tags</th>
                 @endif
+                @if(($type ?? 'post') === 'product')
+                    <th class="wp-table-header text-left">Stock</th>
+                @endif
                 <th class="wp-table-header text-center w-8"><svg class="w-4 h-4 mx-auto text-[#8c8f94]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg></th>
                 <th class="wp-table-header text-left">SEO</th>
                 <th class="wp-table-header text-left">Date</th>
@@ -209,6 +212,24 @@
                         @endif
                     </td>
                     @endif
+                    @if(($type ?? 'post') === 'product')
+                    <td class="wp-table-cell text-left">
+                        @php $stockStatus = $post->shopData?->stock_status ?? 'instock'; @endphp
+                        @if($stockStatus === 'instock')
+                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0]">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>In Stock
+                            </span>
+                        @elseif($stockStatus === 'onbackorder')
+                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#fffbeb] text-[#92400e] border border-[#fde68a]">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#d97706]"></span>Backorder
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#fef2f2] text-[#991b1b] border border-[#fecaca]">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#dc2626]"></span>Out of Stock
+                            </span>
+                        @endif
+                    </td>
+                    @endif
                     <td class="wp-table-cell text-center text-[#646970]">-</td>
                     <td class="wp-table-cell text-left">
                         @php $score = $post->getSeoScore(); @endphp
@@ -220,10 +241,10 @@
                     <td class="wp-table-cell text-[#2c3338] text-left">
                         @if($post->trashed())
                             Last Modified<br>
-                            <span class="text-[#646970] text-[12px]">{{ $post->updated_at?->format('Y/m/d \a\t g:i a') }}</span>
+                            <span class="text-[#646970] text-[12px]">{{ $post->updated_at ? cms_date($post->updated_at, 'Y/m/d \a\t g:i a') : '' }}</span>
                         @else
                             {{ ucfirst($post->status) }}<br>
-                            <span class="text-[#646970] text-[12px]">{{ $post->created_at?->format('Y/m/d \a\t g:i a') }}</span>
+                            <span class="text-[#646970] text-[12px]">{{ $post->created_at ? cms_date($post->created_at, 'Y/m/d \a\t g:i a') : '' }}</span>
                         @endif
                     </td>
                 </tr>
@@ -263,6 +284,9 @@
 
                 @if(!in_array('tags', $overriddenTaxonomies) && ($type ?? 'post') === 'post')
                     <th class="wp-table-header text-left border-t">Tags</th>
+                @endif
+                @if(($type ?? 'post') === 'product')
+                    <th class="wp-table-header text-left border-t">Stock</th>
                 @endif
                 <th class="wp-table-header text-center w-8 border-t"><svg class="w-4 h-4 mx-auto text-[#8c8f94]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg></th>
                 <th class="wp-table-header text-left border-t">SEO</th>

@@ -67,7 +67,7 @@
                             </td>
                             <td class="p-2">{{ $ip->attempts }}</td>
                             <td class="p-2 text-[#646970]">{{ $ip->reason }}</td>
-                            <td class="p-2">{{ $ip->created_at->format('M d, Y H:i') }}</td>
+                            <td class="p-2">{{ cms_date($ip->created_at, 'M d, Y H:i') }}</td>
                             <td class="p-2">
                                 <form id="delete-blacklist-{{ $ip->id }}" action="{{ route('admin.blacklist.destroy', $ip->id) }}" method="POST" class="inline">
                                     @csrf @method('DELETE')

@@ -75,8 +75,8 @@
                                 </a>
                             </td>
                             <td class="wp-table-cell text-[#646970]">
-                                {{ $order->created_at->format('M d, Y') }}
-                                <div class="text-[11px]">{{ $order->created_at->format('H:i') }}</div>
+                                {{ cms_date($order->created_at, 'M d, Y') }}
+                                <div class="text-[11px]">{{ cms_date($order->created_at, 'H:i') }}</div>
                             </td>
                             <td class="wp-table-cell">
                                 @php

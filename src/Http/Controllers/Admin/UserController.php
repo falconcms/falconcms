@@ -46,13 +46,7 @@ class UserController extends Controller
         
         $allCount = User::count();
         $roles = Role::all()->map(function($role) {
-            // Count users who hold this role (via the role_user pivot — multiple roles aware),
-            // falling back to the primary role_id if the pivot isn't present yet.
-            try {
-                $role->count = \Illuminate\Support\Facades\DB::table('role_user')->where('role_id', $role->id)->distinct()->count('user_id');
-            } catch (\Throwable $e) {
-                $role->count = User::where('role_id', $role->id)->count();
-            }
+            $role->count = User::where('role_id', $role->id)->count();
             return $role;
         });
 
@@ -133,7 +127,7 @@ class UserController extends Controller
             abort(403);
         }
 
-        $canManageRoles = auth()->user()->hasPermission('manage_users');
+        $canManageRoles = auth()->user()->isAdmin();
 
         $rules = [
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,

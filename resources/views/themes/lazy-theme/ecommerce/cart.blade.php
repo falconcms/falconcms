@@ -38,8 +38,10 @@
                                 <th class="p-4 border border-gray-100">Subtotal</th>
                             </tr>
                         </thead>
+                        <?php do_lazy_action('lazy_before_cart_items', $cart); ?>
                         <tbody class="text-[15px] text-gray-600">
                             @foreach($cart as $key => $item)
+                                <?php do_lazy_action('lazy_before_cart_item', $item, $key); ?>
                                 <tr class="border-b border-gray-100">
                                     <td class="p-4 border border-gray-100 text-center w-10">
                                         <a href="{{ route('shop.cart.remove', $key) }}" class="text-gray-400 hover:text-red-500 text-xl">&times;</a>
@@ -50,7 +52,11 @@
                                         </a>
                                     </td>
                                     <td class="p-4 border border-gray-100 font-bold text-primary">
-                                        <a href="{{ get_lazy_permalink($item) }}">{{ $item['name'] }}</a>
+                                        {!! apply_lazy_filters('lazy_cart_item_name',
+                                            '<a href="' . get_lazy_permalink($item) . '">' . e($item['name']) . '</a>',
+                                            $item, $key) !!}
+                                        {!! lazy_render_item_custom_fields($item, 'cart') !!}
+                                        <?php do_lazy_action('lazy_cart_item_meta', $item, $key); ?>
                                     </td>
                                     <td class="p-4 border border-gray-100">
                                         {{ lazy_price_format($item['sale_price'] ?: $item['price']) }}
@@ -66,6 +72,7 @@
                                         {{ lazy_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
                                     </td>
                                 </tr>
+                                <?php do_lazy_action('lazy_after_cart_item', $item, $key); ?>
                             @endforeach
                             <tr>
                                 <td colspan="6" class="p-4 border border-gray-100">

@@ -98,7 +98,7 @@
                                 <tr class="border-b border-[#f0f0f1]">
                                     <td class="px-3 py-2 text-[#1d2327] font-medium">{{ $t->name }}</td>
                                     <td class="px-3 py-2 text-[#646970]">{{ $t->last_used_at ? $t->last_used_at->diffForHumans() : 'Never' }}</td>
-                                    <td class="px-3 py-2 text-[#646970]">{{ $t->created_at->format('M j, Y') }}</td>
+                                    <td class="px-3 py-2 text-[#646970]">{{ cms_date($t->created_at, 'M j, Y') }}</td>
                                     <td class="px-3 py-2 text-right">
                                         <form method="POST" action="{{ route('admin.settings.api.tokens.destroy', $t->id) }}" onsubmit="return confirm('Revoke this token? Apps using it will stop working.')">
                                             @csrf @method('DELETE')

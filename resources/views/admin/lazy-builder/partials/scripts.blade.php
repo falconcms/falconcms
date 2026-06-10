@@ -12,6 +12,10 @@
 <style>
     .CodeMirror { height: 280px !important; font-size: 12px; font-family: 'Fira Code', 'Courier New', monospace; }
     .CodeMirror-scroll { min-height: 260px; }
+    .lazy-dyn-btn { flex-shrink:0; width:22px; height:22px; display:flex; align-items:center; justify-content:center; color:#cbd5e1; border-radius:4px; transition:all .15s; cursor:pointer; background:transparent; border:0; padding:0; }
+    .lazy-dyn-btn:hover { color:#0091ea; background:#f0f9ff; }
+    .dyn-token-btn { padding:3px 7px; border:1px solid #e2e8f0; border-radius:4px; font-size:11px; font-weight:500; color:#475569; background:#f8fafc; cursor:pointer; transition:all .15s; text-align:left; white-space:nowrap; }
+    .dyn-token-btn:hover { background:#eff6ff; border-color:#0091ea; color:#0091ea; }
 </style>
 
 <script>
@@ -45,6 +49,133 @@
             const device = ref('desktop');
             const activeResponsiveMenu = ref(null);
             const activePickr = ref(null);
+            // ── Dynamic Value Picker (inline token {lazy:X} system) ────────────
+            const dynMenu = reactive({ open: false, x: 0, y: 0, settings: null, key: '' });
+            const dynAcptSlug = ref('');
+            const openDynMenu = (settings, key, event) => {
+                dynSrcMenu.open = false;
+                const rect = event.currentTarget.getBoundingClientRect();
+                dynMenu.settings = settings;
+                dynMenu.key = key;
+                dynAcptSlug.value = '';
+                dynMenu.x = Math.max(8, rect.right - 280);
+                dynMenu.y = rect.bottom + 4;
+                dynMenu.open = true;
+            };
+            const insertDynToken = (token) => {
+                if (!dynMenu.settings || !dynMenu.key) return;
+                const cur = String(dynMenu.settings[dynMenu.key] ?? '');
+                dynMenu.settings[dynMenu.key] = cur + '{lazy:' + token + '}';
+                dynMenu.open = false;
+            };
+            const insertDynAcpt = () => {
+                const slug = dynAcptSlug.value.trim();
+                if (slug) insertDynToken('acpt_' + slug);
+            };
+            // ── Dynamic Source Picker (database-icon / blue-pill system) ────────
+            const dynSrcMenu = reactive({ open: false, x: 0, y: 0, settings: null, sourceKey: '', ctx: 'text', showConfig: false, configKey: '' });
+            const dynSrcDefs = {
+                text: [
+                    { key: 'post_title',        label: 'Post Title',      icon: 'fa-heading',       group: 'Post',   subFields: [] },
+                    { key: 'post_excerpt',       label: 'Post Excerpt',    icon: 'fa-align-left',    group: 'Post',   subFields: [
+                        { key: 'dynamic_excerpt_length', label: 'Length (chars)', type: 'number', placeholder: '150' },
+                        { key: 'dynamic_fallback',       label: 'Fallback',       type: 'text',   placeholder: 'No excerpt available...' },
+                    ]},
+                    { key: 'post_date',          label: 'Post Date',       icon: 'fa-calendar',      group: 'Post',   subFields: [
+                        { key: 'dynamic_date_type',   label: 'Date Type', type: 'select', options: [
+                            { value: 'published', label: 'Post Published' },
+                            { value: 'modified',  label: 'Post Modified' },
+                        ]},
+                        { key: 'dynamic_date_format', label: 'Format',    type: 'text', placeholder: 'F j, Y' },
+                        { key: 'dynamic_before',      label: 'Before',    type: 'text', placeholder: 'Text before value' },
+                        { key: 'dynamic_after',       label: 'After',     type: 'text', placeholder: 'Text after value' },
+                        { key: 'dynamic_fallback',    label: 'Fallback',  type: 'text', placeholder: 'Fallback value' },
+                    ]},
+                    { key: 'post_reading_time',  label: 'Reading Time',    icon: 'fa-clock',         group: 'Post',   subFields: [] },
+                    { key: 'post_id',            label: 'Post ID',         icon: 'fa-hashtag',       group: 'Post',   subFields: [] },
+                    { key: 'post_type',          label: 'Post Type',       icon: 'fa-tag',           group: 'Post',   subFields: [] },
+                    { key: 'post_author',        label: 'Author Name',     icon: 'fa-user',          group: 'Author', subFields: [] },
+                    { key: 'author_bio',         label: 'Author Bio',      icon: 'fa-user-edit',     group: 'Author', subFields: [] },
+                    { key: 'site_name',          label: 'Site Title',      icon: 'fa-globe',         group: 'Site',   subFields: [] },
+                    { key: 'site_tagline',       label: 'Site Tagline',    icon: 'fa-quote-left',    group: 'Site',   subFields: [] },
+                    { key: 'current_date',       label: 'Current Date',    icon: 'fa-calendar-day',  group: 'Other',  subFields: [
+                        { key: 'dynamic_date_format', label: 'Format', type: 'text', placeholder: 'F j, Y' },
+                        { key: 'dynamic_before',      label: 'Before', type: 'text', placeholder: '' },
+                        { key: 'dynamic_after',       label: 'After',  type: 'text', placeholder: '' },
+                    ]},
+                    { key: 'current_year',       label: 'Current Year',    icon: 'fa-calendar-alt',  group: 'Other',  subFields: [] },
+                    { key: 'user_name',          label: 'Logged-in User',  icon: 'fa-user-circle',   group: 'Other',  subFields: [] },
+                    { key: 'acpt_custom',        label: 'Custom Field',    icon: 'fa-database',      group: 'Custom', subFields: [
+                        { key: 'dynamic_acpt_slug', label: 'Field Slug', type: 'text', placeholder: 'e.g. my_field_slug', required: true },
+                        { key: 'dynamic_fallback',  label: 'Fallback',   type: 'text', placeholder: '' },
+                    ]},
+                ],
+                link: [
+                    { key: 'post_url',   label: 'Post URL',   icon: 'fa-link',  group: 'Post',   subFields: [] },
+                    { key: 'author_url', label: 'Author URL', icon: 'fa-user',  group: 'Author', subFields: [] },
+                    { key: 'site_url',   label: 'Site URL',   icon: 'fa-globe', group: 'Site',   subFields: [] },
+                ],
+                image: [
+                    { key: 'feature_image', label: 'Feature Image', icon: 'fa-image',       group: 'Post',   subFields: [] },
+                    { key: 'author_avatar', label: 'Author Avatar', icon: 'fa-user-circle', group: 'Author', subFields: [] },
+                ],
+            };
+            const getDynSrcDef = (key) => {
+                const all = [...dynSrcDefs.text, ...dynSrcDefs.link, ...dynSrcDefs.image];
+                return all.find(d => d.key === key) || { key, label: key, icon: 'fa-bolt', subFields: [] };
+            };
+            const getDynSrcGroups = (ctx) => {
+                const opts = dynSrcDefs[ctx] || dynSrcDefs.text;
+                const map = {};
+                opts.forEach(opt => { const g = opt.group || 'Other'; if (!map[g]) map[g] = []; map[g].push(opt); });
+                return Object.entries(map).map(([name, items]) => ({ name, items }));
+            };
+            const _applySubFieldDefaults = (key) => {
+                const def = getDynSrcDef(key);
+                (def.subFields || []).forEach(field => {
+                    if (field.type === 'select' && field.options && field.options.length && !dynSrcMenu.settings[field.key]) {
+                        dynSrcMenu.settings[field.key] = field.options[0].value;
+                    }
+                });
+            };
+            const openDynSrcMenu = (settings, sourceKey, ctx, event) => {
+                dynMenu.open = false;
+                const rect = event.currentTarget.getBoundingClientRect();
+                dynSrcMenu.settings = settings;
+                dynSrcMenu.sourceKey = sourceKey;
+                dynSrcMenu.ctx = ctx || 'text';
+                dynSrcMenu.x = Math.max(8, rect.right - 278);
+                dynSrcMenu.y = rect.bottom + 4;
+                const currentKey = settings[sourceKey];
+                const def = currentKey ? getDynSrcDef(currentKey) : null;
+                if (def && def.subFields && def.subFields.length) {
+                    dynSrcMenu.configKey = currentKey;
+                    dynSrcMenu.showConfig = true;
+                    _applySubFieldDefaults(currentKey);
+                } else {
+                    dynSrcMenu.showConfig = false;
+                    dynSrcMenu.configKey = '';
+                }
+                dynSrcMenu.open = true;
+            };
+            const selectDynSource = (key) => {
+                if (!dynSrcMenu.settings) return;
+                const def = getDynSrcDef(key);
+                dynSrcMenu.settings[dynSrcMenu.sourceKey] = key;
+                if (def.subFields && def.subFields.length) {
+                    _applySubFieldDefaults(key);
+                    dynSrcMenu.configKey = key;
+                    dynSrcMenu.showConfig = true;
+                } else {
+                    dynSrcMenu.open = false;
+                }
+            };
+            const clearDynSource = () => {
+                if (!dynSrcMenu.settings) return;
+                dynSrcMenu.settings[dynSrcMenu.sourceKey] = '';
+                dynSrcMenu.open = false;
+            };
+            // ── End Dynamic Pickers ─────────────────────────────────────────────
             let _pickerCtx = null; // { obj, colorKey, opacityKey, origColor, origOpacity }
 
             const _closeActivePickr = (revert) => {
@@ -384,6 +515,7 @@
             ];
             if (postCardMode.value) {
                 availableElements.push({ type: 'post_content', name: 'Content', icon: 'fa fa-paragraph' });
+                availableElements.push({ type: 'post_meta', name: 'Post Meta', icon: 'fa fa-tags' });
             }
 
             const filteredColumnLayouts = computed(() => {
@@ -2884,6 +3016,20 @@
                             cssClass: '', cssId: '',
                             visibility: { mobile: true, tablet: true, desktop: true }
                         } : {}),
+                        ...(type === 'post_meta' ? {
+                            metaOrder: ['categories', 'tags', 'author', 'date', 'reading_time'],
+                            showCategories: true, categoryTaxonomy: 'category',
+                            showTags: false, tagTaxonomy: 'tag',
+                            showAuthor: true, showDate: true, showReadingTime: false,
+                            hideEmptyTerms: true,
+                            dateFormat: 'M j, Y', separator: '·', layout: 'inline', showIcons: true,
+                            metaAlign: 'left',
+                            fontSize: 13, fontSizeUnit: 'px', fontWeight: '400', color: '#6b7280', linkColor: '#374151',
+                            gap: 12, gapUnit: 'px',
+                            marginTop: 0, marginBottom: 8, marginTopUnit: 'px', marginBottomUnit: 'px',
+                            cssClass: '', cssId: '',
+                            visibility: { mobile: true, tablet: true, desktop: true }
+                        } : {}),
                         ...(type === 'spacer' ? {
                             style: 'default',
                             flexGrow: 0,
@@ -3575,7 +3721,9 @@
                 getCustomElementRender,
                 customFieldVisible,
                 autosaveStatus, showRevisions, revisionList, isRestoring, autosaveBanner,
-                openRevisions, restoreRevision, deleteRevisionItem, dismissAutosaveBanner
+                openRevisions, restoreRevision, deleteRevisionItem, dismissAutosaveBanner,
+                dynMenu, dynAcptSlug, openDynMenu, insertDynToken, insertDynAcpt,
+                dynSrcMenu, dynSrcDefs, getDynSrcDef, getDynSrcGroups, openDynSrcMenu, selectDynSource, clearDynSource
             };
         }
     }).directive('tomselect', {

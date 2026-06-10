@@ -91,8 +91,23 @@ class ShopFrontendController extends Controller
 
         $cartKey = $variationId ? "{$productId}_{$variationId}" : $productId;
 
+        // Collect custom fields prefixed with lazy_custom_
+        $customFields = [];
+        foreach ($request->all() as $k => $v) {
+            if (str_starts_with($k, 'lazy_custom_')) {
+                $customFields[substr($k, 12)] = $v;
+            }
+        }
+        $customFields = apply_lazy_filters('lazy_cart_item_custom_fields', $customFields, $product, $variation);
+
         if (isset($cart[$cartKey])) {
             $cart[$cartKey]['quantity'] += $quantity;
+            // Merge any new custom fields into existing meta
+            if (!empty($customFields)) {
+                $existing = $cart[$cartKey]['meta'] ?? [];
+                $existing['custom_fields'] = array_merge($existing['custom_fields'] ?? [], $customFields);
+                $cart[$cartKey]['meta'] = $existing;
+            }
         } else {
             // Determine name and attributes for variation
             $itemName = $product->title;
@@ -102,16 +117,19 @@ class ShopFrontendController extends Controller
             }
 
             $cart[$cartKey] = [
-                'id' => $product->id,
-                'name' => $itemName,
-                'slug' => $product->slug,
-                'price' => $variation ? $variation->price : $product->price,
-                'sale_price' => $variation ? $variation->sale_price : $product->sale_price,
-                'quantity' => $quantity,
-                'thumbnail' => ($variation && $variation->image) ? $variation->image : $product->featured_image,
+                'id'           => $product->id,
+                'name'         => $itemName,
+                'slug'         => $product->slug,
+                'price'        => $variation ? $variation->price : $product->price,
+                'sale_price'   => $variation ? $variation->sale_price : $product->sale_price,
+                'quantity'     => $quantity,
+                'thumbnail'    => ($variation && $variation->image) ? $variation->image : $product->featured_image,
                 'variation_id' => $variationId,
-                'sku' => $variation ? $variation->sku : $product->sku
+                'sku'          => $variation ? $variation->sku : $product->sku,
+                'meta'         => !empty($customFields) ? ['custom_fields' => $customFields] : [],
             ];
+
+            $cart[$cartKey] = apply_lazy_filters('lazy_cart_item_data', $cart[$cartKey], $product, $variation);
         }
 
         Session::put('lazy_cart', $cart);
@@ -493,62 +511,69 @@ class ShopFrontendController extends Controller
             'shipping_country' => 'Shipping Country',
         ];
 
+        // Collect extra fields registered via lazy_billing_fields / lazy_shipping_fields hooks
+        $allHookFields   = array_merge(lazy_get_checkout_fields('billing'), lazy_get_checkout_fields('shipping'));
+        $standardNames   = lazy_standard_checkout_field_names();
+
+        foreach ($allHookFields as $hf) {
+            $hfName = $hf['name'] ?? '';
+            if (!$hfName || in_array($hfName, $standardNames)) continue;
+            if (!empty($hf['required'])) {
+                $rules[$hfName]      = $hf['rules'] ?? 'required';
+                $attributes[$hfName] = $hf['label'] ?? $hfName;
+            }
+        }
+
         $request->validate($rules, [], $attributes);
 
-        // Account creation & Guest checkout validation
+        // Non-logged-in users must create an account to place an order
         if (!auth()->check()) {
-            $guestEnabled = get_shop_option('shop_checkout_guest_enable', '1') === '1';
-            $createAcc = $request->input('create_account') == '1';
+            $request->validate([
+                'account_password' => 'required|min:6',
+            ], [
+                'account_password.required' => 'Please enter a password to create your account.',
+                'account_password.min'      => 'Password must be at least 6 characters.',
+            ]);
 
-            if (!$guestEnabled && !$createAcc) {
+            $existingUser = \App\Models\User::where('email', $request->billing_email)->first();
+            if ($existingUser) {
                 if ($request->ajax() || $request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Guest checkout is disabled. Please login or create an account.'
-                    ]);
+                    return response()->json(['success' => false, 'message' => 'An account with this email already exists. Please log in.']);
                 }
-                return redirect()->back()->with('error', 'Guest checkout is disabled. Please login or create an account.');
+                return redirect()->back()->with('error', 'An account with this email already exists. Please log in.');
             }
 
-            if ($createAcc) {
-                $request->validate([
-                    'account_password' => 'required|min:6'
-                ], [
-                    'account_password.required' => 'Please enter a password to create your account.'
-                ]);
-
-                $existingUser = \App\Models\User::where('email', $request->billing_email)->first();
-                if ($existingUser) {
-                    if ($request->ajax() || $request->wantsJson()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'An account with this email already exists. Please login.'
-                        ]);
-                    }
-                    return redirect()->back()->with('error', 'An account with this email already exists. Please login.');
-                }
-
-                $newUser = \App\Models\User::create([
-                    'name' => trim($request->billing_first_name . ' ' . $request->billing_last_name),
-                    'email' => $request->billing_email,
-                    'password' => \Illuminate\Support\Facades\Hash::make($request->account_password),
-                ]);
-
-                $customerRole = \Acme\CmsDashboard\Models\Role::firstOrCreate(
-                    ['slug' => 'customer'],
-                    ['name' => 'Customer', 'description' => 'Customer who registered via store checkout or account.']
-                );
-                if ($customerRole) {
-                    $newUser->update(['role_id' => $customerRole->id]);
-                }
-
-                auth()->login($newUser);
-            }
+            $customerRole = \Acme\CmsDashboard\Models\Role::firstOrCreate(
+                ['slug' => 'customer'],
+                ['name' => 'Customer', 'description' => 'Customer who registered via store checkout or account.']
+            );
+            $newUser = \App\Models\User::create([
+                'name'     => trim($request->billing_first_name . ' ' . $request->billing_last_name),
+                'email'    => $request->billing_email,
+                'password' => \Illuminate\Support\Facades\Hash::make($request->account_password),
+                'role_id'  => $customerRole->id,
+            ]);
+            auth()->login($newUser);
         }
 
         $cart = Session::get('lazy_cart', []);
         if (empty($cart)) {
             return redirect()->route('shop.cart')->with('error', 'Your cart is empty!');
+        }
+
+        // Duplicate order guard: same email + same cart total, pending/processing, within 60 s
+        $dupExists = Order::where('customer_email', $request->billing_email)
+            ->whereIn('status', ['pending', 'processing'])
+            ->where('total', round(get_lazy_cart_total(), 2))
+            ->where('created_at', '>=', now()->subSeconds(60))
+            ->exists();
+
+        if ($dupExists) {
+            $msg = 'It looks like this order was already submitted. Please check your email before trying again.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg]);
+            }
+            return redirect()->back()->with('error', $msg);
         }
 
         $shippingCountry = $request->has('ship_to_different_address') ? $request->shipping_country : $request->billing_country;
@@ -615,17 +640,38 @@ class ShopFrontendController extends Controller
             $orderData['shipping_country'] = $request->shipping_country;
         }
 
+        // Save custom checkout field values to order meta
+        $customCheckout = [];
+        foreach ($allHookFields as $hf) {
+            $hfName = $hf['name'] ?? '';
+            if (!$hfName || in_array($hfName, $standardNames)) continue;
+            $val = $request->input($hfName);
+            if ($val !== null && $val !== '') {
+                $customCheckout[$hfName] = $val;
+            }
+        }
+        $customCheckout = apply_lazy_filters('lazy_checkout_custom_fields', $customCheckout, $request);
+        if (!empty($customCheckout)) {
+            $orderData['meta'] = ['checkout_fields' => $customCheckout];
+        }
+
         $order = Order::create($orderData);
 
+        do_lazy_action('lazy_before_place_order', $order, $cart, $request);
+
         foreach ($cart as $item) {
+            $itemMeta = $item['meta'] ?? [];
+            $itemMeta = apply_lazy_filters('lazy_order_item_meta', $itemMeta, $item, $order);
+
             OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $item['id'],
+                'order_id'     => $order->id,
+                'product_id'   => $item['id'],
                 'variation_id' => $item['variation_id'] ?? null,
                 'product_name' => $item['name'],
-                'quantity' => $item['quantity'],
-                'price' => $item['sale_price'] ?? $item['price'],
-                'subtotal' => ($item['sale_price'] ?? $item['price']) * $item['quantity'],
+                'quantity'     => $item['quantity'],
+                'price'        => $item['sale_price'] ?? $item['price'],
+                'subtotal'     => ($item['sale_price'] ?? $item['price']) * $item['quantity'],
+                'meta'         => !empty($itemMeta) ? $itemMeta : null,
             ]);
 
             // Decrement Stock
@@ -951,10 +997,139 @@ class ShopFrontendController extends Controller
             ->onlyInput('account_email');
     }
 
+    public function updateProfile(\Illuminate\Http\Request $request)
+    {
+        if (!auth()->check()) return redirect()->back();
+
+        $user = auth()->user();
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $user->update([
+            'name' => $request->name,
+        ]);
+
+        return redirect()->back()->with('profile_success', 'Profile updated successfully.');
+    }
+
+    public function updatePassword(\Illuminate\Http\Request $request)
+    {
+        if (!auth()->check()) return redirect()->back();
+
+        $request->validate([
+            'current_password' => 'required',
+            'password'         => 'required|min:8|confirmed',
+        ], [
+            'password.min'       => 'New password must be at least 8 characters.',
+            'password.confirmed' => 'New password confirmation does not match.',
+        ]);
+
+        $user = auth()->user();
+
+        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+            return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        }
+
+        $user->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+
+        return redirect()->back()->with('password_success', 'Password updated successfully.');
+    }
+
+    public function checkMagicEmail(\Illuminate\Http\Request $request)
+    {
+        $email  = strtolower(trim($request->input('email', '')));
+        $exists = false;
+
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $exists = \App\Models\User::where('email', $email)->exists();
+        }
+
+        return response()->json(['exists' => $exists]);
+    }
+
+    public function requestMagicLink(\Illuminate\Http\Request $request)
+    {
+        if (!get_cms_option('magic_login_enabled')) {
+            return redirect()->back()->withErrors(['magic_email' => 'Magic login is not enabled.']);
+        }
+
+        $request->validate(['magic_email' => 'required|email'], [
+            'magic_email.required' => 'Please enter your email address.',
+            'magic_email.email'    => 'Please enter a valid email address.',
+        ]);
+
+        $email = strtolower(trim($request->magic_email));
+        $user  = \App\Models\User::where('email', $email)->first();
+
+        // Always show the same success message — never confirm whether an email exists
+        if ($user) {
+            \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+                ->where('email', $email)
+                ->where('used_at', null)
+                ->delete();
+
+            $rawToken = \Illuminate\Support\Str::random(48);
+            $hash     = hash('sha256', $rawToken);
+
+            \Illuminate\Support\Facades\DB::table('magic_login_tokens')->insert([
+                'email'      => $email,
+                'token'      => $hash,
+                'expires_at' => now()->addMinutes(10),
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $magicUrl = route('shop.magic.verify', ['token' => $rawToken]);
+
+            \Illuminate\Support\Facades\Mail::to($email)->send(
+                new \Acme\CmsDashboard\Mail\MagicLoginMail($magicUrl, $user->name)
+            );
+        }
+
+        return redirect()->back()->with('magic_sent', true);
+    }
+
+    public function verifyMagicLink(\Illuminate\Http\Request $request, string $token)
+    {
+        $accountPageId = get_shop_option('shop_account_page_id');
+        $accountPage   = $accountPageId ? \Acme\CmsDashboard\Models\Post::find($accountPageId) : null;
+        $accountUrl    = $accountPage ? url('/' . $accountPage->slug) : url('/');
+
+        $hash = hash('sha256', $token);
+
+        $row = \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+            ->where('token', $hash)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$row) {
+            return redirect($accountUrl)
+                ->withErrors(['account_email' => 'This magic link is invalid or has expired. Please request a new one.']);
+        }
+
+        \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+            ->where('token', $hash)
+            ->update(['used_at' => now()]);
+
+        $user = \App\Models\User::where('email', $row->email)->first();
+
+        if (!$user) {
+            return redirect($accountUrl)
+                ->withErrors(['account_email' => 'No account found for this magic link.']);
+        }
+
+        auth()->login($user, false);
+
+        return redirect($accountUrl)->with('magic_login_success', 'You have been signed in successfully.');
+    }
+
     /**
      * Public order tracking — look up an order by number + email.
      */
-    public function trackOrder(Request $request)
+    public function trackOrder(\Illuminate\Http\Request $request)
     {
         $order = null;
         $notFound = false;

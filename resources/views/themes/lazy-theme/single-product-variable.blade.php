@@ -23,6 +23,8 @@
         ->filter(fn($a) => ($a['variation'] ?? false) && isset($allVariationAttrs[$a['name']]));
 @endphp
 
+<?php do_lazy_action('lazy_before_single_product', $post); ?>
+<?php do_lazy_action('lazy_variable_before_single_product', $post); ?>
 <div class="bg-white py-12 min-h-screen font-sans" x-data="variableProductHandler()">
     <div class="container-custom">
         <!-- Breadcrumbs -->
@@ -61,6 +63,7 @@
 
         <div class="flex flex-col lg:flex-row gap-12 mb-20">
             <!-- Left: Product Images -->
+            <?php do_lazy_action('lazy_before_product_images', $post); ?>
             <div class="w-full lg:w-1/2">
                 <div class="relative bg-[#f8f8f8] rounded-sm overflow-hidden mb-4 group cursor-zoom-in">
                     <img id="main-product-image" :src="currentImage" :alt="'{{ $post->title }}'" class="w-full h-auto object-cover transition-all duration-500 hover:scale-125">
@@ -92,11 +95,15 @@
                 </div>
                 @endif
             </div>
+            <?php do_lazy_action('lazy_after_product_images', $post); ?>
 
             <!-- Right: Product Info -->
             <div class="w-full lg:w-1/2 flex flex-col">
-                <h1 class="text-[36px] font-bold text-[#2c3338] mb-4 leading-tight">{{ $post->title }}</h1>
+                <?php do_lazy_action('lazy_variable_before_product_title', $post); ?>
+                {!! apply_lazy_filters('lazy_variable_product_title', '<h1 class="text-[36px] font-bold text-[#2c3338] mb-4 leading-tight">' . e($post->title) . '</h1>', $post) !!}
+                <?php do_lazy_action('lazy_variable_after_product_title', $post); ?>
                 
+                <?php do_lazy_action('lazy_variable_before_product_price', $post); ?>
                 <div class="text-[28px] font-medium text-gray-900 mb-6 flex items-center gap-3">
                     <template x-if="selectedVariation && selectedVariation.price">
                         <div class="flex items-center gap-3">
@@ -115,6 +122,7 @@
                         <span class="text-gray-900 font-bold">{{ $post->shopData->price_range ?? lazy_price_format($post->shopData->price ?? 0) }}</span>
                     </template>
                 </div>
+                <?php do_lazy_action('lazy_variable_after_product_price', $post); ?>
 
                 <!-- Dynamic Stock Status for Variations -->
                 <div class="mb-6 -mt-4" x-show="selectedVariation" x-cloak>
@@ -156,11 +164,11 @@
                     </template>
                 </div>
 
+                <?php do_lazy_action('lazy_variable_before_short_description', $post); ?>
                 @if(!empty($post->shopData->short_description))
-                <div class="text-[15px] text-gray-600 mb-8 leading-relaxed">
-                    {!! $post->shopData->short_description !!}
-                </div>
+                {!! apply_lazy_filters('lazy_variable_short_description', '<div class="text-[15px] text-gray-600 mb-8 leading-relaxed">' . $post->shopData->short_description . '</div>', $post) !!}
                 @endif
+                <?php do_lazy_action('lazy_variable_after_short_description', $post); ?>
 
                 <!-- Variations Selection -->
                 <div class="space-y-8 mb-10 p-6 bg-[#fcfcfc] border border-gray-100 rounded-sm shadow-sm">
@@ -225,44 +233,44 @@
                 </div>
 
                 <!-- Simple & Reliable Interaction Area -->
+                <?php do_lazy_action('lazy_variable_before_add_to_cart_form', $post); ?>
                 <div class="space-y-6 pt-6 border-t border-gray-100 mb-10 pb-8 border-b border-gray-100">
-                    <form id="add-to-cart-form" action="{{ route('shop.cart.add') }}" method="POST" class="flex flex-col sm:flex-row items-center gap-3">
+                    <form id="add-to-cart-form" action="{{ route('shop.cart.add') }}" method="POST" class="w-full">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $post->id }}">
                         <input type="hidden" name="variation_id" :value="selectedVariation ? selectedVariation.id : ''">
-                        
-                        <div class="flex items-center gap-3 w-full">
+                        <?php do_lazy_action('lazy_variable_add_to_cart_form_top', $post); ?>
+                        <?php lazy_render_product_fields(apply_lazy_filters('lazy_variable_product_fields', apply_lazy_filters('lazy_product_fields', [], $post), $post)); ?>
+
+                        <div class="flex items-center gap-3 w-full mt-4">
                             <!-- Standard Quantity Box -->
                             <div class="flex items-center border border-gray-200 rounded-sm h-12 bg-white overflow-hidden">
                                 <button type="button" @click="qty = Math.max(1, qty - 1)" class="w-10 h-full flex items-center justify-center text-gray-500 hover:bg-gray-50 border-r border-gray-100 font-bold text-lg select-none">-</button>
                                 <input type="text" name="quantity" x-model="qty" readonly class="w-12 h-full text-center border-none focus:ring-0 text-[15px] font-bold text-gray-800 p-0 cursor-default">
                                 <button type="button" @click="qty = parseInt(qty) + 1" class="w-10 h-full flex items-center justify-center text-gray-500 hover:bg-gray-50 border-l border-gray-100 font-bold text-lg select-none">+</button>
                             </div>
-                            
-                            <!-- Standard Add to Cart Button -->
-                             <button type="submit" 
-                                     id="add-to-cart-btn"
-                                     x-show="selectedVariation"
-                                     :disabled="selectedVariation && selectedVariation.stock_status !== 'instock'"
-                                     :class="(selectedVariation && selectedVariation.stock_status !== 'instock') 
-                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                         : 'bg-[#1363df] hover:bg-[#005ba6] text-white hover:text-white'"
-                                     class="flex-1 h-12 rounded-sm font-bold text-[14px] transition-all uppercase flex items-center justify-center px-8">
-                                 <span x-text="selectedVariation && selectedVariation.stock_status === 'instock' ? 'Add to cart' : 'Out of Stock'">Add to cart</span>
-                            </button>
-                            
+
+                            <?php do_lazy_action('lazy_variable_before_add_to_cart_button', $post); ?>
+                            {!! apply_lazy_filters('lazy_variable_add_to_cart_button',
+                                '<button type="submit" id="add-to-cart-btn" x-show="selectedVariation" :disabled="selectedVariation && selectedVariation.stock_status !== \'instock\'" :class="(selectedVariation && selectedVariation.stock_status !== \'instock\') ? \'bg-gray-100 text-gray-400 cursor-not-allowed\' : \'bg-[#1363df] hover:bg-[#005ba6] text-white hover:text-white\'" class="flex-1 h-12 rounded-sm font-bold text-[14px] transition-all uppercase flex items-center justify-center px-8"><span x-text="selectedVariation && selectedVariation.stock_status === \'instock\' ? \'Add to cart\' : \'Out of Stock\'">Add to cart</span></button>',
+                                $post) !!}
+                            <?php do_lazy_action('lazy_variable_after_add_to_cart_button', $post); ?>
+
                             <!-- Placeholder when nothing selected -->
                             <div x-show="!selectedVariation" class="flex-1 h-12 rounded-sm bg-gray-50 border border-dashed border-gray-200 text-gray-400 font-medium text-[13px] flex items-center justify-center px-8">
                                 Please select options above
                             </div>
                         </div>
+                        <?php do_lazy_action('lazy_variable_add_to_cart_form_bottom', $post); ?>
                     </form>
                 </div>
+                <?php do_lazy_action('lazy_variable_after_add_to_cart_form', $post); ?>
 
+                <?php do_lazy_action('lazy_variable_before_product_meta', $post); ?>
                 <div class="text-[13px] text-gray-500 space-y-3 mt-6">
                     <div x-show="selectedVariation && selectedVariation.sku"><span class="uppercase font-bold text-gray-800">SKU:</span> <span x-text="selectedVariation.sku" class="ml-2 bg-gray-100 px-2 py-0.5 rounded text-gray-600"></span></div>
                     <div x-show="!selectedVariation && '{{ $post->shopData->sku }}'"><span class="uppercase font-bold text-gray-800">SKU:</span> <span class="ml-2">{{ $post->shopData->sku }}</span></div>
-                    <div><span class="uppercase font-bold text-gray-800">Category:</span> 
+                    <div><span class="uppercase font-bold text-gray-800">Category:</span>
                         <span class="ml-2">
                         @php
                             $categories = $post->productCategories;
@@ -272,11 +280,14 @@
                         @endforeach
                         </span>
                     </div>
+                    <?php do_lazy_action('lazy_variable_product_meta_fields', $post); ?>
                 </div>
+                <?php do_lazy_action('lazy_variable_after_product_meta', $post); ?>
             </div>
         </div>
 
         <!-- Tabs Section -->
+        <?php do_lazy_action('lazy_before_product_description', $post); ?>
         @php
             $reviewsOn = get_shop_option('shop_enable_reviews', '1') === '1';
             $ratingOn  = get_shop_option('shop_enable_review_rating', '1') === '1';
@@ -291,7 +302,7 @@
             </div>
             
             <div x-show="activeTab === 'description'" class="prose max-w-none text-gray-600 text-[15px] leading-relaxed">
-                {!! $post->content !!}
+                {!! apply_lazy_filters('lazy_variable_product_description', apply_lazy_filters('lazy_product_description', $post->content, $post), $post) !!}
             </div>
 
             <div x-show="activeTab === 'info'" x-cloak>
@@ -475,6 +486,9 @@
 
     </div>
 </div>
+<?php do_lazy_action('lazy_after_product_description', $post); ?>
+<?php do_lazy_action('lazy_variable_after_single_product', $post); ?>
+<?php do_lazy_action('lazy_after_single_product', $post); ?>
 
 <style>
     [x-cloak] { display: none !important; }

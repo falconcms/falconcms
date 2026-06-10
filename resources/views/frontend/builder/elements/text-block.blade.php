@@ -1,5 +1,21 @@
 @php
     $s = $el['settings'] ?? [];
+
+    $dynamicSrc = $s['dynamic_source'] ?? '';
+    if ($dynamicSrc && function_exists('lazy_resolve_dynamic_value')) {
+        $dynamicConfig = [
+            'date_type'      => $s['dynamic_date_type']      ?? 'published',
+            'date_format'    => $s['dynamic_date_format']     ?? '',
+            'before'         => $s['dynamic_before']          ?? '',
+            'after'          => $s['dynamic_after']           ?? '',
+            'fallback'       => $s['dynamic_fallback']        ?? '',
+            'excerpt_length' => (int)($s['dynamic_excerpt_length'] ?? 150),
+            'acpt_slug'      => $s['dynamic_acpt_slug']       ?? '',
+        ];
+        $resolved = lazy_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig);
+        $s['content'] = $resolved ? nl2br(e($resolved)) : ($s['content'] ?? '');
+    }
+
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
     $visibilityClasses = '';
     if (!($v['mobile']  ?? true)) $visibilityClasses .= ' lazy-hide-mobile';

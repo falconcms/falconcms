@@ -1209,43 +1209,6 @@
             <!-- Email and Account Tab -->
             <div x-show="tab === 'emails_accounts'" x-transition>
                 <table class="w-full border-separate border-spacing-y-6">
-                    <!-- Guest & Account Checkout -->
-                    <tr><td colspan="2"><h3 class="text-[16px] font-semibold text-[#1d2327] mb-2">Account creation & checkout</h3></td></tr>
-                    <tr>
-                        <th scope="row" class="w-[200px] text-left align-top pt-2">
-                            <label class="text-[14px] font-semibold text-[#1d2327]">Guest checkout</label>
-                        </th>
-                        <td>
-                            <div class="space-y-3">
-                                <label class="inline-flex items-center cursor-pointer">
-                                    <input type="hidden" name="checkout_guest_enable" value="0">
-                                    <input type="checkbox" name="checkout_guest_enable" value="1" {{ get_shop_option('shop_checkout_guest_enable', '1') === '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
-                                    <span class="text-[14px]">Allow customers to place orders without an account</span>
-                                </label>
-                                <br>
-                                <label class="inline-flex items-center cursor-pointer">
-                                    <input type="hidden" name="checkout_login_enable" value="0">
-                                    <input type="checkbox" name="checkout_login_enable" value="1" {{ get_shop_option('shop_checkout_login_enable', '1') === '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
-                                    <span class="text-[14px]">Allow customers to log into an existing account during checkout</span>
-                                </label>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row" class="w-[200px] text-left align-top pt-2">
-                            <label class="text-[14px] font-semibold text-[#1d2327]">Account creation</label>
-                        </th>
-                        <td>
-                            <div class="space-y-3">
-                                <label class="inline-flex items-center cursor-pointer">
-                                    <input type="hidden" name="checkout_create_account" value="0">
-                                    <input type="checkbox" name="checkout_create_account" value="1" {{ get_shop_option('shop_checkout_create_account', '1') === '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
-                                    <span class="text-[14px]">Allow customers to create an account during checkout</span>
-                                </label>
-                            </div>
-                        </td>
-                    </tr>
-
                     <!-- Email Settings -->
                     <tr><td colspan="2"><h3 class="text-[16px] font-semibold text-[#1d2327] mt-8 mb-2">Email sender options</h3></td></tr>
                     <tr>

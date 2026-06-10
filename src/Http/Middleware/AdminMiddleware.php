@@ -45,6 +45,14 @@ class AdminMiddleware
             return redirect()->route('admin.login')->withErrors(['email' => 'Your account has been blocked. Please contact the administrator.']);
         }
 
+        // Redirect customer-role users to the shop account page instead of admin
+        if (optional($user->role)->slug === 'customer') {
+            $accountPageId = get_shop_option('shop_account_page_id');
+            $accountPage   = $accountPageId ? \Acme\CmsDashboard\Models\Post::find($accountPageId) : null;
+            $accountUrl    = $accountPage ? url('/' . $accountPage->slug) : url('/');
+            return redirect($accountUrl);
+        }
+
         // 4. Strict Permission Check
         $userRoleSlug = $user->role ? $user->role->slug : null;
         if (!$userRoleSlug && $user->role_id) {

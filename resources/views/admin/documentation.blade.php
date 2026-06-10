@@ -27,6 +27,9 @@
                     <a href="#templates" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Templates</a>
                     <a href="#custom-widgets" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Widgets</a>
                     <a href="#hooks" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Hooks (Actions & Filters)</a>
+                    <a href="#ecommerce-hooks" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200 pl-7">↳ Ecommerce Product Hooks</a>
+                    <a href="#checkout-form-hooks" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200 pl-10">↳ Checkout Form Hooks</a>
+                    <a href="#order-hooks" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200 pl-10">↳ Order & Invoice Hooks</a>
                     <a href="#builder-elements" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Builder Elements</a>
                     <a href="#rest-api" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">REST API & Headless</a>
                     <a href="#multilingual" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Multilingual & Localization</a>
@@ -552,6 +555,580 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
     return $fields;
 }, 20); // Priority 20 to run after adding
 @endverbatim</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Section: Ecommerce Product Hooks --}}
+                <section id="ecommerce-hooks">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Ecommerce Product Hooks</h2>
+                    <p class="text-gray-700 mb-6">WordPress-style hooks placed throughout the single product pages. Use them in your theme's <code>functions.php</code> to inject content, modify output, add custom fields, or remove sections — without touching package files.</p>
+
+                    {{-- Helper Functions --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Hook Helper Functions</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Function</th><th class="px-3 py-2">Description</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">add_lazy_action($tag, $cb, $priority)</td><td class="px-3 py-2">Register an action</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">do_lazy_action($tag, ...$args)</td><td class="px-3 py-2">Fire an action</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">remove_lazy_action($tag, $cb, $priority)</td><td class="px-3 py-2">Remove a registered action</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">add_lazy_filter($tag, $cb, $priority)</td><td class="px-3 py-2">Register a filter</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">apply_lazy_filters($tag, $value, ...$args)</td><td class="px-3 py-2">Apply filters and return result</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">remove_lazy_filter($tag, $cb, $priority)</td><td class="px-3 py-2">Remove a registered filter</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">has_lazy_action($tag)</td><td class="px-3 py-2">Check if action has registered callbacks</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">has_lazy_filter($tag)</td><td class="px-3 py-2">Check if filter has registered callbacks</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Shared Hooks --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-1">Shared Hooks <span class="text-sm font-normal text-gray-500">(fire on both Simple & Variable pages)</span></h3>
+                        <div class="overflow-x-auto mt-4">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Where it fires</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_single_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before entire product page</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_single_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After entire product page</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_product_images</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before image gallery column</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_product_images</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After image gallery column</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_product_description</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before description section</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_product_description</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After description section</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_product_description_title</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify "Description" heading HTML</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_product_description</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify full description HTML</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Add custom form fields to <b>both</b> simple & variable product pages at once (rendered before the ATC button). Use <code>lazy_simple_product_fields</code> / <code>lazy_variable_product_fields</code> for type-specific fields.</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_simple_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Simple product only — applied after <code>lazy_product_fields</code></td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_variable_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Variable product only — applied after <code>lazy_product_fields</code></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3">Render helper: <code class="bg-gray-100 px-1 rounded">lazy_render_product_fields($fields)</code> — called automatically by the theme. Each field is an array with a <code>type</code> key (<code>text</code>, <code>select</code>, <code>textarea</code>, <code>raw</code>…). The <code>raw</code> type lets you output any HTML via <code>ob_start()</code>.</p>
+                    </div>
+
+                    {{-- Simple Product Hooks --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-1">Simple Product Hooks <span class="text-sm font-normal text-gray-500">(prefix: <code>lazy_simple_</code>)</span></h3>
+                        <p class="text-sm text-gray-600 mt-1 mb-4">These fire only on simple product pages.</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Position</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_before_product_title</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before &lt;h1&gt; title</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_simple_product_title</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify title HTML</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_product_title</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After title</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_before_product_price</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before price block</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_simple_product_price</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify price HTML</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_product_price</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After price block</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_before_short_description</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before short description</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_simple_short_description</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify short description HTML</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_short_description</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After short description</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_before_add_to_cart_form</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before add-to-cart form</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_add_to_cart_form_top</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Inside form — top (custom fields)</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_add_to_cart_form_bottom</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Inside form — bottom</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_before_add_to_cart_button</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before submit button</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_simple_add_to_cart_button</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify button HTML</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_add_to_cart_button</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After submit button</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_add_to_cart_form</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After add-to-cart form</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_out_of_stock_button</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Replaces default out-of-stock button</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_before_product_meta</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before SKU/category meta</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_product_meta_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Inside meta — add extra rows</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_product_meta</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After SKU/category meta</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Variable Product Hooks --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-1">Variable Product Hooks <span class="text-sm font-normal text-gray-500">(prefix: <code>lazy_variable_</code>)</span></h3>
+                        <p class="text-sm text-gray-600 mt-1 mb-4">These fire only on variable product pages. All simple product hooks exist here with the <code>lazy_variable_</code> prefix plus these extras:</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Position</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_variable_before_single_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before variable product wrapper</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_variable_after_single_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After variable product wrapper</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_variable_before_product_title</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before title</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_variable_product_title</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify title HTML</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_variable_before_add_to_cart_form</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before variation selector + form</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_variable_add_to_cart_form_top</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Inside form — top (custom fields)</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_variable_add_to_cart_form_bottom</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Inside form — bottom</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_variable_add_to_cart_button</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify button HTML</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_variable_product_meta_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Inside meta — add extra rows</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_variable_product_description</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify full description HTML</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Cart & Admin Hooks --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Cart & Checkout Hooks</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Description</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_cart_item_custom_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $product, $variation</td><td class="px-3 py-2">Validate / modify custom fields array before it is stored in the cart session</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_cart_item_data</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$item, $product, $variation</td><td class="px-3 py-2">Modify the <b>full cart item array</b> just before it is written to the session. Use this to bake price add-ons into <code>$item['price']</code> / <code>$item['sale_price']</code> so totals, tax, coupons, and invoices stay correct automatically.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_order_item_meta</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$meta, $item, $order</td><td class="px-3 py-2">Modify order item meta before it is saved to the database</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_place_order</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$order, $cart, $request</td><td class="px-3 py-2">After the order row is created, before order items are saved</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_custom_field_labels</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$labels, $context</td><td class="px-3 py-2">Provide human-readable labels for custom item fields (<code>$item-&gt;meta['custom_fields']</code>). The <code>$labels</code> array maps field key → label. Used automatically by <code>lazy_render_item_custom_fields()</code> across mini-cart, cart, checkout, confirmation, and invoice.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Admin Product Hooks</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Description</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_admin_before_save_product</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$data, $post|null, $request</td><td class="px-3 py-2">Modify product data before insert/update</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_admin_after_save_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post, $shopData, $request, $action</td><td class="px-3 py-2">After save — <code>$action</code> is <code>'create'</code> or <code>'update'</code></td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_admin_before_delete_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before product moved to trash</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_admin_after_delete_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$postId, $title</td><td class="px-3 py-2">After product trashed</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-blue-600">lazy_admin_order_item_meta</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$item</td><td class="px-3 py-2">Fires under each order item row in the admin order detail page. Echo HTML to display custom field labels/values (e.g. engraving, protective case). The <code>$item</code> object exposes <code>$item-&gt;meta['custom_fields']</code>.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Custom Fields Example --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-3">Custom Fields — Add to Cart → Order</h3>
+                        <p class="text-sm text-gray-600 mb-4">Add custom input fields to the add-to-cart form. Field names must be prefixed <code>lazy_custom_</code>. They are automatically stored in the cart session and persisted to <code>shop_order_items.meta</code> when the order is placed.</p>
+
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Method A — Array fields via <code>lazy_product_fields</code> (recommended, renders on both product types)</p>
+                        <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
+                            <pre><code>@verbatim
+// Works on BOTH simple and variable products
+add_lazy_filter('lazy_product_fields', function ($fields) {
+    $fields[] = [
+        'type'        => 'text',
+        'name'        => 'lazy_custom_engraving',
+        'label'       => 'Engraving Text',
+        'placeholder' => 'Enter text to engrave...',
+        'required'    => false,
+    ];
+    return $fields;
+});
+@endverbatim</code></pre>
+                        </div>
+
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Method B — Raw HTML via action hooks (type-specific)</p>
+                        <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
+                            <pre><code>@verbatim
+// Simple product only
+add_lazy_action('lazy_simple_add_to_cart_form_top', function ($post) {
+    echo '<div class="mb-4">';
+    echo '  <label class="block text-sm font-medium text-gray-700 mb-1">Gift Message</label>';
+    echo '  <textarea name="lazy_custom_gift_message" rows="2"';
+    echo '    class="w-full border border-gray-300 rounded px-3 py-2 text-sm"';
+    echo '    placeholder="Add a personal message..."></textarea>';
+    echo '</div>';
+});
+@endverbatim</code></pre>
+                        </div>
+
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-3 text-xs text-blue-700">
+                            Access in orders: <code>$item-&gt;meta['custom_fields']['engraving']</code> (the <code>lazy_custom_</code> prefix is stripped automatically).
+                            Display across pages: register a label via <code>lazy_custom_field_labels</code> and the CMS renders it everywhere automatically (mini-cart, cart, checkout summary, confirmation, invoice).
+                        </div>
+                    </div>
+
+                    {{-- Quick examples --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Quick Examples</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Add a badge after the title</p>
+                                <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                    <pre><code>@verbatim
+add_lazy_action('lazy_simple_after_product_title', function ($post) {
+    if ($post->sku === 'FEATURED-001') {
+        echo '<span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded mb-3">Staff Pick</span>';
+    }
+});
+@endverbatim</code></pre>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Show savings below the price</p>
+                                <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                    <pre><code>@verbatim
+add_lazy_filter('lazy_simple_product_price', function ($html, $post) {
+    if ($post->sale_price) {
+        $savings = $post->price - $post->sale_price;
+        $html .= '<p class="text-sm text-green-600 mt-1">You save ' . lazy_price_format($savings) . '</p>';
+    }
+    return $html;
+});
+@endverbatim</code></pre>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove the description section entirely</p>
+                                <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                    <pre><code>@verbatim
+add_lazy_filter('lazy_product_description', function ($html, $post) {
+    return ''; // return empty string to suppress
+});
+@endverbatim</code></pre>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Low stock alert on product save</p>
+                                <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                    <pre><code>@verbatim
+add_lazy_action('lazy_admin_after_save_product', function ($post, $shopData, $request, $action) {
+    if ($shopData && $shopData->manage_stock && $shopData->stock_quantity <= 5) {
+        \Log::warning("Low stock: {$post->title} has {$shopData->stock_quantity} units.");
+    }
+});
+@endverbatim</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Section: Checkout Form Hooks --}}
+                <section id="checkout-form-hooks">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Checkout Form Hooks</h2>
+                    <p class="text-gray-700 mb-6">The checkout billing and shipping forms are fully hookable. You can add, remove, or reorder fields via <code>functions.php</code> — required validation, storage, and display across all order pages happen automatically.</p>
+
+                    {{-- How it works --}}
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8">
+                        <h3 class="text-lg font-bold text-blue-700 mb-3">How custom checkout fields flow through the system</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-blue-800">
+                            <div class="bg-white/60 rounded-lg p-3 border border-blue-100">
+                                <div class="font-bold mb-1">1. Define</div>
+                                Push a field array into <code>lazy_billing_fields</code> or <code>lazy_shipping_fields</code>.
+                            </div>
+                            <div class="bg-white/60 rounded-lg p-3 border border-blue-100">
+                                <div class="font-bold mb-1">2. Automatic</div>
+                                CMS renders it on checkout, validates if <code>required</code>, saves to <code>$order->meta['checkout_fields']</code>.
+                            </div>
+                            <div class="bg-white/60 rounded-lg p-3 border border-blue-100">
+                                <div class="font-bold mb-1">3. Shown everywhere</div>
+                                Order confirmation page · Admin order detail "Additional Info" · Invoice print — all automatic.
+                            </div>
+                        </div>
+                        <p class="text-xs text-blue-700 mt-3"><b>Standard fields</b> (first name, last name, address, phone, email…) map to dedicated order columns. <b>Custom fields</b> — any name not in that list — are stored in <code>$order->meta['checkout_fields']</code>.</p>
+                    </div>
+
+                    {{-- Hooks table --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Available Hooks</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Description</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_billing_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields</td><td class="px-3 py-2">Add / remove / reorder billing form fields. Return the modified array.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_shipping_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields</td><td class="px-3 py-2">Same as above for the shipping form.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_checkout_custom_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $request</td><td class="px-3 py-2">Final filter on the collected custom field values before they are saved to <code>$order->meta</code>. Useful for transforming or removing values.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_checkout_field_labels</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$labels</td><td class="px-3 py-2">Map custom field key → human-readable label. Used on order confirmation, admin detail, and invoice. Returns an array e.g. <code>['billing_company' => 'Company']</code>.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_billing_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">—</td><td class="px-3 py-2">Before the billing fields grid renders</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_billing_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">—</td><td class="px-3 py-2">After the billing fields grid renders</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_shipping_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">—</td><td class="px-3 py-2">Before the shipping fields grid renders</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_shipping_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">—</td><td class="px-3 py-2">After the shipping fields grid renders</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Field definition keys --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Field Definition Keys</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Key</th><th class="px-3 py-2">Required</th><th class="px-3 py-2">Description</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">name</td><td class="px-3 py-2 font-bold text-red-500">Yes</td><td class="px-3 py-2">HTML input name. Standard names (e.g. <code>billing_first_name</code>) map to dedicated order columns. Any other name is treated as a custom field and saved to <code>$order->meta</code>.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">type</td><td class="px-3 py-2">—</td><td class="px-3 py-2"><code>text</code> · <code>email</code> · <code>tel</code> · <code>select</code> · <code>country</code> · <code>textarea</code> · <code>checkbox</code> · <code>hidden</code>. Defaults to <code>text</code>.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">label</td><td class="px-3 py-2">—</td><td class="px-3 py-2">Visible label above the input. <code>null</code> = no label.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">required</td><td class="px-3 py-2">—</td><td class="px-3 py-2"><code>true</code> adds HTML required attribute AND server-side Laravel validation automatically.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">rules</td><td class="px-3 py-2">—</td><td class="px-3 py-2">Override the default validation rule string (e.g. <code>'required|email|max:255'</code>). Only used when <code>required</code> is <code>true</code>.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">width</td><td class="px-3 py-2">—</td><td class="px-3 py-2"><code>'half'</code> = one column (default for most fields) · <code>'full'</code> = both columns (<code>md:col-span-2</code>).</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">priority</td><td class="px-3 py-2">—</td><td class="px-3 py-2">Sort order — lower appears higher. Built-in billing fields use 10–100. Insert custom fields between them by choosing a value in that range.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">options</td><td class="px-3 py-2">—</td><td class="px-3 py-2">For <code>type=select</code>: associative array of <code>value => label</code> pairs.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">placeholder</td><td class="px-3 py-2">—</td><td class="px-3 py-2">Input placeholder text.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">default</td><td class="px-3 py-2">—</td><td class="px-3 py-2">Pre-filled value (e.g. from the logged-in user).</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">class</td><td class="px-3 py-2">—</td><td class="px-3 py-2">Extra CSS classes on the input element.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">rows</td><td class="px-3 py-2">—</td><td class="px-3 py-2">Number of rows for <code>type=textarea</code>.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4 class="text-sm font-bold text-gray-700 mt-5 mb-1">Default billing field priorities</h4>
+                        <div class="bg-gray-100 rounded-lg p-3 font-mono text-xs text-gray-700 leading-relaxed">
+                            10 First name &nbsp;&nbsp;&nbsp; 20 Last name &nbsp;&nbsp;&nbsp; 30 Country &nbsp;&nbsp;&nbsp; 40 Street address<br>
+                            50 Address line 2 &nbsp; 60 City &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 70 State &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 80 ZIP Code<br>
+                            90 Phone &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100 Email
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Insert a custom field at priority 25 to place it between Last name and Country.</p>
+                    </div>
+
+                    {{-- Helper functions --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Helper Functions</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Function</th><th class="px-3 py-2">Description</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_get_checkout_fields(string $section)</td><td class="px-3 py-2">Returns the merged + sorted field array for <code>'billing'</code> or <code>'shipping'</code> — the single source of truth used both for rendering the form and for server-side validation/collection.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_render_checkout_fields(array $fields)</td><td class="px-3 py-2">Wraps all fields in a responsive 2-column grid and calls <code>lazy_render_checkout_field</code> for each.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_render_checkout_field(array $field)</td><td class="px-3 py-2">Renders one field — handles all supported types automatically.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_standard_checkout_field_names()</td><td class="px-3 py-2">Returns the list of standard field names that map to dedicated order columns. Any other name is a "custom" field.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Example --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-3">Complete Example — Add "Company Name" field</h3>
+                        <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                            <pre><code>@verbatim
+// In functions.php
+
+// 1. Add the field (priority 25 = between Last name and Country)
+add_lazy_filter('lazy_billing_fields', function ($fields) {
+    $fields[] = [
+        'name'        => 'billing_company',
+        'type'        => 'text',
+        'label'       => 'Company Name',
+        'required'    => false,
+        'width'       => 'full',
+        'priority'    => 25,
+        'placeholder' => 'Optional',
+    ];
+    return $fields;
+});
+
+// 2. Human-readable label for order pages
+add_lazy_filter('lazy_checkout_field_labels', function ($labels) {
+    $labels['billing_company'] = 'Company';
+    return $labels;
+});
+
+// Done!
+// The CMS will:
+// → Render the field on checkout between Last name and Country
+// → Validate it (not required here, but it would be if required => true)
+// → Save the value to $order->meta['checkout_fields']['billing_company']
+// → Show "Company: Acme Ltd" on order confirmation, admin detail, and invoice
+@endverbatim</code></pre>
+                        </div>
+                    </div>
+
+                    {{-- Select example --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-3">Example — Required select field</h3>
+                        <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                            <pre><code>@verbatim
+// Add a required "Delivery Preference" select after Address line 2 (priority 55)
+add_lazy_filter('lazy_billing_fields', function ($fields) {
+    $fields[] = [
+        'name'     => 'delivery_preference',
+        'type'     => 'select',
+        'label'    => 'Delivery Preference',
+        'required' => true,
+        'width'    => 'full',
+        'priority' => 55,
+        'options'  => [
+            ''          => 'Select…',
+            'leave'     => 'Leave at door',
+            'reception' => 'Hand to reception',
+            'neighbour' => 'Leave with neighbour',
+        ],
+    ];
+    return $fields;
+});
+
+add_lazy_filter('lazy_checkout_field_labels', function ($labels) {
+    $labels['delivery_preference'] = 'Delivery Preference';
+    return $labels;
+});
+@endverbatim</code></pre>
+                        </div>
+                    </div>
+
+                    {{-- Removing fields --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-3">Removing Fields</h3>
+                        <p class="text-sm text-gray-600 mb-4">Use <code>array_filter</code> inside the filter hook to remove any field by its <code>name</code>. Always use <b>priority 20</b> (or higher) so your filter runs <em>after</em> the default fields are built (priority 10).</p>
+
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove a single field</p>
+                        <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
+                            <pre><code>@verbatim
+add_lazy_filter('lazy_billing_fields', function ($fields) {
+    return array_filter($fields, fn($f) => ($f['name'] ?? '') !== 'billing_address_2');
+}, 20);
+@endverbatim</code></pre>
+                        </div>
+
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove multiple fields at once</p>
+                        <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-6">
+                            <pre><code>@verbatim
+add_lazy_filter('lazy_billing_fields', function ($fields) {
+    $remove = ['billing_address_2', 'billing_state'];
+    return array_filter($fields, fn($f) => !in_array($f['name'] ?? '', $remove));
+}, 20);
+@endverbatim</code></pre>
+                        </div>
+
+                        <h4 class="text-sm font-bold text-gray-700 mb-3">Standard Billing Field Names</h4>
+                        <div class="overflow-x-auto mb-4">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">name (use in array_filter)</th><th class="px-3 py-2">Field label</th><th class="px-3 py-2">Priority</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_first_name</td><td class="px-3 py-2">First name</td><td class="px-3 py-2">10</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_last_name</td><td class="px-3 py-2">Last name</td><td class="px-3 py-2">20</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_country</td><td class="px-3 py-2">Country / Region</td><td class="px-3 py-2">30</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_address_1</td><td class="px-3 py-2">Street address</td><td class="px-3 py-2">40</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_address_2</td><td class="px-3 py-2">Address line 2 (optional)</td><td class="px-3 py-2">50</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_city</td><td class="px-3 py-2">Town / City</td><td class="px-3 py-2">60</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_state</td><td class="px-3 py-2">State / Province</td><td class="px-3 py-2">70</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_postcode</td><td class="px-3 py-2">ZIP Code</td><td class="px-3 py-2">80</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_phone</td><td class="px-3 py-2">Phone</td><td class="px-3 py-2">90</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">billing_email</td><td class="px-3 py-2">Email address</td><td class="px-3 py-2">100</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h4 class="text-sm font-bold text-gray-700 mb-3">Standard Shipping Field Names</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">name</th><th class="px-3 py-2">Field label</th><th class="px-3 py-2">Priority</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_first_name</td><td class="px-3 py-2">First name</td><td class="px-3 py-2">10</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_last_name</td><td class="px-3 py-2">Last name</td><td class="px-3 py-2">20</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_country</td><td class="px-3 py-2">Country / Region</td><td class="px-3 py-2">30</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_address_1</td><td class="px-3 py-2">Street address</td><td class="px-3 py-2">40</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_address_2</td><td class="px-3 py-2">Address line 2 (optional)</td><td class="px-3 py-2">50</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_city</td><td class="px-3 py-2">Town / City</td><td class="px-3 py-2">60</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_state</td><td class="px-3 py-2">State / Province</td><td class="px-3 py-2">70</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_postcode</td><td class="px-3 py-2">ZIP Code</td><td class="px-3 py-2">80</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">shipping_phone</td><td class="px-3 py-2">Phone</td><td class="px-3 py-2">90</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-4 bg-amber-50 border-l-4 border-amber-400 p-3 text-xs text-amber-800">
+                            <b>Important:</b> Removing a field from the hook only hides it from the form. The server-side validation for standard required fields (like <code>billing_email</code>) is enforced separately. If you remove a standard required field from the form, also pass an empty validation bypass or make it optional — otherwise the order will fail to submit.
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Section: Order & Invoice Hooks --}}
+                <section id="order-hooks">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Order & Invoice Hooks</h2>
+                    <p class="text-gray-700 mb-6">Hooks for the order confirmation page, admin order detail, and invoice print.</p>
+
+                    {{-- Hooks table --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Order Confirmation Page</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Description</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_order_confirmation</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$order</td><td class="px-3 py-2">Before the entire confirmation page renders</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_order_confirmation</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$order</td><td class="px-3 py-2">After the entire confirmation page (great for analytics, pixel fires, etc.)</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_order_confirmation_item_name</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $item, $order</td><td class="px-3 py-2">Modify the product name HTML in the order summary table (default: name + × qty). Return modified HTML string.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_order_confirmation_item_meta</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$item, $order</td><td class="px-3 py-2">Fires under each item row in the confirmation table. Echo extra HTML (e.g. customization details).</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Invoice Print</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-gray-100 rounded-lg overflow-hidden">
+                                <thead class="bg-gray-50 text-gray-500 uppercase">
+                                    <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Description</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_invoice_title</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$title, $order</td><td class="px-3 py-2">Change the "Invoice" heading on the print page. Default: <code>'Invoice'</code>. You can return different text per order status, currency, or any condition.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Examples --}}
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <h3 class="text-lg font-bold text-blue-600 mb-4">Quick Examples</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Fire a conversion pixel after the confirmation page</p>
+                                <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                    <pre><code>@verbatim
+add_lazy_action('lazy_after_order_confirmation', function ($order) {
+    echo '<script>
+        fbq("track", "Purchase", {
+            value: ' . (float) $order->total . ',
+            currency: "' . strtoupper($order->currency ?? 'USD') . '"
+        });
+    </script>';
+});
+@endverbatim</code></pre>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Change the invoice title based on order status</p>
+                                <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                    <pre><code>@verbatim
+add_lazy_filter('lazy_invoice_title', function ($title, $order) {
+    if ($order->status === 'refunded') {
+        return 'Credit Note';
+    }
+    return $title; // default: "Invoice"
+});
+@endverbatim</code></pre>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 uppercase mb-2">Add extra data under an item in the confirmation table</p>
+                                <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                    <pre><code>@verbatim
+add_lazy_action('lazy_order_confirmation_item_meta', function ($item, $order) {
+    $engraving = $item->meta['custom_fields']['engraving'] ?? null;
+    if ($engraving) {
+        echo '<div class="text-xs text-gray-500 mt-1">Engraving: ' . e($engraving) . '</div>';
+    }
+});
+@endverbatim</code></pre>
+                                </div>
                             </div>
                         </div>
                     </div>

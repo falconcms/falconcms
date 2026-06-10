@@ -118,6 +118,7 @@
             $postCreatedAt     = $post->created_at ?? null;
             $postAuthor        = optional($post->user)->name ?? '';
             $postCategories    = $post->categories ?? collect();
+            $postTags          = $post->tags ?? collect();
         @endphp
         @if(!empty($cardLayout))
         <div style="break-inside:avoid">

@@ -22,6 +22,7 @@ return new class extends Migration
             ['key' => 'login_theme', 'value' => 'classic'],
             ['key' => 'register_theme', 'value' => 'classic'],
             ['key' => 'users_can_register', 'value' => '1'],
+            ['key' => 'timezone', 'value' => 'Asia/Dhaka'],
         ]);
     }
 

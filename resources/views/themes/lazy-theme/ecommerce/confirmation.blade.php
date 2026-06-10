@@ -3,6 +3,7 @@
 @section('title', 'Order Confirmation')
 
 @section('content')
+    <?php do_lazy_action('lazy_before_order_confirmation', $order); ?>
     <div class="bg-gray-50 py-20 min-h-screen font-sans">
         <div class="container-custom">
             <div class="bg-white rounded-sm shadow-sm border border-gray-100 p-10 text-center mb-10">
@@ -28,7 +29,7 @@
                     </div>
                     <div>
                         <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Date</span>
-                        <strong class="text-heading">{{ $order->created_at->format('M d, Y') }}</strong>
+                        <strong class="text-heading">{{ cms_date($order->created_at, 'M d, Y') }}</strong>
                     </div>
                     <div>
                         <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total</span>
@@ -85,8 +86,11 @@
                             @foreach ($order->items as $item)
                                 <tr class="border-b border-gray-50">
                                     <td class="py-4">
-                                        {{ $item->product_name }} <strong class="text-heading">×
-                                            {{ $item->quantity }}</strong>
+                                        {!! apply_lazy_filters('lazy_order_confirmation_item_name',
+                                            e($item->product_name) . ' <strong class="text-heading">× ' . (int)$item->quantity . '</strong>',
+                                            $item, $order) !!}
+                                        {!! lazy_render_item_custom_fields($item, 'confirmation') !!}
+                                        <?php do_lazy_action('lazy_order_confirmation_item_meta', $item, $order); ?>
                                     </td>
                                     <td class="py-4 text-right font-medium">
                                         {{ lazy_price_format($item->subtotal, $order) }}
@@ -148,6 +152,20 @@
                                         {{ $order->customer_email }}</span>
                                 </div>
                             </address>
+                            @php $confCheckoutMeta = $order->meta['checkout_fields'] ?? []; @endphp
+                            @if(!empty($confCheckoutMeta))
+                                @php $confLabels = apply_lazy_filters('lazy_checkout_field_labels', []); @endphp
+                                <div class="mt-4 pt-4 border-t border-gray-100 space-y-1 text-sm text-body">
+                                    @foreach($confCheckoutMeta as $cKey => $cVal)
+                                        @if($cVal)
+                                        <div>
+                                            <strong class="text-heading">{{ $confLabels[$cKey] ?? ucwords(str_replace('_', ' ', $cKey)) }}:</strong>
+                                            {{ $cVal }}
+                                        </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
                         @if ($order->shipping_address_line_1)
@@ -193,8 +211,8 @@
 
                         {{-- Date column --}}
                         <div class="hidden sm:flex flex-col items-end justify-start w-36 flex-shrink-0 pt-0.5 pr-4">
-                            <span class="text-[13px] text-gray-500 font-medium leading-tight">{{ $entry->created_at->format('d M Y') }}</span>
-                            <span class="text-[12px] text-gray-400 mt-0.5">{{ $entry->created_at->format('h:i a') }}</span>
+                            <span class="text-[13px] text-gray-500 font-medium leading-tight">{{ cms_date($entry->created_at, 'd M Y') }}</span>
+                            <span class="text-[12px] text-gray-400 mt-0.5">{{ cms_date($entry->created_at, 'h:i a') }}</span>
                         </div>
 
                         {{-- Icon + connecting line --}}
@@ -214,7 +232,7 @@
 
                         {{-- Content --}}
                         <div class="flex-1 pl-4 {{ $isLast ? 'pb-0' : 'pb-8' }} pt-0.5">
-                            <span class="sm:hidden text-[11px] text-gray-400 block mb-0.5">{{ $entry->created_at->format('d M Y, h:i a') }}</span>
+                            <span class="sm:hidden text-[11px] text-gray-400 block mb-0.5">{{ cms_date($entry->created_at, 'd M Y, h:i a') }}</span>
                             <p class="font-bold text-heading text-[15px] leading-snug">{{ $label }}</p>
                             <p class="text-[14px] text-body mt-1 leading-relaxed">{{ $note }}</p>
                             @if($showTrack)
@@ -233,4 +251,5 @@
 
         </div>
     </div>
+    <?php do_lazy_action('lazy_after_order_confirmation', $order); ?>
 @stop

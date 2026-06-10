@@ -37,6 +37,13 @@ Route::middleware(['web'])->group(function() use ($login_slug, $register_slug) {
     Route::get('reset-password/{token}', [LoginController::class, 'showResetForm'])->name('admin.password.reset');
     Route::post('reset-password', [LoginController::class, 'resetPassword'])->name('admin.password.update');
 
+    // Admin magic login (passwordless)
+    Route::post('admin-magic-login', [LoginController::class, 'requestAdminMagicLink'])->name('admin.magic.request');
+    Route::get('admin-magic-login/verify/{token}', [LoginController::class, 'verifyAdminMagicLink'])->name('admin.magic.verify');
+
+    // Frontend magic email check (AJAX, rate-limited)
+    Route::post('magic-email-check', [ShopFrontendController::class, 'checkMagicEmail'])->name('shop.magic.email.check')->middleware('throttle:30,1');
+
     // Redirect standard admin/login and admin/register to custom slugs
     Route::get('admin/login', function() use ($login_slug) { return redirect($login_slug); });
     Route::get('admin/register', function() use ($register_slug) { return redirect($register_slug); });
@@ -359,10 +366,10 @@ Route::middleware(['web', \Acme\CmsDashboard\Http\Middleware\PageCacheMiddleware
             ->where('locale', $localePattern);
             
         Route::get('/{locale}/category/{slug}', [FrontendController::class, 'archive'])
-            ->where('locale', $localePattern)->where('slug', '.*');
-            
+            ->where('locale', $localePattern)->where('slug', '.*')->name('frontend.category.locale');
+
         Route::get('/{locale}/tag/{slug}', [FrontendController::class, 'archive'])
-            ->where('locale', $localePattern)->where('slug', '.*');
+            ->where('locale', $localePattern)->where('slug', '.*')->name('frontend.tag.locale');
 
         Route::get('/{locale}/product-category/{slug}', [FrontendController::class, 'archive'])
             ->where('locale', $localePattern)->where('slug', '.*')->name('frontend.product_category.locale');
@@ -377,6 +384,7 @@ Route::middleware(['web', \Acme\CmsDashboard\Http\Middleware\PageCacheMiddleware
     Route::get('/tag/{slug}', [FrontendController::class, 'archive'])->name('frontend.tag')->where('slug', '.*');
     Route::get('/product-category/{slug}', [FrontendController::class, 'archive'])->name('frontend.product_category')->where('slug', '.*');
     Route::get('/product-tag/{slug}', [FrontendController::class, 'archive'])->name('frontend.product_tag')->where('slug', '.*');
+    Route::get('/author/{id}', [FrontendController::class, 'authorArchive'])->name('frontend.author')->where('id', '[0-9]+');
     Route::get('/search', [FrontendController::class, 'search'])->name('frontend.search');
     Route::get('/search/live', [FrontendController::class, 'liveSearch'])->name('frontend.search.live');
     Route::post('/comment', [FrontendController::class, 'storeComment'])->name('frontend.comment.store');
@@ -401,9 +409,15 @@ Route::middleware(['web', \Acme\CmsDashboard\Http\Middleware\PageCacheMiddleware
     // Order tracking
     Route::match(['get', 'post'], '/track-order', [ShopFrontendController::class, 'trackOrder'])->name('shop.track');
 
-    // Account page login / logout (shown inline on the account page for guests)
+    // Account page login / logout / profile / password
     Route::post('/account-login', [ShopFrontendController::class, 'accountLogin'])->name('shop.account.login');
     Route::post('/account-logout', [ShopFrontendController::class, 'accountLogout'])->name('shop.account.logout');
+    Route::post('/account-profile-update', [ShopFrontendController::class, 'updateProfile'])->name('shop.account.profile.update');
+    Route::post('/account-password-update', [ShopFrontendController::class, 'updatePassword'])->name('shop.account.password.update');
+
+    // Magic login (passwordless)
+    Route::post('/magic-login', [ShopFrontendController::class, 'requestMagicLink'])->name('shop.magic.request');
+    Route::get('/magic-login/{token}', [ShopFrontendController::class, 'verifyMagicLink'])->name('shop.magic.verify');
 
     // Wishlist
     Route::get('/wishlist', [\Acme\CmsDashboard\Http\Controllers\WishlistController::class, 'index'])->name('shop.wishlist');

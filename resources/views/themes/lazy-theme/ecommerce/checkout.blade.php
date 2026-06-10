@@ -34,60 +34,22 @@
                 <!-- Left Column: Billing Details -->
                 <div class="w-full md:w-1/2">
                     <h2 class="text-[20px] font-bold text-heading border-b border-[#eee] pb-4 mb-6 uppercase tracking-tight">Billing details</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[14px] font-bold text-heading">First name <span class="text-red-600">*</span></label>
-                            <input type="text" name="billing_first_name" value="{{ old('billing_first_name', auth()->user()->first_name ?? '') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[14px] font-bold text-heading">Last name <span class="text-red-600">*</span></label>
-                            <input type="text" name="billing_last_name" value="{{ old('billing_last_name', auth()->user()->last_name ?? '') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                        </div>
-                    </div>
+                    <?php do_lazy_action('lazy_before_billing_fields'); ?>
+                    <?php lazy_render_checkout_fields(lazy_get_checkout_fields('billing')); ?>
+                    <?php do_lazy_action('lazy_after_billing_fields'); ?>
 
-                    <div class="space-y-1.5 mb-4">
-                        <label class="text-[14px] font-bold text-heading">Country / Region <span class="text-red-600">*</span></label>
-                        <select name="billing_country" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] bg-white focus:border-primary outline-none cursor-pointer">
-                            @php $selectedCountry = old('billing_country', session('lazy_shipping_country')); @endphp
-                            @foreach(\Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates() as $code => $name)
-                                <option value="{{ $code }}" {{ $selectedCountry == $code ? 'selected' : '' }}>{{ $name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="space-y-2 mb-4">
-                        <label class="text-[14px] font-bold text-heading">Street address <span class="text-red-600">*</span></label>
-                        <input type="text" name="billing_address_1" value="{{ old('billing_address_1') }}" placeholder="House number and street name" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none mb-2">
-                        <input type="text" name="billing_address_2" value="{{ old('billing_address_2') }}" placeholder="Apartment, suite, unit, etc. (optional)" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    @guest
+                    <div class="mb-4 border border-[#ddd] rounded-sm p-4 bg-[#fafafa]">
+                        <p class="text-[13px] font-semibold text-heading mb-3">Create an account</p>
+                        <p class="text-[13px] text-body mb-3">Set a password to create your account. You'll be able to track orders after checkout.</p>
+                        <input type="hidden" name="create_account" value="1">
                         <div class="space-y-1.5">
-                            <label class="text-[14px] font-bold text-heading">Town / City <span class="text-red-600">*</span></label>
-                            <input type="text" name="billing_city" value="{{ old('billing_city') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[14px] font-bold text-heading">State / Province <span class="text-red-600">*</span></label>
-                            <input type="text" name="billing_state" value="{{ old('billing_state') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
+                            <label class="text-[14px] font-bold text-heading">Password <span class="text-red-600">*</span></label>
+                            <input type="password" name="account_password" autocomplete="new-password" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none {{ $errors->has('account_password') ? 'border-red-400' : '' }}">
+                            @error('account_password')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div class="space-y-1.5">
-                            <label class="text-[14px] font-bold text-heading">ZIP Code <span class="text-red-600">*</span></label>
-                            <input type="text" name="billing_postcode" value="{{ old('billing_postcode') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[14px] font-bold text-heading">Phone <span class="text-red-600">*</span></label>
-                            <input type="text" name="billing_phone" value="{{ old('billing_phone') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1.5 mb-4">
-                        <label class="text-[14px] font-bold text-heading">Email address <span class="text-red-600">*</span></label>
-                        <input type="email" name="billing_email" value="{{ old('billing_email', auth()->user()->email ?? '') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                    </div>
+                    @endguest
                 </div>
 
                 <!-- Right Column: Shipping Details -->
@@ -99,45 +61,10 @@
                         </label>
                     </div>
 
-                    <div id="shipping-form" class="{{ old('ship_to_different_address') ? '' : 'hidden' }} space-y-4 mb-8 border-t border-[#eee] pt-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="space-y-1.5">
-                                <label class="text-[14px] font-bold text-heading">First name <span class="text-red-600">*</span></label>
-                                <input type="text" name="shipping_first_name" value="{{ old('shipping_first_name') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                            </div>
-                            <div class="space-y-1.5">
-                                <label class="text-[14px] font-bold text-heading">Last name <span class="text-red-600">*</span></label>
-                                <input type="text" name="shipping_last_name" value="{{ old('shipping_last_name') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                            </div>
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[14px] font-bold text-heading">Country / Region <span class="text-red-600">*</span></label>
-                            <select name="shipping_country" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] bg-white focus:border-primary outline-none">
-                                @php $selectedShipCountry = old('shipping_country', session('lazy_shipping_country')); @endphp
-                                @foreach(\Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates() as $code => $name)
-                                    <option value="{{ $code }}" {{ $selectedShipCountry == $code ? 'selected' : '' }}>{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[14px] font-bold text-heading">Street address <span class="text-red-600">*</span></label>
-                            <input type="text" name="shipping_address_1" value="{{ old('shipping_address_1') }}" placeholder="House number and street name" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none mb-2">
-                            <input type="text" name="shipping_address_2" value="{{ old('shipping_address_2') }}" placeholder="Apartment, suite, unit, etc. (optional)" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="space-y-1.5">
-                                <label class="text-[14px] font-bold text-heading">Town / City <span class="text-red-600">*</span></label>
-                                <input type="text" name="shipping_city" value="{{ old('shipping_city') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                            </div>
-                            <div class="space-y-1.5">
-                                <label class="text-[14px] font-bold text-heading">State / Province <span class="text-red-600">*</span></label>
-                                <input type="text" name="shipping_state" value="{{ old('shipping_state') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                            </div>
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-[14px] font-bold text-heading">ZIP Code <span class="text-red-600">*</span></label>
-                            <input type="text" name="shipping_postcode" value="{{ old('shipping_postcode') }}" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none">
-                        </div>
+                    <div id="shipping-form" class="{{ old('ship_to_different_address') ? '' : 'hidden' }} mb-8 border-t border-[#eee] pt-6">
+                        <?php do_lazy_action('lazy_before_shipping_fields'); ?>
+                        <?php lazy_render_checkout_fields(lazy_get_checkout_fields('shipping')); ?>
+                        <?php do_lazy_action('lazy_after_shipping_fields'); ?>
                     </div>
 
                     <div class="space-y-2 mt-6">
@@ -148,9 +75,10 @@
             </div>
 
             <!-- Full Width Order Section -->
+            <?php do_lazy_action('lazy_before_checkout_order_review', $cart); ?>
             <div class="mt-12">
                 <h2 class="text-[20px] font-bold text-heading mb-6 uppercase tracking-tight">Your order</h2>
-                
+
                 <div class="border border-[#eee] bg-white">
                     <table class="w-full border-collapse text-[14px]">
                         <thead>
@@ -163,7 +91,11 @@
                             @foreach($cart as $item)
                                 <tr class="border-b border-[#eee]">
                                     <td class="p-4 text-body">
-                                        <a href="{{ route('frontend.show', ['typeOrSlug' => 'product', 'slug' => $item['slug']]) }}" class="hover:text-primary transition-colors">{{ $item['name'] }}</a> <span class="font-bold text-heading">× {{ $item['quantity'] }}</span>
+                                        {!! apply_lazy_filters('lazy_checkout_item_name',
+                                            '<a href="' . route('frontend.show', ['typeOrSlug' => 'product', 'slug' => $item['slug']]) . '" class="hover:text-primary transition-colors">' . e($item['name']) . '</a> <span class="font-bold text-heading">× ' . (int)$item['quantity'] . '</span>',
+                                            $item) !!}
+                                        {!! lazy_render_item_custom_fields($item, 'checkout') !!}
+                                        <?php do_lazy_action('lazy_checkout_item_meta', $item); ?>
                                     </td>
                                     <td class="p-4 text-right font-medium text-heading">
                                         {{ lazy_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
@@ -221,7 +153,10 @@
                         </tbody>
                     </table>
 
+                    <?php do_lazy_action('lazy_after_checkout_order_review', $cart); ?>
+
                     <!-- Payment Section -->
+                    <?php do_lazy_action('lazy_before_checkout_payment', $cart); ?>
                     @php $gateways = lazy_enabled_payment_gateways(); $firstGw = array_key_first($gateways); @endphp
                     <div class="p-8 border-t border-[#eee]">
                         <div class="max-w-4xl">
@@ -255,11 +190,14 @@
                                 Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our <a href="#" class="text-primary hover:underline">privacy policy</a>.
                             </p>
 
+                            <?php do_lazy_action('lazy_before_place_order_button', $cart); ?>
                             <button type="submit" @if(empty($gateways)) disabled @endif class="bg-primary text-white px-10 py-4 rounded-sm font-bold text-[16px] hover:bg-primary-hover transition-all shadow-lg uppercase disabled:opacity-50 disabled:cursor-not-allowed">
                                 Place order
                             </button>
+                            <?php do_lazy_action('lazy_after_place_order_button', $cart); ?>
                         </div>
                     </div>
+                    <?php do_lazy_action('lazy_after_checkout_payment', $cart); ?>
                 </div>
             </div>
         </form>
@@ -457,6 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 if (data.success && data.redirect) {
+                    if (window.clearCheckoutDraft) window.clearCheckoutDraft();
                     window.location.href = data.redirect;
                 } else if (data.errors) {
                     let errorList = '<ul class="text-left list-disc pl-5 space-y-1">';
@@ -487,6 +426,62 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // ── Checkout form persistence (localStorage) ───────────────────────────
+    @php
+        $allCheckoutHookFields = array_merge(lazy_get_checkout_fields('billing'), lazy_get_checkout_fields('shipping'));
+        $extraPersistFields = array_values(array_diff(
+            array_column($allCheckoutHookFields, 'name'),
+            lazy_standard_checkout_field_names()
+        ));
+    @endphp
+    (function () {
+        var KEY = 'lazy_checkout_draft';
+        var TEXT  = ['billing_first_name','billing_last_name','billing_email','billing_phone',
+                     'billing_address_1','billing_address_2','billing_city','billing_state','billing_postcode',
+                     'shipping_first_name','shipping_last_name',
+                     'shipping_address_1','shipping_address_2','shipping_city','shipping_state','shipping_postcode',
+                     'order_comments'].concat(@json($extraPersistFields));
+        var SEL   = ['billing_country','shipping_country'];
+
+        function save() {
+            var d = {};
+            TEXT.forEach(function(n){ var e=document.querySelector('[name="'+n+'"]'); if(e) d[n]=e.value; });
+            SEL.forEach(function(n){ var e=document.querySelector('[name="'+n+'"]'); if(e) d[n]=e.value; });
+            var cb=document.querySelector('[name="ship_to_different_address"]'); if(cb) d.ship_diff=cb.checked;
+            try{ localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){}
+        }
+
+        function restore() {
+            var raw; try{ raw=localStorage.getItem(KEY); }catch(e){ return; }
+            if(!raw) return;
+            var d; try{ d=JSON.parse(raw); }catch(e){ return; }
+            // Only fill fields that are currently empty (don't override old() / auth() values from server)
+            TEXT.forEach(function(n){
+                if(!d[n]) return;
+                var e=document.querySelector('[name="'+n+'"]');
+                if(e && !e.value.trim()) e.value=d[n];
+            });
+            SEL.forEach(function(n){
+                if(!d[n]) return;
+                var e=document.querySelector('[name="'+n+'"]');
+                if(e && !e.value) { e.value=d[n]; e.dispatchEvent(new Event('change')); }
+            });
+            if(d.ship_diff) {
+                var cb=document.querySelector('[name="ship_to_different_address"]');
+                if(cb && !cb.checked){ cb.checked=true; var sf=document.getElementById('shipping-form'); if(sf) sf.classList.remove('hidden'); }
+            }
+        }
+
+        function clear() { try{ localStorage.removeItem(KEY); }catch(e){} }
+        window.clearCheckoutDraft = clear;
+
+        restore();
+        TEXT.concat(SEL).concat(['ship_to_different_address']).forEach(function(n){
+            var e=document.querySelector('[name="'+n+'"]');
+            if(e){ e.addEventListener('input', save); e.addEventListener('change', save); }
+        });
+    })();
 });
 </script>
 @endpush

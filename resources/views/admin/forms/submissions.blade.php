@@ -135,7 +135,7 @@
             })->all();
         @endphp
         {{ $sub->id }}: {
-            date: @json($sub->created_at->format('d M Y, H:i')),
+            date: @json(cms_date($sub->created_at, 'd M Y, H:i')),
             ip:   @json($sub->ip_address),
             ua:   @json($sub->user_agent),
             data: @json($subFields)

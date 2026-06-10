@@ -344,7 +344,11 @@ class PostController extends Controller
         $status = $request->query('status');
         
         $lang = $request->query('lang');
-        $query = Post::with(['categories', 'tags', 'taxonomyTerms'])->where('type', $type);
+        $eagerLoad = ['categories', 'tags', 'taxonomyTerms'];
+        if ($type === 'product') {
+            $eagerLoad[] = 'shopData';
+        }
+        $query = Post::with($eagerLoad)->where('type', $type);
 
         if ($lang && $lang !== 'all') {
             $query->where('lang_code', $lang);
@@ -624,6 +628,10 @@ class PostController extends Controller
         // Interpret the publish date in the CMS timezone → store UTC, and decide status on the server.
         $postData = lazy_normalize_publish($postData);
 
+        if ($type === 'product') {
+            $productData = apply_lazy_filters('lazy_admin_before_save_product', $productData, null, $request);
+        }
+
         $post = Post::create($postData);
 
         // Save Product Data
@@ -686,6 +694,10 @@ class PostController extends Controller
                     'created_at' => now(), 'updated_at' => now()
                 ]);
             }
+        }
+
+        if ($type === 'product') {
+            do_lazy_action('lazy_admin_after_save_product', $post, $post->shopData, $request, 'create');
         }
 
         lazy_log_activity('created', "Created a new {$postData['type']}: {$post->title}", $post);
@@ -1063,6 +1075,10 @@ class PostController extends Controller
         // Interpret the publish date in the CMS timezone → store UTC, and decide status on the server.
         $postData = lazy_normalize_publish($postData);
 
+        if ($post->type === 'product') {
+            $productData = apply_lazy_filters('lazy_admin_before_save_product', $productData, $post, $request);
+        }
+
         $post->update($postData);
         Revision::clearAutosave($post);
 
@@ -1210,10 +1226,14 @@ class PostController extends Controller
             }
         }
         
+        if ($post->type === 'product') {
+            do_lazy_action('lazy_admin_after_save_product', $post, $post->fresh()->shopData, $request, 'update');
+        }
+
         lazy_log_activity('updated', "Updated {$post->type}: {$post->title}", $post);
 
         clear_page_cache();
-        
+
         return redirect()->back()->with('success', ucfirst($post->type) . ' updated successfully.');
     }
 
@@ -1234,7 +1254,17 @@ class PostController extends Controller
 
         $type = $post->type;
         $title = $post->title;
+
+        if ($type === 'product') {
+            do_lazy_action('lazy_admin_before_delete_product', $post);
+        }
+
         $post->delete();
+
+        if ($type === 'product') {
+            do_lazy_action('lazy_admin_after_delete_product', $post->id, $title);
+        }
+
         lazy_log_activity('deleted', "Moved {$type} to trash: {$title}", $post);
         clear_page_cache();
         return redirect()->route('admin.posts.index', ['type' => $type])->with('success', 'Moved to trash.');
