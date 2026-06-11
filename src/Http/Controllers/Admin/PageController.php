@@ -78,8 +78,13 @@ class PageController extends Controller
 
         $pages = $query->latest()->paginate(10)->withQueryString();
 
-        $dates = Page::selectRaw('YEAR(created_at) as year, MONTH(created_at) as month')
-            ->groupBy('year', 'month')->orderBy('year', 'desc')->orderBy('month', 'desc')->get();
+        $driver = \DB::connection()->getDriverName();
+        $yearCol  = $driver === 'sqlite' ? "strftime('%Y', created_at)" : 'YEAR(created_at)';
+        $monthCol = $driver === 'sqlite' ? "strftime('%m', created_at)" : 'MONTH(created_at)';
+        $dates = Page::selectRaw("$yearCol as year, $monthCol as month")
+            ->groupByRaw("$yearCol, $monthCol")
+            ->orderByRaw("$yearCol DESC, $monthCol DESC")
+            ->get();
 
         $countQuery = Page::query();
         if ($lang && $lang !== 'all') {
