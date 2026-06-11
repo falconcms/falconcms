@@ -59,7 +59,7 @@
             <!-- Nested Column Inner (Handles Background, Padding, Border, Shadow) -->
             <div class="column-inner group/ncol-inner relative"
                  :class="[
-                    activeColi === ncoli && activeColCi === eli ? 'nested-column-active' : '',
+                    (!isPreview && activeColi === ncoli && activeColCi === eli) ? 'nested-column-active' : '',
                     isDragging && dragCi === ci && dragColi === coli && dragEli === eli && dragNcoli === ncoli ? 'dragging-no-transition' : '',
                     dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragPosition === 'left' ? 'border-l-4 border-l-blue-500' : '',
                     dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragPosition === 'right' ? 'border-r-4 border-r-blue-500' : '',
@@ -139,22 +139,32 @@
                     </div>
                     <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#ff9800]/5 transition-opacity"
                          :style="{ height: (ncol.settings.paddingTop || 0) + 'px', top: '0px' }"
-                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingTop' && dragNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragType === 'paddingTop' && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                          <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#ff9800]/30"></div>
                     </div>
                     <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#ff9800]/5 transition-opacity"
                          :style="{ height: (ncol.settings.paddingBottom || 0) + 'px', bottom: '0px' }"
-                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingBottom' && dragNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragType === 'paddingBottom' && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                          <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#ff9800]/30"></div>
+                    </div>
+                    <div class="absolute top-0 bottom-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
+                         :style="{ width: '0px', left: '0px' }"
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (activeColi === ncoli && activeColCi === eli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         <div class="absolute top-0 left-0 h-full border-l border-dashed border-[#9c27b0]/20"></div>
+                    </div>
+                    <div class="absolute top-0 bottom-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
+                         :style="{ width: '0px', right: '0px' }"
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (activeColi === ncoli && activeColCi === eli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         <div class="absolute top-0 right-0 h-full border-r border-dashed border-[#9c27b0]/20"></div>
                     </div>
                     <div class="absolute top-0 bottom-0 pointer-events-none z-0 bg-[#ff9800]/5 transition-opacity"
                          :style="{ width: (ncol.settings.paddingLeft || 0) + 'px', left: '0px' }"
-                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingLeft' && dragNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragType === 'paddingLeft' && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                          <div class="absolute top-0 right-0 h-full border-r border-dashed border-[#ff9800]/30"></div>
                     </div>
                     <div class="absolute top-0 bottom-0 pointer-events-none z-0 bg-[#ff9800]/5 transition-opacity"
                          :style="{ width: (ncol.settings.paddingRight || 0) + 'px', right: '0px' }"
-                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingRight' && dragNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragType === 'paddingRight' && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                          <div class="absolute top-0 left-0 h-full border-l border-dashed border-[#ff9800]/30"></div>
                     </div>
                 </div>
@@ -172,7 +182,7 @@
                         </div>
                         <div class="handle-orange group/nh"
                              :class="isDragging ? '' : 'transition-all'"
-                             :style="{ transform: 'translateY(' + (Number(ncol.settings.paddingTop || 0) + 2) + 'px)' }"
+                             :style="{ transform: 'translateY(' + (Number(ncol.settings.paddingTop || 0)) + 'px)' }"
                              @mousedown.stop.prevent="startDrag($event, 'paddingTop', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars"></i>
                             <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingTop' && dragNcoli === ncoli">@{{ ncol.settings.paddingTop || 0 }}px</div>
@@ -201,7 +211,7 @@
                     <div class="absolute left-0.5 top-1/2 -translate-y-1/2 pointer-events-auto flex flex-col gap-0.5 items-start">
                         <div class="handle-orange-h group/nchl"
                              :class="isDragging ? '' : 'transition-all'"
-                             :style="{ transform: 'translateX(' + (Number(ncol.settings.paddingLeft || 0) + 2) + 'px)' }"
+                             :style="{ transform: 'translateX(' + (Number(ncol.settings.paddingLeft || 0)) + 'px)' }"
                              @mousedown.stop.prevent="startDrag($event, 'paddingLeft', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
                             <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingLeft' && dragNcoli === ncoli">@{{ ncol.settings.paddingLeft || 0 }}px</div>
@@ -212,7 +222,7 @@
                     <div class="absolute right-0.5 top-1/2 -translate-y-1/2 pointer-events-auto flex flex-col gap-0.5 items-end">
                         <div class="handle-orange-h group/nchr"
                              :class="isDragging ? '' : 'transition-all'"
-                             :style="{ transform: 'translateX(-' + (Number(ncol.settings.paddingRight || 0) + 2) + 'px)' }"
+                             :style="{ transform: 'translateX(-' + (Number(ncol.settings.paddingRight || 0)) + 'px)' }"
                              @mousedown.stop.prevent="startDrag($event, 'paddingRight', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
                             <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingRight' && dragNcoli === ncoli">@{{ ncol.settings.paddingRight || 0 }}px</div>

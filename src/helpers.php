@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\DB;
 
 if (!defined('LAZY_CMS_VERSION')) {
-    define('LAZY_CMS_VERSION', '1.0.0');
+    define('LAZY_CMS_VERSION', '1.0.5');
 }
 
 if (!function_exists('lazy_cms_installed_version')) {

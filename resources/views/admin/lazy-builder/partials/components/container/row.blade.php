@@ -9,7 +9,7 @@
 @else
 <div class="container-row relative group/cont"
      :class="[
-        editingCi === ci ? 'container-active' : '',
+        (!isPreview && editingCi === ci) ? 'container-active' : '',
         isDragging && dragCi === ci && !isColumnDrag ? 'dragging-no-transition' : 'transition-all',
         dragTarget === 'container-' + ci + '-null-null-null-null' && dragPosition === 'top' ? 'border-t-4 border-t-blue-500' : '',
         dragTarget === 'container-' + ci + '-null-null-null-null' && dragPosition === 'bottom' ? 'border-b-4 border-b-blue-500' : '',

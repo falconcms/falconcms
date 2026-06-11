@@ -7,7 +7,7 @@
     
     <component :is="column.settings.htmlTag || 'div'" class="column-inner group/col relative"
          :class="[
-            activeColi === coli && activeColCi === ci ? 'column-active' : '', 
+            (!isPreview && activeColi === coli && activeColCi === ci) ? 'column-active' : '', 
             isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '',
             dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragPosition === 'left' ? 'border-l-4 border-l-blue-500' : '',
             dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragPosition === 'right' ? 'border-r-4 border-r-blue-500' : '',
@@ -87,7 +87,7 @@
                     <i class="fa fa-bars"></i>
                     <div class="lazy-tooltip opacity-0 group-hover/chmt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginTop' && dragCi === ci && dragColi === coli}">@{{ column.settings.marginTop || 0 }}px</div>
                 </div>
-                <div class="handle-blue group/chpt" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateY(' + (Number(column.settings.paddingTop || 0) + 2) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingTop', ci, coli)">
+                <div class="handle-blue group/chpt" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateY(' + (Number(column.settings.paddingTop || 0)) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingTop', ci, coli)">
                     <i class="fa fa-bars"></i>
                     <div class="lazy-tooltip opacity-0 group-hover/chpt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingTop' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingTop || 0 }}px</div>
                 </div>
@@ -110,7 +110,7 @@
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
                     <div class="lazy-tooltip opacity-0 group-hover/chml:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'columnSpacingLeft' && dragCi === ci && dragColi === coli}">@{{ (column.settings.columnSpacingLeft || 0).toFixed(1) }}%</div>
                 </div>
-                <div class="handle-blue-h group/chpl" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(' + (Number(column.settings.paddingLeft || 0) + 2) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingLeft', ci, coli)">
+                <div class="handle-blue-h group/chpl" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(' + (Number(column.settings.paddingLeft || 0)) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingLeft', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
                     <div class="lazy-tooltip opacity-0 group-hover/chpl:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingLeft' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingLeft || 0 }}px</div>
                 </div>
@@ -121,7 +121,7 @@
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
                     <div class="lazy-tooltip opacity-0 group-hover/chmr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'columnSpacingRight' && dragCi === ci && dragColi === coli}">@{{ (column.settings.columnSpacingRight || 0).toFixed(1) }}%</div>
                 </div>
-                <div class="handle-blue-h group/chpr" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(-' + (Number(column.settings.paddingRight || 0) + 2) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingRight', ci, coli)">
+                <div class="handle-blue-h group/chpr" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(-' + (Number(column.settings.paddingRight || 0)) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingRight', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
                     <div class="lazy-tooltip opacity-0 group-hover/chpr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingRight' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingRight || 0 }}px</div>
                 </div>

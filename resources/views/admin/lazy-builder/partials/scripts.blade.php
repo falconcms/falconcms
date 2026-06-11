@@ -1162,6 +1162,7 @@
                 if (val) {
                     // Preview ON: collapse sidebar column to 0
                     wrapper.style.gridTemplateColumns = '0px 1fr';
+                    wrapper.classList.add('is-preview');
                     if (sidebar) {
                         sidebar.style.display = 'none';
                         sidebar.style.width = '0';
@@ -1170,6 +1171,7 @@
                 } else {
                     // Preview OFF: restore sidebar column
                     wrapper.style.gridTemplateColumns = '';
+                    wrapper.classList.remove('is-preview');
                     if (sidebar) {
                         sidebar.style.display = '';
                         sidebar.style.width = '';

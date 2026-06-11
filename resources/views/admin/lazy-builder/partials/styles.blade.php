@@ -52,16 +52,14 @@
     }
 
     .is-preview .container-row,
-    .is-preview .column-box,
-    .is-preview .column-inner,
+    .is-preview .container-row:hover,
     .is-preview .column-outer,
-    .is-preview .nested-column,
-    .is-preview .nested-row-wrapper,
-    .is-preview .group\/ncol,
-    .is-preview .column-outer {
+    .is-preview .column-outer:hover {
+        outline: 2px solid transparent !important;
+    }
+    .is-preview .nested-row-outer-wrapper {
+        outline: 2px solid transparent !important;
         border-color: transparent !important;
-        border: none !important;
-        outline: none !important;
         box-shadow: none !important;
     }
     .is-preview .container-handles,
@@ -190,9 +188,6 @@
         outline: 2px solid var(--primary) !important;
         z-index: 7;
     }
-    .preview-mode .column-outer {
-        outline: none !important;
-    }
 
     /* Padding/Margin Handles */
     .container-handles > div {
@@ -205,18 +200,7 @@
         opacity: 1;
     }
 
-    .handle-blue, .handle-purple, .handle-left, .handle-right {
-        background: var(--primary);
-        color: white;
-        width: 18px;
-        height: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 8px;
-        border-radius: 2px;
-    }
-    .handle-blue, .handle-purple, .handle-blue-h, .handle-purple-h {
+    .handle-blue, .handle-purple, .handle-blue-h, .handle-purple-h, .handle-left, .handle-right {
         width: 18px;
         height: 18px;
         background: #2271b1;
@@ -231,7 +215,7 @@
         box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
     .handle-blue, .handle-purple { cursor: ns-resize !important; }
-    .handle-blue-h, .handle-purple-h { cursor: ew-resize !important; }
+    .handle-blue-h, .handle-purple-h, .handle-left, .handle-right { cursor: ew-resize !important; }
     .handle-purple, .handle-purple-h { background: #9c27b0; }
 
     .handle-top { top: -10px; left: 50%; transform: translateX(-50%); position: absolute; }

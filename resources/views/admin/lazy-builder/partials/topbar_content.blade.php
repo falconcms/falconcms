@@ -20,9 +20,6 @@
         <div class="topbar-icon" title="Responsive" @click="device = device === 'desktop' ? 'tablet' : (device === 'tablet' ? 'mobile' : 'desktop')">
             <i class="fa" :class="device==='desktop' ? 'fa-desktop' : (device==='tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
         </div>
-        <div class="topbar-icon" title="Add Element" @click="activeTab='elements'">
-            <i class="fa fa-plus text-sm"></i>
-        </div>
         <div class="topbar-icon" title="Clear All" @click="layout = []">
             <i class="fa fa-trash text-sm text-red-400"></i>
         </div>
@@ -38,12 +35,6 @@
         <span v-if="autosaveStatus" class="hidden lg:inline text-[10px] text-white/40 whitespace-nowrap">@{{ autosaveStatus }}</span>
         <div class="topbar-icon" v-if="!postCardMode" title="Revision History" @click="openRevisions()">
             <i class="fa fa-history text-sm"></i>
-        </div>
-        <div class="topbar-icon" title="Settings" @click="activeTab='settings'">
-            <i class="fa fa-cog text-sm"></i>
-        </div>
-        <div class="topbar-icon" title="Help">
-            <i class="fa fa-question-circle text-sm"></i>
         </div>
         <div class="topbar-icon" @click="isPreview = !isPreview" title="Preview">
             <i class="fa" :class="isPreview ? 'fa-eye-slash' : 'fa-eye'"></i>

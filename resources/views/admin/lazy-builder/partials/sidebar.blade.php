@@ -1,10 +1,7 @@
 ﻿<aside class="builder-sidebar flex flex-col" v-if="!isPreview">
-    <!-- Mini Tab Icons at Top (WP/Avada Style) -->
+    <!-- Tab Header -->
     <div class="flex border-b border-slate-100 bg-slate-50/50">
-        <button @click="activeTab='settings'" :class="activeTab==='settings' ? 'bg-white border-b-2 border-[#0091ea] text-[#0091ea]' : 'text-slate-400'" class="w-12 h-12 flex items-center justify-center transition-all">
-            <i class="fa fa-cog text-sm"></i>
-        </button>
-        <button @click="activeTab='navigator'" :class="activeTab==='navigator' ? 'bg-white border-b-2 border-[#0091ea] text-[#0091ea]' : 'text-slate-400'" class="flex-1 flex items-center justify-center gap-2 transition-all group">
+        <button @click="activeTab='navigator'" class="flex-1 flex items-center justify-center gap-2 h-11 transition-all group">
              <i class="fa fa-caret-down text-[10px] text-slate-400 group-hover:text-[#0091ea]"></i>
              <span class="text-[11px] font-black uppercase tracking-widest text-slate-500 group-hover:text-[#0091ea]">Navigator</span>
         </button>
