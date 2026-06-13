@@ -149,7 +149,7 @@
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
              ]"
-             :style="el.type === 'row' ? { width: '100%', maxWidth: '100%' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : {})"
+             :style="el.type === 'row' ? { width: '100%', maxWidth: '100%' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '0', lineHeight: '0' })"
              @dragover="onDragOver($event, 'element', ci, coli, eli)"
              @drop="onDrop($event, 'element', ci, coli, eli)">
             

@@ -132,6 +132,15 @@
     }
 
 
+    /* Hide inline <style> tags rendered by Vue's <component is="style"> inside canvas.
+       They apply CSS regardless of display, but if they become visible (e.g. Tailwind CDN
+       overrides the UA stylesheet's display:none for <style>) they inflate element height. */
+    .canvas-container style {
+        display: none !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+
     /* Fix huge icons if Tailwind fails */
     svg {
         max-width: 100%;
@@ -295,6 +304,7 @@
         color: white;
         text-transform: uppercase;
         font-size: 10px;
+        line-height: normal;
         font-weight: 700;
         padding: 6px 12px;
         border-radius: 4px;
@@ -402,6 +412,7 @@
         color: white;
         text-transform: uppercase;
         font-size: 10px;
+        line-height: normal;
         font-weight: 700;
         padding: 6px 12px;
         border-radius: 4px;
@@ -958,5 +969,45 @@
     .builder-sidebar .flex.justify-between i.fa-caret-down,
     .builder-sidebar .flex.items-center.mb-2 i.fa-caret-down {
         color: #555 !important;
+    }
+
+    /* ── Ticker: label badge animations ── */
+    .lztick-la-blink-dot { animation: lztick-label-pulse 1.8s ease-in-out infinite; }
+    .lztick-la-blink-dot::before {
+        content: ''; width: 8px; height: 8px; border-radius: 50%;
+        background: currentColor; margin-right: 6px; flex-shrink: 0;
+        animation: lztick-dot-blink 1s step-end infinite;
+    }
+    .lztick-la-pulse   { animation: lztick-label-pulse  1.8s ease-in-out infinite; }
+    .lztick-la-flash   { animation: lztick-label-flash  1.2s step-end  infinite; }
+    .lztick-la-shake   { animation: lztick-label-shake  2.5s ease-in-out infinite; }
+    .lztick-la-bounce  { animation: lztick-label-bounce 1.5s ease-in-out infinite; }
+    .lztick-la-none    { animation: none; }
+
+    @keyframes lztick-dot-blink  { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes lztick-label-pulse { 0%,100%{filter:brightness(1) saturate(1)} 50%{filter:brightness(1.35) saturate(1.6)} }
+    @keyframes lztick-label-flash { 0%,49%,100%{opacity:1} 50%,98%{opacity:0.15} }
+    @keyframes lztick-label-shake {
+        0%,100%{transform:translateX(0)} 10%{transform:translateX(-4px)} 20%{transform:translateX(4px)}
+        30%{transform:translateX(-3px)} 40%{transform:translateX(3px)}
+        50%{transform:translateX(-2px)} 60%{transform:translateX(2px)} 70%,90%{transform:translateX(0)}
+    }
+    @keyframes lztick-label-bounce {
+        0%,100%{transform:scaleX(1)} 20%{transform:scaleX(1.1)} 40%{transform:scaleX(1)}
+        60%{transform:scaleX(1.05)} 80%{transform:scaleX(1)}
+    }
+
+    /* ── Ticker: dancing-dots separator ── */
+    .lztick-sep-dance { display:inline-flex; align-items:center; gap:3px; margin:0 10px; vertical-align:middle; }
+    .lztick-sep-dance > span { display:inline-block; width:4px; height:4px; border-radius:50%; background:currentColor; opacity:.7; }
+    .lztick-sep-dance > span:nth-child(1) { animation: lztick-ddot .9s ease-in-out infinite 0s; }
+    .lztick-sep-dance > span:nth-child(2) { animation: lztick-ddot .9s ease-in-out infinite .15s; }
+    .lztick-sep-dance > span:nth-child(3) { animation: lztick-ddot .9s ease-in-out infinite .3s; }
+    @keyframes lztick-ddot { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(-4px);opacity:1} }
+
+    /* ── Ticker: text effects on scrolling content ── */
+    .lztick-te-glow { text-shadow: 0 0 10px rgba(255,255,255,0.6); }
+    .lztick-te-highlight span:not(.lztick-sep):not(.lztick-sep-dance):not(.lztick-sep-dance > span) {
+        background: rgba(255,255,255,0.12); padding: 1px 8px; border-radius: 3px;
     }
 </style>

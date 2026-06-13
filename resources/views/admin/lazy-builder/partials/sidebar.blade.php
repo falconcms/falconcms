@@ -2735,6 +2735,30 @@
                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                 </div>
 
+                                <!-- Label Animation -->
+                                <div v-if="editingElement.settings.label">
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Label Animation</label>
+                                    <div class="grid grid-cols-3 gap-1.5">
+                                        <button v-for="la in [
+                                                    {v:'blink-dot', icon:'fa-circle',  label:'Blink Dot'},
+                                                    {v:'pulse',     icon:'fa-sun',     label:'Pulse'},
+                                                    {v:'flash',     icon:'fa-bolt',    label:'Flash'},
+                                                    {v:'shake',     icon:'fa-bell',    label:'Shake'},
+                                                    {v:'bounce',    icon:'fa-expand',  label:'Bounce'},
+                                                    {v:'none',      icon:'fa-ban',     label:'None'},
+                                                ]"
+                                                :key="la.v"
+                                                @click="editingElement.settings.labelAnimation = la.v"
+                                                :class="(editingElement.settings.labelAnimation || 'blink-dot') === la.v
+                                                    ? 'bg-[#2271b1] text-white border-[#2271b1]'
+                                                    : 'bg-white text-slate-500 border-slate-200 hover:border-[#2271b1] hover:text-[#2271b1]'"
+                                                class="flex flex-col items-center gap-1 py-2 px-1 border rounded text-[10px] transition-all">
+                                            <i :class="'fa ' + la.icon + ' text-[13px]'"></i>
+                                            <span>@{{ la.label }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <!-- Separator + Direction in 2 cols -->
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
@@ -2745,6 +2769,7 @@
                                             <option value="|">| Pipe</option>
                                             <option value="·">· Middle dot</option>
                                             <option value="—">— Dash</option>
+                                            <option value="dance">⠿ Dancing Dots</option>
                                             <option value="">None</option>
                                         </select>
                                     </div>
@@ -2754,9 +2779,28 @@
                                                 class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                             <option value="left">← Left</option>
                                             <option value="right">→ Right</option>
-                                            <option value="up">↑ Up</option>
-                                            <option value="down">↓ Down</option>
                                         </select>
+                                    </div>
+                                </div>
+
+                                <!-- Text Effect -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Text Effect</label>
+                                    <div class="grid grid-cols-3 gap-1.5">
+                                        <button v-for="te in [
+                                                    {v:'none',      icon:'fa-minus',      label:'None'},
+                                                    {v:'glow',      icon:'fa-star',       label:'Glow'},
+                                                    {v:'highlight', icon:'fa-highlighter', label:'Highlight'},
+                                                ]"
+                                                :key="te.v"
+                                                @click="editingElement.settings.textEffect = te.v"
+                                                :class="(editingElement.settings.textEffect || 'none') === te.v
+                                                    ? 'bg-[#2271b1] text-white border-[#2271b1]'
+                                                    : 'bg-white text-slate-500 border-slate-200 hover:border-[#2271b1] hover:text-[#2271b1]'"
+                                                class="flex flex-col items-center gap-1 py-2 px-1 border rounded text-[10px] transition-all">
+                                            <i :class="'fa ' + te.icon + ' text-[13px]'"></i>
+                                            <span>@{{ te.label }}</span>
+                                        </button>
                                     </div>
                                 </div>
 
