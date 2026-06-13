@@ -69,8 +69,27 @@ The builder-based header/footer automatically applies sticky behavior and respon
 
 ## Mega Menus
 
-Sub-items support multiple levels. Build a mega menu by:
-1. Adding a top-level item with no URL (use `#`)
-2. Adding sub-items nested beneath it
+Lazy CMS has a built-in **visual Mega Menu Builder** — no CSS required.
 
-Styling is handled by your theme's CSS.
+### Enabling a Mega Menu
+
+1. In the menu editor, hover over any top-level item
+2. Click the **Mega Menu** toggle that appears
+3. Click **Edit Mega Menu** to open the builder
+
+### Mega Menu Builder
+
+The mega menu panel opens a mini page-builder where you can:
+
+- Add multiple **columns** (2, 3, or 4 column layouts)
+- Place any builder element inside each column — headings, image, links, icon lists, etc.
+- Set a **panel background color** and **max width** (defaults to site width)
+- Each column has its own settings (width, padding)
+
+### How it renders
+
+When a visitor hovers over the top-level item, the mega menu panel drops down — centered and constrained to your site's configured width. It is fully responsive and collapses to a standard mobile accordion on small screens.
+
+::: tip
+If the mega menu panel appears misaligned, check **Settings → Site Width** — the panel uses this value to center itself relative to the page container.
+:::

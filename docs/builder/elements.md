@@ -33,12 +33,21 @@ A rich-text paragraph block with a WYSIWYG editor.
 A single image with optional link.
 
 **Settings:**
-- Image URL (media library picker)
+- **Dynamic Source** — pull the image automatically from context:
+  - `Feature Image` — the current post's featured image
+  - `Author Avatar` — the post author's avatar
+  - `Site Logo` — the logo set in Customizer → General → Logo
+- Image URL (media library picker, used when no dynamic source is selected)
 - Alt text
-- Width / Height
-- Link URL + target (`_blank`, `_self`)
-- Caption
-- Border radius, box shadow
+- Width / Max Width
+- **Link URL** — static URL or dynamic source:
+  - `Site URL` — links to the site homepage
+  - `Post URL` — links to the current post's permalink
+- Link target (`_blank`, `_self`)
+- Aspect ratio + focus point (X/Y) for cropped images
+- Border radius, border (per-side), box shadow
+- Hover effect
+- Sticky width (shrinks when header is sticky)
 
 ### Gallery
 A responsive image grid or slider.

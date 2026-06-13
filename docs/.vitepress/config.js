@@ -1,10 +1,21 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
+  lang: 'en-US',
   title: 'Lazy CMS Builder',
-  description: 'A powerful WordPress-like CMS package for Laravel',
+  titleTemplate: '%s | Lazy CMS Builder',
+  description: 'A WordPress-like drag-and-drop CMS package for Laravel — page builder, e-commerce, multi-language, hooks API, mega menus, and more.',
+  lastUpdated: true,
+
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['meta', { property: 'og:type',        content: 'website' }],
+    ['meta', { property: 'og:site_name',   content: 'Lazy CMS Builder' }],
+    ['meta', { property: 'og:description', content: 'A WordPress-like drag-and-drop CMS package for Laravel — page builder, e-commerce, multi-language, hooks API, mega menus, and more.' }],
+    ['meta', { property: 'og:image',       content: '/hero.png' }],
+    ['meta', { name: 'twitter:card',       content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:image',      content: '/hero.png' }],
+    ['meta', { name: 'keywords',           content: 'Laravel CMS, Laravel page builder, drag-and-drop, e-commerce, multi-language, mega menu, hooks API' }],
   ],
 
   themeConfig: {
@@ -17,7 +28,7 @@ export default defineConfig({
       { text: 'E-commerce', link: '/ecommerce/overview' },
       { text: 'Hooks API', link: '/api/hooks' },
       {
-        text: 'v1.0.3',
+        text: 'v1.0.7',
         items: [
           { text: 'Changelog', link: 'https://github.com/lazycmsapp/lazy-cms-builder/releases' },
           { text: 'Packagist', link: 'https://packagist.org/packages/lazycmsapp/lazy-cms-builder' },

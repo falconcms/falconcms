@@ -37,6 +37,10 @@ features:
     title: Role-Based Access Control
     details: Granular permissions with 6 predefined roles — Administrator, Editor, Author, Contributor, Subscriber, and User.
 
+  - icon: 🗂️
+    title: Mega Menu Builder
+    details: Build rich mega menus visually — multi-column layouts with images, headings, and icon lists. Drops down centered to your site width with no CSS required.
+
   - icon: ⚡
     title: Hook System
     details: Extend anything with WordPress-like Action and Filter hooks. Add custom fields, modify output, and integrate third-party services cleanly.
