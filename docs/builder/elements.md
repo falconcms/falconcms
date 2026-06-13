@@ -1,6 +1,6 @@
 # Builder Elements
 
-Elements are the content blocks inside columns. Lazy Builder ships with 20+ built-in element types.
+Elements are the content blocks inside columns. Lazy Builder ships with **22 built-in element types**.
 
 ## Text Elements
 
@@ -16,6 +16,14 @@ A title or subtitle block (H1–H6).
 - Color
 - CSS Class / CSS ID
 
+### Title
+A dynamic post/page title element — automatically pulls the current content's title. Useful in templates, header builder, and single post layouts.
+
+**Settings:**
+- Tag (H1–H6)
+- Font size, weight, color
+- Text alignment
+
 ### Text Block
 A rich-text paragraph block with a WYSIWYG editor.
 
@@ -24,6 +32,24 @@ A rich-text paragraph block with a WYSIWYG editor.
 - Font size, line height
 - Text alignment
 - Color
+
+### Text
+A simple single-line text element with dynamic source support.
+
+**Settings:**
+- Text content or dynamic source (post title, site name, etc.)
+- Font size, weight, color
+- Text alignment
+
+### Ticker
+A horizontally scrolling text marquee — great for announcements or news tickers.
+
+**Settings:**
+- Items (list of text lines)
+- Speed
+- Direction (left / right)
+- Separator style
+- Font size, color, background
 
 ---
 
@@ -123,6 +149,16 @@ A call-to-action button.
 - Icon (FontAwesome class + position)
 - Full width toggle
 
+### Card
+A content card with image, title, description, and optional button.
+
+**Settings:**
+- Image (media library)
+- Title, description
+- Button text + link
+- Border radius, shadow
+- Hover effect
+
 ### Spacer
 Empty vertical space for layout control.
 
@@ -152,19 +188,7 @@ A styled list with icons.
 
 ---
 
-## Advanced Elements
-
-### HTML
-A raw HTML block — paste any embed code.
-
-**Settings:**
-- Raw HTML / embed code
-
-### Shortcode
-Render any registered shortcode.
-
-**Settings:**
-- Shortcode string
+## Post & Dynamic Elements
 
 ### Post Grid
 Dynamically display posts in a grid.
@@ -180,6 +204,17 @@ Dynamically display posts in a grid.
 - Show: thumbnail, title, excerpt, date, author, read more button
 - Pagination on/off
 
+### Post Content
+Renders the full content of the current post — used in single post/page templates.
+
+### Post Meta
+Displays post metadata — author, date, category, tags, etc.
+
+**Settings:**
+- Select which meta fields to show
+- Date format
+- Separator style
+
 ### Star Rating
 Display a static star rating.
 
@@ -187,6 +222,24 @@ Display a static star rating.
 - Rating value (0–5)
 - Icon color
 - Size
+
+---
+
+## Advanced Elements
+
+### HTML
+A raw HTML block — paste any embed code or custom markup.
+
+**Settings:**
+- Raw HTML / embed code
+
+### Menu
+Render a navigation menu inline inside the builder canvas — primarily used in the header builder.
+
+**Settings:**
+- Select menu (by location or slug)
+- Layout: horizontal / vertical
+- Mega menu support
 
 ---
 
@@ -230,7 +283,5 @@ Many text fields support dynamic tokens — they're replaced at render time:
 | `{site_name}` | Site name from settings |
 | `{current_date}` | Today's date |
 | `{author_name}` | Post author's name |
-| `{author_avatar}` | Author avatar `<img>` |
-| `{featured_image}` | Featured image URL |
 
 **Example:** Set a Heading text to `Welcome back, {author_name}!` for a personalized greeting.

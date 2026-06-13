@@ -19,7 +19,7 @@ hero:
 features:
   - icon: 🏗️
     title: Drag & Drop Page Builder
-    details: Build stunning pages visually with Lazy Builder — containers, columns, and 20+ elements including text, image, gallery, counter, accordion, tabs, slider, and more.
+    details: Build stunning pages visually with Lazy Builder — containers, columns, and 22 built-in elements including text, image, gallery, counter, accordion, tabs, ticker, card, and more.
 
   - icon: 🛒
     title: Full E-commerce

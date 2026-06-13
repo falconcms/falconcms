@@ -44,7 +44,7 @@ A clean, fast admin interface for managing all your content, settings, and users
 ### Lazy Builder (Page Builder)
 Visual drag-and-drop builder with:
 - Containers with responsive column layouts
-- 20+ element types
+- 22 built-in element types
 - Device-specific visibility controls
 - Global Sections (reusable across pages)
 - Container & Column Library (save and reuse your designs)
