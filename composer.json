@@ -1,6 +1,6 @@
 {
-    "name": "lazycmsapp/lazy-cms-builder",
-    "description": "A reusable WordPress-like admin dashboard package.",
+    "name": "falconcms/falconcms",
+    "description": "FalconCMS — A powerful Laravel CMS with page builder, e-commerce, and admin dashboard.",
     "license": "MIT",
     "type": "library",
     "require": {

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **Lazy CMS Builder** are documented here.  
+All notable changes to **FalconCMS** are documented here.  
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — versions are sorted newest first.
 
 ---
@@ -35,7 +35,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 - **Settings tabs** — Now URL-aware: switching tabs updates the browser URL via `history.replaceState`; initial tab resolved from `?tab=` query string
 - **Shop menu** — Parent "Shop" link now navigates to Overview instead of Orders
 - **Sidebar collapse** — "Collapse Menu" button at the bottom of sidebar; state persisted in `localStorage`; `sidebar-collapsed` class applied via inline script before first paint to eliminate flash on page navigation
-- **Admin top bar** — Replaced non-functional WordPress globe icon with **LCB** branded logo linking to the dashboard
+- **Admin top bar** — Replaced non-functional WordPress globe icon with **FCM / FalconCMS** branded logo linking to the dashboard
 
 ---
 
