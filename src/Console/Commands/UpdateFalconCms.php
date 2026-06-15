@@ -4,7 +4,7 @@ namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 
-class UpdateLazyCms extends Command
+class UpdateFalconCms extends Command
 {
     protected $signature = 'falcon:update';
     protected $description = 'Update Lazy CMS: run migrations, sync system data, and refresh assets/themes.';

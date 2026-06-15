@@ -155,7 +155,7 @@ class DashboardController extends Controller
         $this->ensureUpdateMenu();
 
         // Refresh update cache silently (only when expired, max once per 6h)
-        if (!cache()->has('lazy_cms_update_check')) {
+        if (!cache()->has('falcon_cms_update_check')) {
             try { lazy_check_update(); } catch (\Exception $e) {}
         }
 
@@ -195,12 +195,12 @@ class DashboardController extends Controller
         // Step 1: composer update
         $composerBin = $this->findComposer();
         if ($composerBin) {
-            $cmd = $composerBin . ' update lazycmsapp/lazy-cms-builder --no-interaction --prefer-dist --no-progress 2>&1';
+            $cmd = $composerBin . ' update falconcms/falconcms --no-interaction --prefer-dist --no-progress 2>&1';
             exec('cd ' . escapeshellarg(base_path()) . ' && ' . $cmd, $composerOut, $exitCode);
             $steps[] = ['label' => 'composer update', 'output' => implode("\n", $composerOut), 'ok' => $exitCode === 0];
             if ($exitCode !== 0) $hasError = true;
         } else {
-            $steps[] = ['label' => 'composer update', 'output' => 'composer not found in PATH. Run manually: composer update lazycmsapp/lazy-cms-builder', 'ok' => false];
+            $steps[] = ['label' => 'composer update', 'output' => 'composer not found in PATH. Run manually: composer update falconcms/falconcms', 'ok' => false];
             $hasError = true;
         }
 
@@ -214,7 +214,7 @@ class DashboardController extends Controller
         $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $lazyOut)), 'ok' => $lazyExit === 0];
         if ($lazyExit !== 0) $hasError = true;
 
-        cache()->forget('lazy_cms_update_check');
+        cache()->forget('falcon_cms_update_check');
 
         return redirect()->route('admin.update')
             ->with('update_steps', $steps)

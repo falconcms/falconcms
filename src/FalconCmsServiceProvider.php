@@ -59,9 +59,9 @@ class FalconCmsServiceProvider extends ServiceProvider
         $this->commands([
             \FalconCms\Core\Console\Commands\LazyList::class,
             \FalconCms\Core\Console\Commands\MakeDashboardPage::class,
-            \FalconCms\Core\Console\Commands\InstallLazyCms::class,
-            \FalconCms\Core\Console\Commands\SeedLazyCms::class,
-            \FalconCms\Core\Console\Commands\UpdateLazyCms::class,
+            \FalconCms\Core\Console\Commands\InstallFalconCms::class,
+            \FalconCms\Core\Console\Commands\SeedFalconCms::class,
+            \FalconCms\Core\Console\Commands\UpdateFalconCms::class,
             \FalconCms\Core\Console\Commands\PublishScheduledPosts::class,
             \FalconCms\Core\Console\Commands\ExpireSalePrices::class,
         ]);

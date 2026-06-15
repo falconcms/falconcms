@@ -111,7 +111,7 @@
                                                                 @endif
                                                             @endif
                                                             @if($child->title === 'Updates')
-                                                                @php $lzUpd = cache()->get('lazy_cms_update_check'); @endphp
+                                                                @php $lzUpd = cache()->get('falcon_cms_update_check'); @endphp
                                                                 @if(!empty($lzUpd['has_update']))
                                                                     <span class="bg-[#46b450] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">NEW</span>
                                                                 @endif
@@ -137,7 +137,7 @@
                                                                 @endif
                                                             @endif
                                                             @if($child->title === 'Updates')
-                                                                @php $lzUpd = cache()->get('lazy_cms_update_check'); @endphp
+                                                                @php $lzUpd = cache()->get('falcon_cms_update_check'); @endphp
                                                                 @if(!empty($lzUpd['has_update']))
                                                                     <span class="bg-[#46b450] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">NEW</span>
                                                                 @endif

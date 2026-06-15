@@ -131,17 +131,17 @@ if (!function_exists('lazy_sanitize_builder_json')) {
     }
 }
 
-if (!function_exists('lazy_cms_installed_version')) {
+if (!function_exists('falcon_cms_installed_version')) {
     /**
      * The version actually installed by Composer (falls back to LAZY_CMS_VERSION).
      * Reading it live keeps the "update available" check accurate after every
      * `composer update`, even if the LAZY_CMS_VERSION constant isn't hand-bumped.
      */
-    function lazy_cms_installed_version(): string
+    function falcon_cms_installed_version(): string
     {
         if (class_exists(\Composer\InstalledVersions::class)) {
             try {
-                $v = \Composer\InstalledVersions::getPrettyVersion('lazycmsapp/lazy-cms-builder');
+                $v = \Composer\InstalledVersions::getPrettyVersion('falconcms/falconcms');
                 if ($v) {
                     $clean = ltrim($v, 'v');
                     if (preg_match('/^\d+\.\d+\.\d+$/', $clean)) {
@@ -157,26 +157,26 @@ if (!function_exists('lazy_cms_installed_version')) {
 if (!function_exists('lazy_check_update')) {
     function lazy_check_update(bool $force = false): array
     {
-        $cacheKey = 'lazy_cms_update_check';
+        $cacheKey = 'falcon_cms_update_check';
         if (!$force && cache()->has($cacheKey)) {
             return cache()->get($cacheKey);
         }
 
-        $current = lazy_cms_installed_version();
+        $current = falcon_cms_installed_version();
         $result  = ['current' => $current, 'latest' => null, 'has_update' => false, 'url' => null, 'checked_at' => now()->toDateTimeString()];
 
         try {
             $res = \Illuminate\Support\Facades\Http::timeout(5)
                 ->withHeaders(['Accept' => 'application/json', 'User-Agent' => 'LazyCMS/' . $current])
-                ->get('https://repo.packagist.org/p2/lazycmsapp/lazy-cms-builder.json');
+                ->get('https://repo.packagist.org/p2/falconcms/falconcms.json');
 
             if ($res->successful()) {
-                $versions = $res->json('packages.lazycmsapp/lazy-cms-builder') ?? [];
+                $versions = $res->json('packages.falconcms/falconcms') ?? [];
                 foreach ($versions as $v) {
                     $ver = ltrim($v['version'] ?? '', 'v');
                     if (preg_match('/^\d+\.\d+\.\d+$/', $ver)) {
                         $result['latest'] = $ver;
-                        $result['url']    = 'https://packagist.org/packages/lazycmsapp/lazy-cms-builder';
+                        $result['url']    = 'https://packagist.org/packages/falconcms/falconcms';
                         break;
                     }
                 }
@@ -188,7 +188,7 @@ if (!function_exists('lazy_check_update')) {
                 // Try GitHub Releases first, fall back to Tags (tags exist even without formal releases)
                 $gh = \Illuminate\Support\Facades\Http::timeout(5)
                     ->withHeaders(['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'LazyCMS/' . $current])
-                    ->get('https://api.github.com/repos/lazycmsapp/lazy-cms-builder/releases/latest');
+                    ->get('https://api.github.com/repos/falconcms/falconcms/releases/latest');
                 if ($gh->successful() && $gh->json('tag_name')) {
                     $tag = ltrim($gh->json('tag_name'), 'v');
                     if ($tag) {
@@ -204,13 +204,13 @@ if (!function_exists('lazy_check_update')) {
                 // Fall back to tags list when no formal GitHub Release exists
                 $gh = \Illuminate\Support\Facades\Http::timeout(5)
                     ->withHeaders(['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'LazyCMS/' . $current])
-                    ->get('https://api.github.com/repos/lazycmsapp/lazy-cms-builder/tags');
+                    ->get('https://api.github.com/repos/falconcms/falconcms/tags');
                 if ($gh->successful()) {
                     foreach ($gh->json() ?? [] as $t) {
                         $tag = ltrim($t['name'] ?? '', 'v');
                         if (preg_match('/^\d+\.\d+\.\d+$/', $tag)) {
                             $result['latest'] = $tag;
-                            $result['url']    = 'https://github.com/lazycmsapp/lazy-cms-builder/releases/tag/v' . $tag;
+                            $result['url']    = 'https://github.com/falconcms/falconcms/releases/tag/v' . $tag;
                             break;
                         }
                     }
@@ -227,8 +227,8 @@ if (!function_exists('lazy_check_update')) {
     }
 }
 
-if (!function_exists('_lazy_cms_options_store')) {
-    function &_lazy_cms_options_store(): array
+if (!function_exists('_falcon_cms_options_store')) {
+    function &_falcon_cms_options_store(): array
     {
         static $store = ['loaded' => false, 'data' => []];
         return $store;
@@ -239,7 +239,7 @@ if (!function_exists('get_cms_option')) {
     function get_cms_option($key, $default = null)
     {
         try {
-            $store = &_lazy_cms_options_store();
+            $store = &_falcon_cms_options_store();
 
             // Bulk-load all settings on first call — 1 DB query per request
             if (!$store['loaded']) {
@@ -274,7 +274,7 @@ if (!function_exists('update_cms_option')) {
                 ['value' => $value, 'updated_at' => now()]
             );
             // Keep in-memory cache consistent within the same request
-            $store = &_lazy_cms_options_store();
+            $store = &_falcon_cms_options_store();
             $store['data'][$key] = $value;
             return true;
         } catch (\Exception $e) {

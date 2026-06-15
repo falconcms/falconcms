@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
-class InstallLazyCms extends Command
+class InstallFalconCms extends Command
 {
     protected $signature = 'falcon:install';
     protected $description = 'Full installation of Lazy CMS: migrations, assets, themes, and default data.';

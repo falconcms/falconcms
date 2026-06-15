@@ -4,7 +4,7 @@ namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 
-class SeedLazyCms extends Command
+class SeedFalconCms extends Command
 {
     /**
      * The name and signature of the console command.
