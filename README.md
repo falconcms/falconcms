@@ -1,9 +1,9 @@
-# Lazy CMS Builder
+# FalconCMS
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/lazycmsapp/lazy-cms-builder.svg)](https://packagist.org/packages/lazycmsapp/lazy-cms-builder)
-[![License](https://img.shields.io/github/license/lazycmsapp/lazy-cms-builder)](LICENSE)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/falconcms/falconcms.svg)](https://packagist.org/packages/falconcms/falconcms)
+[![License](https://img.shields.io/github/license/falconcms/falconcms)](LICENSE)
 
-A powerful, modular, and easy-to-use CMS package for Laravel applications with built-in multi-language support, robust Role-Based Access Control (RBAC), a drag-and-drop page builder (Lazy Builder), and a WordPress-like theme & hook system.
+A powerful, modular, and easy-to-use CMS package for Laravel applications with built-in multi-language support, robust Role-Based Access Control (RBAC), a drag-and-drop page builder (Falcon Builder), and a WordPress-like theme & hook system.
 
 ## 🚀 Installation
 
@@ -11,12 +11,12 @@ To install the package in a fresh Laravel project:
 
 1. **Require the package via Composer:**
    ```bash
-   composer require lazycmsapp/lazy-cms-builder
+   composer require falconcms/falconcms
    ```
 
 2. **Run the Automated Installation:**
    ```bash
-   php artisan lazy:install
+   php artisan falcon:install
    ```
    *This command handles migrations, asset publishing, theme distribution, storage linking, and default admin creation.*
 
@@ -24,21 +24,21 @@ To install the package in a fresh Laravel project:
 
 ## 🛠 Commands Summary
 
-Lazy CMS comes with a set of automated commands to make development easier.
+Falcon CMS comes with a set of automated commands to make development easier.
 
 | Command | Description |
 | :--- | :--- |
-| `php artisan lazy` | **Help Menu:** Lists all available Lazy CMS commands in CLI. |
-| `php artisan lazy:install` | **Full Setup:** Migrations, Assets, Themes, User and seeds. |
-| `php artisan lazy:update` | **Sync Update:** Refreshes assets, themes, and permissions. |
-| `php artisan lazy:seed` | **Demo Data:** Seeds default menus and initial demo data. |
-| `php artisan make:lazy-page` | **Scaffold:** Creates a new dashboard page, controller, and menu item. |
+| `php artisan falcon` | **Help Menu:** Lists all available Falcon CMS commands in CLI. |
+| `php artisan falcon:install` | **Full Setup:** Migrations, Assets, Themes, User and seeds. |
+| `php artisan falcon:update` | **Sync Update:** Refreshes assets, themes, and permissions. |
+| `php artisan falcon:seed` | **Demo Data:** Seeds default menus and initial demo data. |
+| `php artisan make:falcon-page` | **Scaffold:** Creates a new dashboard page, controller, and menu item. |
 
 ---
 
 ## 🔐 Role-Based Access Control (RBAC)
 
-Version 4.0.0 introduces a granular permission system with several predefined roles:
+FalconCMS includes a granular permission system with several predefined roles:
 
 - **Administrator**: Full access to all settings, content, and system configurations.
 - **Editor**: Can publish and manage all posts and pages, access media library, and moderate comments.
@@ -54,14 +54,14 @@ Version 4.0.0 introduces a granular permission system with several predefined ro
 ## 🎨 Theme Development & Isolation
 
 ### 📂 Strict Theme Structure
-Frontend views **MUST** be located in `resources/views/themes/{theme-name}/`. 
+Frontend views **MUST** be located in `resources/views/themes/{theme-name}/`.
 For security and organization, any view file created directly in the root `resources/views/` folder will be blocked from frontend rendering (returns a 404).
 
 ### 🪄 Automated Theme Sync
 When you update the package, your themes are automatically refreshed. To ensure this works, add the following to your `composer.json` scripts:
 ```json
 "post-autoload-dump": [
-    "@php artisan vendor:publish --tag=lazy-themes --force"
+    "@php artisan vendor:publish --tag=falcon-cms-themes --force"
 ]
 ```
 
@@ -69,7 +69,7 @@ When you update the package, your themes are automatically refreshed. To ensure 
 
 ## 🌐 Multi-Language Support
 
-Lazy CMS supports dynamic localization. You can enable or disable multi-language support from the Admin Settings.
+Falcon CMS supports dynamic localization. You can enable or disable multi-language support from the Admin Settings.
 
 - **Clean URLs:** When multi-language is disabled, URLs are clean (e.g., `/my-post`).
 - **ISO Prefixes:** When enabled, URLs include the language code (e.g., `/en/my-post`).
@@ -84,6 +84,8 @@ Lazy CMS supports dynamic localization. You can enable or disable multi-language
 - **Advanced Hook System:** WordPress-like Action and Filter hooks.
 - **Headless Mode:** Full REST API support for decoupled apps.
 - **Theme Isolation:** High-security frontend view resolution.
+- **Falcon Builder:** Drag-and-drop page builder with global header/footer sections.
+- **E-Commerce:** Built-in shop, orders, product management, and checkout flow.
 
 ---
 
@@ -91,7 +93,7 @@ Lazy CMS supports dynamic localization. You can enable or disable multi-language
 
 ### Adding a Filter
 ```php
-add_lazy_filter('lazy_general_settings_fields', function($fields) {
+add_falcon_filter('falcon_general_settings_fields', function($fields) {
     $fields['my_custom_option'] = ['type' => 'text', 'label' => 'Custom Option'];
     return $fields;
 });
@@ -99,10 +101,24 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
 
 ### Adding an Action
 ```php
-add_lazy_action('lazy_after_post_content', function($post) {
+add_falcon_action('falcon_after_post_content', function($post) {
     echo "<div>Related Content Here</div>";
 });
 ```
+
+### Registering a Custom Builder Element
+```php
+add_falcon_filter('falcon_builder_elements', function($elements) {
+    $elements['my_element'] = [
+        'label' => 'My Element',
+        'icon'  => 'star',
+        'fields' => [],
+    ];
+    return $elements;
+});
+```
+
+---
 
 ## 🧪 Testing
 

@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class MakeDashboardPage extends Command
 {
-    protected $signature = 'make:lazy-page {name}';
+    protected $signature = 'make:falcon-page {name}';
     protected $description = 'Scaffold a new dashboard page';
 
     public function handle()
