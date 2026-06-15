@@ -117,7 +117,7 @@
                         @csrf
                         <button type="submit" id="run-update-btn" disabled
                             class="inline-flex items-center gap-2 bg-[#2271b1] text-white font-semibold text-[13px] px-5 py-2 rounded transition-colors opacity-50 cursor-not-allowed"
-                            onclick="return confirm('This will run composer update + lazy:update — migrations, asset publishing and cache clearing will happen. Continue?')">
+                            onclick="return confirm('This will run composer update + falcon:update — migrations, asset publishing and cache clearing will happen. Continue?')">
                             <span class="material-symbols-outlined text-[18px]">system_update</span>
                             Run Update Now
                         </button>

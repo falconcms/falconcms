@@ -9,7 +9,7 @@ use FalconCms\Core\Models\Post;
 /**
  * Seeds the default storefront pages (Shop, Cart, Checkout, Account), a sample blog post
  * and a Blog page, and links the shop page settings. Idempotent (firstOrCreate) so it is
- * safe to run on every seed/update. Runs via `lazy:seed` and `lazy:install`.
+ * safe to run on every seed/update. Runs via `falcon:seed` and `falcon:install`.
  */
 class DefaultContentSeeder extends Seeder
 {

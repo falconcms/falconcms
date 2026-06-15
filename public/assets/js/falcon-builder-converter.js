@@ -1,5 +1,5 @@
 /**
- * Lazy Builder ↔ Shortcode Converter
+ * Falcon Builder ↔ Shortcode Converter
  *
  * Converts builder JSON ↔ [falcon_section] shortcodes inside the admin rich editor.
  * - On page load : JSON → shortcodes (display-side conversion)

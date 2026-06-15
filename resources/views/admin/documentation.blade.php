@@ -57,7 +57,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-500"># 2. Run CMS installer</span><br>
-                                <code class="text-green-400">php artisan lazy:install</code>
+                                <code class="text-green-400">php artisan falcon:install</code>
                                 <p class="text-[10px] text-gray-400 mt-1 italic">// This handles migrations, assets, themes, and admin creation.</p>
                             </div>
                             <div>
@@ -67,7 +67,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-500"># 4. Seed demo data (Optional)</span><br>
-                                <code class="text-green-400">php artisan lazy:seed</code>
+                                <code class="text-green-400">php artisan falcon:seed</code>
                                 <p class="text-[10px] text-gray-400 mt-1 italic">// Populates default menus and initial demo content.</p>
                             </div>
                         </div>
@@ -86,7 +86,7 @@
                         </div>
                         <div>
                             <span class="text-gray-500"># 2. Run Sync Command</span><br>
-                            <code class="text-green-400">php artisan lazy:update</code>
+                            <code class="text-green-400">php artisan falcon:update</code>
                             <p class="text-[10px] text-gray-400 mt-1 italic">// This automates migrations, refreshing assets/themes, and clearing cache.</p>
                         </div>
                     </div>
@@ -100,7 +100,7 @@
                     <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
                         <div>
                             <span class="text-gray-500"># Create a new dashboard page (e.g. Portfolio)</span><br>
-                            <code class="text-green-400">php artisan make:lazy-page Portfolio</code>
+                            <code class="text-green-400">php artisan make:falcon-page Portfolio</code>
                             <p class="text-[10px] text-gray-400 mt-1 italic">// This creates a controller, a view, and adds a menu item in the sidebar.</p>
                         </div>
                     </div>
@@ -1739,7 +1739,7 @@ curl -X DELETE "{{ url('/api/v1/posts/123') }}" \
                         <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
                             <h3 class="font-bold text-gray-800">Permission Syncing</h3>
                             <p class="text-xs text-gray-500 mt-2">When you add new menus or features, run the sync command to update permissions:</p>
-                            <code class="block bg-gray-50 p-2 mt-2 text-[10px]">php artisan lazy:update</code>
+                            <code class="block bg-gray-50 p-2 mt-2 text-[10px]">php artisan falcon:update</code>
                         </div>
                     </div>
                 </section>
@@ -1911,7 +1911,7 @@ curl -X DELETE "{{ url('/api/v1/posts/123') }}" \
                             <h3 class="font-bold text-gray-800 mb-3">Automated Theme Refresh</h3>
                             <p class="text-sm text-gray-600 mb-4">When you update the package, use the sync command to ensure your local themes are updated with any core improvements.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <code class="text-green-400">php artisan lazy:update</code>
+                                <code class="text-green-400">php artisan falcon:update</code>
                             </div>
                         </div>
                     </div>

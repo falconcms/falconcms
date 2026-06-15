@@ -1,9 +1,9 @@
-# Lazy CMS Localization Guide
+# Falcon CMS Localization Guide
 
-This guide explains how to manage multilingual content, menus, and settings in Lazy CMS.
+This guide explains how to manage multilingual content, menus, and settings in Falcon CMS.
 
 ## 1. Post & Page Translations
-Lazy CMS uses an `origin_id` system to link translations.
+Falcon CMS uses an `origin_id` system to link translations.
 - **How to translate:** Edit a post/page and use the "Translate" or "Make Multilingual Copy" feature.
 - **Lineage:** All translations share the same root `origin_id`, ensuring the language switcher can always find every version.
 - **Slug Logic:** Slugs are automatically generated based on the language. For non-English languages, native characters are preserved where possible.
