@@ -68,31 +68,31 @@
         <div class="handle-top flex gap-0.5">
             <div class="handle-blue group/hpt" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateY(' + (container.settings.paddingTop || 0) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingTop', ci)">
                 <i class="fa fa-bars"></i>
-                <div class="lazy-tooltip opacity-0 group-hover/hpt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingTop' && dragCi === ci && !isColumnDrag}">@{{ container.settings.paddingTop || 0 }}px</div>
+                <div class="falcon-tooltip opacity-0 group-hover/hpt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingTop' && dragCi === ci && !isColumnDrag}">@{{ container.settings.paddingTop || 0 }}px</div>
             </div>
             <div class="handle-purple group/hmt" @mousedown.stop.prevent="startDrag($event, 'marginTop', ci)">
                 <i class="fa fa-bars"></i>
-                <div class="lazy-tooltip opacity-0 group-hover/hmt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginTop' && dragCi === ci && !isColumnDrag}">@{{ container.settings.marginTop || 0 }}px</div>
+                <div class="falcon-tooltip opacity-0 group-hover/hmt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginTop' && dragCi === ci && !isColumnDrag}">@{{ container.settings.marginTop || 0 }}px</div>
             </div>
         </div>
         <div class="handle-bottom flex gap-0.5">
             <div class="handle-blue group/hpb"
                  @mousedown.stop.prevent="startDrag($event, 'paddingBottom', ci)">
                 <i class="fa fa-bars"></i>
-                <div class="lazy-tooltip opacity-0 group-hover/hpb:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingBottom' && dragCi === ci && !isColumnDrag}">@{{ container.settings.paddingBottom || 0 }}px</div>
+                <div class="falcon-tooltip opacity-0 group-hover/hpb:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingBottom' && dragCi === ci && !isColumnDrag}">@{{ container.settings.paddingBottom || 0 }}px</div>
             </div>
             <div class="handle-purple group/hmb" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateY(' + (container.settings.marginBottom || 0) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'marginBottom', ci)">
                 <i class="fa fa-bars"></i>
-                <div class="lazy-tooltip opacity-0 group-hover/hmb:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginBottom' && dragCi === ci && !isColumnDrag}">@{{ container.settings.marginBottom || 0 }}px</div>
+                <div class="falcon-tooltip opacity-0 group-hover/hmb:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginBottom' && dragCi === ci && !isColumnDrag}">@{{ container.settings.marginBottom || 0 }}px</div>
             </div>
         </div>
         <div class="handle-left group/hpl" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(' + (container.settings.paddingLeft || 0) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingLeft', ci)">
             <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-            <div class="lazy-tooltip opacity-0 group-hover/hpl:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingLeft' && dragCi === ci && !isColumnDrag}">@{{ container.settings.paddingLeft || 0 }}px</div>
+            <div class="falcon-tooltip opacity-0 group-hover/hpl:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingLeft' && dragCi === ci && !isColumnDrag}">@{{ container.settings.paddingLeft || 0 }}px</div>
         </div>
         <div class="handle-right group/hpr" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(-' + (container.settings.paddingRight || 0) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingRight', ci)">
             <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-            <div class="lazy-tooltip opacity-0 group-hover/hpr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingRight' && dragCi === ci && !isColumnDrag}">@{{ container.settings.paddingRight || 0 }}px</div>
+            <div class="falcon-tooltip opacity-0 group-hover/hpr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingRight' && dragCi === ci && !isColumnDrag}">@{{ container.settings.paddingRight || 0 }}px</div>
         </div>
     </div>
     @endif
@@ -103,15 +103,15 @@
          :class="(editingCi === ci || (isDragging && dragCi === ci)) ? 'opacity-100' : 'opacity-0'">
         <div class="panel-inner shadow-xl group/panel">
             <div class="flex items-center overflow-hidden max-w-0 opacity-0 group-hover/panel:max-w-[200px] group-hover/panel:opacity-100 group-hover/panel:overflow-visible transition-all duration-300">
-                <div class="panel-btn cursor-move" draggable="true" @dragstart="onDragStart($event, 'container', ci)" @dragend="onDragEnd"><i class="fa fa-arrows-alt"></i><div class="lazy-tooltip">Drag</div></div>
-                <div class="panel-btn" @click.stop="layout.splice(ci,1)"><i class="fa fa-trash-alt"></i><div class="lazy-tooltip">Delete</div></div>
-                <div class="panel-btn" @click.stop="openLibraryModal('containers', ci)"><i class="fa fa-hdd"></i><div class="lazy-tooltip">Library</div></div>
-                <div class="panel-btn" @click.stop="duplicateContainer(ci)"><i class="fa fa-copy"></i><div class="lazy-tooltip">Duplicate</div></div>
+                <div class="panel-btn cursor-move" draggable="true" @dragstart="onDragStart($event, 'container', ci)" @dragend="onDragEnd"><i class="fa fa-arrows-alt"></i><div class="falcon-tooltip">Drag</div></div>
+                <div class="panel-btn" @click.stop="layout.splice(ci,1)"><i class="fa fa-trash-alt"></i><div class="falcon-tooltip">Delete</div></div>
+                <div class="panel-btn" @click.stop="openLibraryModal('containers', ci)"><i class="fa fa-hdd"></i><div class="falcon-tooltip">Library</div></div>
+                <div class="panel-btn" @click.stop="duplicateContainer(ci)"><i class="fa fa-copy"></i><div class="falcon-tooltip">Duplicate</div></div>
             </div>
             <div class="panel-btn" @click.stop="setEditingContext('container', ci)">
-                <i class="fa fa-pen"></i><div class="lazy-tooltip">Edit</div>
+                <i class="fa fa-pen"></i><div class="falcon-tooltip">Edit</div>
             </div>
-            <div class="panel-btn" @click.stop="addContainer(ci + 1)"><i class="fa fa-plus-square"></i><div class="lazy-tooltip">Add</div></div>
+            <div class="panel-btn" @click.stop="addContainer(ci + 1)"><i class="fa fa-plus-square"></i><div class="falcon-tooltip">Add</div></div>
         </div>
     </div>
     @endif
@@ -144,7 +144,7 @@
             <button @click.stop="openColumnModal(ci, 'edit')" 
                     class="w-8 h-8 bg-[#2271b1] text-white rounded shadow-lg flex items-center justify-center hover:scale-110 transition-all relative group/addbtn pointer-events-auto">
                 <i class="fa fa-plus text-base pointer-events-none"></i>
-                <div class="lazy-tooltip opacity-0 group-hover/addbtn:opacity-100" style="top: 100%; margin-top: 10px; display: block !important;">Add Column Layout</div>
+                <div class="falcon-tooltip opacity-0 group-hover/addbtn:opacity-100" style="top: 100%; margin-top: 10px; display: block !important;">Add Column Layout</div>
             </button>
         </div>
 

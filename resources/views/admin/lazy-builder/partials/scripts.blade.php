@@ -551,7 +551,7 @@
                 });
             }
             // Expose to converter so it can handle custom shortcode tags
-            window.lazyCustomElements = customElements;
+            window.falconCustomElements = customElements;
 
             // Canvas preview helpers for custom elements
             const _CE_TEXT_TYPES  = ['text', 'textarea', 'textfield'];
@@ -2919,11 +2919,11 @@
             const getVisibilityClasses = (settings) => {
                 if (!settings || !settings.visibility) return '';
                 let classes = '';
-                if (settings.visibility.mobile === false) classes += ' lazy-hide-mobile';
-                if (settings.visibility.tablet === false) classes += ' lazy-hide-tablet';
-                if (settings.visibility.desktop === false) classes += ' lazy-hide-desktop';
+                if (settings.visibility.mobile === false) classes += ' falcon-hide-mobile';
+                if (settings.visibility.tablet === false) classes += ' falcon-hide-tablet';
+                if (settings.visibility.desktop === false) classes += ' falcon-hide-desktop';
                 if (settings.visibility.mobile === false && settings.visibility.tablet === false && settings.visibility.desktop === false) {
-                    classes = ' lazy-hide-all';
+                    classes = ' falcon-hide-all';
                 }
                 return classes;
             };

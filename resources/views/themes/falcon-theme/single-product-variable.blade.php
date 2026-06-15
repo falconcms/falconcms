@@ -1,4 +1,4 @@
-@extends('falcon-cms::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.falcon-theme.layouts.app')
 
 @section('title', $post->title)
 
@@ -478,7 +478,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
                 @foreach($related as $item)
-                    @include('falcon-cms::themes.lazy-theme.partials.product-card', ['product' => $item])
+                    @include('falcon-cms::themes.falcon-theme.partials.product-card', ['product' => $item])
                 @endforeach
             </div>
         </div>

@@ -14,7 +14,7 @@ class FalconCmsServiceProvider extends ServiceProvider
         });
 
         // Share activeTheme globally with all views
-        $activeTheme = get_cms_option('active_theme', 'lazy-theme');
+        $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         view()->share('activeTheme', $activeTheme);
 
         // Register Middlewares
@@ -46,7 +46,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             $magicKey = $viewMap[$viewName] ?? null;
 
             if ($magicKey) {
-                $dynamicFields = config("lazy-options.hooks.{$magicKey}.fields", []);
+                $dynamicFields = config("falcon-options.hooks.{$magicKey}.fields", []);
                 $settings = \Illuminate\Support\Facades\DB::table('cms_settings')->pluck('value', 'key')->toArray();
                 $view->with(compact('dynamicFields', 'settings'));
             }
@@ -106,13 +106,13 @@ class FalconCmsServiceProvider extends ServiceProvider
 
             // 1. Parent theme only — safe to publish with --force on every update
             $this->publishes([
-                __DIR__ . '/../resources/views/themes/lazy-theme' => resource_path('views/themes/lazy-theme'),
-            ], 'lazy-themes');
+                __DIR__ . '/../resources/views/themes/falcon-theme' => resource_path('views/themes/falcon-theme'),
+            ], 'falcon-themes');
 
             // Child theme — published WITHOUT --force so user customizations are never overwritten
             $this->publishes([
-                __DIR__ . '/../resources/views/themes/lazy-theme-child' => resource_path('views/themes/lazy-theme-child'),
-            ], 'lazy-theme-child');
+                __DIR__ . '/../resources/views/themes/falcon-theme-child' => resource_path('views/themes/falcon-theme-child'),
+            ], 'falcon-theme-child');
 
             $this->publishes([
                 __DIR__ . '/../resources/views' => resource_path('views/vendor/cms-dashboard'),
@@ -124,11 +124,11 @@ class FalconCmsServiceProvider extends ServiceProvider
     {
         require_once __DIR__ . '/helpers.php';
         require_once __DIR__ . '/ecommerce_helpers.php';
-        $this->mergeConfigFrom(__DIR__ . '/../config/lazy-options.php', 'lazy-options');
+        $this->mergeConfigFrom(__DIR__ . '/../config/falcon-options.php', 'falcon-options');
 
         // 1. Get Active Theme
         // We use a simple way to get it since DB might not be ready in early register
-        $activeTheme = 'lazy-theme';
+        $activeTheme = 'falcon-theme';
         try {
             // Check if we are running in web context and can access DB
             if (!$this->app->runningInConsole()) {
@@ -202,7 +202,7 @@ class FalconCmsServiceProvider extends ServiceProvider
         }
 
         // 5. Merge and Filter Options
-        $baseOptions = config('lazy-options', []);
+        $baseOptions = config('falcon-options', []);
         if (!empty($themeOptions)) {
             $baseOptions = array_replace_recursive($baseOptions, $themeOptions);
         }
@@ -213,7 +213,7 @@ class FalconCmsServiceProvider extends ServiceProvider
                 $finalOptions['hooks'][$key]['fields'] = apply_falcon_filters($filterTag, $finalOptions['hooks'][$key]['fields'] ?? []);
             }
         }
-        config(['lazy-options' => $finalOptions]);
+        config(['falcon-options' => $finalOptions]);
 
         // 6. Set View Paths Priority: child theme first → parent theme second → Laravel default
         $paths = config('view.paths', []);

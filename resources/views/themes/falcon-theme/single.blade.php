@@ -1,4 +1,4 @@
-@extends('falcon-cms::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.falcon-theme.layouts.app')
 
 @section('title', $post->title)
 
@@ -81,12 +81,12 @@
                 </div>
             @endif
 
-            @include('falcon-cms::themes.lazy-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
-            @include('falcon-cms::themes.lazy-theme.partials.single-related', ['post' => $post])
+            @include('falcon-cms::themes.falcon-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
+            @include('falcon-cms::themes.falcon-theme.partials.single-related', ['post' => $post])
 
             @if($sComments)
             <div class="mt-16">
-                @include('falcon-cms::themes.lazy-theme.partials.comments')
+                @include('falcon-cms::themes.falcon-theme.partials.comments')
             </div>
             @endif
         </div>
@@ -154,7 +154,7 @@
                         <div class="lazy-content-wrapper">
                             @php 
                                 $rawContent = do_lazy_shortcode($post->content);
-                                $filteredContent = apply_falcon_filters('lazy_the_content', $rawContent, $post);
+                                $filteredContent = apply_falcon_filters('falcon_the_content', $rawContent, $post);
                             @endphp
 
                             {!! do_falcon_action('lazy_before_content', $post) !!}
@@ -182,15 +182,15 @@
                         @endif
 
                         <!-- Share Buttons -->
-                        @include('falcon-cms::themes.lazy-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
+                        @include('falcon-cms::themes.falcon-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
 
                         <!-- Related Posts -->
-                        @include('falcon-cms::themes.lazy-theme.partials.single-related', ['post' => $post])
+                        @include('falcon-cms::themes.falcon-theme.partials.single-related', ['post' => $post])
 
                         <!-- Comments Section -->
                         @if($sComments)
                         <div class="mt-24">
-                            @include('falcon-cms::themes.lazy-theme.partials.comments')
+                            @include('falcon-cms::themes.falcon-theme.partials.comments')
                         </div>
                         @endif
                     </article>

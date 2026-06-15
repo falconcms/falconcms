@@ -354,10 +354,10 @@
 @if($customHeader = get_falcon_header())
     {!! $customHeader !!}
 @else
-    @include('falcon-cms::themes.lazy-theme.partials.header')
+    @include('falcon-cms::themes.falcon-theme.partials.header')
 @endif
 
-@include('falcon-cms::themes.lazy-theme.partials.title-bar')
+@include('falcon-cms::themes.falcon-theme.partials.title-bar')
 
 <main class="flex-grow">
     @yield('content')
@@ -366,11 +366,11 @@
 @if($customFooter = get_falcon_footer())
     {!! $customFooter !!}
 @else
-    @include('falcon-cms::themes.lazy-theme.partials.footer')
+    @include('falcon-cms::themes.falcon-theme.partials.footer')
 @endif
 
     {{-- Off-canvas mini cart --}}
-    @include('falcon-cms::themes.lazy-theme.partials.mini-cart')
+    @include('falcon-cms::themes.falcon-theme.partials.mini-cart')
 
     <!-- Scripts -->
     <script src="{{ asset('vendor/cms-dashboard/js/lucide.min.js') }}"></script>

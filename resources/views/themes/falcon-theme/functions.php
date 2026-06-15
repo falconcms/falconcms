@@ -71,7 +71,7 @@ add_falcon_filter('the_content', function($content) {
     return $content . '<p><i>Originally published on Lazy Panda.</i></p>';
 });
 */
-add_falcon_filter('lazy_the_content', function($content) {
+add_falcon_filter('falcon_the_content', function($content) {
     return $content . '<p><i>Originally published on Lazy Panda.</i></p>';
 });
 

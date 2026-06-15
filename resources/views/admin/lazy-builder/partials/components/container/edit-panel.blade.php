@@ -1,4 +1,4 @@
-﻿@php
+@php
     $base = (isset($isNestedRow) && $isNestedRow) ? 'layout[editingContext.ci].columns[editingContext.coli].elements[editingContext.eli]' : 'layout[editingContext.ci]';
     $label = (isset($isNestedRow) && $isNestedRow) ? 'Nested Columns' : 'Container';
 @endphp
@@ -163,7 +163,7 @@
                         <rect x="10.5" y="4" width="3" height="14" rx="0.5"/>
                         <rect x="16" y="4" width="3" height="8" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Top</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Top</div>
                 </button>
                 <button @click="setResponsiveVal({{ $base }}.settings, 'alignItems', device, 'center')"
                         :class="getResponsiveVal({{ $base }}.settings, 'alignItems', device) === 'center' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -173,7 +173,7 @@
                         <rect x="10.5" y="5" width="3" height="14" rx="0.5"/>
                         <rect x="16" y="8" width="3" height="8" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Center</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Center</div>
                 </button>
                 <button @click="setResponsiveVal({{ $base }}.settings, 'alignItems', device, 'flex-end')"
                         :class="getResponsiveVal({{ $base }}.settings, 'alignItems', device) === 'flex-end' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -183,7 +183,7 @@
                         <rect x="10.5" y="6" width="3" height="14" rx="0.5"/>
                         <rect x="16" y="12" width="3" height="8" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Bottom</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Bottom</div>
                 </button>
                 <button @click="setResponsiveVal({{ $base }}.settings, 'alignItems', device, 'stretch')"
                         :class="getResponsiveVal({{ $base }}.settings, 'alignItems', device) === 'stretch' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -191,7 +191,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 3l3 3h-2v12h2l-3 3-3-3h2V6H9l3-3z" fill="currentColor"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
                 </button>
             </div>
         </div>
@@ -234,7 +234,7 @@
                         <rect x="4" y="13" width="10" height="3" rx="0.5"/>
                         <rect x="4" y="18" width="16" height="3" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
                 </button>
 
                 <!-- 2. Align Top (flex-start) -->
@@ -245,7 +245,7 @@
                         <rect x="5" y="4" width="14" height="2" rx="0.5"/>
                         <rect x="7" y="8" width="10" height="4" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Top</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Top</div>
                 </button>
 
                 <!-- 3. Align Center (center) -->
@@ -257,7 +257,7 @@
                         <rect x="7" y="7" width="10" height="3" rx="0.5"/>
                         <rect x="7" y="14" width="10" height="3" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Center</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Center</div>
                 </button>
 
                 <!-- 4. Align Bottom (flex-end) -->
@@ -268,7 +268,7 @@
                         <rect x="7" y="12" width="10" height="4" rx="0.5"/>
                         <rect x="5" y="18" width="14" height="2" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Bottom</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Bottom</div>
                 </button>
 
                 <!-- 5. Space Between (space-between) -->
@@ -281,7 +281,7 @@
                         <rect x="7" y="15" width="10" height="3" rx="0.5"/>
                         <rect x="5" y="19" width="14" height="2" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
                 </button>
 
                 <!-- 6. Space Around (space-around) -->
@@ -294,7 +294,7 @@
                         <rect x="7" y="13" width="10" height="2" rx="0.5"/>
                         <rect x="5" y="16" width="14" height="2" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
                 </button>
 
                 <!-- 7. Space Evenly (space-evenly) -->
@@ -306,7 +306,7 @@
                         <rect x="5" y="11" width="14" height="2" rx="0.5"/>
                         <rect x="5" y="18" width="14" height="2" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
                 </button>
             </div>
         </div>
@@ -347,7 +347,7 @@
                         <rect x="4" y="10.5" width="14" height="3" rx="0.5"/>
                         <rect x="4" y="16" width="11" height="3" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Justify Left</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Justify Left</div>
                 </button>
                 <button @click="setResponsiveVal({{ $base }}.settings, 'justifyContent', device, 'center')" 
                         :class="getResponsiveVal({{ $base }}.settings, 'justifyContent', device) === 'center' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -357,7 +357,7 @@
                         <rect x="5" y="10.5" width="14" height="3" rx="0.5"/>
                         <rect x="6.5" y="16" width="11" height="3" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Justify Center</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Justify Center</div>
                 </button>
                 <button @click="setResponsiveVal({{ $base }}.settings, 'justifyContent', device, 'flex-end')" 
                         :class="getResponsiveVal({{ $base }}.settings, 'justifyContent', device) === 'flex-end' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -367,7 +367,7 @@
                         <rect x="6" y="10.5" width="14" height="3" rx="0.5"/>
                         <rect x="9" y="16" width="11" height="3" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Justify Right</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Justify Right</div>
                 </button>
                 <button @click="setResponsiveVal({{ $base }}.settings, 'justifyContent', device, 'space-between')" 
                         :class="getResponsiveVal({{ $base }}.settings, 'justifyContent', device) === 'space-between' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -375,7 +375,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M6 16v-3h12v3l4-4-4-4v3H6V8l-4 4 4 4z" fill="currentColor"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
                 </button>
                 <button @click="setResponsiveVal({{ $base }}.settings, 'justifyContent', device, 'space-around')" 
                         :class="getResponsiveVal({{ $base }}.settings, 'justifyContent', device) === 'space-around' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -385,7 +385,7 @@
                         <rect x="4" y="11" width="16" height="3" rx="0.5"/>
                         <rect x="4" y="16" width="16" height="3" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
                 </button>
                 <button @click="setResponsiveVal({{ $base }}.settings, 'justifyContent', device, 'space-evenly')" 
                         :class="getResponsiveVal({{ $base }}.settings, 'justifyContent', device) === 'space-evenly' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -393,7 +393,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="4" y="9.5" width="16" height="5" rx="0.5"/>
                     </svg>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
                 </button>
             </div>
         </div>

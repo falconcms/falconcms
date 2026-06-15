@@ -3,9 +3,9 @@
 
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
     $visCls = '';
-    if (!($v['mobile']  ?? true)) $visCls .= ' lazy-hide-mobile';
-    if (!($v['tablet']  ?? true)) $visCls .= ' lazy-hide-tablet';
-    if (!($v['desktop'] ?? true)) $visCls .= ' lazy-hide-desktop';
+    if (!($v['mobile']  ?? true)) $visCls .= ' falcon-hide-mobile';
+    if (!($v['tablet']  ?? true)) $visCls .= ' falcon-hide-tablet';
+    if (!($v['desktop'] ?? true)) $visCls .= ' falcon-hide-desktop';
 
     $galleryId = 'lzg-' . ($el['id'] ?? str_replace('.', '', uniqid('', true)));
     $images    = array_values(array_filter($s['images'] ?? [], fn($img) => !empty($img['url'])));

@@ -16,7 +16,7 @@
             <?php do_falcon_action('lazy_before_mini_cart_item', $item, $key); ?>
             <li class="flex gap-3 py-4 px-5">
                 <a href="{{ get_falcon_permalink(['slug' => $item['slug'], 'type' => 'product']) }}" class="shrink-0 block w-16 h-16 rounded-sm overflow-hidden bg-[#eef1f5]">
-                    <img src="{{ get_lazy_image_url($item['thumbnail']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
+                    <img src="{{ get_falcon_image_url($item['thumbnail']) }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
                 </a>
                 <div class="flex-1 min-w-0">
                     {!! apply_falcon_filters('lazy_mini_cart_item_name',

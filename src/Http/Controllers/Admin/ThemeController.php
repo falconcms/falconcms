@@ -17,7 +17,7 @@ class ThemeController extends Controller
         }
 
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
-        $activeTheme = $settings['active_theme'] ?? 'lazy-theme';
+        $activeTheme = $settings['active_theme'] ?? 'falcon-theme';
 
         $themes = [];
         
@@ -128,13 +128,13 @@ class ThemeController extends Controller
 
         // Prevent deleting core theme or active theme
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
-        $activeTheme = $settings['active_theme'] ?? 'lazy-theme';
+        $activeTheme = $settings['active_theme'] ?? 'falcon-theme';
 
-        if ($slug === 'lazy-theme') {
+        if ($slug === 'falcon-theme') {
             return redirect()->back()->with('error', "The core 'Lazy Theme' cannot be deleted!");
         }
 
-        if ($slug === 'lazy-theme-child') {
+        if ($slug === 'falcon-theme-child') {
             return redirect()->back()->with('error', "The default child theme 'Lazy Theme Child' cannot be deleted!");
         }
 

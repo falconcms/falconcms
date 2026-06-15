@@ -27,18 +27,18 @@
              :class="(activeColi === coli && activeColCi === ci) ? 'opacity-100' : 'opacity-0 group-hover/col:opacity-100'">
             <div class="panel-inner shadow-xl group/panel">
                 <div class="panel-btn" @click.stop="setEditingContext('column', ci, coli)">
-                    <i class="fa fa-pen"></i><div class="lazy-tooltip">Column Options</div>
+                    <i class="fa fa-pen"></i><div class="falcon-tooltip">Column Options</div>
                 </div>
                 <div class="panel-btn" @click.stop="openColumnModal(ci, 'edit')">
-                    <i class="fa fa-plus-square"></i><div class="lazy-tooltip">Add Column</div>
+                    <i class="fa fa-plus-square"></i><div class="falcon-tooltip">Add Column</div>
                 </div>
                 
                 <div class="flex items-center overflow-hidden max-w-0 opacity-0 group-hover/panel:max-w-[200px] group-hover/panel:opacity-100 group-hover/panel:overflow-visible transition-all duration-300">
                     <div class="column-label whitespace-nowrap">@{{ formatBasisToFraction(device === 'desktop' ? column.basis : (column['basis_' + device] || column.basis)) }}</div>
-                    <div class="panel-btn" @click.stop="duplicateColumn(ci, coli)"><i class="fa fa-copy"></i><div class="lazy-tooltip">Duplicate</div></div>
-                    <div class="panel-btn" @click.stop="openLibraryModal('columns', ci, coli)"><i class="fa fa-hdd"></i><div class="lazy-tooltip">Library</div></div>
-                    <div class="panel-btn" @click.stop="container.columns.splice(coli, 1)"><i class="fa fa-trash-alt"></i><div class="lazy-tooltip">Delete</div></div>
-                    <div class="panel-btn cursor-move" draggable="true" @dragstart="onDragStart($event, 'column', ci, coli)" @dragend="onDragEnd"><i class="fa fa-arrows-alt"></i><div class="lazy-tooltip">Drag</div></div>
+                    <div class="panel-btn" @click.stop="duplicateColumn(ci, coli)"><i class="fa fa-copy"></i><div class="falcon-tooltip">Duplicate</div></div>
+                    <div class="panel-btn" @click.stop="openLibraryModal('columns', ci, coli)"><i class="fa fa-hdd"></i><div class="falcon-tooltip">Library</div></div>
+                    <div class="panel-btn" @click.stop="container.columns.splice(coli, 1)"><i class="fa fa-trash-alt"></i><div class="falcon-tooltip">Delete</div></div>
+                    <div class="panel-btn cursor-move" draggable="true" @dragstart="onDragStart($event, 'column', ci, coli)" @dragend="onDragEnd"><i class="fa fa-arrows-alt"></i><div class="falcon-tooltip">Drag</div></div>
                 </div>
             </div>
         </div>
@@ -85,45 +85,45 @@
             <div class="absolute top-0.5 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-0.5 items-start">
                 <div class="handle-purple group/chmt" @mousedown.stop.prevent="startDrag($event, 'marginTop', ci, coli)">
                     <i class="fa fa-bars"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chmt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginTop' && dragCi === ci && dragColi === coli}">@{{ column.settings.marginTop || 0 }}px</div>
+                    <div class="falcon-tooltip opacity-0 group-hover/chmt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginTop' && dragCi === ci && dragColi === coli}">@{{ column.settings.marginTop || 0 }}px</div>
                 </div>
                 <div class="handle-blue group/chpt" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateY(' + (Number(column.settings.paddingTop || 0)) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingTop', ci, coli)">
                     <i class="fa fa-bars"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chpt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingTop' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingTop || 0 }}px</div>
+                    <div class="falcon-tooltip opacity-0 group-hover/chpt:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingTop' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingTop || 0 }}px</div>
                 </div>
             </div>
 
             <div class="absolute bottom-0.5 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-0.5 items-end">
                 <div class="handle-purple group/chmb" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateY(' + (column.settings.marginBottom || 0) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'marginBottom', ci, coli)">
                     <i class="fa fa-bars"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chmb:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginBottom' && dragCi === ci && dragColi === coli}">@{{ column.settings.marginBottom || 0 }}px</div>
+                    <div class="falcon-tooltip opacity-0 group-hover/chmb:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginBottom' && dragCi === ci && dragColi === coli}">@{{ column.settings.marginBottom || 0 }}px</div>
                 </div>
                 <div class="handle-blue group/chpb"
                      @mousedown.stop.prevent="startDrag($event, 'paddingBottom', ci, coli)">
                     <i class="fa fa-bars"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chpb:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingBottom' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingBottom || 0 }}px</div>
+                    <div class="falcon-tooltip opacity-0 group-hover/chpb:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingBottom' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingBottom || 0 }}px</div>
                 </div>
             </div>
 
             <div class="absolute left-0.5 top-1/2 -translate-y-1/2 pointer-events-auto flex flex-col gap-0.5 items-start">
                 <div class="handle-purple-h group/chml" @mousedown.stop.prevent="startDrag($event, 'columnSpacingLeft', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chml:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'columnSpacingLeft' && dragCi === ci && dragColi === coli}">@{{ (column.settings.columnSpacingLeft || 0).toFixed(1) }}%</div>
+                    <div class="falcon-tooltip opacity-0 group-hover/chml:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'columnSpacingLeft' && dragCi === ci && dragColi === coli}">@{{ (column.settings.columnSpacingLeft || 0).toFixed(1) }}%</div>
                 </div>
                 <div class="handle-blue-h group/chpl" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(' + (Number(column.settings.paddingLeft || 0)) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingLeft', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chpl:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingLeft' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingLeft || 0 }}px</div>
+                    <div class="falcon-tooltip opacity-0 group-hover/chpl:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingLeft' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingLeft || 0 }}px</div>
                 </div>
             </div>
 
             <div class="absolute right-0.5 top-1/2 -translate-y-1/2 pointer-events-auto flex flex-col gap-0.5 items-end">
                 <div class="handle-purple-h group/chmr" @mousedown.stop.prevent="startDrag($event, 'columnSpacingRight', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chmr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'columnSpacingRight' && dragCi === ci && dragColi === coli}">@{{ (column.settings.columnSpacingRight || 0).toFixed(1) }}%</div>
+                    <div class="falcon-tooltip opacity-0 group-hover/chmr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'columnSpacingRight' && dragCi === ci && dragColi === coli}">@{{ (column.settings.columnSpacingRight || 0).toFixed(1) }}%</div>
                 </div>
                 <div class="handle-blue-h group/chpr" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(-' + (Number(column.settings.paddingRight || 0)) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingRight', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chpr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingRight' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingRight || 0 }}px</div>
+                    <div class="falcon-tooltip opacity-0 group-hover/chpr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'paddingRight' && dragCi === ci && dragColi === coli}">@{{ column.settings.paddingRight || 0 }}px</div>
                 </div>
             </div>
         </div>
@@ -134,7 +134,7 @@
             <button @click.stop="openElementModal(ci, coli, 'design')" 
                     class="w-8 h-8 bg-[#2271b1] text-white rounded shadow-lg flex items-center justify-center hover:scale-110 transition-all relative group/coladdbtn pointer-events-auto">
                 <i class="fa fa-plus text-base pointer-events-none"></i>
-                <div class="lazy-tooltip opacity-0 group-hover/coladdbtn:opacity-100" style="top: 100%; margin-top: 10px; display: block !important;">Add Element</div>
+                <div class="falcon-tooltip opacity-0 group-hover/coladdbtn:opacity-100" style="top: 100%; margin-top: 10px; display: block !important;">Add Element</div>
             </button>
         </div>
         
@@ -222,12 +222,12 @@
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                              @click.stop="setEditingContext('element', ci, coli, eli)">
                             <i class="fa fa-pen text-[10px]"></i>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit @{{ {heading:'Heading',title:'Title',text:'Text',image:'Image',button:'Button',video:'Video',spacer:'Spacer',html:'HTML',icon_box:'Icon Box',text_block:'Text Block',menu:'Menu',card:'Card',row:'Nested Row',post_grid:'Post Grid',post_content:'Post Content',star_rating:'Star Rating',gallery:'Gallery',special_text:'Special Text',accordion:'Accordion',tabs:'Tabs'}[el.type] || 'Element' }}</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit @{{ {heading:'Heading',title:'Title',text:'Text',image:'Image',button:'Button',video:'Video',spacer:'Spacer',html:'HTML',icon_box:'Icon Box',text_block:'Text Block',menu:'Menu',card:'Card',row:'Nested Row',post_grid:'Post Grid',post_content:'Post Content',star_rating:'Star Rating',gallery:'Gallery',special_text:'Special Text',accordion:'Accordion',tabs:'Tabs'}[el.type] || 'Element' }}</div>
                         </div>
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                              @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)">
                             <i class="fa fa-plus text-[10px]"></i>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Below</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Below</div>
                         </div>
                     </div>
 
@@ -236,22 +236,22 @@
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-move relative group/etool" 
                              draggable="true" @dragstart="onDragStart($event, 'element', ci, coli, eli)" @dragend="onDragEnd">
                             <i class="fa fa-arrows-alt text-[10px]"></i>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Move</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Move</div>
                         </div>
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                              @click.stop="duplicateElement(ci, coli, eli)">
                             <i class="fa fa-copy text-[10px]"></i>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
                         </div>
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                              @click.stop="openLibraryModal('elements', ci, coli, eli)">
                             <i class="fa fa-hdd text-[10px]"></i>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Library</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Library</div>
                         </div>
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-red-500 rounded cursor-pointer relative group/etool text-red-100 hover:text-white"
                              @click.stop="column.elements.splice(eli, 1)">
                             <i class="fa fa-trash-alt text-[10px]"></i>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
                         </div>
                     </div>
                 </div>

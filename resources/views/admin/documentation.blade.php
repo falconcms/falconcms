@@ -215,7 +215,7 @@ Route::get('/blogs', function () {
                 {{-- Section: Custom Settings & Options Pages --}}
                 <section id="custom-options">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Custom Settings & Options Pages</h2>
-                    <p class="text-gray-700 mb-6">You can extend the CMS by adding new fields to existing settings or creating entirely new admin pages via <code>config/lazy-options.php</code>.</p>
+                    <p class="text-gray-700 mb-6">You can extend the CMS by adding new fields to existing settings or creating entirely new admin pages via <code>config/falcon-options.php</code>.</p>
 
                     <div class="space-y-8">
                         {{-- Adding to Main Settings --}}
@@ -224,7 +224,7 @@ Route::get('/blogs', function () {
                             <p class="text-sm text-gray-600 mb-4">To add new inputs to the <b>General Settings</b> page, use the <code>hooks</code> array in your config.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                 <pre><code>@verbatim
-// config/lazy-options.php
+// config/falcon-options.php
 'hooks' => [
     'general-settings' => [
         'fields' => [
@@ -246,7 +246,7 @@ Route::get('/blogs', function () {
                             <p class="text-sm text-gray-600 mb-4">You can create standalone pages that appear in the sidebar using the <code>pages</code> array.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                 <pre><code>@verbatim
-// config/lazy-options.php
+// config/falcon-options.php
 'pages' => [
     'theme-settings' => [
         'title' => 'Theme Options',
@@ -410,7 +410,7 @@ Route::get('/blogs', function () {
                         <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                             <h3 class="text-lg font-bold text-blue-600 mb-3">1. Create Widget File</h3>
                             <p class="text-sm text-gray-600 mb-4">Create a new Blade file in your active theme's widget folder:</p>
-                            <code class="block bg-gray-50 p-3 rounded text-sm mb-4">/resources/views/themes/lazy-theme/widgets/about-author.blade.php</code>
+                            <code class="block bg-gray-50 p-3 rounded text-sm mb-4">/resources/views/themes/falcon-theme/widgets/about-author.blade.php</code>
                             <p class="text-sm text-gray-600 mb-4">Once created, it will automatically appear in <b>Appearance > Widgets</b> as "About Author".</p>
                         </div>
 
@@ -460,7 +460,7 @@ Route::get('/blogs', function () {
                     <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8">
                         <h3 class="text-lg font-bold text-blue-700 mb-2">Theme Functions File</h3>
                         <p class="text-sm text-blue-600 mb-4">Just like WordPress, you can create a <code>functions.php</code> file inside your theme folder to register hooks, add custom logic, or include scripts.</p>
-                        <code class="block bg-white/50 p-2 rounded text-xs border border-blue-200">/resources/views/themes/lazy-theme/functions.php</code>
+                        <code class="block bg-white/50 p-2 rounded text-xs border border-blue-200">/resources/views/themes/falcon-theme/functions.php</code>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1154,10 +1154,10 @@ add_falcon_action('lazy_order_confirmation_item_meta', function ($item, $order) 
                         {{-- Translatable Fields --}}
                         <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                             <h3 class="text-lg font-bold text-blue-600 mb-3">2. Translatable Option Fields</h3>
-                            <p class="text-sm text-gray-600 mb-4">To make a custom option field translatable, simply add <code>'translatable' => true</code> to the field definition in <code>config/lazy-options.php</code>.</p>
+                            <p class="text-sm text-gray-600 mb-4">To make a custom option field translatable, simply add <code>'translatable' => true</code> to the field definition in <code>config/falcon-options.php</code>.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                 <pre><code>@verbatim
-// config/lazy-options.php
+// config/falcon-options.php
 'fields' => [
     'footer_text' => [
         'type' => 'textarea',

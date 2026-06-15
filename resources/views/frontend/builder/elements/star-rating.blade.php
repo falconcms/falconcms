@@ -3,9 +3,9 @@
 
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
     $visCls = '';
-    if (!($v['mobile']  ?? true)) $visCls .= ' lazy-hide-mobile';
-    if (!($v['tablet']  ?? true)) $visCls .= ' lazy-hide-tablet';
-    if (!($v['desktop'] ?? true)) $visCls .= ' lazy-hide-desktop';
+    if (!($v['mobile']  ?? true)) $visCls .= ' falcon-hide-mobile';
+    if (!($v['tablet']  ?? true)) $visCls .= ' falcon-hide-tablet';
+    if (!($v['desktop'] ?? true)) $visCls .= ' falcon-hide-desktop';
 
     $rating    = (float)($s['rating']          ?? 5);
     $maxStars  = max(1, (int)($s['maxStars']   ?? 5));

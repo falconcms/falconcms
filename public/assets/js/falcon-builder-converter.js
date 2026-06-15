@@ -69,7 +69,7 @@
 
     /** Custom element defs keyed by type (mirror of PHP customDefs). */
     function customDefsJs() {
-        var d = (typeof window !== 'undefined' && window.lazyCustomElements) ? window.lazyCustomElements : {};
+        var d = (typeof window !== 'undefined' && window.falconCustomElements) ? window.falconCustomElements : {};
         var out = {};
         Object.keys(d).forEach(function (k) { var def = d[k]; if (def) out[def.type || k] = def; });
         return out;
@@ -823,7 +823,7 @@
             }
             default: {
                 // Custom element: registered via lazy_builder_elements
-                var _cdefs = (typeof window !== 'undefined' && window.lazyCustomElements) ? window.lazyCustomElements : {};
+                var _cdefs = (typeof window !== 'undefined' && window.falconCustomElements) ? window.falconCustomElements : {};
                 var _cdef  = _cdefs[type] || (Object.values(_cdefs).find(function(e) { return e.type === type; }) || null);
                 if (_cdef) {
                     var _tag    = _cdef.shortcode ? _cdef.shortcode : 'lazy_element';
@@ -992,7 +992,7 @@
         }
 
         // Also match custom element shortcode tags registered via lazy_builder_elements
-        var _cdefs = (typeof window !== 'undefined' && window.lazyCustomElements) ? window.lazyCustomElements : {};
+        var _cdefs = (typeof window !== 'undefined' && window.falconCustomElements) ? window.falconCustomElements : {};
         Object.values(_cdefs).forEach(function(def) {
             var tag = def.shortcode || def.type;
             if (!tag || /^lazy_/.test(tag)) return; // already handled above

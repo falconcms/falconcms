@@ -31,14 +31,14 @@ class InstallFalconCms extends Command
         // 3. Publish Themes
         $this->info('Step 3: Publishing themes to resources/views/themes...');
         $this->call('vendor:publish', [
-            '--tag' => 'lazy-themes',
+            '--tag' => 'falcon-themes',
             '--force' => true
         ]);
 
         // 3b. Publish child theme skeleton (no --force: never overwrite user customizations)
         $this->info('Step 3b: Publishing child theme (skipped if already exists)...');
         $this->call('vendor:publish', [
-            '--tag' => 'lazy-theme-child',
+            '--tag' => 'falcon-theme-child',
         ]);
 
         // 4. Create Storage Link
@@ -54,7 +54,7 @@ class InstallFalconCms extends Command
             'register_url' => 'lazy-registration',
             'login_theme' => 'modern',
             'registration_theme' => 'modern',
-            'active_theme' => 'lazy-theme',
+            'active_theme' => 'falcon-theme',
         ];
 
         foreach ($options as $key => $value) {

@@ -2,7 +2,7 @@
     $layout = json_decode($post->content) ?: [];
 @endphp
 
-<div class="lazy-builder-content">
+<div class="falcon-builder-content">
     @foreach($layout as $container)
         @php $cs = $container->settings; @endphp
         <section class="lazy-container" style="

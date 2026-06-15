@@ -83,11 +83,11 @@ class WishlistController extends Controller
 
     private function resolveWishlistView(): string
     {
-        $theme = get_cms_option('active_theme', 'lazy-theme');
+        $theme = get_cms_option('active_theme', 'falcon-theme');
         $app   = "themes.{$theme}.ecommerce.wishlist";
         if (view()->exists($app)) return $app;
         $pkg = "falcon-cms::themes.{$theme}.ecommerce.wishlist";
         if (view()->exists($pkg)) return $pkg;
-        return 'falcon-cms::themes.lazy-theme.ecommerce.wishlist';
+        return 'falcon-cms::themes.falcon-theme.ecommerce.wishlist';
     }
 }

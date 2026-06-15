@@ -14,14 +14,14 @@ class ShopFrontendController extends Controller
 {
     protected function resolveThemeView($view)
     {
-        $activeTheme = get_cms_option('active_theme', 'lazy-theme');
+        $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         $appView = "themes.{$activeTheme}.ecommerce.{$view}";
         if (view()->exists($appView)) return $appView;
 
         $packageView = "falcon-cms::themes.{$activeTheme}.ecommerce.{$view}";
         if (view()->exists($packageView)) return $packageView;
 
-        return "falcon-cms::themes.lazy-theme.ecommerce.{$view}";
+        return "falcon-cms::themes.falcon-theme.ecommerce.{$view}";
     }
 
     public function cart()

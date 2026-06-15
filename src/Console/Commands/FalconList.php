@@ -20,7 +20,7 @@ class FalconList extends Command
             ['falcon:update', 'Sync update: Refreshes assets, themes, and permissions.'],
             ['falcon:seed', 'Demo data: Seeds default menus and initial demo data.'],
             ['make:lazy-page', 'Scaffold: Creates a new dashboard page, controller, and menu.'],
-            ['vendor:publish --tag=lazy-themes', 'Themes only: Publishes frontend themes to resources.'],
+            ['vendor:publish --tag=falcon-themes', 'Themes only: Publishes frontend themes to resources.'],
             ['vendor:publish --tag=lazy-views', 'Views override: Publishes admin views for manual override.'],
         ];
 

@@ -15,7 +15,7 @@
             @endif
         </a>
         <div class="absolute bottom-3 right-3 z-20">
-            @include('falcon-cms::themes.lazy-theme.partials.wishlist-button', ['product' => $product])
+            @include('falcon-cms::themes.falcon-theme.partials.wishlist-button', ['product' => $product])
         </div>
     </div>
     <div class="flex flex-col flex-grow text-left px-1">

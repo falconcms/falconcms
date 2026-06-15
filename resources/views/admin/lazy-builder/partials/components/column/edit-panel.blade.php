@@ -1,4 +1,4 @@
-﻿@php 
+@php 
     $baseCol = "layout[editingContext.ci].columns[editingContext.coli]";
     $nestedCol = "layout[editingContext.ci].columns[editingContext.coli].elements[editingContext.eli].columns[editingContext.ncoli]";
     $c = "((editingContext.type === 'nested-column') ? $nestedCol : $baseCol).settings";
@@ -73,31 +73,31 @@
                             :class="(!getResponsiveVal(editingColumn.settings, 'alignment', device) || getResponsiveVal(editingColumn.settings, 'alignment', device) === 'default') ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <i class="fa fa-undo-alt text-[12px]"></i>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Default</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Default</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'alignment', device, 'flex-start')"
                             :class="getResponsiveVal(editingColumn.settings, 'alignment', device) === 'flex-start' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="3" height="10" rx="0.5"/><rect x="10.5" y="4" width="3" height="14" rx="0.5"/><rect x="16" y="4" width="3" height="8" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'alignment', device, 'center')"
                             :class="getResponsiveVal(editingColumn.settings, 'alignment', device) === 'center' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="7" width="3" height="10" rx="0.5"/><rect x="10.5" y="5" width="3" height="14" rx="0.5"/><rect x="16" y="8" width="3" height="8" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Center</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Center</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'alignment', device, 'flex-end')"
                             :class="getResponsiveVal(editingColumn.settings, 'alignment', device) === 'flex-end' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="10" width="3" height="10" rx="0.5"/><rect x="10.5" y="6" width="3" height="14" rx="0.5"/><rect x="16" y="12" width="3" height="8" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'alignment', device, 'stretch')"
                             :class="getResponsiveVal(editingColumn.settings, 'alignment', device) === 'stretch' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l3 3h-2v12h2l-3 3-3-3h2V6H9l3-3z"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
                     </button>
                 </div>
             </div>
@@ -145,19 +145,19 @@
                             :class="(!getResponsiveVal(editingColumn.settings, 'contentAlignH', device) || getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'flex-start') ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="5" width="2" height="14" rx="0.5"/><rect x="8" y="7" width="4" height="10" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Left</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Left</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignH', device, 'center')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'center' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="11" y="5" width="2" height="14" rx="0.5"/><rect x="7" y="7" width="3" height="10" rx="0.5"/><rect x="14" y="7" width="3" height="10" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Center</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Center</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignH', device, 'flex-end')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'flex-end' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="12" y="7" width="4" height="10" rx="0.5"/><rect x="18" y="5" width="2" height="14" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Right</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Right</div>
                     </button>
                 </div>
                 {{-- Vertical (justify-content) --}}
@@ -166,19 +166,19 @@
                             :class="(!getResponsiveVal(editingColumn.settings, 'contentAlignV', device) || getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'flex-start') ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="14" height="2" rx="0.5"/><rect x="7" y="8" width="10" height="4" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignV', device, 'center')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'center' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="2" rx="0.5"/><rect x="7" y="7" width="10" height="3" rx="0.5"/><rect x="7" y="14" width="10" height="3" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Middle</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Middle</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignV', device, 'flex-end')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'flex-end' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="12" width="10" height="4" rx="0.5"/><rect x="5" y="18" width="14" height="2" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
                     </button>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
@@ -186,19 +186,19 @@
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'space-between' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="14" height="2" rx="0.5"/><rect x="7" y="6" width="10" height="3" rx="0.5"/><rect x="7" y="15" width="10" height="3" rx="0.5"/><rect x="5" y="19" width="14" height="2" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignV', device, 'space-around')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'space-around' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="6" width="14" height="2" rx="0.5"/><rect x="7" y="9" width="10" height="2" rx="0.5"/><rect x="7" y="13" width="10" height="2" rx="0.5"/><rect x="5" y="16" width="14" height="2" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignV', device, 'space-evenly')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'space-evenly' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="14" height="2" rx="0.5"/><rect x="5" y="11" width="14" height="2" rx="0.5"/><rect x="5" y="18" width="14" height="2" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
                     </button>
                 </div>
             </div>
@@ -228,19 +228,19 @@
                             :class="(!getResponsiveVal(editingColumn.settings, 'contentAlignH', device) || getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'flex-start') ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="5" width="2" height="14" rx="0.5"/><rect x="8" y="7" width="4" height="10" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Start</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Start</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignH', device, 'center')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'center' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="11" y="5" width="2" height="14" rx="0.5"/><rect x="7" y="7" width="3" height="10" rx="0.5"/><rect x="14" y="7" width="3" height="10" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Center</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Center</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignH', device, 'flex-end')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'flex-end' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="12" y="7" width="4" height="10" rx="0.5"/><rect x="18" y="5" width="2" height="14" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">End</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">End</div>
                     </button>
                 </div>
                 <div class="grid grid-cols-3 gap-2 mb-4">
@@ -248,19 +248,19 @@
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'space-between' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5" width="2" height="14" rx="0.5"/><rect x="6" y="7" width="3" height="10" rx="0.5"/><rect x="15" y="7" width="3" height="10" rx="0.5"/><rect x="19" y="5" width="2" height="14" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignH', device, 'space-around')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'space-around' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="2" height="14" rx="0.5"/><rect x="9" y="7" width="2" height="10" rx="0.5"/><rect x="13" y="7" width="2" height="10" rx="0.5"/><rect x="16" y="5" width="2" height="14" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignH', device, 'space-evenly')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignH', device) === 'space-evenly' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="5" width="2" height="14" rx="0.5"/><rect x="11" y="5" width="2" height="14" rx="0.5"/><rect x="18" y="5" width="2" height="14" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
                     </button>
                 </div>
                 {{-- Vertical align-items --}}
@@ -270,25 +270,25 @@
                             :class="(!getResponsiveVal(editingColumn.settings, 'contentAlignV', device) || getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'flex-start') ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="3" height="10" rx="0.5"/><rect x="10.5" y="4" width="3" height="14" rx="0.5"/><rect x="16" y="4" width="3" height="8" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignV', device, 'center')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'center' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="7" width="3" height="10" rx="0.5"/><rect x="10.5" y="5" width="3" height="14" rx="0.5"/><rect x="16" y="8" width="3" height="8" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Middle</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Middle</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignV', device, 'flex-end')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'flex-end' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="10" width="3" height="10" rx="0.5"/><rect x="10.5" y="6" width="3" height="14" rx="0.5"/><rect x="16" y="12" width="3" height="8" rx="0.5"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
                     </button>
                     <button @click="setResponsiveVal(editingColumn.settings, 'contentAlignV', device, 'stretch')"
                             :class="getResponsiveVal(editingColumn.settings, 'contentAlignV', device) === 'stretch' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l3 3h-2v12h2l-3 3-3-3h2V6H9l3-3z" fill="currentColor"/></svg>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
+                        <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
                     </button>
                 </div>
             </div>

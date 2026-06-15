@@ -16,13 +16,13 @@
                 <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                      @click.stop="setEditingContext('nested-row', ci, coli, eli)">
                     <i class="fa fa-pen text-white text-[10px]"></i>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit Row</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit Row</div>
                 </div>
                 <!-- Add (Opens Modal) -->
                 <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                      @click.stop="openElementModal(ci, coli, 'nested', false, eli)">
                     <i class="fa fa-plus text-white text-[10px]"></i>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Nested</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Nested</div>
                 </div>
             </div>
 
@@ -32,19 +32,19 @@
                 <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-move relative group/etool"
                      draggable="true" @dragstart="onDragStart($event, 'element', ci, coli, eli)" @dragend="onDragEnd">
                     <i class="fa fa-arrows-alt text-white text-[10px]"></i>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Drag Row</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Drag Row</div>
                 </div>
                 <!-- Duplicate Row -->
                 <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                      @click.stop="duplicateNestedRow(ci, coli, eli)">
                     <i class="fa fa-copy text-white text-[10px]"></i>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
                 </div>
                 <!-- Delete Row -->
                 <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool text-white hover:text-red-100"
                      @click.stop="column.elements.splice(eli, 1)">
                     <i class="fa fa-trash-alt text-[10px]"></i>
-                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete Row</div>
+                    <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete Row</div>
                 </div>
             </div>
         </div>
@@ -85,13 +85,13 @@
                             <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                                  @click.stop="setEditingContext('nested-column', ci, coli, eli, ncoli)">
                                 <i class="fa fa-pen text-white text-[10px]"></i>
-                                <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Column Settings</div>
+                                <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Column Settings</div>
                             </div>
                             <!-- Add Nested / Element -->
                             <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                                  @click.stop="openElementModal(ci, coli, 'nested', false, eli, ncoli, null, ['design', 'nested'])">
                                 <i class="fa fa-plus text-white text-[10px]"></i>
-                                <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Content</div>
+                                <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Content</div>
                             </div>
                         </div>
 
@@ -101,25 +101,25 @@
                             <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-move relative group/etool"
                                  draggable="true" @dragstart="onDragStart($event, 'nested-column', ci, coli, eli, ncoli)" @dragend="onDragEnd">
                                 <i class="fa fa-arrows-alt text-white text-[10px]"></i>
-                                <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Drag Column</div>
+                                <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Drag Column</div>
                             </div>
                             <!-- Duplicate -->
                             <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                                  @click.stop="duplicateNestedColumn(ci, coli, eli, ncoli)">
                                 <i class="fa fa-copy text-white text-[10px]"></i>
-                                <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
+                                <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
                             </div>
                             <!-- Save -->
                             <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                                  @click.stop="openLibraryModal('nested_columns', ci, coli, eli, ncoli)">
                                 <i class="fa fa-hdd text-white text-[10px]"></i>
-                                <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Library</div>
+                                <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Library</div>
                             </div>
                             <!-- Delete -->
                             <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool text-white hover:text-red-200"
                                  @click.stop="el.columns.splice(ncoli, 1)">
                                 <i class="fa fa-trash-alt text-[10px]"></i>
-                                <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
+                                <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
                             </div>
                         </div>
                     </div>
@@ -177,16 +177,16 @@
                         <div class="handle-purple group/nchmt"
                              @mousedown.stop.prevent="startDrag($event, 'marginTop', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars"></i>
-                            <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'marginTop' && dragNcoli === ncoli">@{{ ncol.settings.marginTop || 0 }}px</div>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/nchmt:opacity-100" v-else>@{{ ncol.settings.marginTop || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'marginTop' && dragNcoli === ncoli">@{{ ncol.settings.marginTop || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/nchmt:opacity-100" v-else>@{{ ncol.settings.marginTop || 0 }}px</div>
                         </div>
                         <div class="handle-orange group/nh"
                              :class="isDragging ? '' : 'transition-all'"
                              :style="{ transform: 'translateY(' + (Number(ncol.settings.paddingTop || 0)) + 'px)' }"
                              @mousedown.stop.prevent="startDrag($event, 'paddingTop', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars"></i>
-                            <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingTop' && dragNcoli === ncoli">@{{ ncol.settings.paddingTop || 0 }}px</div>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/nh:opacity-100" v-else>@{{ ncol.settings.paddingTop || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingTop' && dragNcoli === ncoli">@{{ ncol.settings.paddingTop || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/nh:opacity-100" v-else>@{{ ncol.settings.paddingTop || 0 }}px</div>
                         </div>
                     </div>
 
@@ -196,15 +196,15 @@
                              :style="{ transform: 'translateY(' + (ncol.settings.marginBottom || 0) + 'px)' }"
                              @mousedown.stop.prevent="startDrag($event, 'marginBottom', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars"></i>
-                            <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'marginBottom' && dragNcoli === ncoli">@{{ ncol.settings.marginBottom || 0 }}px</div>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/nchmb:opacity-100" v-else>@{{ ncol.settings.marginBottom || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'marginBottom' && dragNcoli === ncoli">@{{ ncol.settings.marginBottom || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/nchmb:opacity-100" v-else>@{{ ncol.settings.marginBottom || 0 }}px</div>
                         </div>
                         <div class="handle-orange group/nh"
                              :class="isDragging ? '' : 'transition-all'"
                              @mousedown.stop.prevent="startDrag($event, 'paddingBottom', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars"></i>
-                            <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingBottom' && dragNcoli === ncoli">@{{ ncol.settings.paddingBottom || 0 }}px</div>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/nh:opacity-100" v-else>@{{ ncol.settings.paddingBottom || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingBottom' && dragNcoli === ncoli">@{{ ncol.settings.paddingBottom || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/nh:opacity-100" v-else>@{{ ncol.settings.paddingBottom || 0 }}px</div>
                         </div>
                     </div>
 
@@ -214,8 +214,8 @@
                              :style="{ transform: 'translateX(' + (Number(ncol.settings.paddingLeft || 0)) + 'px)' }"
                              @mousedown.stop.prevent="startDrag($event, 'paddingLeft', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-                            <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingLeft' && dragNcoli === ncoli">@{{ ncol.settings.paddingLeft || 0 }}px</div>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/nchl:opacity-100" v-else>@{{ ncol.settings.paddingLeft || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingLeft' && dragNcoli === ncoli">@{{ ncol.settings.paddingLeft || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/nchl:opacity-100" v-else>@{{ ncol.settings.paddingLeft || 0 }}px</div>
                         </div>
                     </div>
 
@@ -225,8 +225,8 @@
                              :style="{ transform: 'translateX(-' + (Number(ncol.settings.paddingRight || 0)) + 'px)' }"
                              @mousedown.stop.prevent="startDrag($event, 'paddingRight', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-                            <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingRight' && dragNcoli === ncoli">@{{ ncol.settings.paddingRight || 0 }}px</div>
-                            <div class="lazy-tooltip-v2 opacity-0 group-hover/nchr:opacity-100" v-else>@{{ ncol.settings.paddingRight || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingRight' && dragNcoli === ncoli">@{{ ncol.settings.paddingRight || 0 }}px</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/nchr:opacity-100" v-else>@{{ ncol.settings.paddingRight || 0 }}px</div>
                         </div>
                     </div>
                 </div>
@@ -234,7 +234,7 @@
                 <div v-if="!isPreview && ncol.elements.length === 0" class="text-center w-full flex flex-col items-center py-10">
                     <button @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli)" class="w-8 h-8 bg-[#ff9800] text-white rounded shadow-lg flex items-center justify-center hover:scale-110 transition-all relative group/nadd pointer-events-auto">
                         <i class="fa fa-plus text-base pointer-events-none"></i>
-                        <div class="lazy-tooltip-v2 !bottom-auto !top-full !mt-2 opacity-0 group-hover/nadd:opacity-100">Add Element</div>
+                        <div class="falcon-tooltip-v2 !bottom-auto !top-full !mt-2 opacity-0 group-hover/nadd:opacity-100">Add Element</div>
                     </button>
                 </div>
                 
@@ -312,12 +312,12 @@
                                     <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                                          @click.stop="setEditingContext('element', ci, coli, eli, ncoli, nestedEli)">
                                         <i class="fa fa-pen text-[10px]"></i>
-                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit</div>
+                                        <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit</div>
                                     </div>
                                     <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                                          @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli, nestedEli + 1)">
                                         <i class="fa fa-plus text-[10px]"></i>
-                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Below</div>
+                                        <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Below</div>
                                     </div>
                                 </div>
 
@@ -326,22 +326,22 @@
                                     <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-move relative group/etool" 
                                          draggable="true" @dragstart="onDragStart($event, 'element', ci, coli, eli, ncoli, nestedEli)" @dragend="onDragEnd">
                                         <i class="fa fa-arrows-alt text-[10px]"></i>
-                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Move</div>
+                                        <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Move</div>
                                     </div>
                                     <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                                          @click.stop="duplicateNestedElement(ci, coli, eli, ncoli, nestedEli)">
                                         <i class="fa fa-copy text-[10px]"></i>
-                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
+                                        <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
                                     </div>
                                     <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
                                          @click.stop="openLibraryModal('elements', ci, coli, eli, ncoli, nestedEli)">
                                         <i class="fa fa-hdd text-[10px]"></i>
-                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Library</div>
+                                        <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Library</div>
                                     </div>
                                     <div class="w-7 h-7 flex items-center justify-center hover:bg-red-500 rounded cursor-pointer relative group/etool text-red-100 hover:text-white"
                                          @click.stop="ncol.elements.splice(nestedEli, 1)">
                                         <i class="fa fa-trash-alt text-[10px]"></i>
-                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
+                                        <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
                                     </div>
                                 </div>
                             </div>

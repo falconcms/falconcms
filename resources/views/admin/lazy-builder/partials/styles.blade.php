@@ -295,7 +295,7 @@
     .panel-btn i { font-size: 14px; }
 
     /* Tooltips */
-    .lazy-tooltip {
+    .falcon-tooltip {
         position: absolute;
         top: 100%;
         right: 0;
@@ -314,7 +314,7 @@
         transition: opacity 0.2s;
         z-index: 200;
     }
-    .lazy-tooltip::after {
+    .falcon-tooltip::after {
         content: '';
         position: absolute;
         bottom: 100%;
@@ -322,7 +322,7 @@
         border: 5px solid transparent;
         border-bottom-color: #1b1b1b;
     }
-    .panel-btn:hover .lazy-tooltip {
+    .panel-btn:hover .falcon-tooltip {
         opacity: 1;
     }
 
@@ -402,7 +402,7 @@
     }
     .panel-btn-orange i { font-size: 14px; }
 
-    .lazy-tooltip-v2 {
+    .falcon-tooltip-v2 {
         position: absolute;
         bottom: 100%;
         left: 50%;
@@ -422,7 +422,7 @@
         transition: opacity 0.2s;
         z-index: 500;
     }
-    .lazy-tooltip-v2::after {
+    .falcon-tooltip-v2::after {
         content: '';
         position: absolute;
         top: 100%;
@@ -431,8 +431,8 @@
         border: 5px solid transparent;
         border-top-color: #1b1b1b;
     }
-    .panel-btn-orange:hover .lazy-tooltip-v2,
-    .handle-orange:hover .lazy-tooltip-v2 {
+    .panel-btn-orange:hover .falcon-tooltip-v2,
+    .handle-orange:hover .falcon-tooltip-v2 {
         opacity: 1 !important;
         visibility: visible !important;
     }
@@ -574,7 +574,7 @@
     .hover-effect-glow:hover { box-shadow: 0 0 25px rgba(0, 145, 234, 0.5) !important; z-index: 50 !important; }
     .hover-effect-fade:hover { opacity: 0.7 !important; }
 
-    .lazy-hide-all { display: none !important; }
+    .falcon-hide-all { display: none !important; }
 
     /* Builder-Specific Canvas Device Overrides (Simulating Media Queries) */
     .canvas-container.mobile .lazy-column,
@@ -585,18 +585,18 @@
     }
 
     /* Editing: dim hidden elements + yellow border instead of removing */
-    .builder-wrapper:not(.is-preview) .canvas-container.mobile .lazy-hide-mobile,
-    .builder-wrapper:not(.is-preview) .canvas-container.tablet .lazy-hide-tablet,
-    .builder-wrapper:not(.is-preview) .canvas-container.desktop .lazy-hide-desktop {
+    .builder-wrapper:not(.is-preview) .canvas-container.mobile .falcon-hide-mobile,
+    .builder-wrapper:not(.is-preview) .canvas-container.tablet .falcon-hide-tablet,
+    .builder-wrapper:not(.is-preview) .canvas-container.desktop .falcon-hide-desktop {
         opacity: 0.35 !important;
         outline: 2px dashed #fbbf24 !important;
         outline-offset: -2px !important;
     }
 
     /* Preview: hide completely to simulate frontend */
-    .builder-wrapper.is-preview .canvas-container.mobile .lazy-hide-mobile,
-    .builder-wrapper.is-preview .canvas-container.tablet .lazy-hide-tablet,
-    .builder-wrapper.is-preview .canvas-container.desktop .lazy-hide-desktop {
+    .builder-wrapper.is-preview .canvas-container.mobile .falcon-hide-mobile,
+    .builder-wrapper.is-preview .canvas-container.tablet .falcon-hide-tablet,
+    .builder-wrapper.is-preview .canvas-container.desktop .falcon-hide-desktop {
         display: none !important;
     }
     /* Alpha/Transparency Checkerboard */

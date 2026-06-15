@@ -1,4 +1,4 @@
-@extends('falcon-cms::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.falcon-theme.layouts.app')
 
 @section('title', 'Cart')
 
@@ -61,7 +61,7 @@
                                     </td>
                                     <td class="p-4 border border-gray-100 w-24">
                                         <a href="{{ route('frontend.show', ['typeOrSlug' => 'product', 'slug' => $item['slug']]) }}">
-                                            <img src="{{ get_lazy_image_url($item['thumbnail']) }}" alt="{{ $item['name'] }}" class="w-16 h-16 object-cover border border-gray-100">
+                                            <img src="{{ get_falcon_image_url($item['thumbnail']) }}" alt="{{ $item['name'] }}" class="w-16 h-16 object-cover border border-gray-100">
                                         </a>
                                     </td>
                                     <td class="p-4 border border-gray-100 font-bold text-primary">

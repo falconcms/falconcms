@@ -16,7 +16,7 @@ class FrontendController extends Controller
 {
     protected function resolveThemeView($view, $fallback = null)
     {
-        $activeTheme = get_cms_option('active_theme', 'lazy-theme');
+        $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         
         // 1. Try App-level theme
         $appView = "themes.{$activeTheme}.{$view}";
@@ -31,7 +31,7 @@ class FrontendController extends Controller
         }
 
         // 3. Fallback to Lazy Theme (Package)
-        $lazyView = "falcon-cms::themes.lazy-theme.{$view}";
+        $lazyView = "falcon-cms::themes.falcon-theme.{$view}";
         if (view()->exists($lazyView)) {
             return $lazyView;
         }
@@ -425,7 +425,7 @@ class FrontendController extends Controller
         $fallback = ($post->type === 'product') ? 'single-product' : $baseView;
         $view = $this->resolveThemeView($viewName, $fallback);
         
-        // 4. Final override check for slug-specific view (e.g. themes/lazy-theme/my-custom-page-slug.blade.php)
+        // 4. Final override check for slug-specific view (e.g. themes/falcon-theme/my-custom-page-slug.blade.php)
         if (preg_match('/^[a-z0-9-]+$/', $post->slug) && view()->exists($post->slug)) {
             $view = $post->slug;
         }
@@ -595,7 +595,7 @@ class FrontendController extends Controller
                 'title' => $p->title,
                 'url'   => get_falcon_permalink($p),
                 'type'  => $p->type,
-                'image' => $p->featured_image ? get_lazy_image_url($p->featured_image) : null,
+                'image' => $p->featured_image ? get_falcon_image_url($p->featured_image) : null,
             ];
         });
 

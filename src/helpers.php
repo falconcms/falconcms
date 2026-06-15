@@ -1113,7 +1113,7 @@ if (!function_exists('render_lazy_widgets')) {
         })->get();
 
         $output = '';
-        $activeTheme = get_cms_option('active_theme', 'lazy-theme');
+        $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         foreach ($widgets as $widget) {
             // Resolution order mirrors FrontendController::resolveThemeView():
             // 1. Published theme widget (non-namespaced): resources/views/themes/{theme}/widgets/{type}
@@ -1121,7 +1121,7 @@ if (!function_exists('render_lazy_widgets')) {
             // 3. Package default widget (namespaced):     falcon-cms::frontend.widgets.{type}
             $publishedThemeWidget = "themes.{$activeTheme}.widgets.{$widget->type}";
             $packageThemeWidget   = "falcon-cms::themes.{$activeTheme}.widgets.{$widget->type}";
-            $lazyThemeWidget      = "falcon-cms::themes.lazy-theme.widgets.{$widget->type}";
+            $lazyThemeWidget      = "falcon-cms::themes.falcon-theme.widgets.{$widget->type}";
             $defaultWidget        = "falcon-cms::frontend.widgets.{$widget->type}";
 
             if (view()->exists($publishedThemeWidget)) {
@@ -2877,8 +2877,8 @@ if (!function_exists('get_lazy_coupon_discount_amount')) {
     }
 }
 
-if (!function_exists('get_lazy_image_url')) {
-    function get_lazy_image_url($path, $default = 'https://via.placeholder.com/300?text=No+Image') {
+if (!function_exists('get_falcon_image_url')) {
+    function get_falcon_image_url($path, $default = 'https://via.placeholder.com/300?text=No+Image') {
         if (empty($path)) return $default;
         if (str_starts_with($path, 'http')) return $path;
         
@@ -2929,8 +2929,8 @@ if (!function_exists('lazy_render_special_menu_item')) {
             $count   = function_exists('get_falcon_cart_count') ? (int) get_falcon_cart_count() : 0;
             $cartUrl = \Illuminate\Support\Facades\Route::has('shop.cart') ? route('shop.cart') : url('/cart');
             $badge   = '<span class="cart-count-badge ' . $badgeCls . ($count > 0 ? '' : ' hidden') . '" style="' . $badgeStyle . '">' . $count . '</span>';
-            return '<li class="lazy-menu-item lazy-special-item lazy-special-cart">'
-                 . '<a href="' . e($cartUrl) . '" class="lazy-menu-link lazy-special-link" style="' . $style . $iconWrap . '" '
+            return '<li class="falcon-menu-item lazy-special-item lazy-special-cart">'
+                 . '<a href="' . e($cartUrl) . '" class="falcon-menu-link lazy-special-link" style="' . $style . $iconWrap . '" '
                  . 'onclick="if(window.LazyCart){LazyCart.open();return false;}" aria-label="' . e($label ?: 'Cart') . '">'
                  . $icon . $badge
                  . '</a></li>';
@@ -2940,8 +2940,8 @@ if (!function_exists('lazy_render_special_menu_item')) {
             $count   = function_exists('lazy_wishlist_count') ? (int) lazy_wishlist_count() : 0;
             $wishUrl = \Illuminate\Support\Facades\Route::has('shop.wishlist') ? route('shop.wishlist') : url('/wishlist');
             $badge   = '<span class="wishlist-count-badge ' . $badgeCls . ($count > 0 ? '' : ' hidden') . '" style="' . $badgeStyle . '">' . $count . '</span>';
-            return '<li class="lazy-menu-item lazy-special-item lazy-special-wishlist">'
-                 . '<a href="' . e($wishUrl) . '" class="lazy-menu-link lazy-special-link" style="' . $style . $iconWrap . '" aria-label="' . e($label ?: 'Wishlist') . '">'
+            return '<li class="falcon-menu-item lazy-special-item lazy-special-wishlist">'
+                 . '<a href="' . e($wishUrl) . '" class="falcon-menu-link lazy-special-link" style="' . $style . $iconWrap . '" aria-label="' . e($label ?: 'Wishlist') . '">'
                  . $icon . $badge
                  . '</a></li>';
         }
@@ -2953,8 +2953,8 @@ if (!function_exists('lazy_render_special_menu_item')) {
                 . "if(open){var i=p.querySelector('input');if(i){i.focus();}}return false;";
         $panelStyle = 'display:none;position:absolute;top:100%;right:0;margin-top:8px;z-index:9999;'
                     . 'background:#fff;border:1px solid #e5e7eb;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:10px;min-width:240px;';
-        return '<li class="lazy-menu-item lazy-special-item lazy-special-search" style="position:relative;">'
-             . '<a href="#" class="lazy-menu-link lazy-special-link" style="' . $style . $iconWrap . '" '
+        return '<li class="falcon-menu-item lazy-special-item lazy-special-search" style="position:relative;">'
+             . '<a href="#" class="falcon-menu-link lazy-special-link" style="' . $style . $iconWrap . '" '
              . 'onclick="' . e($toggle) . '" aria-label="' . e($label ?: 'Search') . '">'
              . $icon
              . '</a>'

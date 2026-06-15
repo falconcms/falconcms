@@ -33,10 +33,10 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 
         $liClass = (($hasChildren || $hasMegaMenu) ? 'has-children' : '') . ($isActive ? ' active' : '');
         $liExtra = $hasMegaMenu ? ' data-mega-trigger="' . e($item->id) . '"' : '';
-        echo '<li class="lazy-menu-item ' . $liClass . '"' . $liExtra . '>';
+        echo '<li class="falcon-menu-item ' . $liClass . '"' . $liExtra . '>';
 
         $targetAttr = (!empty($item->target) && $item->target === '_blank') ? ' target="_blank" rel="noopener noreferrer"' : '';
-        echo '<a href="' . ($item->url ?? '#') . '"' . $targetAttr . ' class="lazy-menu-link" style="' . $style . '">';
+        echo '<a href="' . ($item->url ?? '#') . '"' . $targetAttr . ' class="falcon-menu-link" style="' . $style . '">';
         // Optional icon + "show only icon" support (set via menu builder → Options).
         // Icon position (left/right) and gap come from the Menu element settings.
         $itemIcon = $item->icon ?? '';
@@ -56,7 +56,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 
         if ($hasMegaMenu) {
             // Always show a down-chevron for mega menu triggers
-            echo '<i class="fa fa-chevron-down lazy-menu-arrow"></i>';
+            echo '<i class="fa fa-chevron-down falcon-menu-arrow"></i>';
         } elseif($hasChildren) {
             $showArrow = false;
             if ($isMobile) {
@@ -76,7 +76,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             if($showArrow) {
                 $subSubDir = $s['subSubMenuDirection'] ?? 'right';
                 $arrowIcon = $isMobile ? 'fa-chevron-down' : ($isSubmenu ? ($subSubDir === 'left' ? 'fa-chevron-left' : 'fa-chevron-right') : 'fa-chevron-down');
-                echo '<i class="fa ' . $arrowIcon . ' lazy-menu-arrow"></i>';
+                echo '<i class="fa ' . $arrowIcon . ' falcon-menu-arrow"></i>';
             }
         }
         echo '</a>';
@@ -84,7 +84,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         // Desktop + mega menu: skip submenu (panel rendered separately)
         // Mobile or no mega menu: always render standard submenu
         if ($hasChildren && (!$hasMegaMenu || $isMobile)) {
-            echo '<ul class="lazy-submenu ' . ($isMobile ? 'mobile-submenu' : '') . '">';
+            echo '<ul class="falcon-submenu ' . ($isMobile ? 'mobile-submenu' : '') . '">';
             renderLazyMenuItemsResponsive($children, $grouped, $mainStyle, $subStyle, $isMobile, $elId, $settings, $megaMenuLayouts);
             echo '</ul>';
         }
@@ -111,9 +111,9 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     // Visibility
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
     $visibilityClasses = '';
-    if (!($v['mobile']  ?? true)) $visibilityClasses .= ' lazy-hide-mobile';
-    if (!($v['tablet']  ?? true)) $visibilityClasses .= ' lazy-hide-tablet';
-    if (!($v['desktop'] ?? true)) $visibilityClasses .= ' lazy-hide-desktop';
+    if (!($v['mobile']  ?? true)) $visibilityClasses .= ' falcon-hide-mobile';
+    if (!($v['tablet']  ?? true)) $visibilityClasses .= ' falcon-hide-tablet';
+    if (!($v['desktop'] ?? true)) $visibilityClasses .= ' falcon-hide-desktop';
 
     // CSS Class & ID
     $customClass = $s['cssClass'] ?? '';
@@ -286,7 +286,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
                      data-width-px="{{ $__mmPxValue }}"
                      style="position:absolute;top:100%;left:0;z-index:9999;pointer-events:none;opacity:0;visibility:hidden;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,0.12);border-top:1px solid #e5e7eb;box-sizing:border-box;">
                     <div style="width:100%;box-sizing:border-box;">
-                        @include('themes.lazy-theme.partials.mega-menu', ['megaMenuData' => $megaMenuLayouts[$__topItem->mega_menu_id]])
+                        @include('themes.falcon-theme.partials.mega-menu', ['megaMenuData' => $megaMenuLayouts[$__topItem->mega_menu_id]])
                     </div>
                 </div>
                 @endif
@@ -318,7 +318,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
                 </button>
             @endif
             
-            <nav class="lazy-mobile-nav {{ $s['mobileMenuExpandMode'] ?? 'full-width-static' }} side-{{ $s['mobileMenuSidebarSide'] ?? 'left' }} {{ ($bp === 'none' || ($s['mobileMenuMode'] ?? 'collapsed') === 'expanded') ? 'active' : '' }}" id="nav-{{ $elId }}">
+            <nav class="falcon-mobile-nav {{ $s['mobileMenuExpandMode'] ?? 'full-width-static' }} side-{{ $s['mobileMenuSidebarSide'] ?? 'left' }} {{ ($bp === 'none' || ($s['mobileMenuMode'] ?? 'collapsed') === 'expanded') ? 'active' : '' }}" id="nav-{{ $elId }}">
                 @if(($s['mobileMenuExpandMode'] ?? '') === 'sidebar')
                     <div class="lazy-sidebar-header" style="background: {{ $s['mobileMenuBgColor'] ?? '#fff' }}; border-bottom: 1px solid {{ $s['mobileMenuSeparatorColor'] ?? '#eee' }}; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between;">
                         <span class="font-bold uppercase text-xs tracking-widest">{{ $s['mobileMenuTriggerText'] ?: 'Menu' }}</span>
@@ -350,7 +350,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         justify-content: {{ $s['justification'] ?? 'flex-start' }};
         gap: {{ $layout === 'horizontal' ? (in_array($s['justification'] ?? '', ['space-between', 'space-around', 'space-evenly']) ? '0' : ($s['itemSpacing'] ?? 25) . 'px') : ($s['itemSpacing'] ?? 10) . 'px' }};
     }
-    .menu-{{ $elId }} .lazy-menu-item { position: relative; }
+    .menu-{{ $elId }} .falcon-menu-item { position: relative; }
     .menu-{{ $elId }} .lazy-mega-panel {
         top: calc(100% + {{ $submenuSpace }}px) !important;
         transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
@@ -366,10 +366,10 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             ? "border-style: solid !important; border-width: {$bth}px {$brh}px {$bbh}px {$blh}px !important; border-color: {$bch} !important;"
             : '';
     @endphp
-    .menu-{{ $elId }} .lazy-menu-link:hover { color: {{ $s['itemColorHover'] ?? '#0091ea' }} !important; background-color: {{ $s['itemBgColorHover'] ?? 'transparent' }} !important; {{ $hoverBorderStyle }} }
+    .menu-{{ $elId }} .falcon-menu-link:hover { color: {{ $s['itemColorHover'] ?? '#0091ea' }} !important; background-color: {{ $s['itemBgColorHover'] ?? 'transparent' }} !important; {{ $hoverBorderStyle }} }
     
     /* Arrow Styling & Visibility */
-    .menu-{{ $elId }} .lazy-menu-arrow {
+    .menu-{{ $elId }} .falcon-menu-arrow {
         transition: transform 0.3s ease, opacity 0.3s ease, color 0.3s ease;
         width: {{ $s['arrowWidth'] ?? '10' }}{{ is_numeric($s['arrowWidth'] ?? '10') ? 'px' : '' }};
         height: {{ $s['arrowHeight'] ?? '10' }}{{ is_numeric($s['arrowHeight'] ?? '10') ? 'px' : '' }};
@@ -381,8 +381,8 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     }
 
     /* Active/Hover Arrow State */
-    .menu-{{ $elId }} .lazy-menu-item:hover > .lazy-menu-link .lazy-menu-arrow,
-    .menu-{{ $elId }} .lazy-menu-item.active > .lazy-menu-link .lazy-menu-arrow {
+    .menu-{{ $elId }} .falcon-menu-item:hover > .falcon-menu-link .falcon-menu-arrow,
+    .menu-{{ $elId }} .falcon-menu-item.active > .falcon-menu-link .falcon-menu-arrow {
         opacity: 1;
         transform: rotate(180deg);
         @if($s['arrowScopeObj']['active'] ?? false)
@@ -391,9 +391,9 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     }
 
     /* Submenu Arrow Direction */
-    .menu-{{ $elId }} .lazy-submenu .fa-chevron-right.lazy-menu-arrow { transform: rotate(-90deg); }
-    .menu-{{ $elId }} .lazy-submenu .fa-chevron-left.lazy-menu-arrow { transform: rotate(90deg); }
-    .menu-{{ $elId }} .lazy-submenu .lazy-menu-item:hover > .lazy-menu-link .lazy-menu-arrow { transform: rotate(0deg); }
+    .menu-{{ $elId }} .falcon-submenu .fa-chevron-right.falcon-menu-arrow { transform: rotate(-90deg); }
+    .menu-{{ $elId }} .falcon-submenu .fa-chevron-left.falcon-menu-arrow { transform: rotate(90deg); }
+    .menu-{{ $elId }} .falcon-submenu .falcon-menu-item:hover > .falcon-menu-link .falcon-menu-arrow { transform: rotate(0deg); }
 
     @php
         $subDir    = $s['submenuDirection'] ?? 'right';
@@ -424,7 +424,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         $mobileSepColor = !empty($s['mobileMenuSeparatorColor']) ? $s['mobileMenuSeparatorColor'] : 'rgba(0,0,0,0.08)';
     @endphp
 
-    .menu-{{ $elId }} .lazy-submenu {
+    .menu-{{ $elId }} .falcon-submenu {
         position: absolute; top: 100%;
         left: {{ $subLeft }}; right: {{ $subRight }};
         min-width: {{ $s['submenuMinWidth'] ?? '200px' }}; max-width: {{ $s['submenuMaxWidth'] ?? '300px' }};
@@ -433,16 +433,16 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         border-radius: {{ $s['submenuBorderRadiusTopLeft'] ?? 4 }}px;
         transform: {{ $subInitTransform }};
     }
-    .menu-{{ $elId }} .lazy-submenu .lazy-submenu {
+    .menu-{{ $elId }} .falcon-submenu .falcon-submenu {
         top: 0px !important; left: {{ $subSubLeft }} !important; right: {{ $subSubRight }} !important;
         transform: {{ $subSubHiddenTransform }} !important; transition: none !important;
     }
-    .menu-{{ $elId }} .lazy-submenu .lazy-menu-link { border-bottom: 1px solid {{ $subSepColor }} !important; }
+    .menu-{{ $elId }} .falcon-submenu .falcon-menu-link { border-bottom: 1px solid {{ $subSepColor }} !important; }
     /* Remove bottom border only from the last item of the FIRST-LEVEL submenu (L2), not nested (L3+) */
-    .menu-{{ $elId }} .lazy-desktop-nav .lazy-menu-list > .lazy-menu-item > .lazy-submenu > .lazy-menu-item:last-child > .lazy-menu-link { border-bottom: none !important; }
-    .menu-{{ $elId }} .lazy-submenu .lazy-menu-link:hover { color: {{ $s['submenuTextColorHover'] ?? '#0091ea' }} !important; background: rgba(0,0,0,0.02); }
-    .menu-{{ $elId }} .lazy-menu-item:hover > .lazy-submenu { opacity: 1; visibility: visible; transform: {{ $subHoverTransform }}; }
-    .menu-{{ $elId }} .lazy-submenu .lazy-menu-item:hover > .lazy-submenu {
+    .menu-{{ $elId }} .lazy-desktop-nav .lazy-menu-list > .falcon-menu-item > .falcon-submenu > .falcon-menu-item:last-child > .falcon-menu-link { border-bottom: none !important; }
+    .menu-{{ $elId }} .falcon-submenu .falcon-menu-link:hover { color: {{ $s['submenuTextColorHover'] ?? '#0091ea' }} !important; background: rgba(0,0,0,0.02); }
+    .menu-{{ $elId }} .falcon-menu-item:hover > .falcon-submenu { opacity: 1; visibility: visible; transform: {{ $subHoverTransform }}; }
+    .menu-{{ $elId }} .falcon-submenu .falcon-menu-item:hover > .falcon-submenu {
         opacity: 1 !important; visibility: visible !important;
         transform: {{ $subSubShownTransform }} !important;
     }
@@ -450,21 +450,21 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     /* MOBILE STYLES */
     .menu-{{ $elId }} .lazy-mobile-wrapper { display: none; width: 100%; position: relative; }
     .menu-{{ $elId }} .lazy-mobile-trigger { border: none; cursor: pointer; display: flex; align-items: center; border-radius: 4px; box-sizing: border-box; -webkit-appearance: none; appearance: none; line-height: 1; }
-    .menu-{{ $elId }} .lazy-mobile-nav { 
+    .menu-{{ $elId }} .falcon-mobile-nav { 
         display: none; background: {{ $s['mobileMenuBgColor'] ?? '#fff' }}; width: 100%; 
         border-top: 1px solid {{ $mobileSepColor }};
     }
-    .menu-{{ $elId }} .lazy-mobile-nav.active { display: block; }
+    .menu-{{ $elId }} .falcon-mobile-nav.active { display: block; }
     
     /* SIDEBAR MODE */
-    .menu-{{ $elId }} .lazy-mobile-nav.sidebar {
+    .menu-{{ $elId }} .falcon-mobile-nav.sidebar {
         position: fixed; top: 0; bottom: 0; width: 280px; max-width: 85%; z-index: 10001; 
         display: block !important; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 0 50px rgba(0,0,0,0.15); overflow-y: auto; height: 100vh;
     }
-    .menu-{{ $elId }} .lazy-mobile-nav.sidebar.side-left { left: 0; transform: translateX(-100%); }
-    .menu-{{ $elId }} .lazy-mobile-nav.sidebar.side-right { right: 0; transform: translateX(100%); }
-    .menu-{{ $elId }} .lazy-mobile-nav.sidebar.active { transform: translateX(0); }
+    .menu-{{ $elId }} .falcon-mobile-nav.sidebar.side-left { left: 0; transform: translateX(-100%); }
+    .menu-{{ $elId }} .falcon-mobile-nav.sidebar.side-right { right: 0; transform: translateX(100%); }
+    .menu-{{ $elId }} .falcon-mobile-nav.sidebar.active { transform: translateX(0); }
     
     .menu-{{ $elId }} .lazy-mobile-overlay {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); 
@@ -474,15 +474,15 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     
     .menu-{{ $elId }} .lazy-mobile-list { list-style: none; padding: 0; margin: 0; }
     @if(($s['mobileSeparatorEnabled'] ?? 'yes') !== 'no')
-    .menu-{{ $elId }} .lazy-mobile-nav .lazy-menu-link { border-bottom: 1px solid {{ $mobileSepColor }} !important; }
-    .menu-{{ $elId }} .lazy-mobile-nav .mobile-submenu .lazy-menu-link { border-bottom: 1px solid {{ $mobileSepColor }} !important; }
-    .menu-{{ $elId }} .lazy-mobile-nav .mobile-submenu .mobile-submenu .lazy-menu-link { border-bottom: 1px solid {{ $mobileSepColor }} !important; }
+    .menu-{{ $elId }} .falcon-mobile-nav .falcon-menu-link { border-bottom: 1px solid {{ $mobileSepColor }} !important; }
+    .menu-{{ $elId }} .falcon-mobile-nav .mobile-submenu .falcon-menu-link { border-bottom: 1px solid {{ $mobileSepColor }} !important; }
+    .menu-{{ $elId }} .falcon-mobile-nav .mobile-submenu .mobile-submenu .falcon-menu-link { border-bottom: 1px solid {{ $mobileSepColor }} !important; }
     /* Only remove border from the very last top-level item — submenu items always keep their dividers */
-    .menu-{{ $elId }} .lazy-mobile-nav .lazy-mobile-list > .lazy-menu-item:last-child > .lazy-menu-link { border-bottom: none !important; }
+    .menu-{{ $elId }} .falcon-mobile-nav .lazy-mobile-list > .falcon-menu-item:last-child > .falcon-menu-link { border-bottom: none !important; }
     @else
-    .menu-{{ $elId }} .lazy-mobile-nav .lazy-menu-link { border-bottom: none !important; }
+    .menu-{{ $elId }} .falcon-mobile-nav .falcon-menu-link { border-bottom: none !important; }
     @endif
-    .menu-{{ $elId }} .lazy-mobile-nav .lazy-menu-link:hover { color: {{ $s['mobileMenuTextColorHover'] ?? '#0091ea' }} !important; background: {{ $s['mobileMenuBgColorHover'] ?? '#f8f9fa' }} !important; }
+    .menu-{{ $elId }} .falcon-mobile-nav .falcon-menu-link:hover { color: {{ $s['mobileMenuTextColorHover'] ?? '#0091ea' }} !important; background: {{ $s['mobileMenuBgColorHover'] ?? '#f8f9fa' }} !important; }
     
     .menu-{{ $elId }} .mobile-submenu {
         display: none;
@@ -497,7 +497,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         visibility: visible !important;
         opacity: 1 !important;
     }
-    .menu-{{ $elId }} .lazy-mobile-nav .lazy-submenu {
+    .menu-{{ $elId }} .falcon-mobile-nav .falcon-submenu {
         position: static !important;
         transform: none !important;
         left: auto !important; right: auto !important; top: auto !important;
@@ -512,23 +512,23 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         padding: 0 !important;
         margin: 0 !important;
     }
-    .menu-{{ $elId }} .lazy-mobile-nav .lazy-menu-item:hover > .lazy-submenu { transform: none !important; }
+    .menu-{{ $elId }} .falcon-mobile-nav .falcon-menu-item:hover > .falcon-submenu { transform: none !important; }
     @if(($s['mobileMenuIndentSubmenus'] ?? 'on') === 'on')
-        .menu-{{ $elId }} .mobile-submenu .lazy-menu-link { padding-left: 35px !important; }
-        .menu-{{ $elId }} .mobile-submenu .mobile-submenu .lazy-menu-link { padding-left: 55px !important; }
-        .menu-{{ $elId }} .mobile-submenu .mobile-submenu .mobile-submenu .lazy-menu-link { padding-left: 75px !important; }
+        .menu-{{ $elId }} .mobile-submenu .falcon-menu-link { padding-left: 35px !important; }
+        .menu-{{ $elId }} .mobile-submenu .mobile-submenu .falcon-menu-link { padding-left: 55px !important; }
+        .menu-{{ $elId }} .mobile-submenu .mobile-submenu .mobile-submenu .falcon-menu-link { padding-left: 75px !important; }
     @endif
     
-    .menu-{{ $elId }} .lazy-menu-item.active > .mobile-submenu,
-    .menu-{{ $elId }} .lazy-menu-item:hover > .mobile-submenu { display: block !important; }
+    .menu-{{ $elId }} .falcon-menu-item.active > .mobile-submenu,
+    .menu-{{ $elId }} .falcon-menu-item:hover > .mobile-submenu { display: block !important; }
     
-    .menu-{{ $elId }} .lazy-mobile-nav .lazy-menu-arrow {
+    .menu-{{ $elId }} .falcon-mobile-nav .falcon-menu-arrow {
         transition: 0.3s !important;
     }
-    .menu-{{ $elId }} .lazy-menu-item.active > .lazy-menu-link .lazy-menu-arrow {
+    .menu-{{ $elId }} .falcon-menu-item.active > .falcon-menu-link .falcon-menu-arrow {
         transform: rotate(180deg) !important;
     }
-    .menu-{{ $elId }} .lazy-menu-link span {
+    .menu-{{ $elId }} .falcon-menu-link span {
         font-size: inherit !important;
         letter-spacing: inherit !important;
         line-height: inherit !important;
@@ -536,8 +536,8 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         font-family: inherit !important;
         font-weight: inherit !important;
     }
-    .menu-{{ $elId }} .lazy-menu-item.active > .mobile-submenu,
-    .menu-{{ $elId }} .lazy-menu-item:hover > .mobile-submenu { display: block !important; }
+    .menu-{{ $elId }} .falcon-menu-item.active > .mobile-submenu,
+    .menu-{{ $elId }} .falcon-menu-item:hover > .mobile-submenu { display: block !important; }
     
     /* MOBILE MENU MODE: EXPANDED */
     @if(($s['mobileMenuMode'] ?? 'collapsed') === 'expanded')
@@ -554,14 +554,14 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         }
     @endif
     
-    .menu-{{ $elId }} .lazy-menu-item.active > .lazy-menu-link .lazy-menu-arrow { transform: rotate(180deg); }
+    .menu-{{ $elId }} .falcon-menu-item.active > .falcon-menu-link .falcon-menu-arrow { transform: rotate(180deg); }
 
     /* RESPONSIVE BREAKPOINT */
     @media (max-width: {{ ($bp === 'desktop' || $bp === '1024') ? '9999' : (($bp === 'tablet' || $bp === '768') ? '1023' : (($bp === 'mobile' || $bp === '640') ? '767' : '0')) }}px) {
         .menu-{{ $elId }} .lazy-desktop-nav { display: none !important; }
         .menu-{{ $elId }} .lazy-mobile-wrapper { display: flex !important; flex-wrap: wrap; }
         @if(($s['mobileMenuExpandMode'] ?? 'full-width-static') === 'full-width-absolute')
-            .menu-{{ $elId }} .lazy-mobile-nav { position: absolute; top: 100%; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+            .menu-{{ $elId }} .falcon-mobile-nav { position: absolute; top: 100%; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         @endif
     }
     
@@ -628,7 +628,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 
         // Accordion for Mobile
         @if(($s['mobileMenuMode'] ?? 'collapsed') !== 'expanded')
-            const itemsWithChildren = nav.querySelectorAll('.has-children > .lazy-menu-link');
+            const itemsWithChildren = nav.querySelectorAll('.has-children > .falcon-menu-link');
             itemsWithChildren.forEach(link => {
                 link.addEventListener('click', function(e) {
                     const parent = this.parentElement;

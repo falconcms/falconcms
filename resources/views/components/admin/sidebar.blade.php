@@ -156,7 +156,7 @@
 
         {{-- Dynamic Options Pages Grouped by 'group' --}}
         @php 
-            $customPages = config('lazy-options.pages') ?? []; 
+            $customPages = config('falcon-options.pages') ?? []; 
             $groupedPages = [];
             foreach($customPages as $slug => $page) {
                 $group = $page['group'] ?? 'Custom Options';

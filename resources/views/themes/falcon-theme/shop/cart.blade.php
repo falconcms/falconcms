@@ -1,4 +1,4 @@
-@extends('falcon-cms::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.falcon-theme.layouts.app')
 
 @section('content')
 <div class="bg-white py-12 min-h-screen font-sans">
@@ -43,7 +43,7 @@
                                         <a href="{{ route('shop.cart.remove', $key) }}" class="text-gray-400 hover:text-red-500 text-xl">&times;</a>
                                     </td>
                                     <td class="p-4 border border-gray-100 w-24">
-                                        <img src="{{ get_lazy_image_url($item['thumbnail']) }}" alt="{{ $item['name'] }}" class="w-16 h-16 object-cover border border-gray-100">
+                                        <img src="{{ get_falcon_image_url($item['thumbnail']) }}" alt="{{ $item['name'] }}" class="w-16 h-16 object-cover border border-gray-100">
                                     </td>
                                     <td class="p-4 border border-gray-100 font-bold text-primary">
                                         <a href="#">{{ $item['name'] }}</a>

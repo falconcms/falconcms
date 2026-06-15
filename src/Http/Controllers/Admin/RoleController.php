@@ -130,7 +130,7 @@ class RoleController extends Controller
         }
 
         // 3. Add Custom Options Pages from config
-        $customPages = config('lazy-options.pages') ?? [];
+        $customPages = config('falcon-options.pages') ?? [];
         if (!empty($customPages)) {
             $dynamicPermissions['Custom Options'] = [];
             foreach ($customPages as $slug => $page) {

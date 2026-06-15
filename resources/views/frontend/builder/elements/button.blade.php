@@ -21,9 +21,9 @@
 
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
     $visibilityClasses = '';
-    if (!($v['mobile']  ?? true)) $visibilityClasses .= ' lazy-hide-mobile';
-    if (!($v['tablet']  ?? true)) $visibilityClasses .= ' lazy-hide-tablet';
-    if (!($v['desktop'] ?? true)) $visibilityClasses .= ' lazy-hide-desktop';
+    if (!($v['mobile']  ?? true)) $visibilityClasses .= ' falcon-hide-mobile';
+    if (!($v['tablet']  ?? true)) $visibilityClasses .= ' falcon-hide-tablet';
+    if (!($v['desktop'] ?? true)) $visibilityClasses .= ' falcon-hide-desktop';
 
     $bpSm  = (int) get_cms_option('theme_small_screen_breakpoint',  '800');
     $bpMed = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');

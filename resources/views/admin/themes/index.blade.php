@@ -90,7 +90,7 @@
                                 @endif
                                 
                                 {{-- Delete Button (Only for inactive and non-core themes) --}}
-                                @if($theme['slug'] !== 'lazy-theme')
+                                @if($theme['slug'] !== 'falcon-theme')
                                     <form id="delete-theme-{{ $theme['slug'] }}" action="{{ route('admin.themes.destroy', $theme['slug']) }}" method="POST">
                                         @csrf
                                         @method('DELETE')

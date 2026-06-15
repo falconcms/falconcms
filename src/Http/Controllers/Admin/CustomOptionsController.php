@@ -11,7 +11,7 @@ class CustomOptionsController extends Controller
 {
     public function index($slug)
     {
-        $config = config('lazy-options.pages.' . $slug);
+        $config = config('falcon-options.pages.' . $slug);
 
         if (!$config) {
             abort(404, 'Options page not found.');
@@ -32,7 +32,7 @@ class CustomOptionsController extends Controller
 
     public function update(Request $request, $slug)
     {
-        $config = config('lazy-options.pages.' . $slug);
+        $config = config('falcon-options.pages.' . $slug);
 
         if (!$config) {
             abort(404);

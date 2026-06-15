@@ -1,4 +1,4 @@
-﻿{{-- 1. Layout --}}
+{{-- 1. Layout --}}
 <div>
     <label class="text-[12px] font-bold text-[#333] block mb-2">Layout</label>
     <div class="grid grid-cols-4 gap-1.5">
@@ -248,7 +248,7 @@
                 <rect x="10.5" y="4" width="3" height="14" rx="0.5"/>
                 <rect x="16" y="4" width="3" height="8" rx="0.5"/>
             </svg>
-            <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Top</div>
+            <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Top</div>
         </button>
         <button @click="editingElement.settings.card_alignment = 'center'"
                 :class="editingElement.settings.card_alignment === 'center' ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -258,7 +258,7 @@
                 <rect x="10.5" y="5" width="3" height="14" rx="0.5"/>
                 <rect x="16" y="8" width="3" height="8" rx="0.5"/>
             </svg>
-            <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Center</div>
+            <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Center</div>
         </button>
         <button @click="editingElement.settings.card_alignment = 'flex-end'"
                 :class="(editingElement.settings.card_alignment === 'flex-end' || editingElement.settings.card_alignment === 'end' || editingElement.settings.card_alignment === 'right') ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -268,7 +268,7 @@
                 <rect x="10.5" y="6" width="3" height="14" rx="0.5"/>
                 <rect x="16" y="12" width="3" height="8" rx="0.5"/>
             </svg>
-            <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Bottom</div>
+            <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Bottom</div>
         </button>
         <button @click="editingElement.settings.card_alignment = 'stretch'"
                 :class="(editingElement.settings.card_alignment === 'stretch' || editingElement.settings.card_alignment === '') ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
@@ -276,7 +276,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 3l3 3h-2v12h2l-3 3-3-3h2V6H9l3-3z"/>
             </svg>
-            <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
+            <div class="falcon-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
         </button>
     </div>
 </div>

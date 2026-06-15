@@ -1,15 +1,15 @@
 <style>
     @media (max-width: {{ get_cms_option('theme_small_screen_breakpoint', '800') }}px) { 
-        .lazy-hide-mobile { display: none !important; } 
+        .falcon-hide-mobile { display: none !important; } 
         .lazy-column {
             flex-basis: 100% !important;
             max-width: 100% !important;
             width: 100% !important;
         }
     }
-    @media (min-width: {{ (int)get_cms_option('theme_small_screen_breakpoint', '800') + 1 }}px) and (max-width: {{ get_cms_option('theme_medium_screen_breakpoint', '1100') }}px) { .lazy-hide-tablet { display: none !important; } }
-    @media (min-width: {{ (int)get_cms_option('theme_medium_screen_breakpoint', '1100') + 1 }}px) { .lazy-hide-desktop { display: none !important; } }
-    .lazy-hide-all { display: none !important; }
+    @media (min-width: {{ (int)get_cms_option('theme_small_screen_breakpoint', '800') + 1 }}px) and (max-width: {{ get_cms_option('theme_medium_screen_breakpoint', '1100') }}px) { .falcon-hide-tablet { display: none !important; } }
+    @media (min-width: {{ (int)get_cms_option('theme_medium_screen_breakpoint', '1100') + 1 }}px) { .falcon-hide-desktop { display: none !important; } }
+    .falcon-hide-all { display: none !important; }
 </style>
 @php
     $s     = $column['settings'] ?? [];
@@ -48,11 +48,11 @@
     // Device Visibility (Responsive)
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
     $visibilityClasses = '';
-    if (!($v['mobile']  ?? true)) $visibilityClasses .= ' lazy-hide-mobile';
-    if (!($v['tablet']  ?? true)) $visibilityClasses .= ' lazy-hide-tablet';
-    if (!($v['desktop'] ?? true)) $visibilityClasses .= ' lazy-hide-desktop';
+    if (!($v['mobile']  ?? true)) $visibilityClasses .= ' falcon-hide-mobile';
+    if (!($v['tablet']  ?? true)) $visibilityClasses .= ' falcon-hide-tablet';
+    if (!($v['desktop'] ?? true)) $visibilityClasses .= ' falcon-hide-desktop';
     if (!($v['mobile'] ?? true) && !($v['tablet'] ?? true) && !($v['desktop'] ?? true)) {
-        $visibilityClasses = ' lazy-hide-all';
+        $visibilityClasses = ' falcon-hide-all';
     }
 
     $containerAlign = $container['settings']['alignItems'] ?? 'stretch';
@@ -644,9 +644,9 @@
                             // Master wrapper attributes
                             $__ceV   = $el['settings']['visibility'] ?? ['mobile'=>true,'tablet'=>true,'desktop'=>true];
                             $__ceVis = '';
-                            if (($__ceV['mobile']  ?? true) === false) $__ceVis .= ' lazy-hide-mobile';
-                            if (($__ceV['tablet']  ?? true) === false) $__ceVis .= ' lazy-hide-tablet';
-                            if (($__ceV['desktop'] ?? true) === false) $__ceVis .= ' lazy-hide-desktop';
+                            if (($__ceV['mobile']  ?? true) === false) $__ceVis .= ' falcon-hide-mobile';
+                            if (($__ceV['tablet']  ?? true) === false) $__ceVis .= ' falcon-hide-tablet';
+                            if (($__ceV['desktop'] ?? true) === false) $__ceVis .= ' falcon-hide-desktop';
                             $__ceCssClass = $el['settings']['cssClass'] ?? '';
                             $__ceCssId    = $el['settings']['cssId']    ?? '';
                         @endphp
@@ -657,7 +657,7 @@
                                  data-anim-easing="{{ $el['settings']['anim_easing'] ?? 'ease' }}">
                         @endif
                         {{-- Master wrapper: builder handles visibility, class, id here --}}
-                        <div class="lazy-builder-element lazy-custom-block w-full{{ $__ceVis ? ' '.$__ceVis : '' }}{{ $__ceCssClass ? ' '.$__ceCssClass : '' }}"
+                        <div class="falcon-builder-element falcon-custom-block w-full{{ $__ceVis ? ' '.$__ceVis : '' }}{{ $__ceCssClass ? ' '.$__ceCssClass : '' }}"
                              @if($__ceCssId) id="{{ $__ceCssId }}" @endif>
                             @if($__tpl)
                                 @include($__tpl, ['el' => $el, 's' => $el['settings'] ?? []])

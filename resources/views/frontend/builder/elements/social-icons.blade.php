@@ -5,9 +5,9 @@
     // Device visibility (this element renders via its own view, so it must apply the classes itself).
     $vis = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
     $visibilityClasses = '';
-    if (($vis['mobile']  ?? true) === false) $visibilityClasses .= ' lazy-hide-mobile';
-    if (($vis['tablet']  ?? true) === false) $visibilityClasses .= ' lazy-hide-tablet';
-    if (($vis['desktop'] ?? true) === false) $visibilityClasses .= ' lazy-hide-desktop';
+    if (($vis['mobile']  ?? true) === false) $visibilityClasses .= ' falcon-hide-mobile';
+    if (($vis['tablet']  ?? true) === false) $visibilityClasses .= ' falcon-hide-tablet';
+    if (($vis['desktop'] ?? true) === false) $visibilityClasses .= ' falcon-hide-desktop';
 
     $boxSize  = max(0, (int)($s['boxSize']  ?? 38));
     $iconSize = max(0, (int)($s['iconSize'] ?? 18));
