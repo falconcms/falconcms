@@ -11,7 +11,7 @@
                 prose-headings:text-slate-800 prose-headings:font-semibold
                 prose-a:text-primary prose-a:no-underline hover:prose-a:underline
                 prose-strong:text-slate-700 prose-li:my-0.5">
-        {!! lazy_sanitize_html($content) !!}
+        {!! falcon_sanitize_html($content) !!}
     </div>
 </div>
 @endif

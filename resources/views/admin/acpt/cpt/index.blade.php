@@ -173,7 +173,7 @@
             }
 
             if (action === 'delete') {
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: 'Delete Permanently',
                     message: `Are you sure you want to permanently delete ${selected.length} custom post types? This action cannot be undone and will delete all associated data!`,
                     confirmText: 'Delete Permanently',
@@ -194,7 +194,7 @@
         };
 
         window.confirmForceDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Permanently',
                 message: 'Are you sure you want to permanently delete this custom post type? This action cannot be undone and all associated content will be lost!',
                 confirmText: 'Delete Permanently',

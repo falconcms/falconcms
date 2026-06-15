@@ -637,7 +637,7 @@ class PostController extends Controller
         }
 
         // Interpret the publish date in the CMS timezone → store UTC, and decide status on the server.
-        $postData = lazy_normalize_publish($postData);
+        $postData = falcon_normalize_publish($postData);
 
         if ($type === 'product') {
             $productData = apply_falcon_filters('lazy_admin_before_save_product', $productData, null, $request);
@@ -1093,7 +1093,7 @@ class PostController extends Controller
         Revision::snapshot($post, 'revision');
 
         // Interpret the publish date in the CMS timezone → store UTC, and decide status on the server.
-        $postData = lazy_normalize_publish($postData);
+        $postData = falcon_normalize_publish($postData);
 
         if ($post->type === 'product') {
             $productData = apply_falcon_filters('lazy_admin_before_save_product', $productData, $post, $request);

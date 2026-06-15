@@ -199,7 +199,7 @@
             });
 
             window.confirmThemeDelete = async function(slug) {
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: 'Delete Theme',
                     message: 'Are you sure you want to delete this theme? This action cannot be undone and will remove all theme files from the server.',
                     confirmText: 'Delete Theme',

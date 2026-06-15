@@ -61,7 +61,7 @@
                                     <span class="text-heading">{{ falcon_price_format($sd->price ?? 0) }}</span>
                                 @endif
                             </div>
-                            @if(lazy_is_variable_product($product))
+                            @if(falcon_is_variable_product($product))
                                 <a href="{{ get_falcon_permalink($product) }}" class="mt-auto block w-full text-center bg-primary text-white px-4 py-2 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition">Select Options</a>
                             @else
                                 <form action="{{ route('shop.cart.add') }}" method="POST" class="mt-auto">

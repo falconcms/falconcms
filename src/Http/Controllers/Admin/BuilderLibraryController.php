@@ -28,7 +28,7 @@ class BuilderLibraryController extends Controller
 
     private function getPostCards(): array
     {
-        $raw = get_cms_option('lazy_post_cards', null);
+        $raw = get_cms_option('falcon_post_cards', null);
         if ($raw) {
             $decoded = json_decode($raw, true);
             if (is_array($decoded)) return $decoded;
@@ -160,7 +160,7 @@ class BuilderLibraryController extends Controller
             'created_at' => now()->format('Y-m-d H:i'),
         ];
         array_unshift($cards, $card);
-        update_cms_option('lazy_post_cards', json_encode($cards));
+        update_cms_option('falcon_post_cards', json_encode($cards));
         return response()->json(['success' => true, 'card' => $card]);
     }
 
@@ -193,7 +193,7 @@ class BuilderLibraryController extends Controller
                 break;
             }
         }
-        update_cms_option('lazy_post_cards', json_encode($cards));
+        update_cms_option('falcon_post_cards', json_encode($cards));
         return response()->json(['success' => true]);
     }
 
@@ -204,7 +204,7 @@ class BuilderLibraryController extends Controller
         foreach ($cards as &$card) {
             if ($card['id'] === $id) { $card['name'] = $request->input('name'); break; }
         }
-        update_cms_option('lazy_post_cards', json_encode($cards));
+        update_cms_option('falcon_post_cards', json_encode($cards));
         return response()->json(['success' => true]);
     }
 
@@ -212,7 +212,7 @@ class BuilderLibraryController extends Controller
     {
         $cards = $this->getPostCards();
         $cards = array_values(array_filter($cards, fn($c) => $c['id'] !== $id));
-        update_cms_option('lazy_post_cards', json_encode($cards));
+        update_cms_option('falcon_post_cards', json_encode($cards));
         return response()->json(['success' => true]);
     }
 

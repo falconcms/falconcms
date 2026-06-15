@@ -89,7 +89,7 @@
             @endif
         </div>
         <div class="lazy-accordion-content" style="{{ $contentStyle }}{{ !$isOpen ? 'display:none;' : '' }}">
-            {!! lazy_sanitize_html($item['content'] ?? '') !!}
+            {!! falcon_sanitize_html($item['content'] ?? '') !!}
         </div>
     </div>
     @endforeach

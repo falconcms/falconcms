@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - {{ get_cms_option('site_title', 'FalconCMS') }}</title>
-    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>
     <style>
         body { background: #f0f0f1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; margin: 0; }
         .flex-fallback { display: flex; align-items: center; justify-content: center; min-height: 100vh; }

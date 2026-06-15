@@ -68,7 +68,7 @@
     </div>
     <script>
         window.confirmRoleDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Role',
                 message: 'Are you sure you want to delete this role? This action cannot be undone and may affect users assigned to this role.',
                 confirmText: 'Delete Role',

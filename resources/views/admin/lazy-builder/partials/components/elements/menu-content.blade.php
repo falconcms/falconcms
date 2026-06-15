@@ -1,4 +1,4 @@
-﻿<div class="space-y-8">
+<div class="space-y-8">
     <!-- General Settings Header -->
     <div class="flex items-center gap-2 pb-2 border-b border-slate-50">
         <div class="w-1.5 h-4 bg-[#2271b1] rounded-full"></div>
@@ -14,7 +14,7 @@
             <select v-model="editingElement.settings.menuId" 
                     class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea] bg-white">
                 <option value="">Select a menu...</option>
-                <option v-for="(name, id) in lazyMenusList" :value="id">@{{ name }}</option>
+                <option v-for="(name, id) in falconMenusList" :value="id">@{{ name }}</option>
             </select>
         </div>
 

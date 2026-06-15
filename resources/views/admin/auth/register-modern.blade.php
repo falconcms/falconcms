@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account — {{ get_cms_option('site_title', 'FalconCMS') }}</title>
-    <link href="{{ asset('vendor/cms-dashboard/css/inter.css') }}" rel="stylesheet">
+    <link href="{{ asset('vendor/falcon-cms/css/inter.css') }}" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {

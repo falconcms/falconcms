@@ -1,7 +1,7 @@
 <x-falcon-cms::layouts.admin>
     <x-slot name="title">Form Builder - {{ $form->title }}</x-slot>
 
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/pickr.classic.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/pickr.classic.min.css') }}">
     <style>
         .field-item { transition: box-shadow 0.2s, border-color 0.15s; }
         .field-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -228,7 +228,7 @@
                 <div class="pt-2 border-t border-gray-100">
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Shortcode</p>
                     <div class="flex items-stretch gap-1.5">
-                        <code id="form-shortcode-text" class="flex-1 block bg-gray-100 text-blue-700 px-3 py-2 rounded-lg text-xs break-all">[lazy_form slug="{{ $form->slug }}"]</code>
+                        <code id="form-shortcode-text" class="flex-1 block bg-gray-100 text-blue-700 px-3 py-2 rounded-lg text-xs break-all">[falcon_form slug="{{ $form->slug }}"]</code>
                         <button onclick="copyShortcode(this)" title="Copy shortcode"
                                 class="shrink-0 flex items-center justify-center px-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors">
                             <span class="material-symbols-outlined text-[15px]">content_copy</span>
@@ -239,7 +239,7 @@
         </div>
     </div>
 
-    <script src="{{ asset('vendor/cms-dashboard/js/sortable.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/sortable.min.js') }}"></script>
     <script>
     let fields     = @json($form->fields ?? []);
     let selectedId = null;
@@ -643,7 +643,7 @@
     dropZone.addEventListener('drop',      () => dropZone.classList.remove('drag-over'));
     </script>
 
-    <script src="{{ asset('vendor/cms-dashboard/js/pickr.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/pickr.min.js') }}"></script>
     <script>
     (function () {
         function initFormColorPickers() {

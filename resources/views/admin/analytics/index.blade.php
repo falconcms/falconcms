@@ -190,7 +190,7 @@
     </div>
 
     @push('scripts')
-    <script src="{{ asset('vendor/cms-dashboard/js/chart.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/chart.min.js') }}"></script>
     <script>
         const palette = @json($palette);
 

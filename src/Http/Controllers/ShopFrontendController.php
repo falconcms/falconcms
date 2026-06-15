@@ -279,7 +279,7 @@ class ShopFrontendController extends Controller
 
             // 4. Product/Category Restrictions
             $cart = Session::get('falcon_cart', []);
-            $discount = get_lazy_coupon_discount_amount($coupon, $cart);
+            $discount = get_falcon_coupon_discount_amount($coupon, $cart);
             if ($discount <= 0) {
                 return $this->couponResponse(false, 'This coupon is not valid for the products in your cart.', $request);
             }
@@ -295,7 +295,7 @@ class ShopFrontendController extends Controller
             
             Session::put('falcon_coupons', $appliedCoupons);
             Session::save();
-            Session::forget('lazy_coupon'); // Ensure old singular key is gone
+            Session::forget('falcon_coupon'); // Ensure old singular key is gone
 
             return $this->couponResponse(true, 'Coupon applied successfully!', $request);
 
@@ -339,7 +339,7 @@ class ShopFrontendController extends Controller
         
         $html = '';
         foreach ($coupons as $coupon) {
-            $discount = get_lazy_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
+            $discount = get_falcon_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
             $currentSubtotal -= $discount;
 
             if ($discount > 0) {
@@ -374,7 +374,7 @@ class ShopFrontendController extends Controller
         } else {
             Session::forget('falcon_coupons');
         }
-        Session::forget('lazy_coupon');
+        Session::forget('falcon_coupon');
         
         return redirect()->back()->with('success', 'Coupon removed successfully!');
     }
@@ -417,7 +417,7 @@ class ShopFrontendController extends Controller
     {
         $coupons = Session::get('falcon_coupons', []);
         if (empty($coupons)) {
-            Session::forget('lazy_coupon');
+            Session::forget('falcon_coupon');
             return;
         }
 
@@ -448,7 +448,7 @@ class ShopFrontendController extends Controller
 
             // Check Product/Category Restrictions
             $cart = Session::get('falcon_cart', []);
-            $discount = get_lazy_coupon_discount_amount($couponData, $cart);
+            $discount = get_falcon_coupon_discount_amount($couponData, $cart);
             if ($discount <= 0) continue;
 
             $newCoupons[] = [
@@ -463,13 +463,13 @@ class ShopFrontendController extends Controller
         // Wipe if coupons are disabled globally
         if (get_shop_option('shop_enable_coupons', '1') !== '1') {
             Session::forget('falcon_coupons');
-            Session::forget('lazy_coupon');
+            Session::forget('falcon_coupon');
             Session::save();
             return;
         }
 
         Session::put('falcon_coupons', $newCoupons);
-        Session::forget('lazy_coupon');
+        Session::forget('falcon_coupon');
 
         // Prune if multiple not allowed anymore
         $isMultipleAllowed = (int)get_cms_option('shop_coupon_stacking_policy', '1') === 1;
@@ -540,9 +540,9 @@ class ShopFrontendController extends Controller
             'shipping_country' => 'Shipping Country',
         ];
 
-        // Collect extra fields registered via lazy_billing_fields / lazy_shipping_fields hooks
-        $allHookFields   = array_merge(lazy_get_checkout_fields('billing'), lazy_get_checkout_fields('shipping'));
-        $standardNames   = lazy_standard_checkout_field_names();
+        // Collect extra fields registered via falcon_billing_fields / lazy_shipping_fields hooks
+        $allHookFields   = array_merge(falcon_get_checkout_fields('billing'), falcon_get_checkout_fields('shipping'));
+        $standardNames   = falcon_standard_checkout_field_names();
 
         foreach ($allHookFields as $hf) {
             $hfName = $hf['name'] ?? '';
@@ -621,7 +621,7 @@ class ShopFrontendController extends Controller
         }
 
         $shippingCountry = $request->has('ship_to_different_address') ? $request->shipping_country : $request->billing_country;
-        Session::put('lazy_shipping_country', $shippingCountry);
+        Session::put('falcon_shipping_country', $shippingCountry);
 
         $subtotal = get_falcon_cart_subtotal();
         $shipping = get_falcon_cart_shipping($shippingCountry);
@@ -630,7 +630,7 @@ class ShopFrontendController extends Controller
 
         // Coupon Logic for Multiple Coupons
         $coupons = Session::get('falcon_coupons', []);
-        $single = Session::get('lazy_coupon');
+        $single = Session::get('falcon_coupon');
         if ($single && empty($coupons)) $coupons[] = $single;
 
         $couponCodes = [];
@@ -757,7 +757,7 @@ class ShopFrontendController extends Controller
         }
 
         // Online gateways: send the customer to the gateway to pay before finalizing.
-        $gateways = lazy_enabled_payment_gateways();
+        $gateways = falcon_enabled_payment_gateways();
         $gateway  = $gateways[$order->payment_method] ?? null;
 
         if ($gateway && $gateway['type'] === 'online') {
@@ -837,7 +837,7 @@ class ShopFrontendController extends Controller
         $this->generateDownloadTokens($order);
 
         Session::forget('falcon_cart');
-        Session::forget('lazy_coupon');
+        Session::forget('falcon_coupon');
         Session::forget('falcon_coupons');
     }
 
@@ -1478,7 +1478,7 @@ class ShopFrontendController extends Controller
     public function updateShipping(\Illuminate\Http\Request $request)
     {
         $country = $request->input('country');
-        \Illuminate\Support\Facades\Session::put('lazy_shipping_country', $country);
+        \Illuminate\Support\Facades\Session::put('falcon_shipping_country', $country);
         $shippingDetails = get_falcon_cart_shipping_details($country);
         $shippingCost = $shippingDetails['cost'];
         $total = get_falcon_cart_total();

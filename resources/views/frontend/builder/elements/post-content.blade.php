@@ -68,7 +68,7 @@
      @if($cssId) id="{{ $cssId }}" @endif
      style="{{ $wrapStyle }}">
     @if($contentDisplay === 'full' && !$stripHtml)
-        <div style="{{ $typoStyle }}">{!! lazy_sanitize_html($output) !!}</div>
+        <div style="{{ $typoStyle }}">{!! falcon_sanitize_html($output) !!}</div>
     @else
         <p style="{{ $typoStyle }}">{{ $output }}</p>
     @endif

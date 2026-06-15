@@ -40,7 +40,7 @@
                                     @elseif($sf['type'] === 'icon')
                                         <i class="{{ $sv }}"></i>
                                     @else
-                                        <div>{!! lazy_sanitize_html((string)$sv) !!}</div>
+                                        <div>{!! falcon_sanitize_html((string)$sv) !!}</div>
                                     @endif
                                 @endif
                             @endforeach
@@ -51,7 +51,7 @@
 
         @elseif(in_array($it['kind'], ['text', 'textfield', 'textarea', 'wysiwyg']))
             @if($it['value'] !== null && $it['value'] !== '')
-                <div class="{{ $cls }}" @if($sty) style="{!! $sty !!}" @endif>{!! lazy_sanitize_html((string)$it['value']) !!}</div>
+                <div class="{{ $cls }}" @if($sty) style="{!! $sty !!}" @endif>{!! falcon_sanitize_html((string)$it['value']) !!}</div>
             @endif
 
         @elseif(in_array($it['kind'], ['date', 'number', 'slider', 'select', 'radio', 'checkbox', 'url', 'link']))

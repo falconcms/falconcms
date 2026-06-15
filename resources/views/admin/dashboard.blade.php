@@ -357,7 +357,7 @@
 
     @push('scripts')
     @if(auth()->user()->hasPermission('access_dashboard'))
-    <script src="{{ asset('vendor/cms-dashboard/js/chart.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/chart.min.js') }}"></script>
     <script>
         const ctx = document.getElementById('impressionChart').getContext('2d');
         new Chart(ctx, {

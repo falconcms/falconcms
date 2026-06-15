@@ -1,5 +1,5 @@
 <x-falcon-cms::layouts.admin title="Menus">
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/font-awesome.all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
     <x-falcon-cms::admin.delete-modal />
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Menus</h1>
@@ -449,7 +449,7 @@
                                      display:flex; align-items:center; gap:6px; }
     </style>
 
-    <script src="{{ asset('vendor/cms-dashboard/js/sortable.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/sortable.min.js') }}"></script>
     <script>
     /* ──────────────────────────────────
        Data: flat array, each item has depth (0|1|2)
@@ -820,7 +820,7 @@
     }
 
     async function doDelete() {
-        const confirmed = await window.lazyConfirm({
+        const confirmed = await window.falconConfirm({
             title: 'Delete Menu',
             message: 'Are you sure you want to delete this menu permanently? This action cannot be undone.',
             confirmText: 'Delete Menu',

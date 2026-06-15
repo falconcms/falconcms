@@ -18,14 +18,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/font-awesome.all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/material-symbols.css') }}" />
 
-    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>
 
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/pickr.classic.min.css') }}"/>
-    <script src="{{ asset('vendor/cms-dashboard/js/pickr.min.js') }}"></script>
-    <script src="{{ asset('vendor/cms-dashboard/js/tinymce.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/pickr.classic.min.css') }}"/>
+    <script src="{{ asset('vendor/falcon-cms/js/pickr.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/tinymce.min.js') }}"></script>
     <script>if(window.tinymce) tinymce.baseURL='https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';</script>
 
     <script>
@@ -61,11 +61,11 @@
                 $menuNamesJson = json_encode($menuNames);
             } catch(\Exception $e) { $menuDataJson='{}'; $menuNamesJson='{}'; }
         @endphp
-        window.lazyMenuData  = {!! $menuDataJson !!};
-        window.lazyMenusList = {!! $menuNamesJson !!};
-        @php $builderPostCards = json_decode(get_cms_option('lazy_post_cards','[]'),true) ?: []; @endphp
-        window.lazyPostCards = {!! json_encode($builderPostCards) !!};
-        window.lazyPostCardMode = true;
+        window.falconMenuData  = {!! $menuDataJson !!};
+        window.falconMenusList = {!! $menuNamesJson !!};
+        @php $builderPostCards = json_decode(get_cms_option('falcon_post_cards','[]'),true) ?: []; @endphp
+        window.falconPostCards = {!! json_encode($builderPostCards) !!};
+        window.falconPostCardMode = true;
         @php
             $__pcTaxonomies   = [
                 ['slug' => 'category', 'name' => 'Category', 'type' => 'built_in'],
@@ -88,10 +88,10 @@
                 }
             } catch (\Exception $e) { /* built-ins already set */ }
         @endphp
-        window.lazyTaxonomies    = {!! json_encode($__pcTaxonomies) !!};
-        window.lazyTaxonomyTerms = {!! json_encode($__pcTaxTerms) !!};
-        window.lazyCptTaxonomies = {!! json_encode($__pcCptTaxonomies) !!};
-        window.lazyCptList       = [];
+        window.falconTaxonomies    = {!! json_encode($__pcTaxonomies) !!};
+        window.falconTaxonomyTerms = {!! json_encode($__pcTaxTerms) !!};
+        window.falconCptTaxonomies = {!! json_encode($__pcCptTaxonomies) !!};
+        window.falconCptList       = [];
     </script>
 
     @include('falcon-cms::admin.falcon-builder.partials.styles')
@@ -129,7 +129,7 @@
 
     @include('falcon-cms::components.admin.media-modal')
 
-    <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/vue.global.js') }}"></script>
 
     @include('falcon-cms::admin.falcon-builder.partials.scripts')
 </body>

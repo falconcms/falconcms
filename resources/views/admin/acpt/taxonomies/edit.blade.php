@@ -112,7 +112,7 @@
         });
 
         window.confirmDeleteTaxonomy = async function() {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Taxonomy',
                 message: 'Are you sure you want to delete this taxonomy? This will remove all associated terms and their relationships with posts. This action cannot be undone.',
                 confirmText: 'Delete Taxonomy',

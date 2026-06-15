@@ -200,7 +200,7 @@
             }
 
             if (action === 'delete') {
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: 'Bulk Delete Categories',
                     message: `Are you sure you want to delete ${selected.length} selected categories? This action cannot be undone.`,
                     confirmText: 'Delete',
@@ -219,7 +219,7 @@
         };
 
         window.confirmDeleteCategory = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Category',
                 message: 'Are you sure you want to delete this category? This action cannot be undone.',
                 confirmText: 'Delete',

@@ -160,7 +160,7 @@ window.LazyCart = (function () {
         .then(res => res.json())
         .then(data => {
             toast(data.message || 'Item removed from cart.', 'success');
-            window.dispatchEvent(new CustomEvent('lazyCartItemRemoved', { detail: { key, ...data } }));
+            window.dispatchEvent(new CustomEvent('falconCartItemRemoved', { detail: { key, ...data } }));
             return refresh();
         })
         .catch(() => {

@@ -109,7 +109,7 @@
     <div id="{{ $elemId }}-panel-{{ $idx }}"
          class="lazy-tab-panel"
          style="{{ $panelStyle }}{{ !$isActive ? 'display:none;' : '' }}">
-        {!! lazy_sanitize_html($item['content'] ?? '') !!}
+        {!! falcon_sanitize_html($item['content'] ?? '') !!}
     </div>
     @endforeach
 

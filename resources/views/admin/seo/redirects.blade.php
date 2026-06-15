@@ -169,7 +169,7 @@
             }
 
             if (action === 'delete') {
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: 'Delete Redirects',
                     message: `Are you sure you want to permanently delete ${selected.length} redirects? This action cannot be undone.`,
                     confirmText: 'Delete Redirects',
@@ -185,7 +185,7 @@
         };
 
         window.confirmRedirectDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Redirect',
                 message: 'Are you sure you want to permanently delete this redirect? This action cannot be undone.',
                 confirmText: 'Delete Redirect',

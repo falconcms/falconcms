@@ -14,21 +14,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Icons -->
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/font-awesome.all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/material-symbols.css') }}" />
 
     <!-- Tailwind -->
-    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>
 
     <!-- Pickr Color Picker -->
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/pickr.classic.min.css') }}"/>
-    <script src="{{ asset('vendor/cms-dashboard/js/pickr.min.js') }}"></script>
-    <script src="{{ asset('vendor/cms-dashboard/js/tinymce.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/pickr.classic.min.css') }}"/>
+    <script src="{{ asset('vendor/falcon-cms/js/pickr.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/tinymce.min.js') }}"></script>
     <script>if(window.tinymce) tinymce.baseURL='https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';</script>
 
     <!-- Tom Select -->
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/tom-select.default.min.css') }}">
-    <script src="{{ asset('vendor/cms-dashboard/js/tom-select.complete.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/tom-select.default.min.css') }}">
+    <script src="{{ asset('vendor/falcon-cms/js/tom-select.complete.min.js') }}"></script>
     <style>
         .ts-wrapper { font-size: 13px; }
         .ts-control { border-color: #e2e8f0 !important; border-radius: 6px !important; padding: 4px 8px !important; min-height: 36px; box-shadow: none !important; }
@@ -102,12 +102,12 @@
                 $menuNamesJson = '{}';
             }
         @endphp
-        window.lazyMenuData = {!! $menuDataJson !!};
-        window.lazyMenusList = {!! $menuNamesJson !!};
+        window.falconMenuData = {!! $menuDataJson !!};
+        window.falconMenusList = {!! $menuNamesJson !!};
         @php
-            $builderPostCards = json_decode(get_cms_option('lazy_post_cards', '[]'), true) ?: [];
+            $builderPostCards = json_decode(get_cms_option('falcon_post_cards', '[]'), true) ?: [];
         @endphp
-        window.lazyPostCards = {!! json_encode($builderPostCards, JSON_HEX_TAG) !!};
+        window.falconPostCards = {!! json_encode($builderPostCards, JSON_HEX_TAG) !!};
         @php
             try {
                 $__previewPosts = get_falcon_posts(['limit' => 6, 'order' => 'desc', 'orderby' => 'created_at']);
@@ -120,7 +120,7 @@
                 })->values()->toArray();
             } catch(\Exception $e) { $__previewPostsData = []; }
         @endphp
-        window.lazyRecentPosts = {!! json_encode($__previewPostsData, JSON_HEX_TAG) !!};
+        window.falconRecentPosts = {!! json_encode($__previewPostsData, JSON_HEX_TAG) !!};
         @php
             // Built-ins are declared outside try so they survive any DB exception
             $__taxonomies   = [
@@ -139,8 +139,8 @@
                 }
             } catch (\Exception $e) { /* built-ins already set above */ }
         @endphp
-        window.lazyTaxonomies    = {!! json_encode($__taxonomies, JSON_HEX_TAG) !!};
-        window.lazyTaxonomyTerms = {!! json_encode($__taxonomyTerms, JSON_HEX_TAG) !!};
+        window.falconTaxonomies    = {!! json_encode($__taxonomies, JSON_HEX_TAG) !!};
+        window.falconTaxonomyTerms = {!! json_encode($__taxonomyTerms, JSON_HEX_TAG) !!};
         @php
             try {
                 $__cptList = \FalconCms\Core\Models\PostType::where('is_builtin', false)
@@ -162,8 +162,8 @@
                 }
             } catch (\Exception $e) { $__cptList = []; $__cptTaxonomies = ['post' => ['category','tag']]; }
         @endphp
-        window.lazyCptList        = {!! json_encode($__cptList, JSON_HEX_TAG) !!};
-        window.lazyCptTaxonomies  = {!! json_encode($__cptTaxonomies, JSON_HEX_TAG) !!};
+        window.falconCptList        = {!! json_encode($__cptList, JSON_HEX_TAG) !!};
+        window.falconCptTaxonomies  = {!! json_encode($__cptTaxonomies, JSON_HEX_TAG) !!};
     </script>
 
     @include('falcon-cms::admin.falcon-builder.partials.styles')
@@ -208,8 +208,8 @@
     @include('falcon-cms::components.admin.media-modal')
 
     <!-- Scripts (Corrected Paths) -->
-    <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
-    <script src="{{ asset('vendor/cms-dashboard/js/purify.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/vue.global.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/purify.min.js') }}"></script>
 
     @include('falcon-cms::admin.falcon-builder.partials.scripts')
 </body>

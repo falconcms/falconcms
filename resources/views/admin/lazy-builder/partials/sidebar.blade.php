@@ -994,26 +994,26 @@
                                         No taxonomies configured for this post type.
                                     </p>
                                     <!-- Include/Exclude dropdowns only for Terms source -->
-                                    <template v-if="editingElement.settings.content_source === 'terms' && editingElement.settings.taxonomy_slug && lazyTaxonomyTerms[editingElement.settings.taxonomy_slug]?.length">
+                                    <template v-if="editingElement.settings.content_source === 'terms' && editingElement.settings.taxonomy_slug && falconTaxonomyTerms[editingElement.settings.taxonomy_slug]?.length">
                                         <div class="mt-3">
                                             <label class="text-[12px] font-bold text-[#333] flex items-center gap-1.5 mb-1.5">
-                                                Include @{{ lazyTaxonomies.find(t => t.slug === editingElement.settings.taxonomy_slug)?.name || 'Terms' }}
+                                                Include @{{ falconTaxonomies.find(t => t.slug === editingElement.settings.taxonomy_slug)?.name || 'Terms' }}
                                                 <svg v-if="cardPreviewCache[editingElement.id]?.loading" class="animate-spin h-3 w-3 text-[#0091ea]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
                                             </label>
                                             <select :key="'tsinc-' + editingElement.settings.taxonomy_slug"
                                                     v-tomselect="{ value: editingElement.settings.taxonomy_include, onChange: v => { editingElement.settings.taxonomy_include = v; fetchCardPreview(editingElement); }, placeholder: 'Select to include…' }"
                                                     multiple class="w-full">
-                                                <option v-for="term in lazyTaxonomyTerms[editingElement.settings.taxonomy_slug]" :key="term.id" :value="term.slug">@{{ term.name }}</option>
+                                                <option v-for="term in falconTaxonomyTerms[editingElement.settings.taxonomy_slug]" :key="term.id" :value="term.slug">@{{ term.name }}</option>
                                             </select>
                                         </div>
                                         <div class="mt-3">
                                             <label class="text-[12px] font-bold text-[#333] block mb-1.5">
-                                                Exclude @{{ lazyTaxonomies.find(t => t.slug === editingElement.settings.taxonomy_slug)?.name || 'Terms' }}
+                                                Exclude @{{ falconTaxonomies.find(t => t.slug === editingElement.settings.taxonomy_slug)?.name || 'Terms' }}
                                             </label>
                                             <select :key="'tsexc-' + editingElement.settings.taxonomy_slug"
                                                     v-tomselect="{ value: editingElement.settings.taxonomy_exclude, onChange: v => { editingElement.settings.taxonomy_exclude = v; fetchCardPreview(editingElement); }, placeholder: 'Select to exclude…' }"
                                                     multiple class="w-full">
-                                                <option v-for="term in lazyTaxonomyTerms[editingElement.settings.taxonomy_slug]" :key="term.id" :value="term.slug">@{{ term.name }}</option>
+                                                <option v-for="term in falconTaxonomyTerms[editingElement.settings.taxonomy_slug]" :key="term.id" :value="term.slug">@{{ term.name }}</option>
                                             </select>
                                         </div>
                                     </template>
@@ -1027,7 +1027,7 @@
                                         <option value="post">Posts</option>
                                         <option value="page">Pages</option>
                                         <option value="product">Products</option>
-                                        <option v-for="cpt in lazyCptList" :key="cpt.slug" :value="cpt.slug">@{{ cpt.name }}</option>
+                                        <option v-for="cpt in falconCptList" :key="cpt.slug" :value="cpt.slug">@{{ cpt.name }}</option>
                                     </select>
                                 </div>
 
@@ -2863,7 +2863,7 @@
                             @foreach($customElements ?? [] as $type => $custEl)
                             @if($type === 'text_block' || $type === 'button' || $type === 'image') @continue @endif
                             @php
-                                $__allFields     = lazy_normalize_custom_fields($custEl);
+                                $__allFields     = falcon_normalize_custom_fields($custEl);
                                 $__generalFields = array_filter($__allFields, fn($f) => !isset($f['tab']) || in_array($f['tab'], ['general','content','']));
                             @endphp
                             <div v-else-if="editingElement?.type === '{{ $type }}'" class="space-y-8">
@@ -4163,7 +4163,7 @@
                              @foreach($customElements ?? [] as $type => $custEl)
                              @if($type === 'text_block') @continue @endif
                              @php
-                                 $__allFields2    = lazy_normalize_custom_fields($custEl);
+                                 $__allFields2    = falcon_normalize_custom_fields($custEl);
                                  $__designFields2 = array_filter($__allFields2, fn($f) => isset($f['tab']) && $f['tab'] === 'design');
                              @endphp
                              <div v-else-if="editingElement?.type === '{{ $type }}'" class="space-y-6">

@@ -1,6 +1,6 @@
 @php
     $s = $el['settings'] ?? [];
-    $platforms = function_exists('lazy_social_platforms') ? lazy_social_platforms() : [];
+    $platforms = function_exists('falcon_social_platforms') ? falcon_social_platforms() : [];
 
     // Device visibility (this element renders via its own view, so it must apply the classes itself).
     $vis = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];

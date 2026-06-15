@@ -25,7 +25,7 @@
                     <div class="mt-1 text-[12px] text-gray-500">
                         {{ $item['quantity'] }} &times; <span class="font-semibold text-heading">{{ falcon_price_format($linePrice) }}</span>
                     </div>
-                    {!! lazy_render_item_custom_fields($item, 'mini-cart') !!}
+                    {!! falcon_render_item_custom_fields($item, 'mini-cart') !!}
                     <?php do_falcon_action('lazy_mini_cart_item_meta', $item, $key); ?>
                 </div>
                 <div class="flex flex-col items-end justify-between shrink-0">

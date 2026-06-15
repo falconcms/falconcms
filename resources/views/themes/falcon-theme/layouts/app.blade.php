@@ -79,14 +79,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- FontAwesome -->
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/font-awesome.all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
 
     <!-- Tailwind -->
-    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>
     <!-- Alpine.js -->
-    <script defer src="{{ asset('vendor/cms-dashboard/js/alpine.min.js') }}"></script>
+    <script defer src="{{ asset('vendor/falcon-cms/js/alpine.min.js') }}"></script>
     <!-- SweetAlert2 -->
-    <script src="{{ asset('vendor/cms-dashboard/js/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/sweetalert2.all.min.js') }}"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -373,7 +373,7 @@
     @include('falcon-cms::themes.falcon-theme.partials.mini-cart')
 
     <!-- Scripts -->
-    <script src="{{ asset('vendor/cms-dashboard/js/lucide.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/lucide.min.js') }}"></script>
     <script>
         lucide.createIcons();
     </script>

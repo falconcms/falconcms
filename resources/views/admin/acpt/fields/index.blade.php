@@ -61,7 +61,7 @@
 
     <script>
         window.confirmDeleteGroup = async function(id, title) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Field Group',
                 message: `Are you sure you want to permanently delete the field group "${title}"? This will also remove any data associated with these fields. This action cannot be undone.`,
                 confirmText: 'Delete Permanently',

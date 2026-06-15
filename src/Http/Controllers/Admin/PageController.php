@@ -160,7 +160,7 @@ class PageController extends Controller
         }
 
         // Interpret the publish date in the CMS timezone → store UTC, and decide status on the server.
-        $validated = lazy_normalize_publish($validated);
+        $validated = falcon_normalize_publish($validated);
 
         $page = Page::create($validated);
 
@@ -386,7 +386,7 @@ class PageController extends Controller
         Revision::snapshot($page, 'revision');
 
         // Interpret the publish date in the CMS timezone → store UTC, and decide status on the server.
-        $validated = lazy_normalize_publish($validated);
+        $validated = falcon_normalize_publish($validated);
 
         $page->update($validated);
         Revision::clearAutosave($page);

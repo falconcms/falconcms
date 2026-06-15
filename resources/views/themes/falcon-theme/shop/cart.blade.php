@@ -108,7 +108,7 @@
                             </tr>
                             @endif
                             
-                            @php $coupon = session()->get('lazy_coupon'); @endphp
+                            @php $coupon = session()->get('falcon_coupon'); @endphp
                             @if($coupon)
                                 @php 
                                     $subtotal = get_falcon_cart_subtotal();

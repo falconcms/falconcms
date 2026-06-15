@@ -24,7 +24,7 @@
 </div>
 
 <script>
-    window.lazyConfirm = function(options) {
+    window.falconConfirm = function(options) {
         const modal = document.getElementById('lazy-delete-modal');
         const titleEl = document.getElementById('lazy-modal-title');
         const messageEl = document.getElementById('lazy-modal-message');

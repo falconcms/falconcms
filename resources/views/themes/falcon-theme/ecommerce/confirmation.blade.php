@@ -39,7 +39,7 @@
                         <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Payment
                             Method</span>
                         @php
-                            $orderGateways = lazy_enabled_payment_gateways();
+                            $orderGateways = falcon_enabled_payment_gateways();
                             $pmLabel =
                                 $orderGateways[$order->payment_method]['title'] ??
                                 ucwords(str_replace('_', ' ', $order->payment_method ?: 'N/A'));
@@ -89,7 +89,7 @@
                                         {!! apply_falcon_filters('lazy_order_confirmation_item_name',
                                             e($item->product_name) . ' <strong class="text-heading">× ' . (int)$item->quantity . '</strong>',
                                             $item, $order) !!}
-                                        {!! lazy_render_item_custom_fields($item, 'confirmation') !!}
+                                        {!! falcon_render_item_custom_fields($item, 'confirmation') !!}
                                         <?php do_falcon_action('lazy_order_confirmation_item_meta', $item, $order); ?>
                                     </td>
                                     <td class="py-4 text-right font-medium">
@@ -154,7 +154,7 @@
                             </address>
                             @php $confCheckoutMeta = $order->meta['checkout_fields'] ?? []; @endphp
                             @if(!empty($confCheckoutMeta))
-                                @php $confLabels = apply_falcon_filters('lazy_checkout_field_labels', []); @endphp
+                                @php $confLabels = apply_falcon_filters('falcon_checkout_field_labels', []); @endphp
                                 <div class="mt-4 pt-4 border-t border-gray-100 space-y-1 text-sm text-body">
                                     @foreach($confCheckoutMeta as $cKey => $cVal)
                                         @if($cVal)

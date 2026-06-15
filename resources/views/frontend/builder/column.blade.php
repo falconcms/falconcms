@@ -620,8 +620,8 @@
                     @endphp
                     @if($__elView && $__elShow)
                         @php
-                            if (!empty($el['settings']) && function_exists('lazy_resolve_tokens_in_settings')) {
-                                $el['settings'] = lazy_resolve_tokens_in_settings($el['settings'], $post ?? null);
+                            if (!empty($el['settings']) && function_exists('falcon_resolve_tokens_in_settings')) {
+                                $el['settings'] = falcon_resolve_tokens_in_settings($el['settings'], $post ?? null);
                             }
                             $__elAnimType = $el['settings']['anim_type'] ?? '';
                         @endphp

@@ -198,7 +198,7 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
     window.confirmDeleteSubmission = async function(id) {
-        const confirmed = await window.lazyConfirm({
+        const confirmed = await window.falconConfirm({
             title: 'Delete Submission',
             message: 'Are you sure you want to permanently delete this form submission? This action cannot be undone.',
             confirmText: 'Delete Permanently',

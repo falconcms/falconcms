@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'Dashboard' }} &lsaquo; {{ get_cms_option('site_title', 'CMS') }}</title>
-    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>
     <style>
         /* CRITICAL FALLBACKS & CORE STYLES */
         #wpadminbar { position: fixed !important; top: 0; left: 0; right: 0; height: 32px !important; background: #1d2327 !important; z-index: 9999 !important; display: flex !important; align-items: center !important; }
@@ -75,8 +75,8 @@
         .toast-info { border-left-color: #2271b1; }
         .toast-warning { border-left-color: #ffb900; }
     </style>
-    <script defer src="{{ asset('vendor/cms-dashboard/js/alpine.min.js') }}"></script>
-    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
+    <script defer src="{{ asset('vendor/falcon-cms/js/alpine.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/material-symbols.css') }}" />
     {!! do_falcon_action('lazy_admin_head') !!}
 </head>
 <body class="text-[#1d2327] text-[13px] antialiased overflow-x-hidden pt-8">
@@ -207,6 +207,6 @@
     </script>
 
     @stack('scripts')
-    {!! do_falcon_action('lazy_admin_footer') !!}
+    {!! do_falcon_action('falcon_admin_footer') !!}
 </body>
 </html>

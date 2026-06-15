@@ -3,7 +3,7 @@
 @section('title', $post->title)
 
 @section('content')
-<?php do_falcon_action('lazy_before_single_product', $post); ?>
+<?php do_falcon_action('falcon_before_single_product', $post); ?>
 <div class="bg-white py-12 min-h-screen">
     <div class="container-custom">
 
@@ -25,7 +25,7 @@
         <div class="flex flex-col md:flex-row gap-12">
 
             <!-- Product Images -->
-            <?php do_falcon_action('lazy_before_product_images', $post); ?>
+            <?php do_falcon_action('falcon_before_product_images', $post); ?>
             <div class="w-full md:w-1/2">
                 <div class="bg-gray-50 rounded-lg overflow-hidden border border-gray-100 shadow-sm relative pt-[100%]">
                     @if($post->thumbnail)
@@ -53,7 +53,7 @@
                 </div>
                 @endif
             </div>
-            <?php do_falcon_action('lazy_after_product_images', $post); ?>
+            <?php do_falcon_action('falcon_after_product_images', $post); ?>
 
             <!-- Product Info -->
             <div class="w-full md:w-1/2 flex flex-col justify-center">
@@ -112,8 +112,8 @@
                 @if(!$post->is_in_stock)
                     <?php do_falcon_action('lazy_simple_before_add_to_cart_form', $post); ?>
                     <div class="mb-10 pb-10 border-b border-gray-100">
-                        <?php do_falcon_action('lazy_simple_out_of_stock_button', $post); ?>
-                        @if(!has_lazy_action('lazy_simple_out_of_stock_button'))
+                        <?php do_falcon_action('falcon_simple_out_of_stock_button', $post); ?>
+                        @if(!has_lazy_action('falcon_simple_out_of_stock_button'))
                         <button disabled class="w-full bg-gray-400 text-white font-bold h-12 rounded cursor-not-allowed uppercase text-sm tracking-wider">
                             Out of stock
                         </button>
@@ -170,24 +170,24 @@
         </div>
 
         <!-- Description -->
-        <?php do_falcon_action('lazy_before_product_description', $post); ?>
+        <?php do_falcon_action('falcon_before_product_description', $post); ?>
         @if($post->content)
         <div class="mt-20 border-t border-gray-100 pt-12">
             <?php
                 $descTitleHtml = '<h3 class="text-2xl font-bold text-heading mb-8 inline-block border-b-2 border-primary pb-2">Description</h3>';
-                $descTitleHtml = apply_falcon_filters('lazy_product_description_title', $descTitleHtml, $post);
+                $descTitleHtml = apply_falcon_filters('falcon_product_description_title', $descTitleHtml, $post);
                 echo $descTitleHtml;
             ?>
             <?php
                 $descHtml = '<div class="prose max-w-none text-body">' . $post->content . '</div>';
-                $descHtml = apply_falcon_filters('lazy_product_description', $descHtml, $post);
+                $descHtml = apply_falcon_filters('falcon_product_description', $descHtml, $post);
                 echo $descHtml;
             ?>
         </div>
         @endif
-        <?php do_falcon_action('lazy_after_product_description', $post); ?>
+        <?php do_falcon_action('falcon_after_product_description', $post); ?>
 
     </div>
 </div>
-<?php do_falcon_action('lazy_after_single_product', $post); ?>
+<?php do_falcon_action('falcon_after_single_product', $post); ?>
 @stop

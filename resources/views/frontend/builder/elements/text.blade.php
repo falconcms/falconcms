@@ -16,6 +16,6 @@
         text-align: {{ $s['textAlign'] ?? 'left' }};
         @if(!empty($s['fontSize'])) font-size: {{ $s['fontSize'] }}{{ $s['fontSizeUnit'] ?? 'px' }}; @endif
     ">
-        {!! lazy_sanitize_html($s['content'] ?? 'Start typing your content here...') !!}
+        {!! falcon_sanitize_html($s['content'] ?? 'Start typing your content here...') !!}
     </div>
 </div>

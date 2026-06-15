@@ -23,7 +23,7 @@
         ->filter(fn($a) => ($a['variation'] ?? false) && isset($allVariationAttrs[$a['name']]));
 @endphp
 
-<?php do_falcon_action('lazy_before_single_product', $post); ?>
+<?php do_falcon_action('falcon_before_single_product', $post); ?>
 <?php do_falcon_action('lazy_variable_before_single_product', $post); ?>
 <div class="bg-white py-12 min-h-screen font-sans" x-data="variableProductHandler()">
     <div class="container-custom">
@@ -63,7 +63,7 @@
 
         <div class="flex flex-col lg:flex-row gap-12 mb-20">
             <!-- Left: Product Images -->
-            <?php do_falcon_action('lazy_before_product_images', $post); ?>
+            <?php do_falcon_action('falcon_before_product_images', $post); ?>
             <div class="w-full lg:w-1/2">
                 <div class="relative bg-[#f8f8f8] rounded-sm overflow-hidden mb-4 group cursor-zoom-in">
                     <img id="main-product-image" :src="currentImage" :alt="'{{ $post->title }}'" class="w-full h-auto object-cover transition-all duration-500 hover:scale-125">
@@ -95,7 +95,7 @@
                 </div>
                 @endif
             </div>
-            <?php do_falcon_action('lazy_after_product_images', $post); ?>
+            <?php do_falcon_action('falcon_after_product_images', $post); ?>
 
             <!-- Right: Product Info -->
             <div class="w-full lg:w-1/2 flex flex-col">
@@ -240,7 +240,7 @@
                         <input type="hidden" name="product_id" value="{{ $post->id }}">
                         <input type="hidden" name="variation_id" :value="selectedVariation ? selectedVariation.id : ''">
                         <?php do_falcon_action('lazy_variable_add_to_cart_form_top', $post); ?>
-                        <?php lazy_render_product_fields(apply_falcon_filters('lazy_variable_product_fields', apply_falcon_filters('lazy_product_fields', [], $post), $post)); ?>
+                        <?php falcon_render_product_fields(apply_falcon_filters('lazy_variable_product_fields', apply_falcon_filters('falcon_product_fields', [], $post), $post)); ?>
 
                         <div class="flex items-center gap-3 w-full mt-4">
                             <!-- Standard Quantity Box -->
@@ -287,7 +287,7 @@
         </div>
 
         <!-- Tabs Section -->
-        <?php do_falcon_action('lazy_before_product_description', $post); ?>
+        <?php do_falcon_action('falcon_before_product_description', $post); ?>
         @php
             $reviewsOn = get_shop_option('shop_enable_reviews', '1') === '1';
             $ratingOn  = get_shop_option('shop_enable_review_rating', '1') === '1';
@@ -302,7 +302,7 @@
             </div>
             
             <div x-show="activeTab === 'description'" class="prose max-w-none text-gray-600 text-[15px] leading-relaxed">
-                {!! apply_falcon_filters('lazy_variable_product_description', apply_falcon_filters('lazy_product_description', $post->content, $post), $post) !!}
+                {!! apply_falcon_filters('lazy_variable_product_description', apply_falcon_filters('falcon_product_description', $post->content, $post), $post) !!}
             </div>
 
             <div x-show="activeTab === 'info'" x-cloak>
@@ -486,9 +486,9 @@
 
     </div>
 </div>
-<?php do_falcon_action('lazy_after_product_description', $post); ?>
+<?php do_falcon_action('falcon_after_product_description', $post); ?>
 <?php do_falcon_action('lazy_variable_after_single_product', $post); ?>
-<?php do_falcon_action('lazy_after_single_product', $post); ?>
+<?php do_falcon_action('falcon_after_single_product', $post); ?>
 
 <style>
     [x-cloak] { display: none !important; }

@@ -12,7 +12,7 @@
     $postCardId = $s['post_card_id'] ?? '';
     $cardCfg    = [];
     if ($postCardId) {
-        $rawCards = get_cms_option('lazy_post_cards', '[]');
+        $rawCards = get_cms_option('falcon_post_cards', '[]');
         $allCards = json_decode($rawCards, true) ?: [];
         foreach ($allCards as $c) {
             if (($c['id'] ?? '') === $postCardId) { $cardCfg = $c['config'] ?? []; break; }

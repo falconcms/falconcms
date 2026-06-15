@@ -93,7 +93,7 @@
                                 <button disabled class="w-full text-center bg-gray-400 text-white cursor-not-allowed px-4 py-2.5 rounded-[3px] text-[13px] font-semibold uppercase tracking-wider">
                                     Out of stock
                                 </button>
-                            @elseif(lazy_is_variable_product($product))
+                            @elseif(falcon_is_variable_product($product))
                                 <a href="{{ get_falcon_permalink($product) }}" class="w-full text-center bg-primary text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition-colors duration-200">
                                     Select Options
                                 </a>

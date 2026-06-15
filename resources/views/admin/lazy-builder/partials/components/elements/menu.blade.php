@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'menu'"
+<div v-if="el.type === 'menu'"
      class="element-menu-wrapper w-full relative group/menu-preview"
      :class="[el.settings.cssClass || '', 'menu-container-' + el.id]"
      :id="el.settings.cssId || undefined"
@@ -135,10 +135,10 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">@{{ el.settings.mobileMenuTriggerText || 'Menu' }}</span>
                 <i class="fa fa-times text-slate-300"></i>
             </li>
-            <template v-if="el.settings.menuId && lazyMenuData[el.settings.menuId]">
+            <template v-if="el.settings.menuId && falconMenuData[el.settings.menuId]">
                 
                 <!-- Main Level -->
-                <li v-for="(item, idx) in lazyMenuData[el.settings.menuId]"
+                <li v-for="(item, idx) in falconMenuData[el.settings.menuId]"
                     class="admin-menu-item relative group/item"
                     :key="idx"
                     :style="device === 'desktop' ? { display: 'flex', alignItems: 'stretch' } : {}"

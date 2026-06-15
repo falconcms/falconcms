@@ -31,9 +31,9 @@ class FrontendController extends Controller
         }
 
         // 3. Fallback to Lazy Theme (Package)
-        $lazyView = "falcon-cms::themes.falcon-theme.{$view}";
-        if (view()->exists($lazyView)) {
-            return $lazyView;
+        $falconView = "falcon-cms::themes.falcon-theme.{$view}";
+        if (view()->exists($falconView)) {
+            return $falconView;
         }
 
         // 4. If still not found and we have a fallback, try resolving the fallback
@@ -41,8 +41,8 @@ class FrontendController extends Controller
             return $this->resolveThemeView($fallback);
         }
 
-        // Final desperation: Return the lazyView name anyway, but it might still fail if even the base doesn't exist
-        return $lazyView;
+        // Final desperation: Return the falconView name anyway, but it might still fail if even the base doesn't exist
+        return $falconView;
     }
 
     public function index($locale = null)

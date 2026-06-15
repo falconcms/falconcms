@@ -239,7 +239,7 @@
         })();
 
         window.confirmWxrImport = async function () {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title:       'Import WordPress Content',
                 message:     'This will import posts, pages, categories and tags from the selected file. Existing items with the same slug will be skipped. Continue?',
                 confirmText: 'Yes, Run Import',
@@ -249,7 +249,7 @@
         };
 
         window.confirmMediaImport = async function () {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title:       'Import Media Files',
                 message:     'This will extract all media files from the zip into your uploads folder. Duplicate filenames will be renamed automatically. Continue?',
                 confirmText: 'Yes, Import Media',

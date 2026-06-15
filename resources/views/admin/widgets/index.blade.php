@@ -341,8 +341,8 @@
 
 <div class="toast-container" id="toast-container"></div>
 
-<script src="{{ asset('vendor/cms-dashboard/js/sortable.min.js') }}"></script>
-<script src="{{ asset('vendor/cms-dashboard/js/tinymce.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/sortable.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/tinymce.min.js') }}"></script>
 <script>if(window.tinymce) tinymce.baseURL='https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';</script>
 <script>
     function showToast(message, type = 'success') {
@@ -502,7 +502,7 @@
         }
 
         window.confirmWidgetDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Remove Widget',
                 message: 'Are you sure you want to remove this widget from the area? This action cannot be undone.',
                 confirmText: 'Remove Widget',

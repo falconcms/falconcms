@@ -1,14 +1,14 @@
 {{-- CodeMirror — HTML Block IDE editor (local assets) --}}
-<link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/codemirror/codemirror.min.css') }}">
-<link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/codemirror/dracula.min.css') }}">
-<script src="{{ asset('vendor/cms-dashboard/js/codemirror/codemirror.min.js') }}"></script>
-<script src="{{ asset('vendor/cms-dashboard/js/codemirror/xml.min.js') }}"></script>
-<script src="{{ asset('vendor/cms-dashboard/js/codemirror/javascript.min.js') }}"></script>
-<script src="{{ asset('vendor/cms-dashboard/js/codemirror/css.min.js') }}"></script>
-<script src="{{ asset('vendor/cms-dashboard/js/codemirror/htmlmixed.min.js') }}"></script>
-<script src="{{ asset('vendor/cms-dashboard/js/codemirror/closetag.min.js') }}"></script>
-<script src="{{ asset('vendor/cms-dashboard/js/codemirror/closebrackets.min.js') }}"></script>
-<script src="{{ asset('vendor/cms-dashboard/js/codemirror/matchbrackets.min.js') }}"></script>
+<link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/codemirror/codemirror.min.css') }}">
+<link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/codemirror/dracula.min.css') }}">
+<script src="{{ asset('vendor/falcon-cms/js/codemirror/codemirror.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/codemirror/xml.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/codemirror/javascript.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/codemirror/css.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/codemirror/htmlmixed.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/codemirror/closetag.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/codemirror/closebrackets.min.js') }}"></script>
+<script src="{{ asset('vendor/falcon-cms/js/codemirror/matchbrackets.min.js') }}"></script>
 <style>
     .CodeMirror { height: 280px !important; font-size: 12px; font-family: 'Fira Code', 'Courier New', monospace; }
     .CodeMirror-scroll { min-height: 260px; }
@@ -24,7 +24,7 @@
     createApp({
         setup() {
             const layout = ref([]);
-            const postCardMode = ref(window.lazyPostCardMode || false);
+            const postCardMode = ref(window.falconPostCardMode || false);
             const isPreview = ref(false);
             const isSaving = ref(false);
             const isDirty = ref(false);
@@ -2297,7 +2297,7 @@
             }, { immediate: true });
 
             // HTML Block — CodeMirror IDE editor
-            let lazyHtmlCm = null;
+            let falconHtmlCm = null;
 
             const initHtmlEditor = () => {
                 if (!window.CodeMirror) return;
@@ -2305,21 +2305,21 @@
                 if (!container) return;
 
                 // Editor was removed from DOM (v-if toggled off then on) — destroy and re-create
-                if (lazyHtmlCm && !document.body.contains(lazyHtmlCm.getWrapperElement())) {
-                    lazyHtmlCm = null;
+                if (falconHtmlCm && !document.body.contains(falconHtmlCm.getWrapperElement())) {
+                    falconHtmlCm = null;
                 }
 
                 const currentVal = editingElement.value?.settings?.htmlContent || '';
 
-                if (lazyHtmlCm) {
-                    if (lazyHtmlCm.getValue() !== currentVal) {
-                        lazyHtmlCm.setValue(currentVal);
+                if (falconHtmlCm) {
+                    if (falconHtmlCm.getValue() !== currentVal) {
+                        falconHtmlCm.setValue(currentVal);
                     }
-                    lazyHtmlCm.refresh();
+                    falconHtmlCm.refresh();
                     return;
                 }
 
-                lazyHtmlCm = CodeMirror(container, {
+                falconHtmlCm = CodeMirror(container, {
                     value: currentVal,
                     mode: 'htmlmixed',
                     theme: 'dracula',
@@ -2331,8 +2331,8 @@
                     autoCloseBrackets: true,
                     matchBrackets: true,
                 });
-                lazyHtmlCm.setSize('100%', 280);
-                lazyHtmlCm.on('change', (cm) => {
+                falconHtmlCm.setSize('100%', 280);
+                falconHtmlCm.on('change', (cm) => {
                     if (editingElement.value?.type === 'html') {
                         editingElement.value.settings.htmlContent = cm.getValue();
                     }
@@ -2345,7 +2345,7 @@
                 if (nowHtml) {
                     setTimeout(initHtmlEditor, 80);
                 } else {
-                    lazyHtmlCm = null;
+                    falconHtmlCm = null;
                 }
             }, { flush: 'post' });
             // Re-init when switching between two html elements
@@ -3307,12 +3307,12 @@
             const globalModalName    = ref('');
             const globalModalCi      = ref(null);
             const isSavingGlobal     = ref(false);
-            const postCardsList      = ref(window.lazyPostCards || []);
-            const recentPosts        = ref(window.lazyRecentPosts || []);
-            const lazyTaxonomies     = ref(window.lazyTaxonomies    || []);
-            const lazyTaxonomyTerms  = ref(window.lazyTaxonomyTerms || {});
-            const lazyCptList        = ref(window.lazyCptList        || []);
-            const lazyCptTaxonomies  = ref(window.lazyCptTaxonomies  || { post: ['category','tag'] });
+            const postCardsList      = ref(window.falconPostCards || []);
+            const recentPosts        = ref(window.falconRecentPosts || []);
+            const falconTaxonomies     = ref(window.falconTaxonomies    || []);
+            const falconTaxonomyTerms  = ref(window.falconTaxonomyTerms || {});
+            const falconCptList        = ref(window.falconCptList        || []);
+            const falconCptTaxonomies  = ref(window.falconCptTaxonomies  || { post: ['category','tag'] });
             const cardPreviewCache   = reactive({});
             const postCardsMap       = computed(() => {
                 const m = {};
@@ -3387,24 +3387,24 @@
             const cardCategoryTerms = computed(() => {
                 if (!editingElement.value || editingElement.value.type !== 'card') return [];
                 const postType = editingElement.value.settings.post_type || 'post';
-                const taxSlugs = lazyCptTaxonomies.value[postType] || ['category'];
+                const taxSlugs = falconCptTaxonomies.value[postType] || ['category'];
                 const result = [];
                 for (const slug of taxSlugs) {
                     if (slug === 'tag') continue;
-                    const terms = lazyTaxonomyTerms.value[slug] || [];
+                    const terms = falconTaxonomyTerms.value[slug] || [];
                     result.push(...terms);
                 }
                 return result;
             });
 
-            const cardTagTerms = computed(() => lazyTaxonomyTerms.value['tag'] || []);
+            const cardTagTerms = computed(() => falconTaxonomyTerms.value['tag'] || []);
 
             const cardTaxonomiesByPostType = computed(() => {
-                if (!editingElement.value || editingElement.value.type !== 'card') return lazyTaxonomies.value;
+                if (!editingElement.value || editingElement.value.type !== 'card') return falconTaxonomies.value;
                 const postType = editingElement.value.settings.post_type || 'post';
-                const allowed = lazyCptTaxonomies.value[postType];
-                if (allowed === undefined) return lazyTaxonomies.value;
-                return lazyTaxonomies.value.filter(t => allowed.includes(t.slug));
+                const allowed = falconCptTaxonomies.value[postType];
+                if (allowed === undefined) return falconTaxonomies.value;
+                return falconTaxonomies.value.filter(t => allowed.includes(t.slug));
             });
 
             const postsbyValueArr = computed({
@@ -3735,7 +3735,7 @@
                 toasts, showToast,
                 showLibraryModal, libraryActiveTab, libraryNewName, isSavingToLibrary, saveAsGlobalChecked, libraryItems, libraryContext,
                 postCardsList, postCardsMap, recentPosts, getCardElementsFlat,
-                lazyTaxonomies, lazyTaxonomyTerms, lazyCptList, lazyCptTaxonomies, cardPreviewCache, fetchCardPreview,
+                falconTaxonomies, falconTaxonomyTerms, falconCptList, falconCptTaxonomies, cardPreviewCache, fetchCardPreview,
                 cardCategoryTerms, cardTagTerms, postsbyValueArr, cardTaxonomiesByPostType,
                 libraryTabs, libraryCurrentItems, libraryActiveTabLabel, libraryTabIcon, libraryCanSave,
                 openLibraryModal, saveToLibrary, insertFromLibrary, insertGlobalFromLibrary, deleteFromLibrary,
@@ -3747,8 +3747,8 @@
                 titleFontVariants, loadBuilderFont,
                 undo, redo, canUndo, canRedo,
                 applyButtonSize, searchIconQuery, filteredIcons, selectIcon, activeIconTab, clearColorField, activeAccordionItem, activeTabsItem, activeIconListItem,
-                lazyMenuData: reactive(window.lazyMenuData || {}),
-                lazyMenusList: window.lazyMenusList || {},
+                falconMenuData: reactive(window.falconMenuData || {}),
+                falconMenusList: window.falconMenusList || {},
                 postCardMode,
                 customElements,
                 getCustomElementPreviewText,

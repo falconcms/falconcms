@@ -35,7 +35,7 @@
 @endphp
 
 @section('content')
-<?php do_falcon_action('lazy_before_single_product', $post); ?>
+<?php do_falcon_action('falcon_before_single_product', $post); ?>
 <?php do_falcon_action('lazy_variable_before_single_product', $post); ?>
 <div class="bg-white py-12 min-h-screen">
     <div class="container-custom">
@@ -58,7 +58,7 @@
         <div class="flex flex-col md:flex-row gap-12">
 
             <!-- Product Images -->
-            <?php do_falcon_action('lazy_before_product_images', $post); ?>
+            <?php do_falcon_action('falcon_before_product_images', $post); ?>
             <?php do_falcon_action('lazy_variable_before_product_images', $post); ?>
             <div class="w-full md:w-1/2">
                 <div class="bg-gray-50 rounded-lg overflow-hidden border border-gray-100 shadow-sm relative pt-[100%]">
@@ -87,7 +87,7 @@
                 </div>
                 @endif
             </div>
-            <?php do_falcon_action('lazy_after_product_images', $post); ?>
+            <?php do_falcon_action('falcon_after_product_images', $post); ?>
             <?php do_falcon_action('lazy_variable_after_product_images', $post); ?>
 
             <!-- Product Info -->
@@ -204,13 +204,13 @@
         </div>
 
         <!-- Description -->
-        <?php do_falcon_action('lazy_before_product_description', $post); ?>
+        <?php do_falcon_action('falcon_before_product_description', $post); ?>
         <?php do_falcon_action('lazy_variable_before_product_description', $post); ?>
         @if($post->content)
         <div class="mt-20 border-t border-gray-100 pt-12">
             <?php
                 $descTitleHtml = '<h3 class="text-2xl font-bold text-heading mb-8 inline-block border-b-2 border-primary pb-2">Description</h3>';
-                $descTitleHtml = apply_falcon_filters('lazy_product_description_title', $descTitleHtml, $post);
+                $descTitleHtml = apply_falcon_filters('falcon_product_description_title', $descTitleHtml, $post);
                 echo $descTitleHtml;
             ?>
             <?php
@@ -220,12 +220,12 @@
             ?>
         </div>
         @endif
-        <?php do_falcon_action('lazy_after_product_description', $post); ?>
+        <?php do_falcon_action('falcon_after_product_description', $post); ?>
         <?php do_falcon_action('lazy_variable_after_product_description', $post); ?>
 
     </div>
 </div>
-<?php do_falcon_action('lazy_after_single_product', $post); ?>
+<?php do_falcon_action('falcon_after_single_product', $post); ?>
 <?php do_falcon_action('lazy_variable_after_single_product', $post); ?>
 @stop
 

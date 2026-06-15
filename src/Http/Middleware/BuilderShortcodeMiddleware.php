@@ -9,7 +9,7 @@ use FalconCms\Core\Services\BuilderShortcodeConverter;
 class BuilderShortcodeMiddleware
 {
     /**
-     * Server-side fallback: converts [lazy_section] shortcodes to builder JSON
+     * Server-side fallback: converts [falcon_section] shortcodes to builder JSON
      * before the request reaches the controller. This ensures that saving from
      * the rich editor with shortcode content always produces valid builder output.
      */

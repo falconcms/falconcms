@@ -44,7 +44,7 @@
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-4 py-3 font-semibold text-gray-800">{{ $form->title }}</td>
                                 <td class="px-4 py-3">
-                                    <code class="bg-gray-100 text-blue-700 px-2 py-1 rounded text-xs">[lazy_form slug="{{ $form->slug }}"]</code>
+                                    <code class="bg-gray-100 text-blue-700 px-2 py-1 rounded text-xs">[falcon_form slug="{{ $form->slug }}"]</code>
                                 </td>
                                 <td class="px-4 py-3 text-gray-600">{{ $form->submissions_count }}</td>
                                 <td class="px-4 py-3">
@@ -78,7 +78,7 @@
     </div>
     <script>
         window.confirmFormDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Form',
                 message: 'Are you sure you want to delete this form? This action cannot be undone and will delete all associated submissions.',
                 confirmText: 'Delete Form',

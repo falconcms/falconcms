@@ -87,7 +87,7 @@
             <!-- Actions -->
             <div class="flex items-center gap-5">
                 <!-- Language Switcher -->
-                {!! lazy_lang_dropdown() !!}
+                {!! falcon_lang_dropdown() !!}
 
                 <!-- Cart Icon -->
                 <a href="{{ route('shop.cart') }}" class="relative group hover:text-primary transition-colors" style="color: inherit;">

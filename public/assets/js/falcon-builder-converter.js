@@ -1,7 +1,7 @@
 /**
  * Lazy Builder ↔ Shortcode Converter
  *
- * Converts builder JSON ↔ [lazy_section] shortcodes inside the admin rich editor.
+ * Converts builder JSON ↔ [falcon_section] shortcodes inside the admin rich editor.
  * - On page load : JSON → shortcodes (display-side conversion)
  * - On form submit: shortcodes → JSON (editor_type stays 'rich' to preserve the active tab)
  *
@@ -397,7 +397,7 @@
 
         var attrStr   = a.join(' ');
         var recovered = containerSettings(parseAttrs(attrStr));
-        return appendExtras('[lazy_section ' + attrStr + ']' + inner + '[/lazy_section]', s, recovered);
+        return appendExtras('[falcon_section ' + attrStr + ']' + inner + '[/falcon_section]', s, recovered);
     }
 
     function columnToShortcode(col) {
@@ -505,7 +505,7 @@
 
         var attrStr   = a.join(' ');
         var recovered = columnSettings(parseAttrs(attrStr));
-        return appendExtras('[lazy_col ' + attrStr + ']' + inner + '[/lazy_col]', s, recovered);
+        return appendExtras('[falcon_col ' + attrStr + ']' + inner + '[/falcon_col]', s, recovered);
     }
 
     function elementToShortcode(el) {
@@ -530,7 +530,7 @@
                 a = attrI(a, 'align',       s.textAlign);
                 a = attrI(a, 'color',       s.color);
                 a = attrI(a, 'css_class',   s.cssClass);
-                return '[lazy_heading ' + a.trim() + vis + ']' + (s.title || '').replace(/[\r\n]+/g, '') + '[/lazy_heading]';
+                return '[falcon_heading ' + a.trim() + vis + ']' + (s.title || '').replace(/[\r\n]+/g, '') + '[/falcon_heading]';
             }
             case 'title': {
                 var a = base;
@@ -545,7 +545,7 @@
                 a = attrI(a, 'link_url',        s.linkUrl);
                 a = attrI(a, 'link_color',      s.linkColor);
                 a = attrI(a, 'css_class',       s.cssClass);
-                return '[lazy_title ' + a.trim() + vis + ']' + (s.title || '').replace(/[\r\n]+/g, '') + '[/lazy_title]';
+                return '[falcon_title ' + a.trim() + vis + ']' + (s.title || '').replace(/[\r\n]+/g, '') + '[/falcon_title]';
             }
             case 'text': {
                 var a = base;
@@ -554,7 +554,7 @@
                 a = attrI(a, 'color',       s.color);
                 a = attrI(a, 'align',       s.textAlign);
                 a = attrI(a, 'css_class',   s.cssClass);
-                return '[lazy_text ' + a.trim() + vis + ']' + (s.content || '').replace(/[\r\n]+/g, '') + '[/lazy_text]';
+                return '[falcon_text ' + a.trim() + vis + ']' + (s.content || '').replace(/[\r\n]+/g, '') + '[/falcon_text]';
             }
             case 'button': {
                 var a = base;
@@ -566,7 +566,7 @@
                 a = attrI(a, 'align',      s.alignment);
                 a = attrI(a, 'size',       s.size);
                 a = attrI(a, 'css_class',  s.cssClass);
-                return '[lazy_button ' + a.trim() + vis + ' /]';
+                return '[falcon_button ' + a.trim() + vis + ' /]';
             }
             case 'image': {
                 var a = base;
@@ -575,12 +575,12 @@
                 a = attrI(a, 'width',     s.width);
                 a = attrI(a, 'align',     s.alignment);
                 a = attrI(a, 'css_class', s.cssClass);
-                return '[lazy_image ' + a.trim() + vis + ' /]';
+                return '[falcon_image ' + a.trim() + vis + ' /]';
             }
             case 'spacer': {
                 var a = base;
                 a = attrI(a, 'height', s.height !== undefined ? s.height : 20);
-                return '[lazy_spacer ' + a.trim() + vis + ' /]';
+                return '[falcon_spacer ' + a.trim() + vis + ' /]';
             }
             case 'video': {
                 var a = base;
@@ -588,7 +588,7 @@
                 a = attrI(a, 'type',   s.type);
                 a = attrI(a, 'width',  s.width);
                 a = attrI(a, 'height', s.height);
-                return '[lazy_video ' + a.trim() + vis + ' /]';
+                return '[falcon_video ' + a.trim() + vis + ' /]';
             }
             case 'menu': {
                 var a = base;
@@ -705,15 +705,15 @@
                 a = attrI(a, 'mobile_bg_color_h',    s.mobileMenuBgColorHover);
                 a = attrI(a, 'mobile_text_color',    s.mobileMenuTextColor);
                 a = attrI(a, 'mobile_text_color_h',  s.mobileMenuTextColorHover);
-                return '[lazy_menu ' + a.trim() + vis + ' /]';
+                return '[falcon_menu ' + a.trim() + vis + ' /]';
             }
             case 'row': {
                 if (el.columns && el.columns.length) {
                     var rowCols = el.columns.map(columnToShortcode);
                     var rowInner = ' ' + rowCols.join(' ') + ' ';
-                    return '[lazy_row' + (base ? ' ' + base.trim() : '') + vis + ']' + rowInner + '[/lazy_row]';
+                    return '[falcon_row' + (base ? ' ' + base.trim() : '') + vis + ']' + rowInner + '[/falcon_row]';
                 }
-                return '[lazy_row ' + base.trim() + vis + ' /]';
+                return '[falcon_row ' + base.trim() + vis + ' /]';
             }
             case 'counter': {
                 var a = base;
@@ -748,7 +748,7 @@
                 a = attrI(a, 'mb_unit',    s.marginBottomUnit, 'px');
                 a = attrI(a, 'css_class',  s.cssClass);
                 a = attrI(a, 'css_id',     s.cssId);
-                return '[lazy_counter ' + a.trim() + vis + ' /]';
+                return '[falcon_counter ' + a.trim() + vis + ' /]';
             }
             case 'star_rating': {
                 var a = base;
@@ -773,7 +773,7 @@
                 a = attrI(a, 'mb_unit',     s.marginBottomUnit,    'px');
                 a = attrI(a, 'css_class',   s.cssClass);
                 a = attrI(a, 'css_id',      s.cssId);
-                return '[lazy_star_rating ' + a.trim() + vis + ' /]';
+                return '[falcon_star_rating ' + a.trim() + vis + ' /]';
             }
             case 'gallery': {
                 var a = base;
@@ -819,19 +819,19 @@
                 a = attrI(a, 'mb_m_unit', (s['marginBottom_mobile'] !== undefined && s['marginBottom_mobile'] !== '' && s['marginBottom_mobile'] !== null) ? (s['marginBottomUnit_mobile'] || 'px') : null);
                 a = attrI(a, 'css_class', s.cssClass);
                 a = attrI(a, 'css_id',    s.cssId);
-                return '[lazy_gallery ' + a.trim() + vis + ' /]';
+                return '[falcon_gallery ' + a.trim() + vis + ' /]';
             }
             default: {
                 // Custom element: registered via lazy_builder_elements
                 var _cdefs = (typeof window !== 'undefined' && window.falconCustomElements) ? window.falconCustomElements : {};
                 var _cdef  = _cdefs[type] || (Object.values(_cdefs).find(function(e) { return e.type === type; }) || null);
                 if (_cdef) {
-                    var _tag    = _cdef.shortcode ? _cdef.shortcode : 'lazy_element';
+                    var _tag    = _cdef.shortcode ? _cdef.shortcode : 'falcon_element';
                     var bases   = ceAllowedKeys(_cdef); // null = allow all
                     var extraKeys = Array.isArray(_cdef.shortcode_keys) ? _cdef.shortcode_keys : [];
                     var repKeys = ceFieldList(_cdef).filter(function(f){ return f.type === 'repeater'; }).map(function(f){ return f.key; });
                     var a = base;
-                    if (!_cdef.shortcode) a = attrI(a, 'type', type); // lazy_element needs the type attr
+                    if (!_cdef.shortcode) a = attrI(a, 'type', type); // falcon_element needs the type attr
                     Object.keys(s).forEach(function(k) {
                         if (k === 'visibility' || k.charAt(0) === '_') return;     // skip transient/UI keys
                         if (repKeys.indexOf(k) !== -1) return;                     // repeater → child shortcodes
@@ -869,7 +869,7 @@
                     if (children) return '[' + _tag + ' ' + a.trim() + vis + ']' + children + '[/' + _tag + ']';
                     return '[' + _tag + ' ' + a.trim() + vis + ' /]';
                 }
-                return '[lazy_element type="' + type + '" ' + base.trim() + vis + ' /]';
+                return '[falcon_element type="' + type + '" ' + base.trim() + vis + ' /]';
             }
         }
     }
@@ -893,7 +893,7 @@
     function shortcodesToJson(content) {
         content = unwrapEditorMarkup(content);
         var layout = [];
-        var containerRx = /\[lazy_section([^\]]*)\]([\s\S]*?)\[\/lazy_section\]/g;
+        var containerRx = /\[falcon_section([^\]]*)\]([\s\S]*?)\[\/falcon_section\]/g;
         var m;
         while ((m = containerRx.exec(content)) !== null) {
             var container = parseContainer(m[1], m[2]);
@@ -923,7 +923,7 @@
         var len  = inner.length;
 
         while (pos < len) {
-            var tagStart = inner.indexOf('[lazy_col', pos);
+            var tagStart = inner.indexOf('[falcon_col', pos);
             if (tagStart === -1) break;
 
             var c = inner[tagStart + 9];
@@ -938,8 +938,8 @@
             var done    = false;
 
             while (depth > 0 && search < len) {
-                var nextOpen  = inner.indexOf('[lazy_col', search);
-                var nextClose = inner.indexOf('[/lazy_col]', search);
+                var nextOpen  = inner.indexOf('[falcon_col', search);
+                var nextClose = inner.indexOf('[/falcon_col]', search);
 
                 if (nextClose === -1) break;
 
@@ -953,7 +953,7 @@
                         var colInner = inner.substring(openEnd + 1, nextClose);
                         var col = parseColumn(attrStr, colInner);
                         if (col) cols.push(col);
-                        pos  = nextClose + 11; // '[/lazy_col]'.length
+                        pos  = nextClose + 11; // '[/falcon_col]'.length
                         done = true;
                         break;
                     }
@@ -1409,7 +1409,7 @@
             }
 
             default: {
-                // [lazy_element type="x"] or a bare custom tag → resolve the real type and
+                // [falcon_element type="x"] or a bare custom tag → resolve the real type and
                 // route to the custom-element parser (mirror of PHP) so fields + visibility survive.
                 var realType = (type === 'element') ? (a.type || 'text') : type;
                 var cdef = customDefsJs()[realType];
@@ -1655,7 +1655,7 @@
     }
 
     function isBuilderShortcode(str) {
-        return (str || '').indexOf('[lazy_section') !== -1;
+        return (str || '').indexOf('[falcon_section') !== -1;
     }
 
     // -------------------------------------------------------------------------

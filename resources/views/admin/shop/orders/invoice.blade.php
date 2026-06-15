@@ -253,7 +253,7 @@
                 <p>Phone: {{ $order->customer_phone }}</p>
                 @php
                     $invCheckoutMeta = $order->meta['checkout_fields'] ?? [];
-                    $invCoLabels     = apply_falcon_filters('lazy_checkout_field_labels', [], 'invoice');
+                    $invCoLabels     = apply_falcon_filters('falcon_checkout_field_labels', [], 'invoice');
                 @endphp
                 @foreach($invCheckoutMeta as $iKey => $iVal)
                     @if($iVal)
@@ -286,7 +286,7 @@
                 </tr>
             </thead>
             <tbody>
-                @php $invoiceLabels = apply_falcon_filters('lazy_custom_field_labels', [], 'invoice'); @endphp
+                @php $invoiceLabels = apply_falcon_filters('falcon_custom_field_labels', [], 'invoice'); @endphp
                 @foreach($order->items as $item)
                 <tr>
                     <td>

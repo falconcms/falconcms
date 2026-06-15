@@ -143,7 +143,7 @@
         });
 
         window.confirmDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Review',
                 message: 'Are you sure you want to delete this review?',
                 confirmText: 'Delete',

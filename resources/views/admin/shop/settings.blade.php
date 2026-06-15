@@ -1302,8 +1302,8 @@
     </div>
 
     @push('scripts')
-    <link href="{{ asset('vendor/cms-dashboard/css/tom-select.default.min.css') }}" rel="stylesheet">
-    <script src="{{ asset('vendor/cms-dashboard/js/tom-select.complete.min.js') }}"></script>
+    <link href="{{ asset('vendor/falcon-cms/css/tom-select.default.min.css') }}" rel="stylesheet">
+    <script src="{{ asset('vendor/falcon-cms/js/tom-select.complete.min.js') }}"></script>
     <style>
         .ts-wrapper.wp-input {
             padding: 0 !important;

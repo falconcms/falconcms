@@ -101,7 +101,7 @@
     </div>
     <script>
         window.confirmLangDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Language',
                 message: 'Are you sure you want to disable and delete this language? This will remove all translations for this language.',
                 confirmText: 'Delete Language',

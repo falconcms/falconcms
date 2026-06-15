@@ -53,7 +53,7 @@ class FalconCmsServiceProvider extends ServiceProvider
         });
 
         Blade::componentNamespace('FalconCms\\Core\\View\\Components', 'falcon-cms');
-        Blade::component('falcon-cms::components.frontend.breadcrumbs', 'cms-breadcrumbs');
+        Blade::component('falcon-cms::components.frontend.breadcrumbs', 'falcon-breadcrumbs');
 
         // Register commands always (not just in console) so Artisan::call() works from web requests
         $this->commands([
@@ -93,15 +93,15 @@ class FalconCmsServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../resources/views' => resource_path('views/vendor/cms-dashboard'),
-            ], 'cms-dashboard-views');
+                __DIR__ . '/../resources/views' => resource_path('views/vendor/falcon-cms'),
+            ], 'falcon-cms-views');
 
             $this->publishes([
                 __DIR__ . '/../resources/views/themes' => resource_path('views/themes'),
-            ], 'cms-dashboard-themes');
+            ], 'falcon-cms-themes');
 
             $this->publishes([
-                __DIR__ . '/../public/assets' => public_path('vendor/cms-dashboard'),
+                __DIR__ . '/../public/assets' => public_path('vendor/falcon-cms'),
             ], 'falcon-cms-assets');
 
             // 1. Parent theme only — safe to publish with --force on every update
@@ -115,7 +115,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             ], 'falcon-theme-child');
 
             $this->publishes([
-                __DIR__ . '/../resources/views' => resource_path('views/vendor/cms-dashboard'),
+                __DIR__ . '/../resources/views' => resource_path('views/vendor/falcon-cms'),
             ], 'lazy-views');
         }
     }

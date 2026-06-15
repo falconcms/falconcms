@@ -105,7 +105,7 @@
         });
 
         window.confirmBlacklistDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Unblock IP',
                 message: 'Are you sure you want to unblock this IP address? This will allow requests from this IP again.',
                 confirmText: 'Unblock IP',
@@ -130,7 +130,7 @@
             }
 
             if (action === 'delete') {
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: 'Unblock Multiple IPs',
                     message: `Are you sure you want to unblock ${selected.length} IP addresses?`,
                     confirmText: 'Unblock All Selected',

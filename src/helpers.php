@@ -84,13 +84,13 @@ if (!function_exists('falcon_elem_resp_css')) {
     }
 }
 
-if (!function_exists('lazy_sanitize_html')) {
+if (!function_exists('falcon_sanitize_html')) {
     /**
      * Strip dangerous HTML from user-supplied rich-text content.
      * Removes <script> blocks, on* event handlers, and javascript: URLs.
      * Safe structural HTML (<a>, <img>, <iframe>, etc.) is preserved.
      */
-    function lazy_sanitize_html(string $html): string {
+    function falcon_sanitize_html(string $html): string {
         if ($html === '') return '';
 
         // Remove <script> blocks entirely (opening tag + content + closing tag)
@@ -116,7 +116,7 @@ if (!function_exists('lazy_sanitize_html')) {
 if (!function_exists('lazy_sanitize_builder_json')) {
     /**
      * Recursively walks every node of a decoded builder layout array and applies
-     * lazy_sanitize_html() to every string value. Numbers, booleans, and null are
+     * falcon_sanitize_html() to every string value. Numbers, booleans, and null are
      * passed through unchanged. Call this on the decoded `layout` array before
      * json_encode-ing it to the database.
      */
@@ -125,7 +125,7 @@ if (!function_exists('lazy_sanitize_builder_json')) {
             return array_map('lazy_sanitize_builder_json', $node);
         }
         if (is_string($node)) {
-            return lazy_sanitize_html($node);
+            return falcon_sanitize_html($node);
         }
         return $node;
     }
@@ -347,14 +347,14 @@ if (!function_exists('lazy_timezone_list')) {
     }
 }
 
-if (!function_exists('lazy_normalize_publish')) {
+if (!function_exists('falcon_normalize_publish')) {
     /**
      * Normalise a save payload's publish fields:
      *  - interpret the incoming naive `published_at` in the CMS timezone and convert to UTC for storage,
      *  - then set `status` (scheduled vs published) from that UTC time on the server.
      * Keeps the DB in UTC while letting the admin work in their chosen timezone.
      */
-    function lazy_normalize_publish(array $data): array
+    function falcon_normalize_publish(array $data): array
     {
         if (!empty($data['published_at'])) {
             try {
@@ -1121,15 +1121,15 @@ if (!function_exists('render_lazy_widgets')) {
             // 3. Package default widget (namespaced):     falcon-cms::frontend.widgets.{type}
             $publishedThemeWidget = "themes.{$activeTheme}.widgets.{$widget->type}";
             $packageThemeWidget   = "falcon-cms::themes.{$activeTheme}.widgets.{$widget->type}";
-            $lazyThemeWidget      = "falcon-cms::themes.falcon-theme.widgets.{$widget->type}";
+            $falconThemeWidget      = "falcon-cms::themes.falcon-theme.widgets.{$widget->type}";
             $defaultWidget        = "falcon-cms::frontend.widgets.{$widget->type}";
 
             if (view()->exists($publishedThemeWidget)) {
                 $output .= view($publishedThemeWidget, ['widget' => $widget])->render();
             } elseif (view()->exists($packageThemeWidget)) {
                 $output .= view($packageThemeWidget, ['widget' => $widget])->render();
-            } elseif (view()->exists($lazyThemeWidget)) {
-                $output .= view($lazyThemeWidget, ['widget' => $widget])->render();
+            } elseif (view()->exists($falconThemeWidget)) {
+                $output .= view($falconThemeWidget, ['widget' => $widget])->render();
             } elseif (view()->exists($defaultWidget)) {
                 $output .= view($defaultWidget, ['widget' => $widget])->render();
             } else {
@@ -1303,8 +1303,8 @@ if (!function_exists('lazy_render_product_field')) {
     }
 }
 
-if (!function_exists('lazy_render_product_fields')) {
-    function lazy_render_product_fields(array $fields): void
+if (!function_exists('falcon_render_product_fields')) {
+    function falcon_render_product_fields(array $fields): void
     {
         foreach ($fields as $field) {
             echo lazy_render_product_field($field);
@@ -1312,17 +1312,17 @@ if (!function_exists('lazy_render_product_fields')) {
     }
 }
 
-if (!function_exists('lazy_render_item_custom_fields')) {
+if (!function_exists('falcon_render_item_custom_fields')) {
     /**
      * Render custom fields for a cart session item (array) or an OrderItem model.
-     * Context labels can be overridden via the lazy_custom_field_labels filter.
+     * Context labels can be overridden via the falcon_custom_field_labels filter.
      *
      * @param  array|object  $item      Cart array item OR OrderItem model
      * @param  string        $context   'cart' | 'checkout' | 'confirmation' | 'admin'
      * @param  string        $wrapClass CSS class on the wrapper div
      * @return string
      */
-    function lazy_render_item_custom_fields($item, string $context = 'cart', string $wrapClass = 'mt-1.5 space-y-0.5'): string
+    function falcon_render_item_custom_fields($item, string $context = 'cart', string $wrapClass = 'mt-1.5 space-y-0.5'): string
     {
         // Support both cart session array and OrderItem model
         if (is_array($item)) {
@@ -1337,7 +1337,7 @@ if (!function_exists('lazy_render_item_custom_fields')) {
         if (empty($customFields)) return '';
 
         // Allow label overrides via filter
-        $labels = apply_falcon_filters('lazy_custom_field_labels', [], $context);
+        $labels = apply_falcon_filters('falcon_custom_field_labels', [], $context);
 
         $html = '<div class="' . e($wrapClass) . '">';
         foreach ($customFields as $key => $value) {
@@ -1354,7 +1354,7 @@ if (!function_exists('lazy_render_item_custom_fields')) {
     }
 }
 
-if (!function_exists('lazy_normalize_custom_fields')) {
+if (!function_exists('falcon_normalize_custom_fields')) {
     /**
      * Normalize a custom builder element definition (registered via falcon_builder_elements)
      * into a flat, keyed fields array the builder + frontend can consume consistently.
@@ -1365,7 +1365,7 @@ if (!function_exists('lazy_normalize_custom_fields')) {
      *
      * @return array<string,array> keyed by field key
      */
-    function lazy_normalize_custom_fields(array $custEl): array
+    function falcon_normalize_custom_fields(array $custEl): array
     {
         $typeMap = [
             'textfield'        => 'text',
@@ -1692,13 +1692,13 @@ if (!function_exists('lazy_resolve_token')) {
     }
 }
 
-if (!function_exists('lazy_resolve_tokens_in_settings')) {
-    function lazy_resolve_tokens_in_settings(array $settings, $post = null): array {
+if (!function_exists('falcon_resolve_tokens_in_settings')) {
+    function falcon_resolve_tokens_in_settings(array $settings, $post = null): array {
         foreach ($settings as $k => &$v) {
             if (is_string($v) && strpos($v, '{lazy:') !== false) {
                 $v = lazy_resolve_tokens($v, $post);
             } elseif (is_array($v)) {
-                $v = lazy_resolve_tokens_in_settings($v, $post);
+                $v = falcon_resolve_tokens_in_settings($v, $post);
             }
         }
         return $settings;
@@ -1718,7 +1718,7 @@ if (!function_exists('lazy_custom_element_render')) {
     {
         $s    = $el['settings'] ?? [];
         $elId = $el['id'] ?? uniqid('ce');
-        $fields = lazy_normalize_custom_fields($customDef); // keyed, ordered
+        $fields = falcon_normalize_custom_fields($customDef); // keyed, ordered
         $contentTypes = ['text','textarea','wysiwyg','image','media','icon','button','repeater','date','number','slider','select','radio','checkbox','url','link'];
         // A field renders as content unless it's a design modifier (align select/radio, or an apply_to relation).
         $isContent = function (string $k, array $f) use ($contentTypes): bool {
@@ -1995,8 +1995,8 @@ if (!function_exists('lazy_lang_switcher')) {
     }
 }
 
-if (!function_exists('lazy_lang_dropdown')) {
-    function lazy_lang_dropdown() {
+if (!function_exists('falcon_lang_dropdown')) {
+    function falcon_lang_dropdown() {
         try {
             if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
             $activeLangs = \FalconCms\Core\Models\Language::where('status', true)->get();
@@ -2177,8 +2177,8 @@ if (!function_exists('lazy_mobile_lang_switcher')) {
     }
 }
 
-if (!function_exists('the_lazy_lang_dropdown')) {
-    function the_lazy_lang_dropdown() { echo lazy_lang_dropdown(); }
+if (!function_exists('the_falcon_lang_dropdown')) {
+    function the_falcon_lang_dropdown() { echo falcon_lang_dropdown(); }
 }
 
 if (!function_exists('lazy_search_form')) {
@@ -2212,17 +2212,17 @@ if (!function_exists('do_lazy_shortcode')) {
     function do_lazy_shortcode($content) {
         if (empty($content)) return $content;
 
-        // Match [lazy_form slug="..."] — also accept &quot; (entity-encoded quotes from WYSIWYG editors)
+        // Match [falcon_form slug="..."] — also accept &quot; (entity-encoded quotes from WYSIWYG editors)
         // Do NOT html_entity_decode the entire string: that would undo Blade's {{ }} escaping and open XSS.
         $content = preg_replace_callback(
-            '/\[lazy_form\s+slug=(?:&quot;|["\'])([^"\'&\[\]]+)(?:&quot;|["\'])\s*\]/',
+            '/\[falcon_form\s+slug=(?:&quot;|["\'])([^"\'&\[\]]+)(?:&quot;|["\'])\s*\]/',
             function ($matches) { return render_lazy_form($matches[1]); },
             $content
         );
 
         $shortcodes = [
-            '[lazy_search]'        => lazy_search_form(),
-            '[lazy_lang_dropdown]' => lazy_lang_dropdown(),
+            '[falcon_search]'        => lazy_search_form(),
+            '[falcon_lang_dropdown]' => falcon_lang_dropdown(),
         ];
 
         return str_replace(array_keys($shortcodes), array_values($shortcodes), $content);
@@ -2469,7 +2469,7 @@ if (!function_exists('get_falcon_cart_total')) {
     function get_falcon_cart_total() {
         $cart = session()->get('falcon_cart', []);
         $subtotal = get_falcon_cart_subtotal();
-        $shipping = get_falcon_cart_shipping(session()->get('lazy_shipping_country'));
+        $shipping = get_falcon_cart_shipping(session()->get('falcon_shipping_country'));
         $tax = get_falcon_cart_tax();
         
         $coupons = session()->get('falcon_coupons', []);
@@ -2480,7 +2480,7 @@ if (!function_exists('get_falcon_cart_total')) {
         $currentSubtotal = $subtotal;
 
         foreach ($coupons as $coupon) {
-            $discount = get_lazy_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
+            $discount = get_falcon_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
             $totalDiscount += $discount;
             $currentSubtotal -= $discount;
         }
@@ -2489,11 +2489,11 @@ if (!function_exists('get_falcon_cart_total')) {
     }
 }
 
-if (!function_exists('lazy_is_variable_product')) {
+if (!function_exists('falcon_is_variable_product')) {
     /**
      * Whether a product is a variable product (flag may live in shopData->type or ->product_type).
      */
-    function lazy_is_variable_product($product): bool {
+    function falcon_is_variable_product($product): bool {
         $sd = $product->shopData ?? null;
         if (!$sd) return false;
         return ($sd->type ?? null) === 'variable' || ($sd->product_type ?? null) === 'variable';
@@ -2534,11 +2534,11 @@ if (!function_exists('lazy_shipping_carriers')) {
     }
 }
 
-if (!function_exists('lazy_wishlist_product_ids')) {
+if (!function_exists('falcon_wishlist_product_ids')) {
     /**
      * Product IDs in the current user's wishlist (cached per request). Empty for guests.
      */
-    function lazy_wishlist_product_ids(): array {
+    function falcon_wishlist_product_ids(): array {
         static $cache = null;
         if ($cache !== null) return $cache;
         if (!auth()->check()) return $cache = [];
@@ -2553,18 +2553,18 @@ if (!function_exists('lazy_wishlist_product_ids')) {
 
 if (!function_exists('lazy_in_wishlist')) {
     function lazy_in_wishlist($productId): bool {
-        return in_array((int) $productId, lazy_wishlist_product_ids(), true);
+        return in_array((int) $productId, falcon_wishlist_product_ids(), true);
     }
 }
 
 // ── Checkout Field System ──────────────────────────────────────────────────────
 
-if (!function_exists('lazy_standard_checkout_field_names')) {
+if (!function_exists('falcon_standard_checkout_field_names')) {
     /**
      * Returns the field names that map to dedicated order columns.
      * Any field NOT in this list is treated as a custom field and saved to order meta.
      */
-    function lazy_standard_checkout_field_names(): array
+    function falcon_standard_checkout_field_names(): array
     {
         return [
             'billing_first_name', 'billing_last_name', 'billing_email', 'billing_phone',
@@ -2577,10 +2577,10 @@ if (!function_exists('lazy_standard_checkout_field_names')) {
     }
 }
 
-if (!function_exists('lazy_get_checkout_fields')) {
+if (!function_exists('falcon_get_checkout_fields')) {
     /**
      * Returns the sorted field array for 'billing' or 'shipping'.
-     * Applies the lazy_billing_fields / lazy_shipping_fields filter so developers
+     * Applies the falcon_billing_fields / lazy_shipping_fields filter so developers
      * can add, remove, or reorder fields from functions.php.
      *
      * Field keys:
@@ -2597,7 +2597,7 @@ if (!function_exists('lazy_get_checkout_fields')) {
      *   rules       string   Custom Laravel validation rule (overrides 'required' default)
      *   class       string   Extra CSS classes on the field wrapper div
      */
-    function lazy_get_checkout_fields(string $section): array
+    function falcon_get_checkout_fields(string $section): array
     {
         static $defaults = null;
 
@@ -2607,7 +2607,7 @@ if (!function_exists('lazy_get_checkout_fields')) {
                 'billing' => [
                     ['name' => 'billing_first_name', 'type' => 'text',    'label' => 'First name',       'required' => true,  'width' => 'half', 'priority' => 10,  'default' => $user->first_name ?? ''],
                     ['name' => 'billing_last_name',  'type' => 'text',    'label' => 'Last name',         'required' => true,  'width' => 'half', 'priority' => 20,  'default' => $user->last_name  ?? ''],
-                    ['name' => 'billing_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => session('lazy_shipping_country', '')],
+                    ['name' => 'billing_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => session('falcon_shipping_country', '')],
                     ['name' => 'billing_address_1',  'type' => 'text',    'label' => 'Street address',    'required' => true,  'width' => 'full', 'priority' => 40,  'placeholder' => 'House number and street name'],
                     ['name' => 'billing_address_2',  'type' => 'text',    'label' => null,                'required' => false, 'width' => 'full', 'priority' => 50,  'placeholder' => 'Apartment, suite, unit, etc. (optional)'],
                     ['name' => 'billing_city',       'type' => 'text',    'label' => 'Town / City',       'required' => true,  'width' => 'half', 'priority' => 60],
@@ -2619,7 +2619,7 @@ if (!function_exists('lazy_get_checkout_fields')) {
                 'shipping' => [
                     ['name' => 'shipping_first_name', 'type' => 'text',    'label' => 'First name',       'required' => true,  'width' => 'half', 'priority' => 10],
                     ['name' => 'shipping_last_name',  'type' => 'text',    'label' => 'Last name',         'required' => true,  'width' => 'half', 'priority' => 20],
-                    ['name' => 'shipping_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => session('lazy_shipping_country', '')],
+                    ['name' => 'shipping_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => session('falcon_shipping_country', '')],
                     ['name' => 'shipping_address_1',  'type' => 'text',    'label' => 'Street address',    'required' => true,  'width' => 'full', 'priority' => 40,  'placeholder' => 'House number and street name'],
                     ['name' => 'shipping_address_2',  'type' => 'text',    'label' => null,                'required' => false, 'width' => 'full', 'priority' => 50,  'placeholder' => 'Apartment, suite, unit, etc. (optional)'],
                     ['name' => 'shipping_city',       'type' => 'text',    'label' => 'Town / City',       'required' => true,  'width' => 'half', 'priority' => 60],
@@ -2637,12 +2637,12 @@ if (!function_exists('lazy_get_checkout_fields')) {
     }
 }
 
-if (!function_exists('lazy_render_checkout_field')) {
+if (!function_exists('falcon_render_checkout_field')) {
     /**
      * Renders a single checkout field inside the 2-column grid.
      * Full-width fields receive md:col-span-2; half-width get one column.
      */
-    function lazy_render_checkout_field(array $field): void
+    function falcon_render_checkout_field(array $field): void
     {
         $name    = $field['name']         ?? '';
         $type    = $field['type']         ?? 'text';
@@ -2704,34 +2704,34 @@ if (!function_exists('lazy_render_checkout_field')) {
     }
 }
 
-if (!function_exists('lazy_render_checkout_fields')) {
+if (!function_exists('falcon_render_checkout_fields')) {
     /**
      * Renders all checkout fields inside a responsive 2-column grid.
-     * Call with the output of lazy_get_checkout_fields().
+     * Call with the output of falcon_get_checkout_fields().
      */
-    function lazy_render_checkout_fields(array $fields): void
+    function falcon_render_checkout_fields(array $fields): void
     {
         if (empty($fields)) return;
         echo '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
         foreach ($fields as $field) {
-            lazy_render_checkout_field($field);
+            falcon_render_checkout_field($field);
         }
         echo '</div>';
     }
 }
 
-if (!function_exists('lazy_wishlist_count')) {
-    function lazy_wishlist_count(): int {
-        return count(lazy_wishlist_product_ids());
+if (!function_exists('falcon_wishlist_count')) {
+    function falcon_wishlist_count(): int {
+        return count(falcon_wishlist_product_ids());
     }
 }
 
-if (!function_exists('lazy_enabled_payment_gateways')) {
+if (!function_exists('falcon_enabled_payment_gateways')) {
     /**
      * Enabled storefront payment gateways (single source of truth for checkout + order processing).
      * Returns: [ id => ['id','title','desc','type' => offline|online] ]
      */
-    function lazy_enabled_payment_gateways(): array {
+    function falcon_enabled_payment_gateways(): array {
         $gateways = [];
 
         if (get_shop_option('shop_payment_cod_enable') === '1') {
@@ -2781,8 +2781,8 @@ if (!function_exists('lazy_enabled_payment_gateways')) {
     }
 }
 
-if (!function_exists('get_lazy_coupon_discount_amount')) {
-    function get_lazy_coupon_discount_amount($coupon, $cart, $calcBaseSubtotal = null) {
+if (!function_exists('get_falcon_coupon_discount_amount')) {
+    function get_falcon_coupon_discount_amount($coupon, $cart, $calcBaseSubtotal = null) {
         $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
         $couponType = $coupon['type'] ?? 'percent';
         $products = (array) ($coupon['products'] ?? []);
@@ -2937,7 +2937,7 @@ if (!function_exists('lazy_render_special_menu_item')) {
         }
 
         if ($type === 'special_wishlist') {
-            $count   = function_exists('lazy_wishlist_count') ? (int) lazy_wishlist_count() : 0;
+            $count   = function_exists('falcon_wishlist_count') ? (int) falcon_wishlist_count() : 0;
             $wishUrl = \Illuminate\Support\Facades\Route::has('shop.wishlist') ? route('shop.wishlist') : url('/wishlist');
             $badge   = '<span class="wishlist-count-badge ' . $badgeCls . ($count > 0 ? '' : ' hidden') . '" style="' . $badgeStyle . '">' . $count . '</span>';
             return '<li class="falcon-menu-item lazy-special-item lazy-special-wishlist">'
@@ -3376,8 +3376,8 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 
 // Supported social platforms: slug => [label, FontAwesome icon]. Used by the Social Icons
 // element to generate one URL field per platform (no icon picking) and to render the icons.
-if (!function_exists('lazy_social_platforms')) {
-    function lazy_social_platforms(): array {
+if (!function_exists('falcon_social_platforms')) {
+    function falcon_social_platforms(): array {
         return [
             'behance'    => ['label' => 'Behance',     'icon' => 'fa-brands fa-behance',      'color' => '#1769FF'],
             'blogger'    => ['label' => 'Blogger',     'icon' => 'fa-brands fa-blogger-b',    'color' => '#FF5722'],
@@ -3431,7 +3431,7 @@ if (!function_exists('lazy_contrast_color')) {
 // icon shows on the front-end. No icon picking; the icon is fixed per platform.
 add_falcon_filter('falcon_builder_elements', function($elements) {
     $fields = [];
-    foreach (lazy_social_platforms() as $key => $p) {
+    foreach (falcon_social_platforms() as $key => $p) {
         // social_icon / social_color / social_label: tell the live canvas the fixed icon, brand colour and name.
         $fields[$key] = ['type' => 'text', 'label' => $p['label'] . ' Link', 'tab' => 'general', 'default' => '',
                          'social_icon' => $p['icon'], 'social_color' => $p['color'] ?? '#2271b1', 'social_label' => $p['label']];

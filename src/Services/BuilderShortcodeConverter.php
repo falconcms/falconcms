@@ -120,7 +120,7 @@ class BuilderShortcodeConverter
 
     public static function isBuilderShortcode(string $content): bool
     {
-        return str_contains($content, '[lazy_section');
+        return str_contains($content, '[falcon_section');
     }
 
     public static function jsonToShortcodes(string $json): string
@@ -152,7 +152,7 @@ class BuilderShortcodeConverter
     {
         $content = self::unwrapEditorMarkup($content);
         $layout  = [];
-        $pattern = '/\[lazy_section([^\]]*)\](.*?)\[\/lazy_section\]/s';
+        $pattern = '/\[falcon_section([^\]]*)\](.*?)\[\/falcon_section\]/s';
         if (!preg_match_all($pattern, $content, $m, PREG_SET_ORDER)) return $content;
         foreach ($m as $match) {
             $c = self::parseContainer($match[1], $match[2]);
@@ -438,7 +438,7 @@ class BuilderShortcodeConverter
 
         $attrStr   = implode(' ', $a);
         $recovered = self::containerSettings(self::attrs($attrStr));
-        return self::appendExtras('[lazy_section ' . $attrStr . ']' . $inner . '[/lazy_section]', $s, $recovered);
+        return self::appendExtras('[falcon_section ' . $attrStr . ']' . $inner . '[/falcon_section]', $s, $recovered);
     }
 
     private static function columnToShortcode(array $column): string
@@ -614,7 +614,7 @@ class BuilderShortcodeConverter
 
         $attrStr   = implode(' ', $a);
         $recovered = self::columnSettings(self::attrs($attrStr));
-        return self::appendExtras('[lazy_col ' . $attrStr . ']' . $inner . '[/lazy_col]', $s, $recovered);
+        return self::appendExtras('[falcon_col ' . $attrStr . ']' . $inner . '[/falcon_col]', $s, $recovered);
     }
 
     private static function elementToShortcode(array $el): string
@@ -642,7 +642,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'color',       $s['color']      ?? null);
                 self::attrI($a, 'css_class',   $s['cssClass']   ?? null);
                 $body = str_replace(["\r\n", "\r", "\n"], '', $s['title'] ?? '');
-                return '[lazy_heading ' . trim($a) . $vis . ']' . $body . '[/lazy_heading]';
+                return '[falcon_heading ' . trim($a) . $vis . ']' . $body . '[/falcon_heading]';
             }
 
             case 'title': {
@@ -722,7 +722,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'css_class',         $s['cssClass']           ?? null);
                 self::attrI($a, 'css_id',            $s['cssId']              ?? null);
                 $body = str_replace(["\r\n", "\r", "\n"], '', $s['title'] ?? '');
-                return '[lazy_title ' . trim($a) . $vis . ']' . $body . '[/lazy_title]';
+                return '[falcon_title ' . trim($a) . $vis . ']' . $body . '[/falcon_title]';
             }
 
             case 'text': {
@@ -733,7 +733,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'align',       $s['textAlign']  ?? null);
                 self::attrI($a, 'css_class',   $s['cssClass']   ?? null);
                 $body = str_replace(["\r\n", "\r", "\n"], '', $s['content'] ?? '');
-                return '[lazy_text ' . trim($a) . $vis . ']' . $body . '[/lazy_text]';
+                return '[falcon_text ' . trim($a) . $vis . ']' . $body . '[/falcon_text]';
             }
 
             case 'button': {
@@ -843,7 +843,7 @@ class BuilderShortcodeConverter
                 // CSS
                 self::attrI($a, 'css_class', $s['cssClass'] ?? null);
                 self::attrI($a, 'css_id',    $s['cssId']    ?? null);
-                return '[lazy_button ' . trim($a) . $vis . ' /]';
+                return '[falcon_button ' . trim($a) . $vis . ' /]';
             }
 
             case 'image': {
@@ -906,7 +906,7 @@ class BuilderShortcodeConverter
                 // CSS
                 self::attrI($a, 'css_class', $s['cssClass'] ?? null);
                 self::attrI($a, 'css_id',    $s['cssId']    ?? null);
-                return '[lazy_image ' . trim($a) . $vis . ' /]';
+                return '[falcon_image ' . trim($a) . $vis . ' /]';
             }
 
             case 'spacer': {
@@ -924,7 +924,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'separator_color',      $s['separatorColor']     ?? null);
                 self::attrI($a, 'css_class',            $s['cssClass']           ?? null);
                 self::attrI($a, 'css_id',               $s['cssId']              ?? null);
-                return '[lazy_spacer ' . trim($a) . $vis . ' /]';
+                return '[falcon_spacer ' . trim($a) . $vis . ' /]';
             }
 
             case 'html': {
@@ -936,7 +936,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'css_class',          $s['cssClass']         ?? null);
                 self::attrI($a, 'css_id',             $s['cssId']            ?? null);
                 $body = $s['htmlContent'] ?? '';
-                return '[lazy_html ' . trim($a) . $vis . ']' . $body . '[/lazy_html]';
+                return '[falcon_html ' . trim($a) . $vis . ']' . $body . '[/lazy_html]';
             }
 
             case 'icon_box': {
@@ -981,7 +981,7 @@ class BuilderShortcodeConverter
                 $title = htmlspecialchars($s['title'] ?? '', ENT_QUOTES);
                 if ($title !== '') $a .= ' title="' . $title . '"';
                 $body = $s['description'] ?? '';
-                return '[lazy_icon_box ' . trim($a) . $vis . ']' . $body . '[/lazy_icon_box]';
+                return '[falcon_icon_box ' . trim($a) . $vis . ']' . $body . '[/lazy_icon_box]';
             }
 
             case 'video': {
@@ -999,7 +999,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'margin_bottom_unit', $s['marginBottomUnit'] ?? 'px', 'px');
                 self::attrI($a, 'css_class', $s['cssClass'] ?? null);
                 self::attrI($a, 'css_id',    $s['cssId']    ?? null);
-                return '[lazy_video ' . trim($a) . $vis . ' /]';
+                return '[falcon_video ' . trim($a) . $vis . ' /]';
             }
 
             case 'text_block':
@@ -1195,7 +1195,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'mobile_bg_color_h',    $s['mobileMenuBgColorHover']       ?? null);
                 self::attrI($a, 'mobile_text_color',    $s['mobileMenuTextColor']          ?? null);
                 self::attrI($a, 'mobile_text_color_h',  $s['mobileMenuTextColorHover']     ?? null);
-                return '[lazy_menu ' . trim($a) . $vis . ' /]';
+                return '[falcon_menu ' . trim($a) . $vis . ' /]';
             }
 
             case 'row': {
@@ -1205,9 +1205,9 @@ class BuilderShortcodeConverter
                         $rowCols[] = self::columnToShortcode($nestedCol);
                     }
                     $rowInner = ' ' . implode(' ', $rowCols) . ' ';
-                    return '[lazy_row' . ($base ? ' ' . trim($base) : '') . $vis . ']' . $rowInner . '[/lazy_row]';
+                    return '[falcon_row' . ($base ? ' ' . trim($base) : '') . $vis . ']' . $rowInner . '[/falcon_row]';
                 }
-                return '[lazy_row ' . trim($base) . $vis . ' /]';
+                return '[falcon_row ' . trim($base) . $vis . ' /]';
             }
 
             case 'card': {
@@ -1260,7 +1260,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'items_per_slide',         $s['items_per_slide']         ?? null, 1);
                 self::attrI($a, 'items_per_slide_tablet',  $s['items_per_slide_tablet']  ?? null, 0);
                 self::attrI($a, 'items_per_slide_mobile',  $s['items_per_slide_mobile']  ?? null, 0);
-                return '[lazy_card ' . trim($a) . $vis . ' /]';
+                return '[falcon_card ' . trim($a) . $vis . ' /]';
             }
 
             case 'accordion': {
@@ -1300,9 +1300,9 @@ class BuilderShortcodeConverter
                 foreach ($s['items'] ?? [] as $item) {
                     $t  = htmlspecialchars($item['title'] ?? '', ENT_QUOTES);
                     $iid = !empty($item['id']) ? ' id="' . htmlspecialchars((string) $item['id'], ENT_QUOTES) . '"' : '';
-                    $items .= "\n" . '[lazy_acc_item' . $iid . ' title="' . $t . '"]' . ($item['content'] ?? '') . '[/lazy_acc_item]';
+                    $items .= "\n" . '[falcon_acc_item' . $iid . ' title="' . $t . '"]' . ($item['content'] ?? '') . '[/lazy_acc_item]';
                 }
-                return '[lazy_accordion ' . trim($a) . $vis . ']' . $items . "\n[/lazy_accordion]";
+                return '[falcon_accordion ' . trim($a) . $vis . ']' . $items . "\n[/falcon_accordion]";
             }
 
             case 'tabs': {
@@ -1335,9 +1335,9 @@ class BuilderShortcodeConverter
                 foreach ($s['items'] ?? [] as $item) {
                     $l  = htmlspecialchars($item['label'] ?? '', ENT_QUOTES);
                     $iid = !empty($item['id']) ? ' id="' . htmlspecialchars((string) $item['id'], ENT_QUOTES) . '"' : '';
-                    $items .= "\n" . '[lazy_tab_item' . $iid . ' label="' . $l . '"]' . ($item['content'] ?? '') . '[/lazy_tab_item]';
+                    $items .= "\n" . '[falcon_tab_item' . $iid . ' label="' . $l . '"]' . ($item['content'] ?? '') . '[/lazy_tab_item]';
                 }
-                return '[lazy_tabs ' . trim($a) . $vis . ']' . $items . "\n[/lazy_tabs]";
+                return '[falcon_tabs ' . trim($a) . $vis . ']' . $items . "\n[/falcon_tabs]";
             }
 
             case 'icon_list': {
@@ -1368,9 +1368,9 @@ class BuilderShortcodeConverter
                     if (!empty($item['iconColor']))  $ia .= ' icon_color="' . htmlspecialchars($item['iconColor'], ENT_QUOTES) . '"';
                     if (!empty($item['link']))       $ia .= ' link="' . htmlspecialchars($item['link'], ENT_QUOTES) . '"';
                     if (!empty($item['linkTarget'])) $ia .= ' link_target="' . htmlspecialchars($item['linkTarget'], ENT_QUOTES) . '"';
-                    $items .= "\n" . '[lazy_icon_list_item' . $ia . ']' . htmlspecialchars($item['text'] ?? '', ENT_QUOTES) . '[/lazy_icon_list_item]';
+                    $items .= "\n" . '[falcon_icon_list_item' . $ia . ']' . htmlspecialchars($item['text'] ?? '', ENT_QUOTES) . '[/lazy_icon_list_item]';
                 }
-                return '[lazy_icon_list ' . trim($a) . $vis . ']' . $items . "\n[/lazy_icon_list]";
+                return '[falcon_icon_list ' . trim($a) . $vis . ']' . $items . "\n[/falcon_icon_list]";
             }
 
             case 'counter': {
@@ -1406,7 +1406,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'mb_unit',    $s['marginBottomUnit']    ?? null, 'px');
                 self::attrI($a, 'css_class',  $s['cssClass']            ?? null);
                 self::attrI($a, 'css_id',     $s['cssId']               ?? null);
-                return '[lazy_counter ' . trim($a) . $vis . ' /]';
+                return '[falcon_counter ' . trim($a) . $vis . ' /]';
             }
 
             case 'star_rating': {
@@ -1432,7 +1432,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'mb_unit',     $s['marginBottomUnit']    ?? null, 'px');
                 self::attrI($a, 'css_class',   $s['cssClass']            ?? null);
                 self::attrI($a, 'css_id',      $s['cssId']               ?? null);
-                return '[lazy_star_rating ' . trim($a) . $vis . ' /]';
+                return '[falcon_star_rating ' . trim($a) . $vis . ' /]';
             }
 
             case 'gallery': {
@@ -1481,7 +1481,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'mb_m_unit', isset($s['marginBottom_mobile']) && $s['marginBottom_mobile'] !== '' ? ($s['marginBottomUnit_mobile'] ?? 'px') : null);
                 self::attrI($a, 'css_class', $s['cssClass']      ?? null);
                 self::attrI($a, 'css_id',    $s['cssId']         ?? null);
-                return '[lazy_gallery ' . trim($a) . $vis . ' /]';
+                return '[falcon_gallery ' . trim($a) . $vis . ' /]';
             }
 
             case 'ticker': {
@@ -1514,13 +1514,13 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'mb_unit',   $s['marginBottomUnit'] ?? null, 'px');
                 self::attrI($a, 'css_class', $s['cssClass']        ?? null);
                 self::attrI($a, 'css_id',    $s['cssId']           ?? null);
-                return '[lazy_ticker ' . trim($a) . $vis . ' /]';
+                return '[falcon_ticker ' . trim($a) . $vis . ' /]';
             }
 
             default: {
                 $cdefs = self::customDefs();
                 $cdef  = $cdefs[$type] ?? null;
-                $tag   = ($cdef && !empty($cdef['shortcode'])) ? $cdef['shortcode'] : 'lazy_element';
+                $tag   = ($cdef && !empty($cdef['shortcode'])) ? $cdef['shortcode'] : 'falcon_element';
                 $bases = $cdef ? self::ceAllowedKeys($cdef) : null;
                 $extraKeys = ($cdef && is_array($cdef['shortcode_keys'] ?? null)) ? $cdef['shortcode_keys'] : [];
                 $repKeys = [];
@@ -1531,7 +1531,7 @@ class BuilderShortcodeConverter
                 }
 
                 $out = '[' . $tag;
-                if ($tag === 'lazy_element') $out .= ' type="' . $type . '"';
+                if ($tag === 'falcon_element') $out .= ' type="' . $type . '"';
                 $out .= ' ' . trim($base) . $vis;
 
                 foreach ($el['settings'] ?? [] as $k => $v) {
@@ -1595,8 +1595,8 @@ class BuilderShortcodeConverter
     }
 
     /**
-     * Depth-counting column extractor — handles nested [lazy_col] inside [lazy_row] correctly.
-     * A simple .*? regex stops at the first [/lazy_col] it finds (the inner nested one),
+     * Depth-counting column extractor — handles nested [falcon_col] inside [falcon_row] correctly.
+     * A simple .*? regex stops at the first [/falcon_col] it finds (the inner nested one),
      * which breaks nested-row structures.
      */
     private static function parseColumnsFromContent(string $content): array
@@ -1606,10 +1606,10 @@ class BuilderShortcodeConverter
         $len  = strlen($content);
 
         while ($pos < $len) {
-            $tagStart = strpos($content, '[lazy_col', $pos);
+            $tagStart = strpos($content, '[falcon_col', $pos);
             if ($tagStart === false) break;
 
-            // Must be [lazy_col] or [lazy_col ...], not [lazy_columns or similar
+            // Must be [falcon_col] or [falcon_col ...], not [falcon_columns or similar
             $c = $content[$tagStart + 9] ?? '';
             if ($c !== ' ' && $c !== ']') { $pos = $tagStart + 9; continue; }
 
@@ -1622,8 +1622,8 @@ class BuilderShortcodeConverter
             $done    = false;
 
             while ($depth > 0 && $search < $len) {
-                $nextOpen  = strpos($content, '[lazy_col', $search);
-                $nextClose = strpos($content, '[/lazy_col]', $search);
+                $nextOpen  = strpos($content, '[falcon_col', $search);
+                $nextClose = strpos($content, '[/falcon_col]', $search);
 
                 if ($nextClose === false) break;
 
@@ -1637,7 +1637,7 @@ class BuilderShortcodeConverter
                         $colInner = substr($content, $openEnd + 1, $nextClose - $openEnd - 1);
                         $col = self::parseColumn($attrStr, $colInner);
                         if ($col) $cols[] = $col;
-                        $pos  = $nextClose + 11; // strlen('[/lazy_col]')
+                        $pos  = $nextClose + 11; // strlen('[/falcon_col]')
                         $done = true;
                         break;
                     }
@@ -2398,7 +2398,7 @@ class BuilderShortcodeConverter
 
             case 'accordion': {
                 $items = [];
-                if (preg_match_all('/\[lazy_acc_item([^\]]*)\](.*?)\[\/lazy_acc_item\]/s', $inner, $im, PREG_SET_ORDER)) {
+                if (preg_match_all('/\[falcon_acc_item([^\]]*)\](.*?)\[\/lazy_acc_item\]/s', $inner, $im, PREG_SET_ORDER)) {
                     foreach ($im as $imatch) {
                         $ia = self::attrs($imatch[1]);
                         $items[] = [
@@ -2447,7 +2447,7 @@ class BuilderShortcodeConverter
 
             case 'tabs': {
                 $items = [];
-                if (preg_match_all('/\[lazy_tab_item([^\]]*)\](.*?)\[\/lazy_tab_item\]/s', $inner, $im, PREG_SET_ORDER)) {
+                if (preg_match_all('/\[falcon_tab_item([^\]]*)\](.*?)\[\/lazy_tab_item\]/s', $inner, $im, PREG_SET_ORDER)) {
                     foreach ($im as $imatch) {
                         $ia = self::attrs($imatch[1]);
                         $items[] = [
@@ -2489,7 +2489,7 @@ class BuilderShortcodeConverter
 
             case 'icon_list': {
                 $items = [];
-                if (preg_match_all('/\[lazy_icon_list_item([^\]]*)\](.*?)\[\/lazy_icon_list_item\]/s', $inner, $im, PREG_SET_ORDER)) {
+                if (preg_match_all('/\[falcon_icon_list_item([^\]]*)\](.*?)\[\/lazy_icon_list_item\]/s', $inner, $im, PREG_SET_ORDER)) {
                     foreach ($im as $imatch) {
                         $ia = self::attrs($imatch[1]);
                         $items[] = [

@@ -484,7 +484,7 @@ Route::get('/blogs', function () {
                                 <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Admin Panel Actions</h4>
                                 <ul class="text-xs space-y-1 text-gray-700">
                                     <li><code>lazy_admin_head</code> - Inside admin &lt;head&gt;</li>
-                                    <li><code>lazy_admin_footer</code> - Before admin &lt;/body&gt;</li>
+                                    <li><code>falcon_admin_footer</code> - Before admin &lt;/body&gt;</li>
                                     <li><code>lazy_admin_bar_right_before</code> - Top bar right side</li>
                                     <li><code>lazy_settings_form_top</code> - General Settings top</li>
                                     <li><code>lazy_settings_form_bottom</code> - General Settings bottom</li>
@@ -598,21 +598,21 @@ add_falcon_filter('lazy_general_settings_fields', function($fields) {
                                     <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Where it fires</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_single_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before entire product page</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_single_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After entire product page</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_product_images</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before image gallery column</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_product_images</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After image gallery column</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_product_description</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before description section</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_product_description</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After description section</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_product_description_title</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify "Description" heading HTML</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_product_description</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify full description HTML</td></tr>
-                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Add custom form fields to <b>both</b> simple & variable product pages at once (rendered before the ATC button). Use <code>lazy_simple_product_fields</code> / <code>lazy_variable_product_fields</code> for type-specific fields.</td></tr>
-                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_simple_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Simple product only — applied after <code>lazy_product_fields</code></td></tr>
-                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_variable_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Variable product only — applied after <code>lazy_product_fields</code></td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_before_single_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before entire product page</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_after_single_product</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After entire product page</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_before_product_images</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before image gallery column</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_after_product_images</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After image gallery column</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_before_product_description</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before description section</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_after_product_description</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After description section</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">falcon_product_description_title</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify "Description" heading HTML</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">falcon_product_description</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify full description HTML</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">falcon_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Add custom form fields to <b>both</b> simple & variable product pages at once (rendered before the ATC button). Use <code>lazy_simple_product_fields</code> / <code>lazy_variable_product_fields</code> for type-specific fields.</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_simple_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Simple product only — applied after <code>falcon_product_fields</code></td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_variable_product_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $post</td><td class="px-3 py-2">Variable product only — applied after <code>falcon_product_fields</code></td></tr>
                                 </tbody>
                             </table>
                         </div>
-                        <p class="text-xs text-gray-500 mt-3">Render helper: <code class="bg-gray-100 px-1 rounded">lazy_render_product_fields($fields)</code> — called automatically by the theme. Each field is an array with a <code>type</code> key (<code>text</code>, <code>select</code>, <code>textarea</code>, <code>raw</code>…). The <code>raw</code> type lets you output any HTML via <code>ob_start()</code>.</p>
+                        <p class="text-xs text-gray-500 mt-3">Render helper: <code class="bg-gray-100 px-1 rounded">falcon_render_product_fields($fields)</code> — called automatically by the theme. Each field is an array with a <code>type</code> key (<code>text</code>, <code>select</code>, <code>textarea</code>, <code>raw</code>…). The <code>raw</code> type lets you output any HTML via <code>ob_start()</code>.</p>
                     </div>
 
                     {{-- Simple Product Hooks --}}
@@ -641,7 +641,7 @@ add_falcon_filter('lazy_general_settings_fields', function($fields) {
                                     <tr><td class="px-3 py-2 font-mono text-green-600">lazy_simple_add_to_cart_button</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$html, $post</td><td class="px-3 py-2">Modify button HTML</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_add_to_cart_button</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After submit button</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_add_to_cart_form</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After add-to-cart form</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_out_of_stock_button</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Replaces default out-of-stock button</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_simple_out_of_stock_button</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Replaces default out-of-stock button</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_before_product_meta</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Before SKU/category meta</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_product_meta_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">Inside meta — add extra rows</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_simple_after_product_meta</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$post</td><td class="px-3 py-2">After SKU/category meta</td></tr>
@@ -688,7 +688,7 @@ add_falcon_filter('lazy_general_settings_fields', function($fields) {
                                     <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">falcon_cart_item_data</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$item, $product, $variation</td><td class="px-3 py-2">Modify the <b>full cart item array</b> just before it is written to the session. Use this to bake price add-ons into <code>$item['price']</code> / <code>$item['sale_price']</code> so totals, tax, coupons, and invoices stay correct automatically.</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-green-600">lazy_order_item_meta</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$meta, $item, $order</td><td class="px-3 py-2">Modify order item meta before it is saved to the database</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_place_order</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$order, $cart, $request</td><td class="px-3 py-2">After the order row is created, before order items are saved</td></tr>
-                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_custom_field_labels</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$labels, $context</td><td class="px-3 py-2">Provide human-readable labels for custom item fields (<code>$item-&gt;meta['custom_fields']</code>). The <code>$labels</code> array maps field key → label. Used automatically by <code>lazy_render_item_custom_fields()</code> across mini-cart, cart, checkout, confirmation, and invoice.</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">falcon_custom_field_labels</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$labels, $context</td><td class="px-3 py-2">Provide human-readable labels for custom item fields (<code>$item-&gt;meta['custom_fields']</code>). The <code>$labels</code> array maps field key → label. Used automatically by <code>falcon_render_item_custom_fields()</code> across mini-cart, cart, checkout, confirmation, and invoice.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -717,11 +717,11 @@ add_falcon_filter('lazy_general_settings_fields', function($fields) {
                         <h3 class="text-lg font-bold text-blue-600 mb-3">Custom Fields — Add to Cart → Order</h3>
                         <p class="text-sm text-gray-600 mb-4">Add custom input fields to the add-to-cart form. Field names must be prefixed <code>lazy_custom_</code>. They are automatically stored in the cart session and persisted to <code>shop_order_items.meta</code> when the order is placed.</p>
 
-                        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Method A — Array fields via <code>lazy_product_fields</code> (recommended, renders on both product types)</p>
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Method A — Array fields via <code>falcon_product_fields</code> (recommended, renders on both product types)</p>
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
                             <pre><code>@verbatim
 // Works on BOTH simple and variable products
-add_falcon_filter('lazy_product_fields', function ($fields) {
+add_falcon_filter('falcon_product_fields', function ($fields) {
     $fields[] = [
         'type'        => 'text',
         'name'        => 'lazy_custom_engraving',
@@ -751,7 +751,7 @@ add_falcon_action('lazy_simple_add_to_cart_form_top', function ($post) {
 
                         <div class="bg-blue-50 border-l-4 border-blue-400 p-3 text-xs text-blue-700">
                             Access in orders: <code>$item-&gt;meta['custom_fields']['engraving']</code> (the <code>lazy_custom_</code> prefix is stripped automatically).
-                            Display across pages: register a label via <code>lazy_custom_field_labels</code> and the CMS renders it everywhere automatically (mini-cart, cart, checkout summary, confirmation, invoice).
+                            Display across pages: register a label via <code>falcon_custom_field_labels</code> and the CMS renders it everywhere automatically (mini-cart, cart, checkout summary, confirmation, invoice).
                         </div>
                     </div>
 
@@ -789,7 +789,7 @@ add_falcon_filter('lazy_simple_product_price', function ($html, $post) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove the description section entirely</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_falcon_filter('lazy_product_description', function ($html, $post) {
+add_falcon_filter('falcon_product_description', function ($html, $post) {
     return ''; // return empty string to suppress
 });
 @endverbatim</code></pre>
@@ -822,7 +822,7 @@ add_falcon_action('lazy_admin_after_save_product', function ($post, $shopData, $
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-blue-800">
                             <div class="bg-white/60 rounded-lg p-3 border border-blue-100">
                                 <div class="font-bold mb-1">1. Define</div>
-                                Push a field array into <code>lazy_billing_fields</code> or <code>lazy_shipping_fields</code>.
+                                Push a field array into <code>falcon_billing_fields</code> or <code>lazy_shipping_fields</code>.
                             </div>
                             <div class="bg-white/60 rounded-lg p-3 border border-blue-100">
                                 <div class="font-bold mb-1">2. Automatic</div>
@@ -845,10 +845,10 @@ add_falcon_action('lazy_admin_after_save_product', function ($post, $shopData, $
                                     <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Description</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_billing_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields</td><td class="px-3 py-2">Add / remove / reorder billing form fields. Return the modified array.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">falcon_billing_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields</td><td class="px-3 py-2">Add / remove / reorder billing form fields. Return the modified array.</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-green-600">lazy_shipping_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields</td><td class="px-3 py-2">Same as above for the shipping form.</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-green-600">lazy_checkout_custom_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $request</td><td class="px-3 py-2">Final filter on the collected custom field values before they are saved to <code>$order->meta</code>. Useful for transforming or removing values.</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_checkout_field_labels</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$labels</td><td class="px-3 py-2">Map custom field key → human-readable label. Used on order confirmation, admin detail, and invoice. Returns an array e.g. <code>['billing_company' => 'Company']</code>.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">falcon_checkout_field_labels</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$labels</td><td class="px-3 py-2">Map custom field key → human-readable label. Used on order confirmation, admin detail, and invoice. Returns an array e.g. <code>['billing_company' => 'Company']</code>.</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_billing_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">—</td><td class="px-3 py-2">Before the billing fields grid renders</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_after_billing_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">—</td><td class="px-3 py-2">After the billing fields grid renders</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_shipping_fields</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">—</td><td class="px-3 py-2">Before the shipping fields grid renders</td></tr>
@@ -901,10 +901,10 @@ add_falcon_action('lazy_admin_after_save_product', function ($post, $shopData, $
                                     <tr><th class="px-3 py-2">Function</th><th class="px-3 py-2">Description</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_get_checkout_fields(string $section)</td><td class="px-3 py-2">Returns the merged + sorted field array for <code>'billing'</code> or <code>'shipping'</code> — the single source of truth used both for rendering the form and for server-side validation/collection.</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_render_checkout_fields(array $fields)</td><td class="px-3 py-2">Wraps all fields in a responsive 2-column grid and calls <code>lazy_render_checkout_field</code> for each.</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_render_checkout_field(array $field)</td><td class="px-3 py-2">Renders one field — handles all supported types automatically.</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_standard_checkout_field_names()</td><td class="px-3 py-2">Returns the list of standard field names that map to dedicated order columns. Any other name is a "custom" field.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_get_checkout_fields(string $section)</td><td class="px-3 py-2">Returns the merged + sorted field array for <code>'billing'</code> or <code>'shipping'</code> — the single source of truth used both for rendering the form and for server-side validation/collection.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_render_checkout_fields(array $fields)</td><td class="px-3 py-2">Wraps all fields in a responsive 2-column grid and calls <code>falcon_render_checkout_field</code> for each.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_render_checkout_field(array $field)</td><td class="px-3 py-2">Renders one field — handles all supported types automatically.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">falcon_standard_checkout_field_names()</td><td class="px-3 py-2">Returns the list of standard field names that map to dedicated order columns. Any other name is a "custom" field.</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -918,7 +918,7 @@ add_falcon_action('lazy_admin_after_save_product', function ($post, $shopData, $
 // In functions.php
 
 // 1. Add the field (priority 25 = between Last name and Country)
-add_falcon_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('falcon_billing_fields', function ($fields) {
     $fields[] = [
         'name'        => 'billing_company',
         'type'        => 'text',
@@ -932,7 +932,7 @@ add_falcon_filter('lazy_billing_fields', function ($fields) {
 });
 
 // 2. Human-readable label for order pages
-add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
+add_falcon_filter('falcon_checkout_field_labels', function ($labels) {
     $labels['billing_company'] = 'Company';
     return $labels;
 });
@@ -953,7 +953,7 @@ add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                             <pre><code>@verbatim
 // Add a required "Delivery Preference" select after Address line 2 (priority 55)
-add_falcon_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('falcon_billing_fields', function ($fields) {
     $fields[] = [
         'name'     => 'delivery_preference',
         'type'     => 'select',
@@ -971,7 +971,7 @@ add_falcon_filter('lazy_billing_fields', function ($fields) {
     return $fields;
 });
 
-add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
+add_falcon_filter('falcon_checkout_field_labels', function ($labels) {
     $labels['delivery_preference'] = 'Delivery Preference';
     return $labels;
 });
@@ -987,7 +987,7 @@ add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
                         <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove a single field</p>
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
                             <pre><code>@verbatim
-add_falcon_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('falcon_billing_fields', function ($fields) {
     return array_filter($fields, fn($f) => ($f['name'] ?? '') !== 'billing_address_2');
 }, 20);
 @endverbatim</code></pre>
@@ -996,7 +996,7 @@ add_falcon_filter('lazy_billing_fields', function ($fields) {
                         <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove multiple fields at once</p>
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-6">
                             <pre><code>@verbatim
-add_falcon_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('falcon_billing_fields', function ($fields) {
     $remove = ['billing_address_2', 'billing_state'];
     return array_filter($fields, fn($f) => !in_array($f['name'] ?? '', $remove));
 }, 20);
@@ -1174,7 +1174,7 @@ add_falcon_action('lazy_order_confirmation_item_meta', function ($item, $order) 
                             <h3 class="text-lg font-bold text-blue-600 mb-3">3. Language Switcher Helpers</h3>
                             <p class="text-sm text-gray-600 mb-4">Use these helpers to render switchers in your frontend themes:</p>
                             <div class="bg-100 p-4 rounded-lg font-mono text-xs text-gray-700 space-y-2">
-                                <code>{!! lazy_lang_dropdown() !!}</code> - A sleek dropdown with flags.<br>
+                                <code>{!! falcon_lang_dropdown() !!}</code> - A sleek dropdown with flags.<br>
                                 <code>{!! lazy_lang_switcher() !!}</code> - A simple list/flex switcher.
                             </div>
                         </div>
@@ -1213,7 +1213,7 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
                             <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400"><b>type</b> <span class="text-gray-500">— required unique key.</span></div>
                             <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400"><b>name</b> <span class="text-gray-500">— shown in the picker & navigator.</span></div>
                             <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400"><b>icon</b> <span class="text-gray-500">— Font Awesome class.</span></div>
-                            <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400"><b>shortcode</b> <span class="text-gray-500">— optional. Own readable tag, else <code>lazy_element</code>.</span></div>
+                            <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400"><b>shortcode</b> <span class="text-gray-500">— optional. Own readable tag, else <code>falcon_element</code>.</span></div>
                             <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400"><b>template</b> <span class="text-gray-500">— frontend blade view. Omit for the generic auto-renderer.</span></div>
                             <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400"><b>params</b> <span class="text-gray-500">— array of field definitions.</span></div>
                         </div>

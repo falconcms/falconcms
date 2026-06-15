@@ -324,7 +324,7 @@
         }
 
         async function deleteExistingField(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Field',
                 message: 'Are you sure you want to permanently delete this field? Any data stored in this field across your posts will be lost. This action cannot be undone.',
                 confirmText: 'Delete Field',

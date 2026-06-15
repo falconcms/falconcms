@@ -601,8 +601,8 @@
 </div>
 
 @push('scripts')
-<link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/pickr.classic.min.css') }}">
-<script src="{{ asset('vendor/cms-dashboard/js/pickr.min.js') }}"></script>
+<link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/pickr.classic.min.css') }}">
+<script src="{{ asset('vendor/falcon-cms/js/pickr.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 <script>
 // Field dependency: rows with data-depends="<masterKey>" are only active when the
@@ -875,14 +875,14 @@ function customizerApp(initialSection) {
         async runAction(action, event) {
             let confirmed = false;
             if (action === 'optimizeImages') {
-                confirmed = await window.lazyConfirm({
+                confirmed = await window.falconConfirm({
                     title: 'Optimize Images',
                     message: 'Caution: This will replace all existing original images with optimized versions. This process cannot be undone. Continue?',
                     confirmText: 'Yes, Optimize All',
                     isDanger: true
                 });
             } else {
-                confirmed = await window.lazyConfirm({
+                confirmed = await window.falconConfirm({
                     title: 'Run Action',
                     message: 'Are you sure you want to run this action?',
                     confirmText: 'Run Action',
@@ -922,7 +922,7 @@ function customizerApp(initialSection) {
                 ? 'Reset ALL settings to defaults? This cannot be undone.'
                 : 'Reset this section to default values?';
             
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: title,
                 message: msg,
                 confirmText: 'Yes, Reset',
@@ -1012,7 +1012,7 @@ function handleCustImportSelect(input) {
 })();
 
 async function custConfirmImport() {
-    const confirmed = await window.lazyConfirm({
+    const confirmed = await window.falconConfirm({
         title:       'Import Settings',
         message:     'This will overwrite your current theme settings with the ones from the uploaded file. Continue?',
         confirmText: 'Import Now',

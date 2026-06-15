@@ -524,7 +524,7 @@
             const applyBottom = document.getElementById('apply-bulk-action-bottom');
             
             async function executeBulkDelete(ids) {
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: 'Delete Media',
                     message: `Are you sure you want to delete ${ids.length > 1 ? ids.length + ' selected items' : 'this item'} permanently? This action cannot be undone.`,
                     confirmText: 'Delete Permanently',
@@ -680,7 +680,7 @@
             document.getElementById('modal-delete-btn').addEventListener('click', async function() {
                 if (currentIndex === -1) return;
                 
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: 'Delete Media',
                     message: 'Are you sure you want to delete this media item permanently? This action cannot be undone.',
                     confirmText: 'Delete Permanently',

@@ -102,6 +102,6 @@
      id="{{ $appliedId }}"
      style="{{ implode('; ', $wrapperStyles) }}">
     <div class="text-block-content" style="{{ implode('; ', $contentStyles) }}">
-        {!! lazy_sanitize_html($s['content'] ?? '') !!}
+        {!! falcon_sanitize_html($s['content'] ?? '') !!}
     </div>
 </div>

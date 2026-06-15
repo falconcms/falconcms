@@ -198,7 +198,7 @@
             }
 
             if (isDanger) {
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: title,
                     message: message,
                     confirmText: confirmText,
@@ -220,7 +220,7 @@
         };
 
         window.confirmTrash = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Move to Trash',
                 message: 'Are you sure you want to move this taxonomy to trash? It will no longer be active on the site.',
                 confirmText: 'Move to Trash',
@@ -232,7 +232,7 @@
         };
 
         window.confirmForceDelete = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Permanently',
                 message: 'Are you sure you want to permanently delete this taxonomy? This action cannot be undone and all associated terms will be affected!',
                 confirmText: 'Delete Permanently',

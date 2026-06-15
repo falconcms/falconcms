@@ -91,7 +91,7 @@
                             @endif
                         </div>
                         <div class="mt-auto flex flex-wrap gap-2">
-                            @if(lazy_is_variable_product($product))
+                            @if(falcon_is_variable_product($product))
                                 <a href="{{ get_falcon_permalink($product) }}" class="w-full text-center bg-primary text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition-colors duration-200">
                                     Select Options
                                 </a>

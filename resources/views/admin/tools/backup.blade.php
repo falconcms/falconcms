@@ -204,7 +204,7 @@
         })();
 
         window.confirmUpload = async function () {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title:       'Upload Backup File',
                 message:     'This will upload the backup file to this server. After uploading you can restore it. Are you sure?',
                 confirmText: 'Yes, Upload',
@@ -215,7 +215,7 @@
 
         // ── Restore / Delete confirmations ──
         window.confirmRestore = async function(name, formId) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Restore Snapshot',
                 message: `WARNING: This will overwrite your current database with the contents of "${name}". Any changes made since this snapshot was created will be lost. This action cannot be undone.`,
                 confirmText: 'Yes, Restore Database',
@@ -228,7 +228,7 @@
         };
 
         window.confirmDelete = async function(name, formId) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Delete Snapshot',
                 message: `Are you sure you want to delete the snapshot "${name}"? This action cannot be undone.`,
                 confirmText: 'Delete Snapshot',

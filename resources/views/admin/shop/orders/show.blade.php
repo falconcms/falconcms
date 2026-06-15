@@ -348,7 +348,7 @@
 
                         @php $checkoutMeta = $order->meta['checkout_fields'] ?? []; @endphp
                         @if(!empty($checkoutMeta))
-                            @php $coLabels = apply_falcon_filters('lazy_checkout_field_labels', []); @endphp
+                            @php $coLabels = apply_falcon_filters('falcon_checkout_field_labels', []); @endphp
                             <div class="pt-3 border-t border-[#f0f0f1]">
                                 <div class="text-[11px] font-bold uppercase text-[#8c8f94] mb-1.5">Additional Info</div>
                                 <div class="space-y-1">

@@ -29,6 +29,6 @@
 <div id="{{ $elemId }}"
      class="lazy-html-block {{ $respId }}{{ $cssClass ? ' ' . $cssClass : '' }}{{ $visibilityClasses }}"
      style="{{ $outerStyle }}">
-    {!! lazy_sanitize_html($htmlContent) !!}
+    {!! falcon_sanitize_html($htmlContent) !!}
 </div>
 @endif

@@ -48,7 +48,7 @@
         dlUploadUrl:   {!! isset($post->shopData) ? json_encode(route('admin.shop.products.downloads.store', $post->shopData->id)) : 'null' !!}
     };
 
-    function lazyProductData() {
+    function falconProductData() {
         return {
             productType:     _pdCfg.productType,
             activeTab:       'general',
@@ -178,7 +178,7 @@
                 }
             },
 
-            lazyUploadDownload() {
+            falconUploadDownload() {
                 if (!this.dlFile) return;
                 this.dlUploading = true;
                 this.dlStatus = '';
@@ -205,7 +205,7 @@
                     .finally(function () { self.dlUploading = false; });
             },
 
-            lazyDeleteDownload(index, url) {
+            falconDeleteDownload(index, url) {
                 if (!confirm('Delete this file?')) return;
                 var self = this;
                 var token = document.querySelector('meta[name="csrf-token"]');
@@ -226,15 +226,15 @@
     }
 
     if (window.Alpine) {
-        window.Alpine.data('lazyProductData', lazyProductData);
+        window.Alpine.data('falconProductData', falconProductData);
     } else {
         document.addEventListener('alpine:init', function () {
-            window.Alpine.data('lazyProductData', lazyProductData);
+            window.Alpine.data('falconProductData', falconProductData);
         });
     }
 })();
 </script>
-<div class="wp-metabox mt-6 mb-6" x-data="lazyProductData()">
+<div class="wp-metabox mt-6 mb-6" x-data="falconProductData()">
     <div class="wp-metabox-header flex justify-between items-center">
         <span>Product Data</span>
         <div class="flex items-center space-x-2 mr-4">
@@ -623,7 +623,7 @@
                                     </p>
                                 </div>
                                 <button type="button"
-                                    @click="lazyDeleteDownload(idx, dl.delete_url)"
+                                    @click="falconDeleteDownload(idx, dl.delete_url)"
                                     class="p-1 text-[#646970] hover:text-[#d63638] transition flex-shrink-0" title="Delete">
                                     <span class="material-symbols-outlined text-[18px]">delete</span>
                                 </button>
@@ -723,7 +723,7 @@
                     Cancel
                 </button>
                 <button type="button"
-                    @click="lazyUploadDownload()"
+                    @click="falconUploadDownload()"
                     :disabled="dlUploading || !dlFile"
                     class="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-white bg-[#2271b1] rounded hover:bg-[#135e96] transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <template x-if="!dlUploading">

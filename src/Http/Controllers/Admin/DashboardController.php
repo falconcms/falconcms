@@ -209,10 +209,10 @@ class DashboardController extends Controller
         // loaded before composer update ran, causing "command does not exist".
         $phpBin     = PHP_BINARY;
         $artisan    = base_path('artisan');
-        $lazyCmd    = escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' falcon:update --no-ansi 2>&1';
-        exec($lazyCmd, $lazyOut, $lazyExit);
-        $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $lazyOut)), 'ok' => $lazyExit === 0];
-        if ($lazyExit !== 0) $hasError = true;
+        $falconCmd    = escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' falcon:update --no-ansi 2>&1';
+        exec($falconCmd, $falconOut, $falconExit);
+        $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $falconOut)), 'ok' => $falconExit === 0];
+        if ($falconExit !== 0) $hasError = true;
 
         cache()->forget('falcon_cms_update_check');
 

@@ -35,7 +35,7 @@
                 <div class="w-full md:w-1/2">
                     <h2 class="text-[20px] font-bold text-heading border-b border-[#eee] pb-4 mb-6 uppercase tracking-tight">Billing details</h2>
                     <?php do_falcon_action('lazy_before_billing_fields'); ?>
-                    <?php lazy_render_checkout_fields(lazy_get_checkout_fields('billing')); ?>
+                    <?php falcon_render_checkout_fields(falcon_get_checkout_fields('billing')); ?>
                     <?php do_falcon_action('lazy_after_billing_fields'); ?>
 
                     @guest
@@ -83,7 +83,7 @@
 
                     <div id="shipping-form" class="{{ old('ship_to_different_address') ? '' : 'hidden' }} mb-8 border-t border-[#eee] pt-6">
                         <?php do_falcon_action('lazy_before_shipping_fields'); ?>
-                        <?php lazy_render_checkout_fields(lazy_get_checkout_fields('shipping')); ?>
+                        <?php falcon_render_checkout_fields(falcon_get_checkout_fields('shipping')); ?>
                         <?php do_falcon_action('lazy_after_shipping_fields'); ?>
                     </div>
 
@@ -114,7 +114,7 @@
                                         {!! apply_falcon_filters('lazy_checkout_item_name',
                                             '<a href="' . route('frontend.show', ['typeOrSlug' => 'product', 'slug' => $item['slug']]) . '" class="hover:text-primary transition-colors">' . e($item['name']) . '</a> <span class="font-bold text-heading">× ' . (int)$item['quantity'] . '</span>',
                                             $item) !!}
-                                        {!! lazy_render_item_custom_fields($item, 'checkout') !!}
+                                        {!! falcon_render_item_custom_fields($item, 'checkout') !!}
                                         <?php do_falcon_action('lazy_checkout_item_meta', $item); ?>
                                     </td>
                                     <td class="p-4 text-right font-medium text-heading">
@@ -131,7 +131,7 @@
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-heading">Shipping</th>
                                 <td class="text-right p-4 text-body" id="checkout-shipping">
-                                    @php $shipDetails = get_falcon_cart_shipping_details(session('lazy_shipping_country')); @endphp
+                                    @php $shipDetails = get_falcon_cart_shipping_details(session('falcon_shipping_country')); @endphp
                                     {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ $shipDetails['cost'] > 0 ? falcon_price_format($shipDetails['cost']) : 'Free' }}</span>
                                 </td>
                             </tr>
@@ -177,7 +177,7 @@
 
                     <!-- Payment Section -->
                     <?php do_falcon_action('lazy_before_checkout_payment', $cart); ?>
-                    @php $gateways = lazy_enabled_payment_gateways(); $firstGw = array_key_first($gateways); @endphp
+                    @php $gateways = falcon_enabled_payment_gateways(); $firstGw = array_key_first($gateways); @endphp
                     <div class="p-8 border-t border-[#eee]">
                         <div class="max-w-4xl">
                             @if(empty($gateways))
@@ -449,10 +449,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ── Checkout form persistence (localStorage) ───────────────────────────
     @php
-        $allCheckoutHookFields = array_merge(lazy_get_checkout_fields('billing'), lazy_get_checkout_fields('shipping'));
+        $allCheckoutHookFields = array_merge(falcon_get_checkout_fields('billing'), falcon_get_checkout_fields('shipping'));
         $extraPersistFields = array_values(array_diff(
             array_column($allCheckoutHookFields, 'name'),
-            lazy_standard_checkout_field_names()
+            falcon_standard_checkout_field_names()
         ));
     @endphp
     (function () {

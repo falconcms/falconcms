@@ -160,7 +160,7 @@
         });
 
         window.confirmCommentTrash = async function(id) {
-            const confirmed = await window.lazyConfirm({
+            const confirmed = await window.falconConfirm({
                 title: 'Trash Comment',
                 message: 'Are you sure you want to move this comment to trash? This action can be undone from the trash section later.',
                 confirmText: 'Move to Trash',
@@ -184,7 +184,7 @@
             }
 
             if (action === 'delete') {
-                const confirmed = await window.lazyConfirm({
+                const confirmed = await window.falconConfirm({
                     title: 'Delete Comments Permanently',
                     message: `Are you sure you want to permanently delete ${selected.length} comments? This action cannot be undone.`,
                     confirmText: 'Delete Permanently',
