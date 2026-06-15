@@ -1,11 +1,11 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Documentation - Lazy CMS</x-slot>
+    <x-slot name="title">Documentation - FalconCMS</x-slot>
 
     <div class="px-6 py-4">
         <div class="flex items-center justify-between mb-8 border-b border-gray-200 pb-4">
             <div>
                 <h1 class="text-3xl font-black text-gray-900">Developer Documentation</h1>
-                <p class="text-gray-500 mt-1">Master Lazy CMS and build stunning websites with freedom.</p>
+                <p class="text-gray-500 mt-1">Master FalconCMS and build stunning websites with freedom.</p>
             </div>
             <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold border border-blue-100">
                 v1.2.0 Stable
@@ -46,14 +46,14 @@
                 {{-- Section: Getting Started --}}
                 <section id="getting-started">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Getting Started</h2>
-                    <p class="text-gray-700 mb-6">Lazy CMS is designed to give you full control over your content while keeping the development process simple.</p>
+                    <p class="text-gray-700 mb-6">FalconCMS is designed to give you full control over your content while keeping the development process simple.</p>
                     
                     <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
                         <h3 class="font-bold text-gray-800 mb-4">Fresh Installation</h3>
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
                             <div>
                                 <span class="text-gray-500"># 1. Install via composer</span><br>
-                                <code class="text-green-400">composer require lazycmsapp/lazy-cms-builder</code>
+                                <code class="text-green-400">composer require falconcms/falconcms</code>
                             </div>
                             <div>
                                 <span class="text-gray-500"># 2. Run CMS installer</span><br>
@@ -63,7 +63,7 @@
                             <div>
                                 <span class="text-gray-500"># 3. View all available commands</span><br>
                                 <code class="text-green-400">php artisan lazy</code>
-                                <p class="text-[10px] text-gray-400 mt-1 italic">// Lists all specialized Lazy CMS commands.</p>
+                                <p class="text-[10px] text-gray-400 mt-1 italic">// Lists all specialized FalconCMS commands.</p>
                             </div>
                             <div>
                                 <span class="text-gray-500"># 4. Seed demo data (Optional)</span><br>
@@ -82,7 +82,7 @@
                     <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
                         <div>
                             <span class="text-gray-500"># 1. Update composer package</span><br>
-                            <code class="text-green-400">composer require lazycmsapp/lazy-cms-builder</code>
+                            <code class="text-green-400">composer require falconcms/falconcms</code>
                         </div>
                         <div>
                             <span class="text-gray-500"># 2. Run Sync Command</span><br>
@@ -152,7 +152,7 @@ Route::get('/blogs', function () {
                         <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
                             <h3 class="font-bold text-blue-600 mb-2">get_cms_option($key, $default)</h3>
                             <p class="text-sm text-gray-600 mb-2">Get any setting value from the CMS settings table.</p>
-                            <code class="block bg-gray-50 p-3 rounded text-sm">$site_name = get_cms_option('site_title', 'Lazy CMS');</code>
+                            <code class="block bg-gray-50 p-3 rounded text-sm">$site_name = get_cms_option('site_title', 'FalconCMS');</code>
                         </div>
 
                         {{-- get_lazy_excerpt --}}
@@ -294,7 +294,7 @@ Route::get('/blogs', function () {
                 {{-- Section: SEO & Metadata --}}
                 <section id="seo">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">SEO & Metadata</h2>
-                    <p class="text-gray-700 mb-6">Lazy CMS provides a built-in SEO engine that handles meta tags, social sharing (OpenGraph/X), and JSON-LD schema markup automatically.</p>
+                    <p class="text-gray-700 mb-6">FalconCMS provides a built-in SEO engine that handles meta tags, social sharing (OpenGraph/X), and JSON-LD schema markup automatically.</p>
 
                     <div class="space-y-8">
                         {{-- Method 1: Automatic --}}
@@ -343,7 +343,7 @@ Route::get('/blogs', function () {
                 {{-- Section: Templates --}}
                 <section id="templates">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Theme Development Guide</h2>
-                    <p class="text-gray-700 mb-6">Lazy CMS allows you to build custom themes with total creative freedom. Follow this guide to create your first theme.</p>
+                    <p class="text-gray-700 mb-6">FalconCMS allows you to build custom themes with total creative freedom. Follow this guide to create your first theme.</p>
 
                     <div class="space-y-8">
                         {{-- Theme Structure --}}
@@ -429,7 +429,7 @@ Route::get('/blogs', function () {
     <div class="author-box flex items-center gap-4">
         <img src="{{ asset('theme/images/avatar.jpg') }}" class="w-16 h-16 rounded-full">
         <div>
-            <p class="text-gray-600 text-sm">Hello, I'm a passionate developer building amazing things with Lazy CMS.</p>
+            <p class="text-gray-600 text-sm">Hello, I'm a passionate developer building amazing things with FalconCMS.</p>
         </div>
     </div>
 </div>
@@ -454,7 +454,7 @@ Route::get('/blogs', function () {
                 {{-- Section: Hooks System --}}
                 <section id="hooks">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Hooks System (Actions & Filters)</h2>
-                    <p class="text-gray-700 mb-6">Lazy CMS features a powerful hook architecture similar to WordPress, allowing you to extend the core functionality without modifying package files.</p>
+                    <p class="text-gray-700 mb-6">FalconCMS features a powerful hook architecture similar to WordPress, allowing you to extend the core functionality without modifying package files.</p>
 
                     {{-- Theme Functions.php --}}
                     <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8">
@@ -1722,7 +1722,7 @@ curl -X DELETE "{{ url('/api/v1/posts/123') }}" \
                 {{-- Section: RBAC --}}
                 <section id="rbac">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Roles & Permissions (RBAC)</h2>
-                    <p class="text-gray-700 mb-6">Lazy CMS includes a powerful granular permission system. Access is controlled via Roles that are linked to specific Permissions.</p>
+                    <p class="text-gray-700 mb-6">FalconCMS includes a powerful granular permission system. Access is controlled via Roles that are linked to specific Permissions.</p>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                         <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
@@ -1747,7 +1747,7 @@ curl -X DELETE "{{ url('/api/v1/posts/123') }}" \
                 {{-- Section: Security Hardening --}}
                 <section id="security">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Security Hardening</h2>
-                    <p class="text-gray-700 mb-6">Lazy CMS ships with multiple security layers enabled by default. This section documents what is active out of the box and what can be tuned.</p>
+                    <p class="text-gray-700 mb-6">FalconCMS ships with multiple security layers enabled by default. This section documents what is active out of the box and what can be tuned.</p>
 
                     {{-- Security Headers --}}
                     <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
@@ -1900,7 +1900,7 @@ curl -X DELETE "{{ url('/api/v1/posts/123') }}" \
                 {{-- Section: Theme Isolation --}}
                 <section id="theme-isolation">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Theme Isolation & Sync</h2>
-                    <p class="text-gray-700 mb-6">To maintain a clean and secure structure, Lazy CMS enforces strict theme-only view rendering for the frontend.</p>
+                    <p class="text-gray-700 mb-6">To maintain a clean and secure structure, FalconCMS enforces strict theme-only view rendering for the frontend.</p>
                     
                     <div class="space-y-6">
                         <div class="bg-amber-50 border border-amber-100 p-4 rounded-xl text-sm text-amber-800">

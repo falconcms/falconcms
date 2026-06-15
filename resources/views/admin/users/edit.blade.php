@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Edit User - Lazy CMS</x-slot>
+    <x-slot name="title">Edit User - FalconCMS</x-slot>
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-6">Edit User</h1>

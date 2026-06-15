@@ -24,7 +24,7 @@
 <div class="w-full max-w-6xl py-20">
     <div class="mb-12 text-center">
         <h2 class="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">Our Latest Articles</h2>
-        <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">Explore our collection of dummy posts created with Lazy CMS. You can easily manage these from your admin dashboard.</p>
+        <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">Explore our collection of dummy posts created with FalconCMS. You can easily manage these from your admin dashboard.</p>
     </div>
     
     <?php //the_lazy_loop(['post_type' => 'dramas', 'limit' => 15]); ?>

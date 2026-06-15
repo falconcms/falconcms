@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">SEO Settings - Lazy CMS</x-slot>
+    <x-slot name="title">SEO Settings - FalconCMS</x-slot>
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">SEO Settings</h1>

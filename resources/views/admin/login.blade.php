@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - {{ get_cms_option('site_title', 'Lazy CMS') }}</title>
+    <title>Login - {{ get_cms_option('site_title', 'FalconCMS') }}</title>
     <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
     <style>
         body { background: #f0f0f1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; margin: 0; }
@@ -16,7 +16,7 @@
 <body class="flex-fallback">
     <div class="login-box">
         <div class="text-center mb-8">
-            <h1 class="text-[32px] font-bold text-[#3c434a]">{{ get_cms_option('site_title', 'Lazy CMS') }}</h1>
+            <h1 class="text-[32px] font-bold text-[#3c434a]">{{ get_cms_option('site_title', 'FalconCMS') }}</h1>
         </div>
         
         <form action="{{ route('admin.login') }}" method="POST" class="bg-white p-6 shadow-sm border border-[#c3c4c7]">
@@ -40,7 +40,7 @@
             <a href="{{ route('admin.password.request') }}" class="hover:text-[#2271b1]">Lost your password?</a>
         </p>
         <p class="mt-2 text-[13px] text-[#3c434a]">
-            <a href="{{ url('/') }}" class="hover:text-[#2271b1]">← Go to {{ get_cms_option('site_title', 'Lazy CMS') }}</a>
+            <a href="{{ url('/') }}" class="hover:text-[#2271b1]">← Go to {{ get_cms_option('site_title', 'FalconCMS') }}</a>
         </p>
     </div>
 </body>

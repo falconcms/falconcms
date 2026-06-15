@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">{{ $config['title'] }} - Lazy CMS</x-slot>
+    <x-slot name="title">{{ $config['title'] }} - FalconCMS</x-slot>
 
     <div class="px-2">
         <div class="flex items-center gap-3 mb-8">

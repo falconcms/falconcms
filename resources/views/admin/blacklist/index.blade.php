@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">IP Blacklist - Lazy CMS</x-slot>
+    <x-slot name="title">IP Blacklist - FalconCMS</x-slot>
     <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-2">

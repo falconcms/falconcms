@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-<x-slot name="title">Customizer &lsaquo; Lazy CMS</x-slot>
+<x-slot name="title">Customizer &lsaquo; FalconCMS</x-slot>
 <x-cms-dashboard::admin.delete-modal />
 
 {{-- Toast container --}}

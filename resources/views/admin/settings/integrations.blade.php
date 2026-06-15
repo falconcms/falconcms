@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Integrations - Lazy CMS</x-slot>
+    <x-slot name="title">Integrations - FalconCMS</x-slot>
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Settings</h1>

@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Activity Logs - Lazy CMS</x-slot>
+    <x-slot name="title">Activity Logs - FalconCMS</x-slot>
 
     <div class="px-2">
         <div class="mb-4 flex items-center">

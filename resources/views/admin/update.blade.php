@@ -57,7 +57,7 @@
             {{-- Version Status Card --}}
             <div class="bg-white border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)] mb-5">
                 <div class="px-4 py-3 border-b border-[#f0f0f1] flex items-center justify-between">
-                    <span class="text-[14px] font-semibold text-[#1d2327]">Lazy CMS</span>
+                    <span class="text-[14px] font-semibold text-[#1d2327]">FalconCMS</span>
                     @if($update['has_update'])
                         <span class="px-2 py-0.5 bg-[#46b450] text-white text-[11px] font-bold rounded uppercase tracking-wide">Update Available</span>
                     @elseif($update['latest'])
@@ -130,7 +130,7 @@
                         <div>
                             <p class="text-[14px] font-semibold text-[#1a6b20] mb-0.5">You're up to date!</p>
                             <p class="text-[13px] text-[#1a6b20]">
-                                Lazy CMS <strong>v{{ $update['current'] }}</strong> is the latest version. No action required.
+                                FalconCMS <strong>v{{ $update['current'] }}</strong> is the latest version. No action required.
                             </p>
                         </div>
                     </div>
@@ -159,7 +159,7 @@
                 <div class="p-4 space-y-2.5 text-[13px]">
                     <div class="flex justify-between">
                         <span class="text-[#646970]">Package</span>
-                        <span class="font-medium text-[#1d2327]">lazycmsapp/lazy-cms-builder</span>
+                        <span class="font-medium text-[#1d2327]">falconcms/falconcms</span>
                     </div>
                     <div class="flex justify-between border-t border-[#f0f0f1] pt-2.5">
                         <span class="text-[#646970]">Installed</span>

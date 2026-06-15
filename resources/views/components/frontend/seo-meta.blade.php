@@ -1,5 +1,5 @@
 @php
-    $siteTitle = get_cms_option('site_title', 'Lazy CMS');
+    $siteTitle = get_cms_option('site_title', 'FalconCMS');
     $siteDesc = get_cms_option('site_description', '');
     $separator = get_cms_option('seo_separator', '-');
     $defaultImage = get_cms_option('seo_default_image');

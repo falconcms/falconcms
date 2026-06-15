@@ -144,7 +144,7 @@
 
         <!-- Footer -->
         <div class="h-12 border-t border-slate-100 flex items-center px-6 bg-slate-50/50 shrink-0">
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">Lazy CMS Rebuild • Element Selector</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">FalconCMS • Element Selector</span>
         </div>
 
     </div>

@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Backup & Snapshots - Lazy CMS</x-slot>
+    <x-slot name="title">Backup & Snapshots - FalconCMS</x-slot>
     <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-2">

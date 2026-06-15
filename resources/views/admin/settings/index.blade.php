@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Settings - Lazy CMS</x-slot>
+    <x-slot name="title">Settings - FalconCMS</x-slot>
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Settings</h1>
@@ -24,7 +24,7 @@
                     </th>
                     <td>
                         <input type="text" name="site_title" id="site_title"
-                            value="{{ $settings['site_title'] ?? 'Lazy CMS' }}"
+                            value="{{ $settings['site_title'] ?? 'FalconCMS' }}"
                             class="wp-input w-[400px] h-8 shadow-sm">
                     </td>
                 </tr>

@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Analytics - Lazy CMS</x-slot>
+    <x-slot name="title">Analytics - FalconCMS</x-slot>
     <style>
         .classic-card { background:#fff; border:1px solid #c3c4c7; box-shadow:0 1px 1px rgba(0,0,0,.04); margin-bottom:20px; border-radius:2px; }
         .classic-card-header { padding:10px 15px; border-bottom:1px solid #f0f0f1; display:flex; justify-content:space-between; align-items:center; }

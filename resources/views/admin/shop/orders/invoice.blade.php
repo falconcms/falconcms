@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice #{{ $order->order_number ?: $order->id }} | {{ get_cms_option('site_title', 'Lazy CMS') }}</title>
+    <title>Invoice #{{ $order->order_number ?: $order->id }} | {{ get_cms_option('site_title', 'FalconCMS') }}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         

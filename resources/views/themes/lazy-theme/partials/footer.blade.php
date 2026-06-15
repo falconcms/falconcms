@@ -31,7 +31,7 @@
                         @if($i == 1)
                             <a href="{{ url('/') }}" class="flex items-center gap-2 mb-6">
                                 @if(get_cms_option('theme_site_logo'))
-                                    <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'Lazy CMS') }}" class="h-8 w-auto">
+                                    <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-8 w-auto">
                                 @else
                                     <span class="text-xl font-black tracking-tighter" style="color: {{ get_cms_option('theme_header_bg_color', '#ffffff') == '#ffffff' ? '#1d2327' : '#ffffff' }}">
                                         {{ get_cms_option('site_title', 'LAZY') }}<span class="text-primary">.</span>
@@ -39,7 +39,7 @@
                                 @endif
                             </a>
                             <p class="text-[14px] leading-relaxed mb-8 opacity-80">
-                                {{ get_cms_option('footer_about', 'A minimalist, Astra-inspired theme for Lazy CMS. Clean, fast, and professional design focusing on readability and content delivery.') }}
+                                {{ get_cms_option('footer_about', 'A minimalist, Astra-inspired theme for FalconCMS. Clean, fast, and professional design focusing on readability and content delivery.') }}
                             </p>
 
                             {{-- Social Media (hardcoded fallback for column 1) --}}

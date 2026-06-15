@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Users - Lazy CMS</x-slot>
+    <x-slot name="title">Users - FalconCMS</x-slot>
 
     <div class="px-2">
         <div class="flex items-baseline gap-2 mb-6">

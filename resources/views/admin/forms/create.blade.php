@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">New Form - Lazy CMS</x-slot>
+    <x-slot name="title">New Form - FalconCMS</x-slot>
     <div class="px-6 py-4 max-w-lg mx-auto">
         <h1 class="text-2xl font-black text-gray-900 mb-6">Create New Form</h1>
         <form method="POST" action="{{ route('admin.forms.store') }}" class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">

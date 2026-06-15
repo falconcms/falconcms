@@ -8,7 +8,7 @@
 <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
 
 @php
-    $siteName = function_exists('get_cms_option') ? get_cms_option('site_name', config('app.name', 'Lazy CMS')) : config('app.name', 'Lazy CMS');
+    $siteName = function_exists('get_cms_option') ? get_cms_option('site_name', config('app.name', 'FalconCMS')) : config('app.name', 'FalconCMS');
     if (!isset($introText)) {
         $tplData = json_decode(get_cms_option('email_template_form_notification', '{}'), true) ?: [];
         $introText = $tplData['intro'] ?? 'You have received a new submission. Review the details below to follow up promptly.';
@@ -123,7 +123,7 @@
                 <tr>
                     <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:14px 40px;text-align:center;">
                         <p style="margin:0;font-size:11px;color:#9ca3af;">
-                            &copy; {{ date('Y') }} {{ $siteName }} &mdash; Powered by <strong>Lazy CMS</strong>
+                            &copy; {{ date('Y') }} {{ $siteName }} &mdash; Powered by <strong>FalconCMS</strong>
                         </p>
                     </td>
                 </tr>

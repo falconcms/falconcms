@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sign In — {{ get_cms_option('site_title', 'Lazy CMS') }}</title>
+    <title>Sign In — {{ get_cms_option('site_title', 'FalconCMS') }}</title>
     <link href="{{ asset('vendor/cms-dashboard/css/inter.css') }}" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -74,7 +74,7 @@
 
     <div class="form-logo">
         @if(get_cms_option('theme_site_logo'))
-            <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'Lazy CMS') }}">
+            <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}">
         @else
             <span class="form-logo-text">{{ get_cms_option('site_title', 'Lazy') }}<span class="form-logo-accent"> CMS</span></span>
         @endif

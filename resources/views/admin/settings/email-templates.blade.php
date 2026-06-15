@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Email Templates - Lazy CMS</x-slot>
+    <x-slot name="title">Email Templates - FalconCMS</x-slot>
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Settings</h1>
@@ -13,7 +13,7 @@
         <div class="max-w-[860px]">
 
             <p class="text-[13px] text-[#646970] mb-6">
-                Customize the subject and content of emails sent by Lazy CMS. Use the variable chips to insert dynamic values.
+                Customize the subject and content of emails sent by FalconCMS. Use the variable chips to insert dynamic values.
                 Click <strong>Reset to Default</strong> to restore a template's original text.
             </p>
 
