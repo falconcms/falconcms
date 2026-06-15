@@ -1,12 +1,12 @@
-<x-falcon-cms::layouts.admin title="Lazy Builder">
+<x-falcon-cms::layouts.admin title="Falcon Builder">
     <div class="p-6 bg-[#f0f0f1] min-h-screen">
         <div class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-[23px] font-normal text-[#1d2327] mb-1">Lazy Builder</h1>
+                <h1 class="text-[23px] font-normal text-[#1d2327] mb-1">Falcon Builder</h1>
                 <p class="text-[13px] text-[#646970]">Design custom header and footer for your website.</p>
             </div>
             <nav class="text-[13px] text-[#646970]">
-                Appearance / Lazy Builder
+                Appearance / Falcon Builder
             </nav>
         </div>
 

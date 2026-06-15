@@ -204,7 +204,7 @@
     </button>
 
     @php
-        $shopName = get_shop_option('shop_store_name') ?: get_cms_option('site_name', 'Lazy Panda');
+        $shopName = get_shop_option('shop_store_name') ?: get_cms_option('site_name', 'Falcon');
         $refunded = (float) ($order->refunded_amount ?? 0);
         $isFullRefund    = $order->status === 'refunded' || ($refunded > 0 && $refunded >= (float) $order->total - 0.001);
         $isPartialRefund = !$isFullRefund && $refunded > 0;

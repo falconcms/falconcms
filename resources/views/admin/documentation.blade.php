@@ -1184,7 +1184,7 @@ add_falcon_action('lazy_order_confirmation_item_meta', function ($item, $order) 
                 {{-- Section: Custom Builder Elements --}}
                 <section id="builder-elements">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Custom Builder Elements</h2>
-                    <p class="text-gray-700 mb-6">Register your own drag-and-drop elements for the Lazy Builder using the <code>falcon_builder_elements</code> filter inside your theme's <code>functions.php</code>. Each element gets its own fields, live canvas preview, automatic shortcode conversion, and a frontend template you fully control.</p>
+                    <p class="text-gray-700 mb-6">Register your own drag-and-drop elements for the Falcon Builder using the <code>falcon_builder_elements</code> filter inside your theme's <code>functions.php</code>. Each element gets its own fields, live canvas preview, automatic shortcode conversion, and a frontend template you fully control.</p>
 
                     {{-- 1. Registering an element --}}
                     <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">

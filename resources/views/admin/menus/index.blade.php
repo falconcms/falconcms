@@ -206,10 +206,10 @@
                 </div>
             </div>
 
-            <!-- Lazy Special Menu (dynamic ecommerce widgets) -->
+            <!-- Falcon Special Menu (dynamic ecommerce widgets) -->
             <div class="wp-metabox mb-0">
                 <div class="wp-metabox-header flex justify-between items-center lazy-acc-header" onclick="toggleAcc('special')">
-                    <span>Lazy Special Menu</span>
+                    <span>Falcon Special Menu</span>
                     <svg id="acc-icon-special" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
                 </div>
                 <div id="acc-special" class="hidden wp-metabox-content p-3" data-acc="special">

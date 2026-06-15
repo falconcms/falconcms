@@ -1253,7 +1253,7 @@
                             <label class="text-[14px] font-semibold text-[#1d2327]">"From" name</label>
                         </th>
                         <td>
-                            <input type="text" name="email_from_name" value="{{ get_shop_option('shop_email_from_name', config('app.name', 'Lazy Panda Shop')) }}" class="wp-input w-[400px] h-8 shadow-sm">
+                            <input type="text" name="email_from_name" value="{{ get_shop_option('shop_email_from_name', config('app.name', 'Falcon Shop')) }}" class="wp-input w-[400px] h-8 shadow-sm">
                             <p class="text-[12px] text-[#646970] mt-1">How the sender name appears in outgoing transactional emails.</p>
                         </td>
                     </tr>

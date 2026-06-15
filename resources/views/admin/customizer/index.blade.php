@@ -178,7 +178,7 @@
                                         <div>
                                             <p class="text-[13px] font-semibold text-blue-900 m-0 mb-1">{{ $lockedPart }} is being built with the Page Builder</p>
                                             <p class="text-[12px] text-blue-800 leading-relaxed m-0">
-                                                You have an active {{ strtolower($lockedPart) }} created with the <strong>Lazy Builder</strong>, so these Customizer options don't apply. Edit your {{ strtolower($lockedPart) }} from <strong>Appearance → Lazy Builder</strong>.
+                                                You have an active {{ strtolower($lockedPart) }} created with the <strong>Falcon Builder</strong>, so these Customizer options don't apply. Edit your {{ strtolower($lockedPart) }} from <strong>Appearance → Falcon Builder</strong>.
                                                 To use these Customizer settings instead, unpublish or delete the builder {{ strtolower($lockedPart) }}.
                                             </p>
                                         </div>
@@ -374,7 +374,7 @@
                                                         </div>
 
                                                     @elseif($type === 'color')
-                                                        {{-- Pickr picker (same as the Lazy Builder) — swatch button opens the picker, hex syncs to the input --}}
+                                                        {{-- Pickr picker (same as the Falcon Builder) — swatch button opens the picker, hex syncs to the input --}}
                                                         <div class="flex items-center gap-2.5">
                                                             <button type="button" id="swatch_{{ $key }}"
                                                                     class="cstz-color-swatch"
@@ -738,7 +738,7 @@ function openCmsMediaModal(fieldId) {
     }
 }
 
-// Color picker — uses Pickr (the same picker as the Lazy Builder).
+// Color picker — uses Pickr (the same picker as the Falcon Builder).
 function cstzHexFromPickr(color) {
     var s = color.toHEXA().toString();           // #RRGGBB or #RRGGBBAA
     if (/^#([0-9a-fA-F]{6})ff$/i.test(s)) s = s.slice(0, 7); // drop alpha when fully opaque

@@ -21,7 +21,7 @@
             <p class="text-[13px] text-[#646970]">Manage saved builder items, post cards, and mega menus.</p>
         </div>
         <div class="flex items-center gap-3">
-            <nav class="text-[12px] text-[#646970]">Lazy Builder / Library</nav>
+            <nav class="text-[12px] text-[#646970]">Falcon Builder / Library</nav>
             <button id="btn-new-post-card" onclick="openCardModal()"
                     class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white text-[13px] font-semibold rounded transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-[16px]">add</span> New Post Card

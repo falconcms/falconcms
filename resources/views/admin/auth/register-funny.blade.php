@@ -118,7 +118,7 @@
             @if(get_cms_option('theme_site_logo'))
                 <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}">
             @else
-                <span class="card-logo-text">{{ get_cms_option('site_title', 'Lazy') }}<span class="card-logo-accent"> CMS</span></span>
+                <span class="card-logo-text">{{ get_cms_option('site_title', 'Falcon') }}<span class="card-logo-accent"> CMS</span></span>
             @endif
         </div>
 

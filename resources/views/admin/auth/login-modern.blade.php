@@ -76,7 +76,7 @@
         @if(get_cms_option('theme_site_logo'))
             <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}">
         @else
-            <span class="form-logo-text">{{ get_cms_option('site_title', 'Lazy') }}<span class="form-logo-accent"> CMS</span></span>
+            <span class="form-logo-text">{{ get_cms_option('site_title', 'Falcon') }}<span class="form-logo-accent"> CMS</span></span>
         @endif
     </div>
 

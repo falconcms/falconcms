@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $post->title }} | {{ get_cms_option('site_title', 'Lazy Builder') }}</title>
+    <title>{{ $post->title }} | {{ get_cms_option('site_title', 'Falcon Builder') }}</title>
     
     <!-- Meta -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
