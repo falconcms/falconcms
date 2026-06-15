@@ -17,8 +17,8 @@ return new class extends Migration
         });
 
         DB::table('cms_settings')->insert([
-            ['key' => 'login_url', 'value' => 'admin-login'],
-            ['key' => 'register_url', 'value' => 'admin-register'],
+            ['key' => 'login_url', 'value' => 'falcon-admin'],
+            ['key' => 'register_url', 'value' => 'falcon-registration'],
             ['key' => 'login_theme', 'value' => 'classic'],
             ['key' => 'register_theme', 'value' => 'classic'],
             ['key' => 'users_can_register', 'value' => '1'],
