@@ -8,7 +8,7 @@
                 <p class="text-gray-500 mt-1">Master Lazy CMS and build stunning websites with freedom.</p>
             </div>
             <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold border border-blue-100">
-                v1.1.0 Stable
+                v1.2.0 Stable
             </div>
         </div>
 

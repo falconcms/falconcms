@@ -5,7 +5,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.1.0 <Badge type="tip" text="Latest" /> {#v1-1-0}
+## v1.2.0 <Badge type="tip" text="Latest" /> {#v1-2-0}
+
+**Released: 2026-06-15**
+
+### Security
+- **HSTS Header** — `Strict-Transport-Security: max-age=31536000; includeSubDomains` added to `SecurityHeadersMiddleware`, sent only over HTTPS connections
+- **Cart Route: GET → POST** — `/cart/remove/{key}` changed from GET to POST, preventing CSRF-based item removal via crafted links
+- **Cart Rate Limiting** — Add/update/remove: 30 req/min · Apply coupon: 10 req/min · Shipping update: 20 req/min · Review: 5 req/min
+- **Cart Input Validation** — `updateCart` validates quantity as integer (min:1, max:9999, max:100 items); `removeFromCart` validates key against alphanumeric regex before session lookup
+
+### Added
+- **AJAX Cart Update** — "Update cart" button no longer reloads the page; quantity changes are sent via `fetch()` and per-row subtotals + cart totals update in place
+- **AJAX Cart Remove** — `×` remove button sends a POST fetch; the row fades out and is removed from the DOM on success
+- **Cart Page Loader** — Spinning overlay on the cart table during any update or remove operation
+- **Cart Toast Notifications** — Success/error message shown after update or remove (uses SweetAlert2 if available, falls back to custom toast)
+- **Mini-cart Spinner** — Items area shows a spinner while a remove request is in flight
+- **Mini-cart Toast** — Success/error message shown after mini-cart remove (SweetAlert2 or inline panel bar fallback)
+- **Live Cart Page Sync** — Removing an item from the mini-cart drawer while on the cart page instantly removes the matching row and updates totals — no reload needed
+- **Header Badge Sync** — Cart icon count updates immediately after any AJAX cart operation (update, remove) without page reload
+
+### Changed
+- `LazyCart.setBadges` and `LazyCart.toast` exposed in the public API for use by other page scripts
+- Mini-cart `remove()` now fires `lazyCartItemRemoved` custom event so the cart page can react
+
+---
+
+## v1.1.0 {#v1-1-0}
 
 **Released: 2026-06-15**
 
