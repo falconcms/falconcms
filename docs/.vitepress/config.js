@@ -1,4 +1,10 @@
 import { defineConfig } from 'vitepress'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const { version } = JSON.parse(readFileSync(resolve(__dirname, '../../version.json'), 'utf-8'))
 
 export default defineConfig({
   lang: 'en-US',
@@ -29,7 +35,7 @@ export default defineConfig({
       { text: 'E-commerce', link: '/ecommerce/overview' },
       { text: 'Hooks API', link: '/api/hooks' },
       {
-        text: 'v1.1.0',
+        text: `v${version}`,
         items: [
           { text: 'Changelog', link: 'https://github.com/lazycmsapp/lazy-cms-builder/releases' },
           { text: 'Packagist', link: 'https://packagist.org/packages/lazycmsapp/lazy-cms-builder' },

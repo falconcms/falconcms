@@ -3,7 +3,10 @@
 use Illuminate\Support\Facades\DB;
 
 if (!defined('LAZY_CMS_VERSION')) {
-    define('LAZY_CMS_VERSION', '1.1.0');
+    $__versionFile = __DIR__ . '/../version.json';
+    $__versionData = file_exists($__versionFile) ? json_decode(file_get_contents($__versionFile), true) : [];
+    define('LAZY_CMS_VERSION', $__versionData['version'] ?? '1.1.0');
+    unset($__versionFile, $__versionData);
 }
 
 if (!function_exists('lazy_elem_resp_css')) {
