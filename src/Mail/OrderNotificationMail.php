@@ -1,13 +1,13 @@
 <?php
 
-namespace Acme\CmsDashboard\Mail;
+namespace FalconCms\Core\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Acme\CmsDashboard\Models\Order;
+use FalconCms\Core\Models\Order;
 
 class OrderNotificationMail extends Mailable
 {
@@ -63,7 +63,7 @@ class OrderNotificationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'cms-dashboard::emails.shop.order_notification',
+            view: 'falcon-cms::emails.shop.order_notification',
         );
     }
 }

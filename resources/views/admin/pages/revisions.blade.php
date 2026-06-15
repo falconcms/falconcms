@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Revisions — {{ $page->title }}</x-slot>
 
     <style>
@@ -117,4 +117,4 @@
         </div>
         @endif
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

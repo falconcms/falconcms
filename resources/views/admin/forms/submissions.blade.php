@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Submissions {{ $form ? '— ' . $form->title : '(All Forms)' }}</x-slot>
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
 
     {{-- Centered Detail Modal --}}
     <div id="sub-modal" class="fixed inset-0 z-50 hidden">
@@ -210,4 +210,4 @@
         }
     };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

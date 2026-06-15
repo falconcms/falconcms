@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', 'Order Confirmation')
 
@@ -200,8 +200,8 @@
                     @php
                         $isLast  = $loop->last;
                         $isBad   = in_array($entry->status, ['cancelled', 'failed']);
-                        $label   = \Acme\CmsDashboard\Models\OrderStatusHistory::label($entry->status);
-                        $note    = $entry->note ?: \Acme\CmsDashboard\Models\OrderStatusHistory::defaultNote($entry->status);
+                        $label   = \FalconCms\Core\Models\OrderStatusHistory::label($entry->status);
+                        $note    = $entry->note ?: \FalconCms\Core\Models\OrderStatusHistory::defaultNote($entry->status);
                         $showTrack = in_array($entry->status, ['delivering', 'shipped'])
                                    && ($order->tracking_number || $order->tracking_url);
                         $trackUrl  = $order->tracking_url

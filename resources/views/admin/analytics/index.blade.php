@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Analytics - FalconCMS</x-slot>
     <style>
         .classic-card { background:#fff; border:1px solid #c3c4c7; box-shadow:0 1px 1px rgba(0,0,0,.04); margin-bottom:20px; border-radius:2px; }
@@ -227,4 +227,4 @@
         donut('chart-operating-systems', @json($osDist));
     </script>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

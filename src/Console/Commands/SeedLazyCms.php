@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Console\Commands;
+namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 
@@ -11,7 +11,7 @@ class SeedLazyCms extends Command
      *
      * @var string
      */
-    protected $signature = 'lazy:seed';
+    protected $signature = 'falcon:seed';
 
     /**
      * The console command description.
@@ -30,19 +30,19 @@ class SeedLazyCms extends Command
         try {
             $this->info('Step 1: Syncing Roles, Permissions and Menus...');
             $this->call('db:seed', [
-                '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\SystemSyncSeeder',
+                '--class' => 'FalconCms\\Core\\Database\\Seeders\\SystemSyncSeeder',
                 '--force' => true
             ]);
 
             $this->info('Step 2: Syncing Languages...');
             $this->call('db:seed', [
-                '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\LanguageSeeder',
+                '--class' => 'FalconCms\\Core\\Database\\Seeders\\LanguageSeeder',
                 '--force' => true
             ]);
 
             $this->info('Step 3: Creating default pages & sample content...');
             $this->call('db:seed', [
-                '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\DefaultContentSeeder',
+                '--class' => 'FalconCms\\Core\\Database\\Seeders\\DefaultContentSeeder',
                 '--force' => true
             ]);
 

@@ -1,16 +1,16 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Post;
+use FalconCms\Core\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use Acme\CmsDashboard\Models\ProductData;
-use Acme\CmsDashboard\Models\Revision;
-use Acme\CmsDashboard\Services\BuilderShortcodeConverter;
+use FalconCms\Core\Models\ProductData;
+use FalconCms\Core\Models\Revision;
+use FalconCms\Core\Services\BuilderShortcodeConverter;
 
 class PostController extends Controller
 {
@@ -39,7 +39,7 @@ class PostController extends Controller
             }
         } catch (\Throwable $e) {}
 
-        return view('cms-dashboard::admin.lazy-builder.index', compact(
+        return view('falcon-cms::admin.lazy-builder.index', compact(
             'post', 'customElements', 'themeBodyFont', 'themeHeadingFont', 'pendingAutosave'
         ));
     }
@@ -258,7 +258,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         // This would typically return a front-end view that renders the builder JSON
-        return view('cms-dashboard::admin.lazy-builder.preview', compact('post'));
+        return view('falcon-cms::admin.lazy-builder.preview', compact('post'));
     }
 
     public function __construct()
@@ -414,7 +414,7 @@ class PostController extends Controller
         }
 
         $posts = $query->latest()->paginate(10)->withQueryString();
-        $categories = \Acme\CmsDashboard\Models\Category::orderBy('name')->get();
+        $categories = \FalconCms\Core\Models\Category::orderBy('name')->get();
         $driver = \DB::connection()->getDriverName();
         $yearCol  = $driver === 'sqlite' ? "strftime('%Y', created_at)" : 'YEAR(created_at)';
         $monthCol = $driver === 'sqlite' ? "strftime('%m', created_at)" : 'MONTH(created_at)';
@@ -435,15 +435,15 @@ class PostController extends Controller
         $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
         $trashCount = (clone $countQuery)->onlyTrashed()->count();
 
-        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $type)->first();
+        $postType = \FalconCms\Core\Models\PostType::where('slug', $type)->first();
         
-        $assignedTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
+        $assignedTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
             ->whereJsonContains('post_types', $type)
             ->get();
 
         $overriddenTaxonomies = $assignedTaxonomies->whereIn('slug', ['categories', 'tags'])->pluck('slug')->toArray();
 
-        return view('cms-dashboard::admin.posts.index', compact('posts', 'type', 'categories', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount', 'postType', 'assignedTaxonomies', 'overriddenTaxonomies'));
+        return view('falcon-cms::admin.posts.index', compact('posts', 'type', 'categories', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount', 'postType', 'assignedTaxonomies', 'overriddenTaxonomies'));
     }
 
     /**
@@ -458,7 +458,7 @@ class PostController extends Controller
         $tagIds = [];
         foreach (array_map('trim', explode(',', (string) $request->input('product_tags', ''))) as $name) {
             if ($name === '') continue;
-            $tag = \Acme\CmsDashboard\Models\ProductTag::firstOrCreate(
+            $tag = \FalconCms\Core\Models\ProductTag::firstOrCreate(
                 ['slug' => Str::slug($name)],
                 ['name' => $name]
             );
@@ -479,25 +479,25 @@ class PostController extends Controller
         }
         
         $pages = Post::where('type', 'page')->orderBy('title')->get();
-        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $type)->first();
+        $postType = \FalconCms\Core\Models\PostType::where('slug', $type)->first();
         $supports = $postType ? ($postType->supports ?? ['title', 'editor', 'excerpt', 'featured_image']) : ['title', 'editor', 'excerpt', 'featured_image'];
 
         $assignedTaxonomies = [];
         
         // Detect custom taxonomies that override built-in ones
-        $overriddenTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
+        $overriddenTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
             ->whereJsonContains('post_types', $type)
             ->whereIn('slug', ['categories', 'tags'])
             ->pluck('slug')
             ->toArray();
 
-        $taxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)->get();
+        $taxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->get();
         foreach ($taxonomies as $tax) {
             if (is_array($tax->post_types) && in_array($type, $tax->post_types)) {
                 $slugLower = strtolower($tax->slug);
                 if (in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']) && !in_array($slugLower, $overriddenTaxonomies) && $type !== 'product') continue;
                 
-                $tax->terms = \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)
+                $tax->terms = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)
                     ->where('cpt_slug', $type)
                     ->get();
                 $assignedTaxonomies[] = $tax;
@@ -505,7 +505,7 @@ class PostController extends Controller
         }
         
         // Custom Fields
-        $fieldGroups = \Acme\CmsDashboard\Models\FieldGroup::where('is_active', true)
+        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
             ->where(function($q) use ($type) {
                 $q->whereJsonContains('rules->post_type', $type);
             })
@@ -515,7 +515,7 @@ class PostController extends Controller
 
         $post = new Post();
 
-        return view('cms-dashboard::admin.posts.create', compact('post', 'type', 'pages', 'supports', 'assignedTaxonomies', 'fieldGroups', 'postType', 'overriddenTaxonomies'));
+        return view('falcon-cms::admin.posts.create', compact('post', 'type', 'pages', 'supports', 'assignedTaxonomies', 'fieldGroups', 'postType', 'overriddenTaxonomies'));
     }
 
     public function store(Request $request)
@@ -627,10 +627,10 @@ class PostController extends Controller
             $postData['template'] = 'site-width';
         }
 
-        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $postData['type'])->first();
+        $postType = \FalconCms\Core\Models\PostType::where('slug', $postData['type'])->first();
         $overriddenTaxonomies = [];
         if ($postType) {
-            $overriddenTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
+            $overriddenTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
                 ->whereJsonContains('post_types', $postData['type'])
                 ->pluck('slug')
                 ->toArray();
@@ -681,7 +681,7 @@ class PostController extends Controller
             $tags = array_map('trim', explode(',', $request->tags));
             foreach($tags as $tagName) {
                 if(empty($tagName)) continue;
-                $tag = \Acme\CmsDashboard\Models\Tag::firstOrCreate(
+                $tag = \FalconCms\Core\Models\Tag::firstOrCreate(
                     ['slug' => Str::slug($tagName)],
                     ['name' => $tagName]
                 );
@@ -806,24 +806,24 @@ class PostController extends Controller
         $this->checkTypeActive($post->type);
         $type = $post->type;
         $pages = Post::where('type', 'page')->where('id', '!=', $post->id)->orderBy('title')->get();
-        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $type)->first();
+        $postType = \FalconCms\Core\Models\PostType::where('slug', $type)->first();
         $supports = $postType ? ($postType->supports ?? ['title', 'editor', 'excerpt', 'featured_image']) : ['title', 'editor', 'excerpt', 'featured_image'];
 
         // Detect custom taxonomies that override built-in ones
-        $overriddenTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
+        $overriddenTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
             ->whereJsonContains('post_types', $type)
             ->whereIn('slug', ['categories', 'tags'])
             ->pluck('slug')
             ->toArray();
 
         $assignedTaxonomies = [];
-        $taxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)->get();
+        $taxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->get();
         foreach ($taxonomies as $tax) {
             if (is_array($tax->post_types) && in_array($type, $tax->post_types)) {
                 $slugLower = strtolower($tax->slug);
                 if (in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']) && !in_array($slugLower, $overriddenTaxonomies)) continue;
 
-                $tax->terms = \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)
+                $tax->terms = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)
                     ->where('cpt_slug', $type)
                     ->get();
                 $tax->selected_ids = $post->taxonomyTerms()->where('taxonomy_slug', $tax->slug)->pluck('taxonomy_terms.id')->toArray();
@@ -832,7 +832,7 @@ class PostController extends Controller
         }
 
         // Fetch applicable custom field groups
-        $fieldGroups = \Acme\CmsDashboard\Models\FieldGroup::where('is_active', true)
+        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
             ->where(function($q) use ($post) {
                 $q->whereJsonContains('rules->post_type', $post->type);
             })
@@ -846,7 +846,7 @@ class PostController extends Controller
             ->pluck('value', 'field_id')
             ->toArray();
 
-        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $post->type)->first();
+        $postType = \FalconCms\Core\Models\PostType::where('slug', $post->type)->first();
 
         // Convert builder JSON → shortcodes for display in the rich editor.
         // The save path (BuilderShortcodeMiddleware) converts them back to JSON automatically.
@@ -869,7 +869,7 @@ class PostController extends Controller
             }
         } catch (\Throwable $e) {}
 
-        return view('cms-dashboard::admin.posts.edit', compact('post', 'pages', 'type', 'supports', 'assignedTaxonomies', 'fieldGroups', 'fieldValues', 'postType', 'overriddenTaxonomies', 'pendingAutosave', 'revisionCount'));
+        return view('falcon-cms::admin.posts.edit', compact('post', 'pages', 'type', 'supports', 'assignedTaxonomies', 'fieldGroups', 'fieldValues', 'postType', 'overriddenTaxonomies', 'pendingAutosave', 'revisionCount'));
     }
 
     /** Full revisions comparison page (classic editor) — before/after diff + restore. */
@@ -913,7 +913,7 @@ class PostController extends Controller
 
         $diff = lazy_revision_diff($entries[$from]['content'] ?? '', $entries[$to]['content'] ?? '');
 
-        return view('cms-dashboard::admin.posts.revisions', compact('post', 'entries', 'from', 'to', 'diff'));
+        return view('falcon-cms::admin.posts.revisions', compact('post', 'entries', 'from', 'to', 'diff'));
     }
 
     public function update(Request $request, Post $post)
@@ -1026,10 +1026,10 @@ class PostController extends Controller
             $postData['template'] = 'site-width';
         }
 
-        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $postData['type'])->first();
+        $postType = \FalconCms\Core\Models\PostType::where('slug', $postData['type'])->first();
         $overriddenTaxonomies = [];
         if ($postType) {
-            $overriddenTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
+            $overriddenTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
                 ->whereJsonContains('post_types', $postData['type'])
                 ->pluck('slug')
                 ->toArray();
@@ -1192,7 +1192,7 @@ class PostController extends Controller
             $newUrl = '/' . ltrim($prefix . $post->slug, '/');
 
             if ($oldUrl !== $newUrl) {
-                \Acme\CmsDashboard\Models\Redirect::updateOrCreate(
+                \FalconCms\Core\Models\Redirect::updateOrCreate(
                     ['old_url' => $oldUrl],
                     ['new_url' => $newUrl, 'status_code' => 301]
                 );
@@ -1219,7 +1219,7 @@ class PostController extends Controller
             $tags = array_map('trim', explode(',', $request->tags));
             foreach($tags as $tagName) {
                 if(empty($tagName)) continue;
-                $tag = \Acme\CmsDashboard\Models\Tag::firstOrCreate(
+                $tag = \FalconCms\Core\Models\Tag::firstOrCreate(
                     ['slug' => Str::slug($tagName)],
                     ['name' => $tagName]
                 );
@@ -1368,7 +1368,7 @@ class PostController extends Controller
         // If saving as draft, skip required validation for custom fields
         if (!$type || $status === 'draft') return;
 
-        $fieldGroups = \Acme\CmsDashboard\Models\FieldGroup::where('is_active', true)
+        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
             ->whereJsonContains('rules->post_type', $type)
             ->with('fields')
             ->get();

@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
@@ -78,7 +78,7 @@ class ThemeController extends Controller
             }
         }
 
-        return view('cms-dashboard::admin.themes.index', compact('themes', 'activeTheme'));
+        return view('falcon-cms::admin.themes.index', compact('themes', 'activeTheme'));
     }
 
     public function activate($slug)

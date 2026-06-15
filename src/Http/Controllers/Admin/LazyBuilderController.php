@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Post;
+use FalconCms\Core\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -18,7 +18,7 @@ class LazyBuilderController extends Controller
         $header = Post::where('type', 'lazy_header')->first();
         $footer = Post::where('type', 'lazy_footer')->first();
 
-        return view('cms-dashboard::admin.lazy-builder.sections', compact('header', 'footer'));
+        return view('falcon-cms::admin.lazy-builder.sections', compact('header', 'footer'));
     }
 
     public function editHeader()

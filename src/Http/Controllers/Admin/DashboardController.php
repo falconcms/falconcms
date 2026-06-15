@@ -1,16 +1,16 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Acme\CmsDashboard\Models\Post;
+use FalconCms\Core\Models\Post;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
-use Acme\CmsDashboard\Models\ActivityLog;
-use Acme\CmsDashboard\Models\Analytics;
+use FalconCms\Core\Models\ActivityLog;
+use FalconCms\Core\Models\Analytics;
 
 class DashboardController extends Controller
 {
@@ -40,11 +40,11 @@ class DashboardController extends Controller
 
         // 2. Conversion Rate Calculation
         $totalVisitors = Analytics::distinct('ip_address')->count(['ip_address']);
-        $totalSubmissions = \Acme\CmsDashboard\Models\FormSubmission::count();
+        $totalSubmissions = \FalconCms\Core\Models\FormSubmission::count();
         $conversionRate = ($totalVisitors > 0) ? round(($totalSubmissions / $totalVisitors) * 100, 1) : 0;
 
         // 3. Security Status Check
-        $recentBlockedIps = \Acme\CmsDashboard\Models\BlockedIp::where('created_at', '>', now()->subDay())->count();
+        $recentBlockedIps = \FalconCms\Core\Models\BlockedIp::where('created_at', '>', now()->subDay())->count();
         $securityStatus = ($recentBlockedIps > 0) ? 'Warning' : 'Healthy';
         $securityMessage = ($recentBlockedIps > 0) 
             ? "Attention: $recentBlockedIps unauthorized attempts blocked in the last 24 hours."
@@ -75,7 +75,7 @@ class DashboardController extends Controller
             ],
             'blacklisted_ips' => [
                 'label' => 'Blacklisted IPs',
-                'count' => \Acme\CmsDashboard\Models\BlockedIp::count(),
+                'count' => \FalconCms\Core\Models\BlockedIp::count(),
                 'change' => 'Protection'
             ],
             'media_count' => [
@@ -105,7 +105,7 @@ class DashboardController extends Controller
 
         // Ecommerce stats — only when shop tables exist
         $hasShop  = false;
-        $currency = \Acme\CmsDashboard\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
+        $currency = \FalconCms\Core\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
         $ecoStats = [
             'total_orders'    => 0,
             'total_revenue'   => 0,
@@ -124,25 +124,25 @@ class DashboardController extends Controller
                 $revenueStatuses = ['completed', 'processing', 'partially-refunded'];
                 $netRevenue = "COALESCE(SUM(total - COALESCE(refunded_amount, 0)), 0)";
 
-                $ecoStats['total_orders']   = \Acme\CmsDashboard\Models\Order::count();
-                $ecoStats['total_revenue']  = (float) \Acme\CmsDashboard\Models\Order::whereIn('status', $revenueStatuses)
+                $ecoStats['total_orders']   = \FalconCms\Core\Models\Order::count();
+                $ecoStats['total_revenue']  = (float) \FalconCms\Core\Models\Order::whereIn('status', $revenueStatuses)
                     ->selectRaw("{$netRevenue} as net")->value('net');
-                $ecoStats['pending_orders'] = \Acme\CmsDashboard\Models\Order::where('status', 'pending')->count();
+                $ecoStats['pending_orders'] = \FalconCms\Core\Models\Order::where('status', 'pending')->count();
                 $ecoStats['total_products'] = Post::where('type', 'product')->count();
-                $ecoStats['orders_today']   = \Acme\CmsDashboard\Models\Order::whereDate('created_at', today())->count();
-                $ecoStats['orders_month']   = \Acme\CmsDashboard\Models\Order::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
-                $ecoStats['status_counts']  = \Acme\CmsDashboard\Models\Order::selectRaw('status, count(*) as total')
+                $ecoStats['orders_today']   = \FalconCms\Core\Models\Order::whereDate('created_at', today())->count();
+                $ecoStats['orders_month']   = \FalconCms\Core\Models\Order::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
+                $ecoStats['status_counts']  = \FalconCms\Core\Models\Order::selectRaw('status, count(*) as total')
                     ->groupBy('status')->pluck('total', 'status')->toArray();
                 // "Partially Refunded" is driven by actual refund data (any order with a partial refund),
                 // not just the status label — so it reflects partial refunds on completed/processing orders too.
-                $ecoStats['status_counts']['partially-refunded'] = (int) \Acme\CmsDashboard\Models\Order::where('refunded_amount', '>', 0)
+                $ecoStats['status_counts']['partially-refunded'] = (int) \FalconCms\Core\Models\Order::where('refunded_amount', '>', 0)
                     ->whereColumn('refunded_amount', '<', 'total')->count();
                 $rev = [];
                 $revLabels = [];
                 for ($i = 6; $i >= 0; $i--) {
                     $d    = now()->subMonths($i);
                     $revLabels[] = $d->format('M');
-                    $rev[] = (float) \Acme\CmsDashboard\Models\Order::whereIn('status', $revenueStatuses)
+                    $rev[] = (float) \FalconCms\Core\Models\Order::whereIn('status', $revenueStatuses)
                         ->whereBetween('created_at', [$d->copy()->startOfMonth(), $d->copy()->endOfMonth()])
                         ->selectRaw("{$netRevenue} as net")->value('net');
                 }
@@ -159,20 +159,20 @@ class DashboardController extends Controller
             try { lazy_check_update(); } catch (\Exception $e) {}
         }
 
-        return view('cms-dashboard::admin.dashboard', compact('stats', 'hasShop', 'ecoStats', 'currency'));
+        return view('falcon-cms::admin.dashboard', compact('stats', 'hasShop', 'ecoStats', 'currency'));
     }
 
     protected function ensureUpdateMenu(): void
     {
         try {
-            $dash = \Acme\CmsDashboard\Models\Menu::where('title', 'Dashboard')->whereNull('parent_id')->first();
+            $dash = \FalconCms\Core\Models\Menu::where('title', 'Dashboard')->whereNull('parent_id')->first();
             if (!$dash) return;
 
-            \Acme\CmsDashboard\Models\Menu::firstOrCreate(
+            \FalconCms\Core\Models\Menu::firstOrCreate(
                 ['title' => 'Overview', 'parent_id' => $dash->id],
                 ['route' => 'admin.dashboard.index', 'order' => 1]
             );
-            \Acme\CmsDashboard\Models\Menu::firstOrCreate(
+            \FalconCms\Core\Models\Menu::firstOrCreate(
                 ['title' => 'Updates', 'parent_id' => $dash->id],
                 ['route' => 'admin.update', 'order' => 2]
             );
@@ -182,7 +182,7 @@ class DashboardController extends Controller
     public function updateCheck()
     {
         $update = lazy_check_update(force: true);
-        return view('cms-dashboard::admin.update', compact('update'));
+        return view('falcon-cms::admin.update', compact('update'));
     }
 
     public function runUpdate()
@@ -204,14 +204,14 @@ class DashboardController extends Controller
             $hasError = true;
         }
 
-        // Step 2: lazy:update — run as a subprocess so the freshly downloaded code
+        // Step 2: falcon:update — run as a subprocess so the freshly downloaded code
         // is used. Artisan::call() would re-use the old in-memory ServiceProvider
         // loaded before composer update ran, causing "command does not exist".
         $phpBin     = PHP_BINARY;
         $artisan    = base_path('artisan');
-        $lazyCmd    = escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' lazy:update --no-ansi 2>&1';
+        $lazyCmd    = escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' falcon:update --no-ansi 2>&1';
         exec($lazyCmd, $lazyOut, $lazyExit);
-        $steps[] = ['label' => 'php artisan lazy:update', 'output' => trim(implode("\n", $lazyOut)), 'ok' => $lazyExit === 0];
+        $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $lazyOut)), 'ok' => $lazyExit === 0];
         if ($lazyExit !== 0) $hasError = true;
 
         cache()->forget('lazy_cms_update_check');
@@ -249,10 +249,10 @@ class DashboardController extends Controller
         }
         
         $pages = Post::where('type', 'page')->where('status', 'published')->orderBy('title')->get();
-        $roles = \Acme\CmsDashboard\Models\Role::orderBy('name')->get();
+        $roles = \FalconCms\Core\Models\Role::orderBy('name')->get();
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
 
-        return view('cms-dashboard::admin.settings.index', compact('pages', 'settings', 'roles'));
+        return view('falcon-cms::admin.settings.index', compact('pages', 'settings', 'roles'));
     }
 
     public function updateSettings(Request $request)
@@ -301,7 +301,7 @@ class DashboardController extends Controller
         }
         
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
-        return view('cms-dashboard::admin.settings.seo', compact('settings'));
+        return view('falcon-cms::admin.settings.seo', compact('settings'));
     }
 
     public function updateSeoSettings(Request $request)
@@ -316,7 +316,7 @@ class DashboardController extends Controller
         $checkboxes = ['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow'];
 
         try {
-            $slugs = \Acme\CmsDashboard\Models\PostType::where('is_active', true)->pluck('slug');
+            $slugs = \FalconCms\Core\Models\PostType::where('is_active', true)->pluck('slug');
             foreach ($slugs as $slug) {
                 $checkboxes[] = 'sitemap_include_' . $slug;
             }
@@ -343,7 +343,7 @@ class DashboardController extends Controller
         
         if (!$search) return response()->json([]);
 
-        $posts = \Acme\CmsDashboard\Models\Post::where('status', 'published')
+        $posts = \FalconCms\Core\Models\Post::where('status', 'published')
             ->where('id', '!=', $excludeId)
             ->where('title', 'like', '%' . $search . '%')
             ->limit(5)
@@ -390,7 +390,7 @@ class DashboardController extends Controller
         $logs = $query->paginate(10)->withQueryString();
         $users = User::all();
 
-        return view('cms-dashboard::admin.settings.activity-logs', compact('logs', 'users'));
+        return view('falcon-cms::admin.settings.activity-logs', compact('logs', 'users'));
     }
 
     public function apiSettings()
@@ -401,7 +401,7 @@ class DashboardController extends Controller
 
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
         $tokens = auth()->user()->apiTokens()->latest()->get();
-        return view('cms-dashboard::admin.settings.api', compact('settings', 'tokens'));
+        return view('falcon-cms::admin.settings.api', compact('settings', 'tokens'));
     }
 
     public function generateApiToken(Request $request)
@@ -434,7 +434,7 @@ class DashboardController extends Controller
         }
 
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
-        return view('cms-dashboard::admin.settings.integrations', compact('settings'));
+        return view('falcon-cms::admin.settings.integrations', compact('settings'));
     }
 
     public function updateIntegrationsSettings(Request $request)
@@ -500,7 +500,7 @@ class DashboardController extends Controller
             $templates[$key] = array_merge($default, $saved);
         }
 
-        return view('cms-dashboard::admin.settings.email-templates', compact('templates', 'defaults'));
+        return view('falcon-cms::admin.settings.email-templates', compact('templates', 'defaults'));
     }
 
     public function updateEmailTemplate(Request $request)
@@ -559,7 +559,7 @@ class DashboardController extends Controller
                 $ip          = request()->ip();
 
                 \Illuminate\Support\Facades\Mail::send(
-                    'cms-dashboard::emails.form.notification',
+                    'falcon-cms::emails.form.notification',
                     compact('form', 'rows', 'submittedAt', 'ip', 'introText', 'footerText'),
                     fn($msg) => $msg->to($toEmail)->subject($subject)
                 );
@@ -641,7 +641,7 @@ class DashboardController extends Controller
         // ── Recent visits ─────────────────────────────────────────────────────
         $recent = Analytics::latest()->limit(12)->get();
 
-        return view('cms-dashboard::admin.analytics.index', compact(
+        return view('falcon-cms::admin.analytics.index', compact(
             'range', 'totalVisits', 'uniqueVisitors', 'visitsChange', 'today', 'thisMonth',
             'labels', 'visitsSeries', 'uniqueSeries',
             'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'recent'
@@ -660,7 +660,7 @@ class DashboardController extends Controller
             $content = file_get_contents($readmePath);
         }
 
-        return view('cms-dashboard::admin.documentation', compact('content'));
+        return view('falcon-cms::admin.documentation', compact('content'));
     }
     
     public function bulkDeleteLogs(Request $request)

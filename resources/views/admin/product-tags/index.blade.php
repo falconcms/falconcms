@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin title="Product Tags">
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin title="Product Tags">
+    <x-falcon-cms::admin.delete-modal />
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Product Tags</h1>
         <div class="flex space-x-1">
@@ -34,7 +34,7 @@
             <h2 class="text-[14px] font-semibold text-[#1d2327] mb-3">Add New Tag</h2>
             <form action="{{ route('admin.product-tags.store') }}" method="POST">
                 @csrf
-                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @php $activeLanguages = \FalconCms\Core\Models\Language::where('status', true)->get(); @endphp
                 @if($activeLanguages->count() > 1)
                     <div class="mb-4">
                         <label class="block text-[13px] text-[#1d2327] mb-1">Language</label>
@@ -93,7 +93,7 @@
                     </select>
                     <button type="button" onclick="handleBulkAction('tags-bulk-form')" class="wp-btn-secondary h-[30px] leading-[1]">Apply</button>
                 </div>
-                <x-cms-dashboard::admin.pagination :paginator="$tags" />
+                <x-falcon-cms::admin.pagination :paginator="$tags" />
             </div>
 
             <table class="w-full bg-[#fff] border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)]">
@@ -147,7 +147,7 @@
                     </select>
                     <button type="button" onclick="handleBulkAction('tags-bulk-form', 'action2')" class="wp-btn-secondary h-[30px] leading-[1]">Apply</button>
                 </div>
-                <x-cms-dashboard::admin.pagination :paginator="$tags" />
+                <x-falcon-cms::admin.pagination :paginator="$tags" />
             </div>
             </form>
             
@@ -213,4 +213,4 @@
             }
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

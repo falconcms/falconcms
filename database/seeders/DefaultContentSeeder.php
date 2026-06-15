@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Database\Seeders;
+namespace FalconCms\Core\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Acme\CmsDashboard\Models\Post;
+use FalconCms\Core\Models\Post;
 
 /**
  * Seeds the default storefront pages (Shop, Cart, Checkout, Account), a sample blog post

@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Acme\CmsDashboard\Models\Tag;
+use FalconCms\Core\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -25,7 +25,7 @@ class TagController extends Controller
         }
 
         $tags = $query->paginate(10);
-        return view('cms-dashboard::admin.tags.index', compact('tags'));
+        return view('falcon-cms::admin.tags.index', compact('tags'));
     }
 
     public function bulk(Request $request)
@@ -66,7 +66,7 @@ class TagController extends Controller
 
     public function edit(Tag $tag)
     {
-        return view('cms-dashboard::admin.tags.edit', compact('tag'));
+        return view('falcon-cms::admin.tags.edit', compact('tag'));
     }
 
     public function update(Request $request, Tag $tag)

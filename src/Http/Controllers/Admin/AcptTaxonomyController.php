@@ -1,12 +1,12 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\CustomTaxonomy;
-use Acme\CmsDashboard\Models\PostType;
-use Acme\CmsDashboard\Models\Menu;
+use FalconCms\Core\Models\CustomTaxonomy;
+use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Models\Menu;
 
 class AcptTaxonomyController extends Controller
 {
@@ -39,13 +39,13 @@ class AcptTaxonomyController extends Controller
         $inactiveCount = CustomTaxonomy::withoutTrashed()->where('is_active', 0)->count();
         $trashCount = CustomTaxonomy::onlyTrashed()->count();
 
-        return view('cms-dashboard::admin.acpt.taxonomies.index', compact('taxonomies', 'allCount', 'activeCount', 'inactiveCount', 'trashCount'));
+        return view('falcon-cms::admin.acpt.taxonomies.index', compact('taxonomies', 'allCount', 'activeCount', 'inactiveCount', 'trashCount'));
     }
 
     public function create()
     {
         $postTypes = PostType::where('is_builtin', false)->get();
-        return view('cms-dashboard::admin.acpt.taxonomies.create', compact('postTypes'));
+        return view('falcon-cms::admin.acpt.taxonomies.create', compact('postTypes'));
     }
 
     public function store(Request $request)
@@ -78,7 +78,7 @@ class AcptTaxonomyController extends Controller
     {
         $taxonomy = CustomTaxonomy::findOrFail($id);
         $postTypes = PostType::where('is_builtin', false)->get();
-        return view('cms-dashboard::admin.acpt.taxonomies.edit', compact('taxonomy', 'postTypes'));
+        return view('falcon-cms::admin.acpt.taxonomies.edit', compact('taxonomy', 'postTypes'));
     }
 
     public function update(Request $request, $id)

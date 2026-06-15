@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\FieldGroup;
-use Acme\CmsDashboard\Models\Field;
-use Acme\CmsDashboard\Models\PostType;
+use FalconCms\Core\Models\FieldGroup;
+use FalconCms\Core\Models\Field;
+use FalconCms\Core\Models\PostType;
 use Illuminate\Http\Request;
 
 class CustomFieldController extends Controller
@@ -13,13 +13,13 @@ class CustomFieldController extends Controller
     public function index()
     {
         $fieldGroups = FieldGroup::withCount('fields')->orderBy('order')->get();
-        return view('cms-dashboard::admin.acpt.fields.index', compact('fieldGroups'));
+        return view('falcon-cms::admin.acpt.fields.index', compact('fieldGroups'));
     }
 
     public function create()
     {
         $postTypes = PostType::where('is_active', true)->get();
-        return view('cms-dashboard::admin.acpt.fields.create', compact('postTypes'));
+        return view('falcon-cms::admin.acpt.fields.create', compact('postTypes'));
     }
 
     public function store(Request $request)
@@ -75,7 +75,7 @@ class CustomFieldController extends Controller
     {
         $field->load('fields');
         $postTypes = PostType::where('is_active', true)->get();
-        return view('cms-dashboard::admin.acpt.fields.edit', ['fieldGroup' => $field, 'postTypes' => $postTypes]);
+        return view('falcon-cms::admin.acpt.fields.edit', ['fieldGroup' => $field, 'postTypes' => $postTypes]);
     }
 
     public function update(Request $request, FieldGroup $field)

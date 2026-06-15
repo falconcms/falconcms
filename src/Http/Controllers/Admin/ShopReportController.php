@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -60,7 +60,7 @@ class ShopReportController extends Controller
             ->selectRaw('COUNT(*) as total_orders, COALESCE(SUM(total),0) as total_revenue, COUNT(DISTINCT customer_email) as unique_customers')
             ->first();
 
-        return view('cms-dashboard::admin.shop.reports', compact(
+        return view('falcon-cms::admin.shop.reports', compact(
             'revenue', 'topProducts', 'topCustomers', 'summary',
             'period', 'from', 'to', 'fromRaw', 'toRaw'
         ));

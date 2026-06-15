@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Users - FalconCMS</x-slot>
 
     <div class="px-2">
@@ -58,7 +58,7 @@
                 <button type="submit" form="user-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
             </div>
             
-            <x-cms-dashboard::admin.pagination :paginator="$users" size="small" />
+            <x-falcon-cms::admin.pagination :paginator="$users" size="small" />
         </div>
 
         <div class="bg-white border border-[#c3c4c7] shadow-sm overflow-x-auto">
@@ -141,7 +141,7 @@
                 <button type="submit" form="user-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
                 <span class="ml-2 text-[#2c3338]">{{ $users->total() }} items</span>
             </div>
-            <x-cms-dashboard::admin.pagination :paginator="$users" />
+            <x-falcon-cms::admin.pagination :paginator="$users" />
         </div>
 
     </div>
@@ -244,4 +244,4 @@
         }
     </script>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

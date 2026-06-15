@@ -27,9 +27,9 @@ return new class extends Migration
             return;
         }
 
-        $sidebar = new \Acme\CmsDashboard\View\Components\Admin\Sidebar();
+        $sidebar = new \FalconCms\Core\View\Components\Admin\Sidebar();
 
-        foreach (\Acme\CmsDashboard\Models\Menu::all() as $menu) {
+        foreach (\FalconCms\Core\Models\Menu::all() as $menu) {
             if ($menu->children()->count() > 0) continue; // leaf menus only
 
             $new = $sidebar->getPermission($menu);
@@ -75,7 +75,7 @@ return new class extends Migration
 
         $slug = Str::slug($menu->title ?? '', '_');
         if ($menu->parent_id && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
-            $parent = \Acme\CmsDashboard\Models\Menu::find($menu->parent_id);
+            $parent = \FalconCms\Core\Models\Menu::find($menu->parent_id);
             if ($parent) $slug .= '_' . Str::slug($parent->title, '_');
         }
         return 'access_' . $slug;

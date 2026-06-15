@@ -1,14 +1,14 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Page;
-use Acme\CmsDashboard\Models\Revision;
+use FalconCms\Core\Models\Page;
+use FalconCms\Core\Models\Revision;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use Acme\CmsDashboard\Services\BuilderShortcodeConverter;
+use FalconCms\Core\Services\BuilderShortcodeConverter;
 
 class PageController extends Controller
 {
@@ -97,7 +97,7 @@ class PageController extends Controller
         $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
         $trashCount = (clone $countQuery)->onlyTrashed()->count();
 
-        return view('cms-dashboard::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount'));
+        return view('falcon-cms::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount'));
     }
 
     public function create()
@@ -105,7 +105,7 @@ class PageController extends Controller
         $allPages = Page::orderBy('title')->get();
         
         // Fetch applicable custom field groups for pages
-        $fieldGroups = \Acme\CmsDashboard\Models\FieldGroup::where('is_active', true)
+        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
             ->where(function($q) {
                 $q->whereJsonContains('rules->post_type', 'page');
             })
@@ -113,7 +113,7 @@ class PageController extends Controller
             ->orderBy('order')
             ->get();
 
-        return view('cms-dashboard::admin.pages.create', compact('allPages', 'fieldGroups'));
+        return view('falcon-cms::admin.pages.create', compact('allPages', 'fieldGroups'));
     }
 
     public function store(Request $request)
@@ -212,7 +212,7 @@ class PageController extends Controller
         $allPages = Page::where('id', '!=', $page->id)->orderBy('title')->get();
         
         // Fetch applicable custom field groups for pages
-        $fieldGroups = \Acme\CmsDashboard\Models\FieldGroup::where('is_active', true)
+        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
             ->where(function($q) {
                 $q->whereJsonContains('rules->post_type', 'page');
             })
@@ -245,7 +245,7 @@ class PageController extends Controller
             }
         } catch (\Throwable $e) {}
 
-        return view('cms-dashboard::admin.pages.edit', compact('page', 'allPages', 'fieldGroups', 'fieldValues', 'pendingAutosave', 'revisionCount'));
+        return view('falcon-cms::admin.pages.edit', compact('page', 'allPages', 'fieldGroups', 'fieldValues', 'pendingAutosave', 'revisionCount'));
     }
 
     /** Full revisions comparison page for a Page — before/after diff + restore. */
@@ -274,7 +274,7 @@ class PageController extends Controller
         if (!isset($entries[$from])) $from = $to;
         $diff = lazy_revision_diff($entries[$from]['content'] ?? '', $entries[$to]['content'] ?? '');
 
-        return view('cms-dashboard::admin.pages.revisions', compact('page', 'entries', 'from', 'to', 'diff'));
+        return view('falcon-cms::admin.pages.revisions', compact('page', 'entries', 'from', 'to', 'diff'));
     }
 
     /** Page autosave — snapshots title + content without touching the live page. */
@@ -352,12 +352,12 @@ class PageController extends Controller
             if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedExts) || !in_array($file->getMimeType(), $allowedMimes)) {
                 return redirect()->back()->withErrors(['featured_image' => 'Featured image must be a valid image file (JPG, PNG, GIF, WebP, AVIF).'])->withInput();
             }
-            if ($page->featured_image && !\Acme\CmsDashboard\Models\Media::where('path', $page->featured_image)->exists()) {
+            if ($page->featured_image && !\FalconCms\Core\Models\Media::where('path', $page->featured_image)->exists()) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($page->featured_image);
             }
             $validated['featured_image'] = $file->store('pages', 'public');
         } elseif ($request->input('remove_featured_image') === '1') {
-            if ($page->featured_image && !\Acme\CmsDashboard\Models\Media::where('path', $page->featured_image)->exists()) {
+            if ($page->featured_image && !\FalconCms\Core\Models\Media::where('path', $page->featured_image)->exists()) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($page->featured_image);
             }
             $validated['featured_image'] = null;
@@ -397,7 +397,7 @@ class PageController extends Controller
             $newUrl = '/' . ltrim($page->slug, '/');
 
             if ($oldUrl !== $newUrl) {
-                \Acme\CmsDashboard\Models\Redirect::updateOrCreate(
+                \FalconCms\Core\Models\Redirect::updateOrCreate(
                     ['old_url' => $oldUrl],
                     ['new_url' => $newUrl, 'status_code' => 301]
                 );

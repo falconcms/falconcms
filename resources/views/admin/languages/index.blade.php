@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Languages - FalconCMS</x-slot>
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-6">Languages</h1>
@@ -113,4 +113,4 @@
             }
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

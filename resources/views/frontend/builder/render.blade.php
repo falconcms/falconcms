@@ -67,6 +67,6 @@
                 $renderContainer = $globalSectionsMap[$gsId]['data'];
             }
         @endphp
-        @include('cms-dashboard::frontend.builder.container', ['container' => $renderContainer])
+        @include('falcon-cms::frontend.builder.container', ['container' => $renderContainer])
     @endforeach
 @endif

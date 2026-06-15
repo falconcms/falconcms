@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin>
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin>
+    <x-falcon-cms::admin.delete-modal />
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-4">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Field Groups</h1>
@@ -73,4 +73,4 @@
             }
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

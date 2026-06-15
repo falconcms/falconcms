@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin>
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin>
+    <x-falcon-cms::admin.delete-modal />
     <div class="max-w-5xl mx-auto">
         <div class="mb-6 flex justify-between items-center">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Edit Field Group: <span class="font-bold">{{ $fieldGroup->title }}</span></h1>
@@ -344,4 +344,4 @@
         }
     </script>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

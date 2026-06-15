@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin title="Custom Post Types">
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin title="Custom Post Types">
+    <x-falcon-cms::admin.delete-modal />
     <div class="max-w-[1200px] mx-auto pb-12 mt-2">
         <div class="flex items-center mb-4">
             <h1 class="text-[22px] font-normal text-[#1d2327] mr-3">Custom Post Types</h1>
@@ -205,4 +205,4 @@
             }
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

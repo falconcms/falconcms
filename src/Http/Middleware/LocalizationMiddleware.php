@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Middleware;
+namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
-use Acme\CmsDashboard\Models\Language;
+use FalconCms\Core\Models\Language;
 
 class LocalizationMiddleware
 {

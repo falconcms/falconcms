@@ -32,7 +32,7 @@
         <!-- Actual Layout -->
         <div v-else class="w-full bg-white min-h-full flex flex-col {{ ($postCardMode ?? false) ? 'justify-center' : '' }}">
             <template v-for="(container, ci) in layout" :key="container.id">
-                @include('cms-dashboard::admin.lazy-builder.partials.components.container.row')
+                @include('falcon-cms::admin.lazy-builder.partials.components.container.row')
             </template>
         </div>
     </div>

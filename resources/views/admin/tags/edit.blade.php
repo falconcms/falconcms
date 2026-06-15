@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Edit Tag">
+<x-falcon-cms::layouts.admin title="Edit Tag">
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Edit Tag</h1>
     </div>
@@ -26,7 +26,7 @@
             @method('PUT')
             
             <table class="w-full text-[14px]">
-                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @php $activeLanguages = \FalconCms\Core\Models\Language::where('status', true)->get(); @endphp
                 @if($activeLanguages->count() > 1)
                 <tr class="align-top border-b border-[#f0f0f1]">
                     <th class="w-[200px] text-left py-4 px-2 font-medium">Language</th>
@@ -49,7 +49,7 @@
                                 <div id="multi-lang-list" class="hidden space-y-2 pl-4">
                                     <p class="text-[11px] text-gray-500 mb-2">Clone to:</p>
                                     @php 
-                                        $existingClones = \Acme\CmsDashboard\Models\Tag::where('origin_id', $tag->id)->pluck('lang_code')->toArray();
+                                        $existingClones = \FalconCms\Core\Models\Tag::where('origin_id', $tag->id)->pluck('lang_code')->toArray();
                                     @endphp
                                     @foreach($activeLanguages as $lang)
                                         @if($lang->code !== $tag->lang_code && !in_array($lang->code, $existingClones))
@@ -106,4 +106,4 @@
             </div>
         </form>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

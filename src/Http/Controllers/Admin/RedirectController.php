@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Redirect;
+use FalconCms\Core\Models\Redirect;
 use Illuminate\Http\Request;
 
 class RedirectController extends Controller
@@ -18,7 +18,7 @@ class RedirectController extends Controller
         }
 
         $redirects = $query->latest()->paginate(10);
-        return view('cms-dashboard::admin.seo.redirects', compact('redirects'));
+        return view('falcon-cms::admin.seo.redirects', compact('redirects'));
     }
 
     public function store(Request $request)

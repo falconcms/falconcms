@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 
-use Acme\CmsDashboard\Models\BlockedIp;
-use Acme\CmsDashboard\Mail\PasswordResetMail;
+use FalconCms\Core\Models\BlockedIp;
+use FalconCms\Core\Mail\PasswordResetMail;
 
 class LoginController extends Controller
 {
@@ -27,10 +27,10 @@ class LoginController extends Controller
         $theme = get_cms_option('login_theme', 'modern');
 
         if ($theme === 'funny') {
-            return view('cms-dashboard::admin.auth.login-funny');
+            return view('falcon-cms::admin.auth.login-funny');
         }
 
-        return view('cms-dashboard::admin.auth.login-modern');
+        return view('falcon-cms::admin.auth.login-modern');
     }
 
     public function checkCredentials(Request $request)
@@ -202,10 +202,10 @@ class LoginController extends Controller
         $theme = get_cms_option('login_theme', 'modern');
 
         if ($theme === 'funny') {
-            return view('cms-dashboard::admin.auth.forgot-password-funny');
+            return view('falcon-cms::admin.auth.forgot-password-funny');
         }
 
-        return view('cms-dashboard::admin.auth.forgot-password-modern');
+        return view('falcon-cms::admin.auth.forgot-password-modern');
     }
 
     public function sendResetLinkEmail(Request $request)
@@ -250,10 +250,10 @@ class LoginController extends Controller
         $viewData = ['token' => $token, 'email' => $email];
 
         if ($theme === 'funny') {
-            return view('cms-dashboard::admin.auth.reset-password-funny', $viewData);
+            return view('falcon-cms::admin.auth.reset-password-funny', $viewData);
         }
 
-        return view('cms-dashboard::admin.auth.reset-password-modern', $viewData);
+        return view('falcon-cms::admin.auth.reset-password-modern', $viewData);
     }
 
     public function resetPassword(Request $request)
@@ -325,7 +325,7 @@ class LoginController extends Controller
             $magicUrl = route('admin.magic.verify', ['token' => $rawToken]);
 
             try {
-                Mail::to($email)->send(new \Acme\CmsDashboard\Mail\MagicLoginMail($magicUrl, $user->name));
+                Mail::to($email)->send(new \FalconCms\Core\Mail\MagicLoginMail($magicUrl, $user->name));
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('Admin magic login mail failed: ' . $e->getMessage());
                 \Illuminate\Support\Facades\Log::info("Admin magic login link (mail failed) for {$email}: {$magicUrl}");

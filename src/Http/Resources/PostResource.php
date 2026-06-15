@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Resources;
+namespace FalconCms\Core\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 

@@ -84,12 +84,12 @@
             $__pcCustomTaxos = collect();
             $__pcCptTaxonomies = ['post' => ['category', 'tag'], 'page' => [], 'product' => []];
             try {
-                $__pcTaxTerms['category'] = \Acme\CmsDashboard\Models\Category::select('id','name','slug')->orderBy('name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug])->values()->toArray();
-                $__pcTaxTerms['tag']      = \Acme\CmsDashboard\Models\Tag::select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
-                $__pcCustomTaxos = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)->get();
+                $__pcTaxTerms['category'] = \FalconCms\Core\Models\Category::select('id','name','slug')->orderBy('name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug])->values()->toArray();
+                $__pcTaxTerms['tag']      = \FalconCms\Core\Models\Tag::select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
+                $__pcCustomTaxos = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->get();
                 foreach ($__pcCustomTaxos as $__pct) {
                     $__pcTaxonomies[] = ['slug' => $__pct->slug, 'name' => $__pct->name, 'type' => 'custom'];
-                    $__pcTaxTerms[$__pct->slug] = \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $__pct->slug)->select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
+                    $__pcTaxTerms[$__pct->slug] = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $__pct->slug)->select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
                     foreach (($__pct->post_types ?? []) as $__ptSlug) {
                         if (!isset($__pcCptTaxonomies[$__ptSlug])) $__pcCptTaxonomies[$__ptSlug] = [];
                         if (!in_array($__pct->slug, $__pcCptTaxonomies[$__ptSlug])) $__pcCptTaxonomies[$__ptSlug][] = $__pct->slug;
@@ -103,7 +103,7 @@
         window.lazyCptList       = [];
     </script>
 
-    @include('cms-dashboard::admin.lazy-builder.partials.styles')
+    @include('falcon-cms::admin.lazy-builder.partials.styles')
 </head>
 <body class="bg-[#f1f1f1]">
 
@@ -121,26 +121,26 @@
         </div>
 
         <header class="builder-topbar">
-            @include('cms-dashboard::admin.lazy-builder.partials.topbar_content')
+            @include('falcon-cms::admin.lazy-builder.partials.topbar_content')
         </header>
 
         <template v-if="!isPreview">
-            @include('cms-dashboard::admin.lazy-builder.partials.sidebar')
+            @include('falcon-cms::admin.lazy-builder.partials.sidebar')
         </template>
 
-        @include('cms-dashboard::admin.lazy-builder.partials.canvas')
+        @include('falcon-cms::admin.lazy-builder.partials.canvas')
 
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.column-select')
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.element-select')
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.library')
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.context-menu')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.column-select')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.element-select')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.library')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.context-menu')
     </div>
 
-    @include('cms-dashboard::components.admin.media-modal')
+    @include('falcon-cms::components.admin.media-modal')
 
     <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
 
-    @include('cms-dashboard::admin.lazy-builder.partials.scripts')
+    @include('falcon-cms::admin.lazy-builder.partials.scripts')
 
     {{-- Page Options JS — outside Vue template boundary --}}
     <script>

@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', $post->title)
 
@@ -464,7 +464,7 @@
 
         <!-- Related Products Section -->
         @php
-            $related = \Acme\CmsDashboard\Models\Post::where('posts.type', 'product')
+            $related = \FalconCms\Core\Models\Post::where('posts.type', 'product')
                 ->where('posts.status', 'published')
                 ->where('posts.id', '!=', $post->id)
                 ->with('shopData')
@@ -478,7 +478,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
                 @foreach($related as $item)
-                    @include('cms-dashboard::themes.lazy-theme.partials.product-card', ['product' => $item])
+                    @include('falcon-cms::themes.lazy-theme.partials.product-card', ['product' => $item])
                 @endforeach
             </div>
         </div>
@@ -509,7 +509,7 @@
             selectedVariation: null,
             currentImage: '{{ $featuredImage }}',
             defaultImage: '{{ $featuredImage }}',
-            currencySymbol: '{{ \Acme\CmsDashboard\Services\EcommerceData::getCurrencySymbol(get_shop_option("shop_currency", "USD")) }}',
+            currencySymbol: '{{ \FalconCms\Core\Services\EcommerceData::getCurrencySymbol(get_shop_option("shop_currency", "USD")) }}',
             currencyPosition: '{{ get_shop_option("shop_currency_pos", "left") }}',
             priceDecimals: {{ (int)get_shop_option("shop_num_decimals", 2) }},
             thousandSeparator: '{{ get_shop_option("shop_thousand_sep", ",") }}',

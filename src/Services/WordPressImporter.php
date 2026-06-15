@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Services;
+namespace FalconCms\Core\Services;
 
-use Acme\CmsDashboard\Models\Category;
-use Acme\CmsDashboard\Models\Post;
-use Acme\CmsDashboard\Models\Tag;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\Tag;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

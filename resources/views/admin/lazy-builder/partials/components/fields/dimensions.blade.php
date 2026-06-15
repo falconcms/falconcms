@@ -12,7 +12,7 @@
             <button @click="['_top','_right','_bottom','_left'].forEach(s => setResponsiveVal(editingElement.settings, '{{ $key }}' + s, device, ''))" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
                 <i class="fa fa-undo text-[10px]"></i>
             </button>
-            @include('cms-dashboard::admin.lazy-builder.partials.components.fields.responsive-mode', ['menu' => $dimMenu])
+            @include('falcon-cms::admin.lazy-builder.partials.components.fields.responsive-mode', ['menu' => $dimMenu])
         </div>
     </div>
     <div class="grid grid-cols-2 gap-2">

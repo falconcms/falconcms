@@ -1,12 +1,12 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers;
+namespace FalconCms\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Acme\CmsDashboard\Models\Post;
-use Acme\CmsDashboard\Models\Product;
-use Acme\CmsDashboard\Models\Order;
-use Acme\CmsDashboard\Models\OrderItem;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\Product;
+use FalconCms\Core\Models\Order;
+use FalconCms\Core\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -18,10 +18,10 @@ class ShopFrontendController extends Controller
         $appView = "themes.{$activeTheme}.ecommerce.{$view}";
         if (view()->exists($appView)) return $appView;
 
-        $packageView = "cms-dashboard::themes.{$activeTheme}.ecommerce.{$view}";
+        $packageView = "falcon-cms::themes.{$activeTheme}.ecommerce.{$view}";
         if (view()->exists($packageView)) return $packageView;
 
-        return "cms-dashboard::themes.lazy-theme.ecommerce.{$view}";
+        return "falcon-cms::themes.lazy-theme.ecommerce.{$view}";
     }
 
     public function cart()
@@ -62,7 +62,7 @@ class ShopFrontendController extends Controller
 
         $variation = null;
         if ($variationId) {
-            $variation = \Acme\CmsDashboard\Models\ProductVariation::find($variationId);
+            $variation = \FalconCms\Core\Models\ProductVariation::find($variationId);
         }
 
         // Inventory Check
@@ -259,7 +259,7 @@ class ShopFrontendController extends Controller
             if (!empty($coupon['usage_limit'])) {
                 $perUserLimit = (int)$coupon['usage_limit'];
                 if (auth()->check()) {
-                    $userUsageCount = \Acme\CmsDashboard\Models\Order::where('user_id', auth()->id())
+                    $userUsageCount = \FalconCms\Core\Models\Order::where('user_id', auth()->id())
                         ->where(function ($q) use ($code) {
                             $q->where('coupon_code', $code)
                               ->orWhere('coupon_code', 'like', $code . ',%')
@@ -586,7 +586,7 @@ class ShopFrontendController extends Controller
                     return redirect()->back()->with('error', 'An account with this email already exists. Please log in.');
                 }
 
-                $customerRole = \Acme\CmsDashboard\Models\Role::firstOrCreate(
+                $customerRole = \FalconCms\Core\Models\Role::firstOrCreate(
                     ['slug' => 'customer'],
                     ['name' => 'Customer', 'description' => 'Customer who registered via store checkout or account.']
                 );
@@ -666,7 +666,7 @@ class ShopFrontendController extends Controller
             'customer_note' => $request->order_comments,
             // Snapshot currency settings for historical accuracy
             'currency' => get_shop_option('shop_currency', 'USD'),
-            'currency_symbol' => \Acme\CmsDashboard\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD')),
+            'currency_symbol' => \FalconCms\Core\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD')),
             'currency_position' => get_shop_option('shop_currency_pos', 'left'),
             'thousand_separator' => get_shop_option('shop_thousand_sep', ','),
             'decimal_separator' => get_shop_option('shop_decimal_sep', '.'),
@@ -743,7 +743,7 @@ class ShopFrontendController extends Controller
 
             // Decrement Stock
             if (!empty($item['variation_id'])) {
-                $variation = \Acme\CmsDashboard\Models\ProductVariation::find($item['variation_id']);
+                $variation = \FalconCms\Core\Models\ProductVariation::find($item['variation_id']);
                 if ($variation && $variation->manage_stock) {
                     $variation->decrement('stock_quantity', $item['quantity']);
                 }
@@ -820,7 +820,7 @@ class ShopFrontendController extends Controller
     private function finalizeOrder(Order $order): void
     {
         try {
-            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($order, 'placed'));
+            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'placed'));
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} email failed: " . $e->getMessage());
         }
@@ -828,7 +828,7 @@ class ShopFrontendController extends Controller
         $adminRecipient = get_shop_option('shop_email_admin_recipient');
         if (!empty($adminRecipient)) {
             try {
-                \Illuminate\Support\Facades\Mail::to($adminRecipient)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($order, 'placed', 'New Order Received'));
+                \Illuminate\Support\Facades\Mail::to($adminRecipient)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'placed', 'New Order Received'));
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} admin email failed: " . $e->getMessage());
             }
@@ -841,7 +841,7 @@ class ShopFrontendController extends Controller
         Session::forget('lazy_coupons');
     }
 
-    private function generateDownloadTokens(\Acme\CmsDashboard\Models\Order $order): void
+    private function generateDownloadTokens(\FalconCms\Core\Models\Order $order): void
     {
         try {
             $items = $order->items()->with(['product.shopData.downloads'])->get();
@@ -855,7 +855,7 @@ class ShopFrontendController extends Controller
                 $expiresAt  = $expiryDays ? now()->addDays($expiryDays) : null;
 
                 foreach ($files as $file) {
-                    \Acme\CmsDashboard\Models\OrderDownload::create([
+                    \FalconCms\Core\Models\OrderDownload::create([
                         'order_id'            => $order->id,
                         'order_item_id'       => $item->id,
                         'product_download_id' => $file->id,
@@ -1210,7 +1210,7 @@ class ShopFrontendController extends Controller
             $magicUrl = route('shop.magic.verify', ['token' => $rawToken]);
 
             \Illuminate\Support\Facades\Mail::to($email)->send(
-                new \Acme\CmsDashboard\Mail\MagicLoginMail($magicUrl, $user->name)
+                new \FalconCms\Core\Mail\MagicLoginMail($magicUrl, $user->name)
             );
         }
 
@@ -1220,7 +1220,7 @@ class ShopFrontendController extends Controller
     public function verifyMagicLink(\Illuminate\Http\Request $request, string $token)
     {
         $accountPageId = get_shop_option('shop_account_page_id');
-        $accountPage   = $accountPageId ? \Acme\CmsDashboard\Models\Post::find($accountPageId) : null;
+        $accountPage   = $accountPageId ? \FalconCms\Core\Models\Post::find($accountPageId) : null;
         $accountUrl    = $accountPage ? url('/' . $accountPage->slug) : url('/');
 
         $hash = hash('sha256', $token);
@@ -1257,7 +1257,7 @@ class ShopFrontendController extends Controller
      */
     public function downloadFile(Request $request, string $token)
     {
-        $dl = \Acme\CmsDashboard\Models\OrderDownload::with('productDownload')
+        $dl = \FalconCms\Core\Models\OrderDownload::with('productDownload')
             ->where('token', $token)
             ->first();
 
@@ -1396,7 +1396,7 @@ class ShopFrontendController extends Controller
         if (auth()->check() && (auth()->user()->role && in_array(auth()->user()->role->slug, ['admin', 'super-admin']))) {
             $isApproved = true;
         } else {
-            $query = \Acme\CmsDashboard\Models\Review::where('is_approved', true);
+            $query = \FalconCms\Core\Models\Review::where('is_approved', true);
             if ($userId) {
                 $isApproved = (clone $query)->where('user_id', $userId)->exists();
             } elseif ($email) {
@@ -1404,7 +1404,7 @@ class ShopFrontendController extends Controller
             }
         }
 
-        \Acme\CmsDashboard\Models\Review::create([
+        \FalconCms\Core\Models\Review::create([
             'post_id' => $validated['post_id'],
             'parent_id' => $validated['parent_id'] ?? null,
             'user_id' => $userId,

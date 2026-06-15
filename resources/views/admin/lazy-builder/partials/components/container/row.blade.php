@@ -148,6 +148,6 @@
             </button>
         </div>
 
-        @include('cms-dashboard::admin.lazy-builder.partials.components.column.col')
+        @include('falcon-cms::admin.lazy-builder.partials.components.column.col')
     </div>
 </div>

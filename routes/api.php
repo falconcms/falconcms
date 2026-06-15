@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Acme\CmsDashboard\Http\Controllers\Api\V1\CmsApiController;
+use FalconCms\Core\Http\Controllers\Api\V1\CmsApiController;
 
 Route::prefix('api/v1')->middleware(['api', 'throttle:60,1'])->group(function() {
     

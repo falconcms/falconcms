@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Middleware;
+namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\Analytics;
+use FalconCms\Core\Models\Analytics;
 
 class TrackVisits
 {
@@ -29,9 +29,9 @@ class TrackVisits
             'url'         => $request->fullUrl(),
             'referrer'    => $request->header('referer'),
             'user_agent'  => $userAgent,
-            'browser'     => \Acme\CmsDashboard\Support\UserAgentParser::browser($userAgent),
-            'os'          => \Acme\CmsDashboard\Support\UserAgentParser::os($userAgent),
-            'device_type' => \Acme\CmsDashboard\Support\UserAgentParser::device($userAgent),
+            'browser'     => \FalconCms\Core\Support\UserAgentParser::browser($userAgent),
+            'os'          => \FalconCms\Core\Support\UserAgentParser::os($userAgent),
+            'device_type' => \FalconCms\Core\Support\UserAgentParser::device($userAgent),
         ]);
     }
 }

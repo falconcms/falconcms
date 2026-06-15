@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Sales Reports" active-menu="shop">
+<x-falcon-cms::layouts.admin title="Sales Reports" active-menu="shop">
     @php
         $currency  = get_shop_option('shop_currency_symbol', '$');
         $money     = fn($v) => $currency . number_format((float) $v, 2);
@@ -163,4 +163,4 @@
             @endif
         </div>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

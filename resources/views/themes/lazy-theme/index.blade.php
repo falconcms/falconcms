@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', get_cms_option('site_title', 'Lazy Panda'))
 
@@ -258,7 +258,7 @@
 
                 {{-- Tags --}}
                 @php
-                    try { $tags = \Acme\CmsDashboard\Models\Tag::orderBy('name')->take(20)->get(); }
+                    try { $tags = \FalconCms\Core\Models\Tag::orderBy('name')->take(20)->get(); }
                     catch (\Throwable $e) { $tags = collect(); }
                 @endphp
                 @if($tags->count() > 0)

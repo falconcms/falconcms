@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Form Builder - {{ $form->title }}</x-slot>
 
     <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/pickr.classic.min.css') }}">
@@ -686,4 +686,4 @@
             : initFormColorPickers();
     })();
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

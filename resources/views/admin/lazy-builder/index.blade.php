@@ -130,12 +130,12 @@
             $__taxonomyTerms = [];
             $__customTaxos   = collect();
             try {
-                $__taxonomyTerms['category'] = \Acme\CmsDashboard\Models\Category::select('id','name','slug')->orderBy('name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug])->values()->toArray();
-                $__taxonomyTerms['tag']      = \Acme\CmsDashboard\Models\Tag::select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
-                $__customTaxos = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)->get();
+                $__taxonomyTerms['category'] = \FalconCms\Core\Models\Category::select('id','name','slug')->orderBy('name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug])->values()->toArray();
+                $__taxonomyTerms['tag']      = \FalconCms\Core\Models\Tag::select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
+                $__customTaxos = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->get();
                 foreach ($__customTaxos as $__tax) {
                     $__taxonomies[] = ['slug' => $__tax->slug, 'name' => $__tax->name, 'type' => 'custom'];
-                    $__taxonomyTerms[$__tax->slug] = \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $__tax->slug)->select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
+                    $__taxonomyTerms[$__tax->slug] = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $__tax->slug)->select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
                 }
             } catch (\Exception $e) { /* built-ins already set above */ }
         @endphp
@@ -143,7 +143,7 @@
         window.lazyTaxonomyTerms = {!! json_encode($__taxonomyTerms, JSON_HEX_TAG) !!};
         @php
             try {
-                $__cptList = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false)
+                $__cptList = \FalconCms\Core\Models\PostType::where('is_builtin', false)
                     ->where('is_active', true)
                     ->whereNull('deleted_at')
                     ->orderBy('name')
@@ -166,7 +166,7 @@
         window.lazyCptTaxonomies  = {!! json_encode($__cptTaxonomies, JSON_HEX_TAG) !!};
     </script>
 
-    @include('cms-dashboard::admin.lazy-builder.partials.styles')
+    @include('falcon-cms::admin.lazy-builder.partials.styles')
 </head>
 <body class="bg-[#f1f1f1]">
 
@@ -186,31 +186,31 @@
         
         <!-- Topbar -->
         <header class="builder-topbar">
-            @include('cms-dashboard::admin.lazy-builder.partials.topbar_content')
+            @include('falcon-cms::admin.lazy-builder.partials.topbar_content')
         </header>
 
         <!-- Sidebar -->
         <template v-if="!isPreview">
-            @include('cms-dashboard::admin.lazy-builder.partials.sidebar')
+            @include('falcon-cms::admin.lazy-builder.partials.sidebar')
         </template>
 
         <!-- Canvas -->
-        @include('cms-dashboard::admin.lazy-builder.partials.canvas')
+        @include('falcon-cms::admin.lazy-builder.partials.canvas')
 
         <!-- Modals -->
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.column-select')
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.element-select')
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.library')
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.context-menu')
-        @include('cms-dashboard::admin.lazy-builder.partials.modals.global-section')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.column-select')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.element-select')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.library')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.context-menu')
+        @include('falcon-cms::admin.lazy-builder.partials.modals.global-section')
     </div>
 
-    @include('cms-dashboard::components.admin.media-modal')
+    @include('falcon-cms::components.admin.media-modal')
 
     <!-- Scripts (Corrected Paths) -->
     <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
     <script src="{{ asset('vendor/cms-dashboard/js/purify.min.js') }}"></script>
 
-    @include('cms-dashboard::admin.lazy-builder.partials.scripts')
+    @include('falcon-cms::admin.lazy-builder.partials.scripts')
 </body>
 </html>

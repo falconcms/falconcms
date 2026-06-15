@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Acme\CmsDashboard\Models\Category;
+use FalconCms\Core\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -65,7 +65,7 @@ class CategoryController extends Controller
             );
         }
 
-        return view('cms-dashboard::admin.categories.index', compact('categories', 'fullTree'));
+        return view('falcon-cms::admin.categories.index', compact('categories', 'fullTree'));
     }
 
     public function bulk(Request $request)
@@ -129,7 +129,7 @@ class CategoryController extends Controller
         };
         $buildTree(null, 0);
 
-        return view('cms-dashboard::admin.categories.edit', compact('category', 'fullTree'));
+        return view('falcon-cms::admin.categories.edit', compact('category', 'fullTree'));
     }
 
     public function update(Request $request, Category $category)
@@ -149,7 +149,7 @@ class CategoryController extends Controller
                         return;
                     }
                     if ($value) {
-                        $parent = \Acme\CmsDashboard\Models\Category::find($value);
+                        $parent = \FalconCms\Core\Models\Category::find($value);
                         while ($parent) {
                             if ($parent->id == $category->id) {
                                 $fail('Circular reference detected: The selected parent is already a sub-category of this category.');

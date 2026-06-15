@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin title="Menus">
+<x-falcon-cms::layouts.admin title="Menus">
     <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/font-awesome.all.min.css') }}">
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Menus</h1>
     </div>
@@ -840,4 +840,4 @@
     /* Boot */
     document.addEventListener('DOMContentLoaded', render);
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Custom Post Types">
+<x-falcon-cms::layouts.admin title="Custom Post Types">
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Custom Post Types</h1>
     </div>
@@ -46,4 +46,4 @@
             </form>
         </div>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

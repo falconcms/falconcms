@@ -1,8 +1,8 @@
-<x-cms-dashboard::layouts.admin title="Manage Widgets">
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin title="Manage Widgets">
+    <x-falcon-cms::admin.delete-modal />
 @php
-    $hasBuilderFooter = \Acme\CmsDashboard\Models\Post::where('type', 'lazy_footer')->where('status', 'published')->exists();
-    $hasBuilderHeader = \Acme\CmsDashboard\Models\Post::where('type', 'lazy_header')->where('status', 'published')->exists();
+    $hasBuilderFooter = \FalconCms\Core\Models\Post::where('type', 'lazy_footer')->where('status', 'published')->exists();
+    $hasBuilderHeader = \FalconCms\Core\Models\Post::where('type', 'lazy_header')->where('status', 'published')->exists();
 @endphp
 <div class="max-w-[1400px] mx-auto px-6 py-8">
     <div class="flex items-center justify-between mb-8">
@@ -515,4 +515,4 @@
         };
     });
 </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

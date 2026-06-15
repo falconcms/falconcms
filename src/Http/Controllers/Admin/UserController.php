@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use App\Models\User;
-use Acme\CmsDashboard\Models\Role;
+use FalconCms\Core\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -58,7 +58,7 @@ class UserController extends Controller
         
         $allUsers = User::all(); // For reassignment dropdown
         
-        return view('cms-dashboard::admin.users.index', compact(
+        return view('falcon-cms::admin.users.index', compact(
             'users', 'allCount', 'roles', 'blockedCount', 'allUsers'
         ));
     }
@@ -69,7 +69,7 @@ class UserController extends Controller
             abort(403);
         }
         $roles = Role::orderBy('name')->get();
-        return view('cms-dashboard::admin.users.create', compact('roles'));
+        return view('falcon-cms::admin.users.create', compact('roles'));
     }
 
     public function store(Request $request)
@@ -119,7 +119,7 @@ class UserController extends Controller
         }
 
         $roles = Role::all();
-        return view('cms-dashboard::admin.users.edit', compact('user', 'roles'));
+        return view('falcon-cms::admin.users.edit', compact('user', 'roles'));
     }
     public function update(Request $request, User $user)
     {
@@ -157,7 +157,7 @@ class UserController extends Controller
         // which also prevents self-escalation via the profile page.
         if ($canManageRoles) {
             $roles = array_values(array_unique(array_map('intval', $request->input('roles', []))));
-            if (\Acme\CmsDashboard\Models\Role::whereIn('id', $roles)->where('slug', 'super-admin')->exists()
+            if (\FalconCms\Core\Models\Role::whereIn('id', $roles)->where('slug', 'super-admin')->exists()
                 && !auth()->user()->hasRole('super-admin')) {
                 return redirect()->back()->with('error', 'Only a Super Admin can assign the Super Admin role.')->withInput();
             }

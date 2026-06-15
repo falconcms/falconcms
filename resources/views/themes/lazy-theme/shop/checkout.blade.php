@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', 'Checkout')
 
@@ -48,7 +48,7 @@
                     <div class="space-y-1.5 mb-4">
                         <label class="text-[14px] font-bold text-[#2c3338]">Country / Region <span class="text-red-600">*</span></label>
                         <select name="billing_country" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] bg-white focus:border-[#1363df] outline-none cursor-pointer">
-                            @foreach(\Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates() as $code => $name)
+                            @foreach(\FalconCms\Core\Services\EcommerceData::getCountriesWithStates() as $code => $name)
                                 <option value="{{ $code }}" {{ old('billing_country') == $code ? 'selected' : '' }}>{{ $name }}</option>
                             @endforeach
                         </select>
@@ -144,7 +144,7 @@
                         <div class="space-y-1.5">
                             <label class="text-[14px] font-bold text-[#2c3338]">Country / Region <span class="text-red-600">*</span></label>
                             <select name="shipping_country" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] bg-white focus:border-[#1363df] outline-none">
-                                @foreach(\Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates() as $code => $name)
+                                @foreach(\FalconCms\Core\Services\EcommerceData::getCountriesWithStates() as $code => $name)
                                     <option value="{{ $code }}" {{ old('shipping_country') == $code ? 'selected' : '' }}>{{ $name }}</option>
                                 @endforeach
                             </select>

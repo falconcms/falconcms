@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Edit {{ ucfirst($post->type) }}" active-menu="{{ $post->type === 'page' ? 'pages' : ($post->type ?: 'posts') }}">
+<x-falcon-cms::layouts.admin title="Edit {{ ucfirst($post->type) }}" active-menu="{{ $post->type === 'page' ? 'pages' : ($post->type ?: 'posts') }}">
     
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">Edit {{ ucfirst($post->type) }}</h1>
@@ -256,8 +256,8 @@
                     @endforeach
                 @endif
 
-                @include('cms-dashboard::admin.posts.partials.product-data', ['post' => $post, 'type' => $type])
-                @include('cms-dashboard::admin.posts.partials.seo', ['post' => $post])
+                @include('falcon-cms::admin.posts.partials.product-data', ['post' => $post, 'type' => $type])
+                @include('falcon-cms::admin.posts.partials.seo', ['post' => $post])
             </div>
 
             <!-- Right Column: Metaboxes -->
@@ -266,7 +266,7 @@
                 <!-- Language & Multilingual Metabox -->
                 @php 
                     $isMultiLang = get_cms_option('multi_language_enabled', 0);
-                    $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
+                    $activeLanguages = \FalconCms\Core\Models\Language::where('status', true)->get(); 
                 @endphp
 
                 @if($activeLanguages->count() > 1)
@@ -294,7 +294,7 @@
                             <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
                                 <p class="text-[11px] text-gray-500 mb-2">Clone to:</p>
                                 @php
-                                    $existingClones = \Acme\CmsDashboard\Models\Post::where('origin_id', $post->id)->pluck('lang_code')->toArray();
+                                    $existingClones = \FalconCms\Core\Models\Post::where('origin_id', $post->id)->pluck('lang_code')->toArray();
                                 @endphp
                                 @foreach($activeLanguages as $lang)
                                     @if($lang->code !== $post->lang_code && !in_array($lang->code, $existingClones))
@@ -306,7 +306,7 @@
                                 @endforeach
                             </div>
                         @elseif($post->origin_id)
-                            @php $original = \Acme\CmsDashboard\Models\Post::find($post->origin_id); @endphp
+                            @php $original = \FalconCms\Core\Models\Post::find($post->origin_id); @endphp
                             <div class="bg-blue-50 p-2 border border-blue-100 rounded-sm">
                                 <p class="text-[11px] text-blue-700">
                                     This is the <strong>{{ $activeLanguages->where('code', $post->lang_code)->first()->name ?? $post->lang_code }}</strong> version.
@@ -457,7 +457,7 @@
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="h-44 overflow-y-auto border border-[#dfdfdf] p-2 mb-3 bg-white">
                             @php 
-                                $allCategories = \Acme\CmsDashboard\Models\Category::orderBy('name')->get();
+                                $allCategories = \FalconCms\Core\Models\Category::orderBy('name')->get();
                                 $selectedCatIds = $post->categories->pluck('id')->toArray();
                             @endphp
                             @forelse($allCategories as $category)
@@ -588,7 +588,7 @@
                 @endif
 
                 @if($post->type === 'product')
-                    @include('cms-dashboard::admin.posts.partials.product-taxonomies')
+                    @include('falcon-cms::admin.posts.partials.product-taxonomies')
                 @endif
 
                 @if(in_array('featured_image', $supports) || in_array('thumbnail', $supports))
@@ -1276,4 +1276,4 @@
         document.getElementById('post-form')?.addEventListener('submit', () => { titleDirty = false; const ed = getEditor(); if (ed) ed.setDirty(false); });
     })();
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

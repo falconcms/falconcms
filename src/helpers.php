@@ -363,7 +363,7 @@ if (!function_exists('lazy_normalize_publish')) {
             } catch (\Throwable $e) {
             }
         }
-        $data['status'] = \Acme\CmsDashboard\Models\Post::resolveStatusForSchedule(
+        $data['status'] = \FalconCms\Core\Models\Post::resolveStatusForSchedule(
             $data['status'] ?? null,
             $data['published_at'] ?? null
         );
@@ -401,7 +401,7 @@ if (!function_exists('get_post_custom_fields')) {
     function get_post_custom_fields($post): array
     {
         try {
-            $post = is_object($post) ? $post : \Acme\CmsDashboard\Models\Post::find($post);
+            $post = is_object($post) ? $post : \FalconCms\Core\Models\Post::find($post);
             if (!$post) return [];
             $type = $post->type;
 
@@ -439,8 +439,8 @@ if (!function_exists('get_lazy_content')) {
     {
         if (empty($content)) return '';
         // Check if it's builder shortcode format
-        if (is_string($content) && \Acme\CmsDashboard\Services\BuilderShortcodeConverter::isBuilderShortcode($content)) {
-            $content = \Acme\CmsDashboard\Services\BuilderShortcodeConverter::shortcodesToJson($content);
+        if (is_string($content) && \FalconCms\Core\Services\BuilderShortcodeConverter::isBuilderShortcode($content)) {
+            $content = \FalconCms\Core\Services\BuilderShortcodeConverter::shortcodesToJson($content);
         }
 
         try {
@@ -450,7 +450,7 @@ if (!function_exists('get_lazy_content')) {
                 return do_lazy_shortcode($content);
             }
             
-            $rendered = view('cms-dashboard::frontend.builder.render', ['layout' => $layout])->render();
+            $rendered = view('falcon-cms::frontend.builder.render', ['layout' => $layout])->render();
             return do_lazy_shortcode($rendered);
         } catch (\Exception $e) {
             \Log::error('Lazy Builder Error: ' . $e->getMessage());
@@ -475,8 +475,8 @@ if (!function_exists('_lazy_parse_builder_layout')) {
     function _lazy_parse_builder_layout(string $raw): ?array
     {
         try {
-            if (\Acme\CmsDashboard\Services\BuilderShortcodeConverter::isBuilderShortcode($raw)) {
-                $raw = \Acme\CmsDashboard\Services\BuilderShortcodeConverter::shortcodesToJson($raw);
+            if (\FalconCms\Core\Services\BuilderShortcodeConverter::isBuilderShortcode($raw)) {
+                $raw = \FalconCms\Core\Services\BuilderShortcodeConverter::shortcodesToJson($raw);
             }
             $layout = json_decode($raw, true);
             return is_array($layout) ? $layout : null;
@@ -489,7 +489,7 @@ if (!function_exists('_lazy_parse_builder_layout')) {
 if (!function_exists('_lazy_render_layout')) {
     function _lazy_render_layout(array $layout): string
     {
-        $rendered = view('cms-dashboard::frontend.builder.render', ['layout' => $layout])->render();
+        $rendered = view('falcon-cms::frontend.builder.render', ['layout' => $layout])->render();
         return do_lazy_shortcode($rendered);
     }
 }
@@ -614,12 +614,12 @@ if (!function_exists('_lazy_builder_render_wrapper')) {
 if (!function_exists('get_lazy_header')) {
     function get_lazy_header()
     {
-        $header = \Acme\CmsDashboard\Models\Post::where('type', 'lazy_header')
+        $header = \FalconCms\Core\Models\Post::where('type', 'lazy_header')
             ->where('status', 'published')
             ->where('lang_code', app()->getLocale())
             ->first();
         if (!$header) {
-            $header = \Acme\CmsDashboard\Models\Post::where('type', 'lazy_header')
+            $header = \FalconCms\Core\Models\Post::where('type', 'lazy_header')
                 ->where('status', 'published')
                 ->first();
         }
@@ -633,12 +633,12 @@ if (!function_exists('get_lazy_header')) {
 if (!function_exists('get_lazy_footer')) {
     function get_lazy_footer()
     {
-        $footer = \Acme\CmsDashboard\Models\Post::where('type', 'lazy_footer')
+        $footer = \FalconCms\Core\Models\Post::where('type', 'lazy_footer')
             ->where('status', 'published')
             ->where('lang_code', app()->getLocale())
             ->first();
         if (!$footer) {
-            $footer = \Acme\CmsDashboard\Models\Post::where('type', 'lazy_footer')
+            $footer = \FalconCms\Core\Models\Post::where('type', 'lazy_footer')
                 ->where('status', 'published')
                 ->first();
         }
@@ -691,9 +691,9 @@ if (!function_exists('get_lazy_posts')) {
         $args = array_merge($defaults, $args);
 
         if ($args['post_type'] === 'any') {
-            $query = \Acme\CmsDashboard\Models\Post::query();
+            $query = \FalconCms\Core\Models\Post::query();
         } else {
-            $query = \Acme\CmsDashboard\Models\Post::where('type', $args['post_type']);
+            $query = \FalconCms\Core\Models\Post::where('type', $args['post_type']);
         }
 
         $lang = $args['lang'] ?: app()->getLocale();
@@ -799,7 +799,7 @@ if (!function_exists('the_lazy_pagination')) {
 }
 
 if (!function_exists('the_lazy_loop')) {
-    function the_lazy_loop($args = [], $view = 'cms-dashboard::frontend.loop')
+    function the_lazy_loop($args = [], $view = 'falcon-cms::frontend.loop')
     {
         $posts = get_lazy_posts($args);
         echo view($view, ['posts' => $posts])->render();
@@ -858,8 +858,8 @@ if (!function_exists('get_lazy_excerpt')) {
 
 if (!function_exists('get_lazy_post')) {
     function get_lazy_post($slugOrId) {
-        if (is_numeric($slugOrId)) return \Acme\CmsDashboard\Models\Post::find($slugOrId);
-        return \Acme\CmsDashboard\Models\Post::where('slug', $slugOrId)->where('lang_code', app()->getLocale())->first();
+        if (is_numeric($slugOrId)) return \FalconCms\Core\Models\Post::find($slugOrId);
+        return \FalconCms\Core\Models\Post::where('slug', $slugOrId)->where('lang_code', app()->getLocale())->first();
     }
 }
 
@@ -892,28 +892,28 @@ if (!function_exists('get_lazy_categories')) {
         if ($taxonomy === 'category') {
             $info = get_lazy_category_taxonomy($postType);
             if ($info['type'] === 'native') {
-                return \Acme\CmsDashboard\Models\Category::withCount(['posts' => fn($r) => $r->where('status', 'published')])
+                return \FalconCms\Core\Models\Category::withCount(['posts' => fn($r) => $r->where('status', 'published')])
                     ->orderBy('name')->get();
             }
             if ($info['type'] === 'product') {
-                return \Acme\CmsDashboard\Models\ProductCategory::withCount(['posts as posts_count' => fn($r) => $r->where('status', 'published')])
+                return \FalconCms\Core\Models\ProductCategory::withCount(['posts as posts_count' => fn($r) => $r->where('status', 'published')])
                     ->orderBy('name')->get();
             }
             if ($info['type'] === 'acpt') {
-                return \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $info['taxonomy_slug'])
+                return \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $info['taxonomy_slug'])
                     ->withCount(['posts as posts_count' => fn($q) => $q->where('status', 'published')])
                     ->orderBy('name')->get();
             }
             return collect();
         }
-        return \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $taxonomy)
+        return \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $taxonomy)
             ->withCount(['posts' => fn($q) => $q->where('status', 'published')])->get();
     }
 }
 
 if (!function_exists('get_lazy_menu')) {
     function get_lazy_menu($slugOrLocation) {
-        $query = \Acme\CmsDashboard\Models\NavigationMenu::query();
+        $query = \FalconCms\Core\Models\NavigationMenu::query();
         
         if ($slugOrLocation === 'header') {
             $query->where('is_header', true);
@@ -950,8 +950,8 @@ if (!function_exists('get_lazy_menu')) {
 if (!function_exists('this_process_items')) {
     function this_process_items($menu) {
         // Fetch active CPTs and Taxonomies to filter items
-        $activePostTypes = \Acme\CmsDashboard\Models\PostType::where('is_active', true)->pluck('slug')->toArray();
-        $activeTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
+        $activePostTypes = \FalconCms\Core\Models\PostType::where('is_active', true)->pluck('slug')->toArray();
+        $activeTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
 
         // Built-in types are always active
         $activePostTypes[] = 'post';
@@ -966,9 +966,9 @@ if (!function_exists('this_process_items')) {
             }
             // If it's a category/taxonomy item
             if ($item->type === 'category' && $item->object_id) {
-                $term = \Acme\CmsDashboard\Models\TaxonomyTerm::find($item->object_id);
+                $term = \FalconCms\Core\Models\TaxonomyTerm::find($item->object_id);
                 if ($term) return in_array($term->taxonomy_slug, $activeTaxonomies);
-                $standardCat = \Acme\CmsDashboard\Models\Category::find($item->object_id);
+                $standardCat = \FalconCms\Core\Models\Category::find($item->object_id);
                 return (bool) $standardCat;
             }
             return true;
@@ -980,7 +980,7 @@ if (!function_exists('this_process_items')) {
                 
                 // If it's a post/page/cpt item, find translation
                 if (!in_array($item->type, ['category', 'custom']) && $item->object_id) {
-                    $post = \Acme\CmsDashboard\Models\Post::find($item->object_id);
+                    $post = \FalconCms\Core\Models\Post::find($item->object_id);
                     if ($post) {
                         // Find translation in current locale
                         if ($post->lang_code !== $currentLocale) {
@@ -1084,7 +1084,7 @@ if (!function_exists('lazy_log_activity')) {
                 } catch (\Exception $e) {}
             }
 
-            return \Acme\CmsDashboard\Models\ActivityLog::create([
+            return \FalconCms\Core\Models\ActivityLog::create([
                 'user_id' => auth()->id(),
                 'action' => $action,
                 'model_type' => $model ? get_class($model) : null,
@@ -1105,7 +1105,7 @@ if (!function_exists('lazy_log_activity')) {
 if (!function_exists('render_lazy_widgets')) {
     function render_lazy_widgets($area) {
         $currentLocale = app()->getLocale();
-        $query = \Acme\CmsDashboard\Models\Widget::forArea($area);
+        $query = \FalconCms\Core\Models\Widget::forArea($area);
         
         // 1. Filter by lang_code
         $widgets = $query->where(function($q) use ($currentLocale) {
@@ -1117,12 +1117,12 @@ if (!function_exists('render_lazy_widgets')) {
         foreach ($widgets as $widget) {
             // Resolution order mirrors FrontendController::resolveThemeView():
             // 1. Published theme widget (non-namespaced): resources/views/themes/{theme}/widgets/{type}
-            // 2. Package theme widget (namespaced):       cms-dashboard::themes.{theme}.widgets.{type}
-            // 3. Package default widget (namespaced):     cms-dashboard::frontend.widgets.{type}
+            // 2. Package theme widget (namespaced):       falcon-cms::themes.{theme}.widgets.{type}
+            // 3. Package default widget (namespaced):     falcon-cms::frontend.widgets.{type}
             $publishedThemeWidget = "themes.{$activeTheme}.widgets.{$widget->type}";
-            $packageThemeWidget   = "cms-dashboard::themes.{$activeTheme}.widgets.{$widget->type}";
-            $lazyThemeWidget      = "cms-dashboard::themes.lazy-theme.widgets.{$widget->type}";
-            $defaultWidget        = "cms-dashboard::frontend.widgets.{$widget->type}";
+            $packageThemeWidget   = "falcon-cms::themes.{$activeTheme}.widgets.{$widget->type}";
+            $lazyThemeWidget      = "falcon-cms::themes.lazy-theme.widgets.{$widget->type}";
+            $defaultWidget        = "falcon-cms::frontend.widgets.{$widget->type}";
 
             if (view()->exists($publishedThemeWidget)) {
                 $output .= view($publishedThemeWidget, ['widget' => $widget])->render();
@@ -1154,37 +1154,37 @@ if (!function_exists('render_lazy_widgets')) {
 
 if (!function_exists('add_lazy_action')) {
     function add_lazy_action($tag, $callback, $priority = 10) {
-        \Acme\CmsDashboard\Core\HookManager::getInstance()->addAction($tag, $callback, $priority);
+        \FalconCms\Core\Core\HookManager::getInstance()->addAction($tag, $callback, $priority);
     }
 }
 
 if (!function_exists('do_lazy_action')) {
     function do_lazy_action($tag, ...$args) {
-        \Acme\CmsDashboard\Core\HookManager::getInstance()->doAction($tag, ...$args);
+        \FalconCms\Core\Core\HookManager::getInstance()->doAction($tag, ...$args);
     }
 }
 
 if (!function_exists('add_lazy_filter')) {
     function add_lazy_filter($tag, $callback, $priority = 10) {
-        \Acme\CmsDashboard\Core\HookManager::getInstance()->addFilter($tag, $callback, $priority);
+        \FalconCms\Core\Core\HookManager::getInstance()->addFilter($tag, $callback, $priority);
     }
 }
 
 if (!function_exists('apply_lazy_filters')) {
     function apply_lazy_filters($tag, $value, ...$args) {
-        return \Acme\CmsDashboard\Core\HookManager::getInstance()->applyFilters($tag, $value, ...$args);
+        return \FalconCms\Core\Core\HookManager::getInstance()->applyFilters($tag, $value, ...$args);
     }
 }
 
 if (!function_exists('has_lazy_action')) {
     function has_lazy_action($tag) {
-        return \Acme\CmsDashboard\Core\HookManager::getInstance()->hasAction($tag);
+        return \FalconCms\Core\Core\HookManager::getInstance()->hasAction($tag);
     }
 }
 
 if (!function_exists('has_lazy_filter')) {
     function has_lazy_filter($tag) {
-        return \Acme\CmsDashboard\Core\HookManager::getInstance()->hasFilter($tag);
+        return \FalconCms\Core\Core\HookManager::getInstance()->hasFilter($tag);
     }
 }
 
@@ -1682,7 +1682,7 @@ if (!function_exists('lazy_resolve_token')) {
                 if (str_starts_with($token, 'acpt_') && $post) {
                     $slug = substr($token, 5);
                     try {
-                        $meta = \Acme\CmsDashboard\Models\PostMeta::where('post_id', $post->id)
+                        $meta = \FalconCms\Core\Models\PostMeta::where('post_id', $post->id)
                             ->where('meta_key', $slug)->first();
                         if ($meta) return (string) $meta->meta_value;
                     } catch (\Throwable $e) {}
@@ -1888,8 +1888,8 @@ if (!function_exists('lazy_revision_diff')) {
     {
         $prep = function ($s) {
             $s = (string) $s;
-            if (\Acme\CmsDashboard\Services\BuilderShortcodeConverter::isBuilderJson($s)) {
-                $s = \Acme\CmsDashboard\Services\BuilderShortcodeConverter::jsonToShortcodes($s);
+            if (\FalconCms\Core\Services\BuilderShortcodeConverter::isBuilderJson($s)) {
+                $s = \FalconCms\Core\Services\BuilderShortcodeConverter::jsonToShortcodes($s);
             }
             $s = preg_replace('/>\s*</', ">\n<", $s);        // break HTML onto separate lines
             $lines = preg_split('/\r\n|\r|\n/', $s);
@@ -1942,13 +1942,13 @@ if (!function_exists('lazy_revision_diff')) {
 
 if (!function_exists('remove_lazy_action')) {
     function remove_lazy_action($tag, $callback, $priority = 10) {
-        return \Acme\CmsDashboard\Core\HookManager::getInstance()->removeAction($tag, $callback, $priority);
+        return \FalconCms\Core\Core\HookManager::getInstance()->removeAction($tag, $callback, $priority);
     }
 }
 
 if (!function_exists('remove_lazy_filter')) {
     function remove_lazy_filter($tag, $callback, $priority = 10) {
-        return \Acme\CmsDashboard\Core\HookManager::getInstance()->removeFilter($tag, $callback, $priority);
+        return \FalconCms\Core\Core\HookManager::getInstance()->removeFilter($tag, $callback, $priority);
     }
 }
 
@@ -1956,7 +1956,7 @@ if (!function_exists('lazy_lang_switcher')) {
     function lazy_lang_switcher($showFlags = true) {
         try {
             if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
-            $languages = \Acme\CmsDashboard\Models\Language::where('status', true)->get();
+            $languages = \FalconCms\Core\Models\Language::where('status', true)->get();
             if ($languages->count() <= 1) return '';
             
             $currentLocale = app()->getLocale();
@@ -1999,7 +1999,7 @@ if (!function_exists('lazy_lang_dropdown')) {
     function lazy_lang_dropdown() {
         try {
             if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
-            $activeLangs = \Acme\CmsDashboard\Models\Language::where('status', true)->get();
+            $activeLangs = \FalconCms\Core\Models\Language::where('status', true)->get();
             if ($activeLangs->count() <= 1) return '';
             
             $currentLang = $activeLangs->where('code', app()->getLocale())->first() ?? $activeLangs->first();
@@ -2107,7 +2107,7 @@ if (!function_exists('lazy_mobile_lang_switcher')) {
     function lazy_mobile_lang_switcher() {
         try {
             if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
-            $activeLangs = \Acme\CmsDashboard\Models\Language::where('status', true)->get();
+            $activeLangs = \FalconCms\Core\Models\Language::where('status', true)->get();
             if ($activeLangs->count() <= 1) return '';
             
             // Find current post to check for translations
@@ -2199,9 +2199,9 @@ if (!function_exists('the_lazy_search_form')) {
 if (!function_exists('render_lazy_form')) {
     function render_lazy_form($slug) {
         try {
-            $form = \Acme\CmsDashboard\Models\Form::where('slug', $slug)->where('status', true)->first();
+            $form = \FalconCms\Core\Models\Form::where('slug', $slug)->where('status', true)->first();
             if (!$form || empty($form->fields)) return '';
-            return view('cms-dashboard::frontend.form-renderer', ['form' => $form])->render();
+            return view('falcon-cms::frontend.form-renderer', ['form' => $form])->render();
         } catch (\Exception $e) {
             return '';
         }
@@ -2273,7 +2273,7 @@ if (!function_exists('get_lazy_shop_url')) {
     function get_lazy_shop_url() {
         $pageId = get_shop_option('shop_shop_page_id');
         if ($pageId) {
-            $page = \Acme\CmsDashboard\Models\Post::find($pageId);
+            $page = \FalconCms\Core\Models\Post::find($pageId);
             if ($page) return get_lazy_permalink($page);
         }
         return url('/product');
@@ -2284,7 +2284,7 @@ if (!function_exists('get_lazy_cart_url')) {
     function get_lazy_cart_url() {
         $pageId = get_shop_option('shop_cart_page_id');
         if ($pageId) {
-            $page = \Acme\CmsDashboard\Models\Post::find($pageId);
+            $page = \FalconCms\Core\Models\Post::find($pageId);
             if ($page) return get_lazy_permalink($page);
         }
         return route('shop.cart');
@@ -2295,7 +2295,7 @@ if (!function_exists('get_lazy_checkout_url')) {
     function get_lazy_checkout_url() {
         $pageId = get_shop_option('shop_checkout_page_id');
         if ($pageId) {
-            $page = \Acme\CmsDashboard\Models\Post::find($pageId);
+            $page = \FalconCms\Core\Models\Post::find($pageId);
             if ($page) return get_lazy_permalink($page);
         }
         return route('shop.checkout');
@@ -2312,7 +2312,7 @@ if (!function_exists('lazy_price_format')) {
             $decimalSep = $order->decimal_separator ?? '.';
         } else {
             $currencyCode = get_shop_option('shop_currency', 'USD');
-            $symbol = \Acme\CmsDashboard\Services\EcommerceData::getCurrencySymbol($currencyCode);
+            $symbol = \FalconCms\Core\Services\EcommerceData::getCurrencySymbol($currencyCode);
             
             $position = get_shop_option('shop_currency_pos', 'left');
             $decimals = (int) get_shop_option('shop_num_decimals', 2);
@@ -2543,7 +2543,7 @@ if (!function_exists('lazy_wishlist_product_ids')) {
         if ($cache !== null) return $cache;
         if (!auth()->check()) return $cache = [];
         try {
-            $cache = \Acme\CmsDashboard\Models\Wishlist::where('user_id', auth()->id())->pluck('product_id')->map(fn($v) => (int) $v)->all();
+            $cache = \FalconCms\Core\Models\Wishlist::where('user_id', auth()->id())->pluck('product_id')->map(fn($v) => (int) $v)->all();
         } catch (\Throwable $e) {
             $cache = [];
         }
@@ -2673,7 +2673,7 @@ if (!function_exists('lazy_render_checkout_field')) {
         }
 
         if ($type === 'country') {
-            $countries = \Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates();
+            $countries = \FalconCms\Core\Services\EcommerceData::getCountriesWithStates();
             echo '<select name="' . e($name) . '" class="' . $inp . ' bg-white cursor-pointer">';
             foreach ($countries as $code => $cname) {
                 echo '<option value="' . e($code) . '"' . ($value == $code ? ' selected' : '') . '>' . e($cname) . '</option>';
@@ -2976,7 +2976,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
         'type' => 'text_block',
         'name' => 'Text Block',
         'icon' => 'fa fa-align-left',
-        'template' => 'cms-dashboard::frontend.builder.elements.text-block',
+        'template' => 'falcon-cms::frontend.builder.elements.text-block',
         'fields' => [
             // General
             'content' => ['type' => 'wysiwyg', 'label' => 'Content', 'default' => '<p>your content is here...</p>'],
@@ -3062,7 +3062,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
         'type' => 'button',
         'name' => 'Button',
         'icon' => 'fas fa-toggle-on',
-        'template' => 'cms-dashboard::frontend.builder.elements.button',
+        'template' => 'falcon-cms::frontend.builder.elements.button',
         'fields' => [
             // General
             'text' => ['type' => 'text', 'label' => 'Button Text', 'default' => 'Click Here'],
@@ -3143,7 +3143,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
         'type' => 'menu',
         'name' => 'Menu',
         'icon' => 'fa fa-bars',
-        'template' => 'cms-dashboard::frontend.builder.elements.menu',
+        'template' => 'falcon-cms::frontend.builder.elements.menu',
         'fields' => [
             // General
             'menuId' => [
@@ -3322,7 +3322,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
         'type' => 'image',
         'name' => 'Image',
         'icon' => 'fa fa-image',
-        'template' => 'cms-dashboard::frontend.builder.elements.image',
+        'template' => 'falcon-cms::frontend.builder.elements.image',
         'fields' => [
             // General
             'url' => ['type' => 'media', 'label' => 'Image URL', 'default' => ''],
@@ -3468,7 +3468,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
         'type' => 'social_icons',
         'name' => 'Social Icons',
         'icon' => 'fa fa-share-alt',
-        'template' => 'cms-dashboard::frontend.builder.elements.social-icons',
+        'template' => 'falcon-cms::frontend.builder.elements.social-icons',
         'fields' => $fields,
     ];
     return $elements;
@@ -3483,7 +3483,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
     // Dynamic post-type options (active types). Multi-select; none selected = all content.
     $ptOptions = [];
     try {
-        foreach (\Acme\CmsDashboard\Models\PostType::where('is_active', true)->orderBy('name')->get() as $pt) {
+        foreach (\FalconCms\Core\Models\PostType::where('is_active', true)->orderBy('name')->get() as $pt) {
             $ptOptions[$pt->slug] = $pt->name;
         }
     } catch (\Throwable $e) {
@@ -3494,7 +3494,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
         'type' => 'advanced_search',
         'name' => 'Advanced Search',
         'icon' => 'fa fa-magnifying-glass',
-        'template' => 'cms-dashboard::frontend.builder.elements.advanced-search',
+        'template' => 'falcon-cms::frontend.builder.elements.advanced-search',
         'fields' => [
             // ── General ──
             'searchPostType'         => ['type' => 'multiselect', 'label' => 'Search In (none = all content)', 'tab' => 'general', 'options' => $ptOptions, 'default' => [], 'placeholder' => 'All content (select post types)'],

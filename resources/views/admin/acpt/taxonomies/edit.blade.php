@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin title="Edit Taxonomy">
+<x-falcon-cms::layouts.admin title="Edit Taxonomy">
     <div class="max-w-[1280px] mx-auto pb-12" x-data="taxonomyForm()">
-        <x-cms-dashboard::admin.delete-modal />
+        <x-falcon-cms::admin.delete-modal />
         <form action="{{ route('admin.acpt.taxonomies.update', $taxonomy->id) }}" method="POST">
             @csrf
             @method('PUT')
@@ -126,4 +126,4 @@
     </script>
     <style>[x-cloak] { display: none !important; }</style>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

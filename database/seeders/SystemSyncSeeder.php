@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard\Database\Seeders;
+namespace FalconCms\Core\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Acme\CmsDashboard\Models\Role;
-use Acme\CmsDashboard\Models\Permission;
-use Acme\CmsDashboard\Models\Menu;
+use FalconCms\Core\Models\Role;
+use FalconCms\Core\Models\Permission;
+use FalconCms\Core\Models\Menu;
 use Illuminate\Support\Facades\DB;
 
 class SystemSyncSeeder extends Seeder

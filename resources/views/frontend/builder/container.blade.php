@@ -359,7 +359,7 @@
         <div class="lazy-container-inner {{ $innerClass }} flex flex-wrap" style="{{ implode('; ', $innerStyles) }}">
             @if(!empty($container['columns']))
                 @foreach($container['columns'] as $column)
-                    @include('cms-dashboard::frontend.builder.column', ['column' => $column, 'container' => $container])
+                    @include('falcon-cms::frontend.builder.column', ['column' => $column, 'container' => $container])
                 @endforeach
             @endif
         </div>

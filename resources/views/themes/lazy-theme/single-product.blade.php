@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', $post->title)
 
@@ -156,7 +156,7 @@
                         <?php do_lazy_action('lazy_simple_before_add_to_cart_button', $post); ?>
                         {!! apply_lazy_filters('lazy_simple_add_to_cart_button', '<button type="submit" id="add-to-cart-btn" class="bg-primary text-white px-8 h-11 rounded-sm font-bold text-[14px] hover:bg-primary-hover transition-colors uppercase flex items-center gap-2"><span>Add to cart</span></button>', $post) !!}
                         <?php do_lazy_action('lazy_simple_after_add_to_cart_button', $post); ?>
-                        @include('cms-dashboard::themes.lazy-theme.partials.wishlist-button', ['product' => $post])
+                        @include('falcon-cms::themes.lazy-theme.partials.wishlist-button', ['product' => $post])
                     </div>
                     <?php do_lazy_action('lazy_simple_add_to_cart_form_bottom', $post); ?>
                 </form>
@@ -165,7 +165,7 @@
 
                 <div class="flex items-center gap-2 mb-8 -mt-4">
                     @unless($post->is_in_stock ?? true)
-                        @include('cms-dashboard::themes.lazy-theme.partials.wishlist-button', ['product' => $post])
+                        @include('falcon-cms::themes.lazy-theme.partials.wishlist-button', ['product' => $post])
                     @endunless
                     <span class="text-[13px] text-gray-500">{{ lazy_in_wishlist($post->id) ? 'Saved to your wishlist' : 'Add to your wishlist to buy later' }}</span>
                 </div>
@@ -559,7 +559,7 @@
 
         <!-- Related Products Section -->
         @php
-            $related = \Acme\CmsDashboard\Models\Post::where('posts.type', 'product')
+            $related = \FalconCms\Core\Models\Post::where('posts.type', 'product')
                 ->where('posts.status', 'published')
                 ->where('posts.id', '!=', $post->id)
                 ->with('shopData')
@@ -573,7 +573,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
                 @foreach($related as $item)
-                    @include('cms-dashboard::themes.lazy-theme.partials.product-card', ['product' => $item])
+                    @include('falcon-cms::themes.lazy-theme.partials.product-card', ['product' => $item])
                 @endforeach
             </div>
         </div>

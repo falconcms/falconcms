@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Acme\CmsDashboard\Models\ProductCategory;
+use FalconCms\Core\Models\ProductCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -63,7 +63,7 @@ class ProductCategoryController extends Controller
             );
         }
 
-        return view('cms-dashboard::admin.product-categories.index', compact('categories', 'fullTree'));
+        return view('falcon-cms::admin.product-categories.index', compact('categories', 'fullTree'));
     }
 
     public function bulk(Request $request)
@@ -128,7 +128,7 @@ class ProductCategoryController extends Controller
         };
         $buildTree(null, 0);
 
-        return view('cms-dashboard::admin.product-categories.edit', compact('category', 'fullTree'));
+        return view('falcon-cms::admin.product-categories.edit', compact('category', 'fullTree'));
     }
 
     public function update(Request $request, ProductCategory $product_category)

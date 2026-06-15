@@ -3,7 +3,7 @@
 @php
     try {
         $relCatInfo = get_lazy_category_taxonomy($post->type);
-        $relQ = \Acme\CmsDashboard\Models\Post::where('type', $post->type)
+        $relQ = \FalconCms\Core\Models\Post::where('type', $post->type)
             ->where('status', 'published')
             ->where('id', '!=', $post->id)
             ->where('lang_code', app()->getLocale());
@@ -29,7 +29,7 @@
 
         $related = $relQ->latest()->take(3)->get();
         if ($related->isEmpty()) {
-            $related = \Acme\CmsDashboard\Models\Post::where('type', $post->type)
+            $related = \FalconCms\Core\Models\Post::where('type', $post->type)
                 ->where('status', 'published')
                 ->where('id', '!=', $post->id)
                 ->where('lang_code', app()->getLocale())

@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Middleware;
+namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\ApiToken;
+use FalconCms\Core\Models\ApiToken;
 
 /**
  * Authenticates an API request via a personal API token:

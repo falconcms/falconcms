@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Services;
+namespace FalconCms\Core\Services;
 
 /**
  * Converts Lazy Builder JSON ↔ human-readable shortcodes.

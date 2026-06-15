@@ -1,16 +1,16 @@
 <?php
 
-namespace Acme\CmsDashboard\Console\Commands;
+namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
-use Acme\CmsDashboard\Models\Role;
+use FalconCms\Core\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 
 class InstallLazyCms extends Command
 {
-    protected $signature = 'lazy:install';
+    protected $signature = 'falcon:install';
     protected $description = 'Full installation of Lazy CMS: migrations, assets, themes, and default data.';
 
     public function handle()
@@ -24,7 +24,7 @@ class InstallLazyCms extends Command
         // 2. Publish Assets
         $this->info('Step 2: Publishing dashboard assets...');
         $this->call('vendor:publish', [
-            '--tag' => 'cms-dashboard-assets',
+            '--tag' => 'falcon-cms-assets',
             '--force' => true
         ]);
 
@@ -64,14 +64,14 @@ class InstallLazyCms extends Command
         // 6. Sync System Data (Permissions, Roles, Menus)
         $this->info('Step 6: Syncing Roles, Permissions and Menus...');
         $this->call('db:seed', [
-            '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\SystemSyncSeeder',
+            '--class' => 'FalconCms\\Core\\Database\\Seeders\\SystemSyncSeeder',
             '--force' => true
         ]);
 
         // 7. Sync Languages
         $this->info('Step 7: Syncing Languages...');
         $this->call('db:seed', [
-            '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\LanguageSeeder',
+            '--class' => 'FalconCms\\Core\\Database\\Seeders\\LanguageSeeder',
             '--force' => true
         ]);
 
@@ -96,7 +96,7 @@ class InstallLazyCms extends Command
         }
 
         if (!$adminRole) {
-            $this->error('Admin role not found! Please run php artisan lazy:seed first.');
+            $this->error('Admin role not found! Please run php artisan falcon:seed first.');
             return;
         }
 
@@ -138,8 +138,8 @@ class InstallLazyCms extends Command
         $content = preg_replace('/use Illuminate\\\\Database\\\\Eloquent\\\\Factories\\\\HasFactory, HasCmsPermissions;/', 'use Illuminate\Database\Eloquent\Factories\HasFactory;', $content);
 
         // 1. Add Namespace Import (at the top)
-        if (!str_contains($content, 'Acme\CmsDashboard\Traits\HasCmsPermissions')) {
-            $content = preg_replace('/(namespace\s+App\\\\Models;)/', "$1\n\nuse Acme\CmsDashboard\Traits\HasCmsPermissions;", $content);
+        if (!str_contains($content, 'FalconCms\Core\Traits\HasCmsPermissions')) {
+            $content = preg_replace('/(namespace\s+App\\\\Models;)/', "$1\n\nuse FalconCms\Core\Traits\HasCmsPermissions;", $content);
         }
 
         // 2. Add role_id and username to Fillable
@@ -185,7 +185,7 @@ class InstallLazyCms extends Command
         $adminId = User::first()->id ?? 1;
 
         foreach ($pages as $page) {
-            \Acme\CmsDashboard\Models\Post::firstOrCreate(
+            \FalconCms\Core\Models\Post::firstOrCreate(
                 ['slug' => $page['slug'], 'type' => 'page'],
                 [
                     'title' => $page['title'],
@@ -203,7 +203,7 @@ class InstallLazyCms extends Command
         $adminId = User::first()->id ?? 1;
 
         // Sample blog post so the blog listing has content right after install.
-        \Acme\CmsDashboard\Models\Post::firstOrCreate(
+        \FalconCms\Core\Models\Post::firstOrCreate(
             ['slug' => 'hello-world', 'type' => 'post'],
             [
                 'title'       => 'Hello World — Welcome to Lazy CMS',
@@ -224,7 +224,7 @@ class InstallLazyCms extends Command
         );
 
         // A ready-to-use "Blog" page the user can assign as the Blog page (Settings → General).
-        \Acme\CmsDashboard\Models\Post::firstOrCreate(
+        \FalconCms\Core\Models\Post::firstOrCreate(
             ['slug' => 'blog', 'type' => 'page'],
             [
                 'title'       => 'Blog',

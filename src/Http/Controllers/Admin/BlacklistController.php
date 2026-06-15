@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\BlockedIp;
+use FalconCms\Core\Models\BlockedIp;
 use Illuminate\Http\Request;
 
 class BlacklistController extends Controller
@@ -23,7 +23,7 @@ class BlacklistController extends Controller
         }
 
         $blockedIps = $query->paginate(10)->withQueryString();
-        return view('cms-dashboard::admin.blacklist.index', compact('blockedIps'));
+        return view('falcon-cms::admin.blacklist.index', compact('blockedIps'));
     }
 
     public function bulk(Request $request)

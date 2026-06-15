@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', 'Cart')
 
@@ -138,7 +138,7 @@
                                         <div id="shipping-estimator" class="hidden mt-3 space-y-3">
                                             <select id="shipping_country" class="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary">
                                                 <option value="">Select a country...</option>
-                                                @foreach(\Acme\CmsDashboard\Services\EcommerceData::getCountries() as $code => $name)
+                                                @foreach(\FalconCms\Core\Services\EcommerceData::getCountries() as $code => $name)
                                                     <option value="{{ $code }}" {{ session()->get('lazy_shipping_country') === $code ? 'selected' : '' }}>{{ $name }}</option>
                                                 @endforeach
                                             </select>

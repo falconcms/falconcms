@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">{{ $config['title'] }} - FalconCMS</x-slot>
 
     <div class="px-2">
@@ -117,4 +117,4 @@
             });
         });
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

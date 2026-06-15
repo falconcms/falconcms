@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers;
+namespace FalconCms\Core\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\Wishlist;
-use Acme\CmsDashboard\Models\Product;
+use FalconCms\Core\Models\Wishlist;
+use FalconCms\Core\Models\Product;
 
 class WishlistController extends Controller
 {
@@ -86,8 +86,8 @@ class WishlistController extends Controller
         $theme = get_cms_option('active_theme', 'lazy-theme');
         $app   = "themes.{$theme}.ecommerce.wishlist";
         if (view()->exists($app)) return $app;
-        $pkg = "cms-dashboard::themes.{$theme}.ecommerce.wishlist";
+        $pkg = "falcon-cms::themes.{$theme}.ecommerce.wishlist";
         if (view()->exists($pkg)) return $pkg;
-        return 'cms-dashboard::themes.lazy-theme.ecommerce.wishlist';
+        return 'falcon-cms::themes.lazy-theme.ecommerce.wishlist';
     }
 }

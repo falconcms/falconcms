@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Add New Page">
+<x-falcon-cms::layouts.admin title="Add New Page">
     
     <div class="flex items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Add New Page</h1>
@@ -128,7 +128,7 @@
                     @endforeach
                 @endif
                 
-                @include('cms-dashboard::admin.posts.partials.seo', ['post' => new \Acme\CmsDashboard\Models\Post()])
+                @include('falcon-cms::admin.posts.partials.seo', ['post' => new \FalconCms\Core\Models\Post()])
             </div>
 
             <!-- Right Column: Metaboxes -->
@@ -137,7 +137,7 @@
                 <!-- Multilingual Metabox -->
                 @php 
                     $isMultiLang = get_cms_option('multi_language_enabled', 0);
-                    $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
+                    $activeLanguages = \FalconCms\Core\Models\Language::where('status', true)->get(); 
                 @endphp
                 @if($activeLanguages->count() > 1)
                 <div class="wp-metabox mb-0">
@@ -525,4 +525,4 @@
             }
         });
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

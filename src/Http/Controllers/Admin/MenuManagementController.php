@@ -1,12 +1,12 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\NavigationMenu;
-use Acme\CmsDashboard\Models\NavigationMenuItem;
-use Acme\CmsDashboard\Models\Post;
-use Acme\CmsDashboard\Models\Category;
+use FalconCms\Core\Models\NavigationMenu;
+use FalconCms\Core\Models\NavigationMenuItem;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -28,7 +28,7 @@ class MenuManagementController extends Controller
         $categories = Category::all();
 
         // Dynamic CPTs for Menu Builder (Only Active, excluding static 'post' and 'page')
-        $customPostTypes = \Acme\CmsDashboard\Models\PostType::where('is_active', true)
+        $customPostTypes = \FalconCms\Core\Models\PostType::where('is_active', true)
             ->whereNotIn('slug', ['post', 'page'])
             ->get();
         
@@ -43,12 +43,12 @@ class MenuManagementController extends Controller
         }
 
         // Dynamic Custom Taxonomies for Menu Builder (Grouped by Active CPTs)
-        $customTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
+        $customTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
             ->where('hierarchical', true)
             ->get();
         $taxonomyData = [];
         
-        $allPostTypes = \Acme\CmsDashboard\Models\PostType::where('is_active', true)->get();
+        $allPostTypes = \FalconCms\Core\Models\PostType::where('is_active', true)->get();
         
         foreach ($allPostTypes as $pt) {
             foreach ($customTaxonomies as $tax) {
@@ -56,7 +56,7 @@ class MenuManagementController extends Controller
                     $taxonomyData[] = [
                         'key' => 'tax_' . $pt->slug . '_' . $tax->slug,
                         'label' => $tax->name,
-                        'items' => \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)->orderBy('name')->get(),
+                        'items' => \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)->orderBy('name')->get(),
                         'slug' => $tax->slug
                     ];
                 }
@@ -74,12 +74,12 @@ class MenuManagementController extends Controller
             $postIds     = $allItems->whereNotIn('type', ['category', 'custom'])->pluck('object_id')->filter()->unique()->values()->all();
             $categoryIds = $allItems->where('type','category')->pluck('object_id')->filter()->unique()->values()->all();
 
-            $postsData = $postIds ? \Acme\CmsDashboard\Models\Post::withTrashed()->whereIn('id', $postIds)->get(['id', 'status', 'deleted_at'])->keyBy('id') : collect();
+            $postsData = $postIds ? \FalconCms\Core\Models\Post::withTrashed()->whereIn('id', $postIds)->get(['id', 'status', 'deleted_at'])->keyBy('id') : collect();
             
             // Fetch all terms and their taxonomies for status check
-            $termsData = $categoryIds ? \Acme\CmsDashboard\Models\TaxonomyTerm::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
-            $standardCatsData = $categoryIds ? \Acme\CmsDashboard\Models\Category::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
-            $activeTaxSlugs = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
+            $termsData = $categoryIds ? \FalconCms\Core\Models\TaxonomyTerm::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
+            $standardCatsData = $categoryIds ? \FalconCms\Core\Models\Category::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
+            $activeTaxSlugs = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
 
             $buildItem = function($item, $depth) use ($postsData, $termsData, $standardCatsData, $activeTaxSlugs) {
                 $type      = $item->type ?? 'custom';
@@ -121,10 +121,10 @@ class MenuManagementController extends Controller
                 if ($type === 'category' && $objectId) {
                     $term = $termsData->get($objectId);
                     if ($term && $term->taxonomy_slug !== 'category') {
-                        $tax = \Acme\CmsDashboard\Models\CustomTaxonomy::where('slug', $term->taxonomy_slug)->first();
+                        $tax = \FalconCms\Core\Models\CustomTaxonomy::where('slug', $term->taxonomy_slug)->first();
                         $pts = $tax ? $tax->post_types : null;
                         $ptSlug = is_array($pts) ? reset($pts) : null;
-                        $pt = \Acme\CmsDashboard\Models\PostType::where('slug', $ptSlug)->first();
+                        $pt = \FalconCms\Core\Models\PostType::where('slug', $ptSlug)->first();
                         if ($pt && $tax) {
                             $sourceLabel = $pt->singular_name . ' ' . $tax->singular_name;
                         }
@@ -163,9 +163,9 @@ class MenuManagementController extends Controller
             $menuItemsJson = json_encode($flat, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
         }
 
-        $productCategories = \Acme\CmsDashboard\Models\ProductCategory::orderBy('name')->get();
+        $productCategories = \FalconCms\Core\Models\ProductCategory::orderBy('name')->get();
 
-        return view('cms-dashboard::admin.menus.index', compact('menus', 'menu', 'pages', 'posts', 'categories', 'menuItemsJson', 'cptData', 'taxonomyData', 'productCategories'));
+        return view('falcon-cms::admin.menus.index', compact('menus', 'menu', 'pages', 'posts', 'categories', 'menuItemsJson', 'cptData', 'taxonomyData', 'productCategories'));
     }
 
     public function store(Request $request)

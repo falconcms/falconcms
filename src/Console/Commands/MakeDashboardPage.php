@@ -1,8 +1,8 @@
 <?php
 
-namespace Acme\CmsDashboard\Console\Commands;
+namespace FalconCms\Core\Console\Commands;
 
-use Acme\CmsDashboard\Models\Menu;
+use FalconCms\Core\Models\Menu;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -29,7 +29,7 @@ class MakeDashboardPage extends Command
 
         $viewPath = resource_path("views/admin/{$slug}/index.blade.php");
         File::ensureDirectoryExists(dirname($viewPath));
-        $viewStub = "<x-cms-dashboard::layouts.admin title=\"{$pluralName}\">\n    <h1 class=\"text-2xl font-semibold mb-6\">{$pluralName}</h1>\n    <div class=\"bg-white shadow-sm ring-1 ring-gray-200 rounded-lg p-6\">Hello {$name}</div>\n</x-cms-dashboard::layouts.admin>";
+        $viewStub = "<x-falcon-cms::layouts.admin title=\"{$pluralName}\">\n    <h1 class=\"text-2xl font-semibold mb-6\">{$pluralName}</h1>\n    <div class=\"bg-white shadow-sm ring-1 ring-gray-200 rounded-lg p-6\">Hello {$name}</div>\n</x-falcon-cms::layouts.admin>";
         File::put($viewPath, $viewStub);
 
         $routeFile = base_path('routes/web.php');

@@ -1,13 +1,13 @@
 <?php
 
-namespace Acme\CmsDashboard\Console\Commands;
+namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class ExpireSalePrices extends Command
 {
-    protected $signature = 'lazy:expire-sales';
+    protected $signature = 'falcon:expire-sales';
     protected $description = 'Null out sale prices whose sale_ends_at date has passed.';
 
     public function handle(): int

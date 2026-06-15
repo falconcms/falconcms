@@ -121,7 +121,7 @@
     </div>
 
     <!-- WP Admin Menu (Sidebar) -->
-    <x-cms-dashboard::admin.sidebar :activeMenu="$activeMenu ?? null" />
+    <x-falcon-cms::admin.sidebar :activeMenu="$activeMenu ?? null" />
 
     <!-- Main Content -->
     <div class="p-4 sm:p-5">
@@ -129,7 +129,7 @@
     </div>
 
     <!-- Media Modal Global Inclusion -->
-    <x-cms-dashboard::admin.media-modal />
+    <x-falcon-cms::admin.media-modal />
 
     <!-- Toast Container -->
     <div id="lazy-toast-container" class="toast-container"></div>

@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard\Database\Seeders;
+namespace FalconCms\Core\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Acme\CmsDashboard\Models\Menu;
-use Acme\CmsDashboard\Models\PostType;
-use Acme\CmsDashboard\Models\CustomTaxonomy;
+use FalconCms\Core\Models\Menu;
+use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Models\CustomTaxonomy;
 
 class MenuSeeder extends Seeder
 {
@@ -239,7 +239,7 @@ class MenuSeeder extends Seeder
         $customCPTs = PostType::where('is_builtin', false)->where('is_active', true)->get();
         foreach ($customCPTs as $cpt) {
             $permSlug = 'manage_' . str_replace('-', '_', $cpt->slug);
-            \Acme\CmsDashboard\Models\Permission::firstOrCreate(
+            \FalconCms\Core\Models\Permission::firstOrCreate(
                 ['slug' => $permSlug],
                 ['name' => 'Manage ' . $cpt->name, 'description' => 'Access ' . $cpt->name . ' section in sidebar']
             );

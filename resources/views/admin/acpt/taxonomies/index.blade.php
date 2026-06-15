@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin title="Taxonomies">
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin title="Taxonomies">
+    <x-falcon-cms::admin.delete-modal />
     <div class="max-w-[1200px] mx-auto pb-12 mt-2">
         <div class="flex items-center mb-4">
             <h1 class="text-[22px] font-normal text-[#1d2327] mr-3">Taxonomies</h1>
@@ -46,7 +46,7 @@
                     <button type="button" onclick="handleBulkAction('bulk-action-form')" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
                 </div>
                 <div class="text-[13px] text-[#646970]">
-                    <x-cms-dashboard::admin.pagination :paginator="$taxonomies" />
+                    <x-falcon-cms::admin.pagination :paginator="$taxonomies" />
                 </div>
             </div>
 
@@ -243,4 +243,4 @@
             }
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

@@ -9,21 +9,24 @@
     },
     "autoload": {
         "psr-4": {
-            "Acme\\CmsDashboard\\": "src/",
-            "Acme\\CmsDashboard\\Database\\Seeders\\": "database/seeders/"
-        }
+            "FalconCms\\Core\\": "src/",
+            "FalconCms\\Core\\Database\\Seeders\\": "database/seeders/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Acme\\CmsDashboard\\CmsDashboardServiceProvider"
+                "FalconCms\\Core\\FalconCmsServiceProvider"
             ]
         }
     },
     "scripts": {
         "post-autoload-dump": [
-            "@php artisan vendor:publish --tag=lazy-themes --force",
-            "@php artisan vendor:publish --tag=cms-dashboard-assets --force"
+            "@php artisan vendor:publish --tag=falcon-themes --force",
+            "@php artisan vendor:publish --tag=falcon-cms-assets --force"
         ]
     }
 }

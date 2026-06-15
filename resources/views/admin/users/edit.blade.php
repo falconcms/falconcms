@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Edit User - FalconCMS</x-slot>
 
     <div class="px-2">
@@ -52,11 +52,11 @@
                 @endif
             </table>
 
-            @include('cms-dashboard::components.admin.dynamic-fields')
+            @include('falcon-cms::components.admin.dynamic-fields')
 
             <div class="mt-8 pt-6 border-t border-[#c3c4c7]">
                 <button type="submit" class="wp-btn-primary h-[32px] px-4 font-semibold">Update User</button>
             </div>
         </form>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

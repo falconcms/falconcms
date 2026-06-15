@@ -1,10 +1,10 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">SEO Settings - FalconCMS</x-slot>
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">SEO Settings</h1>
 
-        @include('cms-dashboard::admin.settings.nav')
+        @include('falcon-cms::admin.settings.nav')
 
         @if (session('success'))
             <div class="bg-[#edfaef] border-l-4 border-[#46b450] p-3 mb-6 text-[13px] text-[#1d2327]">
@@ -102,7 +102,7 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                             <p class="text-[13px] font-bold text-[#2c3338]">Include in Sitemap:</p>
                             <div class="grid grid-cols-2 gap-4">
                                 @php
-                                    $allPostTypes = \Acme\CmsDashboard\Models\PostType::where('is_active', true)
+                                    $allPostTypes = \FalconCms\Core\Models\PostType::where('is_active', true)
                                         ->orderByDesc('is_builtin')
                                         ->orderBy('name')
                                         ->get();
@@ -150,4 +150,4 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
         }
     </script>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

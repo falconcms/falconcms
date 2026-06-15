@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Redirection Manager - FalconCMS</x-slot>
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex items-center justify-between mb-6">
@@ -198,4 +198,4 @@
         };
     </script>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

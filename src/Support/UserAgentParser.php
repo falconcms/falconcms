@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Support;
+namespace FalconCms\Core\Support;
 
 /**
  * Smart User-Agent parser — detects OS family, browser and device type.

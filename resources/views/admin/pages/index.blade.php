@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin title="Pages">
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin title="Pages">
+    <x-falcon-cms::admin.delete-modal />
     <div class="flex items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] mr-3">Pages</h1>
         <a href="{{ route('admin.pages.create') }}" class="wp-btn-secondary px-2 py-0.5 text-[12px] bg-white hover:bg-[#f6f7f7] border-[#2271b1] text-[#2271b1] leading-normal">Add New</a>
@@ -83,7 +83,7 @@
             @endif
         </div>
         
-        <x-cms-dashboard::admin.pagination :paginator="$pages" />
+        <x-falcon-cms::admin.pagination :paginator="$pages" />
     </div>
 
     <table class="w-full bg-[#fff] border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)] mb-4">
@@ -179,7 +179,7 @@
             <button type="button" onclick="handleBulkAction('pages-filter', 'action2')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
         </div>
         
-        <x-cms-dashboard::admin.pagination :paginator="$pages" />
+        <x-falcon-cms::admin.pagination :paginator="$pages" />
     </div>
     </form>
 
@@ -252,4 +252,4 @@
             }
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

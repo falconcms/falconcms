@@ -1,8 +1,8 @@
 <?php
 
-namespace Acme\CmsDashboard\View\Components\Admin;
+namespace FalconCms\Core\View\Components\Admin;
 
-use Acme\CmsDashboard\Models\Menu;
+use FalconCms\Core\Models\Menu;
 use Illuminate\View\Component;
 use Illuminate\Support\Facades\Route;
 
@@ -89,11 +89,11 @@ class Sidebar extends Component
             $route = request()->route();
             if ($route) {
                 $post = $route->parameter('post');
-                if ($post instanceof \Acme\CmsDashboard\Models\Post) {
+                if ($post instanceof \FalconCms\Core\Models\Post) {
                     $currentType = $post->type;
                 } elseif (is_numeric($post)) {
                     try {
-                        $currentType = \Acme\CmsDashboard\Models\Post::where('id', $post)->value('type');
+                        $currentType = \FalconCms\Core\Models\Post::where('id', $post)->value('type');
                     } catch (\Exception $e) {}
                 } else {
                     $currentType = $route->parameter('type');
@@ -250,7 +250,7 @@ class Sidebar extends Component
             if ($title === 'Comments') return route('admin.comments.index', $params);
 
             try {
-                $postType = \Acme\CmsDashboard\Models\PostType::where('name', $title)->first();
+                $postType = \FalconCms\Core\Models\PostType::where('name', $title)->first();
                 if ($postType) {
                     return route('admin.posts.index', ['type' => $postType->slug]);
                 }
@@ -305,7 +305,7 @@ class Sidebar extends Component
         // under different parents never collide (Shop → Settings vs top-level Settings,
         // Shop → Overview vs Dashboard → Overview, Shop → Orders, etc.).
         if ($parentId) {
-            $parent = \Acme\CmsDashboard\Models\Menu::find($parentId);
+            $parent = \FalconCms\Core\Models\Menu::find($parentId);
             if ($parent) {
                 $slug .= '_' . \Illuminate\Support\Str::slug($parent->title, '_');
             }
@@ -316,7 +316,7 @@ class Sidebar extends Component
 
     public function render()
     {
-        return view('cms-dashboard::components.admin.sidebar', [
+        return view('falcon-cms::components.admin.sidebar', [
             'getPermission' => [$this, 'getPermission'],
             'resolveRoute' => [$this, 'resolveRoute'],
         ]);

@@ -1,12 +1,12 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Api\V1;
+namespace FalconCms\Core\Http\Controllers\Api\V1;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\Post;
-use Acme\CmsDashboard\Http\Resources\PostResource;
-use Acme\CmsDashboard\Models\Category;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Http\Resources\PostResource;
+use FalconCms\Core\Models\Category;
 use Illuminate\Support\Facades\DB;
 
 class CmsApiController extends Controller
@@ -86,7 +86,7 @@ class CmsApiController extends Controller
     public function menus()
     {
         // Front-end navigation menus (not the admin sidebar) with their nested items.
-        $menus = \Acme\CmsDashboard\Models\NavigationMenu::with('items.children')->get();
+        $menus = \FalconCms\Core\Models\NavigationMenu::with('items.children')->get();
 
         return response()->json([
             'success' => true,
@@ -155,7 +155,7 @@ class CmsApiController extends Controller
     /** Post categories. */
     public function categories()
     {
-        $cats = \Acme\CmsDashboard\Models\Category::orderBy('name')->get()
+        $cats = \FalconCms\Core\Models\Category::orderBy('name')->get()
             ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug, 'parent_id' => $c->parent_id]);
 
         return response()->json(['success' => true, 'data' => $cats]);
@@ -164,7 +164,7 @@ class CmsApiController extends Controller
     /** Post tags. */
     public function tags()
     {
-        $tags = \Acme\CmsDashboard\Models\Tag::orderBy('name')->get()
+        $tags = \FalconCms\Core\Models\Tag::orderBy('name')->get()
             ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug]);
 
         return response()->json(['success' => true, 'data' => $tags]);

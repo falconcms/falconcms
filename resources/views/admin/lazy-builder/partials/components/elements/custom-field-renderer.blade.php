@@ -31,7 +31,7 @@
     @if($allowDynamic)
     <template v-if="editingElement.settings.{{ $dynKey }}">
         <div class="mb-2">
-            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'text'])
+            @include('falcon-cms::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'text'])
         </div>
     </template>
     <input v-else type="text" v-model="editingElement.settings.{{ $fieldKey }}"
@@ -96,7 +96,7 @@
     <div class="flex justify-between items-center mb-3">
         <label class="text-[12px] font-bold text-[#333]">{{ $fieldLabel }}</label>
         @if(!empty($field['responsive']))
-            @include('cms-dashboard::admin.lazy-builder.partials.components.fields.responsive-mode', ['menu' => 'cfsel_' . $fieldKey])
+            @include('falcon-cms::admin.lazy-builder.partials.components.fields.responsive-mode', ['menu' => 'cfsel_' . $fieldKey])
         @endif
     </div>
     @if(!empty($field['responsive']))
@@ -175,14 +175,14 @@
 {{-- ── TOGGLE ───────────────────────────────────────────────────────────────── --}}
 @elseif($ft === 'toggle')
 <div>
-    @include('cms-dashboard::admin.lazy-builder.partials.components.fields.toggle', ['key' => $fieldKey, 'label' => $fieldLabel])
+    @include('falcon-cms::admin.lazy-builder.partials.components.fields.toggle', ['key' => $fieldKey, 'label' => $fieldLabel])
     @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
 </div>
 
 {{-- ── COLOR ────────────────────────────────────────────────────────────────── --}}
 @elseif(in_array($ft, ['color', 'colorpicker', 'colorpickeralpha']))
 <div>
-    @include('cms-dashboard::admin.lazy-builder.partials.components.fields.color', ['key' => $fieldKey, 'label' => $fieldLabel, 'default' => $field['default'] ?? '#000000'])
+    @include('falcon-cms::admin.lazy-builder.partials.components.fields.color', ['key' => $fieldKey, 'label' => $fieldLabel, 'default' => $field['default'] ?? '#000000'])
     @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
 </div>
 
@@ -239,7 +239,7 @@
     @if($allowDynamic)
     <template v-if="editingElement.settings.{{ $dynKey }}">
         <div class="mb-2">
-            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'link'])
+            @include('falcon-cms::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'link'])
         </div>
     </template>
     <div v-else class="flex gap-2 items-center">
@@ -278,7 +278,7 @@
     @if($allowDynamic)
     <template v-if="editingElement.settings.{{ $dynKey }}">
         <div class="mb-2">
-            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'link'])
+            @include('falcon-cms::admin.lazy-builder.partials.components.elements.custom-dynamic-select', ['dynKey' => $dynKey, 'dynCtx' => 'link'])
         </div>
     </template>
     @endif
@@ -304,7 +304,7 @@
 {{-- ── BUTTON (label + url + target) ────────────────────────────────────────── --}}
 @elseif($ft === 'button')
 <div>
-    @include('cms-dashboard::admin.lazy-builder.partials.components.fields.button', ['key' => $fieldKey, 'label' => $fieldLabel, 'placeholder' => $field['placeholder'] ?? 'Click here'])
+    @include('falcon-cms::admin.lazy-builder.partials.components.fields.button', ['key' => $fieldKey, 'label' => $fieldLabel, 'placeholder' => $field['placeholder'] ?? 'Click here'])
     @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
 </div>
 
@@ -322,14 +322,14 @@
 {{-- ── ICON picker (shared control — matches Icon Box element) ─────────────── --}}
 @elseif($ft === 'icon')
 <div>
-    @include('cms-dashboard::admin.lazy-builder.partials.components.fields.icon', ['key' => $fieldKey, 'label' => $fieldLabel])
+    @include('falcon-cms::admin.lazy-builder.partials.components.fields.icon', ['key' => $fieldKey, 'label' => $fieldLabel])
     @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
 </div>
 
 {{-- ── DIMENSIONS (shared control — units + responsive) ─────────────────────── --}}
 @elseif($ft === 'dimensions')
 <div>
-    @include('cms-dashboard::admin.lazy-builder.partials.components.fields.dimensions', ['key' => $fieldKey, 'label' => $fieldLabel, 'unit' => $field['unit'] ?? 'px'])
+    @include('falcon-cms::admin.lazy-builder.partials.components.fields.dimensions', ['key' => $fieldKey, 'label' => $fieldLabel, 'unit' => $field['unit'] ?? 'px'])
     @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
 </div>
 
@@ -339,7 +339,7 @@
     <div class="flex justify-between items-center mb-3">
         <label class="text-[12px] font-bold text-[#333]">{{ $fieldLabel }}</label>
     </div>
-    @include('cms-dashboard::admin.lazy-builder.partials.components.fields.typography', ['prefix' => $fieldKey])
+    @include('falcon-cms::admin.lazy-builder.partials.components.fields.typography', ['prefix' => $fieldKey])
     @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
 </div>
 

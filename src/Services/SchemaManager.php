@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Services;
+namespace FalconCms\Core\Services;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;

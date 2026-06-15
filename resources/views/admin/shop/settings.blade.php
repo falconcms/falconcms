@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Shop Settings" active-menu="shop">
+<x-falcon-cms::layouts.admin title="Shop Settings" active-menu="shop">
     <div class="px-2" x-data="{
         tab: '{{ request('tab', session('active_shop_tab', 'general')) }}',
         sellingLocations: '{{ get_shop_option('shop_selling_locations', 'all') }}',
@@ -8,7 +8,7 @@
     >
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Shop Settings</h1>
         
-        @include('cms-dashboard::admin.shop.nav')
+        @include('falcon-cms::admin.shop.nav')
 
         @if(session('success'))
             <div class="bg-[#edfaef] border-l-4 border-[#46b450] p-3 mb-6 text-[13px] text-[#1d2327]">
@@ -1427,4 +1427,4 @@
         });
     </script>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

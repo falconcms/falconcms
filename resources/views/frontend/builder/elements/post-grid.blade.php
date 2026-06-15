@@ -122,7 +122,7 @@
         @endphp
         @if(!empty($cardLayout))
         <div style="break-inside:avoid">
-            @include('cms-dashboard::frontend.builder.render', ['layout' => $cardLayout])
+            @include('falcon-cms::frontend.builder.render', ['layout' => $cardLayout])
         </div>
         @else
         <article class="lazy-post-card {{ $cardStyleCss }} {{ $hoverCss }} rounded-lg overflow-hidden bg-white" style="break-inside:avoid">

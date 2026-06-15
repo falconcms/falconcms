@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Add New {{ ucfirst($type) }}" active-menu="{{ $type === 'page' ? 'pages' : ($type ?: 'posts') }}">
+<x-falcon-cms::layouts.admin title="Add New {{ ucfirst($type) }}" active-menu="{{ $type === 'page' ? 'pages' : ($type ?: 'posts') }}">
     
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">Add New {{ ucfirst($type) }}</h1>
@@ -212,8 +212,8 @@
                     @endforeach
                 @endif
 
-                @include('cms-dashboard::admin.posts.partials.product-data', ['post' => $post, 'type' => $type])
-                @include('cms-dashboard::admin.posts.partials.seo', ['post' => new \Acme\CmsDashboard\Models\Post()])
+                @include('falcon-cms::admin.posts.partials.product-data', ['post' => $post, 'type' => $type])
+                @include('falcon-cms::admin.posts.partials.seo', ['post' => new \FalconCms\Core\Models\Post()])
             </div>
 
             <!-- Right Column: Metaboxes -->
@@ -222,7 +222,7 @@
                 <!-- Multilingual Metabox -->
                 @php 
                     $isMultiLang = get_cms_option('multi_language_enabled', 0);
-                    $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
+                    $activeLanguages = \FalconCms\Core\Models\Language::where('status', true)->get(); 
                 @endphp
 
                 @if($activeLanguages->count() > 1)
@@ -379,7 +379,7 @@
                     </div>
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="h-44 overflow-y-auto border border-[#dfdfdf] p-2 mb-3 bg-white">
-                            @php $allCategories = \Acme\CmsDashboard\Models\Category::orderBy('name')->get(); @endphp
+                            @php $allCategories = \FalconCms\Core\Models\Category::orderBy('name')->get(); @endphp
                             @forelse($allCategories as $category)
                                 <label class="flex items-center text-[13px] text-[#2c3338] mb-1">
                                     <input type="checkbox" name="categories[]" value="{{ $category->id }}" {{ in_array($category->id, old('categories', [])) ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
@@ -498,7 +498,7 @@
                 @endif
 
                 @if($type === 'product')
-                    @include('cms-dashboard::admin.posts.partials.product-taxonomies')
+                    @include('falcon-cms::admin.posts.partials.product-taxonomies')
                 @endif
 
 
@@ -1136,4 +1136,4 @@
             });
         });
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

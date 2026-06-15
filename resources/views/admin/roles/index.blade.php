@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Roles - FalconCMS</x-slot>
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex justify-between items-center mb-4">
@@ -80,4 +80,4 @@
             }
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

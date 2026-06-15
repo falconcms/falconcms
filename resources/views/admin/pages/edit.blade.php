@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Edit Page">
+<x-falcon-cms::layouts.admin title="Edit Page">
     
     <div class="flex items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] mr-3">Edit Page</h1>
@@ -154,7 +154,7 @@
                     @endforeach
                 @endif
 
-                @include('cms-dashboard::admin.posts.partials.seo', ['post' => $page])
+                @include('falcon-cms::admin.posts.partials.seo', ['post' => $page])
             </div>
 
             <!-- Right Column: Metaboxes -->
@@ -163,7 +163,7 @@
                 <!-- Language & Multilingual Metabox -->
                 @php 
                     $isMultiLang = get_cms_option('multi_language_enabled', 0);
-                    $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
+                    $activeLanguages = \FalconCms\Core\Models\Language::where('status', true)->get(); 
                 @endphp
                 @if($activeLanguages->count() > 1)
                 <div class="wp-metabox mb-0">
@@ -190,7 +190,7 @@
                             <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
                                 <p class="text-[11px] text-gray-500 mb-2">Clone to:</p>
                                 @php 
-                                    $existingClones = \Acme\CmsDashboard\Models\Page::where('origin_id', $page->id)->pluck('lang_code')->toArray();
+                                    $existingClones = \FalconCms\Core\Models\Page::where('origin_id', $page->id)->pluck('lang_code')->toArray();
                                 @endphp
                                 @foreach($activeLanguages as $lang)
                                     @if($lang->code !== $page->lang_code && !in_array($lang->code, $existingClones))
@@ -202,7 +202,7 @@
                                 @endforeach
                             </div>
                         @elseif($page->origin_id)
-                            @php $original = \Acme\CmsDashboard\Models\Page::find($page->origin_id); @endphp
+                            @php $original = \FalconCms\Core\Models\Page::find($page->origin_id); @endphp
                             <div class="bg-blue-50 p-2 border border-blue-100 rounded-sm">
                                 <p class="text-[11px] text-blue-700">
                                     This is the <strong>{{ $activeLanguages->where('code', $page->lang_code)->first()->name ?? $page->lang_code }}</strong> version.
@@ -609,4 +609,4 @@
         document.getElementById('page-form')?.addEventListener('submit', () => { titleDirty = false; const ed = getEditor(); if (ed) ed.setDirty(false); });
     })();
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

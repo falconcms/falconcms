@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Comment;
+use FalconCms\Core\Models\Comment;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
@@ -36,7 +36,7 @@ class CommentController extends Controller
         $pendingCount = Comment::where('is_approved', false)->count();
         $approvedCount = Comment::where('is_approved', true)->count();
 
-        return view('cms-dashboard::admin.comments.index', compact('comments', 'allCount', 'pendingCount', 'approvedCount'));
+        return view('falcon-cms::admin.comments.index', compact('comments', 'allCount', 'pendingCount', 'approvedCount'));
     }
 
     public function toggleApprove(Comment $comment)

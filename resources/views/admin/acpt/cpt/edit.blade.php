@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Edit Post Type">
+<x-falcon-cms::layouts.admin title="Edit Post Type">
     @php
         $advancedOpen = !empty(array_diff($postType->supports ?? [], ['title']));
     @endphp
@@ -208,4 +208,4 @@
         [x-cloak] { display: none !important; }
     </style>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin :title="'Edit ' . $taxonomy->singular_name . ' — ' . strtoupper($cptSlug)">
+<x-falcon-cms::layouts.admin :title="'Edit ' . $taxonomy->singular_name . ' — ' . strtoupper($cptSlug)">
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Edit {{ $taxonomy->singular_name }}</h1>
     </div>
@@ -69,4 +69,4 @@
             </div>
         </form>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

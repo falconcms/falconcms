@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">New Form - FalconCMS</x-slot>
     <div class="px-6 py-4 max-w-lg mx-auto">
         <h1 class="text-2xl font-black text-gray-900 mb-6">Create New Form</h1>
@@ -11,4 +11,4 @@
             </button>
         </form>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

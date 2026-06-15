@@ -590,14 +590,14 @@
                     @if($contentLayout === 'row')
                         <div style="flex-basis: 100%; width: 100%; height: 0; overflow: hidden;"></div>
                     @endif
-                    @include('cms-dashboard::frontend.builder.container', ['container' => $el])
+                    @include('falcon-cms::frontend.builder.container', ['container' => $el])
                     @if($contentLayout === 'row')
                         <div style="flex-basis: 100%; width: 100%; height: 0; overflow: hidden;"></div>
                     @endif
                 @else
                     @php
                         $__elType    = $el['type'];
-                        $__viewBase  = 'cms-dashboard::frontend.builder.elements.';
+                        $__viewBase  = 'falcon-cms::frontend.builder.elements.';
                         $__viewExact = $__viewBase . $__elType;
                         $__viewDash  = $__viewBase . str_replace('_', '-', $__elType);
                         $__elView    = \Illuminate\Support\Facades\View::exists($__viewExact) ? $__viewExact
@@ -662,7 +662,7 @@
                             @if($__tpl)
                                 @include($__tpl, ['el' => $el, 's' => $el['settings'] ?? []])
                             @else
-                                @include('cms-dashboard::frontend.builder.elements.custom', ['el' => $el, 'customDef' => $__customDef])
+                                @include('falcon-cms::frontend.builder.elements.custom', ['el' => $el, 'customDef' => $__customDef])
                             @endif
                         </div>
                         @if($__elAnimType)

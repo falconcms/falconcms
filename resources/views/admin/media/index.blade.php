@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin title="Media Library">
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin title="Media Library">
+    <x-falcon-cms::admin.delete-modal />
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-4">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Media Library</h1>
@@ -56,7 +56,7 @@
         <div id="pagination-top" class="flex items-center gap-4 text-[13px] text-[#646970]">
             <span>{{ $media->total() }} items</span>
             <div class="flex items-center gap-1">
-                {{ $media->links('cms-dashboard::components.admin.pagination') }}
+                {{ $media->links('falcon-cms::components.admin.pagination') }}
             </div>
         </div>
     </div>
@@ -182,7 +182,7 @@
         <div class="flex items-center gap-4 text-[13px] text-[#646970]">
             <span>{{ $media->total() }} items</span>
             <div class="flex items-center gap-1">
-                {{ $media->links('cms-dashboard::components.admin.pagination') }}
+                {{ $media->links('falcon-cms::components.admin.pagination') }}
             </div>
         </div>
     </div>
@@ -706,4 +706,4 @@
         });
     </script>
 
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

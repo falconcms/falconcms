@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Documentation - FalconCMS</x-slot>
 
     <div class="px-6 py-4">
@@ -304,7 +304,7 @@ Route::get('/blogs', function () {
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                 <pre><code>@verbatim
 <!-- Inside layout/app.blade.php head section -->
-<x-cms-dashboard::frontend.seo-meta :post="$post ?? null" :title="$title ?? null" />
+<x-falcon-cms::frontend.seo-meta :post="$post ?? null" :title="$title ?? null" />
 @endverbatim</code></pre>
                             </div>
                         </div>
@@ -372,7 +372,7 @@ Route::get('/blogs', function () {
                                 <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">SEO Support (In &lt;head&gt;)</p>
                                     <code class="text-xs">@verbatim
-<x-cms-dashboard::frontend.seo-meta :post="$post ?? null" />
+<x-falcon-cms::frontend.seo-meta :post="$post ?? null" />
 @endverbatim</code>
                                 </div>
 
@@ -2036,4 +2036,4 @@ curl -X DELETE "{{ url('/api/v1/posts/123') }}" \
         .bg-gray-100 .doc-copy-btn,
         .bg-gray-50 .doc-copy-btn { color: #475569; background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
     </style>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

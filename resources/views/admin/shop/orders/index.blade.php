@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Orders" active-menu="shop">
+<x-falcon-cms::layouts.admin title="Orders" active-menu="shop">
     <div class="flex justify-between items-center mb-5">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Orders</h1>
     </div>
@@ -45,7 +45,7 @@
                 </div>
                 
                 <div class="hidden md:block">
-                    {{ $orders->links('cms-dashboard::components.admin.pagination') }}
+                    {{ $orders->links('falcon-cms::components.admin.pagination') }}
                 </div>
             </div>
 
@@ -146,13 +146,13 @@
                 </div>
                 
                 <div>
-                    {{ $orders->links('cms-dashboard::components.admin.pagination') }}
+                    {{ $orders->links('falcon-cms::components.admin.pagination') }}
                 </div>
             </div>
         </form>
     </div>
 
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
 
     <script>
         document.getElementById('select-all').addEventListener('change', function() {
@@ -205,4 +205,4 @@
             });
         });
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

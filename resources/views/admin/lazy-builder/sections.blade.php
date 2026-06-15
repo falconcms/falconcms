@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Lazy Builder">
+<x-falcon-cms::layouts.admin title="Lazy Builder">
     <div class="p-6 bg-[#f0f0f1] min-h-screen">
         <div class="flex justify-between items-center mb-8">
             <div>
@@ -101,4 +101,4 @@
             </div>
         </div>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Database\Seeders;
+namespace FalconCms\Core\Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Acme\CmsDashboard\Models\Language;
+use FalconCms\Core\Models\Language;
 
 class LanguageSeeder extends Seeder
 {

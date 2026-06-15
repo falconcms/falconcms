@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Mail;
+namespace FalconCms\Core\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -39,7 +39,7 @@ class PasswordResetMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'cms-dashboard::emails.auth.password_reset',
+            view: 'falcon-cms::emails.auth.password_reset',
         );
     }
 }

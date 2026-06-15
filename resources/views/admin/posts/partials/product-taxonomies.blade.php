@@ -1,7 +1,7 @@
 {{-- Dedicated Product Categories + Product Tags metaboxes (first-class, like Post's).
      Self-contained: works on both create and edit. Expects $post (may be a new model). --}}
 @php
-    $pcAll = \Acme\CmsDashboard\Models\ProductCategory::orderBy('name')->get();
+    $pcAll = \FalconCms\Core\Models\ProductCategory::orderBy('name')->get();
     $pcSelected = old('product_categories', ($post && $post->exists) ? $post->productCategories->pluck('id')->toArray() : []);
     $ptValue = old('product_tags', ($post && $post->exists) ? implode(', ', $post->productTags->pluck('name')->toArray()) : '');
 @endphp

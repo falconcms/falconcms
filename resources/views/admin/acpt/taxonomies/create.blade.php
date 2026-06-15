@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Add New Taxonomy">
+<x-falcon-cms::layouts.admin title="Add New Taxonomy">
     <div class="max-w-[1280px] mx-auto pb-12" x-data="taxonomyForm()">
         <form action="{{ route('admin.acpt.taxonomies.store') }}" method="POST">
             @csrf
@@ -111,4 +111,4 @@
     </script>
     <style>[x-cloak] { display: none !important; }</style>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

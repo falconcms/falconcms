@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Upload New Media</h1>
         <a href="{{ route('admin.media.index') }}" class="wp-btn-secondary text-[13px]">← Back to Library</a>
@@ -130,4 +130,4 @@
         }
     })();
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

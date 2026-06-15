@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Acme\CmsDashboard\Models\Analytics;
-use Acme\CmsDashboard\Support\UserAgentParser;
+use FalconCms\Core\Models\Analytics;
+use FalconCms\Core\Support\UserAgentParser;
 
 /**
  * Re-derives os / browser / device_type for every existing analytics row from its stored

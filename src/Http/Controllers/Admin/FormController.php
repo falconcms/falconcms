@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Form;
-use Acme\CmsDashboard\Models\FormSubmission;
+use FalconCms\Core\Models\Form;
+use FalconCms\Core\Models\FormSubmission;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,12 +14,12 @@ class FormController extends Controller
     public function index()
     {
         $forms = Form::withCount('submissions')->latest()->paginate(10);
-        return view('cms-dashboard::admin.forms.index', compact('forms'));
+        return view('falcon-cms::admin.forms.index', compact('forms'));
     }
 
     public function create()
     {
-        return view('cms-dashboard::admin.forms.create');
+        return view('falcon-cms::admin.forms.create');
     }
 
     public function store(Request $request)
@@ -41,7 +41,7 @@ class FormController extends Controller
     public function builder($id)
     {
         $form = Form::findOrFail($id);
-        return view('cms-dashboard::admin.forms.builder', compact('form'));
+        return view('falcon-cms::admin.forms.builder', compact('form'));
     }
 
     public function saveBuilder(Request $request, $id)
@@ -60,14 +60,14 @@ class FormController extends Controller
         $form = Form::findOrFail($id);
         $form->submissions()->where('is_read', false)->update(['is_read' => true]);
         $submissions = $form->submissions()->latest()->paginate(20);
-        return view('cms-dashboard::admin.forms.submissions', compact('form', 'submissions'));
+        return view('falcon-cms::admin.forms.submissions', compact('form', 'submissions'));
     }
 
     public function allSubmissions()
     {
         $submissions = FormSubmission::with('form')->latest()->paginate(20);
         $form = null;
-        return view('cms-dashboard::admin.forms.submissions', compact('form', 'submissions'));
+        return view('falcon-cms::admin.forms.submissions', compact('form', 'submissions'));
     }
 
     public function destroySubmission(FormSubmission $submission)

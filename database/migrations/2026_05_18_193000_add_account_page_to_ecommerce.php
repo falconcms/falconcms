@@ -2,7 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use Acme\CmsDashboard\Models\Post;
+use FalconCms\Core\Models\Post;
 
 /**
  * Creates the storefront "Account" page and stores its id in shop settings.

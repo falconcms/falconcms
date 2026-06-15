@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
@@ -23,7 +23,7 @@ class CustomOptionsController extends Controller
 
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
 
-        return view('cms-dashboard::admin.options.generic', [
+        return view('falcon-cms::admin.options.generic', [
             'slug' => $slug,
             'config' => $config,
             'settings' => $settings

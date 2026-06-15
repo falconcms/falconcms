@@ -243,13 +243,13 @@
         <!-- Settings Tab -->
         <div v-show="activeTab==='settings'" class="h-full animate-fade-in flex flex-col">
             <div v-if="editingContext.type === 'container'" :key="'container-' + editingContext.ci" class="h-full">
-                @include('cms-dashboard::admin.lazy-builder.partials.components.container.edit-panel')
+                @include('falcon-cms::admin.lazy-builder.partials.components.container.edit-panel')
             </div>
             <div v-else-if="editingContext.type === 'nested-row'" :key="'nested-row-' + editingContext.ci + '-' + editingContext.coli + '-' + editingContext.eli" class="h-full">
-                @include('cms-dashboard::admin.lazy-builder.partials.components.container.edit-panel', ['isNestedRow' => true])
+                @include('falcon-cms::admin.lazy-builder.partials.components.container.edit-panel', ['isNestedRow' => true])
             </div>
             <div v-else-if="editingContext.type === 'column' || editingContext.type === 'nested-column'" :key="'column-' + editingContext.ci + '-' + editingContext.coli + '-' + editingContext.eli + '-' + editingContext.ncoli" class="h-full">
-                @include('cms-dashboard::admin.lazy-builder.partials.components.column.edit-panel')
+                @include('falcon-cms::admin.lazy-builder.partials.components.column.edit-panel')
             </div>
             <div v-else-if="editingContext.type === 'element'" :key="'element-' + editingContext.ci + '-' + editingContext.coli + '-' + editingContext.eli + '-' + editingContext.neli" class="h-full">
                 <!-- Dynamic Element Settings Panel -->
@@ -2868,29 +2868,29 @@
                             @endphp
                             <div v-else-if="editingElement?.type === '{{ $type }}'" class="space-y-8">
                                 @if($type === 'menu')
-                                    @include('cms-dashboard::admin.lazy-builder.partials.components.elements.menu-content')
+                                    @include('falcon-cms::admin.lazy-builder.partials.components.elements.menu-content')
                                 @endif
 
                                 @if($type !== 'menu')
                                     @foreach($__generalFields as $fieldKey => $field)
                                         @if(!empty($field['condition']))
                                             <template v-if="customFieldVisible(editingElement.settings, {{ Illuminate\Support\Js::from($field['condition']) }})">
-                                                @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-field-renderer', compact('field', 'fieldKey'))
+                                                @include('falcon-cms::admin.lazy-builder.partials.components.elements.custom-field-renderer', compact('field', 'fieldKey'))
                                             </template>
                                         @else
-                                            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-field-renderer', compact('field', 'fieldKey'))
+                                            @include('falcon-cms::admin.lazy-builder.partials.components.elements.custom-field-renderer', compact('field', 'fieldKey'))
                                         @endif
                                     @endforeach
                                 @endif
 
                                 <!-- Default: Element Visibility (shared partial) -->
                                 <div v-if="editingElement?.type !== 'menu'" class="pt-4 border-t border-slate-50">
-                                    @include('cms-dashboard::admin.lazy-builder.partials.components.fields.element-visibility')
+                                    @include('falcon-cms::admin.lazy-builder.partials.components.fields.element-visibility')
                                 </div>
 
                                 <!-- Default: CSS Class & ID (shared partial) -->
                                 <div v-if="editingElement?.type !== 'menu'" class="pt-4 border-t border-slate-50">
-                                    @include('cms-dashboard::admin.lazy-builder.partials.components.fields.css-attributes')
+                                    @include('falcon-cms::admin.lazy-builder.partials.components.fields.css-attributes')
                                 </div>
                             </div>
                             @endforeach
@@ -2900,49 +2900,49 @@
                         <div v-if="editingContext.tab === 'design'" class="p-5 space-y-6">
                              <!-- Design Settings for Gallery -->
                              <div v-if="editingElement?.type === 'gallery'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.gallery-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.gallery-design')
                              </div>
                              <!-- Design Settings for Star Rating -->
                              <div v-else-if="editingElement?.type === 'star_rating'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.star-rating-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.star-rating-design')
                              </div>
 
                              <!-- Design Settings for Counter -->
                              <div v-else-if="editingElement?.type === 'counter'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.counter-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.counter-design')
                              </div>
 
                              <!-- Design Settings for Special Text -->
                              <div v-else-if="editingElement?.type === 'text_block' || editingElement?.type === 'special_text'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.text-block-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.text-block-design')
                              </div>
 
                              <!-- Design Settings for Title -->
                              <div v-else-if="editingElement?.type === 'title'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.title-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.title-design')
                              </div>
 
                              <!-- Design Settings for Button -->
                              <div v-else-if="editingElement?.type === 'button'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.button-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.button-design')
                              </div>
 
                              <!-- Design Settings for Image -->
                              <div v-else-if="editingElement?.type === 'image'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.image-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.image-design')
                              </div>
 
                              <!-- Design Settings for Menu -->
                              <div v-else-if="editingElement?.type === 'menu'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.menu-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.menu-design')
                              </div>
                              <!-- Design Settings for Card -->
                              <div v-else-if="editingElement?.type === 'card'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.card-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.card-design')
                              </div>
                              <!-- Design Settings for Spacer -->
                              <div v-else-if="editingElement?.type === 'spacer'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.spacer-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.spacer-design')
                              </div>
 
                              <!-- Design Settings for HTML Block -->
@@ -4153,11 +4153,11 @@
 
                              <!-- Design Settings for Post Content -->
                              <div v-else-if="editingElement?.type === 'post_content'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.post-content-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.post-content-design')
                              </div>
                              <!-- Design Settings for Post Meta -->
                              <div v-else-if="editingElement?.type === 'post_meta'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.post-meta-design')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.post-meta-design')
                              </div>
                              <!-- Custom Elements: design tab fields -->
                              @foreach($customElements ?? [] as $type => $custEl)
@@ -4171,10 +4171,10 @@
                                      @foreach($__designFields2 as $fieldKey => $field)
                                          @if(!empty($field['condition']))
                                              <template v-if="customFieldVisible(editingElement.settings, {{ Illuminate\Support\Js::from($field['condition']) }})">
-                                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-field-renderer', compact('field', 'fieldKey'))
+                                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.custom-field-renderer', compact('field', 'fieldKey'))
                                              </template>
                                          @else
-                                             @include('cms-dashboard::admin.lazy-builder.partials.components.elements.custom-field-renderer', compact('field', 'fieldKey'))
+                                             @include('falcon-cms::admin.lazy-builder.partials.components.elements.custom-field-renderer', compact('field', 'fieldKey'))
                                          @endif
                                      @endforeach
                                  @else
@@ -4208,20 +4208,20 @@
                         <!-- ══ SUB MENU TAB ══ -->
                         <div v-if="editingContext.tab === 'submenu'" class="p-5 space-y-6">
                              <div v-if="editingElement?.type === 'menu'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.menu-submenu')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.menu-submenu')
                              </div>
                         </div>
 
                         <!-- ══ MOBILE TAB ══ -->
                         <div v-if="editingContext.tab === 'mobile'" class="p-5 space-y-6">
                              <div v-if="editingElement?.type === 'menu'" class="space-y-6">
-                                 @include('cms-dashboard::admin.lazy-builder.partials.components.elements.menu-mobile')
+                                 @include('falcon-cms::admin.lazy-builder.partials.components.elements.menu-mobile')
                              </div>
                         </div>
 
                         <!-- ══ EXTRAS TAB (shared partial) ══ -->
                         <div v-if="editingContext.tab === 'extras' && editingElement" class="p-5">
-                            @include('cms-dashboard::admin.lazy-builder.partials.components.fields.extra-options')
+                            @include('falcon-cms::admin.lazy-builder.partials.components.fields.extra-options')
                         </div>
                     </div>
                 </div>

@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\Language;
+use FalconCms\Core\Models\Language;
 
 class LanguageController extends Controller
 {
@@ -39,7 +39,7 @@ class LanguageController extends Controller
         $languages = Language::all();
         $displayMode = get_cms_option('lang_switcher_display', 'both');
         
-        return view('cms-dashboard::admin.languages.index', compact('languages', 'topCountries', 'displayMode'));
+        return view('falcon-cms::admin.languages.index', compact('languages', 'topCountries', 'displayMode'));
     }
 
     public function updateSettings(Request $request)

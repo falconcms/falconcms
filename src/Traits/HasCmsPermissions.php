@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Traits;
+namespace FalconCms\Core\Traits;
 
 use Illuminate\Support\Facades\DB;
 
@@ -15,13 +15,13 @@ trait HasCmsPermissions
     /** Primary role (backward compatible — $user->role keeps working). */
     public function role()
     {
-        return $this->belongsTo(\Acme\CmsDashboard\Models\Role::class);
+        return $this->belongsTo(\FalconCms\Core\Models\Role::class);
     }
 
     /** All roles assigned to the user (primary role_id + the role_user pivot). */
     public function roles()
     {
-        return $this->belongsToMany(\Acme\CmsDashboard\Models\Role::class, 'role_user');
+        return $this->belongsToMany(\FalconCms\Core\Models\Role::class, 'role_user');
     }
 
     /**
@@ -110,7 +110,7 @@ trait HasCmsPermissions
     /** Personal API tokens belonging to this user. */
     public function apiTokens()
     {
-        return $this->hasMany(\Acme\CmsDashboard\Models\ApiToken::class);
+        return $this->hasMany(\FalconCms\Core\Models\ApiToken::class);
     }
 
     /**

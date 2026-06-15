@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Forms - FalconCMS</x-slot>
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
 
     <div class="px-6 py-4">
         <div class="flex items-center justify-between mb-6">
@@ -90,4 +90,4 @@
             }
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

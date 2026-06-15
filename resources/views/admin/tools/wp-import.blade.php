@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">WordPress Import — FalconCMS</x-slot>
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex items-center justify-between mb-6">
@@ -258,4 +258,4 @@
             if (confirmed) document.getElementById('media-form').submit();
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

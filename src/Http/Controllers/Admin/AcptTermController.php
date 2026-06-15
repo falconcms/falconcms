@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\CustomTaxonomy;
-use Acme\CmsDashboard\Models\TaxonomyTerm;
+use FalconCms\Core\Models\CustomTaxonomy;
+use FalconCms\Core\Models\TaxonomyTerm;
 use Illuminate\Support\Str;
 
 class AcptTermController extends Controller
@@ -69,7 +69,7 @@ class AcptTermController extends Controller
             );
         }
         
-        return view('cms-dashboard::admin.acpt.taxonomies.terms.index', compact('taxonomy', 'terms', 'fullTree'));
+        return view('falcon-cms::admin.acpt.taxonomies.terms.index', compact('taxonomy', 'terms', 'fullTree'));
     }
 
     public function store(Request $request, $taxonomySlug)
@@ -160,7 +160,7 @@ class AcptTermController extends Controller
         };
         $buildTree(null, 0);
 
-        return view('cms-dashboard::admin.acpt.taxonomies.terms.edit', compact('taxonomy', 'term', 'fullTree'));
+        return view('falcon-cms::admin.acpt.taxonomies.terms.edit', compact('taxonomy', 'term', 'fullTree'));
     }
 
     public function update(Request $request, $taxonomySlug, $id)

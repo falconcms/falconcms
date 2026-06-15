@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Builder Library">
+<x-falcon-cms::layouts.admin title="Builder Library">
 <style>
 .lib-tab-btn { border-bottom: 2px solid transparent; transition: all .15s; }
 .lib-tab-btn.active { border-color: #2271b1; color: #2271b1; }
@@ -345,4 +345,4 @@ function deleteMegaMenu(id) {
 // Init
 switchTab('{{ request()->query("tab", "containers") }}');
 </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

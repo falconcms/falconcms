@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
@@ -23,10 +23,10 @@ class RegisterController extends Controller
         $theme = get_cms_option('registration_theme', 'modern');
 
         if ($theme === 'funny') {
-            return view('cms-dashboard::admin.auth.register-funny');
+            return view('falcon-cms::admin.auth.register-funny');
         }
 
-        return view('cms-dashboard::admin.auth.register-modern');
+        return view('falcon-cms::admin.auth.register-modern');
     }
 
     public function checkEmail(Request $request)
@@ -47,7 +47,7 @@ class RegisterController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $subscriberRole = \Acme\CmsDashboard\Models\Role::where('slug', 'subscriber')->first();
+        $subscriberRole = \FalconCms\Core\Models\Role::where('slug', 'subscriber')->first();
 
         $user = User::create([
             'name' => $request->name,

@@ -1,1 +1,1 @@
-@include('cms-dashboard::frontend.builder.elements.text-block')
+@include('falcon-cms::frontend.builder.elements.text-block')

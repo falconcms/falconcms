@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">Activity Logs - FalconCMS</x-slot>
 
     <div class="px-2">
@@ -6,7 +6,7 @@
             <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">Settings</h1>
         </div>
 
-        @include('cms-dashboard::admin.settings.nav')
+        @include('falcon-cms::admin.settings.nav')
 
         @if (session('success'))
             <div class="bg-[#fff] border-l-4 border-[#00a32a] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px] flex justify-between items-center">
@@ -17,13 +17,13 @@
 
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-4">
             <div class="flex flex-wrap items-center text-[13px] text-[#646970]">
-                <a href="{{ route('admin.settings.activity-logs') }}" class="{{ !request('action') ? 'text-black font-semibold' : 'text-[#2271b1]' }}">All <span class="text-[#646970]">({{ \Acme\CmsDashboard\Models\ActivityLog::count() }})</span></a>
+                <a href="{{ route('admin.settings.activity-logs') }}" class="{{ !request('action') ? 'text-black font-semibold' : 'text-[#2271b1]' }}">All <span class="text-[#646970]">({{ \FalconCms\Core\Models\ActivityLog::count() }})</span></a>
                 <span class="mx-1 text-[#c3c4c7]">|</span>
-                <a href="{{ route('admin.settings.activity-logs', ['action' => 'created']) }}" class="{{ request('action') == 'created' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Created <span class="text-[#646970]">({{ \Acme\CmsDashboard\Models\ActivityLog::where('action', 'created')->count() }})</span></a>
+                <a href="{{ route('admin.settings.activity-logs', ['action' => 'created']) }}" class="{{ request('action') == 'created' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Created <span class="text-[#646970]">({{ \FalconCms\Core\Models\ActivityLog::where('action', 'created')->count() }})</span></a>
                 <span class="mx-1 text-[#c3c4c7]">|</span>
-                <a href="{{ route('admin.settings.activity-logs', ['action' => 'updated']) }}" class="{{ request('action') == 'updated' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Updated <span class="text-[#646970]">({{ \Acme\CmsDashboard\Models\ActivityLog::where('action', 'updated')->count() }})</span></a>
+                <a href="{{ route('admin.settings.activity-logs', ['action' => 'updated']) }}" class="{{ request('action') == 'updated' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Updated <span class="text-[#646970]">({{ \FalconCms\Core\Models\ActivityLog::where('action', 'updated')->count() }})</span></a>
                 <span class="mx-1 text-[#c3c4c7]">|</span>
-                <a href="{{ route('admin.settings.activity-logs', ['action' => 'deleted']) }}" class="{{ request('action') == 'deleted' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Deleted <span class="text-[#646970]">({{ \Acme\CmsDashboard\Models\ActivityLog::where('action', 'deleted')->count() }})</span></a>
+                <a href="{{ route('admin.settings.activity-logs', ['action' => 'deleted']) }}" class="{{ request('action') == 'deleted' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Deleted <span class="text-[#646970]">({{ \FalconCms\Core\Models\ActivityLog::where('action', 'deleted')->count() }})</span></a>
             </div>
 
             <form action="{{ route('admin.settings.activity-logs') }}" method="GET" class="flex items-center space-x-1 w-full md:w-auto">
@@ -57,7 +57,7 @@
                 </form>
             </div>
             
-            <x-cms-dashboard::admin.pagination :paginator="$logs" />
+            <x-falcon-cms::admin.pagination :paginator="$logs" />
         </div>
 
         <form action="{{ route('admin.settings.activity-logs.bulk') }}" method="POST" id="main-logs-form">
@@ -162,7 +162,7 @@
                 <button type="button" onclick="submitBulkAction('bulk_action_bottom')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
             </div>
             
-            <x-cms-dashboard::admin.pagination :paginator="$logs" />
+            <x-falcon-cms::admin.pagination :paginator="$logs" />
         </div>
     </div>
 
@@ -293,4 +293,4 @@
             });
         </script>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

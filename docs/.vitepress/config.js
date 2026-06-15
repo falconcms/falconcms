@@ -15,7 +15,7 @@ export default defineConfig({
   lastUpdated: true,
 
   head: [
-    ['link', { rel: 'icon', href: '/lazy-cms-builder/logo.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'icon', href: '/lazy-cms-builder/hero.svg', type: 'image/svg+xml' }],
     ['meta', { property: 'og:type',        content: 'website' }],
     ['meta', { property: 'og:site_name',   content: 'Lazy CMS Builder' }],
     ['meta', { property: 'og:description', content: 'A WordPress-like drag-and-drop CMS package for Laravel — page builder, e-commerce, multi-language, hooks API, mega menus, and more.' }],
@@ -26,8 +26,8 @@ export default defineConfig({
   ],
 
   themeConfig: {
-    logo: '/logo.svg',
-    siteTitle: false,
+    logo: '/hero.svg',
+    siteTitle: 'Lazy CMS Builder',
 
     nav: [
       { text: 'Guide', link: '/guide/introduction' },

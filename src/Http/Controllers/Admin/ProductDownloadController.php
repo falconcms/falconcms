@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\ProductData;
-use Acme\CmsDashboard\Models\ProductDownload;
+use FalconCms\Core\Models\ProductData;
+use FalconCms\Core\Models\ProductDownload;
 
 class ProductDownloadController extends Controller
 {

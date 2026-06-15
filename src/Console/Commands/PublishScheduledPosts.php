@@ -1,14 +1,14 @@
 <?php
 
-namespace Acme\CmsDashboard\Console\Commands;
+namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
-use Acme\CmsDashboard\Models\Post;
+use FalconCms\Core\Models\Post;
 use Illuminate\Support\Carbon;
 
 class PublishScheduledPosts extends Command
 {
-    protected $signature = 'lazy:publish-scheduled';
+    protected $signature = 'falcon:publish-scheduled';
     protected $description = 'Publish posts whose scheduled publish time has arrived.';
 
     public function handle(): void

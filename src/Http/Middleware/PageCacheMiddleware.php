@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Middleware;
+namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;

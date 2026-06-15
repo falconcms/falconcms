@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Middleware;
+namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\Redirect;
+use FalconCms\Core\Models\Redirect;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\View;
 

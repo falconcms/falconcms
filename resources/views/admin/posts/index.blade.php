@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin title="{{ ucfirst($type ?? 'Posts') }}" active-menu="{{ ($type ?? 'post') === 'page' ? 'pages' : ($type ?? 'posts') }}">
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin title="{{ ucfirst($type ?? 'Posts') }}" active-menu="{{ ($type ?? 'post') === 'page' ? 'pages' : ($type ?? 'posts') }}">
+    <x-falcon-cms::admin.delete-modal />
     <div class="mb-4 flex items-center">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">{{ ucfirst($type ?? 'Posts') }}</h1>
         <a href="{{ route('admin.posts.create', ['type' => $type ?? 'post']) }}" class="wp-btn-outline">Add New</a>
@@ -92,7 +92,7 @@
             @endif
         </div>
         
-        <x-cms-dashboard::admin.pagination :paginator="$posts" />
+        <x-falcon-cms::admin.pagination :paginator="$posts" />
     </div>
 
     <table class="w-full bg-[#fff] border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)] mb-4">
@@ -311,7 +311,7 @@
             <button type="button" onclick="handleBulkAction('posts-filter', 'action2')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
         </div>
         
-        <x-cms-dashboard::admin.pagination :paginator="$posts" />
+        <x-falcon-cms::admin.pagination :paginator="$posts" />
     </div>
     
     </form>
@@ -386,4 +386,4 @@
         </form>
     @endforeach
  
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

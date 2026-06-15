@@ -1,5 +1,5 @@
-<x-cms-dashboard::layouts.admin title="Product Reviews">
-    <x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::layouts.admin title="Product Reviews">
+    <x-falcon-cms::admin.delete-modal />
     <div class="flex items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] mr-3">Product Reviews</h1>
     </div>
@@ -19,7 +19,7 @@
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.shop.reviews.index', ['status' => 'approved']) }}" class="{{ request('status') == 'approved' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Approved <span class="text-[#646970]">({{ $approvedCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
-            <a href="{{ route('admin.comments.index') }}" class="text-[#2271b1]">Comments <span class="text-[#646970]">({{ \Acme\CmsDashboard\Models\Comment::count() }})</span></a>
+            <a href="{{ route('admin.comments.index') }}" class="text-[#2271b1]">Comments <span class="text-[#646970]">({{ \FalconCms\Core\Models\Comment::count() }})</span></a>
         </div>
         
         <form action="{{ route('admin.shop.reviews.index') }}" method="GET" class="flex items-center space-x-1 w-full md:w-auto">
@@ -45,7 +45,7 @@
             </div>
         </div>
         
-        <x-cms-dashboard::admin.pagination :paginator="$reviews" />
+        <x-falcon-cms::admin.pagination :paginator="$reviews" />
     </div>
 
     <table class="w-full bg-[#fff] border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)] mb-4">
@@ -119,7 +119,7 @@
             <button type="button" onclick="handleBulkAction('reviews-bulk', 'action2')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
         </div>
         
-        <x-cms-dashboard::admin.pagination :paginator="$reviews" />
+        <x-falcon-cms::admin.pagination :paginator="$reviews" />
     </div>
     </form>
 
@@ -165,4 +165,4 @@
             form.submit();
         };
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

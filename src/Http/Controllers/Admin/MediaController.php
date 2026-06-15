@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Acme\CmsDashboard\Models\Media;
+use FalconCms\Core\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -66,12 +66,12 @@ class MediaController extends Controller
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json($media);
         }
-        return view('cms-dashboard::admin.media.index', compact('media', 'months', 'types'));
+        return view('falcon-cms::admin.media.index', compact('media', 'months', 'types'));
     }
 
     public function create()
     {
-        return view('cms-dashboard::admin.media.create');
+        return view('falcon-cms::admin.media.create');
     }
 
     public function store(Request $request)

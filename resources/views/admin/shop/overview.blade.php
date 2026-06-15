@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Shop Overview" active-menu="shop">
+<x-falcon-cms::layouts.admin title="Shop Overview" active-menu="shop">
     @php
         $money = fn ($v) => $currency . number_format((float) $v, 2);
         $presets = ['today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', 'month' => 'This Month', 'year' => 'This Year', 'all' => 'All Time'];
@@ -119,7 +119,7 @@
                     @endforelse
                 </tbody>
             </table>
-            <div class="px-4 py-3 border-t border-[#f0f0f1] flex justify-end">{{ $orders->links('cms-dashboard::components.admin.pagination') }}</div>
+            <div class="px-4 py-3 border-t border-[#f0f0f1] flex justify-end">{{ $orders->links('falcon-cms::components.admin.pagination') }}</div>
         </div>
 
         {{-- Status breakdown --}}
@@ -153,4 +153,4 @@
             </div>
         </div>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

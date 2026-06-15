@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
 <x-slot name="title">Customizer &lsaquo; FalconCMS</x-slot>
-<x-cms-dashboard::admin.delete-modal />
+<x-falcon-cms::admin.delete-modal />
 
 {{-- Toast container --}}
 <div id="customizer-toast" class="fixed top-6 right-6 z-[99999] flex flex-col gap-2 pointer-events-none" style="min-width:280px;"></div>
@@ -1273,4 +1273,4 @@ function typographyComponent(key, initialData) {
 .cstz-btn-opt:hover { filter: brightness(0.97); }
 </style>
 @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

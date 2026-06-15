@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\View\Components;
+namespace FalconCms\Core\View\Components;
 
 use Illuminate\View\Component;
 
@@ -19,6 +19,6 @@ class PostRenderer extends Component
             return '<div>{!! get_lazy_content($post->content) !!}</div>';
         }
 
-        return view('cms-dashboard::components.rich-renderer');
+        return view('falcon-cms::components.rich-renderer');
     }
 }

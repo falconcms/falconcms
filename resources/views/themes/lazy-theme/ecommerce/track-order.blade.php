@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', 'Track Your Order')
 
@@ -52,7 +52,7 @@
                 'failed'             => '#dc2626',
             ];
             $stColor = $statusColors[$order->status] ?? '#6b7280';
-            $stLabel = \Acme\CmsDashboard\Models\OrderStatusHistory::label($order->status);
+            $stLabel = \FalconCms\Core\Models\OrderStatusHistory::label($order->status);
             $timeline = $order->statusHistory ?? collect();
         @endphp
 
@@ -78,8 +78,8 @@
                             $isLast   = $loop->last;
                             $entryBad = in_array($entry->status, ['cancelled','failed']);
                             $eColor   = $entryBad ? '#ef4444' : $primaryColor;
-                            $note     = $entry->note ?: \Acme\CmsDashboard\Models\OrderStatusHistory::defaultNote($entry->status);
-                            $eLabel   = \Acme\CmsDashboard\Models\OrderStatusHistory::label($entry->status);
+                            $note     = $entry->note ?: \FalconCms\Core\Models\OrderStatusHistory::defaultNote($entry->status);
+                            $eLabel   = \FalconCms\Core\Models\OrderStatusHistory::label($entry->status);
                             $showTrack = in_array($entry->status, ['delivering','shipped'])
                                        && ($order->tracking_number || $order->tracking_url);
                             $trackUrl  = $order->tracking_url

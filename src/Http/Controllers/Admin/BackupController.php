@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
@@ -71,7 +71,7 @@ class BackupController extends Controller
         $maxUploadBytes = $this->maxUploadBytes();
         $maxUploadHuman = $this->formatBytes($maxUploadBytes);
 
-        return view('cms-dashboard::admin.tools.backup', compact('backups', 'maxUploadBytes', 'maxUploadHuman'));
+        return view('falcon-cms::admin.tools.backup', compact('backups', 'maxUploadBytes', 'maxUploadHuman'));
     }
 
     public function create()

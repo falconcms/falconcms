@@ -41,11 +41,11 @@
                                         }
                                     }
                                     if ($menu->title === 'Help' && get_cms_option('enable_documentation', '1') !== '1') continue;
-                                    $isActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($href);
+                                    $isActive = \FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($href);
                                     if (!$isActive && $hasChildren) {
                                         foreach($menu->children as $child) {
                                             if ($isAdmin || auth()->user()->hasPermission($getPermission($child))) {
-                                                if (\Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($resolveRoute($child))) {
+                                                if (\FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($resolveRoute($child))) {
                                                     $isActive = true;
                                                     break;
                                                 }
@@ -69,19 +69,19 @@
                                     <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }} flex items-center gap-2">
                                         {{ $menu->title }}
                                         @if($isComments)
-                                            @php $unreadComments = \Acme\CmsDashboard\Models\Comment::where('is_read', false)->count(); @endphp
+                                            @php $unreadComments = \FalconCms\Core\Models\Comment::where('is_read', false)->count(); @endphp
                                             @if($unreadComments > 0)
                                                 <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{{ $unreadComments }}</span>
                                             @endif
                                         @endif
                                         @if($isForms)
-                                            @php $unreadSubmissions = \Acme\CmsDashboard\Models\FormSubmission::where('is_read', false)->count(); @endphp
+                                            @php $unreadSubmissions = \FalconCms\Core\Models\FormSubmission::where('is_read', false)->count(); @endphp
                                             @if($unreadSubmissions > 0)
                                                 <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{{ $unreadSubmissions }}</span>
                                             @endif
                                         @endif
                                         @if($isShop)
-                                            @php try { $unreadOrders = \Acme\CmsDashboard\Models\Order::where('is_read', false)->count(); } catch (\Exception $e) { $unreadOrders = 0; } @endphp
+                                            @php try { $unreadOrders = \FalconCms\Core\Models\Order::where('is_read', false)->count(); } catch (\Exception $e) { $unreadOrders = 0; } @endphp
                                             @if($unreadOrders > 0)
                                                 <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{{ $unreadOrders }}</span>
                                             @endif
@@ -99,13 +99,13 @@
                                                     @php
                                                         if (!$isAdmin && !auth()->user()->hasPermission($getPermission($child))) continue;
                                                         $childHref = $resolveRoute($child);
-                                                        $isChildActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($childHref, true);
+                                                        $isChildActive = \FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($childHref, true);
                                                     @endphp
                                                     <li>
                                                         <a href="{{ $childHref }}" class="block px-3 py-[6px] transition text-[13px] {{ $isChildActive ? 'text-white font-semibold' : 'text-[#c3c4c7] hover:text-[#72aee6]' }}">
                                                             {{ $child->title }}
                                                             @if($child->title === 'Orders')
-                                                                @php try { $unreadOrders = \Acme\CmsDashboard\Models\Order::where('is_read', false)->count(); } catch (\Exception $e) { $unreadOrders = 0; } @endphp
+                                                                @php try { $unreadOrders = \FalconCms\Core\Models\Order::where('is_read', false)->count(); } catch (\Exception $e) { $unreadOrders = 0; } @endphp
                                                                 @if($unreadOrders > 0)
                                                                     <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">{{ $unreadOrders }}</span>
                                                                 @endif
@@ -131,7 +131,7 @@
                                                         <a href="{{ $resolveRoute($child) }}" class="block px-3 py-[6px] transition text-[13px] hover:text-[#72aee6] text-[#c3c4c7]">
                                                             {{ $child->title }}
                                                             @if($child->title === 'Orders')
-                                                                @php try { $unreadOrders = \Acme\CmsDashboard\Models\Order::where('is_read', false)->count(); } catch (\Exception $e) { $unreadOrders = 0; } @endphp
+                                                                @php try { $unreadOrders = \FalconCms\Core\Models\Order::where('is_read', false)->count(); } catch (\Exception $e) { $unreadOrders = 0; } @endphp
                                                                 @if($unreadOrders > 0)
                                                                     <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">{{ $unreadOrders }}</span>
                                                                 @endif

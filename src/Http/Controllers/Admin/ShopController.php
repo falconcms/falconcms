@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Order;
+use FalconCms\Core\Models\Order;
 use Illuminate\Http\Request;
 
 class ShopController extends Controller
@@ -65,9 +65,9 @@ class ShopController extends Controller
             });
         }
         $orders   = $ordersQuery->latest()->paginate(15)->withQueryString();
-        $currency = \Acme\CmsDashboard\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
+        $currency = \FalconCms\Core\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
 
-        return view('cms-dashboard::admin.shop.overview', compact('orders', 'stats', 'statusCounts', 'from', 'to', 'preset', 'currency'));
+        return view('falcon-cms::admin.shop.overview', compact('orders', 'stats', 'statusCounts', 'from', 'to', 'preset', 'currency'));
     }
 
     public function orders(Request $request)
@@ -85,7 +85,7 @@ class ShopController extends Controller
         }
 
         $orders = $query->latest()->paginate(10)->withQueryString();
-        return view('cms-dashboard::admin.shop.orders.index', compact('orders'));
+        return view('falcon-cms::admin.shop.orders.index', compact('orders'));
     }
 
     public function ordersBulk(Request $request)
@@ -108,7 +108,7 @@ class ShopController extends Controller
                     $this->handleInventoryStatusChange($o, $oldStatus, $status);
                     if ($status === 'delivered') {
                         try {
-                            \Illuminate\Support\Facades\Mail::to($o->customer_email)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($o, 'status_updated'));
+                            \Illuminate\Support\Facades\Mail::to($o->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($o, 'status_updated'));
                         } catch (\Exception $e) {
                             \Illuminate\Support\Facades\Log::error("Order #{$o->order_number} delivery email failed: " . $e->getMessage());
                         }
@@ -134,13 +134,13 @@ class ShopController extends Controller
             $order->update(['is_read' => true]);
         }
 
-        return view('cms-dashboard::admin.shop.orders.show', compact('order'));
+        return view('falcon-cms::admin.shop.orders.show', compact('order'));
     }
 
     public function orderInvoice($id)
     {
         $order = Order::with('items.product')->findOrFail($id);
-        return view('cms-dashboard::admin.shop.orders.invoice', compact('order'));
+        return view('falcon-cms::admin.shop.orders.invoice', compact('order'));
     }
 
     public function orderUpdateStatus(Request $request, $id)
@@ -179,7 +179,7 @@ class ShopController extends Controller
             // Only email customer when order is delivered
             if ($newStatus === 'delivered') {
                 try {
-                    \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', $emailRefundAmount));
+                    \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', $emailRefundAmount));
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} delivery email failed: " . $e->getMessage());
                 }
@@ -284,7 +284,7 @@ class ShopController extends Controller
 
         // Always notify the customer about the refund (even on repeat partial refunds), with the amount.
         try {
-            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \Acme\CmsDashboard\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', (float) $request->refund_amount));
+            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', (float) $request->refund_amount));
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} refund email failed: " . $e->getMessage());
         }
@@ -340,9 +340,9 @@ class ShopController extends Controller
 
     public function settings()
     {
-        $countries = \Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates(false);
-        $allowedCountries = \Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates(true);
-        $currencies = \Acme\CmsDashboard\Services\EcommerceData::getCurrencies();
+        $countries = \FalconCms\Core\Services\EcommerceData::getCountriesWithStates(false);
+        $allowedCountries = \FalconCms\Core\Services\EcommerceData::getCountriesWithStates(true);
+        $currencies = \FalconCms\Core\Services\EcommerceData::getCurrencies();
         $frontPageId    = get_cms_option('page_on_front');
         $shopPageId     = get_shop_option('shop_shop_page_id');
         $cartPageId     = get_shop_option('shop_cart_page_id');
@@ -376,7 +376,7 @@ class ShopController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('cms-dashboard::admin.shop.settings', compact('countries', 'allowedCountries', 'currencies', 'pages', 'products', 'categories'));
+        return view('falcon-cms::admin.shop.settings', compact('countries', 'allowedCountries', 'currencies', 'pages', 'products', 'categories'));
     }
 
     public function saveSettings(Request $request)

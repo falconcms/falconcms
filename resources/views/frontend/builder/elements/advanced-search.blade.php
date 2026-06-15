@@ -32,8 +32,8 @@
     if ($catDropdown) {
         try {
             $cats = $useProductCats
-                ? \Acme\CmsDashboard\Models\ProductCategory::orderBy('name')->get(['id', 'name'])
-                : \Acme\CmsDashboard\Models\Category::orderBy('name')->get(['id', 'name']);
+                ? \FalconCms\Core\Models\ProductCategory::orderBy('name')->get(['id', 'name'])
+                : \FalconCms\Core\Models\Category::orderBy('name')->get(['id', 'name']);
         } catch (\Throwable $e) { $cats = collect(); }
     }
 

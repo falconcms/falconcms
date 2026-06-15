@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Acme\CmsDashboard\Models\Role;
+use FalconCms\Core\Models\Role;
 
 return new class extends Migration
 {
@@ -49,13 +49,13 @@ return new class extends Migration
         ];
 
         foreach ($permissions as $permission) {
-            \Acme\CmsDashboard\Models\Permission::updateOrCreate(['slug' => $permission['slug']], $permission);
+            \FalconCms\Core\Models\Permission::updateOrCreate(['slug' => $permission['slug']], $permission);
         }
 
         // Sync all permissions to administrator role
         $adminRole = Role::where('slug', 'administrator')->first();
         if ($adminRole) {
-            $allPermissionIds = \Acme\CmsDashboard\Models\Permission::pluck('id')->toArray();
+            $allPermissionIds = \FalconCms\Core\Models\Permission::pluck('id')->toArray();
             $adminRole->permissions()->sync($allPermissionIds);
         }
 

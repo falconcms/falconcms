@@ -3,7 +3,7 @@
     $navItems = collect();
 
     if ($menuId) {
-        $navMenu = \Acme\CmsDashboard\Models\NavigationMenu::with(['items' => fn($q) => $q->orderBy('order')])->find($menuId);
+        $navMenu = \FalconCms\Core\Models\NavigationMenu::with(['items' => fn($q) => $q->orderBy('order')])->find($menuId);
         if ($navMenu) {
             $allItems  = $navMenu->items;
             $navItems  = $allItems->where('parent_id', null)->values();

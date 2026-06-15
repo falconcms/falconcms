@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Core;
+namespace FalconCms\Core\Core;
 
 class HookManager
 {

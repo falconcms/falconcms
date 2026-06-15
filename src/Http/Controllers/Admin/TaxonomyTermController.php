@@ -1,12 +1,12 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Acme\CmsDashboard\Models\TaxonomyTerm;
-use Acme\CmsDashboard\Models\CustomTaxonomy;
+use FalconCms\Core\Models\TaxonomyTerm;
+use FalconCms\Core\Models\CustomTaxonomy;
 
 class TaxonomyTermController extends Controller
 {
@@ -43,7 +43,7 @@ class TaxonomyTermController extends Controller
         };
         $buildTree(null, 0);
 
-        return view('cms-dashboard::admin.acpt.taxonomies.terms', compact('taxonomy', 'terms', 'fullParents', 'cptSlug'));
+        return view('falcon-cms::admin.acpt.taxonomies.terms', compact('taxonomy', 'terms', 'fullParents', 'cptSlug'));
     }
 
     public function ajaxStore(Request $request)
@@ -134,7 +134,7 @@ class TaxonomyTermController extends Controller
         };
         $buildTree(null, 0);
 
-        return view('cms-dashboard::admin.acpt.taxonomies.term_edit', compact('taxonomy', 'term', 'fullParents', 'cptSlug'));
+        return view('falcon-cms::admin.acpt.taxonomies.term_edit', compact('taxonomy', 'term', 'fullParents', 'cptSlug'));
     }
 
     public function update(Request $request, $taxonomySlug, $id)

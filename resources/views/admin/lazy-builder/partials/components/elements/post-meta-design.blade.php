@@ -26,7 +26,7 @@
         <div class="flex justify-between items-center mb-1">
             <label class="text-[12px] font-bold text-[#333]">Typography</label>
         </div>
-        @include('cms-dashboard::admin.lazy-builder.partials.components.fields.typography', ['prefix' => 'meta'])
+        @include('falcon-cms::admin.lazy-builder.partials.components.fields.typography', ['prefix' => 'meta'])
     </div>
 
     <!-- Text Color -->

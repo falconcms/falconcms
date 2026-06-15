@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Add New Post Type">
+<x-falcon-cms::layouts.admin title="Add New Post Type">
     <div class="max-w-[1280px] mx-auto pb-12" x-data="cptForm()">
         <form action="{{ route('admin.acpt.cpt.store') }}" method="POST">
             @csrf
@@ -204,4 +204,4 @@
         [x-cloak] { display: none !important; }
     </style>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

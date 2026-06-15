@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Role;
-use Acme\CmsDashboard\Models\Permission;
-use Acme\CmsDashboard\Models\Menu;
+use FalconCms\Core\Models\Role;
+use FalconCms\Core\Models\Permission;
+use FalconCms\Core\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -17,13 +17,13 @@ class RoleController extends Controller
             ->orderByRaw("CASE WHEN slug = 'super-admin' THEN 0 WHEN slug = 'administrator' THEN 1 ELSE 2 END")
             ->orderBy('name')
             ->get();
-        return view('cms-dashboard::admin.roles.index', compact('roles'));
+        return view('falcon-cms::admin.roles.index', compact('roles'));
     }
 
     public function create()
     {
         $data = $this->getDynamicPermissions();
-        return view('cms-dashboard::admin.roles.create', $data);
+        return view('falcon-cms::admin.roles.create', $data);
     }
 
     public function store(Request $request)
@@ -55,7 +55,7 @@ class RoleController extends Controller
         $data['role'] = $role;
         $data['rolePermissions'] = $role->permissions->pluck('slug')->toArray();
         
-        return view('cms-dashboard::admin.roles.edit', $data);
+        return view('falcon-cms::admin.roles.edit', $data);
     }
 
     public function update(Request $request, Role $role)
@@ -152,7 +152,7 @@ class RoleController extends Controller
         // Single source of truth: the same resolver the access middleware uses
         // (Sidebar::getPermission), so a checked menu item grants exactly the
         // permission its page requires. Keeps assignment and enforcement in sync.
-        return (new \Acme\CmsDashboard\View\Components\Admin\Sidebar)->getPermission($menu);
+        return (new \FalconCms\Core\View\Components\Admin\Sidebar)->getPermission($menu);
     }
 
     public function destroy(Role $role)

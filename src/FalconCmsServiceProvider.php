@@ -1,11 +1,11 @@
 <?php
 
-namespace Acme\CmsDashboard;
+namespace FalconCms\Core;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 
-class CmsDashboardServiceProvider extends ServiceProvider
+class FalconCmsServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
@@ -18,27 +18,27 @@ class CmsDashboardServiceProvider extends ServiceProvider
         view()->share('activeTheme', $activeTheme);
 
         // Register Middlewares
-        $this->app['router']->prependMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\RedirectMiddleware::class);
-        $this->app['router']->pushMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\TrackVisits::class);
-        $this->app['router']->pushMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\LocalizationMiddleware::class);
-        $this->app['router']->pushMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\BuilderShortcodeMiddleware::class);
-        $this->app['router']->pushMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\PersistCart::class);
-        $this->app['router']->aliasMiddleware('api.token', \Acme\CmsDashboard\Http\Middleware\AuthenticateApiToken::class);
+        $this->app['router']->prependMiddlewareToGroup('web', \FalconCms\Core\Http\Middleware\RedirectMiddleware::class);
+        $this->app['router']->pushMiddlewareToGroup('web', \FalconCms\Core\Http\Middleware\TrackVisits::class);
+        $this->app['router']->pushMiddlewareToGroup('web', \FalconCms\Core\Http\Middleware\LocalizationMiddleware::class);
+        $this->app['router']->pushMiddlewareToGroup('web', \FalconCms\Core\Http\Middleware\BuilderShortcodeMiddleware::class);
+        $this->app['router']->pushMiddlewareToGroup('web', \FalconCms\Core\Http\Middleware\PersistCart::class);
+        $this->app['router']->aliasMiddleware('api.token', \FalconCms\Core\Http\Middleware\AuthenticateApiToken::class);
 
         $this->app->booted(function () {
             $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
             $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
         });
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'cms-dashboard');
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'falcon-cms');
 
         // Register View Composers for Magic Keys
         $viewMap = [
             'admin.users.edit' => 'users-edit',
             'admin.settings.index' => 'general-settings',
             
-            'cms-dashboard::admin.users.edit' => 'users-edit',
-            'cms-dashboard::admin.settings.index'         => 'general-settings',
+            'falcon-cms::admin.users.edit' => 'users-edit',
+            'falcon-cms::admin.settings.index'         => 'general-settings',
         ];
 
         view()->composer('*', function ($view) use ($viewMap) {
@@ -52,24 +52,24 @@ class CmsDashboardServiceProvider extends ServiceProvider
             }
         });
 
-        Blade::componentNamespace('Acme\\CmsDashboard\\View\\Components', 'cms-dashboard');
-        Blade::component('cms-dashboard::components.frontend.breadcrumbs', 'cms-breadcrumbs');
+        Blade::componentNamespace('FalconCms\\Core\\View\\Components', 'falcon-cms');
+        Blade::component('falcon-cms::components.frontend.breadcrumbs', 'cms-breadcrumbs');
 
         // Register commands always (not just in console) so Artisan::call() works from web requests
         $this->commands([
-            \Acme\CmsDashboard\Console\Commands\LazyList::class,
-            \Acme\CmsDashboard\Console\Commands\MakeDashboardPage::class,
-            \Acme\CmsDashboard\Console\Commands\InstallLazyCms::class,
-            \Acme\CmsDashboard\Console\Commands\SeedLazyCms::class,
-            \Acme\CmsDashboard\Console\Commands\UpdateLazyCms::class,
-            \Acme\CmsDashboard\Console\Commands\PublishScheduledPosts::class,
-            \Acme\CmsDashboard\Console\Commands\ExpireSalePrices::class,
+            \FalconCms\Core\Console\Commands\LazyList::class,
+            \FalconCms\Core\Console\Commands\MakeDashboardPage::class,
+            \FalconCms\Core\Console\Commands\InstallLazyCms::class,
+            \FalconCms\Core\Console\Commands\SeedLazyCms::class,
+            \FalconCms\Core\Console\Commands\UpdateLazyCms::class,
+            \FalconCms\Core\Console\Commands\PublishScheduledPosts::class,
+            \FalconCms\Core\Console\Commands\ExpireSalePrices::class,
         ]);
 
         // Register scheduled tasks from within the package
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function ($schedule) {
-            $schedule->command('lazy:publish-scheduled')->everyMinute()->withoutOverlapping();
-            $schedule->command('lazy:expire-sales')->daily();
+            $schedule->command('falcon:publish-scheduled')->everyMinute()->withoutOverlapping();
+            $schedule->command('falcon:expire-sales')->daily();
         });
 
         // Cron-independent fallback: many hosts (and local dev) never run `schedule:run`,
@@ -81,7 +81,7 @@ class CmsDashboardServiceProvider extends ServiceProvider
         if (!$this->app->runningInConsole()) {
             $this->app->terminating(function () {
                 try {
-                    \Acme\CmsDashboard\Models\Post::where('status', 'scheduled')
+                    \FalconCms\Core\Models\Post::where('status', 'scheduled')
                         ->whereNotNull('published_at')
                         ->where('published_at', '<=', now())
                         ->update(['status' => 'published']);
@@ -102,7 +102,7 @@ class CmsDashboardServiceProvider extends ServiceProvider
 
             $this->publishes([
                 __DIR__ . '/../public/assets' => public_path('vendor/cms-dashboard'),
-            ], 'cms-dashboard-assets');
+            ], 'falcon-cms-assets');
 
             // 1. Parent theme only — safe to publish with --force on every update
             $this->publishes([

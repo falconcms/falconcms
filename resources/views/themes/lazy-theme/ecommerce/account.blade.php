@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', 'My Account')
 
@@ -124,7 +124,7 @@
                 </table>
                 @if($orders->hasPages())
                     <div class="px-6 py-4 border-t border-gray-100 flex justify-end">
-                        {{ $orders->links('cms-dashboard::components.admin.pagination') }}
+                        {{ $orders->links('falcon-cms::components.admin.pagination') }}
                     </div>
                 @endif
             @endif
@@ -133,7 +133,7 @@
         {{-- ── DOWNLOADS TAB ── --}}
         @elseif($activeTab === 'downloads')
         @php
-            $myDownloads = \Acme\CmsDashboard\Models\OrderDownload::with(['productDownload', 'order'])
+            $myDownloads = \FalconCms\Core\Models\OrderDownload::with(['productDownload', 'order'])
                 ->whereHas('order', fn($q) => $q->where('customer_email', $user->email))
                 ->orderByDesc('created_at')
                 ->get();

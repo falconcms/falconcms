@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Updates">
+<x-falcon-cms::layouts.admin title="Updates">
 
     <div class="p-4 sm:p-6 bg-[#f0f0f1] min-h-screen">
         <div class="flex justify-between items-center mb-6">
@@ -208,4 +208,4 @@
     @endpush
     @endif
 
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

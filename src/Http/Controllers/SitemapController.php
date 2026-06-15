@@ -1,12 +1,12 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers;
+namespace FalconCms\Core\Http\Controllers;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Post;
-use Acme\CmsDashboard\Models\PostType;
-use Acme\CmsDashboard\Models\Category;
-use Acme\CmsDashboard\Models\Tag;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\Tag;
 use Illuminate\Support\Facades\Response;
 
 class SitemapController extends Controller
@@ -39,7 +39,7 @@ class SitemapController extends Controller
             $tags = Tag::has('posts')->get();
         }
 
-        $xml = view('cms-dashboard::frontend.sitemap', compact('posts', 'categories', 'tags'))->render();
+        $xml = view('falcon-cms::frontend.sitemap', compact('posts', 'categories', 'tags'))->render();
 
         return Response::make($xml, 200, ['Content-Type' => 'application/xml']);
     }

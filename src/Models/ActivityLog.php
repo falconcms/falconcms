@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Models;
+namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;

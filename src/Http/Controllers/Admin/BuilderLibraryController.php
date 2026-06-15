@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -51,7 +51,7 @@ class BuilderLibraryController extends Controller
         $library    = $this->getLibrary();
         $postCards  = $this->getPostCards();
         $megaMenus  = $this->getMegaMenus();
-        return view('cms-dashboard::admin.lazy-builder.library', compact('library', 'postCards', 'megaMenus'));
+        return view('falcon-cms::admin.lazy-builder.library', compact('library', 'postCards', 'megaMenus'));
     }
 
     public function saveMegaMenu(Request $request)
@@ -87,7 +87,7 @@ class BuilderLibraryController extends Controller
         $themeBodyFont    = $bodyFont['family']    ?? null;
         $themeHeadingFont = $headingFont['family'] ?? null;
 
-        return view('cms-dashboard::admin.lazy-builder.mega-menu-builder', compact(
+        return view('falcon-cms::admin.lazy-builder.mega-menu-builder', compact(
             'megaMenu', 'customElements', 'themeBodyFont', 'themeHeadingFont'
         ));
     }
@@ -178,7 +178,7 @@ class BuilderLibraryController extends Controller
         $themeBodyFont   = $bodyFont['family']    ?? null;
         $themeHeadingFont = $headingFont['family'] ?? null;
 
-        return view('cms-dashboard::admin.lazy-builder.post-card-builder', compact(
+        return view('falcon-cms::admin.lazy-builder.post-card-builder', compact(
             'postCard', 'customElements', 'themeBodyFont', 'themeHeadingFont'
         ));
     }

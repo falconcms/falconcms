@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Acme\CmsDashboard\Models\ProductTag;
+use FalconCms\Core\Models\ProductTag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -25,7 +25,7 @@ class ProductTagController extends Controller
         }
 
         $tags = $query->paginate(10);
-        return view('cms-dashboard::admin.product-tags.index', compact('tags'));
+        return view('falcon-cms::admin.product-tags.index', compact('tags'));
     }
 
     public function bulk(Request $request)
@@ -67,7 +67,7 @@ class ProductTagController extends Controller
     public function edit(ProductTag $product_tag)
     {
         $tag = $product_tag;
-        return view('cms-dashboard::admin.product-tags.edit', compact('tag'));
+        return view('falcon-cms::admin.product-tags.edit', compact('tag'));
     }
 
     public function update(Request $request, ProductTag $product_tag)

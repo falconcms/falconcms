@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Dashboard">
+<x-falcon-cms::layouts.admin title="Dashboard">
     <style>
         .classic-card {
             background: #fff;
@@ -471,4 +471,4 @@
     @endif
     @endif {{-- access_dashboard permission --}}
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

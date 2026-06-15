@@ -11,7 +11,7 @@
     @endphp
     <meta name="viewport" content="{{ $viewportContent }}">
     <!-- SEO Meta Tags -->
-    @include('cms-dashboard::components.frontend.seo-meta')
+    @include('falcon-cms::components.frontend.seo-meta')
     
     @php
         // Prepare Theme Options
@@ -354,10 +354,10 @@
 @if($customHeader = get_lazy_header())
     {!! $customHeader !!}
 @else
-    @include('cms-dashboard::themes.lazy-theme.partials.header')
+    @include('falcon-cms::themes.lazy-theme.partials.header')
 @endif
 
-@include('cms-dashboard::themes.lazy-theme.partials.title-bar')
+@include('falcon-cms::themes.lazy-theme.partials.title-bar')
 
 <main class="flex-grow">
     @yield('content')
@@ -366,11 +366,11 @@
 @if($customFooter = get_lazy_footer())
     {!! $customFooter !!}
 @else
-    @include('cms-dashboard::themes.lazy-theme.partials.footer')
+    @include('falcon-cms::themes.lazy-theme.partials.footer')
 @endif
 
     {{-- Off-canvas mini cart --}}
-    @include('cms-dashboard::themes.lazy-theme.partials.mini-cart')
+    @include('falcon-cms::themes.lazy-theme.partials.mini-cart')
 
     <!-- Scripts -->
     <script src="{{ asset('vendor/cms-dashboard/js/lucide.min.js') }}"></script>

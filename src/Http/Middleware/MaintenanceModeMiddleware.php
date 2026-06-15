@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Middleware;
+namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
@@ -19,6 +19,6 @@ class MaintenanceModeMiddleware
 
         $message = get_cms_option('maintenance_message', "We are currently performing scheduled maintenance. We'll be back shortly!");
 
-        return response()->view('cms-dashboard::maintenance', ['message' => $message], 503);
+        return response()->view('falcon-cms::maintenance', ['message' => $message], 503);
     }
 }

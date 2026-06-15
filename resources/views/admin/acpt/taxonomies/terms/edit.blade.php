@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin title="Edit {{ $taxonomy->singular_name ?? $taxonomy->name }}" active-menu="acpt">
+<x-falcon-cms::layouts.admin title="Edit {{ $taxonomy->singular_name ?? $taxonomy->name }}" active-menu="acpt">
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Edit {{ $taxonomy->singular_name ?? $taxonomy->name }}</h1>
     </div>
@@ -19,7 +19,7 @@
             @method('PUT')
             
             <div class="space-y-4">
-                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @php $activeLanguages = \FalconCms\Core\Models\Language::where('status', true)->get(); @endphp
                 @if($activeLanguages->count() > 1)
                 <div>
                     <label class="block text-[14px] text-[#1d2327] mb-1">Language</label>
@@ -41,7 +41,7 @@
                             <div id="multi-lang-list" class="hidden space-y-2 pl-4">
                                 <p class="text-[11px] text-gray-500 mb-2">Clone to:</p>
                                 @php 
-                                    $existingClones = \Acme\CmsDashboard\Models\TaxonomyTerm::where('origin_id', $term->id)->pluck('lang_code')->toArray();
+                                    $existingClones = \FalconCms\Core\Models\TaxonomyTerm::where('origin_id', $term->id)->pluck('lang_code')->toArray();
                                 @endphp
                                 @foreach($activeLanguages as $lang)
                                     @if($lang->code !== $term->lang_code && !in_array($lang->code, $existingClones))
@@ -99,4 +99,4 @@
             </div>
         </form>
     </div>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

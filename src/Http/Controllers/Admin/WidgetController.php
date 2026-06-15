@@ -1,10 +1,10 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Widget;
-use Acme\CmsDashboard\Models\PostType;
+use FalconCms\Core\Models\Widget;
+use FalconCms\Core\Models\PostType;
 use Illuminate\Http\Request;
 
 class WidgetController extends Controller
@@ -103,22 +103,22 @@ class WidgetController extends Controller
             ->get()
             ->filter(function ($pt) use ($cptCatTaxonomies) {
                 if ($pt->slug === 'post') {
-                    return \Acme\CmsDashboard\Models\Category::exists();
+                    return \FalconCms\Core\Models\Category::exists();
                 }
                 if ($pt->slug === 'product') {
-                    return \Acme\CmsDashboard\Models\ProductCategory::exists();
+                    return \FalconCms\Core\Models\ProductCategory::exists();
                 }
                 $taxSlugs = $cptCatTaxonomies
                     ->filter(fn($t) => in_array($pt->slug, json_decode($t->post_types ?? '[]', true)))
                     ->pluck('slug');
                 if ($taxSlugs->isEmpty()) return false;
-                return \Acme\CmsDashboard\Models\TaxonomyTerm::whereIn('taxonomy_slug', $taxSlugs)->exists();
+                return \FalconCms\Core\Models\TaxonomyTerm::whereIn('taxonomy_slug', $taxSlugs)->exists();
             })
             ->pluck('name', 'slug');
 
-        $menus = \Acme\CmsDashboard\Models\NavigationMenu::orderBy('name')->get(['id', 'name', 'slug']);
+        $menus = \FalconCms\Core\Models\NavigationMenu::orderBy('name')->get(['id', 'name', 'slug']);
 
-        return view('cms-dashboard::admin.widgets.index', compact(
+        return view('falcon-cms::admin.widgets.index', compact(
             'widgetAreas', 'availableWidgets', 'activeWidgets',
             'allActivePostTypes', 'postTypesWithCategories', 'menus'
         ));

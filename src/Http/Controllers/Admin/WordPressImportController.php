@@ -1,8 +1,8 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Acme\CmsDashboard\Services\WordPressImporter;
+use FalconCms\Core\Services\WordPressImporter;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
@@ -49,7 +49,7 @@ class WordPressImportController extends Controller
         $maxUploadBytes = $this->maxUploadBytes();
         $maxUploadHuman = $this->formatBytes($maxUploadBytes);
 
-        return view('cms-dashboard::admin.tools.wp-import', compact('maxUploadBytes', 'maxUploadHuman'));
+        return view('falcon-cms::admin.tools.wp-import', compact('maxUploadBytes', 'maxUploadHuman'));
     }
 
     public function import(Request $request)
@@ -183,7 +183,7 @@ class WordPressImportController extends Controller
                     if ($info) { $width = $info[0]; $height = $info[1]; }
                 }
 
-                \Acme\CmsDashboard\Models\Media::create([
+                \FalconCms\Core\Models\Media::create([
                     'filename'        => $basename,
                     'title'           => pathinfo($basename, PATHINFO_FILENAME),
                     'path'            => $path,

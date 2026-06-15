@@ -350,7 +350,7 @@
         @endphp
         @if(!empty($cardLayout))
         <div style="break-inside:avoid{{ $alignItems === 'stretch' ? ';display:flex;flex-direction:column' : '' }}">
-            @include('cms-dashboard::frontend.builder.render', ['layout' => $cardLayout, 'cardStretch' => $alignItems === 'stretch'])
+            @include('falcon-cms::frontend.builder.render', ['layout' => $cardLayout, 'cardStretch' => $alignItems === 'stretch'])
         </div>
         @else
         <article class="lazy-post-card {{ $cardStyleCss }} {{ $hoverCss }} rounded-lg overflow-hidden bg-white" style="break-inside:avoid">

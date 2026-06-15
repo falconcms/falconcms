@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -882,7 +882,7 @@ class CustomizerController extends \Illuminate\Routing\Controller
         $builderHeaderActive = function_exists('get_lazy_header') ? (bool) get_lazy_header() : false;
         $builderFooterActive = function_exists('get_lazy_footer') ? (bool) get_lazy_footer() : false;
 
-        return view('cms-dashboard::admin.customizer.index', compact('section', 'sections', 'settings', 'builderHeaderActive', 'builderFooterActive'));
+        return view('falcon-cms::admin.customizer.index', compact('section', 'sections', 'settings', 'builderHeaderActive', 'builderFooterActive'));
     }
 
     public function save(Request $request)
@@ -1045,7 +1045,7 @@ class CustomizerController extends \Illuminate\Routing\Controller
             throw new \Exception("GD extension with imagecreatefromstring is required.");
         }
 
-        $mediaItems = \Acme\CmsDashboard\Models\Media::where('mime_type', 'like', 'image/%')->get();
+        $mediaItems = \FalconCms\Core\Models\Media::where('mime_type', 'like', 'image/%')->get();
         $count = 0;
         $quality = (int)get_cms_option('performance_image_quality', 80);
         $maxWidth = (int)get_cms_option('performance_max_image_width', 1920);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Acme\CmsDashboard\Mail;
+namespace FalconCms\Core\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -39,7 +39,7 @@ class MagicLoginMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'cms-dashboard::emails.auth.magic_login',
+            view: 'falcon-cms::emails.auth.magic_login',
         );
     }
 }

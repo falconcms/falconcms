@@ -1,4 +1,4 @@
-@extends('cms-dashboard::themes.lazy-theme.layouts.app')
+@extends('falcon-cms::themes.lazy-theme.layouts.app')
 
 @section('title', $post->title)
 
@@ -81,12 +81,12 @@
                 </div>
             @endif
 
-            @include('cms-dashboard::themes.lazy-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
-            @include('cms-dashboard::themes.lazy-theme.partials.single-related', ['post' => $post])
+            @include('falcon-cms::themes.lazy-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
+            @include('falcon-cms::themes.lazy-theme.partials.single-related', ['post' => $post])
 
             @if($sComments)
             <div class="mt-16">
-                @include('cms-dashboard::themes.lazy-theme.partials.comments')
+                @include('falcon-cms::themes.lazy-theme.partials.comments')
             </div>
             @endif
         </div>
@@ -182,15 +182,15 @@
                         @endif
 
                         <!-- Share Buttons -->
-                        @include('cms-dashboard::themes.lazy-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
+                        @include('falcon-cms::themes.lazy-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
 
                         <!-- Related Posts -->
-                        @include('cms-dashboard::themes.lazy-theme.partials.single-related', ['post' => $post])
+                        @include('falcon-cms::themes.lazy-theme.partials.single-related', ['post' => $post])
 
                         <!-- Comments Section -->
                         @if($sComments)
                         <div class="mt-24">
-                            @include('cms-dashboard::themes.lazy-theme.partials.comments')
+                            @include('falcon-cms::themes.lazy-theme.partials.comments')
                         </div>
                         @endif
                     </article>

@@ -1,9 +1,9 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers\Admin;
+namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
-use Acme\CmsDashboard\Models\Review;
+use FalconCms\Core\Models\Review;
 use Illuminate\Http\Request;
 
 class ReviewController extends Controller
@@ -33,7 +33,7 @@ class ReviewController extends Controller
         $pendingCount = Review::where('is_approved', false)->count();
         $approvedCount = Review::where('is_approved', true)->count();
 
-        return view('cms-dashboard::admin.shop.reviews.index', compact('reviews', 'allCount', 'pendingCount', 'approvedCount'));
+        return view('falcon-cms::admin.shop.reviews.index', compact('reviews', 'allCount', 'pendingCount', 'approvedCount'));
     }
 
     public function toggleApprove(Review $review)

@@ -1,6 +1,6 @@
-<x-cms-dashboard::layouts.admin>
+<x-falcon-cms::layouts.admin>
     <x-slot name="title">IP Blacklist - FalconCMS</x-slot>
-    <x-cms-dashboard::admin.delete-modal />
+    <x-falcon-cms::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex items-baseline gap-2 mb-6">
@@ -34,7 +34,7 @@
                 </select>
                 <button type="button" onclick="handleBulkBlacklistAction('blacklist-bulk-form', 'action')" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
             </div>
-            <x-cms-dashboard::admin.pagination :paginator="$blockedIps" />
+            <x-falcon-cms::admin.pagination :paginator="$blockedIps" />
         </div>
 
         <div class="bg-white border border-[#c3c4c7] shadow-sm">
@@ -92,7 +92,7 @@
                 </select>
                 <button type="button" onclick="handleBulkBlacklistAction('blacklist-bulk-form', 'action2')" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
             </div>
-            <x-cms-dashboard::admin.pagination :paginator="$blockedIps" />
+            <x-falcon-cms::admin.pagination :paginator="$blockedIps" />
         </div>
     </div>
 
@@ -154,4 +154,4 @@
         };
     </script>
     @endpush
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

@@ -1,12 +1,12 @@
 <?php
 
-namespace Acme\CmsDashboard\Console\Commands;
+namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 
 class UpdateLazyCms extends Command
 {
-    protected $signature = 'lazy:update';
+    protected $signature = 'falcon:update';
     protected $description = 'Update Lazy CMS: run migrations, sync system data, and refresh assets/themes.';
 
     public function handle()
@@ -20,14 +20,14 @@ class UpdateLazyCms extends Command
         // 2. Sync System Data (Permissions, Roles, Menus)
         $this->info('Step 2: Syncing system data...');
         $this->call('db:seed', [
-            '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\SystemSyncSeeder',
+            '--class' => 'FalconCms\\Core\\Database\\Seeders\\SystemSyncSeeder',
             '--force' => true
         ]);
 
         // 3. Publish Assets (Force)
         $this->info('Step 3: Refreshing dashboard assets...');
         $this->call('vendor:publish', [
-            '--tag' => 'cms-dashboard-assets',
+            '--tag' => 'falcon-cms-assets',
             '--force' => true
         ]);
 
@@ -68,7 +68,7 @@ class UpdateLazyCms extends Command
         $adminId = \App\Models\User::first()->id ?? 1;
 
         foreach ($pages as $page) {
-            \Acme\CmsDashboard\Models\Post::firstOrCreate(
+            \FalconCms\Core\Models\Post::firstOrCreate(
                 ['slug' => $page['slug'], 'type' => 'page'],
                 [
                     'title' => $page['title'],

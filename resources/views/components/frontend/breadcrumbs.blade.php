@@ -8,7 +8,7 @@
 
     if (isset($post)) {
         if ($post->type !== 'post' && $post->type !== 'page') {
-            $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $post->type)->first();
+            $postType = \FalconCms\Core\Models\PostType::where('slug', $post->type)->first();
             if ($postType) {
                 $items[] = ['title' => $postType->name, 'url' => route('frontend.show', $post->type)];
             }

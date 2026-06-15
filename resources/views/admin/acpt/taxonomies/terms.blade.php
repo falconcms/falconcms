@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin :title="$taxonomy->name . ' — ' . strtoupper($cptSlug)">
+<x-falcon-cms::layouts.admin :title="$taxonomy->name . ' — ' . strtoupper($cptSlug)">
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">{{ $taxonomy->name }}
             <span class="text-[14px] text-[#646970] font-normal ml-2">({{ strtoupper($cptSlug) }})</span>
@@ -77,7 +77,7 @@
                         </select>
                         <button type="submit" class="wp-btn-secondary h-[30px] leading-[1]">Apply</button>
                     </div>
-                    <x-cms-dashboard::admin.pagination :paginator="$terms" />
+                    <x-falcon-cms::admin.pagination :paginator="$terms" />
                 </div>
 
                 <table class="w-full bg-[#fff] border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)]">
@@ -134,7 +134,7 @@
                         </select>
                         <button type="submit" class="wp-btn-secondary h-[30px] leading-[1]">Apply</button>
                     </div>
-                    <x-cms-dashboard::admin.pagination :paginator="$terms" />
+                    <x-falcon-cms::admin.pagination :paginator="$terms" />
                 </div>
             </form>
 
@@ -156,4 +156,4 @@
             });
         });
     </script>
-</x-cms-dashboard::layouts.admin>
+</x-falcon-cms::layouts.admin>

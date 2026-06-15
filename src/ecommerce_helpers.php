@@ -70,7 +70,7 @@ if (!function_exists('get_lazy_account_url')) {
     function get_lazy_account_url() {
         $id = (int) get_shop_option('shop_account_page_id');
         if ($id) {
-            $post = \Acme\CmsDashboard\Models\Post::find($id);
+            $post = \FalconCms\Core\Models\Post::find($id);
             if ($post) return get_lazy_permalink($post);
         }
         return url('/page/account');

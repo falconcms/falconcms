@@ -1,15 +1,15 @@
 <?php
 
-namespace Acme\CmsDashboard\Http\Controllers;
+namespace FalconCms\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Acme\CmsDashboard\Models\Post;
-use Acme\CmsDashboard\Models\PostType;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\PostType;
 use Illuminate\Http\Request;
 
-use Acme\CmsDashboard\Models\Category;
-use Acme\CmsDashboard\Models\Tag;
-use Acme\CmsDashboard\Models\TaxonomyTerm;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\Tag;
+use FalconCms\Core\Models\TaxonomyTerm;
 
 
 class FrontendController extends Controller
@@ -25,13 +25,13 @@ class FrontendController extends Controller
         }
 
         // 2. Try Package-level theme
-        $packageView = "cms-dashboard::themes.{$activeTheme}.{$view}";
+        $packageView = "falcon-cms::themes.{$activeTheme}.{$view}";
         if (view()->exists($packageView)) {
             return $packageView;
         }
 
         // 3. Fallback to Lazy Theme (Package)
-        $lazyView = "cms-dashboard::themes.lazy-theme.{$view}";
+        $lazyView = "falcon-cms::themes.lazy-theme.{$view}";
         if (view()->exists($lazyView)) {
             return $lazyView;
         }
@@ -48,7 +48,7 @@ class FrontendController extends Controller
     public function index($locale = null)
     {
         try {
-            $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
             if ($locale && in_array($locale, $supportedLocales)) {
                 app()->setLocale($locale);
             }
@@ -92,7 +92,7 @@ class FrontendController extends Controller
     public function archive($slug)
     {
         try {
-            $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
             $firstSegment = request()->segment(1);
             if (in_array($firstSegment, $supportedLocales)) {
                 app()->setLocale($firstSegment);
@@ -140,7 +140,7 @@ class FrontendController extends Controller
 
             // Try the dedicated ProductCategory table first, fall back to ACPT taxonomy_terms
             try {
-                $category   = \Acme\CmsDashboard\Models\ProductCategory::where('slug', $lastSlug)->firstOrFail();
+                $category   = \FalconCms\Core\Models\ProductCategory::where('slug', $lastSlug)->firstOrFail();
                 $postsQuery = $category->posts()->where('status', 'published');
                 $title      = $category->name;
             } catch (\Throwable $e) {
@@ -156,7 +156,7 @@ class FrontendController extends Controller
         } elseif (in_array($routeName, ['frontend.product_tag', 'frontend.product_tag.locale'])) {
             // Try the dedicated ProductTag table first, fall back to ACPT taxonomy_terms
             try {
-                $tag        = \Acme\CmsDashboard\Models\ProductTag::where('slug', $slug)->firstOrFail();
+                $tag        = \FalconCms\Core\Models\ProductTag::where('slug', $slug)->firstOrFail();
                 $postsQuery = $tag->posts()->where('status', 'published');
                 $title      = $tag->name;
             } catch (\Throwable $e) {
@@ -235,7 +235,7 @@ class FrontendController extends Controller
     {
         $supportedLocales = [];
         try {
-            $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
         } catch (\Exception $e) {}
 
         $firstSegment = request()->segment(1);
@@ -273,11 +273,11 @@ class FrontendController extends Controller
 
         if ($type && !in_array($type, ['post', 'page'])) {
             // Check if it's a Custom Taxonomy first
-            $customTaxonomy = \Acme\CmsDashboard\Models\CustomTaxonomy::where('slug', $type)->first();
+            $customTaxonomy = \FalconCms\Core\Models\CustomTaxonomy::where('slug', $type)->first();
             if ($customTaxonomy) {
                 $slugs = explode('/', $postSlug);
                 $lastSlug = end($slugs);
-                $term = \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $type)
+                $term = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $type)
                     ->where('slug', $lastSlug)
                     ->firstOrFail();
                 $posts           = $term->posts()->where('status', 'published')->where('lang_code', app()->getLocale())->latest()->paginate(12)->withQueryString();
@@ -498,7 +498,7 @@ class FrontendController extends Controller
                     'post'   => $post,
                 ]);
             }
-            $ordersQuery = \Acme\CmsDashboard\Models\Order::with(['items.product'])->where('user_id', auth()->id());
+            $ordersQuery = \FalconCms\Core\Models\Order::with(['items.product'])->where('user_id', auth()->id());
             if (request()->filled('s')) {
                 $s = request('s');
                 $ordersQuery->where(function ($q) use ($s) {
@@ -518,7 +518,7 @@ class FrontendController extends Controller
     public function search(Request $request)
     {
         try {
-            $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
             $firstSegment = request()->segment(1);
             if (in_array($firstSegment, $supportedLocales)) {
                 app()->setLocale($firstSegment);
@@ -618,7 +618,7 @@ class FrontendController extends Controller
 
         // Check if this user/email already has at least one approved comment
         $isApproved = false;
-        $query = \Acme\CmsDashboard\Models\Comment::where('is_approved', true);
+        $query = \FalconCms\Core\Models\Comment::where('is_approved', true);
         
         if ($userId) {
             $isApproved = (clone $query)->where('user_id', $userId)->exists();
@@ -626,7 +626,7 @@ class FrontendController extends Controller
             $isApproved = (clone $query)->where('email', $email)->exists();
         }
 
-        \Acme\CmsDashboard\Models\Comment::create([
+        \FalconCms\Core\Models\Comment::create([
             'post_id' => $validated['post_id'],
             'user_id' => $userId,
             'name' => $name,
@@ -652,7 +652,7 @@ class FrontendController extends Controller
 
     public function setLocale($locale)
     {
-        $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+        $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
         if (in_array($locale, $supportedLocales)) {
             session(['locale' => $locale]);
             app()->setLocale($locale);
@@ -689,7 +689,7 @@ class FrontendController extends Controller
     public function submitForm(\Illuminate\Http\Request $request)
     {
         try {
-            $form = \Acme\CmsDashboard\Models\Form::findOrFail($request->input('form_id'));
+            $form = \FalconCms\Core\Models\Form::findOrFail($request->input('form_id'));
 
             // Turnstile verification
             if (!empty($form->settings['turnstile_enabled'])) {
@@ -729,7 +729,7 @@ class FrontendController extends Controller
                 }
             }
 
-            \Acme\CmsDashboard\Models\FormSubmission::create([
+            \FalconCms\Core\Models\FormSubmission::create([
                 'form_id'    => $form->id,
                 'data'       => $data,
                 'ip_address' => $request->ip(),
@@ -774,7 +774,7 @@ class FrontendController extends Controller
                     $footerText = $tplData['footer'] ?? 'This is an automated notification — no reply is needed.';
 
                     \Illuminate\Support\Facades\Mail::send(
-                        'cms-dashboard::emails.form.notification',
+                        'falcon-cms::emails.form.notification',
                         compact('form', 'rows', 'submittedAt', 'ip', 'introText', 'footerText'),
                         function ($msg) use ($notifyEmail, $subject) {
                             $msg->to($notifyEmail)->subject($subject);
