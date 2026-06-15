@@ -7,7 +7,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Lazy Builder submenus (Sections, Header Builder, Footer Builder, Library)
+        // Falcon Builder submenus (Sections, Header Builder, Footer Builder, Library)
         // are now fully managed by MenuSeeder — no-op here.
     }
 

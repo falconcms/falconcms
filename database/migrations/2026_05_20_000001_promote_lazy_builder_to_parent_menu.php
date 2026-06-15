@@ -7,18 +7,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Lazy Builder promotion is now handled by MenuSeeder — no-op here.
+        // Falcon Builder promotion is now handled by MenuSeeder — no-op here.
     }
 
     public function down(): void
     {
         $appearanceMenu = Menu::where('title', 'Appearance')->first();
-        $lazyBuilder = Menu::where('title', 'Lazy Builder')
+        $falconBuilder = Menu::where('title', 'Falcon Builder')
             ->where('route', 'admin.falcon-builder.sections')
             ->first();
 
-        if ($lazyBuilder && $appearanceMenu) {
-            $lazyBuilder->update([
+        if ($falconBuilder && $appearanceMenu) {
+            $falconBuilder->update([
                 'parent_id' => $appearanceMenu->id,
                 'group'     => null,
                 'icon'      => null,

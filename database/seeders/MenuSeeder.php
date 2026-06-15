@@ -106,14 +106,14 @@ class MenuSeeder extends Seeder
         ]);
 
         // 7b. Lazy Builder
-        $lazyBuilderMenu = Menu::create([
-            'title' => 'Lazy Builder',
+        $falconBuilderMenu = Menu::create([
+            'title' => 'Falcon Builder',
             'route' => 'admin.falcon-builder.sections',
             'icon'  => 'view_quilt',
             'group' => 'Main',
             'order' => 42,
         ]);
-        $lazyBuilderMenu->children()->createMany([
+        $falconBuilderMenu->children()->createMany([
             ['title' => 'Sections',       'route' => 'admin.falcon-builder.sections',     'order' => 1],
             ['title' => 'Header Builder', 'route' => 'admin.falcon-builder.header',        'order' => 2],
             ['title' => 'Footer Builder', 'route' => 'admin.falcon-builder.footer',        'order' => 3],

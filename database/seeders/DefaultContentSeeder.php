@@ -61,13 +61,13 @@ class DefaultContentSeeder extends Seeder
         Post::firstOrCreate(
             ['slug' => 'hello-world', 'type' => 'post'],
             [
-                'title'       => 'Hello World — Welcome to Lazy CMS',
+                'title'       => 'Hello World — Welcome to Falcon CMS',
                 'status'      => 'published',
                 'lang_code'   => 'en',
                 'user_id'     => $adminId,
                 'editor_type' => 'rich',
-                'excerpt'     => 'Welcome to Lazy CMS! This is your first sample blog post — edit or delete it and start publishing your own stories.',
-                'content'     => "<p>Welcome to <strong>Lazy CMS</strong> 🎉</p>"
+                'excerpt'     => 'Welcome to Falcon CMS! This is your first sample blog post — edit or delete it and start publishing your own stories.',
+                'content'     => "<p>Welcome to <strong>Falcon CMS</strong> 🎉</p>"
                     . "<p>This is a sample blog post that was created automatically when you installed the CMS. "
                     . "You can edit it, delete it, or use it as a reference for how your posts will look on the front-end.</p>"
                     . "<h2>Getting started</h2>"
