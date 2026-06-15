@@ -23,8 +23,8 @@ class AdminMiddleware
         }
 
         // 2. Exclude Public Auth Routes
-        $login_slug = get_cms_option('login_url', 'super-lazy-admin');
-        $register_slug = get_cms_option('register_url', 'super-lazy-register');
+        $login_slug = get_cms_option('login_url', 'falcon-admin');
+        $register_slug = get_cms_option('register_url', 'falcon-registration');
 
         if ($request->is('admin/login*') || $request->is('admin/register*') || 
             $request->is('admin/login/check') || $request->is('admin/email/check') ||

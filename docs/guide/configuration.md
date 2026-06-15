@@ -24,8 +24,8 @@ Navigate to **Admin → Settings → General**.
 
 | Setting | Key | Default | Description |
 |---|---|---|---|
-| Login URL | `login_url` | `super-lazy-admin` | Custom login page slug |
-| Register URL | `register_url` | `super-lazy-register` | Custom registration slug |
+| Login URL | `login_url` | `falcon-admin` | Custom login page slug |
+| Register URL | `register_url` | `falcon-registration` | Custom registration slug |
 | Passwordless login | `passwordless_login` | `false` | Enable magic link login |
 
 ::: warning Security

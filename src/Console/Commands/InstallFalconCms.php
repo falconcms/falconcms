@@ -50,8 +50,8 @@ class InstallFalconCms extends Command
         // 5. Set Default Options
         $this->info('Step 5: Setting up default configurations...');
         $options = [
-            'login_url' => 'lazy-admin',
-            'register_url' => 'lazy-registration',
+            'login_url' => 'falcon-admin',
+            'register_url' => 'falcon-registration',
             'login_theme' => 'modern',
             'registration_theme' => 'modern',
             'active_theme' => 'falcon-theme',
@@ -120,7 +120,7 @@ class InstallFalconCms extends Command
         $this->info('Falcon CMS installed successfully!');
         $this->info("Login Email: {$email}");
         $this->info("Login Password: [hidden]");
-        $this->info('Login URL: ' . url('/lazy-admin'));
+        $this->info('Login URL: ' . url('/' . get_cms_option('login_url', 'falcon-admin')));
         $this->info('---------------------------------------');
     }
 
