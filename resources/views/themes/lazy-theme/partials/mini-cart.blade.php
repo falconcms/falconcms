@@ -131,7 +131,10 @@ window.LazyCart = (function () {
 
     function remove(key) {
         const url = ROUTES.removeTpl.replace('__KEY__', encodeURIComponent(key));
-        return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+        })
             .then(res => res.json())
             .then(() => refresh());
     }
