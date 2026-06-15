@@ -1,6 +1,6 @@
 # Helper Functions
 
-Lazy CMS provides 50+ global helper functions available anywhere in your application.
+Falcon CMS provides 50+ global helper functions available anywhere in your application.
 
 ## CMS Options
 

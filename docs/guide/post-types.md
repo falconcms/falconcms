@@ -1,6 +1,6 @@
 # Post Types
 
-Lazy CMS has three layers of content types:
+Falcon CMS has three layers of content types:
 
 1. **Built-in types** — Posts, Pages, Products (hardcoded, always available)
 2. **Custom Post Types** — Created from Admin → Post Types
@@ -13,7 +13,7 @@ Static pages with full builder support. Each page can use a template and the dra
 
 - **Admin:** Admin → Pages
 - **Frontend URL:** `/{slug}` (e.g., `/about-us`)
-- **Builder:** Full Lazy Builder support
+- **Builder:** Full Falcon Builder support
 
 ### Posts
 Blog posts with categories, tags, comments, and scheduling.
@@ -113,12 +113,12 @@ echo $fields['client_name'];
 
 ### Scheduling Posts
 
-Set a future `published_at` datetime — the status automatically changes to `scheduled`. Lazy CMS runs `lazy:publish-scheduled` every minute to auto-publish due posts.
+Set a future `published_at` datetime — the status automatically changes to `scheduled`. Falcon CMS runs `falcon:publish-scheduled` every minute to auto-publish due posts.
 
 You can also trigger it manually:
 
 ```bash
-php artisan lazy:publish-scheduled
+php artisan falcon:publish-scheduled
 ```
 
 ---
@@ -132,4 +132,4 @@ Every time you save a post, a revision is created. To view revisions:
 3. Compare versions side-by-side
 4. Click **Restore** to revert
 
-Revisions support both the Classic editor and the Lazy Builder.
+Revisions support both the Classic editor and the Falcon Builder.

@@ -8,26 +8,26 @@ const { version } = JSON.parse(readFileSync(resolve(__dirname, '../../version.js
 
 export default defineConfig({
   lang: 'en-US',
-  base: '/lazy-cms-builder/',
-  title: 'Lazy CMS Builder',
-  titleTemplate: '%s | Lazy CMS Builder',
+  base: '/falconcms/',
+  title: 'FalconCMS',
+  titleTemplate: '%s | FalconCMS',
   description: 'A WordPress-like drag-and-drop CMS package for Laravel — page builder, e-commerce, multi-language, hooks API, mega menus, and more.',
   lastUpdated: true,
 
   head: [
     ['link', { rel: 'icon', href: '/lazy-cms-builder/hero.svg', type: 'image/svg+xml' }],
     ['meta', { property: 'og:type',        content: 'website' }],
-    ['meta', { property: 'og:site_name',   content: 'Lazy CMS Builder' }],
+    ['meta', { property: 'og:site_name',   content: 'FalconCMS' }],
     ['meta', { property: 'og:description', content: 'A WordPress-like drag-and-drop CMS package for Laravel — page builder, e-commerce, multi-language, hooks API, mega menus, and more.' }],
-    ['meta', { property: 'og:image',       content: 'https://lazycmsapp.github.io/lazy-cms-builder/hero.svg' }],
+    ['meta', { property: 'og:image',       content: 'https://falconcms.github.io/falconcms/hero.svg' }],
     ['meta', { name: 'twitter:card',       content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:image',      content: 'https://lazycmsapp.github.io/lazy-cms-builder/hero.svg' }],
+    ['meta', { name: 'twitter:image',      content: 'https://falconcms.github.io/falconcms/hero.svg' }],
     ['meta', { name: 'keywords',           content: 'Laravel CMS, Laravel page builder, drag-and-drop, e-commerce, multi-language, mega menu, hooks API' }],
   ],
 
   themeConfig: {
     logo: '/hero.svg',
-    siteTitle: 'Lazy CMS Builder',
+    siteTitle: 'FalconCMS',
 
     nav: [
       { text: 'Guide', link: '/guide/introduction' },
@@ -39,7 +39,7 @@ export default defineConfig({
         text: `v${version}`,
         items: [
           { text: 'Release Notes', link: '/changelog' },
-          { text: 'Packagist', link: 'https://packagist.org/packages/lazycmsapp/lazy-cms-builder' },
+          { text: 'Packagist', link: 'https://packagist.org/packages/falconcms/falconcms' },
         ]
       }
     ],
@@ -82,7 +82,7 @@ export default defineConfig({
       ],
       '/builder/': [
         {
-          text: 'Lazy Builder',
+          text: 'Falcon Builder',
           items: [
             { text: 'Overview', link: '/builder/overview' },
             { text: 'Containers & Columns', link: '/builder/containers' },
@@ -135,7 +135,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/lazycmsapp/lazy-cms-builder' },
+      { icon: 'github', link: 'https://github.com/falconcms/falconcms' },
     ],
 
     footer: {
@@ -148,7 +148,7 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: 'https://github.com/lazycmsapp/lazy-cms-builder/edit/main/docs/:path',
+      pattern: 'https://github.com/falconcms/falconcms/edit/main/docs/:path',
       text: 'Edit this page on GitHub'
     },
   }

@@ -1,14 +1,14 @@
 # Introduction
 
-**Lazy CMS Builder** is a full-featured, WordPress-inspired CMS package for Laravel. Drop it into any Laravel app and get a complete admin dashboard with a drag-and-drop page builder, e-commerce, multi-language support, and much more — in minutes.
+**FalconCMS** is a full-featured, WordPress-inspired CMS package for Laravel. Drop it into any Laravel app and get a complete admin dashboard with a drag-and-drop page builder, e-commerce, multi-language support, and much more — in minutes.
 
-## Why Lazy CMS Builder?
+## Why FalconCMS?
 
-Most Laravel CMS solutions are either too simple or require you to rebuild everything from scratch. Lazy CMS Builder gives you a production-ready foundation:
+Most Laravel CMS solutions are either too simple or require you to rebuild everything from scratch. FalconCMS gives you a production-ready foundation:
 
 - **No separate installation** — it's a Composer package, lives inside your Laravel app
 - **Full admin dashboard** — pages, posts, custom post types, menus, media, users, settings
-- **Lazy Builder** — a visual drag-and-drop page builder (think Elementor, but for Laravel)
+- **Falcon Builder** — a visual drag-and-drop page builder (think Elementor, but for Laravel)
 - **E-commerce ready** — shop, cart, checkout, orders, coupons out of the box
 - **Extensible** — WordPress-like hooks let you customize everything without modifying core files
 
@@ -24,10 +24,10 @@ Most Laravel CMS solutions are either too simple or require you to rebuild every
 
 ```bash
 # 1. Install the package
-composer require lazycmsapp/lazy-cms-builder
+composer require falconcms/falconcms
 
 # 2. Run the installer
-php artisan lazy:install
+php artisan falcon:install
 ```
 
 That's it. Visit `/admin` to access your dashboard.
@@ -41,7 +41,7 @@ After installation, use the credentials shown in your terminal output to log in.
 ### Admin Dashboard
 A clean, fast admin interface for managing all your content, settings, and users.
 
-### Lazy Builder (Page Builder)
+### Falcon Builder (Page Builder)
 Visual drag-and-drop builder with:
 - Containers with responsive column layouts
 - 22 built-in element types

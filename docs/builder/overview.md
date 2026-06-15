@@ -1,6 +1,6 @@
-# Lazy Builder Overview
+# Falcon Builder Overview
 
-Lazy Builder is the visual drag-and-drop page builder built into Lazy CMS. Build complex page layouts directly inside the admin dashboard — no code, no templates, no page refreshes.
+Falcon Builder is the visual drag-and-drop page builder built into Falcon CMS. Build complex page layouts directly inside the admin dashboard — no code, no templates, no page refreshes.
 
 It works for **Pages**, **Posts**, **Custom Post Types**, the **Header**, and the **Footer**.
 

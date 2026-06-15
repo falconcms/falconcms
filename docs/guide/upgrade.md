@@ -4,13 +4,13 @@
 
 ```bash
 # 1. Update the package
-composer update lazycmsapp/lazy-cms-builder
+composer update falconcms/falconcms
 
 # 2. Run the update command
-php artisan lazy:update
+php artisan falcon:update
 ```
 
-`lazy:update` handles everything automatically:
+`falcon:update` handles everything automatically:
 - Runs new database migrations
 - Syncs permissions and roles
 - Refreshes admin assets (CSS, JS)
@@ -20,24 +20,24 @@ php artisan lazy:update
 - Auto-creates any missing e-commerce pages
 
 ::: tip Child theme safety
-`lazy:update` will **never** overwrite files in your child theme. Your customizations in `resources/views/themes/my-child-theme/` are always preserved.
+`falcon:update` will **never** overwrite files in your child theme. Your customizations in `resources/views/themes/my-child-theme/` are always preserved.
 :::
 
 ## CLI Commands Reference
 
 | Command | Description |
 |---|---|
-| `php artisan lazy` | Show all Lazy CMS commands |
-| `php artisan lazy:install` | Full fresh install |
-| `php artisan lazy:update` | Update assets, migrations, and permissions |
-| `php artisan lazy:seed` | Seed default menus and demo content |
-| `php artisan lazy:publish-scheduled` | Manually publish due scheduled posts |
-| `php artisan make:lazy-page {Name}` | Scaffold a new admin dashboard page |
+| `php artisan falcon` | Show all Falcon CMS commands |
+| `php artisan falcon:install` | Full fresh install |
+| `php artisan falcon:update` | Update assets, migrations, and permissions |
+| `php artisan falcon:seed` | Seed default menus and demo content |
+| `php artisan falcon:publish-scheduled` | Manually publish due scheduled posts |
+| `php artisan make:falcon-page {Name}` | Scaffold a new admin dashboard page |
 
 ## Scaffolding a Custom Admin Page
 
 ```bash
-php artisan make:lazy-page Analytics
+php artisan make:falcon-page Analytics
 ```
 
 Creates:
@@ -48,16 +48,16 @@ Creates:
 
 ## Scheduled Tasks
 
-Lazy CMS auto-registers a scheduled task via Laravel's scheduler. Ensure your cron is set up:
+Falcon CMS auto-registers a scheduled task via Laravel's scheduler. Ensure your cron is set up:
 
 ```bash
 # crontab -e
 * * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-This runs `lazy:publish-scheduled` every minute to auto-publish scheduled posts.
+This runs `falcon:publish-scheduled` every minute to auto-publish scheduled posts.
 
-If you can't set up cron, Lazy CMS also auto-publishes as a **terminating callback** after every web request — so scheduled posts publish on the next page load after their scheduled time.
+If you can't set up cron, Falcon CMS also auto-publishes as a **terminating callback** after every web request — so scheduled posts publish on the next page load after their scheduled time.
 
 ## Backups
 
@@ -66,7 +66,7 @@ Always back up before upgrading:
 1. Go to **Admin → Tools → Backup**
 2. Click **Create Backup**
 3. Download the backup file
-4. Then run `composer update` and `lazy:update`
+4. Then run `composer update` and `falcon:update`
 
 If something goes wrong, restore from backup:
 1. **Admin → Tools → Backup → Upload** your backup file
@@ -84,7 +84,7 @@ Import content from a WordPress site:
 
 ## REST API
 
-Lazy CMS includes a REST API for headless use.
+Falcon CMS includes a REST API for headless use.
 
 ### Enable API
 

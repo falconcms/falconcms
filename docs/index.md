@@ -2,24 +2,24 @@
 layout: home
 
 hero:
-  name: "Lazy CMS Builder"
+  name: "FalconCMS"
   text: "WordPress-like CMS for Laravel"
   tagline: Build powerful websites faster with a drag-and-drop page builder, full e-commerce, and multi-language support — all inside Laravel.
   image:
     src: /hero.svg
-    alt: Lazy CMS Builder
+    alt: FalconCMS
   actions:
     - theme: brand
       text: Get Started
       link: /guide/introduction
     - theme: alt
       text: View on GitHub
-      link: https://github.com/lazycmsapp/lazy-cms-builder
+      link: https://github.com/falconcms/falconcms
 
 features:
   - icon: 🏗️
     title: Drag & Drop Page Builder
-    details: Build stunning pages visually with Lazy Builder — containers, columns, and 22 built-in elements including text, image, gallery, counter, accordion, tabs, ticker, card, and more.
+    details: Build stunning pages visually with Falcon Builder — containers, columns, and 22 built-in elements including text, image, gallery, counter, accordion, tabs, ticker, card, and more.
 
   - icon: 🛒
     title: Full E-commerce

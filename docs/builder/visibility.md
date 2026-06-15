@@ -1,6 +1,6 @@
 # Device Visibility
 
-Every element in Lazy Builder has visibility controls to show or hide it on specific devices.
+Every element in Falcon Builder has visibility controls to show or hide it on specific devices.
 
 ## How It Works
 

@@ -1,6 +1,6 @@
 # Theme Development
 
-Lazy CMS uses a file-based theme system similar to WordPress. Themes live in `resources/views/themes/{theme-name}/`.
+Falcon CMS uses a file-based theme system similar to WordPress. Themes live in `resources/views/themes/{theme-name}/`.
 
 ## Theme Structure
 
@@ -47,7 +47,7 @@ resources/views/themes/my-theme/
     "slug": "my-theme",
     "version": "1.0.0",
     "author": "Your Name",
-    "description": "A clean, fast theme for Lazy CMS",
+    "description": "A clean, fast theme for Falcon CMS",
     "parent": "lazy-theme"
 }
 ```
@@ -62,22 +62,22 @@ The theme's `functions.php` is loaded before every request. Use it to register h
 <?php
 
 // Register a custom widget
-add_lazy_action('lazy_register_widgets', function() {
+add_falcon_action('lazy_register_widgets', function() {
     // Widget registration
 });
 
 // Add content after every post
-add_lazy_action('lazy_after_post_content', function($post) {
+add_falcon_action('lazy_after_post_content', function($post) {
     echo '<div class="share-buttons">...</div>';
 });
 
 // Modify site title
-add_lazy_filter('site_title', function($title) {
+add_falcon_filter('site_title', function($title) {
     return $title . ' | My Site';
 });
 
 // Register custom builder elements
-add_lazy_filter('lazy_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function($elements) {
     $elements['my_custom'] = [
         'label' => 'My Element',
         'icon'  => 'fa fa-star',
@@ -163,10 +163,10 @@ Child themes inherit all templates from the parent. Override only what you need:
 2. Add `theme.json` with `"parent": "lazy-theme"`
 3. Copy only the templates you want to override
 
-When a template is requested, Lazy CMS checks the child theme first, then falls back to the parent.
+When a template is requested, Falcon CMS checks the child theme first, then falls back to the parent.
 
 ::: tip
-The `lazy:update` command never overwrites child theme files — your customizations are always safe.
+The `falcon:update` command never overwrites child theme files — your customizations are always safe.
 :::
 
 ## Installing Themes

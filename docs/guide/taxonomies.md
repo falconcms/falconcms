@@ -1,6 +1,6 @@
 # Taxonomies
 
-Lazy CMS supports multiple taxonomy systems for organizing content.
+Falcon CMS supports multiple taxonomy systems for organizing content.
 
 ## Post Categories
 
@@ -77,7 +77,7 @@ $posts = get_lazy_posts([
 
 ## Archive Pages
 
-Lazy CMS automatically generates archive pages for all taxonomies:
+Falcon CMS automatically generates archive pages for all taxonomies:
 
 | Taxonomy | URL |
 |---|---|

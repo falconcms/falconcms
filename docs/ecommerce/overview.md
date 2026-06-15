@@ -1,6 +1,6 @@
 # E-commerce Overview
 
-Lazy CMS includes a complete e-commerce system built directly into the package — no extra plugins needed.
+Falcon CMS includes a complete e-commerce system built directly into the package — no extra plugins needed.
 
 ## Features
 
@@ -18,7 +18,7 @@ Lazy CMS includes a complete e-commerce system built directly into the package �
 
 ## Setup Checklist
 
-1. **Create pages** — Lazy CMS auto-creates Shop, Cart, Checkout, and Account pages during `lazy:install`. If missing, create them and assign in settings.
+1. **Create pages** — Falcon CMS auto-creates Shop, Cart, Checkout, and Account pages during `falcon:install`. If missing, create them and assign in settings.
 
 2. **Configure Shop Settings** — Go to **Admin → Shop → Settings**:
    - Currency and format

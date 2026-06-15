@@ -4,7 +4,7 @@ A Global Section is a container saved once and reused across multiple pages. Whe
 
 ## Creating a Global Section
 
-1. Open any page in the Lazy Builder
+1. Open any page in the Falcon Builder
 2. Build your container (e.g., a newsletter signup banner)
 3. Right-click the container toolbar
 4. Select **Save as Global Section**
@@ -14,7 +14,7 @@ The section is saved and available site-wide.
 
 ## Inserting a Global Section
 
-1. Open any page in the Lazy Builder
+1. Open any page in the Falcon Builder
 2. Click **+ Add Container** (or click between containers)
 3. In the **Column Select** modal, click the **Global Sections** tab
 4. Click **Insert** on the section you want

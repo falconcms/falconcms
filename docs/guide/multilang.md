@@ -1,6 +1,6 @@
 # Multi-language
 
-Lazy CMS has built-in multi-language support. You can create content in multiple languages and switch between them from the frontend.
+Falcon CMS has built-in multi-language support. You can create content in multiple languages and switch between them from the frontend.
 
 ## Enabling Multi-language
 
@@ -72,7 +72,7 @@ Render a language switcher anywhere in your theme:
 
 ## Locale Detection
 
-Lazy CMS detects locale from:
+Falcon CMS detects locale from:
 1. URL prefix (`/bn/...`)
 2. Session (`lang` key)
 3. Default language setting

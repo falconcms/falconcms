@@ -5,7 +5,7 @@
 1. Go to **Admin → Products → Add New**
 2. Fill in the product details:
    - **Title** — Product name
-   - **Description** — Full description (Classic editor or Lazy Builder)
+   - **Description** — Full description (Classic editor or Falcon Builder)
    - **Short Description** — Shown in product card
    - **Featured Image** — Main product photo
    - **Gallery** — Additional photos

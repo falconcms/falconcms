@@ -1,6 +1,6 @@
 # Containers & Columns
 
-Every Lazy Builder layout starts with Containers, which hold Columns, which hold Elements.
+Every Falcon Builder layout starts with Containers, which hold Columns, which hold Elements.
 
 ## Containers
 

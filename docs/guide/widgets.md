@@ -4,7 +4,7 @@ Widgets are content blocks placed in predefined areas like the sidebar and foote
 
 ## Widget Areas
 
-Lazy CMS includes these built-in widget areas:
+Falcon CMS includes these built-in widget areas:
 
 | Slug | Label |
 |---|---|
@@ -69,7 +69,7 @@ Each widget can have a `lang_code` field. Widgets only display on matching local
 In your theme's `functions.php`:
 
 ```php
-add_lazy_filter('lazy_available_widgets', function(array $widgets) {
+add_falcon_filter('lazy_available_widgets', function(array $widgets) {
     $widgets['newsletter'] = [
         'name'        => 'Newsletter Signup',
         'description' => 'Email subscription form.',

@@ -12,13 +12,13 @@ Before installing, make sure your environment meets these requirements:
 ## Install via Composer
 
 ```bash
-composer require lazycmsapp/lazy-cms-builder
+composer require falconcms/falconcms
 ```
 
 ## Run the Installer
 
 ```bash
-php artisan lazy:install
+php artisan falcon:install
 ```
 
 This single command handles everything:
@@ -40,7 +40,7 @@ Open your browser and go to:
 http://your-app.test/admin
 ```
 
-Log in with the credentials shown after `lazy:install`.
+Log in with the credentials shown after `falcon:install`.
 
 ---
 
@@ -53,10 +53,10 @@ If you prefer to run steps individually:
 php artisan migrate
 
 # Publish assets
-php artisan vendor:publish --tag=cms-dashboard-assets --force
+php artisan vendor:publish --tag=falcon-cms-assets --force
 
 # Publish themes
-php artisan vendor:publish --tag=lazy-themes --force
+php artisan vendor:publish --tag=falcon-cms-themes --force
 
 # Create storage symlink
 php artisan storage:link
@@ -69,8 +69,8 @@ php artisan storage:link
 When a new version is released:
 
 ```bash
-composer update lazycmsapp/lazy-cms-builder
-php artisan lazy:update
+composer update falconcms/falconcms
+php artisan falcon:update
 ```
 
-The `lazy:update` command refreshes assets, themes, and permissions without touching your content.
+The `falcon:update` command refreshes assets, themes, and permissions without touching your content.

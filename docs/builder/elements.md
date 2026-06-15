@@ -1,6 +1,6 @@
 # Builder Elements
 
-Elements are the content blocks inside columns. Lazy Builder ships with **22 built-in element types**.
+Elements are the content blocks inside columns. Falcon Builder ships with **22 built-in element types**.
 
 ## Text Elements
 

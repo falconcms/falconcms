@@ -13,7 +13,7 @@ Initial public release of **FalconCMS** — a powerful Laravel CMS package with 
 
 ### Core
 - **WordPress-like Admin Dashboard** — Sidebar navigation, top bar, role-based permissions, activity logs
-- **Page Builder (Lazy Builder)** — Drag-and-drop visual editor with rows, columns, and element blocks
+- **Page Builder (Falcon Builder)** — Drag-and-drop visual editor with rows, columns, and element blocks
 - **Post & Page Management** — Custom post types, categories, tags, featured images, SEO fields
 - **Media Library** — Upload, manage, and select images/files across the admin
 - **User & Role Management** — Granular permission system with custom roles

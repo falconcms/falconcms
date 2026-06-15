@@ -1,6 +1,6 @@
-# Lazy CMS — Hook Reference
+# Falcon CMS — Hook Reference
 
-> Hook system is WordPress-style. Use `add_lazy_action()` / `add_lazy_filter()` in your theme's `functions.php`.
+> Hook system is WordPress-style. Use `add_falcon_action()` / `add_falcon_filter()` in your theme's `functions.php`.
 
 ---
 
@@ -8,12 +8,12 @@
 
 | Function | Description |
 |---|---|
-| `add_lazy_action($tag, $callback, $priority)` | Register an action hook |
-| `do_lazy_action($tag, ...$args)` | Fire an action hook |
-| `remove_lazy_action($tag, $callback, $priority)` | Remove a registered action |
-| `add_lazy_filter($tag, $callback, $priority)` | Register a filter hook |
-| `apply_lazy_filters($tag, $value, ...$args)` | Apply filters and return modified value |
-| `remove_lazy_filter($tag, $callback, $priority)` | Remove a registered filter |
+| `add_falcon_action($tag, $callback, $priority)` | Register an action hook |
+| `do_falcon_action($tag, ...$args)` | Fire an action hook |
+| `remove_falcon_action($tag, $callback, $priority)` | Remove a registered action |
+| `add_falcon_filter($tag, $callback, $priority)` | Register a filter hook |
+| `apply_falcon_filters($tag, $value, ...$args)` | Apply filters and return modified value |
+| `remove_falcon_filter($tag, $callback, $priority)` | Remove a registered filter |
 | `has_lazy_action($tag)` | Check if any callbacks are registered for an action |
 | `has_lazy_filter($tag)` | Check if any callbacks are registered for a filter |
 
@@ -125,7 +125,7 @@ These fire **only** on variable product pages (`single-product-variable.blade.ph
 
 | Hook Tag | Type | Args | Description |
 |---|---|---|---|
-| `lazy_cart_item_custom_fields` | filter | `$fields, $product, $variation` | Modify/validate custom fields before storing in cart |
+| `falcon_cart_item_custom_fields` | filter | `$fields, $product, $variation` | Modify/validate custom fields before storing in cart |
 | `lazy_order_item_meta` | filter | `$meta, $item, $order` | Modify order item meta before saving to DB |
 | `lazy_before_place_order` | action | `$order, $cart, $request` | Fires after order record is created, before items are saved |
 
@@ -153,7 +153,7 @@ You can add custom input fields to the add-to-cart form via the `lazy_simple_add
 ```php
 // In your theme's functions.php
 
-add_lazy_action('lazy_simple_add_to_cart_form_top', function ($post) {
+add_falcon_action('lazy_simple_add_to_cart_form_top', function ($post) {
     echo '<div class="mb-4">';
     echo '<label class="block text-sm font-medium text-gray-700 mb-1">Gift Message</label>';
     echo '<textarea name="lazy_custom_gift_message" rows="2" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Add a personal message..."></textarea>';
@@ -170,7 +170,7 @@ The custom fields are stored in `$item->meta['custom_fields']` on each `OrderIte
 ## Example: Append a badge after the product title
 
 ```php
-add_lazy_action('lazy_simple_after_product_title', function ($post) {
+add_falcon_action('lazy_simple_after_product_title', function ($post) {
     if ($post->sku === 'FEATURED-001') {
         echo '<span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded mb-3">Staff Pick</span>';
     }
@@ -180,7 +180,7 @@ add_lazy_action('lazy_simple_after_product_title', function ($post) {
 ## Example: Modify the price HTML
 
 ```php
-add_lazy_filter('lazy_simple_product_price', function ($html, $post) {
+add_falcon_filter('lazy_simple_product_price', function ($html, $post) {
     if ($post->sale_price) {
         $savings = $post->price - $post->sale_price;
         $html .= '<p class="text-sm text-green-600 mt-1">You save ' . lazy_price_format($savings) . '</p>';
@@ -192,7 +192,7 @@ add_lazy_filter('lazy_simple_product_price', function ($html, $post) {
 ## Example: Remove the description section entirely
 
 ```php
-add_lazy_filter('lazy_product_description', function ($html, $post) {
+add_falcon_filter('lazy_product_description', function ($html, $post) {
     return ''; // return empty string to suppress
 }, 10);
 ```
@@ -200,7 +200,7 @@ add_lazy_filter('lazy_product_description', function ($html, $post) {
 ## Example: Low-stock alert on product save
 
 ```php
-add_lazy_action('lazy_admin_after_save_product', function ($post, $shopData, $request, $action) {
+add_falcon_action('lazy_admin_after_save_product', function ($post, $shopData, $request, $action) {
     if ($shopData && $shopData->manage_stock && $shopData->stock_quantity <= 5) {
         \Illuminate\Support\Facades\Log::warning("Low stock: {$post->title} has {$shopData->stock_quantity} units left.");
     }

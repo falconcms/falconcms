@@ -1,12 +1,12 @@
 # Hooks API
 
-Lazy CMS uses a WordPress-style hook system with **Actions** and **Filters**. There are **104 hooks** total — 58 actions and 46 filters.
+Falcon CMS uses a WordPress-style hook system with **Actions** and **Filters**. There are **104 hooks** total — 58 actions and 46 filters.
 
 ## How It Works
 
 ```
-Actions  → do_lazy_action()     → callbacks run, no return value
-Filters  → apply_lazy_filters() → callbacks modify & return a value
+Actions  → do_falcon_action()     → callbacks run, no return value
+Filters  → apply_falcon_filters() → callbacks modify & return a value
 ```
 
 The system is priority-based — multiple callbacks can attach to the same hook at different priorities (default: 10). Lower priority numbers run first.
@@ -15,24 +15,24 @@ The system is priority-based — multiple callbacks can attach to the same hook 
 
 ```php
 // Register an action
-add_lazy_action(string $tag, callable $callback, int $priority = 10): void
+add_falcon_action(string $tag, callable $callback, int $priority = 10): void
 
 // Register a filter
-add_lazy_filter(string $tag, callable $callback, int $priority = 10): void
+add_falcon_filter(string $tag, callable $callback, int $priority = 10): void
 
 // Fire an action (called internally by the CMS)
-do_lazy_action(string $tag, ...$args): void
+do_falcon_action(string $tag, ...$args): void
 
 // Apply a filter chain (called internally, returns the filtered value)
-apply_lazy_filters(string $tag, mixed $value, ...$args): mixed
+apply_falcon_filters(string $tag, mixed $value, ...$args): mixed
 
 // Check if a hook has registered callbacks
-has_lazy_action(string $tag): bool
-has_lazy_filter(string $tag): bool
+has_falcon_action(string $tag): bool
+has_falcon_filter(string $tag): bool
 
 // Remove a previously registered callback
-remove_lazy_action(string $tag, callable $callback, int $priority = 10): void
-remove_lazy_filter(string $tag, callable $callback, int $priority = 10): void
+remove_falcon_action(string $tag, callable $callback, int $priority = 10): void
+remove_falcon_filter(string $tag, callable $callback, int $priority = 10): void
 ```
 
 All hook registrations go in your theme's **`functions.php`** or in a Laravel service provider.
@@ -47,7 +47,7 @@ All hook registrations go in your theme's **`functions.php`** or in a Laravel se
 Fires inside the admin `<head>` tag. Use to inject custom CSS or meta tags.
 
 ```php
-add_lazy_action('lazy_admin_head', function() {
+add_falcon_action('lazy_admin_head', function() {
     echo '<link rel="stylesheet" href="/css/my-admin.css">';
     echo '<meta name="my-meta" content="value">';
 });
@@ -55,11 +55,11 @@ add_lazy_action('lazy_admin_head', function() {
 
 ---
 
-#### `lazy_admin_footer`
+#### `falcon_admin_footer`
 Fires at the bottom of every admin page, before `</body>`. Use to inject JS or custom HTML.
 
 ```php
-add_lazy_action('lazy_admin_footer', function() {
+add_falcon_action('falcon_admin_footer', function() {
     echo '<script src="/js/my-admin-script.js"></script>';
     echo '<p style="text-align:center;color:#999;">Built with ❤️ by My Company</p>';
 });
@@ -71,7 +71,7 @@ add_lazy_action('lazy_admin_footer', function() {
 Fires in the admin toolbar before the right-side content (notifications, user avatar).
 
 ```php
-add_lazy_action('lazy_admin_bar_right_before', function() {
+add_falcon_action('lazy_admin_bar_right_before', function() {
     echo '<a href="/help" class="admin-bar-link">Help</a>';
 });
 ```
@@ -82,7 +82,7 @@ add_lazy_action('lazy_admin_bar_right_before', function() {
 Fires at the top of the General Settings form. Add custom settings sections above the defaults.
 
 ```php
-add_lazy_action('lazy_settings_form_top', function() {
+add_falcon_action('lazy_settings_form_top', function() {
     echo '<div class="custom-settings-notice">Custom notice here</div>';
 });
 ```
@@ -93,7 +93,7 @@ add_lazy_action('lazy_settings_form_top', function() {
 Fires at the bottom of the General Settings form. Add custom settings sections below the defaults.
 
 ```php
-add_lazy_action('lazy_settings_form_bottom', function() {
+add_falcon_action('lazy_settings_form_bottom', function() {
     echo '<div class="my-plugin-settings">
         <h3>My Plugin Settings</h3>
         <input name="my_option" value="' . get_cms_option('my_option') . '">
@@ -114,7 +114,7 @@ Same pattern as general settings, but for the SEO settings page.
 Fires inside the frontend `<head>` tag in the theme layout.
 
 ```php
-add_lazy_action('lazy_head', function() {
+add_falcon_action('lazy_head', function() {
     echo '<link rel="preconnect" href="https://fonts.googleapis.com">';
     echo '<script>window.myConfig = { debug: false };</script>';
 });
@@ -122,11 +122,11 @@ add_lazy_action('lazy_head', function() {
 
 ---
 
-#### `lazy_footer`
+#### `falcon_footer`
 Fires just before `</body>` on the frontend.
 
 ```php
-add_lazy_action('lazy_footer', function() {
+add_falcon_action('falcon_footer', function() {
     echo '<script src="/js/my-script.js" defer></script>';
     echo '<!-- Tracking pixel -->';
 });
@@ -142,7 +142,7 @@ add_lazy_action('lazy_footer', function() {
 Fires before the post content on single post pages.
 
 ```php
-add_lazy_action('lazy_before_content', function($post) {
+add_falcon_action('lazy_before_content', function($post) {
     if ($post->type === 'post') {
         echo '<div class="post-reading-time">
             ' . ceil(str_word_count(strip_tags($post->content)) / 200) . ' min read
@@ -159,7 +159,7 @@ add_lazy_action('lazy_before_content', function($post) {
 Fires after the post content. Use to add related posts, author bio, share buttons, etc.
 
 ```php
-add_lazy_action('lazy_after_content', function($post) {
+add_falcon_action('lazy_after_content', function($post) {
     echo '<div class="author-bio">
         <img src="' . $post->user->avatar . '" alt="">
         <h4>' . $post->user->name . '</h4>
@@ -178,7 +178,7 @@ add_lazy_action('lazy_after_content', function($post) {
 Fires before a product is saved to the database. Use to validate or modify data.
 
 ```php
-add_lazy_action('lazy_admin_before_save_product', function($productData, $post, $request) {
+add_falcon_action('lazy_admin_before_save_product', function($productData, $post, $request) {
     // Validate custom field
     if ($request->input('min_order_qty') < 1) {
         abort(422, 'Minimum order quantity must be at least 1');
@@ -194,7 +194,7 @@ add_lazy_action('lazy_admin_before_save_product', function($productData, $post, 
 Fires after a product is saved. `$action` is `'create'` or `'update'`.
 
 ```php
-add_lazy_action('lazy_admin_after_save_product', function($post, $shopData, $request, $action) {
+add_falcon_action('lazy_admin_after_save_product', function($post, $shopData, $request, $action) {
     if ($action === 'create') {
         // Send notification when new product is added
         \Mail::to('manager@example.com')->send(new \App\Mail\NewProductAlert($post));
@@ -213,7 +213,7 @@ add_lazy_action('lazy_admin_after_save_product', function($post, $shopData, $req
 Fires before a product is deleted.
 
 ```php
-add_lazy_action('lazy_admin_before_delete_product', function($post) {
+add_falcon_action('lazy_admin_before_delete_product', function($post) {
     // Log deletion
     \Log::info("Product deleted: {$post->title} (ID: {$post->id})");
 });
@@ -227,7 +227,7 @@ add_lazy_action('lazy_admin_before_delete_product', function($post) {
 Fires after a product is deleted.
 
 ```php
-add_lazy_action('lazy_admin_after_delete_product', function($postId, $title) {
+add_falcon_action('lazy_admin_after_delete_product', function($postId, $title) {
     // Remove from search index
     \App\Services\SearchIndex::remove($postId);
 });
@@ -245,11 +245,11 @@ These hooks fire on the **single simple product** page in your theme.
 Wrap the entire product page with custom HTML.
 
 ```php
-add_lazy_action('lazy_before_single_product', function($post) {
+add_falcon_action('lazy_before_single_product', function($post) {
     echo '<div class="product-announcement">Limited time offer!</div>';
 });
 
-add_lazy_action('lazy_after_single_product', function($post) {
+add_falcon_action('lazy_after_single_product', function($post) {
     echo '<section class="recently-viewed">...</section>';
 });
 ```
@@ -262,7 +262,7 @@ add_lazy_action('lazy_after_single_product', function($post) {
 Inject content around the product image gallery.
 
 ```php
-add_lazy_action('lazy_before_product_images', function($post) {
+add_falcon_action('lazy_before_product_images', function($post) {
     if ($post->shopData->stock_quantity < 5) {
         echo '<div class="low-stock-badge">Only ' . $post->shopData->stock_quantity . ' left!</div>';
     }
@@ -277,7 +277,7 @@ add_lazy_action('lazy_before_product_images', function($post) {
 Inject content before/after the product `<h1>` title.
 
 ```php
-add_lazy_action('lazy_simple_before_product_title', function($post) {
+add_falcon_action('lazy_simple_before_product_title', function($post) {
     // Show brand badge
     $brand = get_custom_field($post, 'brand');
     if ($brand) echo '<span class="brand-badge">' . e($brand) . '</span>';
@@ -292,7 +292,7 @@ add_lazy_action('lazy_simple_before_product_title', function($post) {
 Inject content around the price display.
 
 ```php
-add_lazy_action('lazy_simple_after_product_price', function($post) {
+add_falcon_action('lazy_simple_after_product_price', function($post) {
     echo '<p class="vat-note">Price includes VAT</p>';
 });
 ```
@@ -312,7 +312,7 @@ Wrap the add-to-cart form with additional content.
 Inject content inside the form, at top or bottom.
 
 ```php
-add_lazy_action('lazy_simple_add_to_cart_form_top', function($post) {
+add_falcon_action('lazy_simple_add_to_cart_form_top', function($post) {
     // Show custom product fields (e.g., engraving text input)
     $fields = get_post_custom_fields($post);
     if (!empty($fields['allow_engraving'])) {
@@ -332,7 +332,7 @@ add_lazy_action('lazy_simple_add_to_cart_form_top', function($post) {
 Inject content immediately around the add-to-cart button.
 
 ```php
-add_lazy_action('lazy_simple_after_add_to_cart_button', function($post) {
+add_falcon_action('lazy_simple_after_add_to_cart_button', function($post) {
     // Wishlist button after add-to-cart
     echo '<button class="wishlist-btn" data-id="' . $post->id . '">♡ Save to Wishlist</button>';
 });
@@ -346,7 +346,7 @@ add_lazy_action('lazy_simple_after_add_to_cart_button', function($post) {
 Fires where the add-to-cart button would be when the product is out of stock. Render a custom button.
 
 ```php
-add_lazy_action('lazy_simple_out_of_stock_button', function($post) {
+add_falcon_action('lazy_simple_out_of_stock_button', function($post) {
     echo '<button class="notify-btn" data-product="' . $post->id . '">
         Notify me when available
     </button>';
@@ -368,7 +368,7 @@ Wrap the product meta section (SKU, category, tags).
 Fires inside the product meta section. Render custom field rows.
 
 ```php
-add_lazy_action('lazy_simple_product_meta_fields', function($post) {
+add_falcon_action('lazy_simple_product_meta_fields', function($post) {
     $weight = get_custom_field($post, 'weight');
     if ($weight) {
         echo '<div class="product-meta-row">
@@ -387,7 +387,7 @@ add_lazy_action('lazy_simple_product_meta_fields', function($post) {
 Wrap the product description section (tabs).
 
 ```php
-add_lazy_action('lazy_after_product_description', function($post) {
+add_falcon_action('lazy_after_product_description', function($post) {
     // Add a custom "Shipping Info" tab
     echo '<div class="product-tab">
         <h3>Shipping Information</h3>
@@ -434,7 +434,7 @@ Usage is identical to the simple product hooks — just replace `lazy_simple_` w
 Fires when the mini cart is empty. Render a custom empty state.
 
 ```php
-add_lazy_action('lazy_mini_cart_empty', function() {
+add_falcon_action('lazy_mini_cart_empty', function() {
     echo '<div class="empty-cart">
         <svg>...</svg>
         <p>Your cart is empty</p>
@@ -451,7 +451,7 @@ add_lazy_action('lazy_mini_cart_empty', function() {
 Wrap the mini cart item list.
 
 ```php
-add_lazy_action('lazy_before_mini_cart', function($cart) {
+add_falcon_action('lazy_before_mini_cart', function($cart) {
     $count = count($cart);
     echo '<p class="cart-count">' . $count . ' item(s) in your cart</p>';
 });
@@ -466,13 +466,13 @@ Wrap each item in the mini cart.
 
 ---
 
-#### `lazy_cart_item_meta`
+#### `falcon_cart_item_meta`
 **Args:** `$item, $key`
 
 Fires inside each cart item row. Render custom meta like engraving text, gift message, etc.
 
 ```php
-add_lazy_action('lazy_cart_item_meta', function($item, $key) {
+add_falcon_action('falcon_cart_item_meta', function($item, $key) {
     if (!empty($item['custom_fields']['engraving'])) {
         echo '<p class="cart-meta">Engraving: ' . e($item['custom_fields']['engraving']) . '</p>';
     }
@@ -494,7 +494,7 @@ Wrap the full cart and individual cart items.
 Fires before/after the billing address form section.
 
 ```php
-add_lazy_action('lazy_after_billing_fields', function() {
+add_falcon_action('lazy_after_billing_fields', function() {
     // Add VAT number field after billing address
     echo '<div class="field">
         <label>VAT Number (optional)</label>
@@ -523,7 +523,7 @@ Wrap the order summary table on the checkout page.
 Render custom meta in the checkout order review table for each item.
 
 ```php
-add_lazy_action('lazy_checkout_item_meta', function($item) {
+add_falcon_action('lazy_checkout_item_meta', function($item) {
     if (!empty($item['custom_fields']['color'])) {
         echo '<p class="item-meta">Color: ' . e($item['custom_fields']['color']) . '</p>';
     }
@@ -545,7 +545,7 @@ Wrap the payment methods section on checkout.
 Inject content immediately around the "Place Order" button.
 
 ```php
-add_lazy_action('lazy_before_place_order_button', function($cart) {
+add_falcon_action('lazy_before_place_order_button', function($cart) {
     echo '<p class="terms-note">By placing your order you agree to our
         <a href="/terms">Terms & Conditions</a>.
     </p>';
@@ -560,7 +560,7 @@ add_lazy_action('lazy_before_place_order_button', function($cart) {
 Fires just before the order is saved to the database. Last chance to validate or modify.
 
 ```php
-add_lazy_action('lazy_before_place_order', function($order, $cart, $request) {
+add_falcon_action('lazy_before_place_order', function($order, $cart, $request) {
     // Store custom checkout data in the order meta
     if ($request->has('gift_message')) {
         $order->meta = array_merge($order->meta ?? [], [
@@ -580,7 +580,7 @@ add_lazy_action('lazy_before_place_order', function($order, $cart, $request) {
 Wrap the order confirmation page content.
 
 ```php
-add_lazy_action('lazy_after_order_confirmation', function($order) {
+add_falcon_action('lazy_after_order_confirmation', function($order) {
     // Track conversion
     echo '<script>
         gtag("event", "purchase", {
@@ -608,7 +608,7 @@ Display custom meta in the confirmation page item list.
 Fires in the admin order detail view for each item. Display custom field data.
 
 ```php
-add_lazy_action('lazy_admin_order_item_meta', function($item) {
+add_falcon_action('lazy_admin_order_item_meta', function($item) {
     if (!empty($item->meta['engraving'])) {
         echo '<tr><td>Engraving:</td><td>' . e($item->meta['engraving']) . '</td></tr>';
     }
@@ -627,7 +627,7 @@ add_lazy_action('lazy_admin_order_item_meta', function($item) {
 Modify post content before it's rendered on the frontend.
 
 ```php
-add_lazy_filter('lazy_the_content', function($content, $post) {
+add_falcon_filter('lazy_the_content', function($content, $post) {
     // Append a publication notice to all posts
     if ($post->type === 'post') {
         $content .= '<p class="published-note">Published on '
@@ -643,7 +643,7 @@ add_lazy_filter('lazy_the_content', function($content, $post) {
 Modify the site title string returned by `get_cms_option('site_title')`.
 
 ```php
-add_lazy_filter('site_title', function($title) {
+add_falcon_filter('site_title', function($title) {
     return $title . ' — Best Shop';
 });
 ```
@@ -658,7 +658,7 @@ add_lazy_filter('site_title', function($title) {
 Modify the product `<h1>` title HTML.
 
 ```php
-add_lazy_filter('lazy_simple_product_title', function($html, $post) {
+add_falcon_filter('lazy_simple_product_title', function($html, $post) {
     $badge = get_custom_field($post, 'is_new') ? '<span class="badge">NEW</span>' : '';
     return $badge . $html;
 });
@@ -672,7 +672,7 @@ add_lazy_filter('lazy_simple_product_title', function($html, $post) {
 Modify the price display HTML.
 
 ```php
-add_lazy_filter('lazy_simple_product_price', function($html, $post) {
+add_falcon_filter('lazy_simple_product_price', function($html, $post) {
     // Add "Save X%" badge when on sale
     $data = $post->shopData;
     if ($data->sale_price && $data->price) {
@@ -698,7 +698,7 @@ Modify the short description HTML.
 Completely replace the add-to-cart button HTML.
 
 ```php
-add_lazy_filter('lazy_simple_add_to_cart_button', function($html, $post) {
+add_falcon_filter('lazy_simple_add_to_cart_button', function($html, $post) {
     // Add a data attribute for analytics
     return str_replace(
         'class="add-to-cart',
@@ -716,7 +716,7 @@ add_lazy_filter('lazy_simple_add_to_cart_button', function($html, $post) {
 Add or remove fields from the product meta section (SKU, category links, etc.).
 
 ```php
-add_lazy_filter('lazy_product_fields', function($fields, $post) {
+add_falcon_filter('lazy_product_fields', function($fields, $post) {
     $fields[] = [
         'label' => 'Material',
         'value' => get_custom_field($post, 'material', 'N/A'),
@@ -744,7 +744,7 @@ Modify the product description HTML.
 Modify the "Description" tab button HTML.
 
 ```php
-add_lazy_filter('lazy_product_description_title', function($html, $post) {
+add_falcon_filter('lazy_product_description_title', function($html, $post) {
     return str_replace('Description', 'Product Details', $html);
 });
 ```
@@ -773,7 +773,7 @@ All simple product filters have variable product equivalents:
 Modify how an item's name displays in the cart.
 
 ```php
-add_lazy_filter('lazy_cart_item_name', function($html, $item, $key) {
+add_falcon_filter('lazy_cart_item_name', function($html, $item, $key) {
     // Append color variant label
     if (!empty($item['variation']['color'])) {
         $html .= ' <small>(' . e($item['variation']['color']) . ')</small>';
@@ -805,13 +805,13 @@ Item name on the order confirmation page.
 
 ---
 
-#### `lazy_cart_item_custom_fields`
+#### `falcon_cart_item_custom_fields`
 **Args:** `$fields, $product, $variation`
 
 Add custom fields to a cart item when it's added to the cart.
 
 ```php
-add_lazy_filter('lazy_cart_item_custom_fields', function($fields, $product, $variation) {
+add_falcon_filter('falcon_cart_item_custom_fields', function($fields, $product, $variation) {
     // Capture custom product options from the request
     if (request()->has('gift_message')) {
         $fields['gift_message'] = request()->gift_message;
@@ -822,13 +822,13 @@ add_lazy_filter('lazy_cart_item_custom_fields', function($fields, $product, $var
 
 ---
 
-#### `lazy_cart_item_data`
+#### `falcon_cart_item_data`
 **Args:** `$cartItem, $product, $variation`
 
 Modify the entire cart item array before it's stored in the session.
 
 ```php
-add_lazy_filter('lazy_cart_item_data', function($cartItem, $product, $variation) {
+add_falcon_filter('falcon_cart_item_data', function($cartItem, $product, $variation) {
     $cartItem['added_from'] = request()->header('Referer');
     return $cartItem;
 });
@@ -842,7 +842,7 @@ add_lazy_filter('lazy_cart_item_data', function($cartItem, $product, $variation)
 Add custom data to be stored with the order from checkout.
 
 ```php
-add_lazy_filter('lazy_checkout_custom_fields', function($fields, $request) {
+add_falcon_filter('lazy_checkout_custom_fields', function($fields, $request) {
     $fields['vat_number'] = $request->input('vat_number');
     $fields['gift_wrap']  = $request->boolean('gift_wrap');
     return $fields;
@@ -857,7 +857,7 @@ add_lazy_filter('lazy_checkout_custom_fields', function($fields, $request) {
 Modify which custom fields are shown. Context is `'cart'`, `'checkout'`, `'invoice'`, etc.
 
 ```php
-add_lazy_filter('lazy_item_custom_fields_display', function($fields, $item, $context) {
+add_falcon_filter('lazy_item_custom_fields_display', function($fields, $item, $context) {
     if ($context === 'invoice') {
         // Only show engraving on invoices
         return array_filter($fields, fn($k) => $k === 'engraving', ARRAY_FILTER_USE_KEY);
@@ -868,13 +868,13 @@ add_lazy_filter('lazy_item_custom_fields_display', function($fields, $item, $con
 
 ---
 
-#### `lazy_custom_field_labels`
+#### `falcon_custom_field_labels`
 **Args:** `$labels, $context`
 
 Override the display labels for custom fields.
 
 ```php
-add_lazy_filter('lazy_custom_field_labels', function($labels, $context) {
+add_falcon_filter('falcon_custom_field_labels', function($labels, $context) {
     $labels['gift_message'] = 'Gift Message';
     $labels['engraving']    = 'Engraving Text';
     return $labels;
@@ -889,7 +889,7 @@ add_lazy_filter('lazy_custom_field_labels', function($labels, $context) {
 Override billing/shipping field labels.
 
 ```php
-add_lazy_filter('lazy_checkout_field_labels', function($labels, $context) {
+add_falcon_filter('lazy_checkout_field_labels', function($labels, $context) {
     $labels['billing_company'] = 'Business Name';
     $labels['billing_phone']   = 'Mobile Number';
     return $labels;
@@ -904,7 +904,7 @@ add_lazy_filter('lazy_checkout_field_labels', function($labels, $context) {
 Change the invoice title (default: "Invoice").
 
 ```php
-add_lazy_filter('lazy_invoice_title', function($title, $order) {
+add_falcon_filter('lazy_invoice_title', function($title, $order) {
     return 'Tax Invoice #' . $order->order_number;
 });
 ```
@@ -920,13 +920,13 @@ Modify order item meta data when the order is being created.
 
 ### Builder Filter
 
-#### `lazy_builder_elements`
+#### `falcon_builder_elements`
 **Args:** `$elements`
 
-Register custom elements in the Lazy Builder.
+Register custom elements in the Falcon Builder.
 
 ```php
-add_lazy_filter('lazy_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function($elements) {
     $elements['testimonial_card'] = [
         'label' => 'Testimonial Card',
         'icon'  => 'fa fa-quote-left',
@@ -952,7 +952,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
 Register custom settings pages in the admin.
 
 ```php
-add_lazy_filter('cms_theme_options', function($options) {
+add_falcon_filter('cms_theme_options', function($options) {
     $options[] = [
         'id'     => 'social',
         'label'  => 'Social Media',
@@ -976,7 +976,7 @@ add_lazy_filter('cms_theme_options', function($options) {
 Add extra fields to the General Settings form.
 
 ```php
-add_lazy_filter('lazy_general_settings_fields', function($fields) {
+add_falcon_filter('lazy_general_settings_fields', function($fields) {
     $fields['support_email'] = [
         'type'    => 'email',
         'label'   => 'Support Email Address',
@@ -996,7 +996,7 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
 Modify the data returned by the REST API for posts.
 
 ```php
-add_lazy_filter('lazy_api_post_data', function($data, $post) {
+add_falcon_filter('lazy_api_post_data', function($data, $post) {
     // Add custom fields to API response
     $data['custom_fields'] = get_post_custom_fields($post);
     $data['reading_time']  = ceil(str_word_count(strip_tags($post->content)) / 200);
@@ -1014,11 +1014,11 @@ add_lazy_filter('lazy_api_post_data', function($data, $post) {
 <?php
 // resources/views/themes/my-theme/functions.php
 
-add_lazy_action('lazy_after_content', function($post) {
+add_falcon_action('lazy_after_content', function($post) {
     // ...
 });
 
-add_lazy_filter('lazy_the_content', function($content, $post) {
+add_falcon_filter('lazy_the_content', function($content, $post) {
     return $content;
 });
 ```
@@ -1037,11 +1037,11 @@ class CmsHooksServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        add_lazy_action('lazy_after_single_product', function($post) {
+        add_falcon_action('lazy_after_single_product', function($post) {
             // ...
         });
 
-        add_lazy_filter('lazy_cart_item_name', function($html, $item, $key) {
+        add_falcon_filter('lazy_cart_item_name', function($html, $item, $key) {
             return $html;
         });
     }
@@ -1066,10 +1066,10 @@ return [
 | Hook | Args |
 |---|---|
 | `lazy_admin_head` | — |
-| `lazy_admin_footer` | — |
+| `falcon_admin_footer` | — |
 | `lazy_admin_bar_right_before` | — |
 | `lazy_head` | — |
-| `lazy_footer` | — |
+| `falcon_footer` | — |
 | `lazy_settings_form_top` | — |
 | `lazy_settings_form_bottom` | — |
 | `lazy_seo_settings_form_top` | — |
@@ -1127,7 +1127,7 @@ return [
 | `lazy_after_mini_cart_item` | `$item, $key` |
 | `lazy_before_cart_items` | `$cart` |
 | `lazy_before_cart_item` | `$item, $key` |
-| `lazy_cart_item_meta` | `$item, $key` |
+| `falcon_cart_item_meta` | `$item, $key` |
 | `lazy_after_cart_item` | `$item, $key` |
 | `lazy_before_billing_fields` | — |
 | `lazy_after_billing_fields` | — |
@@ -1151,7 +1151,7 @@ return [
 |---|---|
 | `lazy_the_content` | `$content, $post` |
 | `site_title` | `$title` |
-| `lazy_builder_elements` | `$elements` |
+| `falcon_builder_elements` | `$elements` |
 | `cms_theme_options` | `$options` |
 | `lazy_general_settings_fields` | `$fields` |
 | `lazy_api_post_data` | `$data, $post` |
@@ -1172,11 +1172,11 @@ return [
 | `lazy_mini_cart_item_name` | `$html, $item, $key` |
 | `lazy_checkout_item_name` | `$html, $item` |
 | `lazy_order_confirmation_item_name` | `$html, $item, $order` |
-| `lazy_cart_item_custom_fields` | `$fields, $product, $variation` |
-| `lazy_cart_item_data` | `$cartItem, $product, $variation` |
+| `falcon_cart_item_custom_fields` | `$fields, $product, $variation` |
+| `falcon_cart_item_data` | `$cartItem, $product, $variation` |
 | `lazy_checkout_custom_fields` | `$fields, $request` |
 | `lazy_item_custom_fields_display` | `$fields, $item, $context` |
-| `lazy_custom_field_labels` | `$labels, $context` |
+| `falcon_custom_field_labels` | `$labels, $context` |
 | `lazy_checkout_field_labels` | `$labels, $context` |
 | `lazy_invoice_title` | `$title, $order` |
 | `lazy_order_item_meta` | `$meta, $item, $order` |

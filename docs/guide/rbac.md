@@ -1,6 +1,6 @@
 # Roles & Permissions
 
-Lazy CMS includes a full Role-Based Access Control (RBAC) system. Every user has a role, and every role has a set of permissions.
+Falcon CMS includes a full Role-Based Access Control (RBAC) system. Every user has a role, and every role has a set of permissions.
 
 ## Built-in Roles
 

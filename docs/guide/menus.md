@@ -1,6 +1,6 @@
 # Menus
 
-Lazy CMS has a visual drag-and-drop menu builder for creating and managing navigation menus.
+Falcon CMS has a visual drag-and-drop menu builder for creating and managing navigation menus.
 
 ## Creating a Menu
 
@@ -48,11 +48,11 @@ if ($menu && $menu->items) {
 
 ## Builder-based Header & Footer
 
-For maximum flexibility, use the **Lazy Builder** to create your header and footer visually:
+For maximum flexibility, use the **Falcon Builder** to create your header and footer visually:
 
 1. Go to **Admin → Appearance → Builder Sections**
 2. Click **Edit Header** or **Edit Footer**
-3. Build your layout using the full Lazy Builder
+3. Build your layout using the full Falcon Builder
 4. Save
 
 Render in your theme's `layouts/app.blade.php`:
@@ -69,7 +69,7 @@ The builder-based header/footer automatically applies sticky behavior and respon
 
 ## Mega Menus
 
-Lazy CMS has a built-in **visual Mega Menu Builder** — no CSS required.
+Falcon CMS has a built-in **visual Mega Menu Builder** — no CSS required.
 
 ### Enabling a Mega Menu
 
