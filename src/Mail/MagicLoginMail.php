@@ -21,7 +21,7 @@ class MagicLoginMail extends Mailable
     {
         $this->magicUrl  = $magicUrl;
         $this->userName  = $userName ?: 'there';
-        $this->siteName  = get_cms_option('site_title') ?: config('app.name', 'Lazy CMS Builder');
+        $this->siteName  = get_cms_option('site_title') ?: config('app.name', 'Falcon CMS');
         $this->siteUrl   = config('app.url', url('/'));
     }
 

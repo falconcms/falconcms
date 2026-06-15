@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Imports a WordPress export (WXR — the XML from WP Tools → Export) into Lazy CMS.
+ * Imports a WordPress export (WXR — the XML from WP Tools → Export) into Falcon CMS.
  *
  * Design:
  *   - parse(string $xml): pure, no DB — turns WXR into normalized arrays (easy to unit-test).

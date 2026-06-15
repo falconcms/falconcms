@@ -3,7 +3,7 @@
 namespace FalconCms\Core\Services;
 
 /**
- * Converts Lazy Builder JSON ↔ human-readable shortcodes.
+ * Converts Falcon Builder JSON ↔ human-readable shortcodes.
  *
  * Format mirrors Fusion Builder style — every setting is a plain attribute.
  * No base64 encoding. Null / default values are omitted to keep shortcodes short.

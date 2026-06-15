@@ -93,7 +93,7 @@ class BackupController extends Controller
             // Simple Database Export Logic
             $tables = DB::select('SHOW TABLES');
             $dbName = config('database.connections.mysql.database');
-            $sql = "-- Lazy CMS Backup\n-- Database: {$dbName}\n-- Date: " . now() . "\n\n";
+            $sql = "-- Falcon CMS Backup\n-- Database: {$dbName}\n-- Date: " . now() . "\n\n";
             $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
 
             foreach ($tables as $table) {

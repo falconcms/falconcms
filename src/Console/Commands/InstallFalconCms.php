@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\DB;
 class InstallFalconCms extends Command
 {
     protected $signature = 'falcon:install';
-    protected $description = 'Full installation of Lazy CMS: migrations, assets, themes, and default data.';
+    protected $description = 'Full installation of Falcon CMS: migrations, assets, themes, and default data.';
 
     public function handle()
     {
-        $this->info('--- Starting Lazy CMS Installation ---');
+        $this->info('--- Starting Falcon CMS Installation ---');
 
         // 1. Run Migrations
         $this->info('Step 1: Running migrations...');
@@ -117,7 +117,7 @@ class InstallFalconCms extends Command
         $this->createSampleContent();
 
         $this->info('---------------------------------------');
-        $this->info('Lazy CMS installed successfully!');
+        $this->info('Falcon CMS installed successfully!');
         $this->info("Login Email: {$email}");
         $this->info("Login Password: [hidden]");
         $this->info('Login URL: ' . url('/lazy-admin'));
@@ -206,13 +206,13 @@ class InstallFalconCms extends Command
         \FalconCms\Core\Models\Post::firstOrCreate(
             ['slug' => 'hello-world', 'type' => 'post'],
             [
-                'title'       => 'Hello World — Welcome to Lazy CMS',
+                'title'       => 'Hello World — Welcome to Falcon CMS',
                 'status'      => 'published',
                 'lang_code'   => 'en',
                 'user_id'     => $adminId,
                 'editor_type' => 'rich',
-                'excerpt'     => 'Welcome to Lazy CMS! This is your first sample blog post — edit or delete it and start publishing your own stories.',
-                'content'     => "<p>Welcome to <strong>Lazy CMS</strong> 🎉</p>"
+                'excerpt'     => 'Welcome to Falcon CMS! This is your first sample blog post — edit or delete it and start publishing your own stories.',
+                'content'     => "<p>Welcome to <strong>Falcon CMS</strong> 🎉</p>"
                     . "<p>This is a sample blog post that was created automatically when you installed the CMS. "
                     . "You can edit it, delete it, or use it as a reference for how your posts will look on the front-end.</p>"
                     . "<h2>Getting started</h2>"

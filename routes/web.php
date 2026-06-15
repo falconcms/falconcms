@@ -307,7 +307,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('/themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
     Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
 
-    // Lazy Builder Sections
+    // Falcon Builder Sections
     Route::get('/falcon-builder-sections', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'index'])->name('falcon-builder.sections');
     Route::get('/falcon-builder-sections/header', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'editHeader'])->name('falcon-builder.header');
     Route::get('/falcon-builder-sections/footer', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'editFooter'])->name('falcon-builder.footer');

@@ -453,7 +453,7 @@ if (!function_exists('get_lazy_content')) {
             $rendered = view('falcon-cms::frontend.builder.render', ['layout' => $layout])->render();
             return do_lazy_shortcode($rendered);
         } catch (\Exception $e) {
-            \Log::error('Lazy Builder Error: ' . $e->getMessage());
+            \Log::error('Falcon Builder Error: ' . $e->getMessage());
             return do_lazy_shortcode($content);
         }
     }
@@ -2969,7 +2969,7 @@ if (!function_exists('lazy_render_special_menu_item')) {
 }
 
 /**
- * Register Special Text Element for Lazy Builder
+ * Register Special Text Element for Falcon Builder
  */
 add_falcon_filter('falcon_builder_elements', function($elements) {
     $elements['text_block'] = [
@@ -3055,7 +3055,7 @@ if (!function_exists('get_lazy_builder_fonts')) {
 }
 
 /**
- * Register Button Element for Lazy Builder
+ * Register Button Element for Falcon Builder
  */
 add_falcon_filter('falcon_builder_elements', function($elements) {
     $elements['button'] = [
@@ -3131,7 +3131,7 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 });
 
 /**
- * Register Menu Element for Lazy Builder
+ * Register Menu Element for Falcon Builder
  */
 add_falcon_filter('falcon_builder_elements', function($elements) {
     $menus = [];
@@ -3315,7 +3315,7 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 });
 
 /**
- * Register Image Element for Lazy Builder
+ * Register Image Element for Falcon Builder
  */
 add_falcon_filter('falcon_builder_elements', function($elements) {
     $elements['image'] = [
@@ -3475,7 +3475,7 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 });
 
 /**
- * Register the Advanced Search element for Lazy Builder.
+ * Register the Advanced Search element for Falcon Builder.
  * A smart search bar: choose which post type to search, optional live (AJAX)
  * results dropdown, and an optional category dropdown inside the bar.
  */

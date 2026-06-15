@@ -877,7 +877,7 @@ class CustomizerController extends \Illuminate\Routing\Controller
             }
         }
 
-        // When a Header/Footer is built with the Lazy Builder, the matching customizer
+        // When a Header/Footer is built with the Falcon Builder, the matching customizer
         // options become irrelevant — flag them so the view can show a notice instead.
         $builderHeaderActive = function_exists('get_falcon_header') ? (bool) get_falcon_header() : false;
         $builderFooterActive = function_exists('get_falcon_footer') ? (bool) get_falcon_footer() : false;

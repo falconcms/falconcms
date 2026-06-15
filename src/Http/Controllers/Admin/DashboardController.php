@@ -542,7 +542,7 @@ class DashboardController extends Controller
 
         $saved    = json_decode(get_cms_option('email_template_' . $key, '{}'), true) ?: [];
         $tpl      = array_merge($defaults[$key], $saved);
-        $siteName = get_cms_option('site_name', config('app.name', 'Lazy CMS'));
+        $siteName = get_cms_option('site_name', config('app.name', 'Falcon CMS'));
 
         try {
             if ($key === 'form_notification') {

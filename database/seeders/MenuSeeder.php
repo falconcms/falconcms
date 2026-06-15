@@ -105,7 +105,7 @@ class MenuSeeder extends Seeder
             ['title' => 'Widgets',    'route' => 'admin.widgets.index',    'order' => 4],
         ]);
 
-        // 7b. Lazy Builder
+        // 7b. Falcon Builder
         $falconBuilderMenu = Menu::create([
             'title' => 'Falcon Builder',
             'route' => 'admin.falcon-builder.sections',

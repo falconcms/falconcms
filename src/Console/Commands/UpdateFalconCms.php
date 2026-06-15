@@ -7,11 +7,11 @@ use Illuminate\Console\Command;
 class UpdateFalconCms extends Command
 {
     protected $signature = 'falcon:update';
-    protected $description = 'Update Lazy CMS: run migrations, sync system data, and refresh assets/themes.';
+    protected $description = 'Update Falcon CMS: run migrations, sync system data, and refresh assets/themes.';
 
     public function handle()
     {
-        $this->info('--- Starting Lazy CMS Update ---');
+        $this->info('--- Starting Falcon CMS Update ---');
 
         // 1. Run Migrations
         $this->info('Step 1: Running migrations...');
@@ -53,7 +53,7 @@ class UpdateFalconCms extends Command
         $this->createEcommercePages();
 
         $this->info('---------------------------------------');
-        $this->info('Lazy CMS updated successfully!');
+        $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
     }
     protected function createEcommercePages()

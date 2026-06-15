@@ -18,14 +18,14 @@ class SeedFalconCms extends Command
      *
      * @var string
      */
-    protected $description = 'Seed Lazy CMS default menus and initial data';
+    protected $description = 'Seed Falcon CMS default menus and initial data';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Seeding Lazy CMS data...');
+        $this->info('Seeding Falcon CMS data...');
 
         try {
             $this->info('Step 1: Syncing Roles, Permissions and Menus...');
@@ -46,7 +46,7 @@ class SeedFalconCms extends Command
                 '--force' => true
             ]);
 
-            $this->info('Lazy CMS seeding completed successfully!');
+            $this->info('Falcon CMS seeding completed successfully!');
         } catch (\Exception $e) {
             $this->error('Seeding failed: ' . $e->getMessage());
         }
