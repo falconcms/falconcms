@@ -185,14 +185,34 @@ if (!function_exists('lazy_check_update')) {
 
         if (!$result['latest']) {
             try {
+                // Try GitHub Releases first, fall back to Tags (tags exist even without formal releases)
                 $gh = \Illuminate\Support\Facades\Http::timeout(5)
                     ->withHeaders(['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'LazyCMS/' . $current])
                     ->get('https://api.github.com/repos/lazycmsapp/lazy-cms-builder/releases/latest');
-                if ($gh->successful()) {
-                    $tag = ltrim($gh->json('tag_name') ?? '', 'v');
+                if ($gh->successful() && $gh->json('tag_name')) {
+                    $tag = ltrim($gh->json('tag_name'), 'v');
                     if ($tag) {
                         $result['latest'] = $tag;
                         $result['url']    = $gh->json('html_url');
+                    }
+                }
+            } catch (\Exception $e) {}
+        }
+
+        if (!$result['latest']) {
+            try {
+                // Fall back to tags list when no formal GitHub Release exists
+                $gh = \Illuminate\Support\Facades\Http::timeout(5)
+                    ->withHeaders(['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'LazyCMS/' . $current])
+                    ->get('https://api.github.com/repos/lazycmsapp/lazy-cms-builder/tags');
+                if ($gh->successful()) {
+                    foreach ($gh->json() ?? [] as $t) {
+                        $tag = ltrim($t['name'] ?? '', 'v');
+                        if (preg_match('/^\d+\.\d+\.\d+$/', $tag)) {
+                            $result['latest'] = $tag;
+                            $result['url']    = 'https://github.com/lazycmsapp/lazy-cms-builder/releases/tag/v' . $tag;
+                            break;
+                        }
                     }
                 }
             } catch (\Exception $e) {}
