@@ -121,7 +121,7 @@
                             <p class="text-[13px] font-semibold text-[#1d2327] truncate leading-snug mb-0.5" title="{{ $card['name'] }}">{{ $card['name'] }}</p>
                             <p class="text-[11px] text-[#9ca3af] mb-4">{{ $card['created_at'] }}</p>
                             <div class="flex gap-2">
-                                <a href="{{ route('admin.lazy-builder.post-cards.builder', $card['id']) }}"
+                                <a href="{{ route('admin.falcon-builder.post-cards.builder', $card['id']) }}"
                                    class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center gap-1">
                                     <span class="material-symbols-outlined text-[13px]">edit</span> Edit
                                 </a>
@@ -157,7 +157,7 @@
                             <p class="text-[13px] font-semibold text-[#1d2327] truncate leading-snug mb-0.5" title="{{ $mm['name'] }}">{{ $mm['name'] }}</p>
                             <p class="text-[11px] text-[#9ca3af] mb-4">{{ $mm['created_at'] }}</p>
                             <div class="flex gap-2">
-                                <a href="{{ route('admin.lazy-builder.mega-menus.builder', $mm['id']) }}"
+                                <a href="{{ route('admin.falcon-builder.mega-menus.builder', $mm['id']) }}"
                                    class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center gap-1">
                                     <span class="material-symbols-outlined text-[13px]">edit</span> Edit
                                 </a>
@@ -268,7 +268,7 @@ function switchTab(key) {
 
 function deleteLibItem(type, id) {
     if (!confirm('Delete this item from the library?')) return;
-    fetch('{{ route("admin.lazy-builder.library.delete", ["type" => "__T__", "id" => "__I__"]) }}'
+    fetch('{{ route("admin.falcon-builder.library.delete", ["type" => "__T__", "id" => "__I__"]) }}'
         .replace('__T__', type).replace('__I__', id), {
         method: 'DELETE',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
@@ -277,7 +277,7 @@ function deleteLibItem(type, id) {
 
 function deletePostCard(id) {
     if (!confirm('Delete this post card?')) return;
-    fetch('{{ route("admin.lazy-builder.post-cards.delete", ["id" => "__I__"]) }}'.replace('__I__', id), {
+    fetch('{{ route("admin.falcon-builder.post-cards.delete", ["id" => "__I__"]) }}'.replace('__I__', id), {
         method: 'DELETE',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
     }).then(r => r.json()).then(d => { if (d.success) document.getElementById('pcard-' + id)?.remove(); });
@@ -298,7 +298,7 @@ function savePostCard() {
     const name = document.getElementById('pc-name').value.trim();
     if (!name) { document.getElementById('pc-name').focus(); return; }
 
-    fetch('{{ route("admin.lazy-builder.post-cards.save") }}', {
+    fetch('{{ route("admin.falcon-builder.post-cards.save") }}', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ name, config: {} })
@@ -325,7 +325,7 @@ function saveMegaMenu() {
     const name = document.getElementById('mm-name').value.trim();
     if (!name) { document.getElementById('mm-name').focus(); return; }
 
-    fetch('{{ route("admin.lazy-builder.mega-menus.save") }}', {
+    fetch('{{ route("admin.falcon-builder.mega-menus.save") }}', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ name, config: {} })
@@ -336,7 +336,7 @@ function saveMegaMenu() {
 
 function deleteMegaMenu(id) {
     if (!confirm('Delete this mega menu?')) return;
-    fetch('{{ route("admin.lazy-builder.mega-menus.delete", ["id" => "__I__"]) }}'.replace('__I__', id), {
+    fetch('{{ route("admin.falcon-builder.mega-menus.delete", ["id" => "__I__"]) }}'.replace('__I__', id), {
         method: 'DELETE',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
     }).then(r => r.json()).then(d => { if (d.success) document.getElementById('mmcard-' + id)?.remove(); });

@@ -25,14 +25,14 @@
     $alt      = $s['alt']        ?? '';
     $linkDynamic = $s['link_dynamic_source'] ?? '';
     $linkUrl = $linkDynamic
-        ? (function_exists('lazy_resolve_dynamic_value') ? (lazy_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
+        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
         : ($s['linkUrl'] ?? '');
     $target   = $s['linkTarget'] ?? '_self';
     $hoverType  = $s['hoverType'] ?? 'none';
     $hoverClass = ($hoverType !== 'none') ? 'hover-' . $hoverType : '';
 
     $iw = '.image-wrap-' . $elemId;
-    $respCss = lazy_elem_resp_css($s, $bpSm, $bpMed, [
+    $respCss = falcon_elem_resp_css($s, $bpSm, $bpMed, [
         ['prop' => 'textAlign',    'sel' => $iw],
         ['prop' => 'marginTop',    'unitProp' => 'marginTopUnit',    'sel' => $iw],
         ['prop' => 'marginRight',  'unitProp' => 'marginRightUnit',  'sel' => $iw],

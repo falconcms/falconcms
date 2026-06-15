@@ -213,10 +213,10 @@ class AcptTermController extends Controller
                 $clone->lang_code = $targetLang;
                 $clone->origin_id = $term->id;
                 
-                $clone->name = lazy_translate($term->name, $targetLang);
+                $clone->name = falcon_translate($term->name, $targetLang);
                 $clone->slug = TaxonomyTerm::generateUniqueSlug($clone->name, 0, $term->cpt_slug, $targetLang);
                 if ($term->description) {
-                    $clone->description = lazy_translate($term->description, $targetLang);
+                    $clone->description = falcon_translate($term->description, $targetLang);
                 }
                 $clone->save();
             }

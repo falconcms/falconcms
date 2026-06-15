@@ -102,7 +102,7 @@ class ProductCategoryController extends Controller
         ]);
 
         $category = ProductCategory::create($validated);
-        lazy_log_activity('created', "Created a new product category: {$category->name}", $category);
+        falcon_log_activity('created', "Created a new product category: {$category->name}", $category);
 
         return redirect()->route('admin.product-categories.index')->with('success', 'Category added.');
     }
@@ -174,16 +174,16 @@ class ProductCategoryController extends Controller
                 $clone = $category->replicate();
                 $clone->lang_code = $targetLang;
                 $clone->origin_id = $category->id;
-                $clone->name = lazy_translate($category->name, $targetLang);
+                $clone->name = falcon_translate($category->name, $targetLang);
                 $clone->slug = ProductCategory::generateUniqueSlug($clone->name, 0, $targetLang);
                 if ($category->description) {
-                    $clone->description = lazy_translate($category->description, $targetLang);
+                    $clone->description = falcon_translate($category->description, $targetLang);
                 }
                 $clone->save();
             }
         }
 
-        lazy_log_activity('updated', "Updated product category: {$category->name}", $category);
+        falcon_log_activity('updated', "Updated product category: {$category->name}", $category);
 
         return redirect()->route('admin.product-categories.index')->with('success', 'Category updated.');
     }
@@ -192,7 +192,7 @@ class ProductCategoryController extends Controller
     {
         $name = $product_category->name;
         $product_category->delete();
-        lazy_log_activity('deleted', "Deleted product category: {$name}", $product_category);
+        falcon_log_activity('deleted', "Deleted product category: {$name}", $product_category);
         return redirect()->route('admin.product-categories.index')->with('success', 'Category deleted.');
     }
 

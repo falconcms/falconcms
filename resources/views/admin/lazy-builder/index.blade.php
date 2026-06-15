@@ -110,7 +110,7 @@
         window.lazyPostCards = {!! json_encode($builderPostCards, JSON_HEX_TAG) !!};
         @php
             try {
-                $__previewPosts = get_lazy_posts(['limit' => 6, 'order' => 'desc', 'orderby' => 'created_at']);
+                $__previewPosts = get_falcon_posts(['limit' => 6, 'order' => 'desc', 'orderby' => 'created_at']);
                 $__previewPostsData = $__previewPosts->map(function($p) {
                     $img = $p->featured_image ?? null;
                     if ($img && !str_starts_with($img, 'http')) $img = asset('storage/' . $img);
@@ -166,7 +166,7 @@
         window.lazyCptTaxonomies  = {!! json_encode($__cptTaxonomies, JSON_HEX_TAG) !!};
     </script>
 
-    @include('falcon-cms::admin.lazy-builder.partials.styles')
+    @include('falcon-cms::admin.falcon-builder.partials.styles')
 </head>
 <body class="bg-[#f1f1f1]">
 
@@ -186,23 +186,23 @@
         
         <!-- Topbar -->
         <header class="builder-topbar">
-            @include('falcon-cms::admin.lazy-builder.partials.topbar_content')
+            @include('falcon-cms::admin.falcon-builder.partials.topbar_content')
         </header>
 
         <!-- Sidebar -->
         <template v-if="!isPreview">
-            @include('falcon-cms::admin.lazy-builder.partials.sidebar')
+            @include('falcon-cms::admin.falcon-builder.partials.sidebar')
         </template>
 
         <!-- Canvas -->
-        @include('falcon-cms::admin.lazy-builder.partials.canvas')
+        @include('falcon-cms::admin.falcon-builder.partials.canvas')
 
         <!-- Modals -->
-        @include('falcon-cms::admin.lazy-builder.partials.modals.column-select')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.element-select')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.library')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.context-menu')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.global-section')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.column-select')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.element-select')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.library')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.context-menu')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.global-section')
     </div>
 
     @include('falcon-cms::components.admin.media-modal')
@@ -211,6 +211,6 @@
     <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
     <script src="{{ asset('vendor/cms-dashboard/js/purify.min.js') }}"></script>
 
-    @include('falcon-cms::admin.lazy-builder.partials.scripts')
+    @include('falcon-cms::admin.falcon-builder.partials.scripts')
 </body>
 </html>

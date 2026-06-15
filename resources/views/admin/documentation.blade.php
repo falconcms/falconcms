@@ -122,11 +122,11 @@ Route::get('/blogs', function () {
                 <section id="helpers">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Global Helper Functions</h2>
                     <div class="space-y-6">
-                        {{-- get_lazy_posts --}}
+                        {{-- get_falcon_posts --}}
                         <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-                            <h3 class="font-bold text-blue-600 mb-2">get_lazy_posts($args)</h3>
+                            <h3 class="font-bold text-blue-600 mb-2">get_falcon_posts($args)</h3>
                             <p class="text-sm text-gray-600 mb-2">Fetch posts with advanced options like pagination and filtering.</p>
-                            <code class="block bg-gray-50 p-3 rounded text-sm mb-2">$posts = get_lazy_posts(['post_type' => 'post', 'limit' => 10, 'paginate' => true]);</code>
+                            <code class="block bg-gray-50 p-3 rounded text-sm mb-2">$posts = get_falcon_posts(['post_type' => 'post', 'limit' => 10, 'paginate' => true]);</code>
                         </div>
 
                         {{-- the_lazy_pagination --}}
@@ -155,11 +155,11 @@ Route::get('/blogs', function () {
                             <code class="block bg-gray-50 p-3 rounded text-sm">$site_name = get_cms_option('site_title', 'FalconCMS');</code>
                         </div>
 
-                        {{-- get_lazy_excerpt --}}
+                        {{-- get_falcon_excerpt --}}
                         <div class="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-                            <h3 class="font-bold text-blue-600 mb-2">get_lazy_excerpt($post, $limit)</h3>
+                            <h3 class="font-bold text-blue-600 mb-2">get_falcon_excerpt($post, $limit)</h3>
                             <p class="text-sm text-gray-600 mb-2">Extracts plain text from builder JSON or rich text content.</p>
-                            <code class="block bg-gray-50 p-3 rounded text-sm">$excerpt = get_lazy_excerpt($post, 150);</code>
+                            <code class="block bg-gray-50 p-3 rounded text-sm">$excerpt = get_falcon_excerpt($post, 150);</code>
                         </div>
 
                         {{-- get_lazy_categories --}}
@@ -194,7 +194,7 @@ Route::get('/blogs', function () {
                     <h3 class="font-bold mb-2">Method 2: Custom HTML with Pagination (Recommended)</h3>
                     <div class="bg-gray-900 rounded-xl p-6 text-gray-300 font-mono text-sm">
                         <pre><code>@verbatim
-@php $items = get_lazy_posts(['post_type' => 'post', 'limit' => 6, 'paginate' => true]); @endphp
+@php $items = get_falcon_posts(['post_type' => 'post', 'limit' => 6, 'paginate' => true]); @endphp
 
 @foreach($items as $post)
     <div class="card">
@@ -379,14 +379,14 @@ Route::get('/blogs', function () {
                                 <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Head Hook (Before &lt;/head&gt;)</p>
                                     <code class="text-xs">@verbatim
-{!! do_lazy_action('lazy_head') !!}
+{!! do_falcon_action('lazy_head') !!}
 @endverbatim</code>
                                 </div>
 
                                 <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Footer Hook (Before &lt;/body&gt;)</p>
                                     <code class="text-xs">@verbatim
-{!! do_lazy_action('lazy_footer') !!}
+{!! do_falcon_action('falcon_footer') !!}
 @endverbatim</code>
                                 </div>
                             </div>
@@ -476,7 +476,7 @@ Route::get('/blogs', function () {
                                 <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Frontend Actions</h4>
                                 <ul class="text-xs space-y-1 text-gray-700 mb-4">
                                     <li><code>lazy_head</code> - Inside frontend &lt;head&gt;</li>
-                                    <li><code>lazy_footer</code> - Before frontend &lt;/body&gt;</li>
+                                    <li><code>falcon_footer</code> - Before frontend &lt;/body&gt;</li>
                                     <li><code>lazy_before_content</code> - Above post body</li>
                                     <li><code>lazy_after_content</code> - Below post body</li>
                                 </ul>
@@ -496,7 +496,7 @@ Route::get('/blogs', function () {
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
                                 <pre><code>@verbatim
 // Example: Add CSS to Admin
-add_lazy_action('lazy_admin_head', function() {
+add_falcon_action('lazy_admin_head', function() {
     echo "<style>body { border-top: 4px solid red; }</style>";
 });
 @endverbatim</code></pre>
@@ -525,7 +525,7 @@ add_lazy_action('lazy_admin_head', function() {
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
                                 <pre><code>@verbatim
 // Example: Simplified Field Hook
-add_lazy_filter('lazy_general_settings_fields', function($fields) {
+add_falcon_filter('lazy_general_settings_fields', function($fields) {
     $fields['copyright_text'] = [
         'type' => 'text',
         'label' => 'Copyright'
@@ -544,7 +544,7 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
                             <h4 class="text-xs font-bold text-gray-500 uppercase mt-4 mb-2">1. Removing Hooks</h4>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs mb-4">
                                 <pre><code>@verbatim
-remove_lazy_action('tag', 'callback', $priority);
+remove_falcon_action('tag', 'callback', $priority);
 remove_lazy_filter('tag', 'callback', $priority);
 @endverbatim</code></pre>
                             </div>
@@ -552,7 +552,7 @@ remove_lazy_filter('tag', 'callback', $priority);
                             <h4 class="text-xs font-bold text-gray-500 uppercase mt-4 mb-2">2. Removing Dynamic Fields</h4>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
                                 <pre><code>@verbatim
-add_lazy_filter('lazy_general_settings_fields', function($fields) {
+add_falcon_filter('lazy_general_settings_fields', function($fields) {
     unset($fields['copyright_text']); // Remove a specific field
     return $fields;
 }, 20); // Priority 20 to run after adding
@@ -576,11 +576,11 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
                                     <tr><th class="px-3 py-2">Function</th><th class="px-3 py-2">Description</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">add_lazy_action($tag, $cb, $priority)</td><td class="px-3 py-2">Register an action</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">do_lazy_action($tag, ...$args)</td><td class="px-3 py-2">Fire an action</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">remove_lazy_action($tag, $cb, $priority)</td><td class="px-3 py-2">Remove a registered action</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">add_lazy_filter($tag, $cb, $priority)</td><td class="px-3 py-2">Register a filter</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">apply_lazy_filters($tag, $value, ...$args)</td><td class="px-3 py-2">Apply filters and return result</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">add_falcon_action($tag, $cb, $priority)</td><td class="px-3 py-2">Register an action</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">do_falcon_action($tag, ...$args)</td><td class="px-3 py-2">Fire an action</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">remove_falcon_action($tag, $cb, $priority)</td><td class="px-3 py-2">Remove a registered action</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">add_falcon_filter($tag, $cb, $priority)</td><td class="px-3 py-2">Register a filter</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">apply_falcon_filters($tag, $value, ...$args)</td><td class="px-3 py-2">Apply filters and return result</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">remove_lazy_filter($tag, $cb, $priority)</td><td class="px-3 py-2">Remove a registered filter</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">has_lazy_action($tag)</td><td class="px-3 py-2">Check if action has registered callbacks</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">has_lazy_filter($tag)</td><td class="px-3 py-2">Check if filter has registered callbacks</td></tr>
@@ -684,8 +684,8 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
                                     <tr><th class="px-3 py-2">Hook Tag</th><th class="px-3 py-2 w-16">Type</th><th class="px-3 py-2">Args</th><th class="px-3 py-2">Description</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    <tr><td class="px-3 py-2 font-mono text-green-600">lazy_cart_item_custom_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $product, $variation</td><td class="px-3 py-2">Validate / modify custom fields array before it is stored in the cart session</td></tr>
-                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_cart_item_data</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$item, $product, $variation</td><td class="px-3 py-2">Modify the <b>full cart item array</b> just before it is written to the session. Use this to bake price add-ons into <code>$item['price']</code> / <code>$item['sale_price']</code> so totals, tax, coupons, and invoices stay correct automatically.</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-green-600">falcon_cart_item_custom_fields</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$fields, $product, $variation</td><td class="px-3 py-2">Validate / modify custom fields array before it is stored in the cart session</td></tr>
+                                    <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">falcon_cart_item_data</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$item, $product, $variation</td><td class="px-3 py-2">Modify the <b>full cart item array</b> just before it is written to the session. Use this to bake price add-ons into <code>$item['price']</code> / <code>$item['sale_price']</code> so totals, tax, coupons, and invoices stay correct automatically.</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-green-600">lazy_order_item_meta</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$meta, $item, $order</td><td class="px-3 py-2">Modify order item meta before it is saved to the database</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">lazy_before_place_order</td><td class="px-3 py-2"><span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold">ACTION</span></td><td class="px-3 py-2 font-mono">$order, $cart, $request</td><td class="px-3 py-2">After the order row is created, before order items are saved</td></tr>
                                     <tr class="bg-emerald-50"><td class="px-3 py-2 font-mono text-green-600">lazy_custom_field_labels</td><td class="px-3 py-2"><span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-bold">FILTER</span></td><td class="px-3 py-2 font-mono">$labels, $context</td><td class="px-3 py-2">Provide human-readable labels for custom item fields (<code>$item-&gt;meta['custom_fields']</code>). The <code>$labels</code> array maps field key → label. Used automatically by <code>lazy_render_item_custom_fields()</code> across mini-cart, cart, checkout, confirmation, and invoice.</td></tr>
@@ -721,7 +721,7 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
                             <pre><code>@verbatim
 // Works on BOTH simple and variable products
-add_lazy_filter('lazy_product_fields', function ($fields) {
+add_falcon_filter('lazy_product_fields', function ($fields) {
     $fields[] = [
         'type'        => 'text',
         'name'        => 'lazy_custom_engraving',
@@ -738,7 +738,7 @@ add_lazy_filter('lazy_product_fields', function ($fields) {
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
                             <pre><code>@verbatim
 // Simple product only
-add_lazy_action('lazy_simple_add_to_cart_form_top', function ($post) {
+add_falcon_action('lazy_simple_add_to_cart_form_top', function ($post) {
     echo '<div class="mb-4">';
     echo '  <label class="block text-sm font-medium text-gray-700 mb-1">Gift Message</label>';
     echo '  <textarea name="lazy_custom_gift_message" rows="2"';
@@ -763,7 +763,7 @@ add_lazy_action('lazy_simple_add_to_cart_form_top', function ($post) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Add a badge after the title</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_lazy_action('lazy_simple_after_product_title', function ($post) {
+add_falcon_action('lazy_simple_after_product_title', function ($post) {
     if ($post->sku === 'FEATURED-001') {
         echo '<span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded mb-3">Staff Pick</span>';
     }
@@ -775,10 +775,10 @@ add_lazy_action('lazy_simple_after_product_title', function ($post) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Show savings below the price</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_lazy_filter('lazy_simple_product_price', function ($html, $post) {
+add_falcon_filter('lazy_simple_product_price', function ($html, $post) {
     if ($post->sale_price) {
         $savings = $post->price - $post->sale_price;
-        $html .= '<p class="text-sm text-green-600 mt-1">You save ' . lazy_price_format($savings) . '</p>';
+        $html .= '<p class="text-sm text-green-600 mt-1">You save ' . falcon_price_format($savings) . '</p>';
     }
     return $html;
 });
@@ -789,7 +789,7 @@ add_lazy_filter('lazy_simple_product_price', function ($html, $post) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove the description section entirely</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_lazy_filter('lazy_product_description', function ($html, $post) {
+add_falcon_filter('lazy_product_description', function ($html, $post) {
     return ''; // return empty string to suppress
 });
 @endverbatim</code></pre>
@@ -799,7 +799,7 @@ add_lazy_filter('lazy_product_description', function ($html, $post) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Low stock alert on product save</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_lazy_action('lazy_admin_after_save_product', function ($post, $shopData, $request, $action) {
+add_falcon_action('lazy_admin_after_save_product', function ($post, $shopData, $request, $action) {
     if ($shopData && $shopData->manage_stock && $shopData->stock_quantity <= 5) {
         \Log::warning("Low stock: {$post->title} has {$shopData->stock_quantity} units.");
     }
@@ -918,7 +918,7 @@ add_lazy_action('lazy_admin_after_save_product', function ($post, $shopData, $re
 // In functions.php
 
 // 1. Add the field (priority 25 = between Last name and Country)
-add_lazy_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('lazy_billing_fields', function ($fields) {
     $fields[] = [
         'name'        => 'billing_company',
         'type'        => 'text',
@@ -932,7 +932,7 @@ add_lazy_filter('lazy_billing_fields', function ($fields) {
 });
 
 // 2. Human-readable label for order pages
-add_lazy_filter('lazy_checkout_field_labels', function ($labels) {
+add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
     $labels['billing_company'] = 'Company';
     return $labels;
 });
@@ -953,7 +953,7 @@ add_lazy_filter('lazy_checkout_field_labels', function ($labels) {
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                             <pre><code>@verbatim
 // Add a required "Delivery Preference" select after Address line 2 (priority 55)
-add_lazy_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('lazy_billing_fields', function ($fields) {
     $fields[] = [
         'name'     => 'delivery_preference',
         'type'     => 'select',
@@ -971,7 +971,7 @@ add_lazy_filter('lazy_billing_fields', function ($fields) {
     return $fields;
 });
 
-add_lazy_filter('lazy_checkout_field_labels', function ($labels) {
+add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
     $labels['delivery_preference'] = 'Delivery Preference';
     return $labels;
 });
@@ -987,7 +987,7 @@ add_lazy_filter('lazy_checkout_field_labels', function ($labels) {
                         <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove a single field</p>
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
                             <pre><code>@verbatim
-add_lazy_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('lazy_billing_fields', function ($fields) {
     return array_filter($fields, fn($f) => ($f['name'] ?? '') !== 'billing_address_2');
 }, 20);
 @endverbatim</code></pre>
@@ -996,7 +996,7 @@ add_lazy_filter('lazy_billing_fields', function ($fields) {
                         <p class="text-xs font-bold text-gray-500 uppercase mb-2">Remove multiple fields at once</p>
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-6">
                             <pre><code>@verbatim
-add_lazy_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('lazy_billing_fields', function ($fields) {
     $remove = ['billing_address_2', 'billing_state'];
     return array_filter($fields, fn($f) => !in_array($f['name'] ?? '', $remove));
 }, 20);
@@ -1095,7 +1095,7 @@ add_lazy_filter('lazy_billing_fields', function ($fields) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Fire a conversion pixel after the confirmation page</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_lazy_action('lazy_after_order_confirmation', function ($order) {
+add_falcon_action('lazy_after_order_confirmation', function ($order) {
     echo '<script>
         fbq("track", "Purchase", {
             value: ' . (float) $order->total . ',
@@ -1110,7 +1110,7 @@ add_lazy_action('lazy_after_order_confirmation', function ($order) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Change the invoice title based on order status</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_lazy_filter('lazy_invoice_title', function ($title, $order) {
+add_falcon_filter('lazy_invoice_title', function ($title, $order) {
     if ($order->status === 'refunded') {
         return 'Credit Note';
     }
@@ -1123,7 +1123,7 @@ add_lazy_filter('lazy_invoice_title', function ($title, $order) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Add extra data under an item in the confirmation table</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_lazy_action('lazy_order_confirmation_item_meta', function ($item, $order) {
+add_falcon_action('lazy_order_confirmation_item_meta', function ($item, $order) {
     $engraving = $item->meta['custom_fields']['engraving'] ?? null;
     if ($engraving) {
         echo '<div class="text-xs text-gray-500 mt-1">Engraving: ' . e($engraving) . '</div>';
@@ -1184,7 +1184,7 @@ add_lazy_action('lazy_order_confirmation_item_meta', function ($item, $order) {
                 {{-- Section: Custom Builder Elements --}}
                 <section id="builder-elements">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Custom Builder Elements</h2>
-                    <p class="text-gray-700 mb-6">Register your own drag-and-drop elements for the Lazy Builder using the <code>lazy_builder_elements</code> filter inside your theme's <code>functions.php</code>. Each element gets its own fields, live canvas preview, automatic shortcode conversion, and a frontend template you fully control.</p>
+                    <p class="text-gray-700 mb-6">Register your own drag-and-drop elements for the Lazy Builder using the <code>falcon_builder_elements</code> filter inside your theme's <code>functions.php</code>. Each element gets its own fields, live canvas preview, automatic shortcode conversion, and a frontend template you fully control.</p>
 
                     {{-- 1. Registering an element --}}
                     <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
@@ -1193,7 +1193,7 @@ add_lazy_action('lazy_order_confirmation_item_meta', function ($item, $order) {
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                             <pre><code>@verbatim
 // resources/views/themes/your-theme/functions.php
-add_lazy_filter('lazy_builder_elements', function ($elements) {
+add_falcon_filter('falcon_builder_elements', function ($elements) {
     $elements['my_card'] = [
         'type'      => 'my_card',                 // unique identifier (required)
         'name'      => 'My Card',                 // label shown in the element picker
@@ -1680,7 +1680,7 @@ curl -X DELETE "{{ url('/api/v1/posts/123') }}" \
                     <h3 class="text-lg font-bold text-gray-800 mb-3 mt-8">7. Extending API output</h3>
                     <p class="text-xs text-gray-600 mb-2">Add custom fields to the post JSON via a theme hook (in your child theme's <code>functions.php</code>):</p>
                     <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-[11px]">
-<pre>@verbatim add_lazy_filter('lazy_api_post_data', function ($data, $post) {
+<pre>@verbatim add_falcon_filter('lazy_api_post_data', function ($data, $post) {
     $data['reading_time'] = ceil(str_word_count(strip_tags($post->content)) / 200) . ' min read';
     return $data;
 }); @endverbatim</pre>
@@ -1833,7 +1833,7 @@ curl -X DELETE "{{ url('/api/v1/posts/123') }}" \
                         <ul class="text-sm text-gray-700 space-y-2 list-disc list-inside">
                             <li><b>Comment length:</b> Frontend comment body is capped at <b>3,000 characters</b> server-side (<code>max:3000</code>) to prevent large payload abuse.</li>
                             <li><b>Password on user update:</b> The password field is <b>optional</b> when editing an existing user — the current password is preserved if left blank, preventing accidental lockouts.</li>
-                            <li><b>Builder permission checks:</b> <code>LazyBuilderController</code> enforces <code>manage_pages</code> or <code>manage_posts</code> permissions before any save/clone/delete operation.</li>
+                            <li><b>Builder permission checks:</b> <code>FalconBuilderController</code> enforces <code>manage_pages</code> or <code>manage_posts</code> permissions before any save/clone/delete operation.</li>
                         </ul>
                     </div>
 

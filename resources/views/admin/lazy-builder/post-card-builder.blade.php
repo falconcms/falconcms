@@ -1,8 +1,8 @@
 @php
     $builderTitle   = $postCard['name'];
     $builderContent = json_encode($postCard['config']['layout'] ?? []);
-    $builderSaveUrl = route('admin.lazy-builder.post-cards.save-layout', $postCard['id']);
-    $builderBackUrl = route('admin.lazy-builder.library') . '?tab=post_cards';
+    $builderSaveUrl = route('admin.falcon-builder.post-cards.save-layout', $postCard['id']);
+    $builderBackUrl = route('admin.falcon-builder.library') . '?tab=post_cards';
     $postCardMode   = true;
 @endphp
 <!DOCTYPE html>
@@ -94,7 +94,7 @@
         window.lazyCptList       = [];
     </script>
 
-    @include('falcon-cms::admin.lazy-builder.partials.styles')
+    @include('falcon-cms::admin.falcon-builder.partials.styles')
 </head>
 <body class="bg-[#f1f1f1]">
 
@@ -112,25 +112,25 @@
         </div>
 
         <header class="builder-topbar">
-            @include('falcon-cms::admin.lazy-builder.partials.topbar_content')
+            @include('falcon-cms::admin.falcon-builder.partials.topbar_content')
         </header>
 
         <template v-if="!isPreview">
-            @include('falcon-cms::admin.lazy-builder.partials.sidebar')
+            @include('falcon-cms::admin.falcon-builder.partials.sidebar')
         </template>
 
-        @include('falcon-cms::admin.lazy-builder.partials.canvas')
+        @include('falcon-cms::admin.falcon-builder.partials.canvas')
 
-        @include('falcon-cms::admin.lazy-builder.partials.modals.column-select')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.element-select')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.library')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.context-menu')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.column-select')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.element-select')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.library')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.context-menu')
     </div>
 
     @include('falcon-cms::components.admin.media-modal')
 
     <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
 
-    @include('falcon-cms::admin.lazy-builder.partials.scripts')
+    @include('falcon-cms::admin.falcon-builder.partials.scripts')
 </body>
 </html>

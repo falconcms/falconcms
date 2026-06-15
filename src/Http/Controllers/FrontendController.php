@@ -482,12 +482,12 @@ class FrontendController extends Controller
         }
 
         if ($post->id == $cartPageId) {
-            $cart = session()->get('lazy_cart', []);
+            $cart = session()->get('falcon_cart', []);
             return view($this->resolveThemeView('ecommerce.cart'), compact('cart', 'post'));
         }
 
         if ($post->id == $checkoutPageId) {
-            $cart = session()->get('lazy_cart', []);
+            $cart = session()->get('falcon_cart', []);
             return view($this->resolveThemeView('ecommerce.checkout'), compact('cart', 'post'));
         }
 
@@ -593,7 +593,7 @@ class FrontendController extends Controller
         $results = $query->latest()->limit(8)->get()->map(function ($p) {
             return [
                 'title' => $p->title,
-                'url'   => get_lazy_permalink($p),
+                'url'   => get_falcon_permalink($p),
                 'type'  => $p->type,
                 'image' => $p->featured_image ? get_lazy_image_url($p->featured_image) : null,
             ];

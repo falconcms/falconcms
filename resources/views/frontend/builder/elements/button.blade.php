@@ -13,10 +13,10 @@
         'acpt_slug'      => $s['dynamic_acpt_slug']       ?? '',
     ];
     $buttonText  = $dynamicSrc
-        ? (function_exists('lazy_resolve_dynamic_value') ? (lazy_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig) ?: ($s['text'] ?? 'Click Here')) : ($postTitle ?? $s['text'] ?? 'Click Here'))
+        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig) ?: ($s['text'] ?? 'Click Here')) : ($postTitle ?? $s['text'] ?? 'Click Here'))
         : ($s['text'] ?? 'Click Here');
     $resolvedLinkUrl = $linkDynamic
-        ? (function_exists('lazy_resolve_dynamic_value') ? (lazy_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '#')) : ($postPermalink ?? $s['linkUrl'] ?? '#'))
+        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '#')) : ($postPermalink ?? $s['linkUrl'] ?? '#'))
         : ($s['linkUrl'] ?? '#');
 
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
@@ -51,7 +51,7 @@
         return null;
     };
 
-    $respCss = lazy_elem_resp_css($s, $bpSm, $bpMed, [
+    $respCss = falcon_elem_resp_css($s, $bpSm, $bpMed, [
         ['prop' => 'marginTop',     'unitProp' => 'marginTopUnit',     'sel' => ".button-container-{$elemId}"],
         ['prop' => 'marginBottom',  'unitProp' => 'marginBottomUnit',  'sel' => ".button-container-{$elemId}"],
         ['prop' => 'marginLeft',    'unitProp' => 'marginLeftUnit',    'sel' => "#{$appliedId}"],

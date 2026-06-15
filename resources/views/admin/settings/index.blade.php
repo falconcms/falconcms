@@ -14,7 +14,7 @@
 
         <form action="{{ route('admin.settings.update') }}" method="POST" class="max-w-[800px]">
             @csrf
-            {!! do_lazy_action('lazy_settings_form_top') !!}
+            {!! do_falcon_action('lazy_settings_form_top') !!}
 
             <table class="w-full border-separate border-spacing-y-6">
                 <!-- Site Title -->
@@ -269,7 +269,7 @@
                 </tr>
             </table>
 
-            {!! do_lazy_action('lazy_settings_form_bottom') !!}
+            {!! do_falcon_action('lazy_settings_form_bottom') !!}
 
             <div class="pt-6 border-t border-gray-100 mt-6">
                 <button type="submit" class="wp-btn-primary px-4 h-8 font-semibold">Save Changes</button>

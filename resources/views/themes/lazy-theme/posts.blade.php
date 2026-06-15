@@ -10,7 +10,7 @@
     <h1 class="text-4xl font-bold mb-10 text-center">Featured Dramas </h1>
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        @php $postItems = get_lazy_posts(['post_type' => 'post', 'limit' => 6, 'paginate' => true]); @endphp
+        @php $postItems = get_falcon_posts(['post_type' => 'post', 'limit' => 6, 'paginate' => true]); @endphp
         
         @foreach($postItems as $post)
             <div class="bg-gray-800 rounded-xl overflow-hidden shadow-2xl border border-gray-700 hover:border-blue-500 transition-all">
@@ -29,7 +29,7 @@
 
                     <h5 class="text-xl font-bold mb-2">{{ $post->title }}</h5>
                     <p class="text-gray-400 text-sm mb-4 line-clamp-3">
-                        {{ get_lazy_excerpt($post, 100) }}
+                        {{ get_falcon_excerpt($post, 100) }}
                     </p>
 
                     {{-- Tags --}}

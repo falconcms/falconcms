@@ -1,8 +1,8 @@
 <x-falcon-cms::layouts.admin title="Manage Widgets">
     <x-falcon-cms::admin.delete-modal />
 @php
-    $hasBuilderFooter = \FalconCms\Core\Models\Post::where('type', 'lazy_footer')->where('status', 'published')->exists();
-    $hasBuilderHeader = \FalconCms\Core\Models\Post::where('type', 'lazy_header')->where('status', 'published')->exists();
+    $hasBuilderFooter = \FalconCms\Core\Models\Post::where('type', 'falcon_footer')->where('status', 'published')->exists();
+    $hasBuilderHeader = \FalconCms\Core\Models\Post::where('type', 'falcon_header')->where('status', 'published')->exists();
 @endphp
 <div class="max-w-[1400px] mx-auto px-6 py-8">
     <div class="flex items-center justify-between mb-8">
@@ -21,7 +21,7 @@
             <p class="text-[12px] text-amber-700 mt-0.5">
                 A published <strong>Footer Builder</strong> page is overriding the default footer.
                 Footer column widgets (1–4) will <strong>not appear</strong> on the frontend until the Footer Builder is unpublished or deleted.
-                <a href="{{ route('admin.posts.index', ['type' => 'lazy_footer']) }}" class="underline hover:text-amber-900">Manage Footer Builder →</a>
+                <a href="{{ route('admin.posts.index', ['type' => 'falcon_footer']) }}" class="underline hover:text-amber-900">Manage Footer Builder →</a>
             </p>
         </div>
     </div>

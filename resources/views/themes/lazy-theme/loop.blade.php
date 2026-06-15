@@ -11,7 +11,7 @@
         <article class="post-card flex flex-col group overflow-hidden bg-white rounded-2xl border border-slate-100/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500">
             <!-- Image Area -->
             <div class="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                <a href="{{ get_lazy_permalink($post) }}" class="block h-full">
+                <a href="{{ get_falcon_permalink($post) }}" class="block h-full">
                     <img src="{{ str_starts_with($post->featured_image, 'http') ? $post->featured_image : asset('storage/'.$post->featured_image) }}" 
                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                          alt="{{ $post->title }}"
@@ -32,20 +32,20 @@
                 </div>
                 
                 <h3 class="text-xl font-bold mb-4 group-hover:text-primary transition-colors leading-tight">
-                    <a href="{{ get_lazy_permalink($post) }}">
+                    <a href="{{ get_falcon_permalink($post) }}">
                         {!! $highlight($post->title, $searchTerm) !!}
                     </a>
                 </h3>
                 
                 <p class="text-slate-500 text-sm mb-6 line-clamp-3 leading-relaxed">
                     @php
-                        $description = $post->excerpt ?: get_lazy_excerpt($post, 120);
+                        $description = $post->excerpt ?: get_falcon_excerpt($post, 120);
                     @endphp
                     {!! $highlight($description, $searchTerm) !!}
                 </p>
 
                 <div class="mt-auto pt-6 border-t border-slate-50">
-                    <a href="{{ get_lazy_permalink($post) }}" class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary hover:gap-3 transition-all group/btn">
+                    <a href="{{ get_falcon_permalink($post) }}" class="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary hover:gap-3 transition-all group/btn">
                         <span>Read Story</span>
                         <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </a>

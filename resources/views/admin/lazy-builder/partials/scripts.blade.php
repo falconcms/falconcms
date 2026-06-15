@@ -1,4 +1,4 @@
-﻿{{-- CodeMirror — HTML Block IDE editor (local assets) --}}
+{{-- CodeMirror — HTML Block IDE editor (local assets) --}}
 <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/codemirror/codemirror.min.css') }}">
 <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/codemirror/dracula.min.css') }}">
 <script src="{{ asset('vendor/cms-dashboard/js/codemirror/codemirror.min.js') }}"></script>
@@ -2099,7 +2099,7 @@
                     const globalContainers = layout.value.filter(c => c.settings?.global_id);
                     if (globalContainers.length) {
                         await Promise.all(globalContainers.map(container =>
-                            fetch(`{{ url('admin/lazy-builder/global-sections') }}/${container.settings.global_id}`, {
+                            fetch(`{{ url('admin/falcon-builder/global-sections') }}/${container.settings.global_id}`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
                                 body: JSON.stringify({ data: JSON.parse(JSON.stringify(container)) })
@@ -2107,7 +2107,7 @@
                         ));
                     }
 
-                    const response = await fetch("{{ $builderSaveUrl ?? route('admin.lazy-builder.save', $post->id) }}", {
+                    const response = await fetch("{{ $builderSaveUrl ?? route('admin.falcon-builder.save', $post->id) }}", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2134,10 +2134,10 @@
             // ── Revisions + Autosave ───────────────────────────────────────────────
             @isset($post)
             const revisionsEnabled = !postCardMode.value;
-            const autosaveUrl   = "{{ route('admin.lazy-builder.autosave', $post->id) }}";
-            const revisionsUrl  = "{{ route('admin.lazy-builder.revisions', $post->id) }}";
-            const restoreUrlFor = (rid) => "{{ url('admin/lazy-builder/'.$post->id.'/revisions') }}/" + rid + "/restore";
-            const deleteUrlFor  = (rid) => "{{ url('admin/lazy-builder/'.$post->id.'/revisions') }}/" + rid;
+            const autosaveUrl   = "{{ route('admin.falcon-builder.autosave', $post->id) }}";
+            const revisionsUrl  = "{{ route('admin.falcon-builder.revisions', $post->id) }}";
+            const restoreUrlFor = (rid) => "{{ url('admin/falcon-builder/'.$post->id.'/revisions') }}/" + rid + "/restore";
+            const deleteUrlFor  = (rid) => "{{ url('admin/falcon-builder/'.$post->id.'/revisions') }}/" + rid;
             @else
             const revisionsEnabled = false;
             const autosaveUrl = null, revisionsUrl = null;
@@ -3362,7 +3362,7 @@
                 const elId = el.id;
                 cardPreviewCache[elId] = { loading: true, html: cardPreviewCache[elId]?.html || '' };
                 try {
-                    const res = await fetch('{{ route("admin.lazy-builder.card-preview") }}', {
+                    const res = await fetch('{{ route("admin.falcon-builder.card-preview") }}', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
                         body: JSON.stringify({ settings: el.settings, device: device.value })
@@ -3438,7 +3438,7 @@
 
             const fetchLibrary = async () => {
                 try {
-                    const res  = await fetch('{{ route("admin.lazy-builder.library.index") }}');
+                    const res  = await fetch('{{ route("admin.falcon-builder.library.index") }}');
                     const data = await res.json();
                     libraryItems.value = { containers: [], columns: [], nested_columns: [], elements: [], ...data };
                 } catch (e) { console.error('Library fetch failed', e); }
@@ -3448,7 +3448,7 @@
 
             const fetchGlobalSections = async () => {
                 try {
-                    const res  = await fetch('{{ route("admin.lazy-builder.global-sections.list") }}');
+                    const res  = await fetch('{{ route("admin.falcon-builder.global-sections.list") }}');
                     const data = await res.json();
                     globalSections.value = Array.isArray(data) ? data : [];
                 } catch (e) { console.error('Global sections fetch failed', e); }
@@ -3479,7 +3479,7 @@
                 isSavingGlobal.value = true;
                 try {
                     const containerData = JSON.parse(JSON.stringify(layout.value[ci]));
-                    const res = await fetch('{{ route("admin.lazy-builder.global-sections.save") }}', {
+                    const res = await fetch('{{ route("admin.falcon-builder.global-sections.save") }}', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
                         body: JSON.stringify({ name: globalModalName.value.trim(), data: containerData })
@@ -3526,7 +3526,7 @@
 
             const deleteGlobalSection = async (id) => {
                 try {
-                    const res = await fetch(`{{ url('admin/lazy-builder/global-sections') }}/${id}`, {
+                    const res = await fetch(`{{ url('admin/falcon-builder/global-sections') }}/${id}`, {
                         method: 'DELETE',
                         headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
                     });
@@ -3575,7 +3575,7 @@
                 isSavingToLibrary.value = true;
                 try {
                     const name = libraryNewName.value.trim();
-                    const res    = await fetch('{{ route("admin.lazy-builder.library.save") }}', {
+                    const res    = await fetch('{{ route("admin.falcon-builder.library.save") }}', {
                         method:  'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
                         body:    JSON.stringify({ type: ctx.type, name, data: JSON.parse(JSON.stringify(data)) })
@@ -3588,7 +3588,7 @@
                         // Also save as global section when checkbox is checked (containers only)
                         if (saveAsGlobalChecked.value && ctx.type === 'containers' && ctx.ci !== null) {
                             try {
-                                const gsRes = await fetch('{{ route("admin.lazy-builder.global-sections.save") }}', {
+                                const gsRes = await fetch('{{ route("admin.falcon-builder.global-sections.save") }}', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
                                     body: JSON.stringify({ name, data: JSON.parse(JSON.stringify(data)) })
@@ -3670,7 +3670,7 @@
             const deleteFromLibrary = async (id) => {
                 const type = libraryActiveTab.value;
                 try {
-                    const res    = await fetch(`{{ url('admin/lazy-builder/library') }}/${type}/${id}`, {
+                    const res    = await fetch(`{{ url('admin/falcon-builder/library') }}/${type}/${id}`, {
                         method:  'DELETE',
                         headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
                     });

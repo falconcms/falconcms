@@ -24,7 +24,7 @@
                     <p class="text-[#646970] text-[14px] leading-relaxed mb-6 max-w-[300px]">
                         Create a stunning custom header. If enabled, this will override your theme's default header.
                     </p>
-                    <a href="{{ route('admin.lazy-builder.header') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#2271b1] hover:bg-[#135e96] text-white text-[14px] font-semibold rounded transition-colors shadow-sm">
+                    <a href="{{ route('admin.falcon-builder.header') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#2271b1] hover:bg-[#135e96] text-white text-[14px] font-semibold rounded transition-colors shadow-sm">
                         <span class="material-symbols-outlined text-[18px]">edit</span>
                         {{ $header ? 'Edit Header' : 'Start Building Header' }}
                     </a>
@@ -33,7 +33,7 @@
                 <div class="px-5 py-3 bg-[#f9fafb] border-t border-[#f0f0f1] flex justify-between items-center">
                     <div class="flex items-center gap-2">
                         <span class="text-[12px] text-[#8c8f94]">Status:</span>
-                        <form action="{{ route('admin.lazy-builder.toggle', $header->id) }}" method="POST" id="toggle-header-form">
+                        <form action="{{ route('admin.falcon-builder.toggle', $header->id) }}" method="POST" id="toggle-header-form">
                             @csrf
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" value="" class="sr-only peer" {{ $header->status === 'published' ? 'checked' : '' }} onchange="document.getElementById('toggle-header-form').submit()">
@@ -62,7 +62,7 @@
                     <p class="text-[#646970] text-[14px] leading-relaxed mb-6 max-w-[300px]">
                         Design a professional footer with widgets and links. Overrides theme default footer.
                     </p>
-                    <a href="{{ route('admin.lazy-builder.footer') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#d63638] hover:bg-[#b32d2e] text-white text-[14px] font-semibold rounded transition-colors shadow-sm">
+                    <a href="{{ route('admin.falcon-builder.footer') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#d63638] hover:bg-[#b32d2e] text-white text-[14px] font-semibold rounded transition-colors shadow-sm">
                         <span class="material-symbols-outlined text-[18px]">edit</span>
                         {{ $footer ? 'Edit Footer' : 'Start Building Footer' }}
                     </a>
@@ -71,7 +71,7 @@
                 <div class="px-5 py-3 bg-[#f9fafb] border-t border-[#f0f0f1] flex justify-between items-center">
                     <div class="flex items-center gap-2">
                         <span class="text-[12px] text-[#8c8f94]">Status:</span>
-                        <form action="{{ route('admin.lazy-builder.toggle', $footer->id) }}" method="POST" id="toggle-footer-form">
+                        <form action="{{ route('admin.falcon-builder.toggle', $footer->id) }}" method="POST" id="toggle-footer-form">
                             @csrf
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" value="" class="sr-only peer" {{ $footer->status === 'published' ? 'checked' : '' }} onchange="document.getElementById('toggle-footer-form').submit()">

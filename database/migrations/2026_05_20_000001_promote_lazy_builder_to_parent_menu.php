@@ -14,7 +14,7 @@ return new class extends Migration
     {
         $appearanceMenu = Menu::where('title', 'Appearance')->first();
         $lazyBuilder = Menu::where('title', 'Lazy Builder')
-            ->where('route', 'admin.lazy-builder.sections')
+            ->where('route', 'admin.falcon-builder.sections')
             ->first();
 
         if ($lazyBuilder && $appearanceMenu) {

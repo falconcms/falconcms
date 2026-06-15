@@ -102,7 +102,7 @@ class CmsApiController extends Controller
             'id'             => $post->id,
             'title'          => $post->title,
             'slug'           => $post->slug,
-            'excerpt'        => ($s && $s->short_description) ? $s->short_description : get_lazy_excerpt($post, 160),
+            'excerpt'        => ($s && $s->short_description) ? $s->short_description : get_falcon_excerpt($post, 160),
             'price'          => $s && $s->price !== null ? (float) $s->price : null,
             'sale_price'     => $s && $s->sale_price !== null ? (float) $s->sale_price : null,
             'sku'            => $s->sku ?? null,

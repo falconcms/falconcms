@@ -339,7 +339,7 @@
     </style>
     
     @yield('styles')
-    {!! do_lazy_action('lazy_head') !!}
+    {!! do_falcon_action('lazy_head') !!}
 
     {{-- PRIORITY HEAD SCRIPT --}}
     @if(get_cms_option('theme_head_script'))
@@ -351,7 +351,7 @@
 @endphp
 <body class="{{ $bodyClasses }}">
 
-@if($customHeader = get_lazy_header())
+@if($customHeader = get_falcon_header())
     {!! $customHeader !!}
 @else
     @include('falcon-cms::themes.lazy-theme.partials.header')
@@ -363,7 +363,7 @@
     @yield('content')
 </main>
 
-@if($customFooter = get_lazy_footer())
+@if($customFooter = get_falcon_footer())
     {!! $customFooter !!}
 @else
     @include('falcon-cms::themes.lazy-theme.partials.footer')
@@ -378,7 +378,7 @@
         lucide.createIcons();
     </script>
     @stack('scripts')
-    {!! do_lazy_action('lazy_footer') !!}
+    {!! do_falcon_action('falcon_footer') !!}
 
     {{-- PRIORITY FOOTER SCRIPT --}}
     @if(get_cms_option('theme_footer_script'))

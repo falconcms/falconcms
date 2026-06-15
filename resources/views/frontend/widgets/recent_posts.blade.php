@@ -1,4 +1,4 @@
-﻿<div class="widget mb-12">
+<div class="widget mb-12">
     @if($widget->title)
         <h4 class="widget-title">{{ $widget->title }}</h4>
     @endif
@@ -10,7 +10,7 @@
                 $currentPost = view()->shared('current_post');
                 $postType = $currentPost ? $currentPost->type : 'post';
             }
-            $recentPosts = get_lazy_posts(['limit' => $limit, 'post_type' => $postType]);
+            $recentPosts = get_falcon_posts(['limit' => $limit, 'post_type' => $postType]);
         @endphp
         @foreach($recentPosts as $recent)
             <div class="flex gap-4 group">
@@ -22,7 +22,7 @@
                 @endif
                 <div>
                     <h5 class="text-sm font-bold leading-snug group-hover:text-primary transition-colors">
-                        <a href="{{ get_lazy_permalink($recent) }}">{{ $recent->title }}</a>
+                        <a href="{{ get_falcon_permalink($recent) }}">{{ $recent->title }}</a>
                     </h5>
                     <p class="text-[10px] font-bold text-slate-400 uppercase mt-2 tracking-widest">{{ $recent->created_at->format('M d, Y') }}</p>
                 </div>

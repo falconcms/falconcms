@@ -101,7 +101,7 @@ class UserController extends Controller
             'role_id'  => $roles[0] ?? null,
         ]);
         $user->assignRoles($roles);
-        lazy_log_activity('created', "Created a new user: {$user->name} ({$user->username})", $user);
+        falcon_log_activity('created', "Created a new user: {$user->name} ({$user->username})", $user);
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
@@ -169,7 +169,7 @@ class UserController extends Controller
         unset($validated['roles']);
         $user->update($validated);
         $user->assignRoles($roles);
-        lazy_log_activity('updated', "Updated user profile: {$user->name}", $user);
+        falcon_log_activity('updated', "Updated user profile: {$user->name}", $user);
 
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
@@ -195,18 +195,18 @@ class UserController extends Controller
             if ($deleteOption === 'reassign' && $reassignTo) {
                 // Migrate all posts, pages, and CPTs to the new user
                 DB::table('posts')->where('user_id', $user->id)->update(['user_id' => $reassignTo]);
-                lazy_log_activity('updated', "Migrated content from deleted user {$user->name} to user ID: {$reassignTo}", $user);
+                falcon_log_activity('updated', "Migrated content from deleted user {$user->name} to user ID: {$reassignTo}", $user);
             } else {
                 // Delete all content
                 DB::table('posts')->where('user_id', $user->id)->delete();
-                lazy_log_activity('deleted', "Deleted all content associated with user: {$user->name}", $user);
+                falcon_log_activity('deleted', "Deleted all content associated with user: {$user->name}", $user);
             }
 
             $name = $user->name;
             $user->delete();
             DB::commit();
 
-            lazy_log_activity('deleted', "Deleted user: {$name}", $user);
+            falcon_log_activity('deleted', "Deleted user: {$name}", $user);
             return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -237,13 +237,13 @@ class UserController extends Controller
             $user->blocked_until = null;
             $user->last_failed_login_ip = null;
             $user->save();
-            lazy_log_activity('updated', "Unblocked user: {$user->name}", $user);
+            falcon_log_activity('updated', "Unblocked user: {$user->name}", $user);
             return redirect()->route('admin.users.index')->with('success', "User has been unblocked successfully.");
         } else {
             // Block
             $user->is_blocked = true;
             $user->save();
-            lazy_log_activity('updated', "Blocked user: {$user->name}", $user);
+            falcon_log_activity('updated', "Blocked user: {$user->name}", $user);
             return redirect()->route('admin.users.index')->with('success', "User has been blocked successfully.");
         }
     }
@@ -269,7 +269,7 @@ class UserController extends Controller
             foreach ($users as $user) {
                 $name = $user->name;
                 $user->delete();
-                lazy_log_activity('deleted', "Deleted user: {$name}", $user);
+                falcon_log_activity('deleted', "Deleted user: {$name}", $user);
             }
             return redirect()->back()->with('success', 'Selected users deleted successfully.');
         }
@@ -278,7 +278,7 @@ class UserController extends Controller
             $users = User::whereIn('id', $ids)->get();
             foreach ($users as $user) {
                 $user->update(['is_blocked' => true]);
-                lazy_log_activity('updated', "Blocked user: {$user->name}", $user);
+                falcon_log_activity('updated', "Blocked user: {$user->name}", $user);
             }
             return redirect()->back()->with('success', 'Selected users blocked successfully.');
         }
@@ -291,7 +291,7 @@ class UserController extends Controller
                     'login_attempts' => 0,
                     'blocked_until' => null
                 ]);
-                lazy_log_activity('updated', "Unblocked user: {$user->name}", $user);
+                falcon_log_activity('updated', "Unblocked user: {$user->name}", $user);
             }
             return redirect()->back()->with('success', 'Selected users unblocked successfully.');
         }

@@ -49,7 +49,7 @@
                                         <a href="#">{{ $item['name'] }}</a>
                                     </td>
                                     <td class="p-4 border border-gray-100">
-                                        {{ lazy_price_format($item['sale_price'] ?: $item['price']) }}
+                                        {{ falcon_price_format($item['sale_price'] ?: $item['price']) }}
                                     </td>
                                     <td class="p-4 border border-gray-100">
                                         <div class="flex items-center border border-gray-300 w-fit">
@@ -59,7 +59,7 @@
                                         </div>
                                     </td>
                                     <td class="p-4 border border-gray-100 font-bold text-gray-900">
-                                        {{ lazy_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
+                                        {{ falcon_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -89,13 +89,13 @@
                         <tbody id="cart-totals-body">
                             <tr class="border-b border-gray-100">
                                 <th class="p-4 bg-gray-50 text-left font-bold text-gray-700 w-1/3">Subtotal</th>
-                                <td class="p-4 font-bold text-gray-900" id="cart-subtotal">{{ lazy_price_format(get_lazy_cart_subtotal()) }}</td>
+                                <td class="p-4 font-bold text-gray-900" id="cart-subtotal">{{ falcon_price_format(get_falcon_cart_subtotal()) }}</td>
                             </tr>
                             <tr class="border-b border-gray-100">
                                 <th class="p-4 bg-gray-50 text-left font-bold text-gray-700">Shipping</th>
                                 <td class="p-4 text-sm" id="cart-shipping">
-                                    @if(get_lazy_cart_shipping() > 0)
-                                        Flat rate: <span class="font-bold text-gray-900">{{ lazy_price_format(get_lazy_cart_shipping()) }}</span>
+                                    @if(get_falcon_cart_shipping() > 0)
+                                        Flat rate: <span class="font-bold text-gray-900">{{ falcon_price_format(get_falcon_cart_shipping()) }}</span>
                                     @else
                                         <span class="font-bold text-gray-900">Free shipping</span>
                                     @endif
@@ -104,14 +104,14 @@
                             @if(get_cms_option('shop_enable_tax') === '1')
                             <tr class="border-b border-gray-100" id="cart-tax-row">
                                 <th class="p-4 bg-gray-50 text-left font-bold text-gray-700">Tax</th>
-                                <td class="p-4 font-bold text-gray-900" id="cart-tax">{{ lazy_price_format(get_lazy_cart_tax()) }}</td>
+                                <td class="p-4 font-bold text-gray-900" id="cart-tax">{{ falcon_price_format(get_falcon_cart_tax()) }}</td>
                             </tr>
                             @endif
                             
                             @php $coupon = session()->get('lazy_coupon'); @endphp
                             @if($coupon)
                                 @php 
-                                    $subtotal = get_lazy_cart_subtotal();
+                                    $subtotal = get_falcon_cart_subtotal();
                                     $discount = $coupon['type'] === 'percent' ? $subtotal * ((float)$coupon['amount'] / 100) : (float)$coupon['amount'];
                                 @endphp
                                 <tr class="coupon-row bg-emerald-50/30">
@@ -119,13 +119,13 @@
                                         Coupon: {{ $coupon['code'] }}
                                         <a href="{{ route('shop.cart.coupon.remove') }}" class="text-rose-500 hover:text-rose-700 text-xs font-normal">[Remove]</a>
                                     </th>
-                                    <td class="p-4 font-bold text-emerald-700">-{{ lazy_price_format($discount) }}</td>
+                                    <td class="p-4 font-bold text-emerald-700">-{{ falcon_price_format($discount) }}</td>
                                 </tr>
                             @endif
 
                             <tr class="bg-gray-50">
                                 <th class="p-4 text-left font-extrabold text-gray-900">Total</th>
-                                <td class="p-4 text-xl font-black text-primary" id="cart-total">{{ lazy_price_format(get_lazy_cart_total()) }}</td>
+                                <td class="p-4 text-xl font-black text-primary" id="cart-total">{{ falcon_price_format(get_falcon_cart_total()) }}</td>
                             </tr>
                         </tbody>
                     </table>

@@ -16,7 +16,7 @@ class PostResource extends JsonResource
             'title' => $translation ? $translation->title : $this->title,
             'slug' => $translation && $translation->slug ? $translation->slug : $this->slug,
             'content' => $translation ? $translation->content : ($this->editor_type === 'builder' ? get_lazy_content($this->content) : $this->content),
-            'excerpt' => $translation && $translation->excerpt ? $translation->excerpt : get_lazy_excerpt($this, 160),
+            'excerpt' => $translation && $translation->excerpt ? $translation->excerpt : get_falcon_excerpt($this, 160),
             'featured_image' => $this->featured_image ? url('storage/' . $this->featured_image) : null,
             'status' => $this->status,
             'type' => $this->type,
@@ -43,6 +43,6 @@ class PostResource extends JsonResource
             'custom_fields' => get_post_custom_fields($this->resource),
         ];
 
-        return apply_lazy_filters('lazy_api_post_data', $data, $this->resource);
+        return apply_falcon_filters('lazy_api_post_data', $data, $this->resource);
     }
 }

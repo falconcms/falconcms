@@ -1,4 +1,4 @@
-﻿<main class="builder-canvas-area flex flex-col bg-white">
+<main class="builder-canvas-area flex flex-col bg-white">
     <div class="canvas-container" 
          @click="clearEditingContext"
          :class="[isPreview ? 'preview-mode' : '', device]" 
@@ -32,7 +32,7 @@
         <!-- Actual Layout -->
         <div v-else class="w-full bg-white min-h-full flex flex-col {{ ($postCardMode ?? false) ? 'justify-center' : '' }}">
             <template v-for="(container, ci) in layout" :key="container.id">
-                @include('falcon-cms::admin.lazy-builder.partials.components.container.row')
+                @include('falcon-cms::admin.falcon-builder.partials.components.container.row')
             </template>
         </div>
     </div>

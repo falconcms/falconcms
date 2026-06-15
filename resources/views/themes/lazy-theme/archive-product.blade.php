@@ -50,7 +50,7 @@
             @foreach($posts as $product)
                 <div class="group flex flex-col">
                     <div class="relative mb-4">
-                    <a href="{{ get_lazy_permalink($product) }}" class="block relative pt-[100%] overflow-hidden bg-[#eef1f5]">
+                    <a href="{{ get_falcon_permalink($product) }}" class="block relative pt-[100%] overflow-hidden bg-[#eef1f5]">
                         @if($product->featured_image)
                             <img src="{{ str_starts_with($product->featured_image, 'http') ? $product->featured_image : asset('storage/'.$product->featured_image) }}" alt="{{ $product->title }}" class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity">
                         @else
@@ -78,14 +78,14 @@
                             @endif
                         </div>
                         <h2 class="text-[15px] font-bold text-heading hover:text-primary transition-colors mb-1 leading-tight">
-                            <a href="{{ get_lazy_permalink($product) }}">{{ $product->title }}</a>
+                            <a href="{{ get_falcon_permalink($product) }}">{{ $product->title }}</a>
                         </h2>
                         <div class="text-heading font-bold text-[14px] mb-3">
                             @if($product->shopData && $product->shopData->sale_price)
-                                <span class="line-through text-[#a5a5a5] font-normal mr-1.5">{{ lazy_price_format($product->shopData->price) }}</span>
-                                <span>{{ lazy_price_format($product->shopData->sale_price) }}</span>
+                                <span class="line-through text-[#a5a5a5] font-normal mr-1.5">{{ falcon_price_format($product->shopData->price) }}</span>
+                                <span>{{ falcon_price_format($product->shopData->sale_price) }}</span>
                             @else
-                                <span>{{ lazy_price_format($product->shopData->price ?? 0) }}</span>
+                                <span>{{ falcon_price_format($product->shopData->price ?? 0) }}</span>
                             @endif
                         </div>
                         <div class="mt-auto flex flex-wrap gap-2">
@@ -94,14 +94,14 @@
                                     Out of stock
                                 </button>
                             @elseif(lazy_is_variable_product($product))
-                                <a href="{{ get_lazy_permalink($product) }}" class="w-full text-center bg-primary text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition-colors duration-200">
+                                <a href="{{ get_falcon_permalink($product) }}" class="w-full text-center bg-primary text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition-colors duration-200">
                                     Select Options
                                 </a>
                             @else
                                 <button onclick="addToCart({{ $product->id }})" class="flex-1 bg-primary text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition-colors duration-200">
                                     Add to cart
                                 </button>
-                                <a href="{{ get_lazy_permalink($product) }}" class="flex-1 text-center bg-white text-primary border border-primary px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-gray-50 transition-colors duration-200">
+                                <a href="{{ get_falcon_permalink($product) }}" class="flex-1 text-center bg-white text-primary border border-primary px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-gray-50 transition-colors duration-200">
                                     See Detail
                                 </a>
                             @endif

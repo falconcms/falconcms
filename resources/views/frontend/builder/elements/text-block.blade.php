@@ -2,7 +2,7 @@
     $s = $el['settings'] ?? [];
 
     $dynamicSrc = $s['dynamic_source'] ?? '';
-    if ($dynamicSrc && function_exists('lazy_resolve_dynamic_value')) {
+    if ($dynamicSrc && function_exists('falcon_resolve_dynamic_value')) {
         $dynamicConfig = [
             'date_type'      => $s['dynamic_date_type']      ?? 'published',
             'date_format'    => $s['dynamic_date_format']     ?? '',
@@ -12,7 +12,7 @@
             'excerpt_length' => (int)($s['dynamic_excerpt_length'] ?? 150),
             'acpt_slug'      => $s['dynamic_acpt_slug']       ?? '',
         ];
-        $resolved = lazy_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig);
+        $resolved = falcon_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig);
         $s['content'] = $resolved ? nl2br(e($resolved)) : ($s['content'] ?? '');
     }
 
@@ -31,7 +31,7 @@
     $hoverColor = $s['hoverColor'] ?? null;
 
     $tb = "#{$appliedId}";
-    $respCss = lazy_elem_resp_css($s, $bpSm, $bpMed, [
+    $respCss = falcon_elem_resp_css($s, $bpSm, $bpMed, [
         ['prop' => 'textAlign',     'sel' => $tb],
         ['prop' => 'marginTop',     'unitProp' => 'marginTopUnit',     'sel' => $tb],
         ['prop' => 'marginRight',   'unitProp' => 'marginRightUnit',   'sel' => $tb],

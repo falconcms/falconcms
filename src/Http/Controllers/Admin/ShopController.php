@@ -208,7 +208,7 @@ class ShopController extends Controller
         $refundAmount = $amount === null ? $remaining : (float) $amount;
         if ($refundAmount <= 0) return [false, 'Refund amount must be greater than zero.'];
         if ($refundAmount > $remaining + 0.001) {
-            return [false, 'Refund amount exceeds the remaining refundable balance (' . lazy_price_format($remaining, $order) . ').'];
+            return [false, 'Refund amount exceeds the remaining refundable balance (' . falcon_price_format($remaining, $order) . ').'];
         }
 
         // Stripe expects the smallest currency unit.
@@ -240,7 +240,7 @@ class ShopController extends Controller
                 'refunded_amount' => round($alreadyRefunded + $refundAmount, 2),
                 'refund_log'      => $log,
             ]);
-            return [true, 'Refunded ' . lazy_price_format($refundAmount, $order) . ' via Stripe.'];
+            return [true, 'Refunded ' . falcon_price_format($refundAmount, $order) . ' via Stripe.'];
         }
 
         // Treat an already-refunded charge as fully refunded so the status can still be set.

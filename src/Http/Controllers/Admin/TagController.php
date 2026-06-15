@@ -59,7 +59,7 @@ class TagController extends Controller
         ]);
 
         $tag = Tag::create($validated);
-        lazy_log_activity('created', "Created a new tag: {$tag->name}", $tag);
+        falcon_log_activity('created', "Created a new tag: {$tag->name}", $tag);
 
         return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag added.');
     }
@@ -93,16 +93,16 @@ class TagController extends Controller
                 $clone->lang_code = $targetLang;
                 $clone->origin_id = $tag->id;
                 
-                $clone->name = lazy_translate($tag->name, $targetLang);
+                $clone->name = falcon_translate($tag->name, $targetLang);
                 $clone->slug = Tag::generateUniqueSlug($clone->name, 0, $targetLang);
                 if ($tag->description) {
-                    $clone->description = lazy_translate($tag->description, $targetLang);
+                    $clone->description = falcon_translate($tag->description, $targetLang);
                 }
                 $clone->save();
             }
         }
 
-        lazy_log_activity('updated', "Updated tag: {$tag->name}", $tag);
+        falcon_log_activity('updated', "Updated tag: {$tag->name}", $tag);
 
         return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag updated.');
     }
@@ -111,7 +111,7 @@ class TagController extends Controller
     {
         $name = $tag->name;
         $tag->delete();
-        lazy_log_activity('deleted', "Deleted tag: {$name}", $tag);
+        falcon_log_activity('deleted', "Deleted tag: {$name}", $tag);
         return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag deleted.');
     }
     public function ajax(Request $request)

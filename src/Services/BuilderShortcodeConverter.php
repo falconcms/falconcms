@@ -24,8 +24,8 @@ class BuilderShortcodeConverter
     {
         if (self::$customDefs !== null) return self::$customDefs;
         self::$customDefs = [];
-        if (function_exists('apply_lazy_filters')) {
-            $defs = apply_lazy_filters('lazy_builder_elements', []);
+        if (function_exists('apply_falcon_filters')) {
+            $defs = apply_falcon_filters('falcon_builder_elements', []);
             if (is_array($defs)) {
                 foreach ($defs as $key => $def) {
                     $t = $def['type'] ?? $key;
@@ -1678,7 +1678,7 @@ class BuilderShortcodeConverter
             }
         }
 
-        // Custom element shortcode tags (registered via lazy_builder_elements)
+        // Custom element shortcode tags (registered via falcon_builder_elements)
         foreach (self::customDefs() as $type => $def) {
             $tag = $def['shortcode'] ?? $type;
             if (!$tag || str_starts_with($tag, 'lazy_')) continue; // lazy_* already handled above
@@ -2674,7 +2674,7 @@ class BuilderShortcodeConverter
             default: {
                 $realType = $type === 'element' ? ($a['type'] ?? 'text') : $type;
 
-                // Custom element registered via lazy_builder_elements → type-aware parse
+                // Custom element registered via falcon_builder_elements → type-aware parse
                 $cdef = self::customDefs()[$realType] ?? null;
                 if ($cdef) {
                     return self::parseCustomElement($cdef, $attrStr, $inner);

@@ -51,10 +51,10 @@
                                 <th class="p-4 border border-gray-100">Subtotal</th>
                             </tr>
                         </thead>
-                        <?php do_lazy_action('lazy_before_cart_items', $cart); ?>
+                        <?php do_falcon_action('lazy_before_cart_items', $cart); ?>
                         <tbody id="cart-items-body" class="text-[15px] text-gray-600">
                             @foreach($cart as $key => $item)
-                                <?php do_lazy_action('lazy_before_cart_item', $item, $key); ?>
+                                <?php do_falcon_action('lazy_before_cart_item', $item, $key); ?>
                                 <tr class="border-b border-gray-100 cart-item-row" data-key="{{ $key }}">
                                     <td class="p-4 border border-gray-100 text-center w-10">
                                         <button type="button" onclick="removeCartItem('{{ $key }}', this)" class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
@@ -65,14 +65,14 @@
                                         </a>
                                     </td>
                                     <td class="p-4 border border-gray-100 font-bold text-primary">
-                                        {!! apply_lazy_filters('lazy_cart_item_name',
-                                            '<a href="' . get_lazy_permalink($item) . '">' . e($item['name']) . '</a>',
+                                        {!! apply_falcon_filters('falcon_cart_item_name',
+                                            '<a href="' . get_falcon_permalink($item) . '">' . e($item['name']) . '</a>',
                                             $item, $key) !!}
                                         {!! lazy_render_item_custom_fields($item, 'cart') !!}
-                                        <?php do_lazy_action('lazy_cart_item_meta', $item, $key); ?>
+                                        <?php do_falcon_action('falcon_cart_item_meta', $item, $key); ?>
                                     </td>
                                     <td class="p-4 border border-gray-100">
-                                        {{ lazy_price_format($item['sale_price'] ?: $item['price']) }}
+                                        {{ falcon_price_format($item['sale_price'] ?: $item['price']) }}
                                     </td>
                                     <td class="p-4 border border-gray-100">
                                         <div class="flex items-center border border-gray-200 rounded-sm h-10 w-fit bg-white overflow-hidden">
@@ -82,10 +82,10 @@
                                         </div>
                                     </td>
                                     <td class="p-4 border border-gray-100 font-bold text-heading item-subtotal">
-                                        {{ lazy_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
+                                        {{ falcon_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
                                     </td>
                                 </tr>
-                                <?php do_lazy_action('lazy_after_cart_item', $item, $key); ?>
+                                <?php do_falcon_action('lazy_after_cart_item', $item, $key); ?>
                             @endforeach
                             <tr>
                                 <td colspan="6" class="p-4 border border-gray-100">
@@ -115,15 +115,15 @@
                         <tbody id="cart-totals-body">
                             <tr class="border-b border-gray-100">
                                 <th class="p-4 bg-gray-50 text-left font-bold text-gray-700 w-1/3">Subtotal</th>
-                                <td class="p-4 font-bold text-heading" id="cart-subtotal">{{ lazy_price_format(get_lazy_cart_subtotal()) }}</td>
+                                <td class="p-4 font-bold text-heading" id="cart-subtotal">{{ falcon_price_format(get_falcon_cart_subtotal()) }}</td>
                             </tr>
                             <tr class="border-b border-gray-100">
                                 <th class="p-4 bg-gray-50 text-left font-bold text-gray-700">Shipping</th>
                                 <td class="p-4 text-sm" id="cart-shipping-cell">
                                     <div id="cart-shipping">
-                                        @php $shipDetails = get_lazy_cart_shipping_details(session()->get('lazy_shipping_country')); @endphp
+                                        @php $shipDetails = get_falcon_cart_shipping_details(session()->get('lazy_shipping_country')); @endphp
                                         @if($shipDetails['cost'] > 0)
-                                            {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ lazy_price_format($shipDetails['cost']) }}</span>
+                                            {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ falcon_price_format($shipDetails['cost']) }}</span>
                                         @else
                                             <span class="font-bold text-heading">{{ $shipDetails['label'] }}</span>
                                         @endif
@@ -151,13 +151,13 @@
                             @if(get_cms_option('shop_enable_tax') === '1')
                             <tr class="border-b border-gray-100" id="cart-tax-row">
                                 <th class="p-4 bg-gray-50 text-left font-bold text-gray-700">Tax</th>
-                                <td class="p-4 font-bold text-heading" id="cart-tax">{{ lazy_price_format(get_lazy_cart_tax()) }}</td>
+                                <td class="p-4 font-bold text-heading" id="cart-tax">{{ falcon_price_format(get_falcon_cart_tax()) }}</td>
                             </tr>
                             @endif
                             
                             @php 
-                                $appliedCoupons = session()->get('lazy_coupons', []); 
-                                $subtotal = get_lazy_cart_subtotal(); 
+                                $appliedCoupons = session()->get('falcon_coupons', []); 
+                                $subtotal = get_falcon_cart_subtotal(); 
                                 $currentSubtotal = $subtotal;
                                 $isMultipleAllowed = (int)get_shop_option('shop_multi_coupon_policy', '1') === 1;
                             @endphp
@@ -175,13 +175,13 @@
                                             <a href="{{ route('shop.cart.coupon.remove') }}?code={{ urlencode($coupon['code']) }}" class="text-rose-500 hover:text-rose-700 text-[10px] font-normal">[Remove]</a>
                                         </div>
                                     </th>
-                                    <td class="p-4 font-bold text-emerald-700">{{ lazy_price_format($discount) }}</td>
+                                    <td class="p-4 font-bold text-emerald-700">{{ falcon_price_format($discount) }}</td>
                                 </tr>
                             @endforeach
 
                             <tr class="bg-gray-50">
                                 <th class="p-4 text-left font-extrabold text-heading">Total</th>
-                                <td class="p-4 text-xl font-black text-primary" id="cart-total">{{ lazy_price_format(get_lazy_cart_total()) }}</td>
+                                <td class="p-4 text-xl font-black text-primary" id="cart-total">{{ falcon_price_format(get_falcon_cart_total()) }}</td>
                             </tr>
                         </tbody>
                     </table>

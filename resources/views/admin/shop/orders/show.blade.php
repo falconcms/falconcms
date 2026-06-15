@@ -53,13 +53,13 @@
                                                     <div class="text-[11px] text-[#646970]">{{ $item->variation_details }}</div>
                                                 @endif
                                                 <div class="text-[11px] text-[#646970]">SKU: {{ $item->product->sku ?? 'N/A' }}</div>
-                                                <?php do_lazy_action('lazy_admin_order_item_meta', $item); ?>
+                                                <?php do_falcon_action('lazy_admin_order_item_meta', $item); ?>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="wp-table-cell text-center">{{ lazy_price_format($item->price, $order) }}</td>
+                                    <td class="wp-table-cell text-center">{{ falcon_price_format($item->price, $order) }}</td>
                                     <td class="wp-table-cell text-center">× {{ $item->quantity }}</td>
-                                    <td class="wp-table-cell text-right font-semibold">{{ lazy_price_format($item->subtotal, $order) }}</td>
+                                    <td class="wp-table-cell text-right font-semibold">{{ falcon_price_format($item->subtotal, $order) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -83,12 +83,12 @@
                                     @endif
                                 </td>
                                 <td class="px-3 py-2 text-right text-[#646970]">Subtotal:</td>
-                                <td class="px-3 py-2 text-right font-semibold">{{ lazy_price_format($order->subtotal, $order) }}</td>
+                                <td class="px-3 py-2 text-right font-semibold">{{ falcon_price_format($order->subtotal, $order) }}</td>
                             </tr>
                             @if($order->shipping_total > 0)
                                 <tr>
                                     <td class="px-3 py-2 text-right text-[#646970]">Shipping:</td>
-                                    <td class="px-3 py-2 text-right font-semibold">{{ lazy_price_format($order->shipping_total, $order) }}</td>
+                                    <td class="px-3 py-2 text-right font-semibold">{{ falcon_price_format($order->shipping_total, $order) }}</td>
                                 </tr>
                             @else
                                 <tr>
@@ -99,18 +99,18 @@
                             @if($order->tax_total > 0)
                                 <tr>
                                     <td class="px-3 py-2 text-right text-[#646970]">Tax:</td>
-                                    <td class="px-3 py-2 text-right font-semibold">{{ lazy_price_format($order->tax_total, $order) }}</td>
+                                    <td class="px-3 py-2 text-right font-semibold">{{ falcon_price_format($order->tax_total, $order) }}</td>
                                 </tr>
                             @endif
                             @if($order->coupon_code)
                                 <tr>
                                     <td class="px-3 py-2 text-right text-emerald-700 font-bold">Coupons ({{ $order->coupon_code }}):</td>
-                                    <td class="px-3 py-2 text-right font-bold text-emerald-700">-{{ lazy_price_format($order->discount_total, $order) }}</td>
+                                    <td class="px-3 py-2 text-right font-bold text-emerald-700">-{{ falcon_price_format($order->discount_total, $order) }}</td>
                                 </tr>
                             @endif
                             <tr class="bg-[#f6f7f7]">
                                 <td class="px-3 py-3 text-right font-bold text-[15px]">Total:</td>
-                                <td class="px-3 py-3 text-right font-bold text-[18px] text-[#2271b1]">{{ lazy_price_format($order->total, $order) }}</td>
+                                <td class="px-3 py-3 text-right font-bold text-[18px] text-[#2271b1]">{{ falcon_price_format($order->total, $order) }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -245,9 +245,9 @@
                     <div class="wp-metabox-header">Refund (Stripe)</div>
                     <div class="wp-metabox-content">
                         <div class="text-[12px] text-[#3c434a] space-y-1 mb-3">
-                            <div class="flex justify-between"><span>Order total</span><strong>{{ lazy_price_format($order->total, $order) }}</strong></div>
-                            <div class="flex justify-between"><span>Refunded</span><strong class="text-[#646970]">{{ lazy_price_format($refunded, $order) }}</strong></div>
-                            <div class="flex justify-between"><span>Remaining</span><strong class="text-[#2271b1]">{{ lazy_price_format($remaining, $order) }}</strong></div>
+                            <div class="flex justify-between"><span>Order total</span><strong>{{ falcon_price_format($order->total, $order) }}</strong></div>
+                            <div class="flex justify-between"><span>Refunded</span><strong class="text-[#646970]">{{ falcon_price_format($refunded, $order) }}</strong></div>
+                            <div class="flex justify-between"><span>Remaining</span><strong class="text-[#2271b1]">{{ falcon_price_format($remaining, $order) }}</strong></div>
                         </div>
                         @if($remaining > 0)
                             <form action="{{ route('admin.shop.orders.refund', $order->id) }}" method="POST"
@@ -257,7 +257,7 @@
                                 <input type="number" name="refund_amount" step="0.01" min="0.01" max="{{ $remaining }}"
                                        value="{{ number_format($remaining, 2, '.', '') }}"
                                        class="wp-input w-full mb-1">
-                                <p class="text-[11px] text-[#646970] mb-3">Max {{ lazy_price_format($remaining, $order) }}. Leave full amount for a complete refund.</p>
+                                <p class="text-[11px] text-[#646970] mb-3">Max {{ falcon_price_format($remaining, $order) }}. Leave full amount for a complete refund.</p>
                                 <button type="submit" class="wp-btn-secondary w-full justify-center border-[#d63638] text-[#d63638] hover:bg-[#d63638] hover:text-white">Refund via Stripe</button>
                             </form>
                         @else
@@ -278,7 +278,7 @@
                                 @foreach(array_reverse($refundLog) as $entry)
                                     <div class="flex items-start justify-between gap-3 pb-3 border-b border-[#f0f0f1] last:border-0 last:pb-0">
                                         <div>
-                                            <div class="text-[13px] font-bold text-[#8c44db]">{{ lazy_price_format($entry['amount'] ?? 0, $order) }}</div>
+                                            <div class="text-[13px] font-bold text-[#8c44db]">{{ falcon_price_format($entry['amount'] ?? 0, $order) }}</div>
                                             <div class="text-[11px] text-[#646970]">
                                                 {{ cms_date($entry['at'] ?? now(), 'M d, Y · h:i A') }}
                                             </div>
@@ -292,13 +292,13 @@
                             </div>
                             <div class="mt-3 pt-3 border-t border-[#dcdcde] flex justify-between text-[13px]">
                                 <span class="font-semibold text-[#3c434a]">Total refunded</span>
-                                <strong class="text-[#8c44db]">{{ lazy_price_format($order->refunded_amount, $order) }}</strong>
+                                <strong class="text-[#8c44db]">{{ falcon_price_format($order->refunded_amount, $order) }}</strong>
                             </div>
                         @else
                             {{-- Legacy refunds with no per-entry log --}}
                             <div class="flex justify-between text-[13px]">
                                 <span class="font-semibold text-[#3c434a]">Total refunded</span>
-                                <strong class="text-[#8c44db]">{{ lazy_price_format($order->refunded_amount, $order) }}</strong>
+                                <strong class="text-[#8c44db]">{{ falcon_price_format($order->refunded_amount, $order) }}</strong>
                             </div>
                             <p class="text-[11px] text-[#a7aaad] mt-1">Detailed refund log not available for this order.</p>
                         @endif
@@ -348,7 +348,7 @@
 
                         @php $checkoutMeta = $order->meta['checkout_fields'] ?? []; @endphp
                         @if(!empty($checkoutMeta))
-                            @php $coLabels = apply_lazy_filters('lazy_checkout_field_labels', []); @endphp
+                            @php $coLabels = apply_falcon_filters('lazy_checkout_field_labels', []); @endphp
                             <div class="pt-3 border-t border-[#f0f0f1]">
                                 <div class="text-[11px] font-bold uppercase text-[#8c8f94] mb-1.5">Additional Info</div>
                                 <div class="space-y-1">

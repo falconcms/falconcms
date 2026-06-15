@@ -289,7 +289,7 @@ class DashboardController extends Controller
             );
         }
 
-        lazy_log_activity('settings_updated', "Updated CMS settings");
+        falcon_log_activity('settings_updated', "Updated CMS settings");
 
         return redirect()->back()->with('success', 'Settings updated successfully!');
     }
@@ -451,7 +451,7 @@ class DashboardController extends Controller
             );
         }
 
-        lazy_log_activity('settings_updated', 'Updated integrations settings');
+        falcon_log_activity('settings_updated', 'Updated integrations settings');
 
         return redirect()->back()->with('success', 'Integrations settings saved successfully!');
     }
@@ -522,7 +522,7 @@ class DashboardController extends Controller
             ['value' => json_encode($data), 'updated_at' => now()]
         );
 
-        lazy_log_activity('settings_updated', "Updated email template: {$key}");
+        falcon_log_activity('settings_updated', "Updated email template: {$key}");
 
         return redirect()->route('admin.settings.email-templates', ['tab' => $key])
             ->with('success', 'Email template saved successfully.');
@@ -674,7 +674,7 @@ class DashboardController extends Controller
 
         if ($action === 'delete' && !empty($ids)) {
             ActivityLog::whereIn('id', $ids)->delete();
-            lazy_log_activity('logs_bulk_deleted', "Deleted " . count($ids) . " activity log entries");
+            falcon_log_activity('logs_bulk_deleted', "Deleted " . count($ids) . " activity log entries");
             return redirect()->back()->with('success', 'Selected logs deleted successfully!');
         }
 

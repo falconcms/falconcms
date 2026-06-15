@@ -97,12 +97,12 @@
                                 </span>
                             </td>
                             <td class="wp-table-cell font-bold">
-                                {{ lazy_price_format($order->total, $order) }}
+                                {{ falcon_price_format($order->total, $order) }}
                             </td>
                             <td class="wp-table-cell">
                                 @if(($order->refunded_amount ?? 0) > 0)
                                     @php $fullyRef = (float) $order->refunded_amount >= (float) $order->total - 0.001; @endphp
-                                    <span class="font-bold {{ $fullyRef ? 'text-[#646970]' : 'text-[#8c44db]' }}">{{ lazy_price_format($order->refunded_amount, $order) }}</span>
+                                    <span class="font-bold {{ $fullyRef ? 'text-[#646970]' : 'text-[#8c44db]' }}">{{ falcon_price_format($order->refunded_amount, $order) }}</span>
                                     <div class="text-[10px] {{ $fullyRef ? 'text-[#646970]' : 'text-[#8c44db]' }}">{{ $fullyRef ? 'Full amount' : 'Partial' }}</div>
                                 @else
                                     <span class="text-[#c3c4c7]">—</span>

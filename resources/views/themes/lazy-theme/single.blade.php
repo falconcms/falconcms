@@ -18,7 +18,7 @@
         $sShare    = get_cms_option('theme_single_show_share', '0') === '1';
         $sRelated  = get_cms_option('theme_single_show_related', '1') === '1';
         $sComments = get_cms_option('theme_single_show_comments', '1') === '1';
-        $permalink = get_lazy_permalink($post);
+        $permalink = get_falcon_permalink($post);
     @endphp
 
     @if($isBuilder)
@@ -154,14 +154,14 @@
                         <div class="lazy-content-wrapper">
                             @php 
                                 $rawContent = do_lazy_shortcode($post->content);
-                                $filteredContent = apply_lazy_filters('lazy_the_content', $rawContent, $post);
+                                $filteredContent = apply_falcon_filters('lazy_the_content', $rawContent, $post);
                             @endphp
 
-                            {!! do_lazy_action('lazy_before_content', $post) !!}
+                            {!! do_falcon_action('lazy_before_content', $post) !!}
                             <div class="entry-content">
                                 {!! $filteredContent !!}
                             </div>
-                            {!! do_lazy_action('lazy_after_content', $post) !!}
+                            {!! do_falcon_action('lazy_after_content', $post) !!}
                         </div>
 
                         <!-- Tags -->

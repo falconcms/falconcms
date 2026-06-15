@@ -39,8 +39,8 @@ if (!function_exists('is_lazy_shop_page')) {
     }
 }
 
-if (!function_exists('is_lazy_cart_page')) {
-    function is_lazy_cart_page($post) {
+if (!function_exists('is_falcon_cart_page')) {
+    function is_falcon_cart_page($post) {
         if (!$post) return false;
         $id = (int) get_shop_option('shop_cart_page_id');
         if (!$id) return false;
@@ -71,7 +71,7 @@ if (!function_exists('get_lazy_account_url')) {
         $id = (int) get_shop_option('shop_account_page_id');
         if ($id) {
             $post = \FalconCms\Core\Models\Post::find($id);
-            if ($post) return get_lazy_permalink($post);
+            if ($post) return get_falcon_permalink($post);
         }
         return url('/page/account');
     }

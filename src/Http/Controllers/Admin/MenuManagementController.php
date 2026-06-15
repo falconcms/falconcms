@@ -189,7 +189,7 @@ class MenuManagementController extends Controller
             'is_footer' => $isFooter,
         ]);
 
-        lazy_log_activity('created', "Created a new menu: {$menu->name}", $menu);
+        falcon_log_activity('created', "Created a new menu: {$menu->name}", $menu);
 
         return redirect()->route('admin.menus.index', ['menu' => $menu->id])->with('success', 'Menu created successfully.');
     }
@@ -226,7 +226,7 @@ class MenuManagementController extends Controller
             }
         }
 
-        lazy_log_activity('updated', "Updated menu structure: {$menu->name}", $menu);
+        falcon_log_activity('updated', "Updated menu structure: {$menu->name}", $menu);
 
         return redirect()
             ->route('admin.menus.index', ['menu' => $menu->id])
@@ -261,7 +261,7 @@ class MenuManagementController extends Controller
         $menu = NavigationMenu::findOrFail($id);
         $name = $menu->name;
         $menu->delete();
-        lazy_log_activity('deleted', "Deleted menu: {$name}");
+        falcon_log_activity('deleted', "Deleted menu: {$name}");
         return redirect()->route('admin.menus.index')->with('success', 'Menu deleted.');
     }
 }

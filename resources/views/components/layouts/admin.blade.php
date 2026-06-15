@@ -77,7 +77,7 @@
     </style>
     <script defer src="{{ asset('vendor/cms-dashboard/js/alpine.min.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
-    {!! do_lazy_action('lazy_admin_head') !!}
+    {!! do_falcon_action('lazy_admin_head') !!}
 </head>
 <body class="text-[#1d2327] text-[13px] antialiased overflow-x-hidden pt-8">
 <script>
@@ -103,7 +103,7 @@
             @endif
         </div>
         <div class="flex items-center space-x-4 pr-1 text-sm relative group" x-data="{ open: false }">
-            {!! do_lazy_action('lazy_admin_bar_right_before') !!}
+            {!! do_falcon_action('lazy_admin_bar_right_before') !!}
             <button @click="open = !open" class="flex items-center space-x-2 text-[#c3c4c7] group-hover:text-[#72aee6] transition py-1 px-2 focus:outline-none">
                 <span>Howdy, <span class="font-semibold">{{ auth()->user()->username ?? auth()->user()->name ?? 'Admin' }}</span></span>
                 <img src="https://secure.gravatar.com/avatar/{{ md5(strtolower(trim(optional(auth()->user())->email ?? 'admin@example.com'))) }}?s=26&d=mm&r=g" class="w-6 h-6 rounded-sm ml-1">
@@ -207,6 +207,6 @@
     </script>
 
     @stack('scripts')
-    {!! do_lazy_action('lazy_admin_footer') !!}
+    {!! do_falcon_action('lazy_admin_footer') !!}
 </body>
 </html>

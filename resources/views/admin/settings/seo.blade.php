@@ -14,7 +14,7 @@
 
         <form action="{{ route('admin.settings.seo.update') }}" method="POST" class="max-w-[800px]">
             @csrf
-            {!! do_lazy_action('lazy_seo_settings_form_top') !!}
+            {!! do_falcon_action('lazy_seo_settings_form_top') !!}
 
             <div class="space-y-8">
                 {{-- Robots.txt --}}
@@ -126,7 +126,7 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                 </div>
             </div>
 
-            {!! do_lazy_action('lazy_seo_settings_form_bottom') !!}
+            {!! do_falcon_action('lazy_seo_settings_form_bottom') !!}
 
             <div class="mt-8 pt-6 border-t border-[#c3c4c7]">
                 <button type="submit" class="wp-btn-primary h-[32px] px-4 font-semibold">Save SEO Settings</button>

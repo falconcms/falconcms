@@ -196,45 +196,45 @@
                                         {{ $item['name'] }} <span class="font-bold text-[#2c3338]">× {{ $item['quantity'] }}</span>
                                     </td>
                                     <td class="p-4 text-right font-medium text-[#2c3338]">
-                                        {{ lazy_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
+                                        {{ falcon_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
                                     </td>
                                 </tr>
                             @endforeach
                             
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-[#2c3338]">Subtotal</th>
-                                <td class="text-right p-4 font-bold text-[#2c3338]" id="checkout-subtotal">{{ lazy_price_format(get_lazy_cart_subtotal()) }}</td>
+                                <td class="text-right p-4 font-bold text-[#2c3338]" id="checkout-subtotal">{{ falcon_price_format(get_falcon_cart_subtotal()) }}</td>
                             </tr>
 
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-[#2c3338]">Shipping</th>
                                 <td class="text-right p-4 text-[#515151]" id="checkout-shipping">
-                                    Flat rate: <span class="font-bold text-[#2c3338]">{{ get_lazy_cart_shipping() > 0 ? lazy_price_format(get_lazy_cart_shipping()) : 'Free' }}</span>
+                                    Flat rate: <span class="font-bold text-[#2c3338]">{{ get_falcon_cart_shipping() > 0 ? falcon_price_format(get_falcon_cart_shipping()) : 'Free' }}</span>
                                 </td>
                             </tr>
 
                             @if(get_cms_option('shop_enable_tax') === '1')
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-[#2c3338]">Estimated Tax</th>
-                                <td class="text-right p-4 font-bold text-[#2c3338]" id="checkout-tax">{{ lazy_price_format(get_lazy_cart_tax()) }}</td>
+                                <td class="text-right p-4 font-bold text-[#2c3338]" id="checkout-tax">{{ falcon_price_format(get_falcon_cart_tax()) }}</td>
                             </tr>
                             @endif
 
                             @php $coupon = session()->get('lazy_coupon'); @endphp
                             @if($coupon)
                                 @php 
-                                    $subtotal = get_lazy_cart_subtotal();
+                                    $subtotal = get_falcon_cart_subtotal();
                                     $discount = $coupon['type'] === 'percent' ? $subtotal * ((float)$coupon['amount'] / 100) : (float)$coupon['amount'];
                                 @endphp
                                 <tr class="coupon-row bg-emerald-50/30">
                                     <th class="text-left p-4 font-bold text-emerald-700">Coupon: {{ $coupon['code'] }}</th>
-                                    <td class="text-right p-4 font-bold text-emerald-700">-{{ lazy_price_format($discount) }}</td>
+                                    <td class="text-right p-4 font-bold text-emerald-700">-{{ falcon_price_format($discount) }}</td>
                                 </tr>
                             @endif
 
                             <tr class="bg-[#fcfcfc]">
                                 <th class="text-left p-4 font-bold text-[#2c3338]">Total</th>
-                                <td class="text-right p-4 text-[18px] font-bold text-[#1363df]" id="checkout-total">{{ lazy_price_format(get_lazy_cart_total()) }}</td>
+                                <td class="text-right p-4 text-[18px] font-bold text-[#1363df]" id="checkout-total">{{ falcon_price_format(get_falcon_cart_total()) }}</td>
                             </tr>
                         </tbody>
                     </table>

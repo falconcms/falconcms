@@ -17,7 +17,7 @@ class PostController extends Controller
     public function builder($id)
     {
         $post = Post::findOrFail($id);
-        $customElements = apply_lazy_filters('lazy_builder_elements', []);
+        $customElements = apply_falcon_filters('falcon_builder_elements', []);
 
         $bodyRaw    = get_cms_option('theme_typography_body');
         $headingRaw = get_cms_option('theme_typography_h1');
@@ -39,7 +39,7 @@ class PostController extends Controller
             }
         } catch (\Throwable $e) {}
 
-        return view('falcon-cms::admin.lazy-builder.index', compact(
+        return view('falcon-cms::admin.falcon-builder.index', compact(
             'post', 'customElements', 'themeBodyFont', 'themeHeadingFont', 'pendingAutosave'
         ));
     }
@@ -258,7 +258,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         // This would typically return a front-end view that renders the builder JSON
-        return view('falcon-cms::admin.lazy-builder.preview', compact('post'));
+        return view('falcon-cms::admin.falcon-builder.preview', compact('post'));
     }
 
     public function __construct()
@@ -640,7 +640,7 @@ class PostController extends Controller
         $postData = lazy_normalize_publish($postData);
 
         if ($type === 'product') {
-            $productData = apply_lazy_filters('lazy_admin_before_save_product', $productData, null, $request);
+            $productData = apply_falcon_filters('lazy_admin_before_save_product', $productData, null, $request);
         }
 
         $post = Post::create($postData);
@@ -708,10 +708,10 @@ class PostController extends Controller
         }
 
         if ($type === 'product') {
-            do_lazy_action('lazy_admin_after_save_product', $post, $post->shopData, $request, 'create');
+            do_falcon_action('lazy_admin_after_save_product', $post, $post->shopData, $request, 'create');
         }
 
-        lazy_log_activity('created', "Created a new {$postData['type']}: {$post->title}", $post);
+        falcon_log_activity('created', "Created a new {$postData['type']}: {$post->title}", $post);
 
         // Multilingual Copy Logic
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
@@ -721,17 +721,17 @@ class PostController extends Controller
                 $clone->origin_id = $post->origin_id ?: $post->id;
                 $clone->slug = $post->slug;
                 
-                $clone->title = lazy_translate($post->title, $langCode);
+                $clone->title = falcon_translate($post->title, $langCode);
                 
                 // Generate translated slug
                 $clone->slug = $this->generateUniqueSlug($clone->title, 0, $post->type, $langCode);
                 // but let's translate simple text if it's rich editor
                 if ($post->editor_type === 'rich') {
-                    $clone->content = lazy_translate($post->content, $langCode);
+                    $clone->content = falcon_translate($post->content, $langCode);
                 }
                 
                 if ($post->excerpt) {
-                    $clone->excerpt = lazy_translate($post->excerpt, $langCode);
+                    $clone->excerpt = falcon_translate($post->excerpt, $langCode);
                 }
                 
                 $clone->save();
@@ -766,7 +766,7 @@ class PostController extends Controller
 
         if ($request->has('redirect_to_builder')) {
             clear_page_cache();
-            return redirect()->route('admin.lazy-builder', $post->id)->with('success', ucfirst($postData['type']) . ' created successfully.');
+            return redirect()->route('admin.falcon-builder', $post->id)->with('success', ucfirst($postData['type']) . ' created successfully.');
         }
 
         clear_page_cache();
@@ -1084,7 +1084,7 @@ class PostController extends Controller
                 $translationData
             );
             
-            lazy_log_activity('updated', "Updated {$locale} translation for {$post->type}: {$post->title}", $post);
+            falcon_log_activity('updated', "Updated {$locale} translation for {$post->type}: {$post->title}", $post);
             clear_page_cache();
             return redirect()->back()->with('success', ucfirst($post->type) . ' translation updated successfully.');
         }
@@ -1096,7 +1096,7 @@ class PostController extends Controller
         $postData = lazy_normalize_publish($postData);
 
         if ($post->type === 'product') {
-            $productData = apply_lazy_filters('lazy_admin_before_save_product', $productData, $post, $request);
+            $productData = apply_falcon_filters('lazy_admin_before_save_product', $productData, $post, $request);
         }
 
         $post->update($postData);
@@ -1155,16 +1155,16 @@ class PostController extends Controller
                 $clone->slug = $post->slug;
 
                 // Auto Translate
-                $clone->title = lazy_translate($post->title, $langCode);
+                $clone->title = falcon_translate($post->title, $langCode);
                 
                 // Generate translated slug
                 $clone->slug = $this->generateUniqueSlug($clone->title, 0, $post->type, $langCode);
                 if ($post->editor_type === 'rich') {
-                    $clone->content = lazy_translate($post->content, $langCode);
+                    $clone->content = falcon_translate($post->content, $langCode);
                 }
 
                 if ($post->excerpt) {
-                    $clone->excerpt = lazy_translate($post->excerpt, $langCode);
+                    $clone->excerpt = falcon_translate($post->excerpt, $langCode);
                 }
 
                 $clone->save();
@@ -1247,10 +1247,10 @@ class PostController extends Controller
         }
         
         if ($post->type === 'product') {
-            do_lazy_action('lazy_admin_after_save_product', $post, $post->fresh()->shopData, $request, 'update');
+            do_falcon_action('lazy_admin_after_save_product', $post, $post->fresh()->shopData, $request, 'update');
         }
 
-        lazy_log_activity('updated', "Updated {$post->type}: {$post->title}", $post);
+        falcon_log_activity('updated', "Updated {$post->type}: {$post->title}", $post);
 
         clear_page_cache();
 
@@ -1276,16 +1276,16 @@ class PostController extends Controller
         $title = $post->title;
 
         if ($type === 'product') {
-            do_lazy_action('lazy_admin_before_delete_product', $post);
+            do_falcon_action('lazy_admin_before_delete_product', $post);
         }
 
         $post->delete();
 
         if ($type === 'product') {
-            do_lazy_action('lazy_admin_after_delete_product', $post->id, $title);
+            do_falcon_action('lazy_admin_after_delete_product', $post->id, $title);
         }
 
-        lazy_log_activity('deleted', "Moved {$type} to trash: {$title}", $post);
+        falcon_log_activity('deleted', "Moved {$type} to trash: {$title}", $post);
         clear_page_cache();
         return redirect()->route('admin.posts.index', ['type' => $type])->with('success', 'Moved to trash.');
     }
@@ -1318,7 +1318,7 @@ class PostController extends Controller
             $posts = Post::whereIn('id', $ids)->get();
             foreach ($posts as $post) {
                 $post->delete();
-                lazy_log_activity('deleted', "Moved {$post->type} to trash: {$post->title}", $post);
+                falcon_log_activity('deleted', "Moved {$post->type} to trash: {$post->title}", $post);
             }
             clear_page_cache();
             return redirect()->back()->with('success', 'Selected items moved to trash.');
@@ -1328,7 +1328,7 @@ class PostController extends Controller
             $posts = Post::onlyTrashed()->whereIn('id', $ids)->get();
             foreach ($posts as $post) {
                 $post->restore();
-                lazy_log_activity('restored', "Restored {$post->type} from trash: {$post->title}", $post);
+                falcon_log_activity('restored', "Restored {$post->type} from trash: {$post->title}", $post);
             }
             clear_page_cache();
             return redirect()->back()->with('success', 'Selected items restored.');
@@ -1340,7 +1340,7 @@ class PostController extends Controller
                 $title = $p->title;
                 $type = $p->type;
                 $p->forceDelete();
-                lazy_log_activity('deleted', "Deleted {$type} permanently: {$title}", $p);
+                falcon_log_activity('deleted', "Deleted {$type} permanently: {$title}", $p);
             }
             clear_page_cache();
             return redirect()->back()->with('success', 'Selected items deleted permanently.');
@@ -1350,7 +1350,7 @@ class PostController extends Controller
             $posts = Post::whereIn('id', $ids)->get();
             foreach ($posts as $post) {
                 $post->update(['status' => $action]);
-                lazy_log_activity('updated', "Updated {$post->type} status to {$action}: {$post->title}", $post);
+                falcon_log_activity('updated', "Updated {$post->type} status to {$action}: {$post->title}", $post);
             }
             clear_page_cache();
             return redirect()->back()->with('success', 'Selected items updated.');

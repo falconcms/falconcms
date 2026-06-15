@@ -20,7 +20,7 @@
     }
 
     // Query args
-    $posts = get_lazy_posts([
+    $posts = get_falcon_posts([
         'post_type' => $s['post_type'] ?? 'post',
         'limit'     => max(1, (int)($s['posts_count'] ?? 6)),
         'order'     => $s['order']    ?? 'desc',
@@ -100,7 +100,7 @@
     <div id="{{ $gridId }}">
         @forelse($posts as $post)
         @php
-            $permalink  = get_lazy_permalink($post);
+            $permalink  = get_falcon_permalink($post);
             $imgSrc     = $post->featured_image ?? null;
             if ($imgSrc && !str_starts_with($imgSrc, 'http')) $imgSrc = asset('storage/' . $imgSrc);
             $rawExcerpt = strip_tags($post->content ?? '');

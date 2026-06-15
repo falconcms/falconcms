@@ -207,7 +207,7 @@ class MediaController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            lazy_log_activity('created', "Uploaded media: {$media->filename}", $media);
+            falcon_log_activity('created', "Uploaded media: {$media->filename}", $media);
 
             return response()->json([
                 'success' => true,
@@ -233,7 +233,7 @@ class MediaController extends Controller
             $name = $item->filename;
             Storage::disk('public')->delete($item->path);
             $item->delete();
-            lazy_log_activity('deleted', "Deleted media: {$name}");
+            falcon_log_activity('deleted', "Deleted media: {$name}");
         }
 
         return response()->json(['success' => true]);
@@ -289,7 +289,7 @@ class MediaController extends Controller
         $name = $media->filename;
         Storage::disk('public')->delete($media->path);
         $media->delete();
-        lazy_log_activity('deleted', "Deleted media: {$name}");
+        falcon_log_activity('deleted', "Deleted media: {$name}");
         return response()->json(['success' => true]);
     }
 
@@ -377,7 +377,7 @@ class MediaController extends Controller
                 imagedestroy($img);
             }
 
-            lazy_log_activity('settings_updated', "Bulk optimized {$count} media items");
+            falcon_log_activity('settings_updated', "Bulk optimized {$count} media items");
 
             return response()->json([
                 'success' => true, 

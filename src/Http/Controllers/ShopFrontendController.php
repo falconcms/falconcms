@@ -28,7 +28,7 @@ class ShopFrontendController extends Controller
     {
         $this->validateCartItems();
         $this->revalidateCoupon();
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
         return view($this->resolveThemeView('cart'), compact('cart'));
     }
 
@@ -39,14 +39,14 @@ class ShopFrontendController extends Controller
     public function miniCart()
     {
         $this->validateCartItems();
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
 
         $html = view($this->resolveThemeView('mini-cart-items'), compact('cart'))->render();
 
         return response()->json([
             'success'  => true,
-            'count'    => get_lazy_cart_count(),
-            'subtotal' => lazy_price_format(get_lazy_cart_subtotal()),
+            'count'    => get_falcon_cart_count(),
+            'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
             'html'     => $html,
         ]);
     }
@@ -68,7 +68,7 @@ class ShopFrontendController extends Controller
         // Inventory Check
         $stockSource = ($variation && $variation->manage_stock) ? $variation : $shopData;
         if ($stockSource && $stockSource->manage_stock) {
-            $cart = Session::get('lazy_cart', []);
+            $cart = Session::get('falcon_cart', []);
             $cartKey = $variationId ? "{$productId}_{$variationId}" : $productId;
             $currentInCart = isset($cart[$cartKey]) ? $cart[$cartKey]['quantity'] : 0;
             
@@ -87,7 +87,7 @@ class ShopFrontendController extends Controller
             }
         }
 
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
 
         $cartKey = $variationId ? "{$productId}_{$variationId}" : $productId;
 
@@ -98,7 +98,7 @@ class ShopFrontendController extends Controller
                 $customFields[substr($k, 12)] = $v;
             }
         }
-        $customFields = apply_lazy_filters('lazy_cart_item_custom_fields', $customFields, $product, $variation);
+        $customFields = apply_falcon_filters('falcon_cart_item_custom_fields', $customFields, $product, $variation);
 
         if (isset($cart[$cartKey])) {
             $cart[$cartKey]['quantity'] += $quantity;
@@ -129,20 +129,20 @@ class ShopFrontendController extends Controller
                 'meta'         => !empty($customFields) ? ['custom_fields' => $customFields] : [],
             ];
 
-            $cart[$cartKey] = apply_lazy_filters('lazy_cart_item_data', $cart[$cartKey], $product, $variation);
+            $cart[$cartKey] = apply_falcon_filters('falcon_cart_item_data', $cart[$cartKey], $product, $variation);
         }
 
-        Session::put('lazy_cart', $cart);
+        Session::put('falcon_cart', $cart);
 
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Product added to cart!',
-                'cart_count' => get_lazy_cart_count()
+                'cart_count' => get_falcon_cart_count()
             ]);
         }
 
-        return redirect()->to(get_lazy_cart_url())->with('success', 'Product added to cart!');
+        return redirect()->to(get_falcon_cart_url())->with('success', 'Product added to cart!');
     }
 
     public function updateCart(Request $request)
@@ -152,7 +152,7 @@ class ShopFrontendController extends Controller
             'quantity.*' => ['required', 'integer', 'min:1', 'max:9999'],
         ]);
 
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
         $quantities = $request->input('quantity', []);
 
         foreach ($quantities as $key => $qty) {
@@ -161,7 +161,7 @@ class ShopFrontendController extends Controller
             $cart[$key]['quantity'] = (int)$qty;
         }
 
-        Session::put('lazy_cart', $cart);
+        Session::put('falcon_cart', $cart);
         $this->validateCartItems();
         $this->revalidateCoupon();
 
@@ -169,18 +169,18 @@ class ShopFrontendController extends Controller
             $item_subtotals = [];
             foreach ($cart as $key => $item) {
                 $price = $item['sale_price'] ?? $item['price'];
-                $item_subtotals[$key] = lazy_price_format($price * $item['quantity']);
+                $item_subtotals[$key] = falcon_price_format($price * $item['quantity']);
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Cart updated!',
-                'cart_count' => get_lazy_cart_count(),
+                'cart_count' => get_falcon_cart_count(),
                 'item_subtotals' => $item_subtotals,
-                'subtotal' => lazy_price_format(get_lazy_cart_subtotal()),
-                'shipping' => lazy_price_format(get_lazy_cart_shipping()),
-                'tax' => lazy_price_format(get_lazy_cart_tax()),
-                'total' => lazy_price_format(get_lazy_cart_total()),
+                'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
+                'shipping' => falcon_price_format(get_falcon_cart_shipping()),
+                'tax' => falcon_price_format(get_falcon_cart_tax()),
+                'total' => falcon_price_format(get_falcon_cart_total()),
                 'discount_html' => $this->getDiscountHtml()
             ]);
         }
@@ -223,7 +223,7 @@ class ShopFrontendController extends Controller
 
             // Check if multiple coupons are allowed
             $isMultipleAllowed = (int)get_cms_option('shop_coupon_stacking_policy', '1') === 1;
-            $appliedCoupons = Session::get('lazy_coupons', []);
+            $appliedCoupons = Session::get('falcon_coupons', []);
             
             if (!$isMultipleAllowed && count($appliedCoupons) > 0) {
                 return $this->couponResponse(false, 'Multiple coupons are not allowed for this order.', $request);
@@ -241,11 +241,11 @@ class ShopFrontendController extends Controller
             }
 
             // 2. Min Spend Check
-            $subtotal = round(get_lazy_cart_subtotal(), 2);
+            $subtotal = round(get_falcon_cart_subtotal(), 2);
             $minSpend = !empty($coupon['min_spend']) ? round((float)$coupon['min_spend'], 2) : 0;
             
             if ($minSpend > 0 && $subtotal < $minSpend) {
-                return $this->couponResponse(false, 'Minimum spend for this coupon is ' . lazy_price_format($minSpend), $request);
+                return $this->couponResponse(false, 'Minimum spend for this coupon is ' . falcon_price_format($minSpend), $request);
             }
 
             // 3a. Total Usage Limit Check (global across all customers)
@@ -278,7 +278,7 @@ class ShopFrontendController extends Controller
             }
 
             // 4. Product/Category Restrictions
-            $cart = Session::get('lazy_cart', []);
+            $cart = Session::get('falcon_cart', []);
             $discount = get_lazy_coupon_discount_amount($coupon, $cart);
             if ($discount <= 0) {
                 return $this->couponResponse(false, 'This coupon is not valid for the products in your cart.', $request);
@@ -293,7 +293,7 @@ class ShopFrontendController extends Controller
                 'categories' => $coupon['categories'] ?? []
             ];
             
-            Session::put('lazy_coupons', $appliedCoupons);
+            Session::put('falcon_coupons', $appliedCoupons);
             Session::save();
             Session::forget('lazy_coupon'); // Ensure old singular key is gone
 
@@ -316,10 +316,10 @@ class ShopFrontendController extends Controller
             return response()->json([
                 'success' => $success,
                 'message' => $message,
-                'subtotal' => lazy_price_format(get_lazy_cart_subtotal()),
-                'shipping' => lazy_price_format(get_lazy_cart_shipping()),
-                'tax' => lazy_price_format(get_lazy_cart_tax()),
-                'total' => lazy_price_format(get_lazy_cart_total()),
+                'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
+                'shipping' => falcon_price_format(get_falcon_cart_shipping()),
+                'tax' => falcon_price_format(get_falcon_cart_tax()),
+                'total' => falcon_price_format(get_falcon_cart_total()),
                 'discount_html' => $success ? $this->getDiscountHtml() : ''
             ], $success ? 200 : 422);
         }
@@ -329,12 +329,12 @@ class ShopFrontendController extends Controller
 
     private function getDiscountHtml()
     {
-        $coupons = Session::get('lazy_coupons', []);
+        $coupons = Session::get('falcon_coupons', []);
         if (empty($coupons)) return '';
         
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
         $isSequential = (int)get_shop_option('shop_coupon_stacking_policy', '1') == 1;
-        $subtotal = get_lazy_cart_subtotal();
+        $subtotal = get_falcon_cart_subtotal();
         $currentSubtotal = $subtotal;
         
         $html = '';
@@ -351,7 +351,7 @@ class ShopFrontendController extends Controller
                                 <a href="' . route('shop.cart.coupon.remove') . '?code=' . urlencode($coupon['code']) . '" class="text-rose-500 hover:text-rose-700 text-[10px] font-normal">[Remove]</a>
                             </div>
                         </th>
-                        <td class="p-4 font-bold text-emerald-700">-' . lazy_price_format($discount) . '</td>
+                        <td class="p-4 font-bold text-emerald-700">-' . falcon_price_format($discount) . '</td>
                     </tr>';
             }
         }
@@ -363,16 +363,16 @@ class ShopFrontendController extends Controller
     {
         $code = $request->get('code');
         if ($code) {
-            $coupons = Session::get('lazy_coupons', []);
+            $coupons = Session::get('falcon_coupons', []);
             $newCoupons = [];
             foreach ($coupons as $c) {
                 if (strtoupper($c['code']) !== strtoupper($code)) {
                     $newCoupons[] = $c;
                 }
             }
-            Session::put('lazy_coupons', $newCoupons);
+            Session::put('falcon_coupons', $newCoupons);
         } else {
-            Session::forget('lazy_coupons');
+            Session::forget('falcon_coupons');
         }
         Session::forget('lazy_coupon');
         
@@ -387,10 +387,10 @@ class ShopFrontendController extends Controller
             return redirect()->route('shop.cart');
         }
 
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
         if (isset($cart[$key])) {
             unset($cart[$key]);
-            Session::put('lazy_cart', $cart);
+            Session::put('falcon_cart', $cart);
             $this->revalidateCoupon();
         }
 
@@ -398,11 +398,11 @@ class ShopFrontendController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Item removed from cart!',
-                'cart_count' => get_lazy_cart_count(),
-                'subtotal' => lazy_price_format(get_lazy_cart_subtotal()),
-                'shipping' => lazy_price_format(get_lazy_cart_shipping()),
-                'tax' => lazy_price_format(get_lazy_cart_tax()),
-                'total' => lazy_price_format(get_lazy_cart_total()),
+                'cart_count' => get_falcon_cart_count(),
+                'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
+                'shipping' => falcon_price_format(get_falcon_cart_shipping()),
+                'tax' => falcon_price_format(get_falcon_cart_tax()),
+                'total' => falcon_price_format(get_falcon_cart_total()),
                 'discount_html' => $this->getDiscountHtml()
             ]);
         }
@@ -415,7 +415,7 @@ class ShopFrontendController extends Controller
      */
     private function revalidateCoupon()
     {
-        $coupons = Session::get('lazy_coupons', []);
+        $coupons = Session::get('falcon_coupons', []);
         if (empty($coupons)) {
             Session::forget('lazy_coupon');
             return;
@@ -436,7 +436,7 @@ class ShopFrontendController extends Controller
             if (!$couponData) continue;
 
             // Check Min Spend
-            $subtotal = round(get_lazy_cart_subtotal(), 2);
+            $subtotal = round(get_falcon_cart_subtotal(), 2);
             $minSpend = !empty($couponData['min_spend']) ? round((float)$couponData['min_spend'], 2) : 0;
             
             if ($minSpend > 0 && $subtotal < $minSpend) continue;
@@ -447,7 +447,7 @@ class ShopFrontendController extends Controller
             }
 
             // Check Product/Category Restrictions
-            $cart = Session::get('lazy_cart', []);
+            $cart = Session::get('falcon_cart', []);
             $discount = get_lazy_coupon_discount_amount($couponData, $cart);
             if ($discount <= 0) continue;
 
@@ -462,23 +462,23 @@ class ShopFrontendController extends Controller
 
         // Wipe if coupons are disabled globally
         if (get_shop_option('shop_enable_coupons', '1') !== '1') {
-            Session::forget('lazy_coupons');
+            Session::forget('falcon_coupons');
             Session::forget('lazy_coupon');
             Session::save();
             return;
         }
 
-        Session::put('lazy_coupons', $newCoupons);
+        Session::put('falcon_coupons', $newCoupons);
         Session::forget('lazy_coupon');
 
         // Prune if multiple not allowed anymore
         $isMultipleAllowed = (int)get_cms_option('shop_coupon_stacking_policy', '1') === 1;
 
         if (!$isMultipleAllowed) {
-            $currentCoupons = Session::get('lazy_coupons', []);
+            $currentCoupons = Session::get('falcon_coupons', []);
             if (count($currentCoupons) > 1) {
                 $keptCoupon = array_shift($currentCoupons);
-                Session::put('lazy_coupons', [$keptCoupon]);
+                Session::put('falcon_coupons', [$keptCoupon]);
             }
         }
         Session::save();
@@ -488,7 +488,7 @@ class ShopFrontendController extends Controller
     {
         $this->validateCartItems();
         $this->revalidateCoupon();
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
         if (empty($cart)) {
             return redirect()->route('shop.cart')->with('error', 'Your cart is empty!');
         }
@@ -600,7 +600,7 @@ class ShopFrontendController extends Controller
             }
         }
 
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
         if (empty($cart)) {
             return redirect()->route('shop.cart')->with('error', 'Your cart is empty!');
         }
@@ -608,7 +608,7 @@ class ShopFrontendController extends Controller
         // Duplicate order guard: same email + same cart total, pending/processing, within 60 s
         $dupExists = Order::where('customer_email', $request->billing_email)
             ->whereIn('status', ['pending', 'processing'])
-            ->where('total', round(get_lazy_cart_total(), 2))
+            ->where('total', round(get_falcon_cart_total(), 2))
             ->where('created_at', '>=', now()->subSeconds(60))
             ->exists();
 
@@ -623,13 +623,13 @@ class ShopFrontendController extends Controller
         $shippingCountry = $request->has('ship_to_different_address') ? $request->shipping_country : $request->billing_country;
         Session::put('lazy_shipping_country', $shippingCountry);
 
-        $subtotal = get_lazy_cart_subtotal();
-        $shipping = get_lazy_cart_shipping($shippingCountry);
-        $tax = get_lazy_cart_tax();
-        $total = get_lazy_cart_total();
+        $subtotal = get_falcon_cart_subtotal();
+        $shipping = get_falcon_cart_shipping($shippingCountry);
+        $tax = get_falcon_cart_tax();
+        $total = get_falcon_cart_total();
 
         // Coupon Logic for Multiple Coupons
-        $coupons = Session::get('lazy_coupons', []);
+        $coupons = Session::get('falcon_coupons', []);
         $single = Session::get('lazy_coupon');
         if ($single && empty($coupons)) $coupons[] = $single;
 
@@ -662,7 +662,7 @@ class ShopFrontendController extends Controller
             'postcode' => $request->billing_postcode,
             'country' => $request->billing_country,
             'payment_method' => $request->payment_method,
-            'shipping_method' => get_lazy_cart_shipping_details($shippingCountry)['label'],
+            'shipping_method' => get_falcon_cart_shipping_details($shippingCountry)['label'],
             'customer_note' => $request->order_comments,
             // Snapshot currency settings for historical accuracy
             'currency' => get_shop_option('shop_currency', 'USD'),
@@ -694,7 +694,7 @@ class ShopFrontendController extends Controller
                 $customCheckout[$hfName] = $val;
             }
         }
-        $customCheckout = apply_lazy_filters('lazy_checkout_custom_fields', $customCheckout, $request);
+        $customCheckout = apply_falcon_filters('lazy_checkout_custom_fields', $customCheckout, $request);
         if (!empty($customCheckout)) {
             $orderData['meta'] = ['checkout_fields' => $customCheckout];
         }
@@ -724,11 +724,11 @@ class ShopFrontendController extends Controller
             }
         }
 
-        do_lazy_action('lazy_before_place_order', $order, $cart, $request);
+        do_falcon_action('lazy_before_place_order', $order, $cart, $request);
 
         foreach ($cart as $item) {
             $itemMeta = $item['meta'] ?? [];
-            $itemMeta = apply_lazy_filters('lazy_order_item_meta', $itemMeta, $item, $order);
+            $itemMeta = apply_falcon_filters('lazy_order_item_meta', $itemMeta, $item, $order);
 
             OrderItem::create([
                 'order_id'     => $order->id,
@@ -836,9 +836,9 @@ class ShopFrontendController extends Controller
 
         $this->generateDownloadTokens($order);
 
-        Session::forget('lazy_cart');
+        Session::forget('falcon_cart');
         Session::forget('lazy_coupon');
-        Session::forget('lazy_coupons');
+        Session::forget('falcon_coupons');
     }
 
     private function generateDownloadTokens(\FalconCms\Core\Models\Order $order): void
@@ -1432,7 +1432,7 @@ class ShopFrontendController extends Controller
      */
     private function validateCartItems()
     {
-        $cart = Session::get('lazy_cart', []);
+        $cart = Session::get('falcon_cart', []);
         if (empty($cart)) return;
 
         $productIds = array_column($cart, 'id');
@@ -1470,7 +1470,7 @@ class ShopFrontendController extends Controller
         }
 
         if ($updated) {
-            \Illuminate\Support\Facades\Session::put('lazy_cart', $cart);
+            \Illuminate\Support\Facades\Session::put('falcon_cart', $cart);
             \Illuminate\Support\Facades\Session::save();
         }
     }
@@ -1479,14 +1479,14 @@ class ShopFrontendController extends Controller
     {
         $country = $request->input('country');
         \Illuminate\Support\Facades\Session::put('lazy_shipping_country', $country);
-        $shippingDetails = get_lazy_cart_shipping_details($country);
+        $shippingDetails = get_falcon_cart_shipping_details($country);
         $shippingCost = $shippingDetails['cost'];
-        $total = get_lazy_cart_total();
+        $total = get_falcon_cart_total();
         
         return response()->json([
             'success' => true,
-            'shipping' => $shippingCost > 0 ? $shippingDetails['label'] . ': ' . lazy_price_format($shippingCost) : $shippingDetails['label'],
-            'total' => lazy_price_format($total)
+            'shipping' => $shippingCost > 0 ? $shippingDetails['label'] . ': ' . falcon_price_format($shippingCost) : $shippingDetails['label'],
+            'total' => falcon_price_format($total)
         ]);
     }
 }

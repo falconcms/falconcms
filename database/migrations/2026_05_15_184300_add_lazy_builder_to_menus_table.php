@@ -16,7 +16,7 @@ return new class extends Migration
     public function down(): void
     {
         Menu::where('title', 'Lazy Builder')
-            ->where('route', 'admin.lazy-builder.sections')
+            ->where('route', 'admin.falcon-builder.sections')
             ->delete();
     }
 };

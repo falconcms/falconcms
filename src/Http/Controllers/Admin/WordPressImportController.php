@@ -87,8 +87,8 @@ class WordPressImportController extends Controller
             'import_pages' => $request->boolean('import_pages', true),
         ]);
 
-        if (function_exists('lazy_log_activity')) {
-            lazy_log_activity('imported', 'Imported WordPress content (posts: ' . $summary['posts'] . ', pages: ' . $summary['pages'] . ')');
+        if (function_exists('falcon_log_activity')) {
+            falcon_log_activity('imported', 'Imported WordPress content (posts: ' . $summary['posts'] . ', pages: ' . $summary['pages'] . ')');
         }
         if (function_exists('clear_page_cache')) {
             clear_page_cache();
@@ -203,7 +203,7 @@ class WordPressImportController extends Controller
             $msg = "Media import complete: {$count} file(s) imported and added to the media library.";
             if ($skipped > 0) $msg .= " {$skipped} non-media file(s) skipped.";
 
-            if (function_exists('lazy_log_activity')) lazy_log_activity('imported', $msg);
+            if (function_exists('falcon_log_activity')) falcon_log_activity('imported', $msg);
 
             return back()->with('media_success', $msg);
 

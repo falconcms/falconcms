@@ -87,7 +87,7 @@
         $queryArgs['offset']     = 0; // offset not used with paginate
     }
 
-    $posts = get_lazy_posts($queryArgs);
+    $posts = get_falcon_posts($queryArgs);
 
     // Grid / spacing settings
     $layout = $s['layout'] ?? 'grid';
@@ -306,7 +306,7 @@
     <div id="{{ $gridId }}">
         @forelse($posts as $post)
         @php
-            $permalink  = get_lazy_permalink($post);
+            $permalink  = get_falcon_permalink($post);
             $imgSrc     = $post->featured_image ?? null;
             if ($imgSrc && !str_starts_with($imgSrc, 'http')) $imgSrc = asset('storage/' . $imgSrc);
             $__rawContent    = $post->content ?? '';

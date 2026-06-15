@@ -56,8 +56,8 @@
                         <span id="permalink-view">
                             @php
                                 $isHomePage   = is_lazy_homepage($page);
-                                $fullUrl      = $isHomePage ? url('/') : get_lazy_permalink($page);
-                                $displayBase  = $isHomePage ? url('/') : str_replace($page->slug, '', get_lazy_permalink($page));
+                                $fullUrl      = $isHomePage ? url('/') : get_falcon_permalink($page);
+                                $displayBase  = $isHomePage ? url('/') : str_replace($page->slug, '', get_falcon_permalink($page));
                             @endphp
                             @if($isHomePage)
                                 <a id="permalink-full-link" href="{{ $fullUrl }}" target="_blank" class="text-[#2271b1] underline">{{ $fullUrl }}</a>
@@ -100,7 +100,7 @@
                         <h2 class="text-[#2c3338] text-[22px] font-bold mb-3">Welcome to the Page Builder</h2>
                         <p class="text-[#646970] text-[14px] mb-8">This post is now using the amazing page builder.</p>
                         
-                        <button type="button" @if(isset($page->id)) onclick="window.location.href='{{ route('admin.lazy-builder', $page->id) }}'" @else onclick="window.showToast('Please save the page first to enable the Page Builder.', 'warning')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
+                        <button type="button" @if(isset($page->id)) onclick="window.location.href='{{ route('admin.falcon-builder', $page->id) }}'" @else onclick="window.showToast('Please save the page first to enable the Page Builder.', 'warning')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
                             Edit with Page Builder
                         </button>
                     </div>

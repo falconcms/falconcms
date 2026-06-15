@@ -13,8 +13,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Menu::where('title', 'Library')->where('route', 'admin.lazy-builder.library')->delete();
-        Menu::where('title', 'Sections')->where('route', 'admin.lazy-builder.sections')
+        Menu::where('title', 'Library')->where('route', 'admin.falcon-builder.library')->delete();
+        Menu::where('title', 'Sections')->where('route', 'admin.falcon-builder.sections')
             ->whereNotNull('parent_id')->delete();
     }
 };

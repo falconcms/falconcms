@@ -108,16 +108,16 @@ class MenuSeeder extends Seeder
         // 7b. Lazy Builder
         $lazyBuilderMenu = Menu::create([
             'title' => 'Lazy Builder',
-            'route' => 'admin.lazy-builder.sections',
+            'route' => 'admin.falcon-builder.sections',
             'icon'  => 'view_quilt',
             'group' => 'Main',
             'order' => 42,
         ]);
         $lazyBuilderMenu->children()->createMany([
-            ['title' => 'Sections',       'route' => 'admin.lazy-builder.sections',     'order' => 1],
-            ['title' => 'Header Builder', 'route' => 'admin.lazy-builder.header',        'order' => 2],
-            ['title' => 'Footer Builder', 'route' => 'admin.lazy-builder.footer',        'order' => 3],
-            ['title' => 'Library',        'route' => 'admin.lazy-builder.library',       'order' => 4],
+            ['title' => 'Sections',       'route' => 'admin.falcon-builder.sections',     'order' => 1],
+            ['title' => 'Header Builder', 'route' => 'admin.falcon-builder.header',        'order' => 2],
+            ['title' => 'Footer Builder', 'route' => 'admin.falcon-builder.footer',        'order' => 3],
+            ['title' => 'Library',        'route' => 'admin.falcon-builder.library',       'order' => 4],
         ]);
 
         // 8. ACPT

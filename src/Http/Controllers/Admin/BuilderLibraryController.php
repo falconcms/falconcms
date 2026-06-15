@@ -51,7 +51,7 @@ class BuilderLibraryController extends Controller
         $library    = $this->getLibrary();
         $postCards  = $this->getPostCards();
         $megaMenus  = $this->getMegaMenus();
-        return view('falcon-cms::admin.lazy-builder.library', compact('library', 'postCards', 'megaMenus'));
+        return view('falcon-cms::admin.falcon-builder.library', compact('library', 'postCards', 'megaMenus'));
     }
 
     public function saveMegaMenu(Request $request)
@@ -79,7 +79,7 @@ class BuilderLibraryController extends Controller
         $megaMenu = collect($menus)->firstWhere('id', $id);
         if (!$megaMenu) abort(404);
 
-        $customElements   = apply_lazy_filters('lazy_builder_elements', []);
+        $customElements   = apply_falcon_filters('falcon_builder_elements', []);
         $bodyRaw          = get_cms_option('theme_typography_body');
         $headingRaw       = get_cms_option('theme_typography_h1');
         $bodyFont         = is_array($bodyRaw)    ? $bodyRaw    : json_decode((string)$bodyRaw,    true);
@@ -87,7 +87,7 @@ class BuilderLibraryController extends Controller
         $themeBodyFont    = $bodyFont['family']    ?? null;
         $themeHeadingFont = $headingFont['family'] ?? null;
 
-        return view('falcon-cms::admin.lazy-builder.mega-menu-builder', compact(
+        return view('falcon-cms::admin.falcon-builder.mega-menu-builder', compact(
             'megaMenu', 'customElements', 'themeBodyFont', 'themeHeadingFont'
         ));
     }
@@ -170,7 +170,7 @@ class BuilderLibraryController extends Controller
         $postCard = collect($cards)->firstWhere('id', $id);
         if (!$postCard) abort(404);
 
-        $customElements  = apply_lazy_filters('lazy_builder_elements', []);
+        $customElements  = apply_falcon_filters('falcon_builder_elements', []);
         $bodyRaw         = get_cms_option('theme_typography_body');
         $headingRaw      = get_cms_option('theme_typography_h1');
         $bodyFont        = is_array($bodyRaw)    ? $bodyRaw    : json_decode((string)$bodyRaw,    true);
@@ -178,7 +178,7 @@ class BuilderLibraryController extends Controller
         $themeBodyFont   = $bodyFont['family']    ?? null;
         $themeHeadingFont = $headingFont['family'] ?? null;
 
-        return view('falcon-cms::admin.lazy-builder.post-card-builder', compact(
+        return view('falcon-cms::admin.falcon-builder.post-card-builder', compact(
             'postCard', 'customElements', 'themeBodyFont', 'themeHeadingFont'
         ));
     }

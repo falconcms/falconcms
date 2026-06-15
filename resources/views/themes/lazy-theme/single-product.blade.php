@@ -3,7 +3,7 @@
 @section('title', $post->title)
 
 @section('content')
-<?php do_lazy_action('lazy_before_single_product', $post); ?>
+<?php do_falcon_action('lazy_before_single_product', $post); ?>
 <div class="bg-white py-12 min-h-screen font-sans">
     <div class="container-custom">
         <!-- Breadcrumbs -->
@@ -42,7 +42,7 @@
         </nav>
 
         <div class="flex flex-col lg:flex-row gap-12 mb-20">
-            <?php do_lazy_action('lazy_before_product_images', $post); ?>
+            <?php do_falcon_action('lazy_before_product_images', $post); ?>
             <div class="w-full lg:w-1/2">
                 <div class="relative bg-[#f8f8f8] rounded-sm overflow-hidden mb-4 group cursor-zoom-in">
                     @if($post->featured_image)
@@ -72,33 +72,33 @@
                 </div>
                 @endif
             </div>
-            <?php do_lazy_action('lazy_after_product_images', $post); ?>
+            <?php do_falcon_action('lazy_after_product_images', $post); ?>
 
             <!-- Right: Product Info -->
             <div class="w-full lg:w-1/2 flex flex-col">
 
-                <?php do_lazy_action('lazy_simple_before_product_title', $post); ?>
-                {!! apply_lazy_filters('lazy_simple_product_title', '<h1 class="text-[36px] font-bold text-heading mb-4 leading-tight">' . e($post->title) . '</h1>', $post) !!}
-                <?php do_lazy_action('lazy_simple_after_product_title', $post); ?>
+                <?php do_falcon_action('lazy_simple_before_product_title', $post); ?>
+                {!! apply_falcon_filters('lazy_simple_product_title', '<h1 class="text-[36px] font-bold text-heading mb-4 leading-tight">' . e($post->title) . '</h1>', $post) !!}
+                <?php do_falcon_action('lazy_simple_after_product_title', $post); ?>
                 
-                <?php do_lazy_action('lazy_simple_before_product_price', $post); ?>
+                <?php do_falcon_action('lazy_simple_before_product_price', $post); ?>
                 <?php
                     ob_start();
                     if ($post->shopData && $post->shopData->sale_price):
                 ?>
                 <div class="text-[24px] font-medium text-heading mb-6 flex items-center gap-3">
-                    <span class="line-through text-gray-300 font-normal">{{ lazy_price_format($post->shopData->price) }}</span>
-                    <span class="text-heading font-bold">{{ lazy_price_format($post->shopData->sale_price) }}</span>
+                    <span class="line-through text-gray-300 font-normal">{{ falcon_price_format($post->shopData->price) }}</span>
+                    <span class="text-heading font-bold">{{ falcon_price_format($post->shopData->sale_price) }}</span>
                 </div>
                 <?php else: ?>
                 <div class="text-[24px] font-medium text-heading mb-6 flex items-center gap-3">
-                    <span class="text-heading font-bold">{{ lazy_price_format($post->shopData->price ?? 0) }}</span>
+                    <span class="text-heading font-bold">{{ falcon_price_format($post->shopData->price ?? 0) }}</span>
                 </div>
                 <?php endif;
                     $priceHtml = ob_get_clean();
-                    echo apply_lazy_filters('lazy_simple_product_price', $priceHtml, $post);
+                    echo apply_falcon_filters('lazy_simple_product_price', $priceHtml, $post);
                 ?>
-                <?php do_lazy_action('lazy_simple_after_product_price', $post); ?>
+                <?php do_falcon_action('lazy_simple_after_product_price', $post); ?>
 
                 @php
                     $stkGlobal = get_shop_option('shop_manage_stock', '1') === '1';
@@ -125,17 +125,17 @@
                     </div>
                 @endif
                 
-                <?php do_lazy_action('lazy_simple_before_short_description', $post); ?>
+                <?php do_falcon_action('lazy_simple_before_short_description', $post); ?>
                 @if(!empty($post->shopData->short_description))
-                {!! apply_lazy_filters('lazy_simple_short_description', '<div class="text-[15px] text-gray-600 mb-8 leading-relaxed">' . $post->shopData->short_description . '</div>', $post) !!}
+                {!! apply_falcon_filters('lazy_simple_short_description', '<div class="text-[15px] text-gray-600 mb-8 leading-relaxed">' . $post->shopData->short_description . '</div>', $post) !!}
                 @endif
-                <?php do_lazy_action('lazy_simple_after_short_description', $post); ?>
+                <?php do_falcon_action('lazy_simple_after_short_description', $post); ?>
 
-                <?php do_lazy_action('lazy_simple_before_add_to_cart_form', $post); ?>
+                <?php do_falcon_action('lazy_simple_before_add_to_cart_form', $post); ?>
                 @if(!$post->is_in_stock)
                 <div class="mb-10 pb-8 border-b border-gray-100">
                     @if(has_lazy_action('lazy_simple_out_of_stock_button'))
-                        <?php do_lazy_action('lazy_simple_out_of_stock_button', $post); ?>
+                        <?php do_falcon_action('lazy_simple_out_of_stock_button', $post); ?>
                     @else
                     <button disabled class="w-full md:w-auto bg-gray-400 text-white px-8 h-11 rounded-sm font-bold text-[14px] cursor-not-allowed uppercase">
                         Out of stock
@@ -146,22 +146,22 @@
                 <form id="add-to-cart-form" action="{{ route('shop.cart.add') }}" method="POST" class="mb-10 pb-8 border-b border-gray-100">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $post->id }}">
-                    <?php do_lazy_action('lazy_simple_add_to_cart_form_top', $post); ?>
-                    <?php lazy_render_product_fields(apply_lazy_filters('lazy_simple_product_fields', apply_lazy_filters('lazy_product_fields', [], $post), $post)); ?>
+                    <?php do_falcon_action('lazy_simple_add_to_cart_form_top', $post); ?>
+                    <?php lazy_render_product_fields(apply_falcon_filters('lazy_simple_product_fields', apply_falcon_filters('lazy_product_fields', [], $post), $post)); ?>
 
                     <div class="flex items-center gap-4 mt-4">
                         <div class="flex items-center border border-gray-200 rounded-sm h-11 w-20">
                             <input type="number" id="qty" name="quantity" value="1" min="1" class="w-full h-full text-center border-none focus:ring-0 text-[15px] font-medium">
                         </div>
-                        <?php do_lazy_action('lazy_simple_before_add_to_cart_button', $post); ?>
-                        {!! apply_lazy_filters('lazy_simple_add_to_cart_button', '<button type="submit" id="add-to-cart-btn" class="bg-primary text-white px-8 h-11 rounded-sm font-bold text-[14px] hover:bg-primary-hover transition-colors uppercase flex items-center gap-2"><span>Add to cart</span></button>', $post) !!}
-                        <?php do_lazy_action('lazy_simple_after_add_to_cart_button', $post); ?>
+                        <?php do_falcon_action('lazy_simple_before_add_to_cart_button', $post); ?>
+                        {!! apply_falcon_filters('lazy_simple_add_to_cart_button', '<button type="submit" id="add-to-cart-btn" class="bg-primary text-white px-8 h-11 rounded-sm font-bold text-[14px] hover:bg-primary-hover transition-colors uppercase flex items-center gap-2"><span>Add to cart</span></button>', $post) !!}
+                        <?php do_falcon_action('lazy_simple_after_add_to_cart_button', $post); ?>
                         @include('falcon-cms::themes.lazy-theme.partials.wishlist-button', ['product' => $post])
                     </div>
-                    <?php do_lazy_action('lazy_simple_add_to_cart_form_bottom', $post); ?>
+                    <?php do_falcon_action('lazy_simple_add_to_cart_form_bottom', $post); ?>
                 </form>
                 @endif
-                <?php do_lazy_action('lazy_simple_after_add_to_cart_form', $post); ?>
+                <?php do_falcon_action('lazy_simple_after_add_to_cart_form', $post); ?>
 
                 <div class="flex items-center gap-2 mb-8 -mt-4">
                     @unless($post->is_in_stock ?? true)
@@ -170,7 +170,7 @@
                     <span class="text-[13px] text-gray-500">{{ lazy_in_wishlist($post->id) ? 'Saved to your wishlist' : 'Add to your wishlist to buy later' }}</span>
                 </div>
 
-                <?php do_lazy_action('lazy_simple_before_product_meta', $post); ?>
+                <?php do_falcon_action('lazy_simple_before_product_meta', $post); ?>
                 <div class="text-[13px] text-gray-500 space-y-2">
                     @if($post->shopData && $post->shopData->sku)
                     <p><span class="uppercase font-bold text-gray-800">SKU:</span> {{ $post->shopData->sku }}</p>
@@ -186,21 +186,21 @@
                             <span class="text-gray-400">Uncategorized</span>
                         @endif
                     </p>
-                    <?php do_lazy_action('lazy_simple_product_meta_fields', $post); ?>
+                    <?php do_falcon_action('lazy_simple_product_meta_fields', $post); ?>
                 </div>
-                <?php do_lazy_action('lazy_simple_after_product_meta', $post); ?>
+                <?php do_falcon_action('lazy_simple_after_product_meta', $post); ?>
             </div>
         </div>
 
         <!-- Tabs Section -->
-        <?php do_lazy_action('lazy_before_product_description', $post); ?>
+        <?php do_falcon_action('lazy_before_product_description', $post); ?>
         @php
             $reviewsOn = get_shop_option('shop_enable_reviews', '1') === '1';
             $ratingOn  = get_shop_option('shop_enable_review_rating', '1') === '1';
         @endphp
         <div class="mt-16 border-t border-gray-100 pt-10">
             <div class="flex gap-8 mb-8 border-b border-gray-100 tab-headers">
-                {!! apply_lazy_filters('lazy_product_description_title', '<button onclick="switchTab(\'description\')" id="tab-btn-description" class="pb-4 text-[14px] font-bold text-heading border-b-2 border-gray-900 uppercase transition-all">Description</button>', $post) !!}
+                {!! apply_falcon_filters('lazy_product_description_title', '<button onclick="switchTab(\'description\')" id="tab-btn-description" class="pb-4 text-[14px] font-bold text-heading border-b-2 border-gray-900 uppercase transition-all">Description</button>', $post) !!}
                 <button onclick="switchTab('info')" id="tab-btn-info" class="pb-4 text-[14px] font-bold text-gray-400 hover:text-heading uppercase border-b-2 border-transparent transition-all">Additional information</button>
                 @if($reviewsOn)
                 <button onclick="switchTab('reviews')" id="tab-btn-reviews" class="pb-4 text-[14px] font-bold text-gray-400 hover:text-heading uppercase border-b-2 border-transparent transition-all">Reviews ({{ $post->reviews()->count() }})</button>
@@ -208,7 +208,7 @@
             </div>
             
             <div id="tab-content-description" class="tab-pane prose max-w-none text-gray-600 text-[15px] leading-relaxed">
-                {!! apply_lazy_filters('lazy_product_description', $post->content, $post) !!}
+                {!! apply_falcon_filters('lazy_product_description', $post->content, $post) !!}
             </div>
 
             <div id="tab-content-info" class="tab-pane hidden">
@@ -581,6 +581,6 @@
 
     </div>
 </div>
-<?php do_lazy_action('lazy_after_product_description', $post); ?>
-<?php do_lazy_action('lazy_after_single_product', $post); ?>
+<?php do_falcon_action('lazy_after_product_description', $post); ?>
+<?php do_falcon_action('lazy_after_single_product', $post); ?>
 @stop

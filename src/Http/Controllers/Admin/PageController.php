@@ -176,7 +176,7 @@ class PageController extends Controller
             }
         }
 
-        lazy_log_activity('created', "Created a new page: {$page->title}", $page);
+        falcon_log_activity('created', "Created a new page: {$page->title}", $page);
         
         // Multilingual Copy Logic
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
@@ -185,15 +185,15 @@ class PageController extends Controller
                 $clone->lang_code = $langCode;
                 $clone->origin_id = $page->id;
                 
-                $clone->title = lazy_translate($page->title, $langCode);
+                $clone->title = falcon_translate($page->title, $langCode);
                 $clone->slug = $this->generateUniqueSlug($clone->title, 0, $langCode);
                 
                 if ($page->editor_type === 'rich') {
-                    $clone->content = lazy_translate($page->content, $langCode);
+                    $clone->content = falcon_translate($page->content, $langCode);
                 }
                 
                 if ($page->excerpt) {
-                    $clone->excerpt = lazy_translate($page->excerpt, $langCode);
+                    $clone->excerpt = falcon_translate($page->excerpt, $langCode);
                 }
                 
                 $clone->save();
@@ -417,7 +417,7 @@ class PageController extends Controller
             }
         }
 
-        lazy_log_activity('updated', "Updated page: {$page->title}", $page);
+        falcon_log_activity('updated', "Updated page: {$page->title}", $page);
 
         // Multilingual Copy Logic for Edit
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
@@ -429,15 +429,15 @@ class PageController extends Controller
                 $clone->lang_code = $langCode;
                 $clone->origin_id = $page->id;
                 
-                $clone->title = lazy_translate($page->title, $langCode);
+                $clone->title = falcon_translate($page->title, $langCode);
                 $clone->slug = $this->generateUniqueSlug($clone->title, 0, $langCode);
                 
                 if ($page->editor_type === 'rich') {
-                    $clone->content = lazy_translate($page->content, $langCode);
+                    $clone->content = falcon_translate($page->content, $langCode);
                 }
                 
                 if ($page->excerpt) {
-                    $clone->excerpt = lazy_translate($page->excerpt, $langCode);
+                    $clone->excerpt = falcon_translate($page->excerpt, $langCode);
                 }
                 
                 $clone->save();
@@ -451,7 +451,7 @@ class PageController extends Controller
     {
         $title = $page->title;
         $page->delete();
-        lazy_log_activity('deleted', "Moved page to trash: {$title}", $page);
+        falcon_log_activity('deleted', "Moved page to trash: {$title}", $page);
         return redirect()->route('admin.pages.index')->with('success', 'Page moved to trash.');
     }
 
@@ -482,14 +482,14 @@ class PageController extends Controller
             $pages = Page::whereIn('id', $ids)->get();
             foreach ($pages as $page) {
                 $page->delete();
-                lazy_log_activity('deleted', "Moved page to trash: {$page->title}", $page);
+                falcon_log_activity('deleted', "Moved page to trash: {$page->title}", $page);
             }
             return back()->with('success', count($ids) . ' pages moved to trash.');
         } elseif ($action === 'restore') {
             $pages = Page::onlyTrashed()->whereIn('id', $ids)->get();
             foreach ($pages as $page) {
                 $page->restore();
-                lazy_log_activity('restored', "Restored page from trash: {$page->title}", $page);
+                falcon_log_activity('restored', "Restored page from trash: {$page->title}", $page);
             }
             return back()->with('success', count($ids) . ' pages restored.');
         } elseif ($action === 'delete') {
@@ -497,14 +497,14 @@ class PageController extends Controller
             foreach ($pages as $page) {
                 $title = $page->title;
                 $page->forceDelete();
-                lazy_log_activity('deleted', "Deleted page permanently: {$title}", $page);
+                falcon_log_activity('deleted', "Deleted page permanently: {$title}", $page);
             }
             return back()->with('success', count($ids) . ' pages deleted permanently.');
         } elseif (in_array($action, ['draft', 'published'])) {
             $pages = Page::whereIn('id', $ids)->get();
             foreach ($pages as $page) {
                 $page->update(['status' => $action]);
-                lazy_log_activity('updated', "Updated page status to {$action}: {$page->title}", $page);
+                falcon_log_activity('updated', "Updated page status to {$action}: {$page->title}", $page);
             }
             return back()->with('success', count($ids) . ' pages marked as ' . ucfirst($action) . '.');
         }

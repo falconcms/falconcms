@@ -1,7 +1,7 @@
 {{-- Social share row — shown only when Customizer → Blog → Single Blog → Show Share Buttons is on. --}}
 @if(get_cms_option('theme_single_show_share', '0') === '1')
 @php
-    $permalink = $permalink ?? get_lazy_permalink($post);
+    $permalink = $permalink ?? get_falcon_permalink($post);
     $shareUrl  = urlencode($permalink);
     $shareTxt  = urlencode($post->title);
     $shareLinks = [

@@ -31,13 +31,13 @@
 
 
     <div class="row">
-    @foreach(get_lazy_posts(['post_type' => 'dramas', 'limit' => 3]) as $post)
+    @foreach(get_falcon_posts(['post_type' => 'dramas', 'limit' => 3]) as $post)
         <div class="col-md-4">
             <div class="card text-white">
                 <img src="{{ str_starts_with($post->featured_image, 'http') ? $post->featured_image : asset('storage/'.$post->featured_image) }}" class="card-img-top">
                 <div class="card-body">
                     <h5 class="card-title">{{ $post->title }}</h5>
-                    <p class="card-text">{{ get_lazy_excerpt($post, 100) }}</p>
+                    <p class="card-text">{{ get_falcon_excerpt($post, 100) }}</p>
                     <a href="{{ route('frontend.show', ['typeOrSlug' => $post->type, 'slug' => $post->slug]) }}" class="btn btn-primary">Watch Now</a>
                 </div>
             </div>

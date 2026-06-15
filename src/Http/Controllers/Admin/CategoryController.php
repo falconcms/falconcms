@@ -104,7 +104,7 @@ class CategoryController extends Controller
         ]);
 
         $category = Category::create($validated);
-        lazy_log_activity('created', "Created a new category: {$category->name}", $category);
+        falcon_log_activity('created', "Created a new category: {$category->name}", $category);
 
         return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category added.');
     }
@@ -176,16 +176,16 @@ class CategoryController extends Controller
                 $clone->lang_code = $targetLang;
                 $clone->origin_id = $category->id;
                 
-                $clone->name = lazy_translate($category->name, $targetLang);
+                $clone->name = falcon_translate($category->name, $targetLang);
                 $clone->slug = Category::generateUniqueSlug($clone->name, 0, $targetLang);
                 if ($category->description) {
-                    $clone->description = lazy_translate($category->description, $targetLang);
+                    $clone->description = falcon_translate($category->description, $targetLang);
                 }
                 $clone->save();
             }
         }
 
-        lazy_log_activity('updated', "Updated category: {$category->name}", $category);
+        falcon_log_activity('updated', "Updated category: {$category->name}", $category);
 
         return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category updated.');
     }
@@ -194,7 +194,7 @@ class CategoryController extends Controller
     {
         $name = $category->name;
         $category->delete();
-        lazy_log_activity('deleted', "Deleted category: {$name}", $category);
+        falcon_log_activity('deleted', "Deleted category: {$name}", $category);
         return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category deleted.');
     }
     public function ajax(Request $request)

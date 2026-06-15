@@ -249,7 +249,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 
     $menuBpSm  = (int) get_cms_option('theme_small_screen_breakpoint',  '800');
     $menuBpMed = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');
-    $menuRespCss = lazy_elem_resp_css($s, $menuBpSm, $menuBpMed, [
+    $menuRespCss = falcon_elem_resp_css($s, $menuBpSm, $menuBpMed, [
         ['prop' => 'marginTop',    'unitProp' => 'marginTopUnit',    'sel' => ".menu-{$elId}"],
         ['prop' => 'marginBottom', 'unitProp' => 'marginBottomUnit', 'sel' => ".menu-{$elId}"],
     ]);

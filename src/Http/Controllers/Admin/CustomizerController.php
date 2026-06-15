@@ -879,8 +879,8 @@ class CustomizerController extends \Illuminate\Routing\Controller
 
         // When a Header/Footer is built with the Lazy Builder, the matching customizer
         // options become irrelevant — flag them so the view can show a notice instead.
-        $builderHeaderActive = function_exists('get_lazy_header') ? (bool) get_lazy_header() : false;
-        $builderFooterActive = function_exists('get_lazy_footer') ? (bool) get_lazy_footer() : false;
+        $builderHeaderActive = function_exists('get_falcon_header') ? (bool) get_falcon_header() : false;
+        $builderFooterActive = function_exists('get_falcon_footer') ? (bool) get_falcon_footer() : false;
 
         return view('falcon-cms::admin.customizer.index', compact('section', 'sections', 'settings', 'builderHeaderActive', 'builderFooterActive'));
     }
@@ -896,8 +896,8 @@ class CustomizerController extends \Illuminate\Routing\Controller
 
         // Mirror the view's locking logic: skip sections whose builder overrides are active,
         // so saving from any other section doesn't overwrite those fields with empty strings.
-        $builderHeaderActive = function_exists('get_lazy_header') ? (bool) get_lazy_header() : false;
-        $builderFooterActive = function_exists('get_lazy_footer') ? (bool) get_lazy_footer() : false;
+        $builderHeaderActive = function_exists('get_falcon_header') ? (bool) get_falcon_header() : false;
+        $builderFooterActive = function_exists('get_falcon_footer') ? (bool) get_falcon_footer() : false;
 
         $lockedSections = [];
         if ($builderHeaderActive) {
@@ -1121,7 +1121,7 @@ class CustomizerController extends \Illuminate\Routing\Controller
             imagedestroy($img);
         }
 
-        lazy_log_activity('settings_updated', "Bulk optimized {$count} media items via Customizer");
+        falcon_log_activity('settings_updated', "Bulk optimized {$count} media items via Customizer");
 
         return response()->json([
             'success' => true,

@@ -57,7 +57,7 @@ class FalconCmsServiceProvider extends ServiceProvider
 
         // Register commands always (not just in console) so Artisan::call() works from web requests
         $this->commands([
-            \FalconCms\Core\Console\Commands\LazyList::class,
+            \FalconCms\Core\Console\Commands\FalconList::class,
             \FalconCms\Core\Console\Commands\MakeDashboardPage::class,
             \FalconCms\Core\Console\Commands\InstallFalconCms::class,
             \FalconCms\Core\Console\Commands\SeedFalconCms::class,
@@ -206,11 +206,11 @@ class FalconCmsServiceProvider extends ServiceProvider
         if (!empty($themeOptions)) {
             $baseOptions = array_replace_recursive($baseOptions, $themeOptions);
         }
-        $finalOptions = apply_lazy_filters('cms_theme_options', $baseOptions);
+        $finalOptions = apply_falcon_filters('cms_theme_options', $baseOptions);
         if (isset($finalOptions['hooks'])) {
             foreach ($finalOptions['hooks'] as $key => $hookData) {
                 $filterTag = 'lazy_' . str_replace('-', '_', $key) . '_fields';
-                $finalOptions['hooks'][$key]['fields'] = apply_lazy_filters($filterTag, $finalOptions['hooks'][$key]['fields'] ?? []);
+                $finalOptions['hooks'][$key]['fields'] = apply_falcon_filters($filterTag, $finalOptions['hooks'][$key]['fields'] ?? []);
             }
         }
         config(['lazy-options' => $finalOptions]);

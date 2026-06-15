@@ -584,7 +584,7 @@
     @endif
     <div class="lazy-column-inner{{ $colBgLazyUrl ? ' lz-lazy-bg' : '' }}" style="{{ implode('; ', $innerStyles) }}"@if($colBgLazyUrl) data-bg="{{ $colBgLazyUrl }}"@endif>
         @if(!empty($column['elements']))
-            @php $__customBuilderDefs = apply_lazy_filters('lazy_builder_elements', []); @endphp
+            @php $__customBuilderDefs = apply_falcon_filters('falcon_builder_elements', []); @endphp
             @foreach($column['elements'] as $el)
                 @if($el['type'] === 'row')
                     @if($contentLayout === 'row')

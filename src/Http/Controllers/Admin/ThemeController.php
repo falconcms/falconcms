@@ -115,7 +115,7 @@ class ThemeController extends Controller
             ['value' => $slug, 'updated_at' => now()]
         );
 
-        lazy_log_activity('theme_activated', "Activated theme: {$slug}");
+        falcon_log_activity('theme_activated', "Activated theme: {$slug}");
 
         return redirect()->back()->with('success', "Theme '{$slug}' activated successfully!");
     }
@@ -152,7 +152,7 @@ class ThemeController extends Controller
                 File::deleteDirectory($assetsPath);
             }
 
-            lazy_log_activity('theme_deleted', "Deleted theme: {$slug}");
+            falcon_log_activity('theme_deleted', "Deleted theme: {$slug}");
             return redirect()->back()->with('success', "Theme '{$slug}' deleted successfully!");
         }
 
@@ -214,7 +214,7 @@ class ThemeController extends Controller
             // Clean up temp
             if (File::isDirectory($tempPath)) File::deleteDirectory($tempPath);
 
-            lazy_log_activity('theme_uploaded', "Uploaded theme: {$themeSlug}");
+            falcon_log_activity('theme_uploaded', "Uploaded theme: {$themeSlug}");
 
             return redirect()->back()->with('success', "Theme '{$themeSlug}' uploaded successfully!");
         }

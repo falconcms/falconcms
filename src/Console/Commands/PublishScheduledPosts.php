@@ -23,7 +23,7 @@ class PublishScheduledPosts extends Command
 
         foreach ($posts as $post) {
             $post->update(['status' => 'published']);
-            lazy_log_activity('updated', "Auto-published scheduled post: {$post->title}", $post);
+            falcon_log_activity('updated', "Auto-published scheduled post: {$post->title}", $post);
         }
 
         $this->info("Published {$posts->count()} scheduled post(s).");

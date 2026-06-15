@@ -25,7 +25,7 @@
         4 => 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
     ][$blogCols] ?? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
 
-    $posts = get_lazy_posts(['post_type' => 'post', 'limit' => 9, 'paginate' => true]);
+    $posts = get_falcon_posts(['post_type' => 'post', 'limit' => 9, 'paginate' => true]);
 
     $imgUrl = function ($p) {
         if (empty($p->featured_image)) return null;
@@ -77,7 +77,7 @@
                             @foreach($posts as $post)
                                 <article class="post-card group flex flex-col sm:flex-row gap-6 bg-white rounded-2xl border border-slate-100 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 overflow-hidden">
                                     @if($showFeat && $imgUrl($post))
-                                        <a href="{{ get_lazy_permalink($post) }}" class="block sm:w-64 flex-shrink-0 aspect-[16/10] overflow-hidden bg-slate-100">
+                                        <a href="{{ get_falcon_permalink($post) }}" class="block sm:w-64 flex-shrink-0 aspect-[16/10] overflow-hidden bg-slate-100">
                                             <img src="{{ $imgUrl($post) }}" alt="{{ $post->title }}" loading="lazy"
                                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                         </a>
@@ -91,14 +91,14 @@
                                             </div>
                                         @endif
                                         <h3 class="text-xl font-bold mb-3 leading-tight text-heading group-hover:text-primary transition-colors">
-                                            <a href="{{ get_lazy_permalink($post) }}">{{ $post->title }}</a>
+                                            <a href="{{ get_falcon_permalink($post) }}">{{ $post->title }}</a>
                                         </h3>
                                         @if($showExc)
                                             <p class="text-slate-500 text-sm mb-5 leading-relaxed">
                                                 {{ $makeExcerpt($post) }}
                                             </p>
                                         @endif
-                                        <a href="{{ get_lazy_permalink($post) }}" class="mt-auto inline-flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-primary hover:gap-3 transition-all w-fit">
+                                        <a href="{{ get_falcon_permalink($post) }}" class="mt-auto inline-flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-primary hover:gap-3 transition-all w-fit">
                                             <span>{{ $readMore }}</span>
                                             <i data-lucide="arrow-right" class="w-4 h-4"></i>
                                         </a>
@@ -113,7 +113,7 @@
                                 <article class="post-card flex flex-col group overflow-hidden bg-white rounded-2xl border border-slate-100 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
                                     @if($showFeat && $imgUrl($post))
                                         <div class="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                                            <a href="{{ get_lazy_permalink($post) }}" class="block h-full">
+                                            <a href="{{ get_falcon_permalink($post) }}" class="block h-full">
                                                 <img src="{{ $imgUrl($post) }}" alt="{{ $post->title }}" loading="lazy"
                                                      class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                                             </a>
@@ -127,14 +127,14 @@
                                             </div>
                                         @endif
                                         <h3 class="text-lg font-bold mb-3 leading-tight text-heading group-hover:text-primary transition-colors">
-                                            <a href="{{ get_lazy_permalink($post) }}">{{ $post->title }}</a>
+                                            <a href="{{ get_falcon_permalink($post) }}">{{ $post->title }}</a>
                                         </h3>
                                         @if($showExc)
                                             <p class="text-slate-500 text-sm mb-5 line-clamp-3 leading-relaxed">
                                                 {{ $makeExcerpt($post) }}
                                             </p>
                                         @endif
-                                        <a href="{{ get_lazy_permalink($post) }}" class="mt-auto pt-4 border-t border-slate-50 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary hover:gap-3 transition-all">
+                                        <a href="{{ get_falcon_permalink($post) }}" class="mt-auto pt-4 border-t border-slate-50 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-primary hover:gap-3 transition-all">
                                             <span>{{ $readMore }}</span>
                                             <i data-lucide="arrow-right" class="w-4 h-4"></i>
                                         </a>
@@ -234,20 +234,20 @@
                 @endif
 
                 {{-- Recent Posts --}}
-                @php $recent = get_lazy_posts(['post_type' => 'post', 'limit' => 5]); @endphp
+                @php $recent = get_falcon_posts(['post_type' => 'post', 'limit' => 5]); @endphp
                 @if(count($recent) > 0)
                 <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                     <h4 class="text-[13px] font-black uppercase tracking-widest text-heading mb-4">Recent Posts</h4>
                     <ul class="space-y-4">
                         @foreach($recent as $rp)
                             <li class="flex items-center gap-3">
-                                <a href="{{ get_lazy_permalink($rp) }}" class="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
+                                <a href="{{ get_falcon_permalink($rp) }}" class="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
                                     @if($imgUrl($rp))
                                         <img src="{{ $imgUrl($rp) }}" alt="{{ $rp->title }}" loading="lazy" class="w-full h-full object-cover">
                                     @endif
                                 </a>
                                 <div class="min-w-0">
-                                    <a href="{{ get_lazy_permalink($rp) }}" class="block text-sm font-bold text-heading hover:text-primary transition leading-snug line-clamp-2">{{ $rp->title }}</a>
+                                    <a href="{{ get_falcon_permalink($rp) }}" class="block text-sm font-bold text-heading hover:text-primary transition leading-snug line-clamp-2">{{ $rp->title }}</a>
                                     <span class="text-[11px] text-slate-400">{{ $rp->created_at->format('M d, Y') }}</span>
                                 </div>
                             </li>

@@ -13,10 +13,10 @@
         'acpt_slug'      => $s['dynamic_acpt_slug']       ?? '',
     ];
     $titleText   = $dynamicSrc
-        ? (function_exists('lazy_resolve_dynamic_value') ? (lazy_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig) ?: ($s['title'] ?? 'Your Awesome Title')) : ($postTitle ?? $s['title'] ?? 'Your Awesome Title'))
+        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig) ?: ($s['title'] ?? 'Your Awesome Title')) : ($postTitle ?? $s['title'] ?? 'Your Awesome Title'))
         : ($s['title'] ?? 'Your Awesome Title');
     $resolvedLinkUrl = $linkDynamic
-        ? (function_exists('lazy_resolve_dynamic_value') ? (lazy_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
+        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
         : ($s['linkUrl'] ?? '');
 
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
@@ -33,7 +33,7 @@
 
     $w = ".{$titleRespId}";
     $h = ".{$titleRespId} .main-title";
-    $respCss = lazy_elem_resp_css($s, $bpSm, $bpMed, [
+    $respCss = falcon_elem_resp_css($s, $bpSm, $bpMed, [
         ['prop' => 'textAlign',     'sel' => $w],
         ['prop' => 'marginTop',     'unitProp' => 'marginTopUnit',     'sel' => $w],
         ['prop' => 'marginRight',   'unitProp' => 'marginRightUnit',   'sel' => $w],

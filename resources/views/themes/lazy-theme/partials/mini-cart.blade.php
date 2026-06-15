@@ -30,7 +30,7 @@
         <div id="mini-cart-footer" class="border-t border-gray-100 px-5 py-4 space-y-3">
             <div class="flex items-center justify-between">
                 <span class="text-[14px] text-gray-500">Subtotal</span>
-                <span id="mini-cart-subtotal" class="text-[18px] font-black text-heading">{{ lazy_price_format(0) }}</span>
+                <span id="mini-cart-subtotal" class="text-[18px] font-black text-heading">{{ falcon_price_format(0) }}</span>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <a href="{{ route('shop.cart') }}" class="text-center bg-white text-primary border border-primary px-4 py-2.5 rounded-[3px] text-[13px] font-semibold uppercase tracking-wider hover:bg-gray-50 transition-colors">View Cart</a>

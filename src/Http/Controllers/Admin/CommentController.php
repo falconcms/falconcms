@@ -44,7 +44,7 @@ class CommentController extends Controller
         $comment->is_approved = !$comment->is_approved;
         $comment->save();
         $status = $comment->is_approved ? 'Approved' : 'Unapproved';
-        lazy_log_activity('updated', "{$status} comment from: " . ($comment->name ?? $comment->user->name), $comment);
+        falcon_log_activity('updated', "{$status} comment from: " . ($comment->name ?? $comment->user->name), $comment);
 
         return back()->with('success', $comment->is_approved ? 'Comment approved.' : 'Comment moved to pending.');
     }
@@ -53,7 +53,7 @@ class CommentController extends Controller
     {
         $author = $comment->name ?? ($comment->user->name ?? 'Unknown');
         $comment->delete();
-        lazy_log_activity('deleted', "Deleted comment from: {$author}", $comment);
+        falcon_log_activity('deleted', "Deleted comment from: {$author}", $comment);
         return back()->with('success', 'Comment deleted successfully.');
     }
 

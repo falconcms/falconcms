@@ -234,7 +234,7 @@
                 </p>
             </div>
             <div class="invoice-details">
-                <h2>{{ apply_lazy_filters('lazy_invoice_title', 'Invoice', $order) }}</h2>
+                <h2>{{ apply_falcon_filters('lazy_invoice_title', 'Invoice', $order) }}</h2>
                 <p>#{{ $order->order_number ?: $order->id }}</p>
                 <p>Date: {{ cms_date($order->created_at, 'M d, Y') }}</p>
                 <span class="inv-badge {{ $badgeClass }}">{{ $badgeText }}</span>
@@ -253,7 +253,7 @@
                 <p>Phone: {{ $order->customer_phone }}</p>
                 @php
                     $invCheckoutMeta = $order->meta['checkout_fields'] ?? [];
-                    $invCoLabels     = apply_lazy_filters('lazy_checkout_field_labels', [], 'invoice');
+                    $invCoLabels     = apply_falcon_filters('lazy_checkout_field_labels', [], 'invoice');
                 @endphp
                 @foreach($invCheckoutMeta as $iKey => $iVal)
                     @if($iVal)
@@ -286,7 +286,7 @@
                 </tr>
             </thead>
             <tbody>
-                @php $invoiceLabels = apply_lazy_filters('lazy_custom_field_labels', [], 'invoice'); @endphp
+                @php $invoiceLabels = apply_falcon_filters('lazy_custom_field_labels', [], 'invoice'); @endphp
                 @foreach($order->items as $item)
                 <tr>
                     <td>
@@ -302,9 +302,9 @@
                             @endif
                         @endforeach
                     </td>
-                    <td style="text-align: center;">{{ lazy_price_format($item->price, $order) }}</td>
+                    <td style="text-align: center;">{{ falcon_price_format($item->price, $order) }}</td>
                     <td style="text-align: center;">{{ $item->quantity }}</td>
-                    <td style="text-align: right;">{{ lazy_price_format($item->subtotal, $order) }}</td>
+                    <td style="text-align: right;">{{ falcon_price_format($item->subtotal, $order) }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -314,37 +314,37 @@
             <table class="totals-table">
                 <tr>
                     <td>Subtotal</td>
-                    <td>{{ lazy_price_format($order->subtotal, $order) }}</td>
+                    <td>{{ falcon_price_format($order->subtotal, $order) }}</td>
                 </tr>
                 <tr>
                     <td>Shipping ({{ $order->shipping_method ?: 'Standard' }})</td>
-                    <td>{{ $order->shipping_total > 0 ? lazy_price_format($order->shipping_total, $order) : 'Free' }}</td>
+                    <td>{{ $order->shipping_total > 0 ? falcon_price_format($order->shipping_total, $order) : 'Free' }}</td>
                 </tr>
                 @if($order->tax_total > 0)
                 <tr>
                     <td>Tax</td>
-                    <td>{{ lazy_price_format($order->tax_total, $order) }}</td>
+                    <td>{{ falcon_price_format($order->tax_total, $order) }}</td>
                 </tr>
                 @endif
                 @if($order->discount_total > 0)
                 <tr style="color: #059669;">
                     <td>Discount</td>
-                    <td>-{{ lazy_price_format($order->discount_total, $order) }}</td>
+                    <td>-{{ falcon_price_format($order->discount_total, $order) }}</td>
                 </tr>
                 @endif
                 <tr class="total-row">
                     <td>Total</td>
-                    <td>{{ lazy_price_format($order->total, $order) }}</td>
+                    <td>{{ falcon_price_format($order->total, $order) }}</td>
                 </tr>
                 @if($effectiveRefunded > 0)
                 @php $netTotal = max(0, (float) $order->total - $effectiveRefunded); @endphp
                 <tr style="color: #b91c1c;">
                     <td>Refunded</td>
-                    <td>-{{ lazy_price_format($effectiveRefunded, $order) }}</td>
+                    <td>-{{ falcon_price_format($effectiveRefunded, $order) }}</td>
                 </tr>
                 <tr style="font-weight: 700;">
                     <td style="padding-top: 10px;">{{ $isFullRefund ? 'Amount Due' : 'Net Total' }}</td>
-                    <td style="padding-top: 10px;">{{ lazy_price_format($netTotal, $order) }}</td>
+                    <td style="padding-top: 10px;">{{ falcon_price_format($netTotal, $order) }}</td>
                 </tr>
                 @endif
             </table>

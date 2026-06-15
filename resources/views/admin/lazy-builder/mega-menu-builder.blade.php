@@ -1,8 +1,8 @@
 @php
     $builderTitle   = $megaMenu['name'];
     $builderContent = json_encode($megaMenu['config']['layout'] ?? []);
-    $builderSaveUrl = route('admin.lazy-builder.mega-menus.save-layout', $megaMenu['id']);
-    $builderBackUrl = route('admin.lazy-builder.library') . '?tab=mega_menus';
+    $builderSaveUrl = route('admin.falcon-builder.mega-menus.save-layout', $megaMenu['id']);
+    $builderBackUrl = route('admin.falcon-builder.library') . '?tab=mega_menus';
     $postCardMode   = false;
 
     // Page Options: passed to sidebar as $mmPoSettings
@@ -10,7 +10,7 @@
     $mmPoSettings = [
         'width_type'   => $megaMenu['config']['settings']['width_type']   ?? 'site_width',
         'custom_width' => $megaMenu['config']['settings']['custom_width'] ?? 1200,
-        'save_url'     => route('admin.lazy-builder.mega-menus.save-settings', $megaMenu['id']),
+        'save_url'     => route('admin.falcon-builder.mega-menus.save-settings', $megaMenu['id']),
         'site_width'   => (int) get_cms_option('theme_site_width', '1200'),
     ];
 @endphp
@@ -103,7 +103,7 @@
         window.lazyCptList       = [];
     </script>
 
-    @include('falcon-cms::admin.lazy-builder.partials.styles')
+    @include('falcon-cms::admin.falcon-builder.partials.styles')
 </head>
 <body class="bg-[#f1f1f1]">
 
@@ -121,26 +121,26 @@
         </div>
 
         <header class="builder-topbar">
-            @include('falcon-cms::admin.lazy-builder.partials.topbar_content')
+            @include('falcon-cms::admin.falcon-builder.partials.topbar_content')
         </header>
 
         <template v-if="!isPreview">
-            @include('falcon-cms::admin.lazy-builder.partials.sidebar')
+            @include('falcon-cms::admin.falcon-builder.partials.sidebar')
         </template>
 
-        @include('falcon-cms::admin.lazy-builder.partials.canvas')
+        @include('falcon-cms::admin.falcon-builder.partials.canvas')
 
-        @include('falcon-cms::admin.lazy-builder.partials.modals.column-select')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.element-select')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.library')
-        @include('falcon-cms::admin.lazy-builder.partials.modals.context-menu')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.column-select')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.element-select')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.library')
+        @include('falcon-cms::admin.falcon-builder.partials.modals.context-menu')
     </div>
 
     @include('falcon-cms::components.admin.media-modal')
 
     <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>
 
-    @include('falcon-cms::admin.lazy-builder.partials.scripts')
+    @include('falcon-cms::admin.falcon-builder.partials.scripts')
 
     {{-- Page Options JS — outside Vue template boundary --}}
     <script>
@@ -155,7 +155,7 @@
         var btn         = document.querySelector('[onclick="mmPoSave()"]');
         if (btn) btn.disabled = true;
         try {
-            var resp = await fetch('{{ route('admin.lazy-builder.mega-menus.save-settings', $megaMenu['id']) }}', {
+            var resp = await fetch('{{ route('admin.falcon-builder.mega-menus.save-settings', $megaMenu['id']) }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 body: JSON.stringify({ width_type: widthType, custom_width: customWidth })

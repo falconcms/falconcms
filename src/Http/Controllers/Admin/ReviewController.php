@@ -41,7 +41,7 @@ class ReviewController extends Controller
         $review->is_approved = !$review->is_approved;
         $review->save();
         $status = $review->is_approved ? 'Approved' : 'Unapproved';
-        lazy_log_activity('updated', "{$status} review from: " . ($review->name ?? $review->user->name), $review);
+        falcon_log_activity('updated', "{$status} review from: " . ($review->name ?? $review->user->name), $review);
 
         return back()->with('success', $review->is_approved ? 'Review approved.' : 'Review moved to pending.');
     }
@@ -50,7 +50,7 @@ class ReviewController extends Controller
     {
         $author = $review->name ?? ($review->user->name ?? 'Unknown');
         $review->delete();
-        lazy_log_activity('deleted', "Deleted review from: {$author}", $review);
+        falcon_log_activity('deleted', "Deleted review from: {$author}", $review);
         return back()->with('success', 'Review deleted successfully.');
     }
 

@@ -114,7 +114,7 @@
                                         {{ str_replace('-', ' ', $order->status) }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right font-bold text-heading">{{ lazy_price_format($order->total, $order) }}</td>
+                                <td class="px-6 py-4 text-right font-bold text-heading">{{ falcon_price_format($order->total, $order) }}</td>
                                 <td class="px-6 py-4 text-right">
                                     <a href="{{ route('shop.confirmation', $order->id) }}" class="text-primary font-bold hover:underline">View</a>
                                 </td>

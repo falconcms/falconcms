@@ -122,7 +122,7 @@ class BackupController extends Controller
 
             file_put_contents($path, $sql);
 
-            lazy_log_activity('created', "Created a database backup: {$filename}");
+            falcon_log_activity('created', "Created a database backup: {$filename}");
             return redirect()->back()->with('success', 'Backup created successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Backup failed: ' . $e->getMessage());
@@ -172,7 +172,7 @@ class BackupController extends Controller
             }
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-            lazy_log_activity('restored', "Restored database from snapshot: {$filename} ({$executed} statements)");
+            falcon_log_activity('restored', "Restored database from snapshot: {$filename} ({$executed} statements)");
             return redirect()->back()->with('success', "Database restored successfully from \"{$filename}\" ({$executed} statements executed).");
         } catch (\Exception $e) {
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
@@ -315,7 +315,7 @@ class BackupController extends Controller
 
             $file->move($backupDir, $filename);
 
-            lazy_log_activity('uploaded', "Uploaded backup file: {$filename}");
+            falcon_log_activity('uploaded', "Uploaded backup file: {$filename}");
             return redirect()->back()->with('success', "Backup file \"{$filename}\" uploaded successfully. You can now restore it from the list below.");
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Upload failed: ' . $e->getMessage());

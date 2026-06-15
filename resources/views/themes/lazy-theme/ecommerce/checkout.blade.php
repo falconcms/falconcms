@@ -34,9 +34,9 @@
                 <!-- Left Column: Billing Details -->
                 <div class="w-full md:w-1/2">
                     <h2 class="text-[20px] font-bold text-heading border-b border-[#eee] pb-4 mb-6 uppercase tracking-tight">Billing details</h2>
-                    <?php do_lazy_action('lazy_before_billing_fields'); ?>
+                    <?php do_falcon_action('lazy_before_billing_fields'); ?>
                     <?php lazy_render_checkout_fields(lazy_get_checkout_fields('billing')); ?>
-                    <?php do_lazy_action('lazy_after_billing_fields'); ?>
+                    <?php do_falcon_action('lazy_after_billing_fields'); ?>
 
                     @guest
                     @php $guestCheckout = get_shop_option('shop_enable_guest_checkout', '1') === '1'; @endphp
@@ -82,9 +82,9 @@
                     </div>
 
                     <div id="shipping-form" class="{{ old('ship_to_different_address') ? '' : 'hidden' }} mb-8 border-t border-[#eee] pt-6">
-                        <?php do_lazy_action('lazy_before_shipping_fields'); ?>
+                        <?php do_falcon_action('lazy_before_shipping_fields'); ?>
                         <?php lazy_render_checkout_fields(lazy_get_checkout_fields('shipping')); ?>
-                        <?php do_lazy_action('lazy_after_shipping_fields'); ?>
+                        <?php do_falcon_action('lazy_after_shipping_fields'); ?>
                     </div>
 
                     <div class="space-y-2 mt-6">
@@ -95,7 +95,7 @@
             </div>
 
             <!-- Full Width Order Section -->
-            <?php do_lazy_action('lazy_before_checkout_order_review', $cart); ?>
+            <?php do_falcon_action('lazy_before_checkout_order_review', $cart); ?>
             <div class="mt-12">
                 <h2 class="text-[20px] font-bold text-heading mb-6 uppercase tracking-tight">Your order</h2>
 
@@ -111,41 +111,41 @@
                             @foreach($cart as $item)
                                 <tr class="border-b border-[#eee]">
                                     <td class="p-4 text-body">
-                                        {!! apply_lazy_filters('lazy_checkout_item_name',
+                                        {!! apply_falcon_filters('lazy_checkout_item_name',
                                             '<a href="' . route('frontend.show', ['typeOrSlug' => 'product', 'slug' => $item['slug']]) . '" class="hover:text-primary transition-colors">' . e($item['name']) . '</a> <span class="font-bold text-heading">× ' . (int)$item['quantity'] . '</span>',
                                             $item) !!}
                                         {!! lazy_render_item_custom_fields($item, 'checkout') !!}
-                                        <?php do_lazy_action('lazy_checkout_item_meta', $item); ?>
+                                        <?php do_falcon_action('lazy_checkout_item_meta', $item); ?>
                                     </td>
                                     <td class="p-4 text-right font-medium text-heading">
-                                        {{ lazy_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
+                                        {{ falcon_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
                                     </td>
                                 </tr>
                             @endforeach
                             
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-heading">Subtotal</th>
-                                <td class="text-right p-4 font-bold text-heading" id="checkout-subtotal">{{ lazy_price_format(get_lazy_cart_subtotal()) }}</td>
+                                <td class="text-right p-4 font-bold text-heading" id="checkout-subtotal">{{ falcon_price_format(get_falcon_cart_subtotal()) }}</td>
                             </tr>
 
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-heading">Shipping</th>
                                 <td class="text-right p-4 text-body" id="checkout-shipping">
-                                    @php $shipDetails = get_lazy_cart_shipping_details(session('lazy_shipping_country')); @endphp
-                                    {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ $shipDetails['cost'] > 0 ? lazy_price_format($shipDetails['cost']) : 'Free' }}</span>
+                                    @php $shipDetails = get_falcon_cart_shipping_details(session('lazy_shipping_country')); @endphp
+                                    {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ $shipDetails['cost'] > 0 ? falcon_price_format($shipDetails['cost']) : 'Free' }}</span>
                                 </td>
                             </tr>
 
                             @if(get_cms_option('shop_enable_tax') === '1')
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-heading">Estimated Tax</th>
-                                <td class="text-right p-4 font-bold text-heading" id="checkout-tax">{{ lazy_price_format(get_lazy_cart_tax()) }}</td>
+                                <td class="text-right p-4 font-bold text-heading" id="checkout-tax">{{ falcon_price_format(get_falcon_cart_tax()) }}</td>
                             </tr>
                             @endif
 
                             @php 
-                                $appliedCoupons = session()->get('lazy_coupons', []); 
-                                $subtotal = get_lazy_cart_subtotal(); 
+                                $appliedCoupons = session()->get('falcon_coupons', []); 
+                                $subtotal = get_falcon_cart_subtotal(); 
                                 $currentSubtotal = $subtotal;
                                 $isMultipleAllowed = (int)get_shop_option('shop_multi_coupon_policy', '1') === 1;
                             @endphp
@@ -162,21 +162,21 @@
                                             Coupon: {{ $coupon['code'] }}
                                         </div>
                                     </th>
-                                    <td class="text-right p-4 font-bold text-emerald-700">-{{ lazy_price_format($discount) }}</td>
+                                    <td class="text-right p-4 font-bold text-emerald-700">-{{ falcon_price_format($discount) }}</td>
                                 </tr>
                             @endforeach
 
                             <tr class="bg-[#fcfcfc]">
                                 <th class="text-left p-4 font-bold text-heading">Total</th>
-                                <td class="text-right p-4 text-[18px] font-bold text-primary" id="checkout-total">{{ lazy_price_format(get_lazy_cart_total()) }}</td>
+                                <td class="text-right p-4 text-[18px] font-bold text-primary" id="checkout-total">{{ falcon_price_format(get_falcon_cart_total()) }}</td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <?php do_lazy_action('lazy_after_checkout_order_review', $cart); ?>
+                    <?php do_falcon_action('lazy_after_checkout_order_review', $cart); ?>
 
                     <!-- Payment Section -->
-                    <?php do_lazy_action('lazy_before_checkout_payment', $cart); ?>
+                    <?php do_falcon_action('lazy_before_checkout_payment', $cart); ?>
                     @php $gateways = lazy_enabled_payment_gateways(); $firstGw = array_key_first($gateways); @endphp
                     <div class="p-8 border-t border-[#eee]">
                         <div class="max-w-4xl">
@@ -210,14 +210,14 @@
                                 Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our <a href="#" class="text-primary hover:underline">privacy policy</a>.
                             </p>
 
-                            <?php do_lazy_action('lazy_before_place_order_button', $cart); ?>
+                            <?php do_falcon_action('lazy_before_place_order_button', $cart); ?>
                             <button type="submit" @if(empty($gateways)) disabled @endif class="bg-primary text-white px-10 py-4 rounded-sm font-bold text-[16px] hover:bg-primary-hover transition-all shadow-lg uppercase disabled:opacity-50 disabled:cursor-not-allowed">
                                 Place order
                             </button>
-                            <?php do_lazy_action('lazy_after_place_order_button', $cart); ?>
+                            <?php do_falcon_action('lazy_after_place_order_button', $cart); ?>
                         </div>
                     </div>
-                    <?php do_lazy_action('lazy_after_checkout_payment', $cart); ?>
+                    <?php do_falcon_action('lazy_after_checkout_payment', $cart); ?>
                 </div>
             </div>
         </form>

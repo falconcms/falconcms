@@ -59,7 +59,7 @@ class ProductTagController extends Controller
         ]);
 
         $tag = ProductTag::create($validated);
-        lazy_log_activity('created', "Created a new product tag: {$tag->name}", $tag);
+        falcon_log_activity('created', "Created a new product tag: {$tag->name}", $tag);
 
         return redirect()->route('admin.product-tags.index')->with('success', 'Tag added.');
     }
@@ -93,16 +93,16 @@ class ProductTagController extends Controller
                 $clone = $tag->replicate();
                 $clone->lang_code = $targetLang;
                 $clone->origin_id = $tag->id;
-                $clone->name = lazy_translate($tag->name, $targetLang);
+                $clone->name = falcon_translate($tag->name, $targetLang);
                 $clone->slug = ProductTag::generateUniqueSlug($clone->name, 0, $targetLang);
                 if ($tag->description) {
-                    $clone->description = lazy_translate($tag->description, $targetLang);
+                    $clone->description = falcon_translate($tag->description, $targetLang);
                 }
                 $clone->save();
             }
         }
 
-        lazy_log_activity('updated', "Updated product tag: {$tag->name}", $tag);
+        falcon_log_activity('updated', "Updated product tag: {$tag->name}", $tag);
 
         return redirect()->route('admin.product-tags.index')->with('success', 'Tag updated.');
     }
@@ -111,7 +111,7 @@ class ProductTagController extends Controller
     {
         $name = $product_tag->name;
         $product_tag->delete();
-        lazy_log_activity('deleted', "Deleted product tag: {$name}", $product_tag);
+        falcon_log_activity('deleted', "Deleted product tag: {$name}", $product_tag);
         return redirect()->route('admin.product-tags.index')->with('success', 'Tag deleted.');
     }
 

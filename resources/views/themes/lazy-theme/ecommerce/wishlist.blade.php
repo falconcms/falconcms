@@ -43,7 +43,7 @@
                                     <i data-lucide="x" class="w-4 h-4"></i>
                                 </button>
                             </form>
-                            <a href="{{ get_lazy_permalink($product) }}" class="block aspect-square bg-[#f4f6f8] overflow-hidden">
+                            <a href="{{ get_falcon_permalink($product) }}" class="block aspect-square bg-[#f4f6f8] overflow-hidden">
                                 @if($img)
                                     <img src="{{ $img }}" alt="{{ $product->title }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 @endif
@@ -51,18 +51,18 @@
                         </div>
                         <div class="p-4 flex flex-col flex-grow">
                             <h3 class="text-sm font-bold text-heading hover:text-primary leading-snug line-clamp-2 mb-2">
-                                <a href="{{ get_lazy_permalink($product) }}">{{ $product->title }}</a>
+                                <a href="{{ get_falcon_permalink($product) }}">{{ $product->title }}</a>
                             </h3>
                             <div class="text-sm font-bold mb-4">
                                 @if($hasSale)
-                                    <span class="line-through text-slate-400 font-normal mr-1.5">{{ lazy_price_format($sd->price) }}</span>
-                                    <span class="text-primary">{{ lazy_price_format($sd->sale_price) }}</span>
+                                    <span class="line-through text-slate-400 font-normal mr-1.5">{{ falcon_price_format($sd->price) }}</span>
+                                    <span class="text-primary">{{ falcon_price_format($sd->sale_price) }}</span>
                                 @else
-                                    <span class="text-heading">{{ lazy_price_format($sd->price ?? 0) }}</span>
+                                    <span class="text-heading">{{ falcon_price_format($sd->price ?? 0) }}</span>
                                 @endif
                             </div>
                             @if(lazy_is_variable_product($product))
-                                <a href="{{ get_lazy_permalink($product) }}" class="mt-auto block w-full text-center bg-primary text-white px-4 py-2 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition">Select Options</a>
+                                <a href="{{ get_falcon_permalink($product) }}" class="mt-auto block w-full text-center bg-primary text-white px-4 py-2 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition">Select Options</a>
                             @else
                                 <form action="{{ route('shop.cart.add') }}" method="POST" class="mt-auto">
                                     @csrf

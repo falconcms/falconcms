@@ -158,7 +158,7 @@
                                 <button type="button" onclick="moveToTrash({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> 
                                 @if(!isset($postType) || $postType->is_public)
                                 <span class="text-[#c3c4c7]">|</span>
-                                <a href="{{ get_lazy_permalink($post) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
+                                <a href="{{ get_falcon_permalink($post) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
                                 @endif
                             @endif
                         </div>

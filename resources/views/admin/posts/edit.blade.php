@@ -49,7 +49,7 @@
                         <span id="permalink-view">
                             @php 
                                 $isHome = is_lazy_homepage($post);
-                                $fullUrl = get_lazy_permalink($post);
+                                $fullUrl = get_falcon_permalink($post);
                                 
                                 $defaultLang = \Illuminate\Support\Facades\DB::table('cms_languages')->where('is_default', true)->value('code') ?: 'en';
                                 $postLang = $post->lang_code ?? $defaultLang;
@@ -112,7 +112,7 @@
                         <h2 class="text-[#2c3338] text-[22px] font-bold mb-3">Welcome to the Page Builder</h2>
                         <p class="text-[#646970] text-[14px] mb-8">This post is now using the amazing page builder.</p>
                         
-                        <button type="button" @if(isset($post->id)) onclick="window.location.href='{{ route('admin.lazy-builder', $post->id) }}'" @else onclick="window.showToast('Please save the post first to enable the Page Builder.', 'warning')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
+                        <button type="button" @if(isset($post->id)) onclick="window.location.href='{{ route('admin.falcon-builder', $post->id) }}'" @else onclick="window.showToast('Please save the post first to enable the Page Builder.', 'warning')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
                             Edit with Page Builder
                         </button>
                     </div>

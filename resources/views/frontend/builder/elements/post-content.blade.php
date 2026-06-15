@@ -13,7 +13,7 @@
     $elemId = 'pc-' . str_replace('.', '', uniqid('', true));
 
     $pc = ".{$elemId}";
-    $respCss = lazy_elem_resp_css($s, $bpSm, $bpMed, [
+    $respCss = falcon_elem_resp_css($s, $bpSm, $bpMed, [
         ['prop' => 'textAlign',     'sel' => $pc],
         ['prop' => 'marginTop',     'unitProp' => 'marginTopUnit',     'sel' => $pc],
         ['prop' => 'marginRight',   'unitProp' => 'marginRightUnit',   'sel' => $pc],

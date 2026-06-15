@@ -92,13 +92,13 @@ class WidgetController extends Controller
             ->get();
 
         $allActivePostTypes = PostType::where('is_active', true)
-            ->whereNotIn('slug', ['page', 'lazy_header', 'lazy_footer'])
+            ->whereNotIn('slug', ['page', 'falcon_header', 'falcon_footer'])
             ->orderBy('name')
             ->pluck('name', 'slug');
 
         // Categories widget: only show post types that have active categories assigned
         $postTypesWithCategories = PostType::where('is_active', true)
-            ->whereNotIn('slug', ['page', 'lazy_header', 'lazy_footer'])
+            ->whereNotIn('slug', ['page', 'falcon_header', 'falcon_footer'])
             ->orderBy('name')
             ->get()
             ->filter(function ($pt) use ($cptCatTaxonomies) {

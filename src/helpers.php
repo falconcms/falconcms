@@ -9,7 +9,7 @@ if (!defined('LAZY_CMS_VERSION')) {
     unset($__versionFile, $__versionData);
 }
 
-if (!function_exists('lazy_elem_resp_css')) {
+if (!function_exists('falcon_elem_resp_css')) {
     /**
      * Generate responsive @media CSS for a builder element.
      *
@@ -23,7 +23,7 @@ if (!function_exists('lazy_elem_resp_css')) {
      *   ]
      * @return string Raw CSS (no <style> tags).  Empty string when nothing changed.
      */
-    function lazy_elem_resp_css(array $s, int $bpSm, int $bpMed, array $props): string
+    function falcon_elem_resp_css(array $s, int $bpSm, int $bpMed, array $props): string
     {
         $bpSm1 = $bpSm + 1;
         $css   = '';
@@ -498,7 +498,7 @@ if (!function_exists('_lazy_build_sticky_wrapper')) {
     /**
      * Build a sticky wrapper element around $content.
      * $settings is the settings array of the first sticky container/column.
-     * $wrapperClass is the CSS class on the wrapper (e.g. lazy-builder-header).
+     * $wrapperClass is the CSS class on the wrapper (e.g. falcon-builder-header).
      * $tag is the HTML tag (header|footer|div).
      */
     function _lazy_build_sticky_wrapper(string $content, array $settings, string $wrapperClass, string $tag): string
@@ -611,39 +611,39 @@ if (!function_exists('_lazy_builder_render_wrapper')) {
     }
 }
 
-if (!function_exists('get_lazy_header')) {
-    function get_lazy_header()
+if (!function_exists('get_falcon_header')) {
+    function get_falcon_header()
     {
-        $header = \FalconCms\Core\Models\Post::where('type', 'lazy_header')
+        $header = \FalconCms\Core\Models\Post::where('type', 'falcon_header')
             ->where('status', 'published')
             ->where('lang_code', app()->getLocale())
             ->first();
         if (!$header) {
-            $header = \FalconCms\Core\Models\Post::where('type', 'lazy_header')
+            $header = \FalconCms\Core\Models\Post::where('type', 'falcon_header')
                 ->where('status', 'published')
                 ->first();
         }
         if ($header) {
-            return _lazy_builder_render_wrapper($header->content ?? '', 'header', 'lazy-builder-header');
+            return _lazy_builder_render_wrapper($header->content ?? '', 'header', 'falcon-builder-header');
         }
         return null;
     }
 }
 
-if (!function_exists('get_lazy_footer')) {
-    function get_lazy_footer()
+if (!function_exists('get_falcon_footer')) {
+    function get_falcon_footer()
     {
-        $footer = \FalconCms\Core\Models\Post::where('type', 'lazy_footer')
+        $footer = \FalconCms\Core\Models\Post::where('type', 'falcon_footer')
             ->where('status', 'published')
             ->where('lang_code', app()->getLocale())
             ->first();
         if (!$footer) {
-            $footer = \FalconCms\Core\Models\Post::where('type', 'lazy_footer')
+            $footer = \FalconCms\Core\Models\Post::where('type', 'falcon_footer')
                 ->where('status', 'published')
                 ->first();
         }
         if ($footer) {
-            return _lazy_builder_render_wrapper($footer->content ?? '', 'footer', 'lazy-builder-footer');
+            return _lazy_builder_render_wrapper($footer->content ?? '', 'footer', 'falcon-builder-footer');
         }
         return null;
     }
@@ -661,8 +661,8 @@ if (!function_exists('the_lazy_content')) {
     function the_lazy_content($content) { echo get_lazy_content($content); }
 }
 
-if (!function_exists('get_lazy_posts')) {
-    function get_lazy_posts($args = []) {
+if (!function_exists('get_falcon_posts')) {
+    function get_falcon_posts($args = []) {
         $defaults = [
             'post_type'        => 'post',
             'limit'            => 10,
@@ -801,13 +801,13 @@ if (!function_exists('the_lazy_pagination')) {
 if (!function_exists('the_lazy_loop')) {
     function the_lazy_loop($args = [], $view = 'falcon-cms::frontend.loop')
     {
-        $posts = get_lazy_posts($args);
+        $posts = get_falcon_posts($args);
         echo view($view, ['posts' => $posts])->render();
     }
 }
 
-if (!function_exists('get_lazy_excerpt')) {
-    function get_lazy_excerpt($post, $limit = 120)
+if (!function_exists('get_falcon_excerpt')) {
+    function get_falcon_excerpt($post, $limit = 120)
     {
         $content = $post->content ?? '';
         $isBuilder = ($post->editor_type ?? '') === 'builder'
@@ -989,7 +989,7 @@ if (!function_exists('this_process_items')) {
                                 $post = $translation;
                             }
                         }
-                        $item->url = get_lazy_permalink($post);
+                        $item->url = get_falcon_permalink($post);
                     }
                 }
 
@@ -1015,8 +1015,8 @@ if (!function_exists('is_lazy_homepage')) {
     }
 }
 
-if (!function_exists('get_lazy_permalink')) {
-    function get_lazy_permalink($post) {
+if (!function_exists('get_falcon_permalink')) {
+    function get_falcon_permalink($post) {
         if (!$post) return '#';
         
         $type = is_array($post) ? ($post['type'] ?? 'product') : ($post->type ?? 'post');
@@ -1063,8 +1063,8 @@ if (!function_exists('clear_page_cache')) {
     }
 }
 
-if (!function_exists('lazy_log_activity')) {
-    function lazy_log_activity($action, $description, $model = null, $properties = []) {
+if (!function_exists('falcon_log_activity')) {
+    function falcon_log_activity($action, $description, $model = null, $properties = []) {
         try {
             $ip = request()->ip();
             $country = null;
@@ -1152,26 +1152,26 @@ if (!function_exists('render_lazy_widgets')) {
 
 // --- Hook System Helpers ---
 
-if (!function_exists('add_lazy_action')) {
-    function add_lazy_action($tag, $callback, $priority = 10) {
+if (!function_exists('add_falcon_action')) {
+    function add_falcon_action($tag, $callback, $priority = 10) {
         \FalconCms\Core\Core\HookManager::getInstance()->addAction($tag, $callback, $priority);
     }
 }
 
-if (!function_exists('do_lazy_action')) {
-    function do_lazy_action($tag, ...$args) {
+if (!function_exists('do_falcon_action')) {
+    function do_falcon_action($tag, ...$args) {
         \FalconCms\Core\Core\HookManager::getInstance()->doAction($tag, ...$args);
     }
 }
 
-if (!function_exists('add_lazy_filter')) {
-    function add_lazy_filter($tag, $callback, $priority = 10) {
+if (!function_exists('add_falcon_filter')) {
+    function add_falcon_filter($tag, $callback, $priority = 10) {
         \FalconCms\Core\Core\HookManager::getInstance()->addFilter($tag, $callback, $priority);
     }
 }
 
-if (!function_exists('apply_lazy_filters')) {
-    function apply_lazy_filters($tag, $value, ...$args) {
+if (!function_exists('apply_falcon_filters')) {
+    function apply_falcon_filters($tag, $value, ...$args) {
         return \FalconCms\Core\Core\HookManager::getInstance()->applyFilters($tag, $value, ...$args);
     }
 }
@@ -1332,12 +1332,12 @@ if (!function_exists('lazy_render_item_custom_fields')) {
             $customFields = $meta['custom_fields'] ?? [];
         }
 
-        $customFields = apply_lazy_filters('lazy_item_custom_fields_display', $customFields, $item, $context);
+        $customFields = apply_falcon_filters('lazy_item_custom_fields_display', $customFields, $item, $context);
 
         if (empty($customFields)) return '';
 
         // Allow label overrides via filter
-        $labels = apply_lazy_filters('lazy_custom_field_labels', [], $context);
+        $labels = apply_falcon_filters('lazy_custom_field_labels', [], $context);
 
         $html = '<div class="' . e($wrapClass) . '">';
         foreach ($customFields as $key => $value) {
@@ -1356,7 +1356,7 @@ if (!function_exists('lazy_render_item_custom_fields')) {
 
 if (!function_exists('lazy_normalize_custom_fields')) {
     /**
-     * Normalize a custom builder element definition (registered via lazy_builder_elements)
+     * Normalize a custom builder element definition (registered via falcon_builder_elements)
      * into a flat, keyed fields array the builder + frontend can consume consistently.
      *
      * Handles both the legacy `fields` map and the Avada-style indexed `params` array,
@@ -1463,13 +1463,13 @@ if (!function_exists('lazy_normalize_custom_fields')) {
     }
 }
 
-if (!function_exists('lazy_resolve_dynamic_value')) {
+if (!function_exists('falcon_resolve_dynamic_value')) {
     /**
      * Resolve a dynamic-source key to a real value using the current post context.
      * $config may include: date_type, date_format, before, after, fallback,
      *                      excerpt_length, acpt_slug
      */
-    function lazy_resolve_dynamic_value(string $source, $post = null, array $config = [])
+    function falcon_resolve_dynamic_value(string $source, $post = null, array $config = [])
     {
         if ($post === null) {
             try { $shared = view()->getShared(); $post = $shared['post'] ?? null; } catch (\Throwable $e) {}
@@ -1495,12 +1495,12 @@ if (!function_exists('lazy_resolve_dynamic_value')) {
                 $val = $post->title ?? '';
                 break;
             case 'post_url':
-                $val = ($post && function_exists('get_lazy_permalink')) ? get_lazy_permalink($post) : ($post->slug ?? '');
+                $val = ($post && function_exists('get_falcon_permalink')) ? get_falcon_permalink($post) : ($post->slug ?? '');
                 break;
             case 'post_excerpt':
                 if (!$post) break;
                 $ex = $post->excerpt ?? '';
-                if (!$ex && function_exists('get_lazy_excerpt')) $ex = get_lazy_excerpt($post);
+                if (!$ex && function_exists('get_falcon_excerpt')) $ex = get_falcon_excerpt($post);
                 $length = max(1, (int)($config['excerpt_length'] ?? 150));
                 if (!$ex) {
                     $raw = strip_tags($post->content ?? '');
@@ -1577,7 +1577,7 @@ if (!function_exists('lazy_resolve_dynamic_value')) {
             case 'acpt_custom':
                 $slug = $config['acpt_slug'] ?? '';
                 if ($slug) {
-                    $val = lazy_resolve_dynamic_value('acpt_' . $slug, $post);
+                    $val = falcon_resolve_dynamic_value('acpt_' . $slug, $post);
                 }
                 break;
             default:
@@ -1617,7 +1617,7 @@ if (!function_exists('lazy_apply_custom_dynamic')) {
         foreach ($settings as $k => $v) {
             if (is_string($k) && str_ends_with($k, '_dynamic') && !empty($v)) {
                 $base = substr($k, 0, -strlen('_dynamic'));
-                $settings[$base] = lazy_resolve_dynamic_value($v, $post, $config);
+                $settings[$base] = falcon_resolve_dynamic_value($v, $post, $config);
             }
         }
         return $settings;
@@ -1644,7 +1644,7 @@ if (!function_exists('lazy_resolve_token')) {
             case 'post_excerpt':
                 if (!$post) return '';
                 $ex = $post->excerpt ?? '';
-                if (!$ex && function_exists('get_lazy_excerpt')) $ex = get_lazy_excerpt($post);
+                if (!$ex && function_exists('get_falcon_excerpt')) $ex = get_falcon_excerpt($post);
                 if (!$ex) {
                     $raw = strip_tags($post->content ?? '');
                     $rawTrimmed = ltrim($raw);
@@ -1662,7 +1662,7 @@ if (!function_exists('lazy_resolve_token')) {
                 return $post->type ?? '';
             case 'post_permalink':
                 if (!$post) return '';
-                return function_exists('get_lazy_permalink') ? get_lazy_permalink($post) : ($post->slug ?? '#');
+                return function_exists('get_falcon_permalink') ? get_falcon_permalink($post) : ($post->slug ?? '#');
             case 'post_reading_time':
                 if (!$post) return '';
                 return max(1, (int) ceil(str_word_count(strip_tags($post->content ?? '')) / 200)) . ' min read';
@@ -1940,8 +1940,8 @@ if (!function_exists('lazy_revision_diff')) {
     }
 }
 
-if (!function_exists('remove_lazy_action')) {
-    function remove_lazy_action($tag, $callback, $priority = 10) {
+if (!function_exists('remove_falcon_action')) {
+    function remove_falcon_action($tag, $callback, $priority = 10) {
         return \FalconCms\Core\Core\HookManager::getInstance()->removeAction($tag, $callback, $priority);
     }
 }
@@ -1978,7 +1978,7 @@ if (!function_exists('lazy_lang_switcher')) {
                 if ($currentPost) {
                     $equivalent = $currentPost->getTranslation($lang->code);
                     if ($equivalent) {
-                        $url = get_lazy_permalink($equivalent);
+                        $url = get_falcon_permalink($equivalent);
                     }
                 }
 
@@ -2056,9 +2056,9 @@ if (!function_exists('lazy_lang_dropdown')) {
                 if ($currentPost) {
                     $equivalent = $currentPost->getTranslation($lang->code);
                     if ($equivalent) {
-                        $url = get_lazy_permalink($equivalent);
+                        $url = get_falcon_permalink($equivalent);
                     } elseif ($currentPost->lang_code == $lang->code) {
-                        $url = get_lazy_permalink($currentPost);
+                        $url = get_falcon_permalink($currentPost);
                     }
                 }
 
@@ -2132,9 +2132,9 @@ if (!function_exists('lazy_mobile_lang_switcher')) {
                 if ($currentPost) {
                     $equivalent = $currentPost->getTranslation($lang->code);
                     if ($equivalent) {
-                        $url = get_lazy_permalink($equivalent);
+                        $url = get_falcon_permalink($equivalent);
                     } elseif ($currentPost->lang_code == $lang->code) {
-                        $url = get_lazy_permalink($currentPost);
+                        $url = get_falcon_permalink($currentPost);
                     }
                 }
 
@@ -2229,8 +2229,8 @@ if (!function_exists('do_lazy_shortcode')) {
     }
 }
 
-if (!function_exists('lazy_translate')) {
-    function lazy_translate($text, $targetLang = 'en', $sourceLang = 'auto') {
+if (!function_exists('falcon_translate')) {
+    function falcon_translate($text, $targetLang = 'en', $sourceLang = 'auto') {
         if (empty($text)) return $text;
         
         // Map common CMS codes to Google Translate codes
@@ -2274,18 +2274,18 @@ if (!function_exists('get_lazy_shop_url')) {
         $pageId = get_shop_option('shop_shop_page_id');
         if ($pageId) {
             $page = \FalconCms\Core\Models\Post::find($pageId);
-            if ($page) return get_lazy_permalink($page);
+            if ($page) return get_falcon_permalink($page);
         }
         return url('/product');
     }
 }
 
-if (!function_exists('get_lazy_cart_url')) {
-    function get_lazy_cart_url() {
+if (!function_exists('get_falcon_cart_url')) {
+    function get_falcon_cart_url() {
         $pageId = get_shop_option('shop_cart_page_id');
         if ($pageId) {
             $page = \FalconCms\Core\Models\Post::find($pageId);
-            if ($page) return get_lazy_permalink($page);
+            if ($page) return get_falcon_permalink($page);
         }
         return route('shop.cart');
     }
@@ -2296,14 +2296,14 @@ if (!function_exists('get_lazy_checkout_url')) {
         $pageId = get_shop_option('shop_checkout_page_id');
         if ($pageId) {
             $page = \FalconCms\Core\Models\Post::find($pageId);
-            if ($page) return get_lazy_permalink($page);
+            if ($page) return get_falcon_permalink($page);
         }
         return route('shop.checkout');
     }
 }
 
-if (!function_exists('lazy_price_format')) {
-    function lazy_price_format($price, $order = null) {
+if (!function_exists('falcon_price_format')) {
+    function falcon_price_format($price, $order = null) {
         if ($order && is_object($order) && isset($order->currency_symbol)) {
             $symbol = $order->currency_symbol;
             $position = $order->currency_position ?? 'left';
@@ -2337,9 +2337,9 @@ if (!function_exists('lazy_price_format')) {
     }
 }
 
-if (!function_exists('get_lazy_cart_count')) {
-    function get_lazy_cart_count() {
-        $cart = session()->get('lazy_cart', []);
+if (!function_exists('get_falcon_cart_count')) {
+    function get_falcon_cart_count() {
+        $cart = session()->get('falcon_cart', []);
         $total = 0;
         foreach($cart as $item) {
             $total += $item['quantity'] ?? 0;
@@ -2348,9 +2348,9 @@ if (!function_exists('get_lazy_cart_count')) {
     }
 }
 
-if (!function_exists('get_lazy_cart_subtotal')) {
-    function get_lazy_cart_subtotal() {
-        $cart = session()->get('lazy_cart', []);
+if (!function_exists('get_falcon_cart_subtotal')) {
+    function get_falcon_cart_subtotal() {
+        $cart = session()->get('falcon_cart', []);
         $subtotal = 0;
         foreach($cart as $item) {
             $price = $item['sale_price'] ?? $item['price'];
@@ -2360,22 +2360,22 @@ if (!function_exists('get_lazy_cart_subtotal')) {
     }
 }
 
-if (!function_exists('get_lazy_cart_shipping')) {
+if (!function_exists('get_falcon_cart_shipping')) {
     /**
      * Calculate shipping cost based on subtotal, quantity, and location.
      * @param string|null $country Customer country code
      * @return float
      */
-    function get_lazy_cart_shipping($country = null) {
-        $details = get_lazy_cart_shipping_details($country);
+    function get_falcon_cart_shipping($country = null) {
+        $details = get_falcon_cart_shipping_details($country);
         return $details['cost'];
     }
 }
 
-if (!function_exists('get_lazy_cart_shipping_details')) {
-    function get_lazy_cart_shipping_details($country = null) {
-        $subtotal = get_lazy_cart_subtotal();
-        $cart = session()->get('lazy_cart', []);
+if (!function_exists('get_falcon_cart_shipping_details')) {
+    function get_falcon_cart_shipping_details($country = null) {
+        $subtotal = get_falcon_cart_subtotal();
+        $cart = session()->get('falcon_cart', []);
         $itemCount = 0;
         foreach ($cart as $item) {
             $itemCount += ($item['quantity'] ?? 0);
@@ -2456,27 +2456,27 @@ if (!function_exists('get_lazy_cart_shipping_details')) {
     }
 }
 
-if (!function_exists('get_lazy_cart_tax')) {
-    function get_lazy_cart_tax() {
+if (!function_exists('get_falcon_cart_tax')) {
+    function get_falcon_cart_tax() {
         if (get_cms_option('shop_enable_tax', 0) != 1) return 0;
-        $subtotal = get_lazy_cart_subtotal();
+        $subtotal = get_falcon_cart_subtotal();
         $taxRate = (float) get_cms_option('shop_tax_rate', 0);
         return $subtotal * ($taxRate / 100);
     }
 }
 
-if (!function_exists('get_lazy_cart_total')) {
-    function get_lazy_cart_total() {
-        $cart = session()->get('lazy_cart', []);
-        $subtotal = get_lazy_cart_subtotal();
-        $shipping = get_lazy_cart_shipping(session()->get('lazy_shipping_country'));
-        $tax = get_lazy_cart_tax();
+if (!function_exists('get_falcon_cart_total')) {
+    function get_falcon_cart_total() {
+        $cart = session()->get('falcon_cart', []);
+        $subtotal = get_falcon_cart_subtotal();
+        $shipping = get_falcon_cart_shipping(session()->get('lazy_shipping_country'));
+        $tax = get_falcon_cart_tax();
         
-        $coupons = session()->get('lazy_coupons', []);
+        $coupons = session()->get('falcon_coupons', []);
         $totalDiscount = 0;
         $currentCart = $cart; // For sequential calculation if needed
         $isSequential = (int)get_shop_option('shop_coupon_stacking_policy', '1') == 1;
-        $subtotal = get_lazy_cart_subtotal();
+        $subtotal = get_falcon_cart_subtotal();
         $currentSubtotal = $subtotal;
 
         foreach ($coupons as $coupon) {
@@ -2630,7 +2630,7 @@ if (!function_exists('lazy_get_checkout_fields')) {
         }
 
         $fields = $defaults[$section] ?? [];
-        $fields = apply_lazy_filters("lazy_{$section}_fields", $fields);
+        $fields = apply_falcon_filters("lazy_{$section}_fields", $fields);
         usort($fields, fn($a, $b) => ($a['priority'] ?? 10) <=> ($b['priority'] ?? 10));
 
         return $fields;
@@ -2790,7 +2790,7 @@ if (!function_exists('get_lazy_coupon_discount_amount')) {
         
         // If NO restrictions, apply to the whole provided subtotal
         if (empty($products) && empty($categories)) {
-            $base = $calcBaseSubtotal ?? get_lazy_cart_subtotal();
+            $base = $calcBaseSubtotal ?? get_falcon_cart_subtotal();
             if ($couponType === 'percent') {
                 return $base * ($amount / 100);
             }
@@ -2926,7 +2926,7 @@ if (!function_exists('lazy_render_special_menu_item')) {
         $iconWrap   = 'display:inline-flex;align-items:center;gap:2px;';
 
         if ($type === 'special_cart') {
-            $count   = function_exists('get_lazy_cart_count') ? (int) get_lazy_cart_count() : 0;
+            $count   = function_exists('get_falcon_cart_count') ? (int) get_falcon_cart_count() : 0;
             $cartUrl = \Illuminate\Support\Facades\Route::has('shop.cart') ? route('shop.cart') : url('/cart');
             $badge   = '<span class="cart-count-badge ' . $badgeCls . ($count > 0 ? '' : ' hidden') . '" style="' . $badgeStyle . '">' . $count . '</span>';
             return '<li class="lazy-menu-item lazy-special-item lazy-special-cart">'
@@ -2971,7 +2971,7 @@ if (!function_exists('lazy_render_special_menu_item')) {
 /**
  * Register Special Text Element for Lazy Builder
  */
-add_lazy_filter('lazy_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function($elements) {
     $elements['text_block'] = [
         'type' => 'text_block',
         'name' => 'Text Block',
@@ -3057,7 +3057,7 @@ if (!function_exists('get_lazy_builder_fonts')) {
 /**
  * Register Button Element for Lazy Builder
  */
-add_lazy_filter('lazy_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function($elements) {
     $elements['button'] = [
         'type' => 'button',
         'name' => 'Button',
@@ -3133,7 +3133,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
 /**
  * Register Menu Element for Lazy Builder
  */
-add_lazy_filter('lazy_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function($elements) {
     $menus = [];
     try {
         $menus = \Illuminate\Support\Facades\DB::table('navigation_menus')->pluck('name', 'id')->toArray();
@@ -3317,7 +3317,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
 /**
  * Register Image Element for Lazy Builder
  */
-add_lazy_filter('lazy_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function($elements) {
     $elements['image'] = [
         'type' => 'image',
         'name' => 'Image',
@@ -3429,7 +3429,7 @@ if (!function_exists('lazy_contrast_color')) {
 
 // Social Icons — one URL field per platform (General tab). Fill a field and that platform's
 // icon shows on the front-end. No icon picking; the icon is fixed per platform.
-add_lazy_filter('lazy_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function($elements) {
     $fields = [];
     foreach (lazy_social_platforms() as $key => $p) {
         // social_icon / social_color / social_label: tell the live canvas the fixed icon, brand colour and name.
@@ -3479,7 +3479,7 @@ add_lazy_filter('lazy_builder_elements', function($elements) {
  * A smart search bar: choose which post type to search, optional live (AJAX)
  * results dropdown, and an optional category dropdown inside the bar.
  */
-add_lazy_filter('lazy_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function($elements) {
     // Dynamic post-type options (active types). Multi-select; none selected = all content.
     $ptOptions = [];
     try {

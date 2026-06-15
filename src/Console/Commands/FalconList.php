@@ -4,7 +4,7 @@ namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 
-class LazyList extends Command
+class FalconList extends Command
 {
     protected $signature = 'lazy';
     protected $description = 'List all available Lazy CMS commands';

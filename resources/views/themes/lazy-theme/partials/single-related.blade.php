@@ -43,7 +43,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
         @foreach($related as $rel)
             @php $relImg = $rel->featured_image ? (str_starts_with($rel->featured_image, 'http') ? $rel->featured_image : asset('storage/'.$rel->featured_image)) : null; @endphp
-            <a href="{{ get_lazy_permalink($rel) }}" class="group block bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all">
+            <a href="{{ get_falcon_permalink($rel) }}" class="group block bg-white rounded-xl border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all">
                 @if($relImg)
                     <div class="aspect-[16/10] bg-slate-100 overflow-hidden">
                         <img src="{{ $relImg }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $rel->title }}" loading="lazy">

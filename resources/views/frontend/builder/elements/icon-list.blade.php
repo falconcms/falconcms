@@ -32,7 +32,7 @@
     $bpSm   = (int) get_cms_option('theme_small_screen_breakpoint',  '800');
     $bpMed  = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');
 
-    $respCss = lazy_elem_resp_css($s, $bpSm, $bpMed, [
+    $respCss = falcon_elem_resp_css($s, $bpSm, $bpMed, [
         ['prop' => 'marginTop',    'unitProp' => 'marginTopUnit',    'sel' => ".icon-list-{$elemId}"],
         ['prop' => 'marginBottom', 'unitProp' => 'marginBottomUnit', 'sel' => ".icon-list-{$elemId}"],
     ]);

@@ -36,7 +36,7 @@
     }
 
     $w = ".{$respId}";
-    $respCss = lazy_elem_resp_css($s, $bpSm, $bpMed, [
+    $respCss = falcon_elem_resp_css($s, $bpSm, $bpMed, [
         ['prop' => 'textAlign',     'sel' => $w],
         ['prop' => 'marginTop',     'unitProp' => 'marginTopUnit',     'sel' => $w],
         ['prop' => 'marginRight',   'unitProp' => 'marginRightUnit',   'sel' => $w],

@@ -109,7 +109,7 @@
                             @if($item->status === 'scheduled' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif
                             @if(is_lazy_homepage($item)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
                             @if(is_lazy_shop_page($item)) <span class="font-normal text-[#646970]"> — Shop Page</span> @endif
-                            @if(is_lazy_cart_page($item)) <span class="font-normal text-[#646970]"> — Cart Page</span> @endif
+                            @if(is_falcon_cart_page($item)) <span class="font-normal text-[#646970]"> — Cart Page</span> @endif
                             @if(is_lazy_checkout_page($item)) <span class="font-normal text-[#646970]"> — Checkout Page</span> @endif
                             @if(is_lazy_account_page($item)) <span class="font-normal text-[#646970]"> — Account Page</span> @endif
                             @if($item->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif
@@ -122,7 +122,7 @@
                             @else
                                 <a href="{{ route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                 <button type="button" onclick="moveToTrash({{ $item->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> <span class="text-[#c3c4c7]">|</span>
-                                <a href="{{ get_lazy_permalink($item) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
+                                <a href="{{ get_falcon_permalink($item) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
                             @endif
                         </div>
                     </td>

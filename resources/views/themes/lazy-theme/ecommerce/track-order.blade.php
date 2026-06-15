@@ -176,7 +176,7 @@
                                 <p class="text-[12px] text-body mt-0.5">Qty: {{ $item->quantity }}</p>
                             </div>
                             <div class="text-sm font-bold text-heading flex-shrink-0">
-                                {{ lazy_price_format($item->subtotal, $order) }}
+                                {{ falcon_price_format($item->subtotal, $order) }}
                             </div>
                         </div>
                     @endforeach
@@ -189,12 +189,12 @@
                     <span class="text-body">{{ $order->items->count() }} item{{ $order->items->count() === 1 ? '' : 's' }}</span>
                     <div class="text-right">
                         @if($order->discount_total > 0)
-                            <div class="text-gray-400 text-[12px]">Discount: -{{ lazy_price_format($order->discount_total, $order) }}</div>
+                            <div class="text-gray-400 text-[12px]">Discount: -{{ falcon_price_format($order->discount_total, $order) }}</div>
                         @endif
                         @if($order->shipping_total > 0)
-                            <div class="text-gray-400 text-[12px]">Shipping: {{ lazy_price_format($order->shipping_total, $order) }}</div>
+                            <div class="text-gray-400 text-[12px]">Shipping: {{ falcon_price_format($order->shipping_total, $order) }}</div>
                         @endif
-                        <div class="font-bold text-heading text-[16px] mt-0.5">Total: {{ lazy_price_format($order->total, $order) }}</div>
+                        <div class="font-bold text-heading text-[16px] mt-0.5">Total: {{ falcon_price_format($order->total, $order) }}</div>
                     </div>
                 </div>
             </div>

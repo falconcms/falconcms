@@ -105,10 +105,10 @@
                             <td class="px-4 py-2.5">
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $statusColors[$order->status] ?? 'bg-gray-200 text-gray-800' }}">{{ str_replace('-', ' ', $order->status) }}</span>
                             </td>
-                            <td class="px-4 py-2.5 text-right font-bold">{{ lazy_price_format($order->total, $order) }}</td>
+                            <td class="px-4 py-2.5 text-right font-bold">{{ falcon_price_format($order->total, $order) }}</td>
                             <td class="px-4 py-2.5 text-right">
                                 @if(($order->refunded_amount ?? 0) > 0)
-                                    <span class="text-[#8c44db] font-semibold">{{ lazy_price_format($order->refunded_amount, $order) }}</span>
+                                    <span class="text-[#8c44db] font-semibold">{{ falcon_price_format($order->refunded_amount, $order) }}</span>
                                 @else
                                     <span class="text-[#c3c4c7]">—</span>
                                 @endif

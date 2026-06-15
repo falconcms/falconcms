@@ -3,7 +3,7 @@
 @section('title', 'Order Confirmation')
 
 @section('content')
-    <?php do_lazy_action('lazy_before_order_confirmation', $order); ?>
+    <?php do_falcon_action('lazy_before_order_confirmation', $order); ?>
     <div class="bg-gray-50 py-20 min-h-screen font-sans">
         <div class="container-custom">
             <div class="bg-white rounded-sm shadow-sm border border-gray-100 p-10 text-center mb-10">
@@ -33,7 +33,7 @@
                     </div>
                     <div>
                         <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total</span>
-                        <strong class="text-primary font-bold">{{ lazy_price_format($order->total, $order) }}</strong>
+                        <strong class="text-primary font-bold">{{ falcon_price_format($order->total, $order) }}</strong>
                     </div>
                     <div>
                         <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Payment
@@ -86,14 +86,14 @@
                             @foreach ($order->items as $item)
                                 <tr class="border-b border-gray-50">
                                     <td class="py-4">
-                                        {!! apply_lazy_filters('lazy_order_confirmation_item_name',
+                                        {!! apply_falcon_filters('lazy_order_confirmation_item_name',
                                             e($item->product_name) . ' <strong class="text-heading">× ' . (int)$item->quantity . '</strong>',
                                             $item, $order) !!}
                                         {!! lazy_render_item_custom_fields($item, 'confirmation') !!}
-                                        <?php do_lazy_action('lazy_order_confirmation_item_meta', $item, $order); ?>
+                                        <?php do_falcon_action('lazy_order_confirmation_item_meta', $item, $order); ?>
                                     </td>
                                     <td class="py-4 text-right font-medium">
-                                        {{ lazy_price_format($item->subtotal, $order) }}
+                                        {{ falcon_price_format($item->subtotal, $order) }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -101,19 +101,19 @@
                         <tfoot class="text-body">
                             <tr>
                                 <td class="pt-6 pb-3 font-bold">Subtotal:</td>
-                                <td class="pt-6 pb-3 text-right font-bold">{{ lazy_price_format($order->subtotal, $order) }}
+                                <td class="pt-6 pb-3 text-right font-bold">{{ falcon_price_format($order->subtotal, $order) }}
                                 </td>
                             </tr>
                             <tr>
                                 <td class="py-3 font-bold">Shipping:</td>
                                 <td class="py-3 text-right font-bold">
-                                    {{ lazy_price_format($order->shipping_total, $order) }}</td>
+                                    {{ falcon_price_format($order->shipping_total, $order) }}</td>
                             </tr>
                             @if ($order->tax_total > 0)
                                 <tr>
                                     <td class="py-3 font-bold">Tax:</td>
                                     <td class="py-3 text-right font-bold">
-                                        {{ lazy_price_format($order->tax_total, $order) }}</td>
+                                        {{ falcon_price_format($order->tax_total, $order) }}</td>
                                 </tr>
                             @endif
                             @if ($order->coupon_code)
@@ -121,13 +121,13 @@
                                     <td class="py-3 font-bold text-emerald-700 text-sm">Coupons
                                         ({{ $order->coupon_code }}):</td>
                                     <td class="py-3 text-right font-bold text-emerald-700">
-                                        {{ lazy_price_format($order->discount_total, $order) }}</td>
+                                        {{ falcon_price_format($order->discount_total, $order) }}</td>
                                 </tr>
                             @endif
                             <tr class="text-heading text-lg border-t border-gray-100">
                                 <td class="pt-4 font-black">Total:</td>
                                 <td class="pt-4 text-right font-black text-primary">
-                                    {{ lazy_price_format($order->total, $order) }}</td>
+                                    {{ falcon_price_format($order->total, $order) }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -154,7 +154,7 @@
                             </address>
                             @php $confCheckoutMeta = $order->meta['checkout_fields'] ?? []; @endphp
                             @if(!empty($confCheckoutMeta))
-                                @php $confLabels = apply_lazy_filters('lazy_checkout_field_labels', []); @endphp
+                                @php $confLabels = apply_falcon_filters('lazy_checkout_field_labels', []); @endphp
                                 <div class="mt-4 pt-4 border-t border-gray-100 space-y-1 text-sm text-body">
                                     @foreach($confCheckoutMeta as $cKey => $cVal)
                                         @if($cVal)
@@ -251,5 +251,5 @@
 
         </div>
     </div>
-    <?php do_lazy_action('lazy_after_order_confirmation', $order); ?>
+    <?php do_falcon_action('lazy_after_order_confirmation', $order); ?>
 @stop

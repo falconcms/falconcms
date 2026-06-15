@@ -73,26 +73,26 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('posts/{id}/revisions/{revision}', [PostController::class, 'deleteRevision'])->name('posts.revisions.delete');
     Route::delete('posts/{id}/revisions', [PostController::class, 'clearRevisions'])->name('posts.revisions.clear');
     Route::resource('posts', PostController::class);
-    Route::get('lazy-builder-library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'page'])->name('lazy-builder.library');
-    Route::post('lazy-builder-library/post-cards', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCard'])->name('lazy-builder.post-cards.save');
-    Route::delete('lazy-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deletePostCard'])->name('lazy-builder.post-cards.delete');
-    Route::patch('lazy-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updatePostCard'])->name('lazy-builder.post-cards.update');
-    Route::get('lazy-builder-library/post-cards/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'editPostCardBuilder'])->name('lazy-builder.post-cards.builder');
-    Route::post('lazy-builder-library/post-cards/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCardLayout'])->name('lazy-builder.post-cards.save-layout');
-    Route::post('lazy-builder-library/mega-menus', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenu'])->name('lazy-builder.mega-menus.save');
-    Route::delete('lazy-builder-library/mega-menus/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteMegaMenu'])->name('lazy-builder.mega-menus.delete');
-    Route::patch('lazy-builder-library/mega-menus/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateMegaMenu'])->name('lazy-builder.mega-menus.update');
-    Route::get('lazy-builder-library/mega-menus/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'editMegaMenuBuilder'])->name('lazy-builder.mega-menus.builder');
-    Route::post('lazy-builder-library/mega-menus/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenuLayout'])->name('lazy-builder.mega-menus.save-layout');
-    Route::post('lazy-builder-library/mega-menus/{id}/settings', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenuSettings'])->name('lazy-builder.mega-menus.save-settings');
-    Route::get('lazy-builder/library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'index'])->name('lazy-builder.library.index');
-    Route::post('lazy-builder/library/save', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'save'])->name('lazy-builder.library.save');
-    Route::delete('lazy-builder/library/{type}/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'delete'])->name('lazy-builder.library.delete');
-    Route::get('lazy-builder/global-sections', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'listGlobalSections'])->name('lazy-builder.global-sections.list');
-    Route::post('lazy-builder/global-sections', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveGlobalSection'])->name('lazy-builder.global-sections.save');
-    Route::patch('lazy-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateGlobalSection'])->name('lazy-builder.global-sections.update');
-    Route::delete('lazy-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteGlobalSection'])->name('lazy-builder.global-sections.delete');
-    Route::post('lazy-builder/card-preview', function(\Illuminate\Http\Request $r) {
+    Route::get('falcon-builder-library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'page'])->name('falcon-builder.library');
+    Route::post('falcon-builder-library/post-cards', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCard'])->name('falcon-builder.post-cards.save');
+    Route::delete('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deletePostCard'])->name('falcon-builder.post-cards.delete');
+    Route::patch('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updatePostCard'])->name('falcon-builder.post-cards.update');
+    Route::get('falcon-builder-library/post-cards/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'editPostCardBuilder'])->name('falcon-builder.post-cards.builder');
+    Route::post('falcon-builder-library/post-cards/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCardLayout'])->name('falcon-builder.post-cards.save-layout');
+    Route::post('falcon-builder-library/mega-menus', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenu'])->name('falcon-builder.mega-menus.save');
+    Route::delete('falcon-builder-library/mega-menus/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteMegaMenu'])->name('falcon-builder.mega-menus.delete');
+    Route::patch('falcon-builder-library/mega-menus/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateMegaMenu'])->name('falcon-builder.mega-menus.update');
+    Route::get('falcon-builder-library/mega-menus/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'editMegaMenuBuilder'])->name('falcon-builder.mega-menus.builder');
+    Route::post('falcon-builder-library/mega-menus/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenuLayout'])->name('falcon-builder.mega-menus.save-layout');
+    Route::post('falcon-builder-library/mega-menus/{id}/settings', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenuSettings'])->name('falcon-builder.mega-menus.save-settings');
+    Route::get('falcon-builder/library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'index'])->name('falcon-builder.library.index');
+    Route::post('falcon-builder/library/save', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'save'])->name('falcon-builder.library.save');
+    Route::delete('falcon-builder/library/{type}/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'delete'])->name('falcon-builder.library.delete');
+    Route::get('falcon-builder/global-sections', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'listGlobalSections'])->name('falcon-builder.global-sections.list');
+    Route::post('falcon-builder/global-sections', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveGlobalSection'])->name('falcon-builder.global-sections.save');
+    Route::patch('falcon-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateGlobalSection'])->name('falcon-builder.global-sections.update');
+    Route::delete('falcon-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteGlobalSection'])->name('falcon-builder.global-sections.delete');
+    Route::post('falcon-builder/card-preview', function(\Illuminate\Http\Request $r) {
         $s = $r->input('settings', []);
         try {
             $html = view('falcon-cms::frontend.builder.elements.card', [
@@ -103,16 +103,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'html' => '']);
         }
-    })->name('lazy-builder.card-preview');
-    Route::get('lazy-builder/{id}', [PostController::class, 'builder'])->name('lazy-builder');
-    Route::post('lazy-builder/{id}/save', [PostController::class, 'saveBuilder'])->name('lazy-builder.save');
+    })->name('falcon-builder.card-preview');
+    Route::get('falcon-builder/{id}', [PostController::class, 'builder'])->name('falcon-builder');
+    Route::post('falcon-builder/{id}/save', [PostController::class, 'saveBuilder'])->name('falcon-builder.save');
     // Revisions + Autosave
-    Route::post('lazy-builder/{id}/autosave', [PostController::class, 'autosaveBuilder'])->name('lazy-builder.autosave');
-    Route::get('lazy-builder/{id}/revisions', [PostController::class, 'revisions'])->name('lazy-builder.revisions');
-    Route::post('lazy-builder/{id}/revisions/{revision}/restore', [PostController::class, 'restoreRevision'])->name('lazy-builder.revisions.restore');
-    Route::delete('lazy-builder/{id}/revisions/{revision}', [PostController::class, 'deleteRevisionBuilder'])->name('lazy-builder.revisions.delete');
+    Route::post('falcon-builder/{id}/autosave', [PostController::class, 'autosaveBuilder'])->name('falcon-builder.autosave');
+    Route::get('falcon-builder/{id}/revisions', [PostController::class, 'revisions'])->name('falcon-builder.revisions');
+    Route::post('falcon-builder/{id}/revisions/{revision}/restore', [PostController::class, 'restoreRevision'])->name('falcon-builder.revisions.restore');
+    Route::delete('falcon-builder/{id}/revisions/{revision}', [PostController::class, 'deleteRevisionBuilder'])->name('falcon-builder.revisions.delete');
     Route::post('posts/{id}/variations/ajax', [PostController::class, 'ajaxSaveVariations'])->name('posts.variations.ajax-save');
-    Route::get('lazy-builder/{id}/preview', [PostController::class, 'previewBuilder'])->name('lazy-builder.preview');
+    Route::get('falcon-builder/{id}/preview', [PostController::class, 'previewBuilder'])->name('falcon-builder.preview');
  
     Route::post('pages/bulk', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'bulk'])->name('pages.bulk');
     Route::post('pages/{page}/restore', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'restore'])->name('pages.restore')->withTrashed();
@@ -308,10 +308,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
 
     // Lazy Builder Sections
-    Route::get('/lazy-builder-sections', [\FalconCms\Core\Http\Controllers\Admin\LazyBuilderController::class, 'index'])->name('lazy-builder.sections');
-    Route::get('/lazy-builder-sections/header', [\FalconCms\Core\Http\Controllers\Admin\LazyBuilderController::class, 'editHeader'])->name('lazy-builder.header');
-    Route::get('/lazy-builder-sections/footer', [\FalconCms\Core\Http\Controllers\Admin\LazyBuilderController::class, 'editFooter'])->name('lazy-builder.footer');
-    Route::post('/lazy-builder-sections/toggle/{id}', [\FalconCms\Core\Http\Controllers\Admin\LazyBuilderController::class, 'toggleStatus'])->name('lazy-builder.toggle');
+    Route::get('/falcon-builder-sections', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'index'])->name('falcon-builder.sections');
+    Route::get('/falcon-builder-sections/header', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'editHeader'])->name('falcon-builder.header');
+    Route::get('/falcon-builder-sections/footer', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'editFooter'])->name('falcon-builder.footer');
+    Route::post('/falcon-builder-sections/toggle/{id}', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'toggleStatus'])->name('falcon-builder.toggle');
 
     // Form Builder
     Route::get('forms', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'index'])->name('forms.index');

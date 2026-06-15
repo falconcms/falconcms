@@ -1,4 +1,4 @@
-﻿<!-- Columns Loop -->
+<!-- Columns Loop -->
 <div v-for="(column, coli) in container.columns" :key="column.id"
      class="column-outer relative"
      :class="['col-' + column.id, (column.settings.hoverType && column.settings.hoverType !== 'none') ? 'hover-effect-' + column.settings.hoverType : '', getVisibilityClasses(column.settings), isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '']"
@@ -153,28 +153,28 @@
              @dragover="onDragOver($event, 'element', ci, coli, eli)"
              @drop="onDrop($event, 'element', ci, coli, eli)">
             
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.counter')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.star-rating')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.gallery')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.heading')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.title')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.text')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.image')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.button')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.video')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.spacer')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.html')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.icon-box')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.icon-list')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.accordion')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.tabs')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.text-block')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.menu')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.card')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.post-content')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.post-meta')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.elements.ticker')
-            @includeIf('falcon-cms::admin.lazy-builder.partials.components.nested.row')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.counter')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.star-rating')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.gallery')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.heading')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.title')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.text')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.image')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.button')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.video')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.spacer')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.html')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.icon-box')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.icon-list')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.accordion')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.tabs')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.text-block')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.menu')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.card')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.post-content')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.post-meta')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.ticker')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.nested.row')
 
             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
             @php

@@ -1,4 +1,4 @@
-﻿@php $pcMode = ($postCardMode ?? false); @endphp
+@php $pcMode = ($postCardMode ?? false); @endphp
 @if($pcMode)
 <div class="relative w-full"
      :class="[getVisibilityClasses(container.settings)]"
@@ -148,6 +148,6 @@
             </button>
         </div>
 
-        @include('falcon-cms::admin.lazy-builder.partials.components.column.col')
+        @include('falcon-cms::admin.falcon-builder.partials.components.column.col')
     </div>
 </div>

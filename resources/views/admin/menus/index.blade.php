@@ -559,7 +559,7 @@
     let miOptionsItemId = null;
 
     const MEGA_MENUS_DATA = @json($megaMenusList);
-    const MEGA_MENU_BUILDER_BASE = '{{ route("admin.lazy-builder.mega-menus.builder", ["id" => "__ID__"]) }}';
+    const MEGA_MENU_BUILDER_BASE = '{{ route("admin.falcon-builder.mega-menus.builder", ["id" => "__ID__"]) }}';
 
     function openItemOptions(id) {
         miOptionsItemId = id;

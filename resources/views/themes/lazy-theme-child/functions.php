@@ -11,12 +11,12 @@
  * Examples:
  *
  *   // Add custom CSS to <head>
- *   add_lazy_action('lazy_head', function() {
+ *   add_falcon_action('lazy_head', function() {
  *       echo '<link rel="stylesheet" href="' . asset('css/my-style.css') . '">';
  *   });
  *
  *   // Add custom JS before </body>
- *   add_lazy_action('lazy_footer', function() {
+ *   add_falcon_action('falcon_footer', function() {
  *       echo '<script src="' . asset('js/my-script.js') . '"></script>';
  *   });
  */
