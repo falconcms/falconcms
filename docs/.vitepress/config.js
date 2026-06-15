@@ -34,10 +34,11 @@ export default defineConfig({
       { text: 'Builder', link: '/builder/overview' },
       { text: 'E-commerce', link: '/ecommerce/overview' },
       { text: 'Hooks API', link: '/api/hooks' },
+      { text: 'Changelog', link: '/changelog' },
       {
         text: `v${version}`,
         items: [
-          { text: 'Changelog', link: 'https://github.com/lazycmsapp/lazy-cms-builder/releases' },
+          { text: 'Release Notes', link: '/changelog' },
           { text: 'Packagist', link: 'https://packagist.org/packages/lazycmsapp/lazy-cms-builder' },
         ]
       }
@@ -109,6 +110,24 @@ export default defineConfig({
           items: [
             { text: 'Hooks', link: '/api/hooks' },
             { text: 'Helper Functions', link: '/api/helpers' },
+          ]
+        },
+      ],
+      '/changelog': [
+        {
+          text: 'Changelog',
+          items: [
+            { text: 'v1.1.0', link: '/changelog#v1-1-0' },
+            { text: 'v1.0.9', link: '/changelog#v1-0-9' },
+            { text: 'v1.0.8', link: '/changelog#v1-0-8' },
+            { text: 'v1.0.7', link: '/changelog#v1-0-7' },
+            { text: 'v1.0.6', link: '/changelog#v1-0-6' },
+            { text: 'v1.0.5', link: '/changelog#v1-0-5' },
+            { text: 'v1.0.4', link: '/changelog#v1-0-4' },
+            { text: 'v1.0.3', link: '/changelog#v1-0-3' },
+            { text: 'v1.0.2', link: '/changelog#v1-0-2' },
+            { text: 'v1.0.1', link: '/changelog#v1-0-1' },
+            { text: 'v1.0.0', link: '/changelog#v1-0-0' },
           ]
         },
       ],
