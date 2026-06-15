@@ -81,5 +81,5 @@
 
   <!-- Top-right badge -->
   <rect x="360" y="24" width="60" height="16" rx="8" fill="#10b981" opacity=".15"/>
-  <text x="372" y="35" fill="#10b981" font-size="8" font-family="monospace" font-weight="bold">v1.0.7</text>
+  <text x="372" y="35" fill="#10b981" font-size="8" font-family="monospace" font-weight="bold">v1.2.0</text>
 </svg>
