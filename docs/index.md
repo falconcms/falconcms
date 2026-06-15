@@ -6,7 +6,7 @@ hero:
   text: "WordPress-like CMS for Laravel"
   tagline: Build powerful websites faster with a drag-and-drop page builder, full e-commerce, and multi-language support — all inside Laravel.
   image:
-    src: /lazy-cms-builder/hero.svg
+    src: /hero.svg
     alt: Lazy CMS Builder
   actions:
     - theme: brand

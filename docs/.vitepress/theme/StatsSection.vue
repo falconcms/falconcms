@@ -1,9 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import versionData from '../../../version.json'
 
 const downloads = ref(null)
 const stars = ref(null)
-const version = ref('1.0.7')
+const version = ref(versionData.version)
 
 onMounted(async () => {
   try {
