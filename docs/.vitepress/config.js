@@ -27,7 +27,7 @@ export default defineConfig({
 
   themeConfig: {
     logo: '/logo.svg',
-    siteTitle: 'Lazy CMS Builder',
+    siteTitle: false,
 
     nav: [
       { text: 'Guide', link: '/guide/introduction' },
