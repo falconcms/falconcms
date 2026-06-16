@@ -64,12 +64,14 @@ class FalconCmsServiceProvider extends ServiceProvider
             \FalconCms\Core\Console\Commands\UpdateFalconCms::class,
             \FalconCms\Core\Console\Commands\PublishScheduledPosts::class,
             \FalconCms\Core\Console\Commands\ExpireSalePrices::class,
+            \FalconCms\Core\Console\Commands\CancelHeldOrders::class,
         ]);
 
         // Register scheduled tasks from within the package
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function ($schedule) {
             $schedule->command('falcon:publish-scheduled')->everyMinute()->withoutOverlapping();
             $schedule->command('falcon:expire-sales')->daily();
+            $schedule->command('falcon:cancel-held-orders')->everyMinute()->withoutOverlapping();
         });
 
         // Cron-independent fallback: many hosts (and local dev) never run `schedule:run`,
