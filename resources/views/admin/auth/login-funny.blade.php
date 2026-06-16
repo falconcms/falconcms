@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -90,11 +90,7 @@
     <div class="funny-card">
 
         <div class="card-logo">
-            @if(get_cms_option('theme_site_logo'))
-                <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}">
-            @else
-                <span class="card-logo-text">{{ get_cms_option('site_title', 'Falcon') }}<span class="card-logo-accent"> CMS</span></span>
-            @endif
+            <img src="{{ get_cms_option('theme_site_logo', asset('vendor/falcon-cms/images/falcon-cms-logo.png')) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}">
         </div>
 
 @php $magicEnabled = get_cms_option('magic_login_enabled'); @endphp
@@ -303,3 +299,4 @@
     </script>
 </body>
 </html>
+

@@ -15,18 +15,18 @@ export default defineConfig({
   lastUpdated: true,
 
   head: [
-    ['link', { rel: 'icon', href: '/falconcms/hero.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'icon', href: '/falconcms/falcon-cms-logo.png', type: 'image/png' }],
     ['meta', { property: 'og:type',        content: 'website' }],
     ['meta', { property: 'og:site_name',   content: 'FalconCMS' }],
     ['meta', { property: 'og:description', content: 'A WordPress-like drag-and-drop CMS package for Laravel — page builder, e-commerce, multi-language, hooks API, mega menus, and more.' }],
-    ['meta', { property: 'og:image',       content: 'https://falconcms.github.io/falconcms/hero.svg' }],
+    ['meta', { property: 'og:image',       content: 'https://falconcms.github.io/falconcms/falcon-cms-logo.png' }],
     ['meta', { name: 'twitter:card',       content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:image',      content: 'https://falconcms.github.io/falconcms/hero.svg' }],
+    ['meta', { name: 'twitter:image',      content: 'https://falconcms.github.io/falconcms/falcon-cms-logo.png' }],
     ['meta', { name: 'keywords',           content: 'Laravel CMS, Laravel page builder, drag-and-drop, e-commerce, multi-language, mega menu, hooks API' }],
   ],
 
   themeConfig: {
-    logo: '/hero.svg',
+    logo: '/falcon-cms-logo.png',
     siteTitle: 'FalconCMS',
 
     nav: [

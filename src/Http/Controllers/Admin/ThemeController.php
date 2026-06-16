@@ -27,10 +27,21 @@ class ThemeController extends Controller
                 $slug = basename($dir);
 
                 $screenshot = null;
-                if (File::exists($dir . '/screenshot.png')) {
-                    $screenshot = asset('themes/' . $slug . '/screenshot.png');
-                } elseif (File::exists($dir . '/screenshot.jpg')) {
-                    $screenshot = asset('themes/' . $slug . '/screenshot.jpg');
+                // 1. User-uploaded: public/themes/{slug}/
+                foreach (['png', 'jpg'] as $ext) {
+                    if (File::exists(public_path("themes/{$slug}/screenshot.{$ext}"))) {
+                        $screenshot = asset("themes/{$slug}/screenshot.{$ext}");
+                        break;
+                    }
+                }
+                // 2. Published package asset: public/vendor/falcon-cms/themes/{slug}/
+                if (!$screenshot) {
+                    foreach (['png', 'jpg'] as $ext) {
+                        if (File::exists(public_path("vendor/falcon-cms/themes/{$slug}/screenshot.{$ext}"))) {
+                            $screenshot = asset("vendor/falcon-cms/themes/{$slug}/screenshot.{$ext}");
+                            break;
+                        }
+                    }
                 }
 
                 $themeJson = [];
