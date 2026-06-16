@@ -44,11 +44,20 @@ resources/views/themes/my-theme/
 ```json
 {
     "name": "My Theme",
-    "slug": "my-theme",
     "version": "1.0.0",
     "author": "Your Name",
-    "description": "A clean, fast theme for Falcon CMS",
-    "parent": "lazy-theme"
+    "description": "A clean, fast theme for Falcon CMS"
+}
+```
+
+For a **child theme**, add a `"parent"` key pointing to the parent theme's slug:
+
+```json
+{
+    "name": "My Child Theme",
+    "version": "1.0.0",
+    "parent": "falcon-theme",
+    "description": "Customizations on top of Falcon Theme"
 }
 ```
 
@@ -160,13 +169,17 @@ lazy_lang_switcher();
 Child themes inherit all templates from the parent. Override only what you need:
 
 1. Create `resources/views/themes/my-child-theme/`
-2. Add `theme.json` with `"parent": "lazy-theme"`
-3. Copy only the templates you want to override
+2. Add `theme.json` with `"parent": "falcon-theme"` (or any installed parent slug)
+3. Add an `index.blade.php` that extends the parent — this is required for activation:
+   ```blade
+   @extends('falcon-cms::themes.falcon-theme.index')
+   ```
+4. Copy only the templates you want to override into your child theme directory
 
 When a template is requested, Falcon CMS checks the child theme first, then falls back to the parent.
 
 ::: tip
-The `falcon:update` command never overwrites child theme files — your customizations are always safe.
+The bundled **Falcon Theme Child** (`falcon-theme-child`) is published to `resources/views/themes/` on install and is ready to customize — your changes there are never overwritten by CMS updates.
 :::
 
 ## Installing Themes

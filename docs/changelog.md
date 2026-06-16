@@ -5,9 +5,63 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.0.0 <Badge type="tip" text="Latest" /> {#v1-0-0}
+## v1.3.4 <Badge type="tip" text="Latest" /> {#v1-3-4}
 
 **Released: 2026-06-16**
+
+### Fixed
+- **Theme system** — Themes now resolve exclusively from the app's `resources/views/themes/` directory; vendor path no longer used as a runtime fallback
+- **Page Builder shortcodes** — All remaining `[lazy_*]` element outputs converted to `[falcon_*]` (`text_block`, `special_text`, `html`, `icon_box`, `acc_item`, `tab_item`, `icon_list_item`); `parseColumn()` now reads both legacy `[lazy_*]` and new `[falcon_*]` element shortcodes; `unwrapEditorMarkup()` handles `falcon_` tags; sub-element closing tag patterns accept both prefixes for backward compatibility
+- **Child theme activation** — Fixed `theme.json` parent reference (`lazy-theme` → `falcon-theme`); added required `index.blade.php` to child theme
+- **Header / Footer logo** — Default FalconCMS logo shown when no custom logo is configured; logo served from published asset path `vendor/falcon-cms/images/falcon-cms-logo.png`
+
+### Added
+- **`falcon:install` screenshot publishing** — Theme screenshots are automatically copied to `public/themes/{slug}/` so they appear in the Themes panel immediately after installation
+- **`theme.json` for Falcon Theme** — Adds proper metadata (name, version, description, author)
+- **New theme screenshots** — Updated preview images for `falcon-theme` and `falcon-theme-child`
+- **Default logo asset** — `public/assets/images/falcon-cms-logo.png` included in the package and published with `falcon-cms-assets`
+
+---
+
+## v1.3.3 {#v1-3-3}
+
+**Released: 2026-06-15**
+
+### Fixed
+- **Dashboard update check** — `version.json` bumped to `1.3.2`; LAZY_CMS_VERSION constant now reflects the installed Packagist version correctly
+
+---
+
+## v1.3.2 {#v1-3-2}
+
+**Released: 2026-06-15**
+
+### Fixed
+- Default `login_url` value changed from `admin-login` to `falcon-admin` in both the install command and the migration seeder
+
+---
+
+## v1.3.1 {#v1-3-1}
+
+**Released: 2026-06-15**
+
+### Fixed
+- Default `register_url` value corrected to `falcon-registration` in the install command
+
+---
+
+## v1.3.0 {#v1-3-0}
+
+**Released: 2026-06-15**
+
+### Changed
+- Complete rebrand from **Lazy CMS** to **FalconCMS** — namespaces, command names (`falcon:install`), config keys, view namespaces, and all public-facing strings updated
+
+---
+
+## v1.0.0 {#v1-0-0}
+
+**Released: 2026-06-15**
 
 Initial public release of **FalconCMS** — a powerful Laravel CMS package with page builder, e-commerce, and a WordPress-like admin dashboard.
 
