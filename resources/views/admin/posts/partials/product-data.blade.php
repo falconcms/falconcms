@@ -64,8 +64,8 @@
             isSaving:        false,
 
             init() {
-                this.activeTab = localStorage.getItem('lazy_product_active_tab') || 'general';
-                this.$watch('activeTab', val => localStorage.setItem('lazy_product_active_tab', val));
+                this.activeTab = localStorage.getItem('falcon_product_active_tab') || 'general';
+                this.$watch('activeTab', val => localStorage.setItem('falcon_product_active_tab', val));
 
                 this.$watch('variations', function (value) {
                     value.forEach(function (v) {

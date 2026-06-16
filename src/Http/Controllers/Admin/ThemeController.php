@@ -113,23 +113,6 @@ class ThemeController extends Controller
         return redirect()->back()->with('success', "Theme '{$slug}' activated successfully!");
     }
 
-    public function preview($slug)
-    {
-        $themePath = $this->findThemePath($slug);
-        if (!$themePath) {
-            return redirect()->back()->with('error', 'Theme not found!');
-        }
-
-        session(['falcon_preview_theme' => $slug]);
-        return redirect(url('/'));
-    }
-
-    public function exitPreview()
-    {
-        session()->forget('falcon_preview_theme');
-        return redirect()->route('admin.themes.index');
-    }
-
     public function destroy($slug)
     {
         if (!auth()->user()->hasPermission('access_themes') && !auth()->user()->hasPermission('manage_settings')) {

@@ -53,7 +53,7 @@
                                                     <div class="text-[11px] text-[#646970]">{{ $item->variation_details }}</div>
                                                 @endif
                                                 <div class="text-[11px] text-[#646970]">SKU: {{ $item->product->sku ?? 'N/A' }}</div>
-                                                <?php do_falcon_action('lazy_admin_order_item_meta', $item); ?>
+                                                <?php do_falcon_action('falcon_admin_order_item_meta', $item); ?>
                                             </div>
                                         </div>
                                     </td>

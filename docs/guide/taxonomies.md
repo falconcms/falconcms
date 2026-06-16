@@ -10,7 +10,7 @@ Hierarchical taxonomy for blog posts. Categories support parent → child relati
 
 ```php
 // Get all categories with post count
-$cats = get_lazy_categories();
+$cats = get_falcon_categories();
 
 foreach ($cats as $cat) {
     echo $cat->name;          // "Technology"
@@ -68,7 +68,7 @@ Attach custom taxonomies to any Advanced Custom Post Type.
 
 ```php
 // Get posts filtered by custom taxonomy term
-$posts = get_lazy_posts([
+$posts = get_falcon_posts([
     'type'          => 'project',
     'taxonomy'      => 'project_status',  // taxonomy slug
     'taxonomy_term' => 'in-progress',     // term slug

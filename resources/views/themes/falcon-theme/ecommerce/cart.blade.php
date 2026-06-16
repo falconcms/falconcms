@@ -51,10 +51,10 @@
                                 <th class="p-4 border border-gray-100">Subtotal</th>
                             </tr>
                         </thead>
-                        <?php do_falcon_action('lazy_before_cart_items', $cart); ?>
+                        <?php do_falcon_action('falcon_before_cart_items', $cart); ?>
                         <tbody id="cart-items-body" class="text-[15px] text-gray-600">
                             @foreach($cart as $key => $item)
-                                <?php do_falcon_action('lazy_before_cart_item', $item, $key); ?>
+                                <?php do_falcon_action('falcon_before_cart_item', $item, $key); ?>
                                 <tr class="border-b border-gray-100 cart-item-row" data-key="{{ $key }}">
                                     <td class="p-4 border border-gray-100 text-center w-10">
                                         <button type="button" onclick="removeCartItem('{{ $key }}', this)" class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
@@ -85,7 +85,7 @@
                                         {{ falcon_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
                                     </td>
                                 </tr>
-                                <?php do_falcon_action('lazy_after_cart_item', $item, $key); ?>
+                                <?php do_falcon_action('falcon_after_cart_item', $item, $key); ?>
                             @endforeach
                             <tr>
                                 <td colspan="6" class="p-4 border border-gray-100">

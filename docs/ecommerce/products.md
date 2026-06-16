@@ -89,13 +89,13 @@ Customers can leave star ratings and text reviews on product pages.
 
 ```php
 // Get all published products
-$products = get_lazy_posts([
+$products = get_falcon_posts([
     'type'  => 'product',
     'limit' => 12,
 ]);
 
 // Filter by product category
-$phones = get_lazy_posts([
+$phones = get_falcon_posts([
     'type'       => 'product',
     'product_category' => 'phones', // category slug
     'limit'      => 6,
@@ -107,6 +107,6 @@ foreach ($products as $product) {
     echo $product->title;
     echo $product->shopData->price;
     echo $product->shopData->stock_status;
-    echo get_lazy_permalink($product);
+    echo get_falcon_permalink($product);
 }
 ```

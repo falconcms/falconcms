@@ -11,7 +11,7 @@
  * Examples:
  *
  *   // Add custom CSS to <head>
- *   add_falcon_action('lazy_head', function() {
+ *   add_falcon_action('falcon_head', function() {
  *       echo '<link rel="stylesheet" href="' . asset('css/my-style.css') . '">';
  *   });
  *

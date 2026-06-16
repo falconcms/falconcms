@@ -27,16 +27,16 @@ $post->status           // published, draft, etc.
 $post->user             // Author (User model)
 
 // Render content
-the_lazy_content($post->content)
+the_falcon_content($post->content)
 
 // Generate excerpt
-get_lazy_excerpt($post, 150)
+get_falcon_excerpt($post, 150)
 
 // Get post URL
-get_lazy_permalink($post)
+get_falcon_permalink($post)
 
 // Check if this is the homepage
-is_lazy_homepage($post)
+is_falcon_homepage($post)
 ```
 
 ## Archive / Loop
@@ -47,21 +47,21 @@ is_lazy_homepage($post)
 
 @foreach ($posts as $post)
     <article>
-        <h2><a href="{{ get_lazy_permalink($post) }}">{{ $post->title }}</a></h2>
+        <h2><a href="{{ get_falcon_permalink($post) }}">{{ $post->title }}</a></h2>
         <time>{{ cms_date($post->published_at, 'M j, Y') }}</time>
-        <p>{{ get_lazy_excerpt($post) }}</p>
+        <p>{{ get_falcon_excerpt($post) }}</p>
     </article>
 @endforeach
 
 // Pagination
-the_lazy_pagination($posts)
+the_falcon_pagination($posts)
 ```
 
 ## Navigation
 
 ```php
 // Header menu
-$menu = get_lazy_menu('header');
+$menu = get_falcon_menu('header');
 
 // Render items
 @if($menu && $menu->items->count())
@@ -117,21 +117,21 @@ $post->comments()->where('is_approved', true)->count()
 
 ```php
 // Render builder-based header (call in layouts/app.blade.php)
-<?php get_lazy_header(); ?>
+<?php get_falcon_header(); ?>
 
 // Render builder-based footer
-<?php get_lazy_footer(); ?>
+<?php get_falcon_footer(); ?>
 ```
 
 ## Widgets
 
 ```php
 // Render sidebar
-<?php render_lazy_widgets('primary-sidebar'); ?>
+<?php render_falcon_widgets('primary-sidebar'); ?>
 
 // Render footer areas
-<?php render_lazy_widgets('footer-1'); ?>
-<?php render_lazy_widgets('footer-2'); ?>
+<?php render_falcon_widgets('footer-1'); ?>
+<?php render_falcon_widgets('footer-2'); ?>
 ```
 
 ## Language
@@ -141,9 +141,9 @@ $post->comments()->where('is_approved', true)->count()
 app()->getLocale()       // "en"
 
 // Language switcher links
-<?php lazy_lang_switcher(); ?>       // flags + text
-<?php lazy_lang_switcher(false); ?>  // text only
-<?php lazy_lang_dropdown(); ?>       // dropdown
+<?php falcon_lang_switcher(); ?>       // flags + text
+<?php falcon_lang_switcher(false); ?>  // text only
+<?php falcon_lang_dropdown(); ?>       // dropdown
 
 // Translate a post
 $post->getTranslation('bn')         // Bengali translation or null

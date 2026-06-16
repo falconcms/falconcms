@@ -51,7 +51,7 @@ foreach ($images as $media) {
 }
 
 // Get the featured image of a post
-$post = get_lazy_post('my-post');
+$post = get_falcon_post('my-post');
 echo $post->featured_image;  // URL string
 ```
 

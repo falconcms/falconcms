@@ -55,7 +55,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 **Released: 2026-06-15**
 
 ### Changed
-- Complete rebrand from **Lazy CMS** to **FalconCMS** — namespaces, command names (`falcon:install`), config keys, view namespaces, and all public-facing strings updated
+- Complete rebrand from **FalconCMS** to **FalconCMS** — namespaces, command names (`falcon:install`), config keys, view namespaces, and all public-facing strings updated
 
 ---
 

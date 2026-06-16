@@ -379,7 +379,7 @@ Route::get('/blogs', function () {
                                 <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Head Hook (Before &lt;/head&gt;)</p>
                                     <code class="text-xs">@verbatim
-{!! do_falcon_action('lazy_head') !!}
+{!! do_falcon_action('falcon_head') !!}
 @endverbatim</code>
                                 </div>
 
@@ -496,7 +496,7 @@ Route::get('/blogs', function () {
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
                                 <pre><code>@verbatim
 // Example: Add CSS to Admin
-add_falcon_action('lazy_admin_head', function() {
+add_falcon_action('falcon_admin_head', function() {
     echo "<style>body { border-top: 4px solid red; }</style>";
 });
 @endverbatim</code></pre>
@@ -545,7 +545,7 @@ add_falcon_filter('lazy_general_settings_fields', function($fields) {
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs mb-4">
                                 <pre><code>@verbatim
 remove_falcon_action('tag', 'callback', $priority);
-remove_lazy_filter('tag', 'callback', $priority);
+remove_falcon_filter('tag', 'callback', $priority);
 @endverbatim</code></pre>
                             </div>
 
@@ -581,9 +581,9 @@ add_falcon_filter('lazy_general_settings_fields', function($fields) {
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">remove_falcon_action($tag, $cb, $priority)</td><td class="px-3 py-2">Remove a registered action</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">add_falcon_filter($tag, $cb, $priority)</td><td class="px-3 py-2">Register a filter</td></tr>
                                     <tr><td class="px-3 py-2 font-mono text-blue-600">apply_falcon_filters($tag, $value, ...$args)</td><td class="px-3 py-2">Apply filters and return result</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">remove_lazy_filter($tag, $cb, $priority)</td><td class="px-3 py-2">Remove a registered filter</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">has_lazy_action($tag)</td><td class="px-3 py-2">Check if action has registered callbacks</td></tr>
-                                    <tr><td class="px-3 py-2 font-mono text-blue-600">has_lazy_filter($tag)</td><td class="px-3 py-2">Check if filter has registered callbacks</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">remove_falcon_filter($tag, $cb, $priority)</td><td class="px-3 py-2">Remove a registered filter</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">has_falcon_action($tag)</td><td class="px-3 py-2">Check if action has registered callbacks</td></tr>
+                                    <tr><td class="px-3 py-2 font-mono text-blue-600">has_falcon_filter($tag)</td><td class="px-3 py-2">Check if filter has registered callbacks</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -738,7 +738,7 @@ add_falcon_filter('falcon_product_fields', function ($fields) {
                         <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto mb-4">
                             <pre><code>@verbatim
 // Simple product only
-add_falcon_action('lazy_simple_add_to_cart_form_top', function ($post) {
+add_falcon_action('falcon_simple_add_to_cart_form_top', function ($post) {
     echo '<div class="mb-4">';
     echo '  <label class="block text-sm font-medium text-gray-700 mb-1">Gift Message</label>';
     echo '  <textarea name="lazy_custom_gift_message" rows="2"';
@@ -763,7 +763,7 @@ add_falcon_action('lazy_simple_add_to_cart_form_top', function ($post) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Add a badge after the title</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_falcon_action('lazy_simple_after_product_title', function ($post) {
+add_falcon_action('falcon_simple_after_product_title', function ($post) {
     if ($post->sku === 'FEATURED-001') {
         echo '<span class="inline-block bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded mb-3">Staff Pick</span>';
     }
@@ -775,7 +775,7 @@ add_falcon_action('lazy_simple_after_product_title', function ($post) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Show savings below the price</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_falcon_filter('lazy_simple_product_price', function ($html, $post) {
+add_falcon_filter('falcon_simple_product_price', function ($html, $post) {
     if ($post->sale_price) {
         $savings = $post->price - $post->sale_price;
         $html .= '<p class="text-sm text-green-600 mt-1">You save ' . falcon_price_format($savings) . '</p>';
@@ -799,7 +799,7 @@ add_falcon_filter('falcon_product_description', function ($html, $post) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Low stock alert on product save</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_falcon_action('lazy_admin_after_save_product', function ($post, $shopData, $request, $action) {
+add_falcon_action('falcon_admin_after_save_product', function ($post, $shopData, $request, $action) {
     if ($shopData && $shopData->manage_stock && $shopData->stock_quantity <= 5) {
         \Log::warning("Low stock: {$post->title} has {$shopData->stock_quantity} units.");
     }
@@ -1095,7 +1095,7 @@ add_falcon_filter('falcon_billing_fields', function ($fields) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Fire a conversion pixel after the confirmation page</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_falcon_action('lazy_after_order_confirmation', function ($order) {
+add_falcon_action('falcon_after_order_confirmation', function ($order) {
     echo '<script>
         fbq("track", "Purchase", {
             value: ' . (float) $order->total . ',
@@ -1123,7 +1123,7 @@ add_falcon_filter('lazy_invoice_title', function ($title, $order) {
                                 <p class="text-xs font-bold text-gray-500 uppercase mb-2">Add extra data under an item in the confirmation table</p>
                                 <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
                                     <pre><code>@verbatim
-add_falcon_action('lazy_order_confirmation_item_meta', function ($item, $order) {
+add_falcon_action('falcon_order_confirmation_item_meta', function ($item, $order) {
     $engraving = $item->meta['custom_fields']['engraving'] ?? null;
     if ($engraving) {
         echo '<div class="text-xs text-gray-500 mt-1">Engraving: ' . e($engraving) . '</div>';

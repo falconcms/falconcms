@@ -157,11 +157,11 @@
                                 $filteredContent = apply_falcon_filters('falcon_the_content', $rawContent, $post);
                             @endphp
 
-                            {!! do_falcon_action('lazy_before_content', $post) !!}
+                            {!! do_falcon_action('falcon_before_content', $post) !!}
                             <div class="entry-content">
                                 {!! $filteredContent !!}
                             </div>
-                            {!! do_falcon_action('lazy_after_content', $post) !!}
+                            {!! do_falcon_action('falcon_after_content', $post) !!}
                         </div>
 
                         <!-- Tags -->

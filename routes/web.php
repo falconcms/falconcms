@@ -305,8 +305,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');
     Route::post('/themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
     Route::post('/themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
-    Route::get('/themes/{slug}/preview', [ThemeController::class, 'preview'])->name('themes.preview');
-    Route::post('/themes/preview/exit', [ThemeController::class, 'exitPreview'])->name('themes.preview.exit');
     Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
 
     // Falcon Builder Sections

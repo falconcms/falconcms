@@ -81,7 +81,7 @@
                                             @csrf
                                             <button type="submit" class="wp-btn-primary px-4 py-1 h-auto text-[13px] font-semibold">Activate</button>
                                         </form>
-                                        <a href="{{ route('admin.themes.preview', $theme['slug']) }}" class="wp-btn-secondary bg-white px-4 py-1 h-auto text-[13px] font-semibold" style="display:inline-flex;align-items:center;text-decoration:none;">Live Preview</a>
+                                        <button class="wp-btn-secondary bg-white px-4 py-1 h-auto text-[13px] font-semibold">Live Preview</button>
                                     </div>
                                 @else
                                     <div class="bg-[#d63638] text-white px-3 py-2 text-[11px] font-bold rounded shadow-sm text-center mx-4">

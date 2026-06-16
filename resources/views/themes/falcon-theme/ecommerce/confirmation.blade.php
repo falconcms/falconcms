@@ -3,7 +3,7 @@
 @section('title', 'Order Confirmation')
 
 @section('content')
-    <?php do_falcon_action('lazy_before_order_confirmation', $order); ?>
+    <?php do_falcon_action('falcon_before_order_confirmation', $order); ?>
     <div class="bg-gray-50 py-20 min-h-screen font-sans">
         <div class="container-custom">
             <div class="bg-white rounded-sm shadow-sm border border-gray-100 p-10 text-center mb-10">
@@ -86,11 +86,11 @@
                             @foreach ($order->items as $item)
                                 <tr class="border-b border-gray-50">
                                     <td class="py-4">
-                                        {!! apply_falcon_filters('lazy_order_confirmation_item_name',
+                                        {!! apply_falcon_filters('falcon_order_confirmation_item_name',
                                             e($item->product_name) . ' <strong class="text-heading">× ' . (int)$item->quantity . '</strong>',
                                             $item, $order) !!}
                                         {!! falcon_render_item_custom_fields($item, 'confirmation') !!}
-                                        <?php do_falcon_action('lazy_order_confirmation_item_meta', $item, $order); ?>
+                                        <?php do_falcon_action('falcon_order_confirmation_item_meta', $item, $order); ?>
                                     </td>
                                     <td class="py-4 text-right font-medium">
                                         {{ falcon_price_format($item->subtotal, $order) }}
@@ -251,5 +251,5 @@
 
         </div>
     </div>
-    <?php do_falcon_action('lazy_after_order_confirmation', $order); ?>
+    <?php do_falcon_action('falcon_after_order_confirmation', $order); ?>
 @stop

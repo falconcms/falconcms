@@ -37,10 +37,10 @@ cms_date(mixed $datetime, string $format = 'M j, Y H:i'): string
 
 ```php
 // Get multiple posts
-get_lazy_posts(array $args = []): Collection
+get_falcon_posts(array $args = []): Collection
 
 // Available args:
-get_lazy_posts([
+get_falcon_posts([
     'type'              => 'post',        // post type slug
     'status'            => 'published',   // status filter
     'limit'             => 10,            // posts per page (0 = all)
@@ -62,44 +62,44 @@ get_lazy_posts([
 ]);
 
 // Get a single post by slug or ID
-get_lazy_post(string|int $slugOrId): ?Post
+get_falcon_post(string|int $slugOrId): ?Post
 
 // Get permalink for a post (language-aware)
-get_lazy_permalink(Post $post): string
+get_falcon_permalink(Post $post): string
 // Returns: "/en/my-post" or "/my-post" depending on locale
 
 // Check if post is the homepage
-is_lazy_homepage(Post $post): bool
+is_falcon_homepage(Post $post): bool
 ```
 
 ## Content Display
 
 ```php
 // Render builder JSON or classic HTML (returns HTML string)
-get_lazy_content(string $content): string
+get_falcon_content(string $content): string
 
 // Echo rendered content
-the_lazy_content(string $content): void
-// Usage in template: <?php the_lazy_content($post->content); ?>
+the_falcon_content(string $content): void
+// Usage in template: <?php the_falcon_content($post->content); ?>
 
 // Generate excerpt (builder or classic, trimmed to $limit chars)
-get_lazy_excerpt(Post $post, int $limit = 120): string
+get_falcon_excerpt(Post $post, int $limit = 120): string
 
 // Render post loop
-the_lazy_loop(array $args = [], ?string $view = null): void
+the_falcon_loop(array $args = [], ?string $view = null): void
 
 // Render pagination
-the_lazy_pagination(LengthAwarePaginator $items, ?string $view = null): void
+the_falcon_pagination(LengthAwarePaginator $items, ?string $view = null): void
 ```
 
 ## Categories & Tags
 
 ```php
 // Get all categories with post counts
-get_lazy_categories(string $taxonomy = 'category'): Collection
+get_falcon_categories(string $taxonomy = 'category'): Collection
 
 // Returns categories with ->posts_count attribute
-$categories = get_lazy_categories();
+$categories = get_falcon_categories();
 foreach ($categories as $cat) {
     echo $cat->name . ' (' . $cat->posts_count . ')';
 }
@@ -109,12 +109,12 @@ foreach ($categories as $cat) {
 
 ```php
 // Get a menu by location or slug
-get_lazy_menu(string $slugOrLocation): ?NavigationMenu
+get_falcon_menu(string $slugOrLocation): ?NavigationMenu
 
 // Examples
-$headerMenu = get_lazy_menu('header');
-$footerMenu = get_lazy_menu('footer');
-$customMenu = get_lazy_menu('main-nav');
+$headerMenu = get_falcon_menu('header');
+$footerMenu = get_falcon_menu('footer');
+$customMenu = get_falcon_menu('main-nav');
 
 // $menu->items contains NavigationMenuItem collection (hierarchical)
 ```
@@ -123,31 +123,31 @@ $customMenu = get_lazy_menu('main-nav');
 
 ```php
 // Render language switcher (flags + text links)
-lazy_lang_switcher(bool $showFlags = true): void
+falcon_lang_switcher(bool $showFlags = true): void
 
 // Render language dropdown (auto-links to current page's translations)
-lazy_lang_dropdown(): void
+falcon_lang_dropdown(): void
 ```
 
 ## Header & Footer
 
 ```php
 // Render builder-based header (from builder sections)
-get_lazy_header(): void
+get_falcon_header(): void
 
 // Render builder-based footer
-get_lazy_footer(): void
+get_falcon_footer(): void
 ```
 
 ## Widgets
 
 ```php
 // Render all active widgets for a given area
-render_lazy_widgets(string $area): void
+render_falcon_widgets(string $area): void
 
 // Area slugs: 'primary-sidebar', 'footer-1', 'footer-2', 'footer-3', 'footer-4'
 // Usage:
-<?php render_lazy_widgets('primary-sidebar'); ?>
+<?php render_falcon_widgets('primary-sidebar'); ?>
 ```
 
 ## Custom Fields
@@ -170,7 +170,7 @@ echo $fields['material'];
 
 ```php
 // Log a user action (with IP, country, user-agent auto-captured)
-lazy_log_activity(
+falcon_log_activity(
     string $action,
     string $description,
     ?Model $model = null,
@@ -178,19 +178,19 @@ lazy_log_activity(
 ): void
 
 // Examples
-lazy_log_activity('create', 'Created post: My First Post', $post);
-lazy_log_activity('login', 'User logged in from IP 192.168.1.1');
+falcon_log_activity('create', 'Created post: My First Post', $post);
+falcon_log_activity('login', 'User logged in from IP 192.168.1.1');
 ```
 
 ## Dynamic Tokens
 
 ```php
 // Resolve tokens in a string
-lazy_resolve_tokens(string $value, ?Post $post = null): string
+falcon_resolve_tokens(string $value, ?Post $post = null): string
 
 // Example
 $text = 'Welcome to {site_name}! Today is {current_date}.';
-echo lazy_resolve_tokens($text);
+echo falcon_resolve_tokens($text);
 // → "Welcome to My Site! Today is June 11, 2026."
 
 // Available tokens:
@@ -203,11 +203,11 @@ echo lazy_resolve_tokens($text);
 
 ```php
 // Get installed version
-lazy_cms_installed_version(): string
+falcon_cms_installed_version(): string
 // Returns: "1.0.2"
 
 // Check for updates (cached 6 hours)
-lazy_check_update(bool $force = false): array
+falcon_check_update(bool $force = false): array
 // Returns: [
 //   'current'    => '1.0.2',
 //   'latest'     => '1.0.3',

@@ -35,7 +35,7 @@ All translations share the same `origin_id` and are linked by `lang_code`.
 
 ```php
 // Get posts in a specific language
-$posts = get_lazy_posts([
+$posts = get_falcon_posts([
     'type' => 'post',
     'lang' => 'bn',   // language code
 ]);
@@ -44,7 +44,7 @@ $posts = get_lazy_posts([
 $translation = $post->getTranslation('bn');
 
 // Get permalink with language prefix
-$url = get_lazy_permalink($post); // auto-detects current locale
+$url = get_falcon_permalink($post); // auto-detects current locale
 ```
 
 ## Language Switcher
@@ -53,13 +53,13 @@ Render a language switcher anywhere in your theme:
 
 ```php
 // Links with flag + text
-<?php lazy_lang_switcher(); ?>
+<?php falcon_lang_switcher(); ?>
 
 // Flag only
-<?php lazy_lang_switcher(showFlags: true); ?>
+<?php falcon_lang_switcher(showFlags: true); ?>
 
 // Dropdown (auto-links to translated version of current page)
-<?php lazy_lang_dropdown(); ?>
+<?php falcon_lang_dropdown(); ?>
 ```
 
 ## URL Structure
@@ -90,5 +90,5 @@ Widgets support language filtering. Add the `lang_code` field when creating widg
 
 ```php
 // Render widgets for current locale's sidebar
-<?php render_lazy_widgets('primary-sidebar'); ?>
+<?php render_falcon_widgets('primary-sidebar'); ?>
 ```

@@ -239,14 +239,6 @@ if (!function_exists('get_cms_option')) {
     function get_cms_option($key, $default = null)
     {
         try {
-            // Preview mode: override active_theme from session
-            if ($key === 'active_theme' && app()->bound('request')) {
-                $req = app('request');
-                if ($req->hasSession() && $req->session()->has('falcon_preview_theme')) {
-                    return $req->session()->get('falcon_preview_theme');
-                }
-            }
-
             $store = &_falcon_cms_options_store();
 
             // Bulk-load all settings on first call — 1 DB query per request
@@ -1184,14 +1176,14 @@ if (!function_exists('apply_falcon_filters')) {
     }
 }
 
-if (!function_exists('has_lazy_action')) {
-    function has_lazy_action($tag) {
+if (!function_exists('has_falcon_action')) {
+    function has_falcon_action($tag) {
         return \FalconCms\Core\Core\HookManager::getInstance()->hasAction($tag);
     }
 }
 
-if (!function_exists('has_lazy_filter')) {
-    function has_lazy_filter($tag) {
+if (!function_exists('has_falcon_filter')) {
+    function has_falcon_filter($tag) {
         return \FalconCms\Core\Core\HookManager::getInstance()->hasFilter($tag);
     }
 }
@@ -1954,8 +1946,8 @@ if (!function_exists('remove_falcon_action')) {
     }
 }
 
-if (!function_exists('remove_lazy_filter')) {
-    function remove_lazy_filter($tag, $callback, $priority = 10) {
+if (!function_exists('remove_falcon_filter')) {
+    function remove_falcon_filter($tag, $callback, $priority = 10) {
         return \FalconCms\Core\Core\HookManager::getInstance()->removeFilter($tag, $callback, $priority);
     }
 }
@@ -2508,7 +2500,7 @@ if (!function_exists('falcon_is_variable_product')) {
     }
 }
 
-if (!function_exists('lazy_shipping_carriers')) {
+if (!function_exists('falcon_shipping_carriers')) {
     /**
      * Shipping carriers for order tracking, grouped (Local / International).
      * Each value is a tracking-URL template with a {tracking} placeholder ('' = use universal fallback).

@@ -36,7 +36,7 @@
 
 @section('content')
 <?php do_falcon_action('falcon_before_single_product', $post); ?>
-<?php do_falcon_action('lazy_variable_before_single_product', $post); ?>
+<?php do_falcon_action('falcon_variable_before_single_product', $post); ?>
 <div class="bg-white py-12 min-h-screen">
     <div class="container-custom">
 
@@ -59,7 +59,7 @@
 
             <!-- Product Images -->
             <?php do_falcon_action('falcon_before_product_images', $post); ?>
-            <?php do_falcon_action('lazy_variable_before_product_images', $post); ?>
+            <?php do_falcon_action('falcon_variable_before_product_images', $post); ?>
             <div class="w-full md:w-1/2">
                 <div class="bg-gray-50 rounded-lg overflow-hidden border border-gray-100 shadow-sm relative pt-[100%]">
                     @if($post->thumbnail)
@@ -88,23 +88,23 @@
                 @endif
             </div>
             <?php do_falcon_action('falcon_after_product_images', $post); ?>
-            <?php do_falcon_action('lazy_variable_after_product_images', $post); ?>
+            <?php do_falcon_action('falcon_variable_after_product_images', $post); ?>
 
             <!-- Product Info -->
             <div class="w-full md:w-1/2 flex flex-col justify-center">
 
                 <!-- Title -->
-                <?php do_falcon_action('lazy_variable_before_product_title', $post); ?>
+                <?php do_falcon_action('falcon_variable_before_product_title', $post); ?>
                 <?php
                     $productTitleHtml = '<h1 class="text-3xl md:text-4xl font-bold text-heading mb-4">'
                         . e($post->title) . '</h1>';
-                    $productTitleHtml = apply_falcon_filters('lazy_variable_product_title', $productTitleHtml, $post);
+                    $productTitleHtml = apply_falcon_filters('falcon_variable_product_title', $productTitleHtml, $post);
                     echo $productTitleHtml;
                 ?>
-                <?php do_falcon_action('lazy_variable_after_product_title', $post); ?>
+                <?php do_falcon_action('falcon_variable_after_product_title', $post); ?>
 
                 <!-- Price (dynamic) -->
-                <?php do_falcon_action('lazy_variable_before_product_price', $post); ?>
+                <?php do_falcon_action('falcon_variable_before_product_price', $post); ?>
                 <div id="variation-price" class="text-2xl font-medium text-heading mb-6 border-b border-gray-100 pb-6">
                     @if($post->sale_price)
                         <span class="line-through text-gray-400 text-lg mr-2" id="regular-price-display">{{ falcon_price_format($post->price) }}</span>
@@ -114,7 +114,7 @@
                     @endif
                     <span id="price-range-display" class="text-primary hidden"></span>
                 </div>
-                <?php do_falcon_action('lazy_variable_after_product_price', $post); ?>
+                <?php do_falcon_action('falcon_variable_after_product_price', $post); ?>
 
                 <!-- Stock badge -->
                 <div id="variation-stock-badge" class="mb-6 -mt-4 hidden">
@@ -123,24 +123,24 @@
 
                 <!-- Short Description -->
                 @php $shortDescription = !empty($post->shopData->short_description) ? $post->shopData->short_description : $post->excerpt; @endphp
-                <?php do_falcon_action('lazy_variable_before_short_description', $post); ?>
+                <?php do_falcon_action('falcon_variable_before_short_description', $post); ?>
                 @if($shortDescription)
                 <?php
                     $shortDescHtml = '<div class="prose text-body mb-8">' . $shortDescription . '</div>';
-                    $shortDescHtml = apply_falcon_filters('lazy_variable_short_description', $shortDescHtml, $post);
+                    $shortDescHtml = apply_falcon_filters('falcon_variable_short_description', $shortDescHtml, $post);
                     echo $shortDescHtml;
                 ?>
                 @endif
-                <?php do_falcon_action('lazy_variable_after_short_description', $post); ?>
+                <?php do_falcon_action('falcon_variable_after_short_description', $post); ?>
 
                 <!-- Variation Selector + Add to Cart -->
-                <?php do_falcon_action('lazy_variable_before_add_to_cart_form', $post); ?>
+                <?php do_falcon_action('falcon_variable_before_add_to_cart_form', $post); ?>
                 <form action="{{ route('shop.cart.add') }}" method="POST" class="mb-10 border-b border-gray-100 pb-10" id="lazy-variable-form">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $post->id }}">
                     <input type="hidden" name="variation_id" id="selected-variation-id" value="">
 
-                    <?php do_falcon_action('lazy_variable_add_to_cart_form_top', $post); ?>
+                    <?php do_falcon_action('falcon_variable_add_to_cart_form_top', $post); ?>
 
                     <!-- Attribute selectors -->
                     @if(count($attributeKeys) > 0)
@@ -168,23 +168,23 @@
                             <input type="number" id="vqty" name="quantity" value="1" min="1" class="w-12 h-full text-center border-none focus:ring-0 appearance-none font-semibold text-body">
                             <button type="button" class="w-10 h-full text-gray-600 hover:bg-gray-100 transition" onclick="document.getElementById('vqty').value++">+</button>
                         </div>
-                        <?php do_falcon_action('lazy_variable_before_add_to_cart_button', $post); ?>
+                        <?php do_falcon_action('falcon_variable_before_add_to_cart_button', $post); ?>
                         <?php
                             $btnHtml = '<button type="submit" id="variable-add-btn" class="flex-grow h-12 bg-primary text-white font-bold rounded hover:bg-primary-hover transition-colors duration-300">Add to Cart</button>';
-                            $btnHtml = apply_falcon_filters('lazy_variable_add_to_cart_button', $btnHtml, $post);
+                            $btnHtml = apply_falcon_filters('falcon_variable_add_to_cart_button', $btnHtml, $post);
                             echo $btnHtml;
                         ?>
-                        <?php do_falcon_action('lazy_variable_after_add_to_cart_button', $post); ?>
+                        <?php do_falcon_action('falcon_variable_after_add_to_cart_button', $post); ?>
                     </div>
 
                     <div id="variation-message" class="text-sm text-gray-500 mt-3"></div>
 
-                    <?php do_falcon_action('lazy_variable_add_to_cart_form_bottom', $post); ?>
+                    <?php do_falcon_action('falcon_variable_add_to_cart_form_bottom', $post); ?>
                 </form>
-                <?php do_falcon_action('lazy_variable_after_add_to_cart_form', $post); ?>
+                <?php do_falcon_action('falcon_variable_after_add_to_cart_form', $post); ?>
 
                 <!-- Product Meta -->
-                <?php do_falcon_action('lazy_variable_before_product_meta', $post); ?>
+                <?php do_falcon_action('falcon_variable_before_product_meta', $post); ?>
                 <div class="text-sm text-gray-500 space-y-2">
                     @if($post->sku)
                     <p><span class="font-bold text-gray-800">SKU:</span> <span id="variation-sku">{{ $post->sku }}</span></p>
@@ -196,16 +196,16 @@
                         @endforeach
                     </p>
                     @endif
-                    <?php do_falcon_action('lazy_variable_product_meta_fields', $post); ?>
+                    <?php do_falcon_action('falcon_variable_product_meta_fields', $post); ?>
                 </div>
-                <?php do_falcon_action('lazy_variable_after_product_meta', $post); ?>
+                <?php do_falcon_action('falcon_variable_after_product_meta', $post); ?>
 
             </div>
         </div>
 
         <!-- Description -->
         <?php do_falcon_action('falcon_before_product_description', $post); ?>
-        <?php do_falcon_action('lazy_variable_before_product_description', $post); ?>
+        <?php do_falcon_action('falcon_variable_before_product_description', $post); ?>
         @if($post->content)
         <div class="mt-20 border-t border-gray-100 pt-12">
             <?php
@@ -215,18 +215,18 @@
             ?>
             <?php
                 $descHtml = '<div class="prose max-w-none text-body">' . $post->content . '</div>';
-                $descHtml = apply_falcon_filters('lazy_variable_product_description', $descHtml, $post);
+                $descHtml = apply_falcon_filters('falcon_variable_product_description', $descHtml, $post);
                 echo $descHtml;
             ?>
         </div>
         @endif
         <?php do_falcon_action('falcon_after_product_description', $post); ?>
-        <?php do_falcon_action('lazy_variable_after_product_description', $post); ?>
+        <?php do_falcon_action('falcon_variable_after_product_description', $post); ?>
 
     </div>
 </div>
 <?php do_falcon_action('falcon_after_single_product', $post); ?>
-<?php do_falcon_action('lazy_variable_after_single_product', $post); ?>
+<?php do_falcon_action('falcon_variable_after_single_product', $post); ?>
 @stop
 
 @push('scripts')

@@ -640,7 +640,7 @@ class PostController extends Controller
         $postData = falcon_normalize_publish($postData);
 
         if ($type === 'product') {
-            $productData = apply_falcon_filters('lazy_admin_before_save_product', $productData, null, $request);
+            $productData = apply_falcon_filters('falcon_admin_before_save_product', $productData, null, $request);
         }
 
         $post = Post::create($postData);
@@ -708,7 +708,7 @@ class PostController extends Controller
         }
 
         if ($type === 'product') {
-            do_falcon_action('lazy_admin_after_save_product', $post, $post->shopData, $request, 'create');
+            do_falcon_action('falcon_admin_after_save_product', $post, $post->shopData, $request, 'create');
         }
 
         falcon_log_activity('created', "Created a new {$postData['type']}: {$post->title}", $post);
@@ -1096,7 +1096,7 @@ class PostController extends Controller
         $postData = falcon_normalize_publish($postData);
 
         if ($post->type === 'product') {
-            $productData = apply_falcon_filters('lazy_admin_before_save_product', $productData, $post, $request);
+            $productData = apply_falcon_filters('falcon_admin_before_save_product', $productData, $post, $request);
         }
 
         $post->update($postData);
@@ -1247,7 +1247,7 @@ class PostController extends Controller
         }
         
         if ($post->type === 'product') {
-            do_falcon_action('lazy_admin_after_save_product', $post, $post->fresh()->shopData, $request, 'update');
+            do_falcon_action('falcon_admin_after_save_product', $post, $post->fresh()->shopData, $request, 'update');
         }
 
         falcon_log_activity('updated', "Updated {$post->type}: {$post->title}", $post);
@@ -1276,13 +1276,13 @@ class PostController extends Controller
         $title = $post->title;
 
         if ($type === 'product') {
-            do_falcon_action('lazy_admin_before_delete_product', $post);
+            do_falcon_action('falcon_admin_before_delete_product', $post);
         }
 
         $post->delete();
 
         if ($type === 'product') {
-            do_falcon_action('lazy_admin_after_delete_product', $post->id, $title);
+            do_falcon_action('falcon_admin_after_delete_product', $post->id, $title);
         }
 
         falcon_log_activity('deleted', "Moved {$type} to trash: {$title}", $post);

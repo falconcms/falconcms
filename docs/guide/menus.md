@@ -27,11 +27,11 @@ Drag items to reorder. Drag items to the right (indent) to make them sub-items.
 
 ```php
 // By location
-$menu = get_lazy_menu('header');   // header menu
-$menu = get_lazy_menu('footer');   // footer menu
+$menu = get_falcon_menu('header');   // header menu
+$menu = get_falcon_menu('footer');   // footer menu
 
 // By slug
-$menu = get_lazy_menu('main-nav');
+$menu = get_falcon_menu('main-nav');
 
 // Render menu items
 if ($menu && $menu->items) {
@@ -58,11 +58,11 @@ For maximum flexibility, use the **Falcon Builder** to create your header and fo
 Render in your theme's `layouts/app.blade.php`:
 
 ```php
-<?php get_lazy_header(); ?>
+<?php get_falcon_header(); ?>
 
 <!-- page content -->
 
-<?php get_lazy_footer(); ?>
+<?php get_falcon_footer(); ?>
 ```
 
 The builder-based header/footer automatically applies sticky behavior and responsive visibility.

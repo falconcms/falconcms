@@ -71,12 +71,12 @@ The theme's `functions.php` is loaded before every request. Use it to register h
 <?php
 
 // Register a custom widget
-add_falcon_action('lazy_register_widgets', function() {
+add_falcon_action('falcon_register_widgets', function() {
     // Widget registration
 });
 
 // Add content after every post
-add_falcon_action('lazy_after_post_content', function($post) {
+add_falcon_action('falcon_after_post_content', function($post) {
     echo '<div class="share-buttons">...</div>';
 });
 
@@ -143,25 +143,25 @@ get_cms_option('site_name')
 get_cms_option('site_logo')
 
 // Render header/footer from builder
-<?php get_lazy_header(); ?>
-<?php get_lazy_footer(); ?>
+<?php get_falcon_header(); ?>
+<?php get_falcon_footer(); ?>
 
 // Navigation menus
-$menu = get_lazy_menu('header');  // by location
-$menu = get_lazy_menu('main-nav'); // by slug
+$menu = get_falcon_menu('header');  // by location
+$menu = get_falcon_menu('main-nav'); // by slug
 
 // Widget areas
-<?php render_lazy_widgets('primary-sidebar'); ?>
-<?php render_lazy_widgets('footer-1'); ?>
+<?php render_falcon_widgets('primary-sidebar'); ?>
+<?php render_falcon_widgets('footer-1'); ?>
 
 // Post content
-the_lazy_content($post->content);
+the_falcon_content($post->content);
 
 // Pagination
-the_lazy_pagination($posts);
+the_falcon_pagination($posts);
 
 // Language switcher
-lazy_lang_switcher();
+falcon_lang_switcher();
 ```
 
 ## Child Themes

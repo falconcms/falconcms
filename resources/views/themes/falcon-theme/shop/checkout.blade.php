@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ── Checkout form persistence (localStorage) ───────────────────────────
     (function () {
-        var KEY = 'lazy_checkout_draft';
+        var KEY = 'falcon_checkout_draft';
         var TEXT  = ['billing_first_name','billing_last_name','billing_email','billing_phone',
                      'billing_address_1','billing_address_2','billing_city','billing_state','billing_postcode',
                      'shipping_first_name','shipping_last_name',

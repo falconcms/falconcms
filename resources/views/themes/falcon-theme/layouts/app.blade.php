@@ -339,7 +339,7 @@
     </style>
     
     @yield('styles')
-    {!! do_falcon_action('lazy_head') !!}
+    {!! do_falcon_action('falcon_head') !!}
 
     {{-- PRIORITY HEAD SCRIPT --}}
     @if(get_cms_option('theme_head_script'))
@@ -350,28 +350,6 @@
     $bodyClasses = "antialiased selection:bg-primary selection:text-white";
 @endphp
 <body class="{{ $bodyClasses }}">
-
-@if(session('falcon_preview_theme'))
-@php $previewSlug = session('falcon_preview_theme'); @endphp
-<div id="falcon-preview-bar" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#0c1524;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:44px;font-family:sans-serif;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.4);">
-    <div style="display:flex;align-items:center;gap:10px;">
-        <span style="background:#f0a500;color:#000;font-weight:700;font-size:11px;padding:2px 8px;border-radius:3px;">PREVIEW</span>
-        <span style="color:#94a3b8;">You are previewing:</span>
-        <strong style="color:#fff;">{{ ucwords(str_replace('-', ' ', $previewSlug)) }}</strong>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-        <form action="{{ route('admin.themes.activate', $previewSlug) }}" method="POST" style="margin:0;">
-            @csrf
-            <button type="submit" style="background:#0091ea;color:#fff;border:none;padding:6px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">Activate Theme</button>
-        </form>
-        <form action="{{ route('admin.themes.preview.exit') }}" method="POST" style="margin:0;">
-            @csrf
-            <button type="submit" style="background:transparent;color:#94a3b8;border:1px solid #334155;padding:6px 14px;border-radius:4px;font-size:12px;cursor:pointer;">✕ Exit Preview</button>
-        </form>
-    </div>
-</div>
-<div style="height:44px;"></div>
-@endif
 
 @if($customHeader = get_falcon_header())
     {!! $customHeader !!}

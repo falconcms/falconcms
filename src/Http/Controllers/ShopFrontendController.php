@@ -694,7 +694,7 @@ class ShopFrontendController extends Controller
                 $customCheckout[$hfName] = $val;
             }
         }
-        $customCheckout = apply_falcon_filters('lazy_checkout_custom_fields', $customCheckout, $request);
+        $customCheckout = apply_falcon_filters('falcon_checkout_custom_fields', $customCheckout, $request);
         if (!empty($customCheckout)) {
             $orderData['meta'] = ['checkout_fields' => $customCheckout];
         }
@@ -724,11 +724,11 @@ class ShopFrontendController extends Controller
             }
         }
 
-        do_falcon_action('lazy_before_place_order', $order, $cart, $request);
+        do_falcon_action('falcon_before_place_order', $order, $cart, $request);
 
         foreach ($cart as $item) {
             $itemMeta = $item['meta'] ?? [];
-            $itemMeta = apply_falcon_filters('lazy_order_item_meta', $itemMeta, $item, $order);
+            $itemMeta = apply_falcon_filters('falcon_order_item_meta', $itemMeta, $item, $order);
 
             OrderItem::create([
                 'order_id'     => $order->id,

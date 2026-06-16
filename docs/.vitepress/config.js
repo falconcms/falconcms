@@ -27,7 +27,7 @@ export default defineConfig({
 
   themeConfig: {
     logo: '/falcon-cms-logo.png',
-    siteTitle: false,
+    siteTitle: 'FalconCMS',
 
     nav: [
       { text: 'Guide', link: '/guide/introduction' },
@@ -140,7 +140,7 @@ export default defineConfig({
 
     footer: {
       message: 'Released under the MIT License.',
-      copyright: `Copyright © 2024–${new Date().getFullYear()} Tareq Codex`
+      copyright: 'Copyright © 2024-present Tareq Codex'
     },
 
     search: {

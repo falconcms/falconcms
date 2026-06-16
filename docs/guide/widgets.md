@@ -39,23 +39,23 @@ Themes can register additional widget types in their `functions.php`.
 
 ```php
 // Render widgets for an area
-<?php render_lazy_widgets('primary-sidebar'); ?>
+<?php render_falcon_widgets('primary-sidebar'); ?>
 
 // In a layout with sidebar
 <div class="layout">
     <main>{{ $content }}</main>
     <aside>
-        <?php render_lazy_widgets('primary-sidebar'); ?>
+        <?php render_falcon_widgets('primary-sidebar'); ?>
     </aside>
 </div>
 
 // Footer
 <footer>
     <div class="footer-grid">
-        <div><?php render_lazy_widgets('footer-1'); ?></div>
-        <div><?php render_lazy_widgets('footer-2'); ?></div>
-        <div><?php render_lazy_widgets('footer-3'); ?></div>
-        <div><?php render_lazy_widgets('footer-4'); ?></div>
+        <div><?php render_falcon_widgets('footer-1'); ?></div>
+        <div><?php render_falcon_widgets('footer-2'); ?></div>
+        <div><?php render_falcon_widgets('footer-3'); ?></div>
+        <div><?php render_falcon_widgets('footer-4'); ?></div>
     </div>
 </footer>
 ```
@@ -69,7 +69,7 @@ Each widget can have a `lang_code` field. Widgets only display on matching local
 In your theme's `functions.php`:
 
 ```php
-add_falcon_filter('lazy_available_widgets', function(array $widgets) {
+add_falcon_filter('falcon_available_widgets', function(array $widgets) {
     $widgets['newsletter'] = [
         'name'        => 'Newsletter Signup',
         'description' => 'Email subscription form.',

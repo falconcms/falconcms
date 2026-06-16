@@ -47,14 +47,14 @@ The new CPT appears instantly in the sidebar under its own menu.
 
 ```php
 // Get posts of a custom type
-$projects = get_lazy_posts([
+$projects = get_falcon_posts([
     'type'  => 'project',  // your CPT slug
     'limit' => 10,
 ]);
 
 foreach ($projects as $post) {
     echo $post->title;
-    echo get_lazy_permalink($post);
+    echo get_falcon_permalink($post);
 }
 ```
 
