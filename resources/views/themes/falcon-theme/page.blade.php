@@ -8,7 +8,7 @@
     @endphp
 
     @if($isBuilder)
-        <div class="lazy-content-wrapper">
+        <div class="falcon-content-wrapper">
             {!! get_lazy_content($post->content) !!}
         </div>
     @else
@@ -17,7 +17,7 @@
         <section class="py-20 bg-white">
             <div class="container-custom">
                 <div class="prose prose-lg prose-slate max-w-none">
-                    <div class="lazy-content-wrapper">
+                    <div class="falcon-content-wrapper">
                         {!! do_lazy_shortcode($post->content) !!}
                     </div>
                 </div>

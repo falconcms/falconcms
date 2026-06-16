@@ -26,7 +26,7 @@
             <div class="flex items-center gap-3">
                 <a href="{{ route('shop.wishlist') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:border-primary hover:text-primary transition">
                     <i data-lucide="heart" class="w-4 h-4"></i> Wishlist
-                    <span class="lazy-wishlist-count bg-primary text-white text-[11px] font-bold rounded-full px-1.5 min-w-[18px] text-center">{{ falcon_wishlist_count() }}</span>
+                    <span class="falcon-wishlist-count bg-primary text-white text-[11px] font-bold rounded-full px-1.5 min-w-[18px] text-center">{{ falcon_wishlist_count() }}</span>
                 </a>
                 <form action="{{ route('shop.account.logout') }}" method="POST">
                     @csrf

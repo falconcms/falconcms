@@ -42,7 +42,7 @@
                     b.classList.toggle('is-active', d.added);
                     b.title = d.added ? 'In your wishlist' : 'Add to wishlist';
                 });
-                document.querySelectorAll('.lazy-wishlist-count').forEach(function (el) { el.textContent = d.count; });
+                document.querySelectorAll('.falcon-wishlist-count').forEach(function (el) { el.textContent = d.count; });
                 if (window.lucide) lucide.createIcons();
             }
         })

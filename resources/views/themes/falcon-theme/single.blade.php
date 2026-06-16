@@ -32,7 +32,7 @@
             </div>
         @endif
 
-        <div class="lazy-content-wrapper">
+        <div class="falcon-content-wrapper">
             {!! get_lazy_content($post->content) !!}
         </div>
 
@@ -151,7 +151,7 @@
                             </div>
                         @endif
 
-                        <div class="lazy-content-wrapper">
+                        <div class="falcon-content-wrapper">
                             @php 
                                 $rawContent = do_lazy_shortcode($post->content);
                                 $filteredContent = apply_falcon_filters('falcon_the_content', $rawContent, $post);
