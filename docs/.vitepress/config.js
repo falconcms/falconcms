@@ -27,7 +27,7 @@ export default defineConfig({
 
   themeConfig: {
     logo: '/falcon-cms-logo.png',
-    siteTitle: 'FalconCMS',
+    siteTitle: false,
 
     nav: [
       { text: 'Guide', link: '/guide/introduction' },
