@@ -239,6 +239,14 @@ if (!function_exists('get_cms_option')) {
     function get_cms_option($key, $default = null)
     {
         try {
+            // Preview mode: override active_theme from session
+            if ($key === 'active_theme' && app()->bound('request')) {
+                $req = app('request');
+                if ($req->hasSession() && $req->session()->has('falcon_preview_theme')) {
+                    return $req->session()->get('falcon_preview_theme');
+                }
+            }
+
             $store = &_falcon_cms_options_store();
 
             // Bulk-load all settings on first call — 1 DB query per request
