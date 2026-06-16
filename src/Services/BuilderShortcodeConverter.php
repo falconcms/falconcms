@@ -1601,22 +1601,24 @@ class BuilderShortcodeConverter
      */
     private static function parseColumnsFromContent(string $content): array
     {
-        $cols = [];
-        $pos  = 0;
-        $len  = strlen($content);
+        $cols    = [];
+        $pos     = 0;
+        $len     = strlen($content);
+        $tagLen  = 11; // strlen('[falcon_col')
+        $closeLen = 13; // strlen('[/falcon_col]')
 
         while ($pos < $len) {
             $tagStart = strpos($content, '[falcon_col', $pos);
             if ($tagStart === false) break;
 
             // Must be [falcon_col] or [falcon_col ...], not [falcon_columns or similar
-            $c = $content[$tagStart + 9] ?? '';
-            if ($c !== ' ' && $c !== ']') { $pos = $tagStart + 9; continue; }
+            $c = $content[$tagStart + $tagLen] ?? '';
+            if ($c !== ' ' && $c !== ']') { $pos = $tagStart + $tagLen; continue; }
 
             $openEnd = strpos($content, ']', $tagStart);
             if ($openEnd === false) break;
 
-            $attrStr = substr($content, $tagStart + 9, $openEnd - $tagStart - 9);
+            $attrStr = substr($content, $tagStart + $tagLen, $openEnd - $tagStart - $tagLen);
             $depth   = 1;
             $search  = $openEnd + 1;
             $done    = false;
@@ -1628,20 +1630,20 @@ class BuilderShortcodeConverter
                 if ($nextClose === false) break;
 
                 if ($nextOpen !== false && $nextOpen < $nextClose) {
-                    $nc = $content[$nextOpen + 9] ?? '';
+                    $nc = $content[$nextOpen + $tagLen] ?? '';
                     if ($nc === ' ' || $nc === ']') $depth++;
-                    $search = $nextOpen + 9;
+                    $search = $nextOpen + $tagLen;
                 } else {
                     $depth--;
                     if ($depth === 0) {
                         $colInner = substr($content, $openEnd + 1, $nextClose - $openEnd - 1);
                         $col = self::parseColumn($attrStr, $colInner);
                         if ($col) $cols[] = $col;
-                        $pos  = $nextClose + 11; // strlen('[/falcon_col]')
+                        $pos  = $nextClose + $closeLen;
                         $done = true;
                         break;
                     }
-                    $search = $nextClose + 11;
+                    $search = $nextClose + $closeLen;
                 }
             }
 
