@@ -5,13 +5,7 @@
             <!-- Logo -->
             <div class="flex-shrink-0">
                 <a href="{{ url('/') }}" class="flex items-center gap-2">
-                    @if(get_cms_option('theme_site_logo'))
-                        <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-10 w-auto">
-                    @else
-                        <span class="text-2xl font-black tracking-tighter text-slate-900">
-                            {{ get_cms_option('site_title', 'Lazy Theme') }}<span class="text-primary">.</span>
-                        </span>
-                    @endif
+                    <img src="{{ get_cms_option('theme_site_logo', asset('vendor/falcon-cms/images/falcon-cms-logo.png')) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-10 w-auto">
                 </a>
             </div>
 

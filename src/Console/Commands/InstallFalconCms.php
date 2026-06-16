@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 use FalconCms\Core\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -40,6 +41,22 @@ class InstallFalconCms extends Command
         $this->call('vendor:publish', [
             '--tag' => 'falcon-theme-child',
         ]);
+
+        // 3c. Copy theme screenshots to public/themes/
+        $this->info('Step 3c: Copying theme screenshots to public...');
+        $themesPath = resource_path('views/themes');
+        if (File::isDirectory($themesPath)) {
+            foreach (File::directories($themesPath) as $themeDir) {
+                $slug = basename($themeDir);
+                $dest = public_path('themes/' . $slug);
+                File::ensureDirectoryExists($dest);
+                foreach (['screenshot.png', 'screenshot.jpg'] as $shot) {
+                    if (File::exists($themeDir . '/' . $shot)) {
+                        File::copy($themeDir . '/' . $shot, $dest . '/' . $shot);
+                    }
+                }
+            }
+        }
 
         // 4. Create Storage Link
         $this->info('Step 4: Creating storage link...');

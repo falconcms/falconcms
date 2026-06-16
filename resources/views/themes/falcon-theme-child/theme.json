@@ -1,6 +1,6 @@
 {
-    "name": "Lazy Theme Child",
-    "parent": "lazy-theme",
+    "name": "Falcon Theme Child",
+    "parent": "falcon-theme",
     "version": "1.0.0",
-    "description": "Child theme of Lazy Theme. Customize freely — this directory is never overwritten by CMS updates."
+    "description": "Child theme of Falcon Theme. Customize freely — this directory is never overwritten by CMS updates."
 }

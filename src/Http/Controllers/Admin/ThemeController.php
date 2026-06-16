@@ -20,61 +20,43 @@ class ThemeController extends Controller
         $activeTheme = $settings['active_theme'] ?? 'falcon-theme';
 
         $themes = [];
-        
-        // 1. Check Package Themes
-        $packageThemesPath = __DIR__ . '/../../../../resources/views/themes';
-        
-        // 2. Check Main App Themes
         $appThemesPath = resource_path('views/themes');
 
-        $paths = array_unique([$packageThemesPath, $appThemesPath]);
+        if (File::isDirectory($appThemesPath)) {
+            foreach (File::directories($appThemesPath) as $dir) {
+                $slug = basename($dir);
 
-        foreach ($paths as $path) {
-            if (File::isDirectory($path)) {
-                $directories = File::directories($path);
-                foreach ($directories as $dir) {
-                    $slug = basename($dir);
-                    
-                    // Skip if already added
-                    if (isset($themes[$slug])) continue;
-
-                    $screenshot = null;
-                    if (File::exists($dir . '/screenshot.png')) {
-                        $screenshot = asset('themes/' . $slug . '/screenshot.png');
-                    } elseif (File::exists($dir . '/screenshot.jpg')) {
-                        $screenshot = asset('themes/' . $slug . '/screenshot.jpg');
-                    }
-
-                    // Read theme.json metadata if present
-                    $themeJson   = [];
-                    $themeJsonFile = $dir . '/theme.json';
-                    if (File::exists($themeJsonFile)) {
-                        $themeJson = json_decode(File::get($themeJsonFile), true) ?: [];
-                    }
-                    $parentSlug = $themeJson['parent'] ?? null;
-
-                    // Child theme is activatable if its parent has index.blade.php
-                    if ($parentSlug) {
-                        $parentPath = resource_path('views/themes/' . $parentSlug);
-                        if (!File::isDirectory($parentPath)) {
-                            $parentPath = dirname(__DIR__, 4) . '/resources/views/themes/' . $parentSlug;
-                        }
-                        $isActivatable = File::exists($parentPath . '/index.blade.php');
-                    } else {
-                        $isActivatable = File::exists($dir . '/index.blade.php');
-                    }
-
-                    $themes[$slug] = [
-                        'name'         => $themeJson['name'] ?? ucfirst(str_replace('-', ' ', $slug)),
-                        'slug'         => $slug,
-                        'screenshot'   => $screenshot,
-                        'is_active'    => ($slug === $activeTheme),
-                        'is_activatable' => $isActivatable,
-                        'parent'       => $parentSlug,
-                        'description'  => $themeJson['description'] ?? null,
-                        'version'      => $themeJson['version'] ?? null,
-                    ];
+                $screenshot = null;
+                if (File::exists($dir . '/screenshot.png')) {
+                    $screenshot = asset('themes/' . $slug . '/screenshot.png');
+                } elseif (File::exists($dir . '/screenshot.jpg')) {
+                    $screenshot = asset('themes/' . $slug . '/screenshot.jpg');
                 }
+
+                $themeJson = [];
+                $themeJsonFile = $dir . '/theme.json';
+                if (File::exists($themeJsonFile)) {
+                    $themeJson = json_decode(File::get($themeJsonFile), true) ?: [];
+                }
+                $parentSlug = $themeJson['parent'] ?? null;
+
+                if ($parentSlug) {
+                    $parentPath = resource_path('views/themes/' . $parentSlug);
+                    $isActivatable = File::isDirectory($parentPath) && File::exists($parentPath . '/index.blade.php');
+                } else {
+                    $isActivatable = File::exists($dir . '/index.blade.php');
+                }
+
+                $themes[$slug] = [
+                    'name'           => $themeJson['name'] ?? ucfirst(str_replace('-', ' ', $slug)),
+                    'slug'           => $slug,
+                    'screenshot'     => $screenshot,
+                    'is_active'      => ($slug === $activeTheme),
+                    'is_activatable' => $isActivatable,
+                    'parent'         => $parentSlug,
+                    'description'    => $themeJson['description'] ?? null,
+                    'version'        => $themeJson['version']     ?? null,
+                ];
             }
         }
 
@@ -224,17 +206,7 @@ class ThemeController extends Controller
 
     protected function findThemePath($slug)
     {
-        $paths = [
-            resource_path('views/themes/' . $slug),
-            __DIR__ . '/../../../../resources/views/themes/' . $slug
-        ];
-
-        foreach ($paths as $path) {
-            if (File::isDirectory($path)) {
-                return $path;
-            }
-        }
-
-        return null;
+        $path = resource_path('views/themes/' . $slug);
+        return File::isDirectory($path) ? $path : null;
     }
 }

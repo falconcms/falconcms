@@ -1,6 +1,6 @@
 @extends('falcon-cms::themes.falcon-theme.layouts.app')
 
-@section('title', get_cms_option('site_title', 'Lazy Panda'))
+@section('title', get_cms_option('site_title', 'FalconCMS'))
 
 @section('content')
 @php

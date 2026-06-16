@@ -1,6 +1,6 @@
 <?php
 /*
- * Lazy Theme Child — functions.php
+ * Falcon Theme Child — functions.php
  *
  * Add your custom hooks, filters, and PHP logic here.
  * This file is loaded AFTER the parent theme's functions.php,

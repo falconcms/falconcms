@@ -6,46 +6,7 @@
 
 // Example hook: Filter site title
 add_falcon_filter('site_title', function($title) {
-    return $title . ' | Lazy Panda';
-});
-
-// Define Dashboard Option Pages via Hook
-add_falcon_filter('cms_theme_options', function($options) {
-    // Ad Management Settings
-    $options['pages']['ad-settings'] = [
-        'title' => 'Ad Management',
-        'icon' => 'ads_click',
-        'group' => 'Marketing',
-        'fields' => [
-            'header_ad_code' => [
-                'type' => 'textarea',
-                'label' => 'Header Ad Code',
-                'placeholder' => 'Paste your ad code here...',
-            ],
-            'header_ad_banner' => [
-                'type' => 'image',
-                'label' => 'Header Ad Banner',
-            ],
-        ]
-    ];
-
-    // Social Media Settings
-    $options['pages']['social-settings'] = [
-        'title' => 'Social Media',
-        'icon' => 'share',
-        'group' => 'Marketing',
-        'fields' => [
-            'theme_social_facebook' => [
-                'type' => 'text',
-                'label' => 'Facebook URL',
-            ],
-            'theme_social_twitter' => [
-                'type' => 'text',
-                'label' => 'Twitter/X URL',
-            ],
-        ]
-    ];
-    return $options;
+    return $title . ' | Falcon CMS';
 });
 
 // Add more theme-specific logic here
@@ -72,7 +33,7 @@ add_falcon_filter('the_content', function($content) {
 });
 */
 add_falcon_filter('falcon_the_content', function($content) {
-    return $content . '<p><i>Originally published on Lazy Panda.</i></p>';
+    return $content . '<p><i>Originally published on Falcon CMS.</i></p>';
 });
 
 /**
