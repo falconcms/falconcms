@@ -207,7 +207,14 @@ class DashboardController extends Controller
         // Step 2: falcon:update — run as a subprocess so the freshly downloaded code
         // is used. Artisan::call() would re-use the old in-memory ServiceProvider
         // loaded before composer update ran, causing "command does not exist".
-        $phpBin     = PHP_BINARY;
+        $phpBin = PHP_BINARY;
+        // PHP_BINARY points to php-fpm in web context; resolve to CLI php
+        if (basename($phpBin) !== 'php') {
+            $cliPhp = trim(shell_exec('which php 2>/dev/null') ?? '');
+            if ($cliPhp && is_executable($cliPhp)) {
+                $phpBin = $cliPhp;
+            }
+        }
         $artisan    = base_path('artisan');
         $falconCmd    = escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' falcon:update --no-ansi 2>&1';
         exec($falconCmd, $falconOut, $falconExit);
