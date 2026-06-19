@@ -114,6 +114,11 @@ class FalconCmsServiceProvider extends ServiceProvider
                 __DIR__ . '/../resources/views/themes/falcon-theme-child' => resource_path('views/themes/falcon-theme-child'),
             ], 'falcon-theme-child');
 
+            // Admin views — published with --force on every update so published copies stay in sync
+            $this->publishes([
+                __DIR__ . '/../resources/views/admin' => resource_path('views/vendor/falcon-cms/admin'),
+            ], 'falcon-cms-admin-views');
+
             $this->publishes([
                 __DIR__ . '/../resources/views' => resource_path('views/vendor/falcon-cms'),
             ], 'lazy-views');
