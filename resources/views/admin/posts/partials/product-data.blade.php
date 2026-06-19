@@ -304,8 +304,28 @@
                     <div class="grid grid-cols-3 items-center">
                         <label class="text-[13px] font-semibold text-[#1d2327]">Sale End Date</label>
                         <div class="col-span-2">
-                            <input type="datetime-local" name="sale_ends_at" value="{{ old('sale_ends_at', isset($post->shopData->sale_ends_at) ? \Carbon\Carbon::parse($post->shopData->sale_ends_at)->format('Y-m-d\TH:i') : '') }}" min="{{ now()->format('Y-m-d\TH:i') }}" class="wp-input w-full max-w-[300px]">
+                            <input type="datetime-local" name="sale_ends_at" id="sale_ends_at_input" value="{{ old('sale_ends_at', isset($post->shopData->sale_ends_at) ? \Carbon\Carbon::parse($post->shopData->sale_ends_at)->format('Y-m-d\TH:i') : '') }}" class="wp-input w-full max-w-[300px]">
                             <p class="text-[11px] text-[#646970] mt-1">Leave blank for no expiry. Must be a future date. Sale price is removed automatically when this date passes.</p>
+                            <script>
+                            (function(){
+                                function localNow(){
+                                    var n=new Date();
+                                    return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'T'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+                                }
+                                var el=document.getElementById('sale_ends_at_input');
+                                if(!el)return;
+                                el.min=localNow();
+                                el.addEventListener('change',function(){
+                                    if(this.value && this.value<localNow()){
+                                        this.setCustomValidity('Sale end date must be in the future.');
+                                        this.reportValidity();
+                                        this.value='';
+                                    } else {
+                                        this.setCustomValidity('');
+                                    }
+                                });
+                            })();
+                            </script>
                         </div>
                     </div>
                 </div>
