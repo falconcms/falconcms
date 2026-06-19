@@ -234,7 +234,8 @@
     }
 })();
 </script>
-<div class="wp-metabox mt-6 mb-6" x-data="falconProductData()">
+<style>[x-cloak]{display:none!important}</style>
+<div class="wp-metabox mt-6 mb-6" x-data="falconProductData()" x-cloak>
     <div class="wp-metabox-header flex justify-between items-center">
         <span>Product Data</span>
         <div class="flex items-center space-x-2 mr-4">
