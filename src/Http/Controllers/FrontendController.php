@@ -445,7 +445,7 @@ class FrontendController extends Controller
         $accountPageId = get_shop_option('shop_account_page_id');
 
         if ($post->id == $shopPageId) {
-            $postsQuery = Post::where('posts.type', 'product')
+            $postsQuery = Post::with('productCategories', 'shopData')->where('posts.type', 'product')
                 ->where('posts.lang_code', app()->getLocale())
                 ->where('posts.status', 'published');
 

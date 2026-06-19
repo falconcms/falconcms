@@ -304,8 +304,8 @@
                     <div class="grid grid-cols-3 items-center">
                         <label class="text-[13px] font-semibold text-[#1d2327]">Sale End Date</label>
                         <div class="col-span-2">
-                            <input type="datetime-local" name="sale_ends_at" value="{{ old('sale_ends_at', isset($post->shopData->sale_ends_at) ? \Carbon\Carbon::parse($post->shopData->sale_ends_at)->format('Y-m-d\TH:i') : '') }}" class="wp-input w-full max-w-[300px]">
-                            <p class="text-[11px] text-[#646970] mt-1">Leave blank for no expiry. Sale price is removed automatically when this date passes.</p>
+                            <input type="datetime-local" name="sale_ends_at" value="{{ old('sale_ends_at', isset($post->shopData->sale_ends_at) ? \Carbon\Carbon::parse($post->shopData->sale_ends_at)->format('Y-m-d\TH:i') : '') }}" min="{{ now()->format('Y-m-d\TH:i') }}" class="wp-input w-full max-w-[300px]">
+                            <p class="text-[11px] text-[#646970] mt-1">Leave blank for no expiry. Must be a future date. Sale price is removed automatically when this date passes.</p>
                         </div>
                     </div>
                 </div>

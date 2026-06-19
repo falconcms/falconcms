@@ -347,6 +347,7 @@ class PostController extends Controller
         $eagerLoad = ['categories', 'tags', 'taxonomyTerms'];
         if ($type === 'product') {
             $eagerLoad[] = 'shopData';
+            $eagerLoad[] = 'productCategories';
         }
         $query = Post::with($eagerLoad)->where('type', $type);
 
@@ -556,7 +557,7 @@ class PostController extends Controller
             $rules['product_type'] = 'required|string|in:simple,variable';
             $rules['price'] = 'required_if:product_type,simple|nullable|numeric|min:0';
             $rules['sale_price'] = 'nullable|numeric|min:0|lt:price';
-            $rules['sale_ends_at'] = 'nullable|date';
+            $rules['sale_ends_at'] = 'nullable|date|after:now';
             $rules['is_downloadable'] = 'nullable|boolean';
             $rules['download_expiry_days'] = 'nullable|integer|min:1|max:3650';
             $rules['sku'] = 'nullable|string|max:100';
@@ -960,7 +961,7 @@ class PostController extends Controller
             $rules['product_type'] = 'required|string|in:simple,variable';
             $rules['price'] = 'required_if:product_type,simple|nullable|numeric|min:0';
             $rules['sale_price'] = 'nullable|numeric|min:0|lt:price';
-            $rules['sale_ends_at'] = 'nullable|date';
+            $rules['sale_ends_at'] = 'nullable|date|after:now';
             $rules['is_downloadable'] = 'nullable|boolean';
             $rules['download_expiry_days'] = 'nullable|integer|min:1|max:3650';
             $rules['sku'] = 'nullable|string|max:100';

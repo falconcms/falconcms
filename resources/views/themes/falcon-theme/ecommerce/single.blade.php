@@ -88,6 +88,31 @@
                 ?>
                 <?php do_falcon_action('falcon_simple_after_product_price', $post); ?>
 
+                @if($post->shopData && $post->shopData->sale_price && !empty($post->shopData->sale_ends_at) && \Carbon\Carbon::parse($post->shopData->sale_ends_at)->isFuture())
+                <div class="mb-5 flex items-center gap-3 bg-sky-50 border border-sky-200 rounded-lg px-4 py-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-sky-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="text-[13px] text-sky-700 font-medium">Sale ends in: <span id="falcon-countdown" class="font-bold tabular-nums" data-ends="{{ \Carbon\Carbon::parse($post->shopData->sale_ends_at)->toIso8601String() }}">--:--:--</span></span>
+                </div>
+                <script>
+                (function(){
+                    var el = document.getElementById('falcon-countdown');
+                    if (!el) return;
+                    var end = new Date(el.dataset.ends).getTime();
+                    function tick() {
+                        var diff = end - Date.now();
+                        if (diff <= 0) { el.textContent = 'Sale ended'; clearInterval(t); return; }
+                        var d = Math.floor(diff/86400000);
+                        var h = Math.floor((diff%86400000)/3600000);
+                        var m = Math.floor((diff%3600000)/60000);
+                        var s = Math.floor((diff%60000)/1000);
+                        el.textContent = (d>0?d+'d ':'')+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+                    }
+                    tick();
+                    var t = setInterval(tick, 1000);
+                })();
+                </script>
+                @endif
+
                 @if($post->shopData && $post->shopData->manage_stock)
                 <div class="mb-6 -mt-4">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
