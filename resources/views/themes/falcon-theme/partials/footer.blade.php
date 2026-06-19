@@ -79,7 +79,6 @@
 
     <div class="container-custom">
         <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <img src="{{ asset('vendor/falcon-cms/images/falcon-cms-footer-logo.png') }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-7 w-auto opacity-80">
             <div class="text-[13px] opacity-60">
                 {!! get_cms_option('theme_footer_copyright', '© ' . date('Y') . ' All Rights Reserved By FalconCMS') !!}
             </div>
