@@ -306,7 +306,7 @@ class FrontendController extends Controller
             if (!$type) {
                 $postType = PostType::where('slug', $postSlug)->first();
                 if ($postType && $postType->is_active && $postType->is_public) {
-                $postsQuery = Post::where('posts.type', $postType->slug)
+                $postsQuery = Post::with('productCategories', 'shopData')->where('posts.type', $postType->slug)
                     ->where('posts.lang_code', app()->getLocale())
                     ->where('posts.status', 'published');
 
