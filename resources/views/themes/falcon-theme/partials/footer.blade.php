@@ -30,7 +30,7 @@
                     @else
                         @if($i == 1)
                             <a href="{{ url('/') }}" class="flex items-center gap-2 mb-6">
-                                <img src="{{ get_cms_option('theme_site_logo', asset('vendor/falcon-cms/images/falcon-cms-logo.png')) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-8 w-auto">
+                                <img src="{{ get_cms_option('theme_footer_logo', get_cms_option('theme_site_logo', asset('vendor/falcon-cms/images/falcon-cms-footer-logo.png'))) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-12 w-auto">
                             </a>
                             <p class="text-[14px] leading-relaxed mb-8 opacity-80">
                                 {{ get_cms_option('footer_about', 'A minimalist, Astra-inspired theme for FalconCMS. Clean, fast, and professional design focusing on readability and content delivery.') }}
