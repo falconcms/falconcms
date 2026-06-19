@@ -69,10 +69,10 @@
                     </div>
                     <div class="flex flex-col flex-grow text-left px-1">
                         <div class="text-[12px] text-[#999] mb-0.5">
-                            @if($product->taxonomyTerms && $product->taxonomyTerms->count() > 0)
+                            @if($product->productCategories && $product->productCategories->count() > 0)
+                                {{ $product->productCategories->first()->name }}
+                            @elseif($product->taxonomyTerms && $product->taxonomyTerms->count() > 0)
                                 {{ $product->taxonomyTerms->first()->name }}
-                            @elseif($product->categories && $product->categories->count() > 0)
-                                {{ $product->categories->first()->name }}
                             @else
                                 Uncategorized
                             @endif
