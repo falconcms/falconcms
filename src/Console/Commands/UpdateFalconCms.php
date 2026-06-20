@@ -82,9 +82,16 @@ class UpdateFalconCms extends Command
             ->where('value', 'LIKE', '%Your Site%')
             ->update(['value' => $newCopyright]);
 
-        // Ensure footer_about is set (for installs where it was never saved)
         if (!\DB::table('cms_settings')->where('key', 'footer_about')->exists()) {
             \DB::table('cms_settings')->insert(['key' => 'footer_about', 'value' => $newAbout]);
+        }
+
+        // Directly copy footer logo so it is not dependent on vendor:publish succeeding
+        $src  = base_path('vendor/falconcms/falconcms/public/assets/images/falcon-cms-footer-logo.png');
+        $dest = public_path('vendor/falcon-cms/images/falcon-cms-footer-logo.png');
+        if (file_exists($src)) {
+            \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($dest));
+            \Illuminate\Support\Facades\File::copy($src, $dest);
         }
     }
 
