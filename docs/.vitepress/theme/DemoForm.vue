@@ -55,12 +55,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 
-// ── Replace these with your actual keys ──────────────────────────────────────
-const EMAILJS_PUBLIC_KEY  = 'YOUR_EMAILJS_PUBLIC_KEY'
-const EMAILJS_SERVICE_ID  = 'YOUR_EMAILJS_SERVICE_ID'
-const EMAILJS_TEMPLATE_ID = 'YOUR_EMAILJS_TEMPLATE_ID'
-const FORMSPREE_ENDPOINT  = 'https://formspree.io/f/YOUR_FORM_ID'
-// ─────────────────────────────────────────────────────────────────────────────
+const EMAILJS_PUBLIC_KEY  = 'yfyH-ECJQyDJzw31B'
+const EMAILJS_SERVICE_ID  = 'service_kz1fmc8'
+const EMAILJS_TEMPLATE_ID = 'template_7x9x3i8'
 
 const form = reactive({ name: '', email: '', website: '', source: '' })
 const loading      = ref(false)
@@ -73,14 +70,6 @@ async function handleSubmit() {
   error.value   = ''
 
   try {
-    // 1. Save lead data to Formspree (marketing collection)
-    await fetch(FORMSPREE_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, _subject: 'New FalconCMS Demo Request' }),
-    })
-
-    // 2. Send credentials email via EmailJS
     await loadEmailJS()
     await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_name:    form.name,
