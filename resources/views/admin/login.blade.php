@@ -19,6 +19,14 @@
             <h1 class="text-[32px] font-bold text-[#3c434a]">{{ get_cms_option('site_title', 'FalconCMS') }}</h1>
         </div>
         
+        @if(env('APP_DEMO'))
+        <div class="bg-white p-4 mb-4 shadow-sm border border-[#c3c4c7] text-[13px] text-[#3c434a]">
+            <p class="font-semibold mb-2">Demo Credentials</p>
+            <p>Email: <strong>admin@falconcms.com</strong></p>
+            <p>Password: <strong>password</strong></p>
+        </div>
+        @endif
+
         <form action="{{ route('admin.login') }}" method="POST" class="bg-white p-6 shadow-sm border border-[#c3c4c7]">
             @csrf
             <div class="mb-4">

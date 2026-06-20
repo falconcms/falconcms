@@ -4,31 +4,37 @@
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-6">Edit User</h1>
 
+        @if(env('APP_DEMO'))
+        <div class="bg-[#fcf0f1] border-l-4 border-[#d63638] p-3 mb-6 text-[13px] text-[#1d2327]">
+            This is a demo site. User editing is disabled.
+        </div>
+        @endif
+
         <form action="{{ route('admin.users.update', $user) }}" method="POST" class="max-w-[800px]">
             @csrf
             @method('PUT')
             <table class="w-full border-separate border-spacing-y-6">
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="username" class="text-[14px] font-semibold text-[#1d2327]">Username</label></th>
-                    <td><input type="text" name="username" id="username" value="{{ $user->username }}" class="wp-input w-[400px] h-8 shadow-sm" required></td>
+                    <td><input type="text" name="username" id="username" value="{{ $user->username }}" class="wp-input w-[400px] h-8 shadow-sm" @if(env('APP_DEMO')) disabled @endif required></td>
                 </tr>
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="name" class="text-[14px] font-semibold text-[#1d2327]">Name</label></th>
-                    <td><input type="text" name="name" id="name" value="{{ $user->name }}" class="wp-input w-[400px] h-8 shadow-sm" required></td>
+                    <td><input type="text" name="name" id="name" value="{{ $user->name }}" class="wp-input w-[400px] h-8 shadow-sm" @if(env('APP_DEMO')) disabled @endif required></td>
                 </tr>
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="email" class="text-[14px] font-semibold text-[#1d2327]">Email</label></th>
-                    <td><input type="email" name="email" id="email" value="{{ $user->email }}" class="wp-input w-[400px] h-8 shadow-sm" required></td>
+                    <td><input type="email" name="email" id="email" value="{{ $user->email }}" class="wp-input w-[400px] h-8 shadow-sm" @if(env('APP_DEMO')) disabled @endif required></td>
                 </tr>
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="password" class="text-[14px] font-semibold text-[#1d2327]">New Password</label></th>
                     <td>
-                        <input type="password" name="password" id="password" class="wp-input w-[400px] h-8 shadow-sm mb-1" required>
+                        <input type="password" name="password" id="password" class="wp-input w-[400px] h-8 shadow-sm mb-1" @if(env('APP_DEMO')) disabled @endif required>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="password_confirmation" class="text-[14px] font-semibold text-[#1d2327]">Confirm New Password</label></th>
-                    <td><input type="password" name="password_confirmation" id="password_confirmation" class="wp-input w-[400px] h-8 shadow-sm" required></td>
+                    <td><input type="password" name="password_confirmation" id="password_confirmation" class="wp-input w-[400px] h-8 shadow-sm" @if(env('APP_DEMO')) disabled @endif required></td>
                 </tr>
                 @if(auth()->user()->isAdmin())
                 @php $userRoleIds = $user->cmsRoleIds(); @endphp
@@ -55,7 +61,7 @@
             @include('falcon-cms::components.admin.dynamic-fields')
 
             <div class="mt-8 pt-6 border-t border-[#c3c4c7]">
-                <button type="submit" class="wp-btn-primary h-[32px] px-4 font-semibold">Update User</button>
+                <button type="submit" class="wp-btn-primary h-[32px] px-4 font-semibold" @if(env('APP_DEMO')) disabled @endif>Update User</button>
             </div>
         </form>
     </div>
