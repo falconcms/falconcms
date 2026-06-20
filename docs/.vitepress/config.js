@@ -35,6 +35,7 @@ export default defineConfig({
       { text: 'E-commerce', link: '/ecommerce/overview' },
       { text: 'Hooks API', link: '/api/hooks' },
       { text: 'Changelog', link: '/changelog' },
+      { text: '🚀 Live Demo', link: '/demo' },
       {
         text: `v${version}`,
         items: [
