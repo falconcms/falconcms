@@ -188,8 +188,10 @@
                             <span class="text-[#646970] text-[13px]">{{ url('/') }}/</span>
                             <input type="text" name="register_url" id="register_url"
                                 value="{{ $settings['register_url'] ?? 'lazy-register' }}"
-                                class="wp-input w-[280px] h-8 shadow-sm">
+                                class="wp-input w-[280px] h-8 shadow-sm"
+                                @if(env('APP_DEMO')) disabled title="Disabled in demo mode" @endif>
                         </div>
+                        @if(env('APP_DEMO'))<p class="text-[11px] text-[#646970] mt-1">Disabled in demo mode.</p>@endif
                     </td>
                 </tr>
 
@@ -202,8 +204,10 @@
                             <span class="text-[#646970] text-[13px]">{{ url('/') }}/</span>
                             <input type="text" name="login_url" id="login_url"
                                 value="{{ $settings['login_url'] ?? 'lazy-admin' }}"
-                                class="wp-input w-[280px] h-8 shadow-sm">
+                                class="wp-input w-[280px] h-8 shadow-sm"
+                                @if(env('APP_DEMO')) disabled title="Disabled in demo mode" @endif>
                         </div>
+                        @if(env('APP_DEMO'))<p class="text-[11px] text-[#646970] mt-1">Disabled in demo mode.</p>@endif
                     </td>
                 </tr>
 
