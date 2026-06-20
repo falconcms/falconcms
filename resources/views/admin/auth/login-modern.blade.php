@@ -137,8 +137,8 @@
         @if(env('APP_DEMO'))
         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;font-size:.84rem;color:#1e40af;margin-bottom:1rem">
             <p style="font-weight:700;margin-bottom:4px">Demo Credentials</p>
-            <p>Email: <strong>admin@falconcms.com</strong></p>
-            <p>Password: <strong>password</strong></p>
+            <p>Email: <strong>admin@falconcms.demo</strong></p>
+            <p>Password: <strong>FalconDemo2025!</strong></p>
         </div>
         @endif
 

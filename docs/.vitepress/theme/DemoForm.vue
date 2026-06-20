@@ -7,8 +7,8 @@
       <p>Demo access details have been sent to <strong>{{ submittedEmail }}</strong>.</p>
       <div class="cred-box">
         <p><strong>Demo URL:</strong> <a href="https://demo.falconcms.com" target="_blank">demo.falconcms.com</a></p>
-        <p><strong>Email:</strong> admin@falconcms.com</p>
-        <p><strong>Password:</strong> password</p>
+        <p><strong>Email:</strong> admin@falconcms.demo</p>
+        <p><strong>Password:</strong> FalconDemo2025!</p>
       </div>
       <button class="btn-reset" @click="reset">Request another access →</button>
     </div>
@@ -75,8 +75,8 @@ async function handleSubmit() {
       to_name:    form.name,
       to_email:   form.email,
       demo_url:   'https://demo.falconcms.com',
-      demo_email: 'admin@falconcms.com',
-      demo_pass:  'password',
+      demo_email: 'admin@falconcms.demo',
+      demo_pass:  'FalconDemo2025!',
     }, EMAILJS_PUBLIC_KEY)
 
     submittedEmail.value = form.email
