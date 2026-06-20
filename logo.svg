@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 52" fill="none">
+  <!-- Lazy CMS -->
+  <text x="0" y="34"
+        font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif"
+        font-size="32" font-weight="800" letter-spacing="-0.5">
+    <tspan fill="#0091ea">Lazy</tspan><tspan fill="#000000"> CMS</tspan>
+  </text>
+
+  <!-- BUILDER — same width as "Lazy CMS" via textLength -->
+  <text x="0" y="49"
+        font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif"
+        font-size="9" font-weight="700" fill="#000000"
+        textLength="156" lengthAdjust="spacingAndGlyphs">BUILDER</text>
+</svg>
