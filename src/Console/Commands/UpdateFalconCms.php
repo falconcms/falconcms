@@ -86,13 +86,10 @@ class UpdateFalconCms extends Command
             \DB::table('cms_settings')->insert(['key' => 'footer_about', 'value' => $newAbout]);
         }
 
-        // Directly copy footer logo so it is not dependent on vendor:publish succeeding
-        $src  = base_path('vendor/falconcms/falconcms/public/assets/images/falcon-cms-footer-logo.png');
-        $dest = public_path('vendor/falcon-cms/images/falcon-cms-footer-logo.png');
-        if (file_exists($src)) {
-            \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($dest));
-            \Illuminate\Support\Facades\File::copy($src, $dest);
-        }
+        // Remove any stored footer logo override so the template default (embedded logo) is used.
+        // Users can set a custom footer logo via Customizer at any time after this.
+        \DB::table('cms_settings')->where('key', 'theme_footer_logo')->delete();
+        \DB::table('cms_settings')->where('key', 'theme_site_logo')->delete();
     }
 
     protected function createEcommercePages()
