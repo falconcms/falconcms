@@ -33,7 +33,7 @@
                                 <img src="{{ get_cms_option('theme_footer_logo', get_cms_option('theme_site_logo', asset('vendor/falcon-cms/images/falcon-cms-footer-logo.png'))) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-12 w-auto">
                             </a>
                             <p class="text-[14px] leading-relaxed mb-8 opacity-80">
-                                {{ get_cms_option('footer_about', 'A minimalist, Astra-inspired theme for FalconCMS. Clean, fast, and professional design focusing on readability and content delivery.') }}
+                                {{ get_cms_option('footer_about', 'A clean, fast, and professional CMS. Built for readability and seamless content delivery.') }}
                             </p>
 
                             {{-- Social Media (hardcoded fallback for column 1) --}}
@@ -80,7 +80,7 @@
     <div class="container-custom">
         <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-[13px] opacity-60">
-                {!! get_cms_option('theme_footer_copyright', '© ' . date('Y') . ' All Rights Reserved By FalconCMS') !!}
+                {!! get_cms_option('theme_footer_copyright', '© ' . date('Y') . ' All rights reserved by Falcon CMS') !!}
             </div>
         </div>
     </div>
