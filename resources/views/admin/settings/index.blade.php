@@ -12,6 +12,12 @@
             </div>
         @endif
 
+        @if(env('APP_DEMO'))
+        <div class="bg-[#fcf0f1] border-l-4 border-[#d63638] p-3 mb-6 text-[13px] text-[#1d2327]">
+            This is a demo site. Registration URL and Login URL settings are disabled.
+        </div>
+        @endif
+
         <form action="{{ route('admin.settings.update') }}" method="POST" class="max-w-[800px]">
             @csrf
             {!! do_falcon_action('falcon_settings_form_top') !!}
@@ -189,9 +195,8 @@
                             <input type="text" name="register_url" id="register_url"
                                 value="{{ $settings['register_url'] ?? 'lazy-register' }}"
                                 class="wp-input w-[280px] h-8 shadow-sm"
-                                @if(env('APP_DEMO')) disabled title="Disabled in demo mode" @endif>
+                                @if(env('APP_DEMO')) disabled @endif>
                         </div>
-                        @if(env('APP_DEMO'))<p class="text-[11px] text-[#646970] mt-1">Disabled in demo mode.</p>@endif
                     </td>
                 </tr>
 
@@ -205,9 +210,8 @@
                             <input type="text" name="login_url" id="login_url"
                                 value="{{ $settings['login_url'] ?? 'lazy-admin' }}"
                                 class="wp-input w-[280px] h-8 shadow-sm"
-                                @if(env('APP_DEMO')) disabled title="Disabled in demo mode" @endif>
+                                @if(env('APP_DEMO')) disabled @endif>
                         </div>
-                        @if(env('APP_DEMO'))<p class="text-[11px] text-[#646970] mt-1">Disabled in demo mode.</p>@endif
                     </td>
                 </tr>
 
