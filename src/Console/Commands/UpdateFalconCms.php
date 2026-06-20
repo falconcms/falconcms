@@ -38,12 +38,12 @@ class UpdateFalconCms extends Command
             '--force' => true
         ]);
 
-        // 4a. Publish Admin Views (Force) — keep published copies in sync with vendor
-        $this->info('Step 4a: Refreshing admin views...');
-        $this->call('vendor:publish', [
-            '--tag' => 'falcon-cms-admin-views',
-            '--force' => true
-        ]);
+        // 4a. Remove published admin views so vendor views are always used directly
+        $adminViewsPath = resource_path('views/vendor/falcon-cms/admin');
+        if (is_dir($adminViewsPath)) {
+            \Illuminate\Support\Facades\File::deleteDirectory($adminViewsPath);
+            $this->info('Step 4a: Removed stale published admin views.');
+        }
 
         // 4b. Publish child theme skeleton if it does not exist yet (never --force)
         $this->info('Step 4b: Publishing child theme (skipped if already exists)...');
