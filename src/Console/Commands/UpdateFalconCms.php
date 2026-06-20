@@ -51,18 +51,43 @@ class UpdateFalconCms extends Command
             '--tag' => 'falcon-theme-child',
         ]);
 
-        // 5. Clear Cache
-        $this->info('Step 5: Clearing cache...');
+        // 5. Sync footer defaults (update stale default values from old installs)
+        $this->info('Step 5: Syncing footer defaults...');
+        $this->syncFooterDefaults();
+
+        // 6. Clear Cache
+        $this->info('Step 6: Clearing cache...');
         $this->call('optimize:clear');
 
-        // 6. Auto-create E-commerce pages
-        $this->info('Step 6: Auto-creating E-commerce pages...');
+        // 7. Auto-create E-commerce pages
+        $this->info('Step 7: Auto-creating E-commerce pages...');
         $this->createEcommercePages();
 
         $this->info('---------------------------------------');
         $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
     }
+    protected function syncFooterDefaults()
+    {
+        $newAbout     = 'A clean, fast, and professional CMS. Built for readability and seamless content delivery.';
+        $newCopyright = '© ' . date('Y') . ' All rights reserved by Falcon CMS';
+
+        \DB::table('cms_settings')
+            ->where('key', 'footer_about')
+            ->where('value', 'LIKE', '%Astra-inspired%')
+            ->update(['value' => $newAbout]);
+
+        \DB::table('cms_settings')
+            ->where('key', 'theme_footer_copyright')
+            ->where('value', 'LIKE', '%Your Site%')
+            ->update(['value' => $newCopyright]);
+
+        // Ensure footer_about is set (for installs where it was never saved)
+        if (!\DB::table('cms_settings')->where('key', 'footer_about')->exists()) {
+            \DB::table('cms_settings')->insert(['key' => 'footer_about', 'value' => $newAbout]);
+        }
+    }
+
     protected function createEcommercePages()
     {
         $pages = [
