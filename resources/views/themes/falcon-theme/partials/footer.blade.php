@@ -24,19 +24,21 @@
         <div class="grid {{ $gridClass }} gap-12 mb-16">
             @for($i = 1; $i <= $footerColumns; $i++)
                 <div class="col-span-1 footer-column">
+                    @if($i == 1)
+                        {{-- Logo always renders above widget/default content --}}
+                        <a href="{{ url('/') }}" class="flex items-center gap-2 mb-6">
+                            <img src="{{ get_cms_option('theme_footer_logo', asset('vendor/falcon-cms/images/falcon-cms-footer-logo.png')) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-12 w-auto">
+                        </a>
+                    @endif
+
                     @php $widgetContent = render_lazy_widgets("footer-{$i}"); @endphp
                     @if($widgetContent)
                         {!! $widgetContent !!}
                     @else
                         @if($i == 1)
-                            <a href="{{ url('/') }}" class="flex items-center gap-2 mb-6">
-                                <img src="{{ get_cms_option('theme_footer_logo', asset('vendor/falcon-cms/images/falcon-cms-footer-logo.png')) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-12 w-auto">
-                            </a>
                             <p class="text-[14px] leading-relaxed mb-8 opacity-80">
                                 {{ get_cms_option('footer_about', 'A clean, fast, and professional CMS. Built for readability and seamless content delivery.') }}
                             </p>
-
-                            {{-- Social Media (hardcoded fallback for column 1) --}}
                             <div class="flex items-center gap-3">
                                 @php
                                     $socials = [
