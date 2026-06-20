@@ -809,6 +809,13 @@ class CustomizerController extends \Illuminate\Routing\Controller
                         'desc'  => '<span class="text-red-600 font-semibold">Caution:</span> This will replace all existing original images with optimized versions. This process cannot be undone.',
                         'action'=> 'optimizeImages',
                     ],
+                    'performance_clear_cache' => [
+                        'type'   => 'action_button',
+                        'label'  => 'Clear Cache',
+                        'text'   => 'Clear All Cache',
+                        'desc'   => 'Clears compiled views, route cache, config cache, and application cache in one click.',
+                        'action' => 'clearCache',
+                    ],
                 ],
             ],
             'custom_css' => [
@@ -1027,6 +1034,10 @@ class CustomizerController extends \Illuminate\Routing\Controller
                 return $this->optimizeImages();
             }
 
+            if ($action === 'clearCache') {
+                return $this->clearCache();
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => "Action '{$action}' not found."
@@ -1037,6 +1048,12 @@ class CustomizerController extends \Illuminate\Routing\Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    protected function clearCache()
+    {
+        \Artisan::call('optimize:clear');
+        return response()->json(['success' => true, 'message' => 'All cache cleared successfully.']);
     }
 
     protected function optimizeImages()

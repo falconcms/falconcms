@@ -881,6 +881,13 @@ function customizerApp(initialSection) {
                     confirmText: 'Yes, Optimize All',
                     isDanger: true
                 });
+            } else if (action === 'clearCache') {
+                confirmed = await window.falconConfirm({
+                    title: 'Clear All Cache',
+                    message: 'This will clear compiled views, route cache, config cache, and application cache. The next page load may be slightly slower while cache rebuilds.',
+                    confirmText: 'Yes, Clear Cache',
+                    isDanger: false
+                });
             } else {
                 confirmed = await window.falconConfirm({
                     title: 'Run Action',
