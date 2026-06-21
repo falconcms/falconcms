@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.4.3 <Badge type="tip" text="Latest" /> {#v1-4-3}
+## v1.4.4 <Badge type="tip" text="Latest" /> {#v1-4-4}
+
+**Released: 2026-06-21**
+
+### Fixed
+- **Dashboard Update — php-fpm binary** — The dashboard "Update" button ran `falcon:update` with `PHP_BINARY`, which in a web (php-fpm) request points at the php-fpm executable and cannot run `artisan` (it printed FastCGI usage and aborted, so migrations/cache-clear/OPcache reset never ran). The updater now locates a real CLI php binary, checking absolute paths first since the php-fpm worker often runs with a stripped `PATH`
+
+## v1.4.3 {#v1-4-3}
 
 **Released: 2026-06-21**
 

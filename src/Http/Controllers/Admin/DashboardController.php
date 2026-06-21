@@ -207,7 +207,7 @@ class DashboardController extends Controller
         // Step 2: falcon:update — run as a subprocess so the freshly downloaded code
         // is used. Artisan::call() would re-use the old in-memory ServiceProvider
         // loaded before composer update ran, causing "command does not exist".
-        $phpBin     = PHP_BINARY;
+        $phpBin     = $this->findPhpCli();
         $artisan    = base_path('artisan');
         $falconCmd    = escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' falcon:update --no-ansi 2>&1';
         exec($falconCmd, $falconOut, $falconExit);
@@ -219,6 +219,49 @@ class DashboardController extends Controller
         return redirect()->route('admin.update')
             ->with('update_steps', $steps)
             ->with('update_had_error', $hasError);
+    }
+
+    /**
+     * Locate a real CLI php binary.
+     *
+     * In a web (php-fpm) request PHP_BINARY points at the php-fpm executable,
+     * which cannot run `artisan` (it prints its FastCGI usage and exits). We must
+     * find the command-line php instead. Absolute paths are checked first because
+     * the php-fpm worker often runs with a stripped PATH, so `which php` may fail.
+     */
+    protected function findPhpCli(): string
+    {
+        // When this code itself runs under the CLI SAPI, PHP_BINARY is already cli php.
+        if (PHP_SAPI === 'cli' && PHP_BINARY) {
+            return PHP_BINARY;
+        }
+
+        $candidates = [];
+        // Derive a sibling cli binary from the fpm path,
+        // e.g. /usr/local/sbin/php-fpm -> /usr/local/sbin/php.
+        if (PHP_BINARY) {
+            $candidates[] = dirname(PHP_BINARY) . '/php';
+            $candidates[] = dirname(dirname(PHP_BINARY)) . '/bin/php';
+        }
+        $candidates[] = '/usr/local/bin/php';
+        $candidates[] = '/usr/bin/php';
+
+        foreach ($candidates as $p) {
+            // Skip anything that is itself an fpm binary.
+            if (str_contains(basename($p), 'fpm')) continue;
+            if (@is_executable($p)) return $p;
+        }
+
+        // PATH lookups (may be empty inside php-fpm, hence checked last).
+        $which = shell_exec('which php 2>/dev/null');
+        if ($which && trim($which)) return trim($which);
+        $where = shell_exec('where php 2>nul');
+        if ($where && trim($where)) {
+            $lines = preg_split('/\r?\n/', trim($where));
+            if (!empty($lines[0])) return trim($lines[0]);
+        }
+
+        return 'php';
     }
 
     protected function findComposer(): ?string
