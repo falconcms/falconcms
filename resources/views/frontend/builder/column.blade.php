@@ -124,7 +124,7 @@
     $contentLayout = ($s['contentLayout'] ?? '') ?: 'column';
     if ($contentLayout && $contentLayout !== 'block') {
         $innerStyles[] = 'display: flex';
-        $innerStyles[] = 'flex-wrap: wrap';
+        $innerStyles[] = $contentLayout === 'row' ? 'flex-wrap: nowrap' : 'flex-wrap: wrap';
         $innerStyles[] = 'flex-direction: ' . ($contentLayout === 'row' ? 'row' : 'column');
         $gw = intval($s['gapWidth']  ?? 0);
         $gh = intval($s['gapHeight'] ?? 0);
@@ -310,6 +310,9 @@
             ? $s['contentAlignH_tablet']
             : $s['contentAlignH'];
         $colCss .= "@media(min-width:{$rBpSm1}px) and (max-width:{$rBpMed}px){{$rInnerSel}{align-items:{$tabAlignH}!important}}";
+    }
+    if ($contentLayout === 'row') {
+        $colCss .= ".{$colCid} .lazy-column-inner>*{width:auto!important;min-width:0;}";
     }
 
     $getColRespOvr = function(string $prop, string $dev) use ($s): ?string {

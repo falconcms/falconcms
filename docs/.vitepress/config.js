@@ -35,6 +35,7 @@ export default defineConfig({
       { text: 'E-commerce', link: '/ecommerce/overview' },
       { text: 'Hooks API', link: '/api/hooks' },
       { text: 'Changelog', link: '/changelog' },
+      { text: '🚀 Live Demo', link: '/demo' },
       {
         text: `v${version}`,
         items: [
@@ -117,17 +118,10 @@ export default defineConfig({
         {
           text: 'Changelog',
           items: [
-            { text: 'v1.2.0', link: '/changelog#v1-2-0' },
-            { text: 'v1.1.0', link: '/changelog#v1-1-0' },
-            { text: 'v1.0.9', link: '/changelog#v1-0-9' },
-            { text: 'v1.0.8', link: '/changelog#v1-0-8' },
-            { text: 'v1.0.7', link: '/changelog#v1-0-7' },
-            { text: 'v1.0.6', link: '/changelog#v1-0-6' },
-            { text: 'v1.0.5', link: '/changelog#v1-0-5' },
-            { text: 'v1.0.4', link: '/changelog#v1-0-4' },
-            { text: 'v1.0.3', link: '/changelog#v1-0-3' },
-            { text: 'v1.0.2', link: '/changelog#v1-0-2' },
-            { text: 'v1.0.1', link: '/changelog#v1-0-1' },
+            { text: 'v1.4.2 (Latest)', link: '/changelog#v1-4-2' },
+            { text: 'v1.4.1', link: '/changelog#v1-4-1' },
+            { text: 'v1.4.0', link: '/changelog#v1-4-0' },
+            { text: 'v1.3.18', link: '/changelog#v1-3-18' },
             { text: 'v1.0.0', link: '/changelog#v1-0-0' },
           ]
         },

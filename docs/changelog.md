@@ -5,57 +5,60 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.3.4 <Badge type="tip" text="Latest" /> {#v1-3-4}
+## v1.4.2 <Badge type="tip" text="Latest" /> {#v1-4-2}
 
-**Released: 2026-06-16**
+**Released: 2026-06-21**
 
 ### Fixed
-- **Theme system** — Themes now resolve exclusively from the app's `resources/views/themes/` directory; vendor path no longer used as a runtime fallback
-- **Page Builder shortcodes** — All remaining `[lazy_*]` element outputs converted to `[falcon_*]` (`text_block`, `special_text`, `html`, `icon_box`, `acc_item`, `tab_item`, `icon_list_item`); `parseColumn()` now reads both legacy `[lazy_*]` and new `[falcon_*]` element shortcodes; `unwrapEditorMarkup()` handles `falcon_` tags; sub-element closing tag patterns accept both prefixes for backward compatibility
-- **Child theme activation** — Fixed `theme.json` parent reference (`lazy-theme` → `falcon-theme`); added required `index.blade.php` to child theme
-- **Header / Footer logo** — Default FalconCMS logo shown when no custom logo is configured; logo served from published asset path `vendor/falcon-cms/images/falcon-cms-logo.png`
+- **Page Builder — Row content layout** — Elements inside a column with Content Layout set to "Row" now stay side-by-side and never wrap to the next line (`flex-wrap: nowrap`); previously `flex-wrap: wrap` caused elements to stack when they did not fit
+- **`falcon:update` — OPcache** — OPcache is now reset after cache clearing so freshly compiled Blade views are served immediately without requiring a server restart
+
+---
+
+## v1.4.1 {#v1-4-1}
+
+**Released: 2026-06-21**
+
+### Fixed
+- **Multi-device login** — `-1` value for Max Devices now correctly means unlimited; previously `count() >= -1` was always true, blocking all logins even when unlimited was intended
+- **Page Builder — Nested Column row layout** — Elements inside a column with Content Layout set to "Row" now render side-by-side on the frontend; previously `width: 100%` on element wrappers caused items to stack vertically despite `flex-direction: row`
+
+---
+
+## v1.4.0 {#v1-4-0}
+
+**Released: 2026-06-20**
 
 ### Added
-- **`falcon:install` screenshot publishing** — Theme screenshots are automatically copied to `public/themes/{slug}/` so they appear in the Themes panel immediately after installation
-- **`theme.json` for Falcon Theme** — Adds proper metadata (name, version, description, author)
-- **New theme screenshots** — Updated preview images for `falcon-theme` and `falcon-theme-child`
-- **Default logo asset** — `public/assets/images/falcon-cms-logo.png` included in the package and published with `falcon-cms-assets`
-
----
-
-## v1.3.3 {#v1-3-3}
-
-**Released: 2026-06-15**
+- **Demo mode — Login page** — Demo credentials box displayed above login form when `APP_DEMO=true`
+- **Demo mode — User management** — All fields on user create and user edit pages disabled with warning banner when `APP_DEMO=true`
+- **Demo mode — Settings** — `register_url` and `login_url` inputs disabled with warning banner when `APP_DEMO=true`
+- **Docs — Demo page** — Live demo request page with lead capture form; credentials sent to visitor's email via EmailJS after form submission
 
 ### Fixed
-- **Dashboard update check** — `version.json` bumped to `1.3.2`; LAZY_CMS_VERSION constant now reflects the installed Packagist version correctly
+- **Footer logo** — Default FalconCMS logo always shown in footer column 1; embedded as base64 to remove file dependency; `theme_footer_logo` / `theme_site_logo` cleared from DB on `falcon:update` so stale overrides are never applied
+- **`falcon:update`** — Published admin views deleted on update so vendor views are always served fresh (no stale published copies)
 
 ---
 
-## v1.3.2 {#v1-3-2}
+## v1.3.18 {#v1-3-18}
 
-**Released: 2026-06-15**
+**Released: 2026-06-20**
+
+### Added
+- **Customizer — Performance** — "Clear All Cache" button for one-click cache clearing from the admin
 
 ### Fixed
-- Default `login_url` value changed from `admin-login` to `falcon-admin` in both the install command and the migration seeder
-
----
-
-## v1.3.1 {#v1-3-1}
-
-**Released: 2026-06-15**
-
-### Fixed
-- Default `register_url` value corrected to `falcon-registration` in the install command
-
----
-
-## v1.3.0 {#v1-3-0}
-
-**Released: 2026-06-15**
-
-### Changed
-- Complete rebrand from **FalconCMS** to **FalconCMS** — namespaces, command names (`falcon:install`), config keys, view namespaces, and all public-facing strings updated
+- **Product editor** — Added `x-cloak` to product data metabox to prevent Alpine.js FOUC on page load
+- **`falcon:update`** — Admin views automatically re-published during update to keep published copies in sync
+- **Sale end date** — `sale_ends_at` datetime input minimum set using client-side local time instead of server UTC
+- **Product archive** — `productCategories` relation used in `archive-product.blade.php`; eager loaded on CPT archive queries to prevent N+1
+- **Sale end date validation** — Removed `after:now` rule causing false rejections in some timezones
+- **PHP_BINARY** — Correctly resolved to CLI `php` in web (php-fpm) context
+- **Product categories** — Category label display corrected on product cards and single product pages
+- **Shop** — Tab active-state bug fixed; `hold_stock` order cancellation implemented
+- **Page Builder** — Fixed offset constants in `parseColumnsFromContent()`
+- **Hooks & helpers** — Remaining `lazy_` class and helper references renamed to `falcon_`
 
 ---
 

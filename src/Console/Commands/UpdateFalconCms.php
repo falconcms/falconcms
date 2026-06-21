@@ -38,24 +38,64 @@ class UpdateFalconCms extends Command
             '--force' => true
         ]);
 
+        // 4a. Remove published admin views so vendor views are always used directly
+        $adminViewsPath = resource_path('views/vendor/falcon-cms/admin');
+        if (is_dir($adminViewsPath)) {
+            \Illuminate\Support\Facades\File::deleteDirectory($adminViewsPath);
+            $this->info('Step 4a: Removed stale published admin views.');
+        }
+
         // 4b. Publish child theme skeleton if it does not exist yet (never --force)
         $this->info('Step 4b: Publishing child theme (skipped if already exists)...');
         $this->call('vendor:publish', [
             '--tag' => 'falcon-theme-child',
         ]);
 
-        // 5. Clear Cache
-        $this->info('Step 5: Clearing cache...');
-        $this->call('optimize:clear');
+        // 5. Sync footer defaults (update stale default values from old installs)
+        $this->info('Step 5: Syncing footer defaults...');
+        $this->syncFooterDefaults();
 
-        // 6. Auto-create E-commerce pages
-        $this->info('Step 6: Auto-creating E-commerce pages...');
+        // 6. Clear Cache
+        $this->info('Step 6: Clearing cache...');
+        $this->call('optimize:clear');
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+            $this->info('Step 6b: OPcache cleared.');
+        }
+
+        // 7. Auto-create E-commerce pages
+        $this->info('Step 7: Auto-creating E-commerce pages...');
         $this->createEcommercePages();
 
         $this->info('---------------------------------------');
         $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
     }
+    protected function syncFooterDefaults()
+    {
+        $newAbout     = 'A clean, fast, and professional CMS. Built for readability and seamless content delivery.';
+        $newCopyright = '© ' . date('Y') . ' All rights reserved by Falcon CMS';
+
+        \DB::table('cms_settings')
+            ->where('key', 'footer_about')
+            ->where('value', 'LIKE', '%Astra-inspired%')
+            ->update(['value' => $newAbout]);
+
+        \DB::table('cms_settings')
+            ->where('key', 'theme_footer_copyright')
+            ->where('value', 'LIKE', '%Your Site%')
+            ->update(['value' => $newCopyright]);
+
+        if (!\DB::table('cms_settings')->where('key', 'footer_about')->exists()) {
+            \DB::table('cms_settings')->insert(['key' => 'footer_about', 'value' => $newAbout]);
+        }
+
+        // Remove any stored footer logo override so the template default (embedded logo) is used.
+        // Users can set a custom footer logo via Customizer at any time after this.
+        \DB::table('cms_settings')->where('key', 'theme_footer_logo')->delete();
+        \DB::table('cms_settings')->where('key', 'theme_site_logo')->delete();
+    }
+
     protected function createEcommercePages()
     {
         $pages = [
