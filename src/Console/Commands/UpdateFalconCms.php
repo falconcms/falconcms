@@ -38,11 +38,16 @@ class UpdateFalconCms extends Command
             '--force' => true
         ]);
 
-        // 4a. Remove published admin views so vendor views are always used directly
-        $adminViewsPath = resource_path('views/vendor/falcon-cms/admin');
-        if (is_dir($adminViewsPath)) {
-            \Illuminate\Support\Facades\File::deleteDirectory($adminViewsPath);
-            $this->info('Step 4a: Removed stale published admin views.');
+        // 4a. Remove ALL published package view overrides so the vendor views are
+        // always used directly. A stale copy under resources/views/vendor/falcon-cms
+        // silently shadows the real namespaced package view — e.g. a months-old
+        // frontend/builder/column.blade.php kept serving the old layout after every
+        // update, regardless of cache/OPcache clears. Deleting the whole namespace
+        // directory guarantees no override can linger.
+        $publishedViewsPath = resource_path('views/vendor/falcon-cms');
+        if (is_dir($publishedViewsPath)) {
+            \Illuminate\Support\Facades\File::deleteDirectory($publishedViewsPath);
+            $this->info('Step 4a: Removed stale published view overrides (vendor/falcon-cms).');
         }
 
         // 4b. Publish child theme skeleton if it does not exist yet (never --force)

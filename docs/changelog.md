@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.4.5 <Badge type="tip" text="Latest" /> {#v1-4-5}
+## v1.4.6 <Badge type="tip" text="Latest" /> {#v1-4-6}
+
+**Released: 2026-06-21**
+
+### Fixed
+- **`falcon:update` — stale published view overrides** — Update now removes the entire published `resources/views/vendor/falcon-cms` directory, not just the `admin` subfolder. A leftover published copy of a namespaced package view (e.g. `frontend/builder/column.blade.php`) silently shadows the real vendor view, so layout fixes never appear on the site no matter how many caches are cleared. Clearing the whole override namespace guarantees the package's own views are always used
+
+## v1.4.5 {#v1-4-5}
 
 **Released: 2026-06-21**
 
