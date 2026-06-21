@@ -214,6 +214,16 @@ class DashboardController extends Controller
         $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $falconOut)), 'ok' => $falconExit === 0];
         if ($falconExit !== 0) $hasError = true;
 
+        // Step 3: reset the php-fpm OPcache from THIS web request. The falcon:update
+        // subprocess runs under CLI php, whose opcache_reset() only clears the CLI
+        // OPcache — not the shared OPcache the php-fpm workers use to serve frontend
+        // pages. Without this, freshly compiled Blade views keep serving stale code
+        // (e.g. builder layout fixes not appearing) until an FPM reload/restart.
+        if (function_exists('opcache_reset')) {
+            $reset = @opcache_reset();
+            $steps[] = ['label' => 'opcache reset (php-fpm)', 'output' => $reset ? 'php-fpm OPcache cleared' : 'OPcache not enabled / nothing to clear', 'ok' => true];
+        }
+
         cache()->forget('falcon_cms_update_check');
 
         return redirect()->route('admin.update')

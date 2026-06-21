@@ -18,7 +18,7 @@ add_falcon_filter('site_title', function($title) {
  */
 add_falcon_action('falcon_admin_footer', function() {
     echo '<div style="padding: 10px; color: #646970; border-top: 1px solid #dcdcde; margin-top: 20px;">
-            &copy; ' . date('Y') . ' Theme developed by TareqCodex
+            &copy; ' . date('Y') . ' Theme developed by Falcon CMS
           </div>';
 });
 

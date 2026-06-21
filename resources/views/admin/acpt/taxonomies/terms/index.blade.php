@@ -1,12 +1,7 @@
 <x-falcon-cms::layouts.admin :title="$taxonomy->name" active-menu="acpt">
     <x-falcon-cms::admin.delete-modal />
     <div class="flex justify-between items-center mb-4">
-        <h1 class="text-[23px] font-normal text-[#1d2327]">{{ $taxonomy->name }}</h1>
-        <div class="flex space-x-1">
-            <button class="bg-white border border-[#c3c4c7] px-2 py-1 text-[13px] text-[#2c3338] hover:bg-[#f6f7f7]">Screen Options <svg class="inline w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
-            <button class="bg-white border border-[#c3c4c7] px-2 py-1 text-[13px] text-[#2c3338] hover:bg-[#f6f7f7]">Help <svg class="inline w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
-        </div>
-    </div>
+        <h1 class="text-[23px] font-normal text-[#1d2327]">{{ $taxonomy->name }}</h1>    </div>
 
     @if(session('success'))
         <div class="bg-[#fff] border-l-4 border-[#00a32a] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">

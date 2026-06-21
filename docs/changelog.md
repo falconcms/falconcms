@@ -5,7 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.4.4 <Badge type="tip" text="Latest" /> {#v1-4-4}
+## v1.4.5 <Badge type="tip" text="Latest" /> {#v1-4-5}
+
+**Released: 2026-06-21**
+
+### Fixed
+- **Dashboard Update — stale frontend after update** — The dashboard "Update" now resets the php-fpm OPcache from the web request itself. Previously the `falcon:update` subprocess ran under CLI php, whose `opcache_reset()` only clears the CLI OPcache — the php-fpm workers that serve frontend pages kept executing the old compiled Blade views, so builder/layout fixes did not appear on the live site until a manual container restart
+- **Dashboard footer** — Default admin footer credit changed to "Theme developed by Falcon CMS"
+
+### Changed
+- **Taxonomy screens** — Removed the non-functional "Screen Options" and "Help" buttons from the top-right of all taxonomy list pages (Categories, Tags, Product Categories, Product Tags, and custom ACPT taxonomy terms)
+
+## v1.4.4 {#v1-4-4}
 
 **Released: 2026-06-21**
 
