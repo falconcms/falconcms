@@ -5,7 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.4.0 <Badge type="tip" text="Latest" /> {#v1-4-0}
+## v1.4.1 <Badge type="tip" text="Latest" /> {#v1-4-1}
+
+**Released: 2026-06-21**
+
+### Fixed
+- **Multi-device login** — `-1` value for Max Devices now correctly means unlimited; previously `count() >= -1` was always true, blocking all logins even when unlimited was intended
+- **Page Builder — Nested Column row layout** — Elements inside a column with Content Layout set to "Row" now render side-by-side on the frontend; previously `width: 100%` on element wrappers caused items to stack vertically despite `flex-direction: row`
+
+---
+
+## v1.4.0 {#v1-4-0}
 
 **Released: 2026-06-20**
 

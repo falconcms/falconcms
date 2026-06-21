@@ -117,7 +117,7 @@ class LoginController extends Controller
                 ->orderBy('last_activity', 'desc')
                 ->get();
 
-            if ($userSessions->count() >= $maxDevices) {
+            if ($maxDevices >= 0 && $userSessions->count() >= $maxDevices) {
                 if ($user->hasRole('super-admin')) {
                     // Kick the oldest (least recently active) session to make room
                     $sessionToKill = $userSessions->last();

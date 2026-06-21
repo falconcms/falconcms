@@ -311,6 +311,9 @@
             : $s['contentAlignH'];
         $colCss .= "@media(min-width:{$rBpSm1}px) and (max-width:{$rBpMed}px){{$rInnerSel}{align-items:{$tabAlignH}!important}}";
     }
+    if ($contentLayout === 'row') {
+        $colCss .= ".{$colCid} .lazy-column-inner>*{width:auto!important;min-width:0;}";
+    }
 
     $getColRespOvr = function(string $prop, string $dev) use ($s): ?string {
         if ($dev === 'mobile') {

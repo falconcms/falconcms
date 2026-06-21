@@ -6,7 +6,7 @@
       <h3>Check your inbox!</h3>
       <p>Demo access details have been sent to <strong>{{ submittedEmail }}</strong>.</p>
       <div class="cred-box">
-        <p><strong>Demo URL:</strong> <a href="https://demo.falconcms.com" target="_blank">demo.falconcms.com</a></p>
+        <p><strong>Demo URL:</strong> <a href="https://demo.falconcms.com/falcon-admin" target="_blank">demo.falconcms.com</a></p>
         <p><strong>Email:</strong> admin@falconcms.demo</p>
         <p><strong>Password:</strong> FalconDemo2025!</p>
       </div>
@@ -74,7 +74,7 @@ async function handleSubmit() {
     await window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_name:    form.name,
       to_email:   form.email,
-      demo_url:   'https://demo.falconcms.com',
+      demo_url:   'https://demo.falconcms.com/falcon-admin',
       demo_email: 'admin@falconcms.demo',
       demo_pass:  'FalconDemo2025!',
     }, EMAILJS_PUBLIC_KEY)
