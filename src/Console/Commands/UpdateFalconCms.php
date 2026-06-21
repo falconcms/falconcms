@@ -13,6 +13,10 @@ class UpdateFalconCms extends Command
     {
         $this->info('--- Starting Falcon CMS Update ---');
 
+        // 0. Pull latest package from Packagist
+        $this->info('Step 0: Pulling latest FalconCMS package...');
+        $this->runComposerUpdate();
+
         // 1. Run Migrations
         $this->info('Step 1: Running migrations...');
         $this->call('migrate', ['--force' => true]);
@@ -67,6 +71,58 @@ class UpdateFalconCms extends Command
         $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
     }
+    protected function runComposerUpdate()
+    {
+        $composer = $this->findComposer();
+        if (!$composer) {
+            $this->warn('Composer not found — skipping package update.');
+            return;
+        }
+
+        $cmd = $composer . ' update falconcms/falconcms --no-interaction --no-dev --prefer-dist 2>&1';
+        $proc = proc_open($cmd, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, base_path());
+
+        if (!is_resource($proc)) {
+            $this->warn('Could not start composer process.');
+            return;
+        }
+
+        while (!feof($pipes[1])) {
+            $line = fgets($pipes[1]);
+            if ($line !== false && trim($line) !== '') $this->line(trim($line));
+        }
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        $exit = proc_close($proc);
+        if ($exit !== 0) {
+            $this->warn("Composer exited with code {$exit} — continuing anyway.");
+        } else {
+            $this->info('Package updated successfully.');
+        }
+    }
+
+    protected function findComposer(): ?string
+    {
+        $phpBin = PHP_BINARY;
+
+        foreach (['composer', 'composer.phar'] as $bin) {
+            $path = trim((string) shell_exec("which {$bin} 2>/dev/null"));
+            if ($path) return "{$phpBin} {$path}";
+        }
+
+        $common = [
+            '/usr/local/bin/composer',
+            '/usr/bin/composer',
+            base_path('composer.phar'),
+        ];
+        foreach ($common as $path) {
+            if (file_exists($path)) return "{$phpBin} {$path}";
+        }
+
+        return null;
+    }
+
     protected function syncFooterDefaults()
     {
         $newAbout     = 'A clean, fast, and professional CMS. Built for readability and seamless content delivery.';
