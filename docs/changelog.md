@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.4.2 <Badge type="tip" text="Latest" /> {#v1-4-2}
+## v1.4.3 <Badge type="tip" text="Latest" /> {#v1-4-3}
+
+**Released: 2026-06-21**
+
+### Fixed
+- **Page Builder — Preview mode blank canvas** — Toggling the builder's eye-icon Preview no longer blanks the whole canvas. In preview the canvas kept `grid-area: auto`, which auto-placed it into the now-hidden sidebar's 0-width grid column; it is now pinned to its named `canvas` area so the design stays visible
+
+## v1.4.2 {#v1-4-2}
 
 **Released: 2026-06-21**
 

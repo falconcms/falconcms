@@ -554,7 +554,10 @@
         max-width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
-        grid-area: auto !important;
+        /* Keep the canvas in its named grid area (row 2 / 1fr column).
+           Using grid-area:auto here auto-placed it into the 0-width first
+           column once the sidebar was hidden, blanking the whole preview. */
+        grid-area: canvas !important;
     }
     .is-preview .canvas-container {
         width: 100% !important;
