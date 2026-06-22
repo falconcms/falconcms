@@ -171,7 +171,7 @@ class UserController extends Controller
         $user->assignRoles($roles);
         falcon_log_activity('updated', "Updated user profile: {$user->name}", $user);
 
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+        return redirect()->route('admin.users.edit', $user)->with('success', 'User updated successfully.');
     }
 
     public function destroy(Request $request, User $user)

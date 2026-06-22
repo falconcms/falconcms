@@ -57,7 +57,7 @@ class RegisterController extends Controller
 
         $user = User::create([
             'name' => $request->name,
-            'username' => strstr($request->email, '@', true), // Simple username from email
+            'username' => $this->uniqueUsername($request->email),
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role_id' => $subscriberRole ? $subscriberRole->id : null,
@@ -125,6 +125,22 @@ class RegisterController extends Controller
 
         return redirect()->route('admin.verify.notice')
             ->with('success', 'If that email needs verifying, a new link is on its way. It expires in ' . $this->verifyTtl . ' minutes.');
+    }
+
+    /** Build a unique, sanitized username from the email local part (e.g. john@a.com → john, john1…). */
+    protected function uniqueUsername(string $email): string
+    {
+        $base = strtolower(preg_replace('/[^a-z0-9_]/i', '', strstr($email, '@', true) ?: ''));
+        if ($base === '') $base = 'user';
+
+        $username = $base;
+        $i = 1;
+        while (User::where('username', $username)->exists()) {
+            $username = $base . $i;
+            $i++;
+        }
+
+        return $username;
     }
 
     /** Build a signed, time-limited verification URL and email it to the user. */
