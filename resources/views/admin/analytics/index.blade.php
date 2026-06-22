@@ -31,6 +31,69 @@
             </div>
         </div>
 
+        <!-- Real-Time (auto-updating) -->
+        <style>
+            @keyframes rtpulse { 0%{transform:scale(.85);opacity:1} 70%{transform:scale(2.4);opacity:0} 100%{opacity:0} }
+            .rt-dot{position:relative;display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;margin-right:7px;vertical-align:middle}
+            .rt-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:#22c55e;animation:rtpulse 1.6s ease-out infinite}
+            #rt-pages tr, #rt-feed tr { border-bottom:1px solid #f7f7f7; }
+            #rt-pages td, #rt-feed td { padding:8px 16px; }
+            .rt-table-head th { padding:8px 16px; font-weight:600; }
+        </style>
+        <div class="classic-card">
+            <div class="classic-card-header">
+                <span class="classic-card-title"><span class="rt-dot"></span>Real-Time</span>
+                <span class="text-[12px] text-[#646970]">auto-updates · updated <span id="rt-time" class="font-semibold text-[#1d2327]">—</span></span>
+            </div>
+
+            {{-- Hero strip: active count + 30-min sparkline --}}
+            <div class="p-5 flex flex-wrap items-center gap-6 border-b border-[#f0f0f1]">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-full bg-[#22c55e]/10 flex items-center justify-center flex-shrink-0">
+                        <span class="rt-dot" style="width:14px;height:14px;margin:0"></span>
+                    </div>
+                    <div>
+                        <div class="text-[40px] font-bold text-[#1d2327] leading-none" id="rt-active">{{ number_format($activeNow) }}</div>
+                        <div class="text-[12px] text-[#646970] mt-1">Active users right now <span class="text-[#9ca3af]">· last 5 min</span></div>
+                    </div>
+                </div>
+                <div class="flex-1 min-w-[220px]">
+                    <div class="text-[11px] text-[#646970] mb-1 text-right">Visits per minute · last 30 minutes</div>
+                    <div style="height:56px"><canvas id="rt-spark"></canvas></div>
+                </div>
+            </div>
+
+            {{-- Two live tables with clear column headers --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2">
+                <div class="lg:border-r border-[#f0f0f1]">
+                    <div class="px-4 pt-4 pb-1 text-[13px] font-bold text-[#1d2327]">Active Pages <span class="text-[11px] text-[#9ca3af] font-normal">— where visitors are now</span></div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-[12px] text-left">
+                            <thead class="rt-table-head text-[#646970] border-y border-[#f0f0f1] bg-[#fafafa]">
+                                <tr><th>Page</th><th class="text-right">Active Users</th></tr>
+                            </thead>
+                            <tbody id="rt-pages">
+                                <tr><td colspan="2" class="text-center text-[#646970]">—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <div class="px-4 pt-4 pb-1 text-[13px] font-bold text-[#1d2327]">Live Visitors <span class="text-[11px] text-[#9ca3af] font-normal">— most recent activity</span></div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-[12px] text-left">
+                            <thead class="rt-table-head text-[#646970] border-y border-[#f0f0f1] bg-[#fafafa]">
+                                <tr><th>Location</th><th>Page</th><th>Device</th><th class="text-right">When</th></tr>
+                            </thead>
+                            <tbody id="rt-feed">
+                                <tr><td colspan="4" class="text-center text-[#646970]">—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-2">
             <div class="classic-card">
@@ -75,6 +138,150 @@
                 </div>
             </div>
         </div>
+
+        <!-- Engagement KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-2">
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#22c55e]"><span class="material-symbols-outlined text-[24px]">radio_button_checked</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ number_format($activeNow) }}</div>
+                        <div class="classic-stat-label">Active Now</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">last 5 minutes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#0ea5e9]"><span class="material-symbols-outlined text-[24px]">timeline</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ is_null($sessions) ? '—' : number_format($sessions) }}</div>
+                        <div class="classic-stat-label">Sessions</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">{{ is_null($pagesPerSession) ? 'too many to compute' : $pagesPerSession . ' pages / session' }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#f97316]"><span class="material-symbols-outlined text-[24px]">call_missed_outgoing</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ is_null($bounceRate) ? '—' : $bounceRate . '%' }}</div>
+                        <div class="classic-stat-label">Bounce Rate</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">single-page sessions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribution donuts: Channels / New vs Returning / Top Countries -->
+        @php
+            $newRetSet = collect([
+                ['label' => 'New', 'count' => (int) $newVisitors],
+                ['label' => 'Returning', 'count' => (int) $returningVisitors],
+            ])->filter(fn ($r) => $r['count'] > 0)->values();
+            $donutSets = [
+                ['title' => 'Traffic Channels', 'id' => 'chart-channels',      'set' => collect($channels)->values()],
+                ['title' => 'New vs Returning', 'id' => 'chart-new-returning', 'set' => $newRetSet],
+                ['title' => 'Top Countries',    'id' => 'chart-countries',     'set' => collect($topCountries)->values()],
+            ];
+        @endphp
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            @foreach($donutSets as $d)
+                <div class="classic-card">
+                    <div class="classic-card-header"><span class="classic-card-title">{{ $d['title'] }}</span></div>
+                    <div class="p-4">
+                        @if($d['set']->isEmpty())
+                            <div class="py-8 text-center text-[13px] text-[#646970]">No data yet.</div>
+                        @else
+                            <div style="height:200px"><canvas id="{{ $d['id'] }}"></canvas></div>
+                            <div class="mt-3 space-y-1.5">
+                                @foreach($d['set']->take(6) as $i => $row)
+                                    <div class="flex items-center justify-between text-[12px]">
+                                        <span class="flex items-center gap-2 text-[#1d2327]">
+                                            <span class="w-2.5 h-2.5 rounded-full inline-block" style="background:{{ $palette[$i % count($palette)] }}"></span>
+                                            {{ $row['label'] }}
+                                        </span>
+                                        <span class="font-semibold text-[#646970]">{{ number_format($row['count']) }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        @if($ecommerce)
+        <!-- E-commerce KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-2">
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#16a34a]"><span class="material-symbols-outlined text-[24px]">payments</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ function_exists('falcon_price_format') ? falcon_price_format($ecommerce['revenue']) : number_format($ecommerce['revenue'], 2) }}</div>
+                        <div class="classic-stat-label">Revenue</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">net, this period</div>
+                    </div>
+                </div>
+            </div>
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#2271b1]"><span class="material-symbols-outlined text-[24px]">shopping_bag</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ number_format($ecommerce['orderCount']) }}</div>
+                        <div class="classic-stat-label">Orders</div>
+                    </div>
+                </div>
+            </div>
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#9333ea]"><span class="material-symbols-outlined text-[24px]">conversion_path</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ $ecommerce['convRate'] }}%</div>
+                        <div class="classic-stat-label">Conversion Rate</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">orders ÷ unique visitors</div>
+                    </div>
+                </div>
+            </div>
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#ea580c]"><span class="material-symbols-outlined text-[24px]">receipt_long</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ function_exists('falcon_price_format') ? falcon_price_format($ecommerce['aov']) : number_format($ecommerce['aov'], 2) }}</div>
+                        <div class="classic-stat-label">Avg. Order Value</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversion funnel -->
+        <div class="classic-card">
+            <div class="classic-card-header"><span class="classic-card-title">Conversion Funnel</span></div>
+            <div class="p-4 space-y-3">
+                @php $funnelTop = $ecommerce['funnel'][0]['count'] ?: 1; @endphp
+                @foreach($ecommerce['funnel'] as $i => $step)
+                    @php
+                        $pct = round($step['count'] / $funnelTop * 100, 1);
+                        $prev = $i > 0 ? $ecommerce['funnel'][$i - 1]['count'] : null;
+                        $drop = ($prev && $prev > 0) ? round(($prev - $step['count']) / $prev * 100, 1) : null;
+                    @endphp
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[12px] font-medium text-[#1d2327]">{{ $step['label'] }}</span>
+                            <span class="text-[12px] text-[#646970]">
+                                <strong class="text-[#1d2327]">{{ number_format($step['count']) }}</strong>
+                                &middot; {{ $pct }}%@if(!is_null($drop)) <span class="text-[#d63638]">(−{{ $drop }}%)</span>@endif
+                            </span>
+                        </div>
+                        <div class="h-2.5 bg-[#f0f0f1] rounded-full overflow-hidden">
+                            <div class="h-full rounded-full" style="width:{{ max(2, $pct) }}%;background:linear-gradient(90deg,#2271b1,#46b450)"></div>
+                        </div>
+                    </div>
+                @endforeach
+                <p class="text-[11px] text-[#646970] pt-1">Funnel steps are estimated from page-view URLs (product / cart / checkout) vs. unique visitors.</p>
+            </div>
+        </div>
+        @endif
 
         <!-- Traffic over time -->
         <div class="classic-card">
@@ -177,7 +384,18 @@
                                 <td class="px-4 py-2.5 text-[#646970] capitalize">{{ $v->device_type ?: '—' }}</td>
                                 <td class="px-4 py-2.5 text-[#646970]">{{ $v->browser ?: '—' }}</td>
                                 <td class="px-4 py-2.5 text-[#646970]">{{ $v->os ?: '—' }}</td>
-                                <td class="px-4 py-2.5 text-[#646970]">{{ $v->ip_address }}</td>
+                                <td class="px-4 py-2.5 text-[#646970] whitespace-nowrap">
+                                    @if($v->country_code)
+                                        <img src="https://flagcdn.com/20x15/{{ strtolower($v->country_code) }}.png"
+                                             alt="{{ $v->country }}" title="{{ $v->country }}{{ $v->city ? ', ' . $v->city : '' }}"
+                                             width="20" height="15" loading="lazy"
+                                             style="display:inline-block;vertical-align:middle;border-radius:2px;margin-right:6px">
+                                    @endif
+                                    {{ $v->ip_address }}
+                                    @if($v->country)
+                                        <span class="text-[#9ca3af] text-[11px]">({{ $v->country }})</span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-2.5 text-[#646970] text-right whitespace-nowrap">{{ $v->created_at ? \Illuminate\Support\Carbon::parse($v->created_at)->diffForHumans() : '—' }}</td>
                             </tr>
                         @empty
@@ -225,6 +443,47 @@
         donut('chart-browsers', @json($browsers));
         donut('chart-devices', @json($devices));
         donut('chart-operating-systems', @json($osDist));
+        donut('chart-channels', @json(collect($channels)->values()));
+        donut('chart-new-returning', @json($newRetSet ?? collect()));
+        donut('chart-countries', @json(collect($topCountries)->values()));
+
+        // ── Real-Time polling ───────────────────────────────────────────────
+        (function () {
+            const rtUrl = "{{ route('admin.analytics.realtime') }}";
+            const sparkEl = document.getElementById('rt-spark');
+            let spark = null;
+            if (sparkEl && window.Chart) {
+                spark = new Chart(sparkEl.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels: Array.from({ length: 30 }, () => ''), datasets: [{ data: Array(30).fill(0), backgroundColor: '#22c55e', borderRadius: 2, barPercentage: .9, categoryPercentage: 1 }] },
+                    options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { display: false }, y: { display: false, beginAtZero: true } }, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                });
+            }
+            const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            const flag = code => code ? '<img src="https://flagcdn.com/16x12/' + code + '.png" width="16" height="12" style="display:inline-block;vertical-align:middle;border-radius:2px;margin-right:5px">' : '';
+            async function poll() {
+                try {
+                    const res = await fetch(rtUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (!res.ok) return;
+                    const d = await res.json();
+                    const a = document.getElementById('rt-active'); if (a) a.textContent = (d.active || 0).toLocaleString();
+                    const t = document.getElementById('rt-time'); if (t) t.textContent = d.time || '';
+                    if (spark && d.minutes) { spark.data.datasets[0].data = d.minutes; spark.update('none'); }
+                    const pages = d.activePages || [];
+                    const pe = document.getElementById('rt-pages');
+                    if (pe) pe.innerHTML = pages.length
+                        ? pages.map(p => '<tr><td class="text-[#1d2327]"><span class="block truncate max-w-[280px]" title="' + esc(p.path) + '">' + esc(p.path) + '</span></td><td class="text-right font-semibold text-[#646970]">' + p.count + '</td></tr>').join('')
+                        : '<tr><td colspan="2" class="text-center text-[#646970]">No active visitors right now.</td></tr>';
+                    const feed = d.recent || [];
+                    const fe = document.getElementById('rt-feed');
+                    if (fe) fe.innerHTML = feed.length
+                        ? feed.map(f => '<tr><td class="whitespace-nowrap">' + flag(f.code) + '<span class="text-[#646970]">' + esc(f.country || 'Unknown') + '</span></td><td class="text-[#1d2327]"><span class="block truncate max-w-[160px]" title="' + esc(f.path) + '">' + esc(f.path) + '</span></td><td class="text-[#646970] capitalize">' + esc(f.device || '—') + '</td><td class="text-right text-[#9ca3af] whitespace-nowrap">' + esc(f.ago) + '</td></tr>').join('')
+                        : '<tr><td colspan="4" class="text-center text-[#646970]">No recent visits.</td></tr>';
+                } catch (e) { /* ignore transient network errors */ }
+            }
+            poll();
+            setInterval(poll, 12000);
+        })();
     </script>
     @endpush
 </x-falcon-cms::layouts.admin>

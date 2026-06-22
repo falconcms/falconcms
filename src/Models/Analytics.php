@@ -11,7 +11,7 @@ class Analytics extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'ip_address', 'url', 'referrer', 'user_agent', 
-        'browser', 'os', 'device_type', 'country', 'city'
+        'ip_address', 'url', 'referrer', 'user_agent',
+        'browser', 'os', 'device_type', 'country', 'country_code', 'city'
     ];
 }

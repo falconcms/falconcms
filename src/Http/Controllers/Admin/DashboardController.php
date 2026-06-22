@@ -672,9 +672,12 @@ class DashboardController extends Controller
         }
 
         // ── Distributions (browser / device / os) ────────────────────────────
+        // Exclude bot/crawler rows left in legacy data so the charts show humans only
+        // (new bot visits are already filtered at tracking time).
         $dist = function (string $col) use ($start) {
             return Analytics::select($col, DB::raw('count(*) as count'))
                 ->where('created_at', '>=', $start)
+                ->whereNotIn($col, ['bot', 'Bot / Crawler'])
                 ->groupBy($col)->orderByDesc('count')->get()
                 ->map(fn($r) => ['label' => $r->{$col} ?: 'Unknown', 'count' => (int) $r->count])->values();
         };
@@ -691,14 +694,142 @@ class DashboardController extends Controller
             ->where('created_at', '>=', $start)
             ->groupBy('ref')->orderByDesc('count')->limit(8)->get();
 
+        // ── Top countries (geo-resolved; null until geo lookup completes) ─────
+        $topCountries = Analytics::select('country', DB::raw('count(*) as count'))
+            ->where('created_at', '>=', $start)
+            ->whereNotNull('country')->where('country', '!=', '')
+            ->groupBy('country')->orderByDesc('count')->limit(8)->get()
+            ->map(fn($r) => ['label' => $r->country, 'count' => (int) $r->count])->values();
+
+        // ── Engagement: real-time, new vs returning, sessions, bounce ─────────
+        $activeNow = Analytics::where('created_at', '>=', now()->subMinutes(5))->distinct()->count('ip_address');
+
+        $returningVisitors = Analytics::where('created_at', '>=', $start)
+            ->whereIn('ip_address', function ($q) use ($start) {
+                $q->select('ip_address')->from('cms_analytics')->where('created_at', '<', $start);
+            })->distinct()->count('ip_address');
+        $newVisitors = max(0, $uniqueVisitors - $returningVisitors);
+
+        // Sessions & bounce via a 30-minute inactivity window (gaps-and-islands in PHP).
+        // Skipped on very large datasets — the daily rollup table handles that at scale.
+        $sessions = $bounceRate = $pagesPerSession = null;
+        if ($totalVisits > 0 && $totalVisits <= 100000) {
+            $rows = Analytics::where('created_at', '>=', $start)
+                ->orderBy('ip_address')->orderBy('created_at')
+                ->get(['ip_address', 'created_at']);
+            $gap = 1800; // 30 min
+            $sessions = 0; $bounces = 0; $curIp = null; $lastTs = null; $pageCount = 0;
+            $close = function () use (&$sessions, &$bounces, &$pageCount) {
+                if ($pageCount > 0) { $sessions++; if ($pageCount === 1) $bounces++; }
+                $pageCount = 0;
+            };
+            foreach ($rows as $r) {
+                $ts = strtotime((string) $r->created_at);
+                if ($r->ip_address !== $curIp) { $close(); $curIp = $r->ip_address; $lastTs = null; }
+                if ($lastTs !== null && ($ts - $lastTs) > $gap) { $close(); }
+                $pageCount++; $lastTs = $ts;
+            }
+            $close();
+            $bounceRate      = $sessions > 0 ? round($bounces / $sessions * 100, 1) : 0;
+            $pagesPerSession = $sessions > 0 ? round($totalVisits / $sessions, 1) : 0;
+        }
+
+        // ── Channel grouping (Direct / Organic Search / Social / Referral) ────
+        $siteHost = strtolower(request()->getHost());
+        $channelOf = function (?string $ref) use ($siteHost) {
+            if (!$ref) return 'Direct';
+            $h = strtolower((string) parse_url($ref, PHP_URL_HOST));
+            if ($h === '' || $h === $siteHost) return 'Direct';
+            if (preg_match('/(^|\.)(google|bing|yahoo|duckduckgo|yandex|baidu|ecosia|ask)\./', $h)) return 'Organic Search';
+            if (preg_match('/(^|\.)(facebook|fb|instagram|twitter|t\.co|x\.com|linkedin|youtube|youtu\.be|pinterest|reddit|tiktok|whatsapp|telegram)/', $h)) return 'Social';
+            return 'Referral';
+        };
+        $channelCounts = [];
+        foreach (Analytics::select('referrer', DB::raw('count(*) as count'))->where('created_at', '>=', $start)->groupBy('referrer')->get() as $rr) {
+            $ch = $channelOf($rr->referrer);
+            $channelCounts[$ch] = ($channelCounts[$ch] ?? 0) + (int) $rr->count;
+        }
+        arsort($channelCounts);
+        $channels = collect($channelCounts)->map(fn($v, $k) => ['label' => $k, 'count' => $v])->values();
+
+        // ── E-commerce conversion & funnel (only when the shop exists) ────────
+        $ecommerce = null;
+        if (\Illuminate\Support\Facades\Schema::hasTable('shop_orders')) {
+            $revStatuses = ['completed', 'processing', 'partially-refunded'];
+            $orderCount  = \FalconCms\Core\Models\Order::where('created_at', '>=', $start)->count();
+            $revenue     = (float) \FalconCms\Core\Models\Order::where('created_at', '>=', $start)
+                ->whereIn('status', $revStatuses)
+                ->selectRaw('COALESCE(SUM(total - COALESCE(refunded_amount, 0)), 0) as net')->value('net');
+            $aov      = $orderCount > 0 ? $revenue / $orderCount : 0;
+            $convRate = $uniqueVisitors > 0 ? round($orderCount / $uniqueVisitors * 100, 2) : 0;
+
+            $stepVisitors = fn (string $like) => Analytics::where('created_at', '>=', $start)
+                ->where('url', 'like', $like)->distinct()->count('ip_address');
+
+            $funnel = [
+                ['label' => 'Visitors',      'count' => $uniqueVisitors],
+                ['label' => 'Product views', 'count' => $stepVisitors('%product%')],
+                ['label' => 'Cart',          'count' => $stepVisitors('%cart%')],
+                ['label' => 'Checkout',      'count' => $stepVisitors('%checkout%')],
+                ['label' => 'Orders',        'count' => $orderCount],
+            ];
+            $ecommerce = compact('orderCount', 'revenue', 'aov', 'convRate', 'funnel');
+        }
+
         // ── Recent visits ─────────────────────────────────────────────────────
         $recent = Analytics::latest()->limit(12)->get();
 
         return view('falcon-cms::admin.analytics.index', compact(
             'range', 'totalVisits', 'uniqueVisitors', 'visitsChange', 'today', 'thisMonth',
             'labels', 'visitsSeries', 'uniqueSeries',
-            'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'recent'
+            'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'topCountries', 'recent',
+            'activeNow', 'newVisitors', 'returningVisitors', 'sessions', 'bounceRate', 'pagesPerSession', 'channels',
+            'ecommerce'
         ));
+    }
+
+    /** Live real-time data for the analytics page (polled by JS). */
+    public function analyticsRealtime()
+    {
+        if (!auth()->user()->hasPermission('manage_analytics')) {
+            abort(403);
+        }
+
+        $since5  = now()->subMinutes(5);
+        $since30 = now()->subMinutes(30);
+        $host    = request()->getSchemeAndHttpHost();
+
+        $active = Analytics::where('created_at', '>=', $since5)->distinct()->count('ip_address');
+
+        // Per-minute visit counts for the last 30 minutes, zero-filled.
+        $perMin = Analytics::where('created_at', '>=', $since30)
+            ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as m"), DB::raw('count(*) as c'))
+            ->groupBy('m')->pluck('c', 'm');
+        $minutes = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $minutes[] = (int) ($perMin[now()->subMinutes($i)->format('Y-m-d H:i')] ?? 0);
+        }
+
+        $activePages = Analytics::where('created_at', '>=', $since5)
+            ->select('url', DB::raw('count(*) as count'))
+            ->groupBy('url')->orderByDesc('count')->limit(6)->get()
+            ->map(fn ($r) => ['path' => \Illuminate\Support\Str::after($r->url, $host) ?: $r->url, 'count' => (int) $r->count]);
+
+        $recent = Analytics::latest()->limit(8)->get()->map(fn ($v) => [
+            'path'    => \Illuminate\Support\Str::limit(\Illuminate\Support\Str::after($v->url, $host) ?: $v->url, 40),
+            'country' => $v->country,
+            'code'    => $v->country_code ? strtolower($v->country_code) : null,
+            'device'  => $v->device_type,
+            'ago'     => $v->created_at ? \Illuminate\Support\Carbon::parse($v->created_at)->diffForHumans(null, true) . ' ago' : '',
+        ]);
+
+        return response()->json([
+            'active'      => $active,
+            'minutes'     => $minutes,
+            'activePages' => $activePages,
+            'recent'      => $recent,
+            'time'        => now()->format('g:i:s A'),
+        ]);
     }
 
     public function documentation()

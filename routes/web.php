@@ -215,6 +215,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     // Dashboard index
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
+    Route::get('analytics/realtime', [DashboardController::class, 'analyticsRealtime'])->name('analytics.realtime');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
  
     // Users

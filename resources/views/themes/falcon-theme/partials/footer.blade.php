@@ -7,6 +7,17 @@
     $footerPaddingTop    = get_cms_option('theme_footer_padding_top',    '') ?: '40px';
     $footerPaddingBottom = get_cms_option('theme_footer_padding_bottom', '') ?: '40px';
 
+    // Footer uses the WHITE brand logo by default (the footer background is dark). If a custom
+    // logo is uploaded (theme_site_logo) it is shown as-is. If the user switches to a LIGHT
+    // footer background, darken the white default logo so it stays visible.
+    $usingDefaultLogo  = !get_cms_option('theme_site_logo');
+    $footerDefaultLogo = asset('vendor/falcon-cms/images/falcon-cms-white-logo.png');
+    $__fbgHex = ltrim((string) $footerBg, '#');
+    $__fbgLum = strlen($__fbgHex) === 6
+        ? (0.299 * hexdec(substr($__fbgHex, 0, 2)) + 0.587 * hexdec(substr($__fbgHex, 2, 2)) + 0.114 * hexdec(substr($__fbgHex, 4, 2)))
+        : 0;
+    $footerLogoDarken = $usingDefaultLogo && $__fbgLum >= 150;
+
     // Cast to int; use ?: to guard against empty-string corruption from a previous Customizer save bug.
     $footerColumns = (int)(get_cms_option('theme_footer_columns') ?: 4);
     $footerColumns = max(1, min(4, $footerColumns)); // clamp 1–4
@@ -30,7 +41,7 @@
                     @else
                         @if($i == 1)
                             <a href="{{ url('/') }}" class="flex items-center gap-2 mb-6">
-                                <img src="{{ get_cms_option('theme_site_logo', asset('vendor/falcon-cms/images/falcon-cms-logo.png')) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="h-8 w-auto">
+                                <img src="{{ get_cms_option('theme_site_logo', $footerDefaultLogo) }}" alt="{{ get_cms_option('site_title', 'FalconCMS') }}" class="w-auto" style="height:3rem;@if($footerLogoDarken) filter:brightness(0);@endif">
                             </a>
                             <p class="text-[14px] leading-relaxed mb-8 opacity-80">
                                 {{ get_cms_option('footer_about', 'A minimalist, Astra-inspired theme for FalconCMS. Clean, fast, and professional design focusing on readability and content delivery.') }}

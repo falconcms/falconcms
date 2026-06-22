@@ -64,12 +64,14 @@ class FalconCmsServiceProvider extends ServiceProvider
             \FalconCms\Core\Console\Commands\UpdateFalconCms::class,
             \FalconCms\Core\Console\Commands\PublishScheduledPosts::class,
             \FalconCms\Core\Console\Commands\ExpireSalePrices::class,
+            \FalconCms\Core\Console\Commands\PruneAnalytics::class,
         ]);
 
         // Register scheduled tasks from within the package
         $this->callAfterResolving(\Illuminate\Console\Scheduling\Schedule::class, function ($schedule) {
             $schedule->command('falcon:publish-scheduled')->everyMinute()->withoutOverlapping();
             $schedule->command('falcon:expire-sales')->daily();
+            $schedule->command('falcon:prune-analytics')->dailyAt('03:30')->withoutOverlapping();
         });
 
         // Cron-independent fallback: many hosts (and local dev) never run `schedule:run`,
@@ -87,6 +89,20 @@ class FalconCmsServiceProvider extends ServiceProvider
                         ->update(['status' => 'published']);
                 } catch (\Throwable $e) {
                     // Never let scheduling maintenance affect the request.
+                }
+
+                // Cron-independent analytics retention: once a day (cache-locked), trim a capped
+                // batch of expired rows after the response is sent — keeps the table lean even on
+                // hosts that never run `schedule:run`. The scheduled command does the full sweep.
+                try {
+                    if (\Illuminate\Support\Facades\Cache::add('falcon_analytics_prune_lock', 1, now()->addDay())) {
+                        $days = max(7, (int) get_cms_option('analytics_retention_days', 365));
+                        \Illuminate\Support\Facades\DB::table('cms_analytics')
+                            ->where('created_at', '<', now()->subDays($days))
+                            ->limit(5000)->delete();
+                    }
+                } catch (\Throwable $e) {
+                    // Best-effort; never let maintenance affect the request.
                 }
             });
         }
