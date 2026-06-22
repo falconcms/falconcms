@@ -5,6 +5,7 @@ import versionData from '../../../version.json'
 const downloads = ref(null)
 const stars = ref(null)
 const version = ref(versionData.version)
+const updated = ref(null)
 
 onMounted(async () => {
   try {
@@ -13,12 +14,23 @@ onMounted(async () => {
     downloads.value = data.package.downloads.total
     const v = data.package.version_normalized
     if (v) version.value = v.replace(/^(\d+\.\d+\.\d+).*$/, '$1')
+
+    // Most recent release time = newest non-dev tagged version on Packagist.
+    const versions = data.package.versions || {}
+    let latest = null
+    for (const [ver, info] of Object.entries(versions)) {
+      if (ver.startsWith('dev-') || !info.time) continue
+      if (!latest || new Date(info.time) > new Date(latest)) latest = info.time
+    }
+    if (latest) updated.value = latest
   } catch (_) {}
 
   try {
     const res = await fetch('https://api.github.com/repos/falconcms/falconcms')
     const data = await res.json()
     stars.value = data.stargazers_count
+    // Fall back to the repo's last push if Packagist didn't give a release time.
+    if (!updated.value && data.pushed_at) updated.value = data.pushed_at
   } catch (_) {}
 })
 
@@ -26,6 +38,18 @@ function fmt(n) {
   if (n === null) return '—'
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
   return String(n)
+}
+
+function ago(ts) {
+  if (!ts) return '—'
+  const diff = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000)
+  if (diff < 60) return 'just now'
+  const units = [['year', 31536000], ['month', 2592000], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]]
+  for (const [name, secs] of units) {
+    const v = Math.floor(diff / secs)
+    if (v >= 1) return v + ' ' + name + (v > 1 ? 's' : '') + ' ago'
+  }
+  return 'just now'
 }
 </script>
 
@@ -57,6 +81,14 @@ function fmt(n) {
         <div class="stat-label">Latest Release</div>
       </div>
 
+      <div class="stat-divider"></div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🕑</div>
+        <div class="stat-value stat-value-sm">{{ ago(updated) }}</div>
+        <div class="stat-label">Last Updated</div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -74,7 +106,7 @@ function fmt(n) {
   align-items: center;
   justify-content: center;
   gap: 0;
-  max-width: 640px;
+  max-width: 820px;
   margin: 0 auto;
   background: var(--vp-c-bg);
   border: 1px solid var(--vp-c-divider);
@@ -120,6 +152,10 @@ function fmt(n) {
   font-weight: 700;
   color: var(--vp-c-brand-1);
   line-height: 1.1;
+}
+
+.stat-value-sm {
+  font-size: 17px;
 }
 
 .stat-label {
