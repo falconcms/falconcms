@@ -18,6 +18,7 @@
     $separator    = $s['separator']  ?? '•';
     $labelAnim    = $s['labelAnimation'] ?? 'blink-dot';
     $textEffect   = $s['textEffect']    ?? 'none';
+    $itemSpacing  = max(0, (int)($s['itemSpacing'] ?? 12));
 
     $bgColor        = $s['bgColor']        ?? '#1e3a8a';
     $textColor      = $s['textColor']      ?? '#ffffff';
@@ -78,13 +79,14 @@
         $parts = ['<span style="opacity:.5">Add items in the builder.</span>'];
     }
 
-    // Build separator HTML
+    // Build separator HTML — $itemSpacing controls the gap on each side of the separator
+    $sepGap = 'margin:0 ' . $itemSpacing . 'px';
     if ($separator === 'dance') {
-        $sep = ' <span class="lztick-sep-dance" aria-hidden="true"><span></span><span></span><span></span></span> ';
+        $sep = '<span class="lztick-sep-dance" aria-hidden="true" style="' . $sepGap . '"><span></span><span></span><span></span></span>';
     } elseif ($separator !== '') {
-        $sep = ' <span class="lztick-sep" aria-hidden="true">' . e($separator) . '</span> ';
+        $sep = '<span class="lztick-sep" aria-hidden="true" style="' . $sepGap . '">' . e($separator) . '</span>';
     } else {
-        $sep = '&nbsp;&nbsp;';
+        $sep = '<span aria-hidden="true" style="display:inline-block;width:' . ($itemSpacing * 2) . 'px"></span>';
     }
 
     if ($isVertical) {

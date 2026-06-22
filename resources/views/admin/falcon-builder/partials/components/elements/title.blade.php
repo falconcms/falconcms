@@ -76,7 +76,7 @@
                     transition: 'color 0.3s ease',
                     pointerEvents: 'auto'
                 }"
-                class="main-title">@{{ el.settings.title || 'Your Awesome Title' }}</component>
+                class="main-title">@{{ dynSrcPreview(el.settings) || el.settings.title || 'Your Awesome Title' }}</component>
         </a>
 
         <!-- Separator -->

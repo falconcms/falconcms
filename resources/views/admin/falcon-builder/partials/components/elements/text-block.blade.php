@@ -18,7 +18,7 @@
          getCanvasVisibilityStyle(el.settings)
      ]">
     <div class="text-block-content"
-       v-safe-html="el.settings.content || 'your content is here...'"
+       v-safe-html="dynSrcPreview(el.settings) || el.settings.content || 'your content is here...'"
        @mouseenter="el.isHovered = true"
        @mouseleave="el.isHovered = false"
        style="margin: 0; width: 100%; transition: color 0.3s ease; display: block;">

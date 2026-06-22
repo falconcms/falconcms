@@ -1580,6 +1580,47 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
                     $val = falcon_resolve_dynamic_value('acpt_' . $slug, $post);
                 }
                 break;
+            case 'product_price': {
+                $sd = $post ? ($post->shopData ?? null) : null;
+                if (!$sd) break;
+                $sale = $sd->sale_price;
+                $saleActive = ($sale !== null && $sale !== '' && (empty($sd->sale_ends_at) || \Carbon\Carbon::parse($sd->sale_ends_at)->isFuture()));
+                $price = $saleActive ? (float) $sale : (float) ($sd->price ?? 0);
+                $val = function_exists('falcon_price_format') ? falcon_price_format($price) : number_format($price, 2);
+                break;
+            }
+            case 'product_regular_price': {
+                $sd = $post ? ($post->shopData ?? null) : null;
+                if (!$sd) break;
+                $price = (float) ($sd->price ?? 0);
+                $val = function_exists('falcon_price_format') ? falcon_price_format($price) : number_format($price, 2);
+                break;
+            }
+            case 'product_sale_price': {
+                $sd = $post ? ($post->shopData ?? null) : null;
+                if (!$sd) break;
+                $sale = $sd->sale_price;
+                $saleActive = ($sale !== null && $sale !== '' && (empty($sd->sale_ends_at) || \Carbon\Carbon::parse($sd->sale_ends_at)->isFuture()));
+                if ($saleActive) {
+                    $val = function_exists('falcon_price_format') ? falcon_price_format((float) $sale) : number_format((float) $sale, 2);
+                }
+                break;
+            }
+            case 'product_sku':
+                $val = ($post && $post->shopData) ? (string) ($post->shopData->sku ?? '') : '';
+                break;
+            case 'product_stock_status': {
+                $sd = $post ? ($post->shopData ?? null) : null;
+                if (!$sd) break;
+                $isOut = ($sd->stock_status ?? 'instock') === 'outofstock'
+                      || (($sd->manage_stock ?? false) && (int) ($sd->stock_quantity ?? 0) <= 0);
+                $val = $isOut ? 'Out of stock' : 'In stock';
+                break;
+            }
+            case 'product_stock_quantity':
+                $val = ($post && $post->shopData && $post->shopData->stock_quantity !== null)
+                    ? (string) (int) $post->shopData->stock_quantity : '';
+                break;
             default:
                 if (str_starts_with($source, 'acpt_') && $post) {
                     $acptSlug = substr($source, 5);

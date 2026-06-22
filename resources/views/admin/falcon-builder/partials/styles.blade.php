@@ -1013,4 +1013,8 @@
     .lztick-te-highlight span:not(.lztick-sep):not(.lztick-sep-dance):not(.lztick-sep-dance > span) {
         background: rgba(255,255,255,0.12); padding: 1px 8px; border-radius: 3px;
     }
+
+    /* ── Ticker: live scrolling in the builder canvas (seamless loop of 2 copies) ── */
+    @keyframes lztick-canvas-left  { from { transform: translateX(0); }    to { transform: translateX(-50%); } }
+    @keyframes lztick-canvas-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
 </style>

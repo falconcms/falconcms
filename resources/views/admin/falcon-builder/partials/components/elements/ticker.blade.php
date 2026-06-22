@@ -52,16 +52,21 @@
         <div style="flex:1;overflow:hidden;height:100%;">
             <template v-if="el.settings.items && el.settings.items.filter(i => i.text).length">
                 <div :class="['lztick-w-' + el.id, 'lztick-te-' + (el.settings.textEffect || 'none')]"
-                     style="display:inline-flex;align-items:center;height:100%;white-space:nowrap;">
+                     :style="{
+                         display: 'inline-flex', alignItems: 'center', height: '100%', whiteSpace: 'nowrap',
+                         willChange: 'transform',
+                         animation: 'lztick-canvas-' + (el.settings.direction === 'right' ? 'right' : 'left')
+                                  + ' ' + Math.min(15, Math.max(3, 105 - (el.settings.speed ?? 50))) + 's linear infinite'
+                     }">
                     {{-- Copy 1 --}}
                     <span style="flex-shrink:0;display:inline-flex;align-items:center;white-space:nowrap;padding-right:40px;height:100%;">
                         <template v-for="(item, idx) in el.settings.items.filter(i => i.text)" :key="'a-'+idx">
                             <span style="white-space:nowrap;">@{{ item.text }}</span>
                             <template v-if="idx < el.settings.items.filter(i => i.text).length - 1">
-                                <span v-if="el.settings.separator === 'dance'" class="lztick-sep-dance" aria-hidden="true">
+                                <span v-if="el.settings.separator === 'dance'" class="lztick-sep-dance" aria-hidden="true" :style="{ margin: '0 ' + (el.settings.itemSpacing ?? 12) + 'px' }">
                                     <span></span><span></span><span></span>
                                 </span>
-                                <span v-else style="opacity:.5;margin:0 6px;">@{{ el.settings.separator !== '' ? (el.settings.separator || '•') : '' }}</span>
+                                <span v-else :style="{ opacity: .5, margin: '0 ' + (el.settings.itemSpacing ?? 12) + 'px' }">@{{ el.settings.separator !== '' ? (el.settings.separator || '•') : '' }}</span>
                             </template>
                         </template>
                     </span>
@@ -70,10 +75,10 @@
                         <template v-for="(item, idx) in el.settings.items.filter(i => i.text)" :key="'b-'+idx">
                             <span style="white-space:nowrap;">@{{ item.text }}</span>
                             <template v-if="idx < el.settings.items.filter(i => i.text).length - 1">
-                                <span v-if="el.settings.separator === 'dance'" class="lztick-sep-dance" aria-hidden="true">
+                                <span v-if="el.settings.separator === 'dance'" class="lztick-sep-dance" aria-hidden="true" :style="{ margin: '0 ' + (el.settings.itemSpacing ?? 12) + 'px' }">
                                     <span></span><span></span><span></span>
                                 </span>
-                                <span v-else style="opacity:.5;margin:0 6px;">@{{ el.settings.separator !== '' ? (el.settings.separator || '•') : '' }}</span>
+                                <span v-else :style="{ opacity: .5, margin: '0 ' + (el.settings.itemSpacing ?? 12) + 'px' }">@{{ el.settings.separator !== '' ? (el.settings.separator || '•') : '' }}</span>
                             </template>
                         </template>
                     </span>
@@ -82,18 +87,4 @@
             <span v-else style="opacity:.4;font-style:italic;padding:0 16px;display:flex;align-items:center;height:100%;">Add ticker items…</span>
         </div>
     </div>
-
-    {{-- Per-instance animation: seamless loop for canvas so text is always in view.
-         Speed capped at 15s max for fast canvas preview. --}}
-    <component is="style"
-        :innerHTML="(function(){
-            var sd = Math.min(15, Math.max(3, 105 - (el.settings.speed ?? 50)));
-            var fx = el.settings.direction === 'right' ? '-50%' : '0%';
-            var tx = el.settings.direction === 'right' ? '0%'   : '-50%';
-            var kf = 'lztickw' + el.id;
-            var wc = '.lztick-w-' + el.id;
-            return wc + '{animation:' + kf + ' ' + sd + 's linear infinite;will-change:transform;}'
-                 + '@@keyframes ' + kf + '{from{transform:translateX(' + fx + ')}to{transform:translateX(' + tx + ')}}';
-        })()">
-    </component>
 </div>

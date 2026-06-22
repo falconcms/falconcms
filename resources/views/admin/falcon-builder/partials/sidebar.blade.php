@@ -2691,6 +2691,173 @@
                                 </div>
                             </div>
 
+                            <!-- ══ PRODUCT META ══ -->
+                            <div v-else-if="editingElement?.type === 'product_meta'" class="space-y-6">
+
+                                <!-- Fields to show -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-3">Fields to Show</label>
+                                    <div class="space-y-2">
+                                        <!-- Price -->
+                                        <div @click="editingElement.settings.showPrice = !(editingElement.settings.showPrice !== false)"
+                                             :class="(editingElement.settings.showPrice !== false) ? 'border-[#0091ea] bg-[#0091ea]/[0.06]' : 'border-slate-200 bg-white hover:border-slate-300'"
+                                             class="flex items-center justify-between px-3 py-2.5 border rounded-lg cursor-pointer transition-all select-none">
+                                            <span class="flex items-center gap-2.5">
+                                                <i :class="(editingElement.settings.showPrice !== false) ? 'text-[#0091ea]' : 'text-slate-300'" class="fa fa-tag text-[13px] w-4 text-center"></i>
+                                                <span :class="(editingElement.settings.showPrice !== false) ? 'text-[#1d2327] font-medium' : 'text-slate-500'" class="text-[13px]">Price</span>
+                                            </span>
+                                            <span :class="(editingElement.settings.showPrice !== false) ? 'bg-[#0091ea]' : 'bg-slate-300'" class="relative w-10 h-5 rounded-full transition-colors flex-shrink-0">
+                                                <span :class="(editingElement.settings.showPrice !== false) ? 'translate-x-[22px]' : 'translate-x-0.5'" class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform"></span>
+                                            </span>
+                                        </div>
+                                        <!-- SKU -->
+                                        <div @click="editingElement.settings.showSku = !(editingElement.settings.showSku !== false)"
+                                             :class="(editingElement.settings.showSku !== false) ? 'border-[#0091ea] bg-[#0091ea]/[0.06]' : 'border-slate-200 bg-white hover:border-slate-300'"
+                                             class="flex items-center justify-between px-3 py-2.5 border rounded-lg cursor-pointer transition-all select-none">
+                                            <span class="flex items-center gap-2.5">
+                                                <i :class="(editingElement.settings.showSku !== false) ? 'text-[#0091ea]' : 'text-slate-300'" class="fa fa-barcode text-[13px] w-4 text-center"></i>
+                                                <span :class="(editingElement.settings.showSku !== false) ? 'text-[#1d2327] font-medium' : 'text-slate-500'" class="text-[13px]">SKU</span>
+                                            </span>
+                                            <span :class="(editingElement.settings.showSku !== false) ? 'bg-[#0091ea]' : 'bg-slate-300'" class="relative w-10 h-5 rounded-full transition-colors flex-shrink-0">
+                                                <span :class="(editingElement.settings.showSku !== false) ? 'translate-x-[22px]' : 'translate-x-0.5'" class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform"></span>
+                                            </span>
+                                        </div>
+                                        <!-- Availability -->
+                                        <div @click="editingElement.settings.showStock = !(editingElement.settings.showStock !== false)"
+                                             :class="(editingElement.settings.showStock !== false) ? 'border-[#0091ea] bg-[#0091ea]/[0.06]' : 'border-slate-200 bg-white hover:border-slate-300'"
+                                             class="flex items-center justify-between px-3 py-2.5 border rounded-lg cursor-pointer transition-all select-none">
+                                            <span class="flex items-center gap-2.5">
+                                                <i :class="(editingElement.settings.showStock !== false) ? 'text-[#0091ea]' : 'text-slate-300'" class="fa fa-circle-check text-[13px] w-4 text-center"></i>
+                                                <span :class="(editingElement.settings.showStock !== false) ? 'text-[#1d2327] font-medium' : 'text-slate-500'" class="text-[13px]">Availability</span>
+                                            </span>
+                                            <span :class="(editingElement.settings.showStock !== false) ? 'bg-[#0091ea]' : 'bg-slate-300'" class="relative w-10 h-5 rounded-full transition-colors flex-shrink-0">
+                                                <span :class="(editingElement.settings.showStock !== false) ? 'translate-x-[22px]' : 'translate-x-0.5'" class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform"></span>
+                                            </span>
+                                        </div>
+                                        <!-- Stock quantity -->
+                                        <div @click="editingElement.settings.showStockQty = !(editingElement.settings.showStockQty === true)"
+                                             :class="(editingElement.settings.showStockQty === true) ? 'border-[#0091ea] bg-[#0091ea]/[0.06]' : 'border-slate-200 bg-white hover:border-slate-300'"
+                                             class="flex items-center justify-between px-3 py-2.5 border rounded-lg cursor-pointer transition-all select-none">
+                                            <span class="flex items-center gap-2.5">
+                                                <i :class="(editingElement.settings.showStockQty === true) ? 'text-[#0091ea]' : 'text-slate-300'" class="fa fa-cubes text-[13px] w-4 text-center"></i>
+                                                <span :class="(editingElement.settings.showStockQty === true) ? 'text-[#1d2327] font-medium' : 'text-slate-500'" class="text-[13px]">Stock quantity</span>
+                                            </span>
+                                            <span :class="(editingElement.settings.showStockQty === true) ? 'bg-[#0091ea]' : 'bg-slate-300'" class="relative w-10 h-5 rounded-full transition-colors flex-shrink-0">
+                                                <span :class="(editingElement.settings.showStockQty === true) ? 'translate-x-[22px]' : 'translate-x-0.5'" class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform"></span>
+                                            </span>
+                                        </div>
+                                        <!-- Product type -->
+                                        <div @click="editingElement.settings.showType = !(editingElement.settings.showType === true)"
+                                             :class="(editingElement.settings.showType === true) ? 'border-[#0091ea] bg-[#0091ea]/[0.06]' : 'border-slate-200 bg-white hover:border-slate-300'"
+                                             class="flex items-center justify-between px-3 py-2.5 border rounded-lg cursor-pointer transition-all select-none">
+                                            <span class="flex items-center gap-2.5">
+                                                <i :class="(editingElement.settings.showType === true) ? 'text-[#0091ea]' : 'text-slate-300'" class="fa fa-layer-group text-[13px] w-4 text-center"></i>
+                                                <span :class="(editingElement.settings.showType === true) ? 'text-[#1d2327] font-medium' : 'text-slate-500'" class="text-[13px]">Product type</span>
+                                            </span>
+                                            <span :class="(editingElement.settings.showType === true) ? 'bg-[#0091ea]' : 'bg-slate-300'" class="relative w-10 h-5 rounded-full transition-colors flex-shrink-0">
+                                                <span :class="(editingElement.settings.showType === true) ? 'translate-x-[22px]' : 'translate-x-0.5'" class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform"></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Labels -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">Show Labels</label>
+                                        <button type="button" @click="editingElement.settings.showLabels = !(editingElement.settings.showLabels !== false)"
+                                                :class="(editingElement.settings.showLabels !== false) ? 'bg-[#0091ea]' : 'bg-slate-300'"
+                                                class="relative w-10 h-5 rounded-full transition-colors flex-shrink-0">
+                                            <span :class="(editingElement.settings.showLabels !== false) ? 'translate-x-[22px]' : 'translate-x-0.5'"
+                                                  class="absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform"></span>
+                                        </button>
+                                    </div>
+                                    <div v-if="editingElement.settings.showLabels !== false" class="space-y-2">
+                                        <input v-if="editingElement.settings.showPrice !== false" type="text" v-model="editingElement.settings.priceLabel" placeholder="Price label"
+                                               class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                                        <input v-if="editingElement.settings.showSku !== false" type="text" v-model="editingElement.settings.skuLabel" placeholder="SKU label"
+                                               class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                                        <input v-if="editingElement.settings.showStock !== false" type="text" v-model="editingElement.settings.stockLabel" placeholder="Availability label"
+                                               class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                                        <input v-if="editingElement.settings.showStockQty === true" type="text" v-model="editingElement.settings.qtyLabel" placeholder="Quantity label"
+                                               class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                                        <input v-if="editingElement.settings.showType === true" type="text" v-model="editingElement.settings.typeLabel" placeholder="Type label"
+                                               class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                </div>
+
+                                <!-- Layout + Alignment -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-[12px] font-bold text-[#333] block mb-2">Layout</label>
+                                        <select v-model="editingElement.settings.layout"
+                                                class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                            <option value="stacked">Stacked</option>
+                                            <option value="inline">Inline</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[12px] font-bold text-[#333] block mb-2">Alignment</label>
+                                        <select v-model="editingElement.settings.metaAlign"
+                                                class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                            <option value="left">Left</option>
+                                            <option value="center">Center</option>
+                                            <option value="right">Right</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Separator (inline only) -->
+                                <div v-if="editingElement.settings.layout === 'inline'">
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Separator</label>
+                                    <input type="text" v-model="editingElement.settings.separator" maxlength="3"
+                                           class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                </div>
+
+                                <!-- Visibility -->
+                                <div class="pt-4 border-t border-slate-50">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">Element Visibility</label>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2"
+                                         @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
+                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
+                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
+                                            <i class="fa fa-mobile-alt text-sm"></i>
+                                        </button>
+                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
+                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
+                                            <i class="fa fa-tablet-alt text-sm"></i>
+                                        </button>
+                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
+                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
+                                            <i class="fa fa-desktop text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- CSS Class & ID -->
+                                <div class="grid grid-cols-1 gap-6 pt-4 border-t border-slate-50">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <label class="text-[12px] font-bold text-[#333]">CSS Class</label>
+                                        </div>
+                                        <input type="text" v-model="editingElement.settings.cssClass"
+                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <label class="text-[12px] font-bold text-[#333]">CSS ID</label>
+                                        </div>
+                                        <input type="text" v-model="editingElement.settings.cssId"
+                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- ══ TICKER ══ -->
                             <div v-else-if="editingElement?.type === 'ticker'" class="space-y-6">
 
@@ -2707,6 +2874,10 @@
                                             <div class="flex items-center gap-1.5">
                                                 <input type="text" v-model="item.text" placeholder="Item text..."
                                                        class="flex-1 border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                                                <button @click="editingElement.settings.items.splice(idx + 1, 0, { text: item.text, url: item.url })"
+                                                        class="text-slate-400 hover:text-[#2271b1] text-[13px] px-1 flex-shrink-0" title="Duplicate">
+                                                    <i class="fa fa-clone"></i>
+                                                </button>
                                                 <button @click="editingElement.settings.items.splice(idx,1)"
                                                         class="text-red-400 hover:text-red-600 text-[14px] px-1 flex-shrink-0" title="Remove">
                                                     <i class="fa fa-times"></i>
@@ -2772,6 +2943,22 @@
                                             <option value="right">→ Right</option>
                                         </select>
                                     </div>
+                                </div>
+
+                                <!-- Item Spacing -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">
+                                        Item Spacing
+                                    </label>
+                                    <div class="flex items-center gap-3">
+                                        <input type="range" min="0" max="80" step="1"
+                                               v-model.number="editingElement.settings.itemSpacing"
+                                               class="flex-1 accent-[#0091ea]">
+                                        <input type="number" min="0" max="200"
+                                               v-model.number="editingElement.settings.itemSpacing"
+                                               class="w-20 border border-slate-200 rounded px-2 py-1.5 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">Space on each side of the separator between ticker items.</p>
                                 </div>
 
                                 <!-- Text Effect -->
@@ -2975,6 +3162,123 @@
                                      </div>
                                  </div>
                              </div>
+                             <!-- Design Settings for Product Meta -->
+                             <div v-else-if="editingElement?.type === 'product_meta'" class="space-y-6 pb-10">
+                                 <!-- Colors -->
+                                 <div>
+                                     <label class="text-[12px] font-bold text-[#333] block mb-3">Colors</label>
+                                     <div class="grid grid-cols-2 gap-3">
+                                         <div>
+                                             <div class="flex justify-between items-center mb-1.5">
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase">Label</label>
+                                                 <button @click="clearColorField(editingElement.settings, 'labelColor')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
+                                             </div>
+                                             <div class="flex gap-2 items-center">
+                                                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                                                      @click="openColorPicker($event, editingElement.settings, 'labelColor')">
+                                                     <div :style="{ backgroundColor: editingElement.settings.labelColor || '#6b7280' }" class="w-full h-full rounded-full"></div>
+                                                 </div>
+                                                 <input type="text" v-model="editingElement.settings.labelColor" placeholder="#6b7280" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                                             </div>
+                                         </div>
+                                         <div>
+                                             <div class="flex justify-between items-center mb-1.5">
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase">Value</label>
+                                                 <button @click="clearColorField(editingElement.settings, 'valueColor')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
+                                             </div>
+                                             <div class="flex gap-2 items-center">
+                                                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                                                      @click="openColorPicker($event, editingElement.settings, 'valueColor')">
+                                                     <div :style="{ backgroundColor: editingElement.settings.valueColor || '#111827' }" class="w-full h-full rounded-full"></div>
+                                                 </div>
+                                                 <input type="text" v-model="editingElement.settings.valueColor" placeholder="#111827" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                                             </div>
+                                         </div>
+                                         <div>
+                                             <div class="flex justify-between items-center mb-1.5">
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase">Sale price</label>
+                                                 <button @click="clearColorField(editingElement.settings, 'saleColor')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
+                                             </div>
+                                             <div class="flex gap-2 items-center">
+                                                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                                                      @click="openColorPicker($event, editingElement.settings, 'saleColor')">
+                                                     <div :style="{ backgroundColor: editingElement.settings.saleColor || '#e02b2b' }" class="w-full h-full rounded-full"></div>
+                                                 </div>
+                                                 <input type="text" v-model="editingElement.settings.saleColor" placeholder="#e02b2b" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                                             </div>
+                                         </div>
+                                         <div>
+                                             <div class="flex justify-between items-center mb-1.5">
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase">In stock</label>
+                                                 <button @click="clearColorField(editingElement.settings, 'instockColor')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
+                                             </div>
+                                             <div class="flex gap-2 items-center">
+                                                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                                                      @click="openColorPicker($event, editingElement.settings, 'instockColor')">
+                                                     <div :style="{ backgroundColor: editingElement.settings.instockColor || '#15803d' }" class="w-full h-full rounded-full"></div>
+                                                 </div>
+                                                 <input type="text" v-model="editingElement.settings.instockColor" placeholder="#15803d" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                                             </div>
+                                         </div>
+                                         <div>
+                                             <div class="flex justify-between items-center mb-1.5">
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase">Out of stock</label>
+                                                 <button @click="clearColorField(editingElement.settings, 'outofstockColor')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
+                                             </div>
+                                             <div class="flex gap-2 items-center">
+                                                 <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                                                      @click="openColorPicker($event, editingElement.settings, 'outofstockColor')">
+                                                     <div :style="{ backgroundColor: editingElement.settings.outofstockColor || '#b91c1c' }" class="w-full h-full rounded-full"></div>
+                                                 </div>
+                                                 <input type="text" v-model="editingElement.settings.outofstockColor" placeholder="#b91c1c" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+
+                                 <!-- Typography -->
+                                 <div class="grid grid-cols-2 gap-3">
+                                     <div>
+                                         <label class="text-[12px] font-bold text-[#333] block mb-2">Font Size (px)</label>
+                                         <input type="number" min="8" max="60" v-model.number="editingElement.settings.fontSize"
+                                                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                     </div>
+                                     <div>
+                                         <label class="text-[12px] font-bold text-[#333] block mb-2">Font Weight</label>
+                                         <select v-model="editingElement.settings.fontWeight"
+                                                 class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                             <option value="300">Light</option>
+                                             <option value="400">Normal</option>
+                                             <option value="500">Medium</option>
+                                             <option value="600">Semibold</option>
+                                             <option value="700">Bold</option>
+                                         </select>
+                                     </div>
+                                 </div>
+
+                                 <!-- Gap between items -->
+                                 <div>
+                                     <label class="text-[12px] font-bold text-[#333] block mb-2">
+                                         Item Gap <span class="text-[#0091ea] font-normal">@{{ (editingElement.settings.gap ?? 8) }}px</span>
+                                     </label>
+                                     <input type="range" min="0" max="40" step="1" v-model.number="editingElement.settings.gap" class="w-full accent-[#0091ea]">
+                                 </div>
+
+                                 <!-- Margins -->
+                                 <div class="grid grid-cols-2 gap-3">
+                                     <div>
+                                         <label class="text-[12px] font-bold text-[#333] block mb-2">Margin Top (px)</label>
+                                         <input type="number" v-model.number="editingElement.settings.marginTop"
+                                                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                     </div>
+                                     <div>
+                                         <label class="text-[12px] font-bold text-[#333] block mb-2">Margin Bottom (px)</label>
+                                         <input type="number" v-model.number="editingElement.settings.marginBottom"
+                                                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                     </div>
+                                 </div>
+                             </div>
+
                              <!-- Design Settings for Ticker -->
                              <div v-else-if="editingElement?.type === 'ticker'" class="space-y-6 pb-10">
                                  <!-- Colors -->

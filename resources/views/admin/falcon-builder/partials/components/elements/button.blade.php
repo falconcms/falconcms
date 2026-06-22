@@ -58,7 +58,7 @@
            textAlign: 'center'
        }">
         <i v-if="el.settings.icon && el.settings.iconPosition !== 'right'" :class="[el.settings.icon, 'mr-2']"></i>
-        @{{ el.settings.text || 'Click Here' }}
+        @{{ dynSrcPreview(el.settings) || el.settings.text || 'Click Here' }}
         <i v-if="el.settings.icon && el.settings.iconPosition === 'right'" :class="[el.settings.icon, 'ml-2']"></i>
     </a>
 </div>

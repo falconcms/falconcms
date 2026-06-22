@@ -94,6 +94,33 @@
                     { key: 'post_reading_time',  label: 'Reading Time',    icon: 'fa-clock',         group: 'Post',   subFields: [] },
                     { key: 'post_id',            label: 'Post ID',         icon: 'fa-hashtag',       group: 'Post',   subFields: [] },
                     { key: 'post_type',          label: 'Post Type',       icon: 'fa-tag',           group: 'Post',   subFields: [] },
+                    { key: 'product_price',          label: 'Product Price',   icon: 'fa-dollar-sign',   group: 'Product', subFields: [
+                        { key: 'dynamic_before',   label: 'Before',   type: 'text', placeholder: 'Text before value' },
+                        { key: 'dynamic_after',    label: 'After',    type: 'text', placeholder: 'Text after value' },
+                        { key: 'dynamic_fallback', label: 'Fallback', type: 'text', placeholder: 'Fallback value' },
+                    ]},
+                    { key: 'product_regular_price',  label: 'Regular Price',   icon: 'fa-tag',           group: 'Product', subFields: [
+                        { key: 'dynamic_before',   label: 'Before',   type: 'text', placeholder: 'Text before value' },
+                        { key: 'dynamic_after',    label: 'After',    type: 'text', placeholder: 'Text after value' },
+                        { key: 'dynamic_fallback', label: 'Fallback', type: 'text', placeholder: 'Fallback value' },
+                    ]},
+                    { key: 'product_sale_price',     label: 'Sale Price',      icon: 'fa-percent',       group: 'Product', subFields: [
+                        { key: 'dynamic_before',   label: 'Before',   type: 'text', placeholder: 'Text before value' },
+                        { key: 'dynamic_after',    label: 'After',    type: 'text', placeholder: 'Text after value' },
+                        { key: 'dynamic_fallback', label: 'Fallback', type: 'text', placeholder: 'Not on sale' },
+                    ]},
+                    { key: 'product_sku',            label: 'Product SKU',     icon: 'fa-barcode',       group: 'Product', subFields: [
+                        { key: 'dynamic_before',   label: 'Before',   type: 'text', placeholder: 'e.g. SKU: ' },
+                        { key: 'dynamic_fallback', label: 'Fallback', type: 'text', placeholder: 'Fallback value' },
+                    ]},
+                    { key: 'product_stock_status',   label: 'Stock Status',    icon: 'fa-circle-check',  group: 'Product', subFields: [
+                        { key: 'dynamic_fallback', label: 'Fallback', type: 'text', placeholder: 'Fallback value' },
+                    ]},
+                    { key: 'product_stock_quantity', label: 'Stock Quantity',  icon: 'fa-cubes',         group: 'Product', subFields: [
+                        { key: 'dynamic_before',   label: 'Before',   type: 'text', placeholder: 'Text before value' },
+                        { key: 'dynamic_after',    label: 'After',    type: 'text', placeholder: 'e.g. in stock' },
+                        { key: 'dynamic_fallback', label: 'Fallback', type: 'text', placeholder: 'Fallback value' },
+                    ]},
                     { key: 'post_author',        label: 'Author Name',     icon: 'fa-user',          group: 'Author', subFields: [] },
                     { key: 'author_bio',         label: 'Author Bio',      icon: 'fa-user-edit',     group: 'Author', subFields: [] },
                     { key: 'site_name',          label: 'Site Title',      icon: 'fa-globe',         group: 'Site',   subFields: [] },
@@ -120,6 +147,30 @@
                     { key: 'author_avatar', label: 'Author Avatar', icon: 'fa-user-circle', group: 'Author', subFields: [] },
                     { key: 'logo',          label: 'Site Logo',     icon: 'fa-star',         group: 'Site',   subFields: [] },
                 ],
+            };
+            // Live preview value per dynamic source. Prefer the REAL resolved value for the
+            // post being edited (window.builderDynPreview, computed server-side); fall back to a
+            // representative sample when the post has no value for that source (e.g. a product
+            // field on a non-product page). Real values resolve on the frontend from $post.
+            const dynSrcGenericSample = (key) => ({
+                post_title: 'Sample Post Title',
+                post_excerpt: 'A short sample excerpt of the post content shown here…',
+                post_date: 'Jan 1, 2026', post_reading_time: '3 min read', post_id: '123', post_type: 'post',
+                post_author: 'Author Name', author_bio: 'Short author biography text…',
+                site_name: 'Site Title', site_tagline: 'Just another tagline', site_url: 'example.com',
+                current_date: 'Jan 1, 2026', current_year: String(new Date().getFullYear()), user_name: 'John Doe',
+                acpt_custom: 'Custom Field', post_url: 'example.com/post', author_url: 'example.com/author',
+                product_price: '$49.00', product_regular_price: '$59.00', product_sale_price: '$49.00',
+                product_sku: 'SAMPLE-SKU-001', product_stock_status: 'In stock', product_stock_quantity: '25',
+            }[key] || String(key).replace(/_/g, ' '));
+            const dynSrcSample = (key) => {
+                const real = (window.builderDynPreview && window.builderDynPreview[key]) || '';
+                return real !== '' ? real : dynSrcGenericSample(key);
+            };
+            // Returns the canvas preview string for a field's dynamic source, or null if not dynamic.
+            const dynSrcPreview = (s) => {
+                if (!s || !s.dynamic_source) return null;
+                return (s.dynamic_before || '') + dynSrcSample(s.dynamic_source) + (s.dynamic_after || '');
             };
             const getDynSrcDef = (key) => {
                 const all = [...dynSrcDefs.text, ...dynSrcDefs.link, ...dynSrcDefs.image];
@@ -519,6 +570,9 @@
                 availableElements.push({ type: 'post_content', name: 'Content', icon: 'fa fa-paragraph' });
                 availableElements.push({ type: 'post_meta', name: 'Post Meta', icon: 'fa fa-tags' });
             }
+            // Product Meta — available in both the regular builder and post-card mode
+            // (renders product price/SKU/stock on product pages; nothing elsewhere).
+            availableElements.push({ type: 'product_meta', name: 'Product Meta', icon: 'fa fa-tag' });
 
             const filteredColumnLayouts = computed(() => {
                 if (!searchColumnQuery.value) return columnLayouts;
@@ -2934,6 +2988,19 @@
                 return hidden ? { opacity: '0.4', outline: '2px dashed #fbbf24', outlineOffset: '-2px' } : {};
             };
 
+            // Sample rows for the Product Meta canvas preview (real data shows on the frontend).
+            const pmCanvasRows = (s) => {
+                s = s || {};
+                const vc = s.valueColor || '#111827';
+                const rows = [];
+                if (s.showPrice !== false)   rows.push({ label: s.priceLabel || 'Price:',        value: '$49.00',         color: vc,                       weight: 700 });
+                if (s.showSku !== false)     rows.push({ label: s.skuLabel   || 'SKU:',          value: 'SAMPLE-SKU-001', color: vc,                       weight: 400 });
+                if (s.showStock !== false)   rows.push({ label: s.stockLabel || 'Availability:', value: 'In stock',       color: s.instockColor || '#15803d', weight: 600 });
+                if (s.showStockQty === true) rows.push({ label: s.qtyLabel   || 'In stock:',     value: '25',             color: vc,                       weight: 400 });
+                if (s.showType === true)     rows.push({ label: s.typeLabel  || 'Type:',         value: 'simple',         color: vc,                       weight: 400 });
+                return rows;
+            };
+
             const addElement = (type) => {
                 if (currentTargetCi.value === null || currentTargetColi.value === null) return;
 
@@ -3042,6 +3109,21 @@
                             cssClass: '', cssId: '',
                             visibility: { mobile: true, tablet: true, desktop: true }
                         } : {}),
+                        ...(type === 'product_meta' ? {
+                            showPrice: true, showSku: true, showStock: true,
+                            showStockQty: false, showType: false,
+                            showLabels: true,
+                            priceLabel: 'Price:', skuLabel: 'SKU:', stockLabel: 'Availability:',
+                            qtyLabel: 'In stock:', typeLabel: 'Type:',
+                            layout: 'stacked', separator: '·', metaAlign: 'left',
+                            labelColor: '#6b7280', valueColor: '#111827', saleColor: '#e02b2b',
+                            instockColor: '#15803d', outofstockColor: '#b91c1c',
+                            fontSize: 14, fontSizeUnit: 'px', fontWeight: '400',
+                            gap: 8, gapUnit: 'px',
+                            marginTop: 0, marginBottom: 0, marginTopUnit: 'px', marginBottomUnit: 'px',
+                            cssClass: '', cssId: '',
+                            visibility: { mobile: true, tablet: true, desktop: true }
+                        } : {}),
                         ...(type === 'ticker' ? {
                             items: [
                                 { id: Date.now() + '_1', text: 'Breaking news item one', url: '' },
@@ -3050,6 +3132,7 @@
                             ],
                             label: 'LIVE',
                             separator: '•',
+                            itemSpacing: 12,
                             direction: 'left',
                             speed: 50,
                             pauseOnHover: true,
@@ -3728,7 +3811,7 @@
                 isDragging, isColumnDrag, dragType, dragSource, dragCi, dragColi, dragEli, dragNcoli, startDrag,
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal,
-                getVisibilityClasses, getCanvasVisibilityStyle, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
+                getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
                 cardPerView, cardPreviewCols, cardPreviewCount,
                 searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements,
                 shouldShowGuide,
@@ -3759,7 +3842,7 @@
                 autosaveStatus, showRevisions, revisionList, isRestoring, autosaveBanner,
                 openRevisions, restoreRevision, deleteRevisionItem, dismissAutosaveBanner,
                 dynMenu, dynAcptSlug, openDynMenu, insertDynToken, insertDynAcpt,
-                dynSrcMenu, dynSrcDefs, getDynSrcDef, getDynSrcGroups, openDynSrcMenu, selectDynSource, clearDynSource
+                dynSrcMenu, dynSrcDefs, getDynSrcDef, getDynSrcGroups, dynSrcPreview, openDynSrcMenu, selectDynSource, clearDynSource
             };
         }
     }).directive('tomselect', {

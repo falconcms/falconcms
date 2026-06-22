@@ -272,10 +272,11 @@
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.card')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.post-content')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.post-meta')
+                            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.product-meta')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.ticker')
                             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
                             @php
-                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','ticker','row']";
+                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','row']";
                             @endphp
                             <div v-if="customElements[el.type] !== undefined && !{!! $builtInTypesNested !!}.includes(el.type)"
                                  :style="[{ width: '100%' }, getCustomElementRender(el).wrapperStyle, getCanvasVisibilityStyle(el.settings)]"

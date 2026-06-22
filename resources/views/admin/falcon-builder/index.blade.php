@@ -52,6 +52,23 @@
         };
 
         @php
+            // Resolve each dynamic source to the REAL value for the post being edited, so the
+            // builder canvas previews actual content (title, excerpt, price, sku…) instead of a
+            // generic sample. Empty values fall back to a generic sample client-side.
+            $__dynKeys = [
+                'post_title','post_excerpt','post_date','post_reading_time','post_id','post_type',
+                'post_author','author_bio','site_name','site_tagline','current_date','current_year','user_name',
+                'product_price','product_regular_price','product_sale_price','product_sku','product_stock_status','product_stock_quantity',
+            ];
+            $__dynPreview = [];
+            foreach ($__dynKeys as $__dk) {
+                try { $__dynPreview[$__dk] = (string) (function_exists('falcon_resolve_dynamic_value') ? falcon_resolve_dynamic_value($__dk, $post, []) : ''); }
+                catch (\Throwable $e) { $__dynPreview[$__dk] = ''; }
+            }
+        @endphp
+        window.builderDynPreview = {!! json_encode($__dynPreview, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) !!};
+
+        @php
             try {
                 $allMenus = \Illuminate\Support\Facades\DB::table('navigation_menus')->get();
                 $allItems = \Illuminate\Support\Facades\DB::table('navigation_menu_items')
