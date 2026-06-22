@@ -8,7 +8,7 @@ const version = ref(versionData.version)
 
 onMounted(async () => {
   try {
-    const res = await fetch('https://packagist.org/packages/lazycmsapp/lazy-cms-builder.json')
+    const res = await fetch('https://packagist.org/packages/falconcms/falconcms.json')
     const data = await res.json()
     downloads.value = data.package.downloads.total
     const v = data.package.version_normalized
@@ -16,7 +16,7 @@ onMounted(async () => {
   } catch (_) {}
 
   try {
-    const res = await fetch('https://api.github.com/repos/lazycmsapp/lazy-cms-builder')
+    const res = await fetch('https://api.github.com/repos/falconcms/falconcms')
     const data = await res.json()
     stars.value = data.stargazers_count
   } catch (_) {}

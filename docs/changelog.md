@@ -5,7 +5,52 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.4.6 <Badge type="tip" text="Latest" /> {#v1-4-6}
+## v1.5.0 <Badge type="tip" text="Latest" /> {#v1-5-0}
+
+**Released: 2026-06-22**
+
+### Fixed
+- **Registration — duplicate username** — Usernames derived from the email local part are now sanitized and made unique (`john@a.com` and `john@b.com` no longer collide → `john`, `john1`…), fixing the duplicate-username error on sign-up
+- **Admin user create/edit** — Validation errors are now displayed (a top summary plus per-field messages) instead of a database constraint crash; inputs repopulate on failure, and a success message is shown
+- **User update redirect** — Saving a user now returns to the same edit page with the success notice, instead of jumping to the user list
+
+### Added
+- **Password strength & match** — The admin user create/edit password fields now show a live strength meter and a password-match indicator, matching the registration page
+
+## v1.4.9 {#v1-4-9}
+
+**Released: 2026-06-22**
+
+### Added
+- **Analytics — major overhaul** — Bot/crawler filtering, geo location (country/city with flags), real-time active users with a 30-minute sparkline and live tables, sessions, bounce rate, new vs returning visitors, traffic channels, e-commerce conversion KPIs and a visit→cart→checkout→order funnel, plus donut charts for channels, returning visitors and top countries
+- **Analytics — data retention** — New `falcon:prune-analytics` command with a daily schedule and a cron-independent fallback, with a configurable retention window
+
+### Fixed
+- **Footer logo** — The default footer logo now uses the white brand logo (the dark logo was invisible on the dark footer) at a larger size, automatically darkened on light footer backgrounds; a custom uploaded logo is always shown as-is
+
+## v1.4.8 {#v1-4-8}
+
+**Released: 2026-06-22**
+
+### Added
+- **Registration — email verification** — New sign-ups are no longer logged in immediately; a time-limited (5-minute) signed verification link is emailed instead, and sign-in is blocked until the address is verified. Includes a notice page and a throttled resend flow. A migration marks all existing users as verified so no one is locked out
+
+### Fixed
+- **Order status emails** — Customers are now emailed on every order status change (pending, on-hold, processing, completed, delivered, cancelled, refunded, partially-refunded, failed), not just on delivery — for both single and bulk updates
+
+### Changed
+- **Product Meta element** — Now available only in post-card mode, like Post Meta and Content
+
+## v1.4.7 {#v1-4-7}
+
+**Released: 2026-06-21**
+
+### Added
+- **Builder — Product Meta element** — A new element that displays a product's price (with sale), SKU, availability, stock quantity and type; each field toggleable, with stacked/inline layout, alignment, labels and full design controls
+- **Builder — Ticker** — Configurable item spacing, a duplicate-item button, and live scrolling in the builder canvas
+- **Dynamic sources — Product group** — Bind any text field to live product data (price, regular/sale price, SKU, stock status, stock quantity); dynamic fields now show a live preview right in the builder using the real value of the post being edited
+
+## v1.4.6 {#v1-4-6}
 
 **Released: 2026-06-21**
 
