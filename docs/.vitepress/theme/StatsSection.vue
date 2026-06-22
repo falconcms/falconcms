@@ -5,7 +5,7 @@ import versionData from '../../../version.json'
 const downloads = ref(null)
 const stars = ref(null)
 const version = ref(versionData.version)
-const updated = ref(null)
+const lastDownload = ref(null)
 
 onMounted(async () => {
   try {
@@ -14,23 +14,27 @@ onMounted(async () => {
     downloads.value = data.package.downloads.total
     const v = data.package.version_normalized
     if (v) version.value = v.replace(/^(\d+\.\d+\.\d+).*$/, '$1')
+    // If there were downloads today, the most recent download day is today.
+    if (data.package.downloads.daily > 0) lastDownload.value = new Date().toISOString().slice(0, 10)
+  } catch (_) {}
 
-    // Most recent release time = newest non-dev tagged version on Packagist.
-    const versions = data.package.versions || {}
-    let latest = null
-    for (const [ver, info] of Object.entries(versions)) {
-      if (ver.startsWith('dev-') || !info.time) continue
-      if (!latest || new Date(info.time) > new Date(latest)) latest = info.time
+  // Packagist exposes day-level download counts (not exact times). The most recent
+  // day with at least one download is the closest we can show to "last downloaded".
+  try {
+    const from = new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10)
+    const res = await fetch(`https://packagist.org/packages/falconcms/falconcms/stats/all.json?average=daily&from=${from}`)
+    const data = await res.json()
+    const labels = data.labels || []
+    const series = (data.values && data.values['falconcms/falconcms']) || []
+    for (let i = series.length - 1; i >= 0; i--) {
+      if (series[i] > 0) { lastDownload.value = labels[i]; break }
     }
-    if (latest) updated.value = latest
   } catch (_) {}
 
   try {
     const res = await fetch('https://api.github.com/repos/falconcms/falconcms')
     const data = await res.json()
     stars.value = data.stargazers_count
-    // Fall back to the repo's last push if Packagist didn't give a release time.
-    if (!updated.value && data.pushed_at) updated.value = data.pushed_at
   } catch (_) {}
 })
 
@@ -40,16 +44,16 @@ function fmt(n) {
   return String(n)
 }
 
-function ago(ts) {
-  if (!ts) return '—'
-  const diff = Math.max(0, (Date.now() - new Date(ts).getTime()) / 1000)
-  if (diff < 60) return 'just now'
-  const units = [['year', 31536000], ['month', 2592000], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]]
-  for (const [name, secs] of units) {
-    const v = Math.floor(diff / secs)
-    if (v >= 1) return v + ' ' + name + (v > 1 ? 's' : '') + ' ago'
-  }
-  return 'just now'
+function agoDay(dateStr) {
+  if (!dateStr) return '—'
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const d = new Date(dateStr + 'T00:00:00')
+  const days = Math.round((today - d) / 86400000)
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  if (days < 7) return days + ' days ago'
+  if (days < 30) { const w = Math.floor(days / 7); return w + ' week' + (w > 1 ? 's' : '') + ' ago' }
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 </script>
 
@@ -84,9 +88,9 @@ function ago(ts) {
       <div class="stat-divider"></div>
 
       <div class="stat-card">
-        <div class="stat-icon">🕑</div>
-        <div class="stat-value stat-value-sm">{{ ago(updated) }}</div>
-        <div class="stat-label">Last Updated</div>
+        <div class="stat-icon">⬇️</div>
+        <div class="stat-value stat-value-sm">{{ agoDay(lastDownload) }}</div>
+        <div class="stat-label">Last Download</div>
       </div>
 
     </div>
