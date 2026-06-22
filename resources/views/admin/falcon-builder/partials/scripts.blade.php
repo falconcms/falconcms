@@ -569,10 +569,10 @@
             if (postCardMode.value) {
                 availableElements.push({ type: 'post_content', name: 'Content', icon: 'fa fa-paragraph' });
                 availableElements.push({ type: 'post_meta', name: 'Post Meta', icon: 'fa fa-tags' });
+                // Product Meta — post-card only (like Post Meta / Content); renders product
+                // price/SKU/stock when the card's post is a product, nothing otherwise.
+                availableElements.push({ type: 'product_meta', name: 'Product Meta', icon: 'fa fa-tag' });
             }
-            // Product Meta — available in both the regular builder and post-card mode
-            // (renders product price/SKU/stock on product pages; nothing elsewhere).
-            availableElements.push({ type: 'product_meta', name: 'Product Meta', icon: 'fa fa-tag' });
 
             const filteredColumnLayouts = computed(() => {
                 if (!searchColumnQuery.value) return columnLayouts;

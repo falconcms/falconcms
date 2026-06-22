@@ -106,11 +106,11 @@ class ShopController extends Controller
                     $o->update(['status' => $status]);
                     $o->logStatus($status);
                     $this->handleInventoryStatusChange($o, $oldStatus, $status);
-                    if ($status === 'delivered') {
+                    if (!empty($o->customer_email)) {
                         try {
                             \Illuminate\Support\Facades\Mail::to($o->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($o, 'status_updated'));
                         } catch (\Exception $e) {
-                            \Illuminate\Support\Facades\Log::error("Order #{$o->order_number} delivery email failed: " . $e->getMessage());
+                            \Illuminate\Support\Facades\Log::error("Order #{$o->order_number} status email failed: " . $e->getMessage());
                         }
                     }
                 }
@@ -176,12 +176,13 @@ class ShopController extends Controller
             $order->logStatus($newStatus, $request->input('timeline_note') ?: null);
             $this->handleInventoryStatusChange($order, $oldStatus, $newStatus);
 
-            // Only email customer when order is delivered
-            if ($newStatus === 'delivered') {
+            // Notify the customer on EVERY status change (pending, on-hold, processing,
+            // confirmed, completed, delivered, cancelled, refunded, partially-refunded, failed…).
+            if (!empty($order->customer_email)) {
                 try {
                     \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', $emailRefundAmount));
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} delivery email failed: " . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} status email failed: " . $e->getMessage());
                 }
             }
         }

@@ -94,6 +94,14 @@ class LoginController extends Controller
                 return back()->withErrors(['email' => 'Your account is restricted.'])->onlyInput('email');
             }
 
+            // Block sign-in until the email address has been verified.
+            if (is_null($user->email_verified_at)) {
+                Auth::logout();
+                $request->session()->put('pending_verification_email', $user->email);
+                return redirect()->route('admin.verify.notice')
+                    ->with('error', 'Please verify your email address before signing in. You can resend the link below.');
+            }
+
 
             // Reset attempts on successful login
             $user->update([

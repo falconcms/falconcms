@@ -7,9 +7,15 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
+use FalconCms\Core\Mail\EmailVerificationMail;
 
 class RegisterController extends Controller
 {
+    /** Minutes a verification link stays valid. */
+    protected int $verifyTtl = 5;
+
     public function showRegistrationForm()
     {
         if (Auth::check()) {
@@ -55,10 +61,85 @@ class RegisterController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role_id' => $subscriberRole ? $subscriberRole->id : null,
+            'email_verified_at' => null, // must verify before logging in
         ]);
 
-        Auth::login($user);
+        // Do NOT log the user in. Send a time-limited verification link instead.
+        $this->sendVerificationLink($user);
 
-        return redirect()->route('admin.dashboard.index')->with('success', 'Registered successfully!');
+        $request->session()->put('pending_verification_email', $user->email);
+
+        return redirect()->route('admin.verify.notice')
+            ->with('success', 'Account created! We sent a verification link to ' . $user->email . '. Please confirm your email to sign in.');
+    }
+
+    /** Notice page shown after registration / when an unverified user tries to log in. */
+    public function verifyNotice(Request $request)
+    {
+        if (Auth::check()) {
+            return redirect()->route('admin.dashboard.index');
+        }
+        $email = $request->session()->get('pending_verification_email', '');
+        return view('falcon-cms::admin.auth.verify-notice', compact('email'));
+    }
+
+    /** Verify the email from a signed link, then sign the user in. */
+    public function verifyEmail(Request $request, $id, $hash)
+    {
+        if (!$request->hasValidSignature()) {
+            return redirect()->route('admin.verify.notice')
+                ->with('error', 'This verification link is invalid or has expired. Please request a new one below.');
+        }
+
+        $user = User::find($id);
+        if (!$user || !hash_equals(sha1($user->email), (string) $hash)) {
+            return redirect()->route('admin.login')->with('error', 'Invalid verification link.');
+        }
+
+        if ($user->email_verified_at) {
+            return redirect()->route('admin.login')->with('success', 'Your email is already verified. Please sign in.');
+        }
+
+        $user->forceFill(['email_verified_at' => now()])->save();
+        $request->session()->forget('pending_verification_email');
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route('admin.dashboard.index')->with('success', 'Email verified — welcome aboard!');
+    }
+
+    /** Re-send a fresh verification link. */
+    public function resendVerification(Request $request)
+    {
+        $request->validate(['email' => ['required', 'email']]);
+
+        $user = User::where('email', $request->email)->first();
+
+        // Always behave the same way to avoid leaking which emails exist.
+        if ($user && is_null($user->email_verified_at)) {
+            $this->sendVerificationLink($user);
+        }
+
+        $request->session()->put('pending_verification_email', $request->email);
+
+        return redirect()->route('admin.verify.notice')
+            ->with('success', 'If that email needs verifying, a new link is on its way. It expires in ' . $this->verifyTtl . ' minutes.');
+    }
+
+    /** Build a signed, time-limited verification URL and email it to the user. */
+    protected function sendVerificationLink(User $user): void
+    {
+        $verifyUrl = URL::temporarySignedRoute(
+            'admin.verify.email',
+            now()->addMinutes($this->verifyTtl),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        try {
+            Mail::to($user->email)->send(new EmailVerificationMail($verifyUrl, $user->name ?? '', $this->verifyTtl));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Email verification send failed for ' . $user->email . ': ' . $e->getMessage());
+        }
     }
 }

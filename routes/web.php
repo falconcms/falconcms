@@ -31,6 +31,11 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::get($register_slug, [RegisterController::class, 'showRegistrationForm'])->name('admin.register');
     Route::post($register_slug, [RegisterController::class, 'register'])->middleware('throttle:10,1');
 
+    // Email verification (registration) — time-limited signed link + notice/resend
+    Route::get('verify-email-notice', [RegisterController::class, 'verifyNotice'])->name('admin.verify.notice');
+    Route::get('verify-email/{id}/{hash}', [RegisterController::class, 'verifyEmail'])->name('admin.verify.email')->middleware('throttle:20,1');
+    Route::post('resend-verification', [RegisterController::class, 'resendVerification'])->name('admin.verify.resend')->middleware('throttle:5,1');
+
     // Password Recovery
     Route::get('forgot-password', [LoginController::class, 'showForgotPasswordForm'])->name('admin.password.request');
     Route::post('forgot-password', [LoginController::class, 'sendResetLinkEmail'])->name('admin.password.email')->middleware('throttle:5,1');
