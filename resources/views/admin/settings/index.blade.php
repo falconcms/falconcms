@@ -235,8 +235,9 @@
                             <input type="checkbox" name="allow_multi_device" id="allow_multi_device"
                                 class="w-4 h-4 mr-2"
                                 {{ ($settings['allow_multi_device'] ?? '0') == '1' ? 'checked' : '' }}>
-                            <span class="text-[14px] text-[#1d2327]">Allow multiple device login</span>
+                            <span class="text-[14px] text-[#1d2327]">Limit the number of devices per account</span>
                         </label>
+                        <p class="text-[12px] text-[#646970] mt-1">When unchecked, users can stay logged in on <strong>unlimited</strong> devices. Check this to cap concurrent logins at the number set below.</p>
                     </td>
                 </tr>
 
@@ -262,9 +263,9 @@
                     </th>
                     <td>
                         <input type="number" name="max_devices" id="max_devices"
-                            value="{{ $settings['max_devices'] ?? '3' }}" min="-1"
+                            value="{{ $settings['max_devices'] ?? '3' }}" min="1"
                             class="wp-input w-[100px] h-8 shadow-sm mb-1">
-                        <p class="text-[12px] text-[#646970]">Limit the number of concurrent sessions per user. Use <strong>-1</strong> for unlimited devices. (Default: 3)</p>
+                        <p class="text-[12px] text-[#646970]">Maximum number of devices a user can be logged in on at once. (Default: 3)</p>
                     </td>
                 </tr>
             </table>

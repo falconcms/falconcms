@@ -115,19 +115,14 @@ class LoginController extends Controller
             
             $request->session()->regenerate();
 
-            // Multi-device Login Restriction
-            $multiDeviceAllowed = get_cms_option('allow_multi_device', '1') === '1';
-            $maxDevices = (int) get_cms_option('max_devices', 3);
+            // Device limit. The "limit devices" option inverts to a cap:
+            //   - unchecked (off) => unlimited concurrent devices, never block
+            //   - checked   (on)  => cap concurrent sessions at max_devices (minimum 1)
+            $limitEnabled = get_cms_option('allow_multi_device', '0') === '1';
 
-            // A non-positive limit (e.g. -1) means UNLIMITED concurrent sessions — never block,
-            // regardless of the multi-device toggle. When multi-device login is off (and no
-            // unlimited sentinel is set), restrict the account to a single active session.
-            $unlimited = $maxDevices <= 0;
-            if (!$multiDeviceAllowed && !$unlimited) {
-                $maxDevices = 1;
-            }
+            if ($limitEnabled) {
+                $maxDevices = max(1, (int) get_cms_option('max_devices', 3));
 
-            if (!$unlimited) {
                 $userSessions = \Illuminate\Support\Facades\DB::table('sessions')
                     ->where('user_id', $user->id)
                     ->where('id', '!=', $request->session()->getId())
@@ -145,11 +140,8 @@ class LoginController extends Controller
                         Auth::logout();
                         $request->session()->invalidate();
                         $request->session()->regenerateToken();
-                        $limitLabel = $multiDeviceAllowed
-                            ? "Maximum device limit ($maxDevices) reached for this account."
-                            : "Only one active session is allowed per account.";
                         return back()->withErrors([
-                            'email' => "Login denied: $limitLabel"
+                            'email' => "Login denied: Maximum device limit ($maxDevices) reached for this account."
                         ])->onlyInput('email');
                     }
                 }

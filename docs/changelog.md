@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.1 <Badge type="tip" text="Latest" /> {#v1-5-1}
+## v1.5.2 <Badge type="tip" text="Latest" /> {#v1-5-2}
+
+**Released: 2026-06-23**
+
+### Changed
+- **Device limit — simpler on/off model** — The multi-device setting is now a clear cap. **Unchecked = unlimited** devices; **checked = limit** concurrent logins to *Max devices allowed*. The `-1` "unlimited" sentinel has been removed — the field is a plain positive number again (minimum 1), and the checkbox/help text now reflect the inverted meaning
+
+## v1.5.1 {#v1-5-1}
 
 **Released: 2026-06-23**
 
