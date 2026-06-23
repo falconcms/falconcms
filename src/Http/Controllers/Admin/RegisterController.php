@@ -53,14 +53,18 @@ class RegisterController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $subscriberRole = \FalconCms\Core\Models\Role::where('slug', 'subscriber')->first();
+        // Assign the role configured in Settings → "New User Default Role",
+        // falling back to subscriber if it is unset or no longer exists.
+        $defaultRoleSlug = get_cms_option('default_role', 'subscriber');
+        $defaultRole = \FalconCms\Core\Models\Role::where('slug', $defaultRoleSlug)->first()
+            ?: \FalconCms\Core\Models\Role::where('slug', 'subscriber')->first();
 
         $user = User::create([
             'name' => $request->name,
             'username' => $this->uniqueUsername($request->email),
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $subscriberRole ? $subscriberRole->id : null,
+            'role_id' => $defaultRole ? $defaultRole->id : null,
             'email_verified_at' => null, // must verify before logging in
         ]);
 

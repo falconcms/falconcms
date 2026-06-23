@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.2 <Badge type="tip" text="Latest" /> {#v1-5-2}
+## v1.5.3 <Badge type="tip" text="Latest" /> {#v1-5-3}
+
+**Released: 2026-06-23**
+
+### Fixed
+- **Registration — default role ignored** — Self-registration now assigns the role configured in **Settings → New User Default Role** instead of always using *subscriber*. Selecting a different role (e.g. Editor, Author) now correctly applies it to newly registered users; if the configured role is missing it safely falls back to subscriber
+
+## v1.5.2 {#v1-5-2}
 
 **Released: 2026-06-23**
 
