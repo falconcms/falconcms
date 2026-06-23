@@ -261,10 +261,10 @@
                         <label for="max_devices" class="text-[14px] font-semibold text-[#1d2327]">Max devices allowed</label>
                     </th>
                     <td>
-                        <input type="number" name="max_devices" id="max_devices" 
-                            value="{{ $settings['max_devices'] ?? '3' }}" min="1"
+                        <input type="number" name="max_devices" id="max_devices"
+                            value="{{ $settings['max_devices'] ?? '3' }}" min="-1"
                             class="wp-input w-[100px] h-8 shadow-sm mb-1">
-                        <p class="text-[12px] text-[#646970]">Limit the number of concurrent sessions per user. (Default: 3)</p>
+                        <p class="text-[12px] text-[#646970]">Limit the number of concurrent sessions per user. Use <strong>-1</strong> for unlimited devices. (Default: 3)</p>
                     </td>
                 </tr>
             </table>

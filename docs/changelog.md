@@ -5,7 +5,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.0 <Badge type="tip" text="Latest" /> {#v1-5-0}
+## v1.5.1 <Badge type="tip" text="Latest" /> {#v1-5-1}
+
+**Released: 2026-06-23**
+
+### Fixed
+- **Multi-device login — unlimited (`-1`)** — Setting **Max devices allowed** to `-1` now correctly means unlimited concurrent sessions and never blocks sign-in. Previously the limit check (`active sessions ≥ -1`) was always true, so logging in from a second device failed with *"Login denied: Only one active session is allowed per account."* The `-1` sentinel now applies regardless of the multi-device toggle; normal numeric limits and the single-session default are unchanged
+
+### Changed
+- **Settings — Max devices allowed** — The field now accepts `-1` (minimum lowered from `1`) with a helper note that `-1` means unlimited devices
+
+## v1.5.0 {#v1-5-0}
 
 **Released: 2026-06-22**
 

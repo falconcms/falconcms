@@ -117,31 +117,41 @@ class LoginController extends Controller
 
             // Multi-device Login Restriction
             $multiDeviceAllowed = get_cms_option('allow_multi_device', '1') === '1';
-            $maxDevices = $multiDeviceAllowed ? (int) get_cms_option('max_devices', 3) : 1;
+            $maxDevices = (int) get_cms_option('max_devices', 3);
 
-            $userSessions = \Illuminate\Support\Facades\DB::table('sessions')
-                ->where('user_id', $user->id)
-                ->where('id', '!=', $request->session()->getId())
-                ->orderBy('last_activity', 'desc')
-                ->get();
+            // A non-positive limit (e.g. -1) means UNLIMITED concurrent sessions — never block,
+            // regardless of the multi-device toggle. When multi-device login is off (and no
+            // unlimited sentinel is set), restrict the account to a single active session.
+            $unlimited = $maxDevices <= 0;
+            if (!$multiDeviceAllowed && !$unlimited) {
+                $maxDevices = 1;
+            }
 
-            if ($userSessions->count() >= $maxDevices) {
-                if ($user->hasRole('super-admin')) {
-                    // Kick the oldest (least recently active) session to make room
-                    $sessionToKill = $userSessions->last();
-                    \Illuminate\Support\Facades\DB::table('sessions')
-                        ->where('id', $sessionToKill->id)
-                        ->delete();
-                } else {
-                    Auth::logout();
-                    $request->session()->invalidate();
-                    $request->session()->regenerateToken();
-                    $limitLabel = $multiDeviceAllowed
-                        ? "Maximum device limit ($maxDevices) reached for this account."
-                        : "Only one active session is allowed per account.";
-                    return back()->withErrors([
-                        'email' => "Login denied: $limitLabel"
-                    ])->onlyInput('email');
+            if (!$unlimited) {
+                $userSessions = \Illuminate\Support\Facades\DB::table('sessions')
+                    ->where('user_id', $user->id)
+                    ->where('id', '!=', $request->session()->getId())
+                    ->orderBy('last_activity', 'desc')
+                    ->get();
+
+                if ($userSessions->count() >= $maxDevices) {
+                    if ($user->hasRole('super-admin')) {
+                        // Kick the oldest (least recently active) session to make room
+                        $sessionToKill = $userSessions->last();
+                        \Illuminate\Support\Facades\DB::table('sessions')
+                            ->where('id', $sessionToKill->id)
+                            ->delete();
+                    } else {
+                        Auth::logout();
+                        $request->session()->invalidate();
+                        $request->session()->regenerateToken();
+                        $limitLabel = $multiDeviceAllowed
+                            ? "Maximum device limit ($maxDevices) reached for this account."
+                            : "Only one active session is allowed per account.";
+                        return back()->withErrors([
+                            'email' => "Login denied: $limitLabel"
+                        ])->onlyInput('email');
+                    }
                 }
             }
 
