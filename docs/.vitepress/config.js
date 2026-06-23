@@ -35,7 +35,7 @@ export default defineConfig({
       { text: 'E-commerce', link: '/ecommerce/overview' },
       { text: 'Hooks API', link: '/api/hooks' },
       { text: 'Changelog', link: '/changelog' },
-      { text: '🚀 Live Demo', link: '/demo' },
+      { text: '🚀 Live Demo', link: 'https://demo.falconcms.com', target: '_blank', rel: 'noopener' },
       {
         text: `v${version}`,
         items: [
