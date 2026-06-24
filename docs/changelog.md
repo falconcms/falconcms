@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.6.0 <Badge type="tip" text="Latest" /> {#v1-6-0}
+## v1.6.1 <Badge type="tip" text="Latest" /> {#v1-6-1}
+
+**Released: 2026-06-24**
+
+### Fixed
+- **Dashboard showed a stale "Installed Version"** — After updating, the dashboard kept showing an old installed version (e.g. v1.4.2) even though the new code was in place. The version check preferred Composer's reported version, which can be a pinned alias (notably on path-repository installs) and lags behind. It now reads the version from the package's `version.json` first (bumped on every release), so the dashboard reflects the version actually installed
+
+## v1.6.0 {#v1-6-0}
 
 **Released: 2026-06-24**
 

@@ -139,6 +139,13 @@ if (!function_exists('falcon_cms_installed_version')) {
      */
     function falcon_cms_installed_version(): string
     {
+        // version.json ships inside the package and is bumped on every release, so it is the most
+        // reliable source of the installed *code* version. Composer's reported version can be a
+        // pinned alias (path repositories) or otherwise out of step, so it is only a fallback.
+        if (defined('LAZY_CMS_VERSION') && preg_match('/^v?\d+\.\d+\.\d+/', LAZY_CMS_VERSION)) {
+            return ltrim(LAZY_CMS_VERSION, 'v');
+        }
+
         if (class_exists(\Composer\InstalledVersions::class)) {
             try {
                 $v = \Composer\InstalledVersions::getPrettyVersion('falconcms/falconcms');
@@ -150,6 +157,7 @@ if (!function_exists('falcon_cms_installed_version')) {
                 }
             } catch (\Throwable $e) {}
         }
+
         return LAZY_CMS_VERSION;
     }
 }
