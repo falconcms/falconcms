@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.6.1 <Badge type="tip" text="Latest" /> {#v1-6-1}
+## v1.6.2 <Badge type="tip" text="Latest" /> {#v1-6-2}
+
+**Released: 2026-06-24**
+
+### Fixed
+- **Uninstall could leave a broken `User` model** — `falcon:uninstall` removed the `HasCmsPermissions` import but only stripped a *standalone* `use HasCmsPermissions;` line. When the trait was declared in a combined list (e.g. `use HasFactory, Notifiable, HasCmsPermissions;`), the reference was left without its import, crashing the app — and any later reinstall's migrations — with *"Trait App\Models\HasCmsPermissions not found"*. The revert now also removes the trait from a combined `use` list (verified valid for leading/middle/trailing positions)
+
+## v1.6.1 {#v1-6-1}
 
 **Released: 2026-06-24**
 

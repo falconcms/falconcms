@@ -84,10 +84,13 @@ class UninstallFalconCms extends Command
         $content  = file_get_contents($path);
         $original = $content;
 
-        // Drop the trait usage line inside the class body.
-        $content = preg_replace('/\R[ \t]*use\s+HasCmsPermissions\s*;/', '', $content);
-        // Drop the namespace import (handles "use FalconCms\Core\Traits\HasCmsPermissions;").
+        // Drop the namespace import first ("use FalconCms\Core\Traits\HasCmsPermissions;").
         $content = preg_replace('/\R[ \t]*use\s+FalconCms\\\\Core\\\\Traits\\\\HasCmsPermissions\s*;/', '', $content);
+        // Drop a standalone trait-use line ("use HasCmsPermissions;").
+        $content = preg_replace('/\R[ \t]*use\s+HasCmsPermissions\s*;/', '', $content);
+        // Drop it from a combined trait list ("use A, B, HasCmsPermissions;" / "use HasCmsPermissions, A;").
+        $content = preg_replace('/,\s*HasCmsPermissions\b/', '', $content);
+        $content = preg_replace('/\buse\s+HasCmsPermissions\s*,\s*/', 'use ', $content);
 
         if ($content !== null && $content !== $original) {
             file_put_contents($path, $content);
