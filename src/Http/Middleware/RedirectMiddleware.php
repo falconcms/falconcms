@@ -4,6 +4,7 @@ namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use FalconCms\Core\Models\Redirect;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\View;
@@ -12,18 +13,21 @@ class RedirectMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        // 1. Handle Redirects
+        // 1. Handle Redirects — guarded so a missing table (before migration / after a DB reset)
+        //    degrades gracefully instead of throwing a 500 on every request.
         $path = $request->path();
         $normalizedPath = '/' . ltrim($path, '/');
-        
-        $redirect = Redirect::where('old_url', $normalizedPath)
-            ->orWhere('old_url', $path)
-            ->first();
 
-        if ($redirect) {
-            $redirect->increment('hits');
-            $redirect->update(['last_hit_at' => now()]);
-            return redirect($redirect->new_url, $redirect->status_code);
+        if ($this->redirectsTableExists()) {
+            $redirect = Redirect::where('old_url', $normalizedPath)
+                ->orWhere('old_url', $path)
+                ->first();
+
+            if ($redirect) {
+                $redirect->increment('hits');
+                $redirect->update(['last_hit_at' => now()]);
+                return redirect($redirect->new_url, $redirect->status_code);
+            }
         }
 
         // 2. Strict Theme Enforcement via View Composer
@@ -46,5 +50,19 @@ class RedirectMiddleware
         });
 
         return $next($request);
+    }
+
+    /** Whether the redirects table exists (cached per request; tolerates DB errors). */
+    protected function redirectsTableExists(): bool
+    {
+        static $exists = null;
+        if ($exists === null) {
+            try {
+                $exists = Schema::hasTable('cms_redirects');
+            } catch (\Throwable $e) {
+                $exists = false;
+            }
+        }
+        return $exists;
     }
 }

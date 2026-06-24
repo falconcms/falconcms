@@ -5,7 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.9 <Badge type="tip" text="Latest" /> {#v1-5-9}
+## v1.5.10 <Badge type="tip" text="Latest" /> {#v1-5-10}
+
+**Released: 2026-06-24**
+
+### Fixed
+- **App crashed after a database reset** — The redirect middleware queried `cms_redirects` on every request and returned a 500 (*"Base table or view not found"*) once the tables were dropped (e.g. after `falcon:uninstall-db`). It now checks the table exists first and degrades gracefully when it doesn't
+- **Reinstall failed with "table already exists"** — Uninstall keeps the shared Laravel tables (`users`, `sessions`, `cache`, `jobs`) but clears the migration records, so re-running `falcon:install` / `migrate` tried to recreate them and failed with *"Table 'users' already exists"*. The bundled `users` / `cache` / `jobs` migrations are now idempotent (`Schema::hasTable` guards), so a reinstall succeeds no matter which tables remain
+
+## v1.5.9 {#v1-5-9}
 
 **Released: 2026-06-24**
 
