@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.4 <Badge type="tip" text="Latest" /> {#v1-5-4}
+## v1.5.5 <Badge type="tip" text="Latest" /> {#v1-5-5}
+
+**Released: 2026-06-24**
+
+### Security
+- **AJAX fragment endpoints no longer expose raw output on direct visit** — `GET /cart/fragment` (mini-cart) and `GET /search/live` are internal AJAX-only endpoints; opening them directly in a browser previously returned their raw JSON. Non-AJAX (direct navigation) requests are now redirected to the cart and search pages respectively, so the raw payloads are never shown. JS-driven calls (which send `X-Requested-With`) are unaffected, and only ever returned the visitor's own session data anyway
+
+## v1.5.4 {#v1-5-4}
 
 **Released: 2026-06-24**
 

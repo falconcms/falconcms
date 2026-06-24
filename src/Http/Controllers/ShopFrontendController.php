@@ -36,8 +36,14 @@ class ShopFrontendController extends Controller
      * Off-canvas mini-cart fragment (AJAX). Returns the rendered item list,
      * live subtotal and item count so the drawer can refresh dynamically.
      */
-    public function miniCart()
+    public function miniCart(Request $request)
     {
+        // Internal AJAX fragment endpoint — send a direct browser visit to the cart page
+        // instead of exposing the raw JSON payload.
+        if (!$request->ajax()) {
+            return redirect()->route('shop.cart');
+        }
+
         $this->validateCartItems();
         $cart = Session::get('falcon_cart', []);
 

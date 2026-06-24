@@ -566,6 +566,11 @@ class FrontendController extends Controller
      */
     public function liveSearch(Request $request)
     {
+        // Internal AJAX endpoint — send direct browser visits to the full search page, not raw JSON.
+        if (!$request->ajax()) {
+            return redirect()->route('frontend.search', array_filter(['s' => $request->input('q')]));
+        }
+
         $q = trim((string) $request->input('q', ''));
         if (mb_strlen($q) < 2) {
             return response()->json(['results' => []]);
