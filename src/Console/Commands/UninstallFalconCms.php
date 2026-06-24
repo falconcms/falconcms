@@ -64,6 +64,10 @@ class UninstallFalconCms extends Command
             $this->removeComposerPackage();
         }
 
+        // 6) Clear the package-discovery / services caches so they don't reference the removed provider.
+        //    (composer remove runs with --no-scripts, so it doesn't regenerate these itself.)
+        $this->clearBootstrapCaches();
+
         $this->newLine();
         $this->info('✔ FalconCMS has been fully removed. Your application should boot cleanly.');
 
@@ -111,6 +115,18 @@ class UninstallFalconCms extends Command
             }
         }
         $this->info("Removed {$removed} published path(s).");
+    }
+
+    /** Delete the compiled package/service caches that still list the (removed) service provider. */
+    protected function clearBootstrapCaches(): void
+    {
+        foreach (['bootstrap/cache/packages.php', 'bootstrap/cache/services.php', 'bootstrap/cache/config.php'] as $rel) {
+            $path = base_path($rel);
+            if (File::exists($path)) {
+                File::delete($path);
+                $this->line('  • cleared ' . $rel);
+            }
+        }
     }
 
     /** Run "composer remove falconcms/falconcms"; fall back to a printed instruction on failure. */

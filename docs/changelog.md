@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.8 <Badge type="tip" text="Latest" /> {#v1-5-8}
+## v1.5.9 <Badge type="tip" text="Latest" /> {#v1-5-9}
+
+**Released: 2026-06-24**
+
+### Fixed
+- **Uninstall left a stale provider cache** — `falcon:uninstall` removes the package with `composer remove --no-scripts`, which doesn't regenerate Laravel's package-discovery cache. `bootstrap/cache/packages.php` / `services.php` therefore still referenced `FalconCmsServiceProvider`, so the app booted with *"Class FalconCms\Core\FalconCmsServiceProvider not found"*. The command now clears those bootstrap caches as its final step. (If you hit this after a manual `composer remove`, delete `bootstrap/cache/packages.php` and `bootstrap/cache/services.php`, then run `composer dump-autoload`.)
+
+## v1.5.8 {#v1-5-8}
 
 **Released: 2026-06-24**
 
