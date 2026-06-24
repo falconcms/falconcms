@@ -23,6 +23,32 @@ class BlacklistController extends Controller
         }
 
         $blockedIps = $query->paginate(10)->withQueryString();
+
+        // Backfill geo for blocked IPs missing a country (older rows, or earlier failed lookups).
+        // Runs after the response so the page is never slowed; ip-api is rate-limited, so cap per load.
+        $needGeo = BlockedIp::where(function ($q) {
+                $q->whereNull('country')->orWhere('country', '')->orWhere('country', 'Unknown');
+            })->whereNotIn('ip_address', ['127.0.0.1', '::1'])
+            ->limit(15)->get(['id', 'ip_address']);
+        if ($needGeo->isNotEmpty()) {
+            app()->terminating(function () use ($needGeo) {
+                foreach ($needGeo as $row) {
+                    try {
+                        $geo = falcon_geoip($row->ip_address);
+                        if (!empty($geo['country'])) {
+                            BlockedIp::where('id', $row->id)->update([
+                                'country'      => $geo['country'],
+                                'country_code' => $geo['country_code'] ? strtolower($geo['country_code']) : null,
+                                'city'         => $geo['city'],
+                                'region'       => $geo['region'],
+                                'isp'          => $geo['isp'],
+                            ]);
+                        }
+                    } catch (\Throwable $e) {}
+                }
+            });
+        }
+
         return view('falcon-cms::admin.blacklist.index', compact('blockedIps'));
     }
 

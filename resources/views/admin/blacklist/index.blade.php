@@ -43,10 +43,12 @@
                     <tr class="border-b border-[#c3c4c7] bg-[#f9f9f9]">
                         <th class="p-2 w-10 text-center"><input type="checkbox" id="select-all"></th>
                         <th class="p-2 font-semibold">IP Address</th>
-                        <th class="p-2 font-semibold">Country</th>
-                        <th class="p-2 font-semibold">Attempts</th>
+                        <th class="p-2 font-semibold">Location</th>
+                        <th class="p-2 font-semibold">ISP / Network</th>
+                        <th class="p-2 font-semibold text-center">Attempts</th>
                         <th class="p-2 font-semibold">Reason</th>
-                        <th class="p-2 font-semibold">Blocked At</th>
+                        <th class="p-2 font-semibold">First Blocked</th>
+                        <th class="p-2 font-semibold">Last Attempt</th>
                         <th class="p-2 font-semibold">Actions</th>
                     </tr>
                 </thead>
@@ -54,20 +56,29 @@
                     @forelse($blockedIps as $ip)
                         <tr class="border-b border-[#f0f0f1] hover:bg-[#f6f7f7] group">
                             <td class="p-2 text-center"><input type="checkbox" name="ids[]" value="{{ $ip->id }}" form="blacklist-bulk-form" class="ip-checkbox"></td>
-                            <td class="p-2 font-semibold text-[#2271b1]">{{ $ip->ip_address }}</td>
+                            <td class="p-2 font-semibold text-[#2271b1] font-mono">{{ $ip->ip_address }}</td>
                             <td class="p-2">
                                 <div class="flex items-center gap-2">
                                     @if($ip->country_code)
-                                        <img src="https://flagcdn.com/w20/{{ $ip->country_code }}.png" 
+                                        <img src="https://flagcdn.com/w20/{{ $ip->country_code }}.png"
                                              srcset="https://flagcdn.com/w40/{{ $ip->country_code }}.png 2x"
-                                             width="20" alt="{{ $ip->country }}">
+                                             width="20" alt="{{ $ip->country }}" style="flex-shrink:0" onerror="this.style.display='none'">
+                                    @else
+                                        <span class="material-symbols-outlined text-[16px] text-[#9ca3af]" style="flex-shrink:0">public_off</span>
                                     @endif
-                                    <span class="bg-slate-100 px-2 py-0.5 rounded text-[#1d2327] font-medium">{{ $ip->country ?: 'Unknown' }}</span>
+                                    <span>
+                                        <span class="text-[#1d2327] font-medium">{{ $ip->country ?: 'Unknown' }}</span>
+                                        @if($ip->city)<span class="block text-[11px] text-[#9ca3af] leading-tight">{{ $ip->city }}{{ $ip->region && $ip->region !== $ip->city ? ', ' . $ip->region : '' }}</span>@endif
+                                    </span>
                                 </div>
                             </td>
-                            <td class="p-2">{{ $ip->attempts }}</td>
-                            <td class="p-2 text-[#646970]">{{ $ip->reason }}</td>
-                            <td class="p-2">{{ cms_date($ip->created_at, 'M d, Y H:i') }}</td>
+                            <td class="p-2 text-[#646970]"><span class="block truncate max-w-[180px]" title="{{ $ip->isp }}">{{ $ip->isp ?: '—' }}</span></td>
+                            <td class="p-2 text-center">
+                                <span class="inline-block min-w-[24px] px-2 py-0.5 rounded-full text-[11px] font-bold {{ $ip->attempts >= 5 ? 'bg-[#fdecec] text-[#b32d2e]' : 'bg-[#fef9ee] text-[#b8860b]' }}">{{ $ip->attempts }}</span>
+                            </td>
+                            <td class="p-2 text-[#646970]">{{ $ip->reason ?: '—' }}</td>
+                            <td class="p-2 text-[#646970] whitespace-nowrap">{{ cms_date($ip->created_at, 'M d, Y') }}<span class="block text-[11px] text-[#9ca3af]">{{ cms_date($ip->created_at, 'H:i') }}</span></td>
+                            <td class="p-2 text-[#646970] whitespace-nowrap" title="{{ cms_date($ip->updated_at, 'M d, Y H:i') }}">{{ $ip->updated_at->diffForHumans() }}</td>
                             <td class="p-2">
                                 <form id="delete-blacklist-{{ $ip->id }}" action="{{ route('admin.blacklist.destroy', $ip->id) }}" method="POST" class="inline">
                                     @csrf @method('DELETE')
@@ -77,7 +88,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="p-4 text-center text-slate-500 italic">No blacklisted IPs found.</td>
+                            <td colspan="9" class="p-4 text-center text-slate-500 italic">No blacklisted IPs found.</td>
                         </tr>
                     @endforelse
                 </tbody>

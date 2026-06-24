@@ -1063,6 +1063,41 @@ if (!function_exists('clear_page_cache')) {
     }
 }
 
+if (!function_exists('falcon_geoip')) {
+    /**
+     * Resolve an IP address to geo/network details via ip-api.com, cached for 30 days.
+     * Uses the Laravel HTTP client (with a timeout) rather than file_get_contents, which is
+     * often disabled or blocked on production hosts. Returns null values when unresolved.
+     *
+     * @return array{country: ?string, country_code: ?string, city: ?string, region: ?string, isp: ?string}
+     */
+    function falcon_geoip(?string $ip): array
+    {
+        $empty = ['country' => null, 'country_code' => null, 'city' => null, 'region' => null, 'isp' => null];
+        if (!$ip || in_array($ip, ['127.0.0.1', '::1'], true)
+            || str_starts_with($ip, '192.168.') || str_starts_with($ip, '10.')
+            || preg_match('/^172\.(1[6-9]|2\d|3[01])\./', $ip)) {
+            return $empty;
+        }
+        return \Illuminate\Support\Facades\Cache::remember('falcon_geoip_' . md5($ip), now()->addDays(30), function () use ($ip, $empty) {
+            try {
+                $resp = \Illuminate\Support\Facades\Http::timeout(3)
+                    ->get("http://ip-api.com/json/{$ip}", ['fields' => 'status,country,countryCode,city,regionName,isp']);
+                if ($resp->ok() && $resp->json('status') === 'success') {
+                    return [
+                        'country'      => $resp->json('country'),
+                        'country_code' => $resp->json('countryCode'),
+                        'city'         => $resp->json('city'),
+                        'region'       => $resp->json('regionName'),
+                        'isp'          => $resp->json('isp'),
+                    ];
+                }
+            } catch (\Throwable $e) {}
+            return $empty;
+        });
+    }
+}
+
 if (!function_exists('falcon_log_activity')) {
     function falcon_log_activity($action, $description, $model = null, $properties = []) {
         try {

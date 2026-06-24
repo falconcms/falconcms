@@ -118,7 +118,8 @@ export default defineConfig({
         {
           text: 'Changelog',
           items: [
-            { text: 'v1.5.5 (Latest)', link: '/changelog#v1-5-5' },
+            { text: 'v1.5.6 (Latest)', link: '/changelog#v1-5-6' },
+            { text: 'v1.5.5', link: '/changelog#v1-5-5' },
             { text: 'v1.5.4', link: '/changelog#v1-5-4' },
             { text: 'v1.5.3', link: '/changelog#v1-5-3' },
             { text: 'v1.5.2', link: '/changelog#v1-5-2' },

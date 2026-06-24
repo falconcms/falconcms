@@ -5,7 +5,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.5 <Badge type="tip" text="Latest" /> {#v1-5-5}
+## v1.5.6 <Badge type="tip" text="Latest" /> {#v1-5-6}
+
+**Released: 2026-06-24**
+
+### Fixed
+- **IP Blacklist — country always "Unknown"** — Blocked IPs were geo-resolved with `file_get_contents`, which is disabled or blocked on many production hosts, so the country never resolved. A new shared `falcon_geoip()` helper now uses the Laravel HTTP client (with a timeout, cached 30 days); existing "Unknown" rows are backfilled when the blacklist page is viewed
+
+### Added
+- **IP Blacklist — richer detail** — The blacklist table now shows **Location** (country + city/region), **ISP / network**, and both **First Blocked** and **Last Attempt** times, with an attempts badge. New blocks capture city, region and ISP
+
+### Changed
+- **Geo lookups unified** — Visit tracking and the IP blacklist now share the same cached `falcon_geoip()` helper instead of separate, less reliable lookups
+
+## v1.5.5 {#v1-5-5}
 
 **Released: 2026-06-24**
 

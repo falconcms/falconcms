@@ -49,22 +49,7 @@ class TrackVisits
         $ip = $request->ip();
         app()->terminating(function () use ($row, $ip) {
             try {
-                $geo = Cache::remember('falcon_geoip_' . md5((string) $ip), now()->addDays(30), function () use ($ip) {
-                    if (!$ip || in_array($ip, ['127.0.0.1', '::1'], true)
-                        || str_starts_with($ip, '192.168.') || str_starts_with($ip, '10.')
-                        || preg_match('/^172\.(1[6-9]|2\d|3[01])\./', $ip)) {
-                        return ['country' => null, 'country_code' => null, 'city' => null];
-                    }
-                    $resp = Http::timeout(3)->get("http://ip-api.com/json/{$ip}", ['fields' => 'status,country,countryCode,city']);
-                    if ($resp->ok() && $resp->json('status') === 'success') {
-                        return [
-                            'country'      => $resp->json('country'),
-                            'country_code' => $resp->json('countryCode'),
-                            'city'         => $resp->json('city'),
-                        ];
-                    }
-                    return ['country' => null, 'country_code' => null, 'city' => null];
-                });
+                $geo = falcon_geoip((string) $ip);
 
                 if (!empty($geo['country'])) {
                     Analytics::where('id', $row->id)->update([

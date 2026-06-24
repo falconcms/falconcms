@@ -172,11 +172,14 @@ class LoginController extends Controller
             $ipRecord->increment('attempts');
             
             if ($ipRecord->attempts >= 5) {
-                $geoData = $this->getCountryFromIp($request->ip());
+                $geo = falcon_geoip($request->ip());
                 $ipRecord->update([
-                    'reason' => 'Too many attempts with non-existent emails',
-                    'country' => $geoData['name'],
-                    'country_code' => $geoData['code'],
+                    'reason'       => 'Too many attempts with non-existent emails',
+                    'country'      => $geo['country'],
+                    'country_code' => $geo['country_code'] ? strtolower($geo['country_code']) : null,
+                    'city'         => $geo['city'],
+                    'region'       => $geo['region'],
+                    'isp'          => $geo['isp'],
                 ]);
                 abort(403, 'Too many failed attempts. Your IP has been permanently blocked.');
             }
@@ -190,21 +193,6 @@ class LoginController extends Controller
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
-    }
-
-    private function getCountryFromIp($ip)
-    {
-        try {
-            $response = @file_get_contents("http://ip-api.com/json/{$ip}");
-            if ($response) {
-                $data = json_decode($response, true);
-                return [
-                    'name' => $data['country'] ?? 'Unknown',
-                    'code' => isset($data['countryCode']) ? strtolower($data['countryCode']) : null
-                ];
-            }
-        } catch (\Exception $e) {}
-        return ['name' => 'Unknown', 'code' => null];
     }
 
     public function showForgotPasswordForm()
