@@ -67,7 +67,29 @@ class ShopController extends Controller
         $orders   = $ordersQuery->latest()->paginate(15)->withQueryString();
         $currency = \FalconCms\Core\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
 
-        return view('falcon-cms::admin.shop.overview', compact('orders', 'stats', 'statusCounts', 'from', 'to', 'preset', 'currency'));
+        // E-commerce conversion funnel (visitors → product → cart → checkout → orders), scoped to this range.
+        $ecommerce = null;
+        if (\Illuminate\Support\Facades\Schema::hasTable('cms_analytics')) {
+            $aQuery = fn () => \FalconCms\Core\Models\Analytics::query()
+                ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+                ->where('created_at', '<=', $to);
+            $uniqueVisitors = $aQuery()->distinct()->count('ip_address');
+            $orderCount = (int) $stats['total_orders'];
+            $convRate   = $uniqueVisitors > 0 ? round($orderCount / $uniqueVisitors * 100, 2) : 0;
+            $stepVisitors = fn (string $like) => $aQuery()->where('url', 'like', $like)->distinct()->count('ip_address');
+            $ecommerce = [
+                'convRate' => $convRate,
+                'funnel'   => [
+                    ['label' => 'Visitors',      'count' => $uniqueVisitors],
+                    ['label' => 'Product views', 'count' => $stepVisitors('%product%')],
+                    ['label' => 'Cart',          'count' => $stepVisitors('%cart%')],
+                    ['label' => 'Checkout',      'count' => $stepVisitors('%checkout%')],
+                    ['label' => 'Orders',        'count' => $orderCount],
+                ],
+            ];
+        }
+
+        return view('falcon-cms::admin.shop.overview', compact('orders', 'stats', 'statusCounts', 'from', 'to', 'preset', 'currency', 'ecommerce'));
     }
 
     public function orders(Request $request)

@@ -116,9 +116,19 @@ class DashboardController extends Controller
             'status_counts'   => [],
             'monthly_revenue' => array_fill(0, 7, 0),
             'monthly_labels'  => [],
+            'top_products'    => collect(),
+            'low_stock'       => collect(),
+            'revenue_this_month' => 0,
+            'revenue_delta'   => null,
+            'orders_delta'    => null,
+            'low_stock_count' => 0,
+            'recent_orders'   => collect(),
+            'orders_by_country' => collect(),
         ];
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('shop_orders')) {
+            // Only expose ecommerce figures (revenue, orders, customer names) to users who can
+            // access the shop. Without this gate every dashboard-accessing role would see them.
+            if (\Illuminate\Support\Facades\Schema::hasTable('shop_orders') && auth()->user()->hasPermission('access_shop')) {
                 $hasShop = true;
                 // Statuses that represent earned revenue. Net = total minus any amount refunded.
                 $revenueStatuses = ['completed', 'processing', 'partially-refunded'];
@@ -148,6 +158,61 @@ class DashboardController extends Controller
                 }
                 $ecoStats['monthly_revenue'] = $rev;
                 $ecoStats['monthly_labels']  = $revLabels;
+
+                // Best sellers — units sold across paid orders (most useful, unique to this widget)
+                $ecoStats['top_products'] = \FalconCms\Core\Models\OrderItem::query()
+                    ->join('shop_orders', 'shop_orders.id', '=', 'shop_order_items.order_id')
+                    ->whereIn('shop_orders.status', $revenueStatuses)
+                    ->whereNotNull('shop_order_items.product_id')
+                    ->selectRaw('shop_order_items.product_id, MAX(shop_order_items.product_name) as product_name, SUM(shop_order_items.quantity) as qty, SUM(shop_order_items.subtotal) as revenue')
+                    ->groupBy('shop_order_items.product_id')
+                    ->orderByDesc('qty')
+                    ->limit(5)
+                    ->get();
+
+                // Products that need restocking — managed stock at or below a low threshold
+                $ecoStats['low_stock'] = \FalconCms\Core\Models\Product::whereHas('shopData', function ($q) {
+                        $q->where('manage_stock', 1)->where('stock_quantity', '<=', 5);
+                    })
+                    ->with('shopData')
+                    ->get()
+                    ->sortBy(fn ($p) => (int) ($p->shopData->stock_quantity ?? 0))
+                    ->take(5)
+                    ->values();
+
+                // Month-over-month deltas + context for the KPI cards
+                $lastMonthRef    = now()->subMonthNoOverflow();
+                $ordersLastMonth = \FalconCms\Core\Models\Order::whereMonth('created_at', $lastMonthRef->month)
+                    ->whereYear('created_at', $lastMonthRef->year)->count();
+                $thisRev = (float) ($rev[6] ?? 0);   // current month (last entry in the 7-month series)
+                $lastRev = (float) ($rev[5] ?? 0);   // previous month
+                $ecoStats['revenue_this_month'] = $thisRev;
+                $ecoStats['revenue_delta'] = $lastRev > 0 ? (int) round(($thisRev - $lastRev) / $lastRev * 100) : null;
+                $ecoStats['orders_delta']  = $ordersLastMonth > 0
+                    ? (int) round(($ecoStats['orders_month'] - $ordersLastMonth) / $ordersLastMonth * 100) : null;
+                $ecoStats['low_stock_count'] = \FalconCms\Core\Models\Product::whereHas('shopData', function ($q) {
+                        $q->where('manage_stock', 1)->where('stock_quantity', '<=', 5);
+                    })->count();
+
+                // Recent orders — fills the space under the revenue chart with actionable activity
+                $ecoStats['recent_orders'] = \FalconCms\Core\Models\Order::latest()->limit(6)->get();
+
+                // Orders grouped by country (normalized to ISO-2) for the world map widget
+                $countryRows = \FalconCms\Core\Models\Order::query()
+                    ->whereNotNull('country')->where('country', '!=', '')
+                    ->selectRaw("country, COUNT(*) as orders, COALESCE(SUM(CASE WHEN status IN ('completed','processing','partially-refunded') THEN total - COALESCE(refunded_amount, 0) ELSE 0 END), 0) as revenue")
+                    ->groupBy('country')->get();
+                $byCountry = [];
+                foreach ($countryRows as $row) {
+                    $code = \FalconCms\Core\Services\EcommerceData::countryToIso2($row->country);
+                    if (!$code) continue;
+                    if (!isset($byCountry[$code])) $byCountry[$code] = ['code' => $code, 'orders' => 0, 'revenue' => 0.0];
+                    $byCountry[$code]['orders']  += (int) $row->orders;
+                    $byCountry[$code]['revenue'] += (float) $row->revenue;
+                }
+                $ecoStats['orders_by_country'] = collect($byCountry)
+                    ->map(fn ($c) => $c + ['name' => \FalconCms\Core\Services\EcommerceData::iso2ToName($c['code'])])
+                    ->sortByDesc('orders')->values();
             }
         } catch (\Exception $e) {}
 
@@ -701,6 +766,14 @@ class DashboardController extends Controller
             ->groupBy('country')->orderByDesc('count')->limit(8)->get()
             ->map(fn($r) => ['label' => $r->country, 'count' => (int) $r->count])->values();
 
+        // Visitors grouped by ISO-2 country code, for the world map widget
+        $visitorsByCountry = Analytics::select('country_code', DB::raw('MAX(country) as country'), DB::raw('count(*) as visitors'))
+            ->where('created_at', '>=', $start)
+            ->whereNotNull('country_code')->where('country_code', '!=', '')
+            ->groupBy('country_code')->orderByDesc('visitors')->get()
+            ->map(fn($r) => ['code' => strtoupper($r->country_code), 'name' => $r->country ?: strtoupper($r->country_code), 'visitors' => (int) $r->visitors])
+            ->values();
+
         // ── Engagement: real-time, new vs returning, sessions, bounce ─────────
         $activeNow = Analytics::where('created_at', '>=', now()->subMinutes(5))->distinct()->count('ip_address');
 
@@ -752,29 +825,38 @@ class DashboardController extends Controller
         arsort($channelCounts);
         $channels = collect($channelCounts)->map(fn($v, $k) => ['label' => $k, 'count' => $v])->values();
 
-        // ── E-commerce conversion & funnel (only when the shop exists) ────────
-        $ecommerce = null;
-        if (\Illuminate\Support\Facades\Schema::hasTable('shop_orders')) {
-            $revStatuses = ['completed', 'processing', 'partially-refunded'];
-            $orderCount  = \FalconCms\Core\Models\Order::where('created_at', '>=', $start)->count();
-            $revenue     = (float) \FalconCms\Core\Models\Order::where('created_at', '>=', $start)
-                ->whereIn('status', $revStatuses)
-                ->selectRaw('COALESCE(SUM(total - COALESCE(refunded_amount, 0)), 0) as net')->value('net');
-            $aov      = $orderCount > 0 ? $revenue / $orderCount : 0;
-            $convRate = $uniqueVisitors > 0 ? round($orderCount / $uniqueVisitors * 100, 2) : 0;
-
-            $stepVisitors = fn (string $like) => Analytics::where('created_at', '>=', $start)
-                ->where('url', 'like', $like)->distinct()->count('ip_address');
-
-            $funnel = [
-                ['label' => 'Visitors',      'count' => $uniqueVisitors],
-                ['label' => 'Product views', 'count' => $stepVisitors('%product%')],
-                ['label' => 'Cart',          'count' => $stepVisitors('%cart%')],
-                ['label' => 'Checkout',      'count' => $stepVisitors('%checkout%')],
-                ['label' => 'Orders',        'count' => $orderCount],
+        // ── Named traffic sources (Google / Facebook / Instagram / … / Direct / other site) ──
+        $sourceOf = function (?string $ref) use ($siteHost) {
+            if (!$ref) return ['Direct', null];
+            $h = strtolower((string) parse_url($ref, PHP_URL_HOST));
+            if ($h === '' || $h === $siteHost) return ['Direct', null];
+            $h = preg_replace('/^www\./', '', $h);
+            $named = [
+                'google' => ['Google', 'google.com'], 'bing' => ['Bing', 'bing.com'],
+                'yahoo' => ['Yahoo', 'yahoo.com'], 'duckduckgo' => ['DuckDuckGo', 'duckduckgo.com'],
+                'yandex' => ['Yandex', 'yandex.com'], 'baidu' => ['Baidu', 'baidu.com'], 'ecosia' => ['Ecosia', 'ecosia.org'],
+                'instagram' => ['Instagram', 'instagram.com'], 'facebook' => ['Facebook', 'facebook.com'],
+                'fb.com' => ['Facebook', 'facebook.com'], 'fb.me' => ['Facebook', 'facebook.com'],
+                'youtube' => ['YouTube', 'youtube.com'], 'youtu.be' => ['YouTube', 'youtube.com'],
+                'twitter' => ['X (Twitter)', 'x.com'], 'x.com' => ['X (Twitter)', 'x.com'], 't.co' => ['X (Twitter)', 'x.com'],
+                'linkedin' => ['LinkedIn', 'linkedin.com'], 'lnkd.in' => ['LinkedIn', 'linkedin.com'],
+                'pinterest' => ['Pinterest', 'pinterest.com'], 'reddit' => ['Reddit', 'reddit.com'],
+                'tiktok' => ['TikTok', 'tiktok.com'], 'whatsapp' => ['WhatsApp', 'whatsapp.com'], 'wa.me' => ['WhatsApp', 'whatsapp.com'],
+                'telegram' => ['Telegram', 'telegram.org'], 't.me' => ['Telegram', 'telegram.org'],
             ];
-            $ecommerce = compact('orderCount', 'revenue', 'aov', 'convRate', 'funnel');
+            foreach ($named as $needle => $pair) {
+                if (strpos($h, $needle) !== false) return $pair;
+            }
+            return [$h, $h]; // any other site — show its domain
+        };
+        $sourceCounts = [];
+        foreach (Analytics::select('referrer', DB::raw('count(*) as count'))->where('created_at', '>=', $start)->groupBy('referrer')->get() as $rr) {
+            [$label, $domain] = $sourceOf($rr->referrer);
+            if (!isset($sourceCounts[$label])) $sourceCounts[$label] = ['label' => $label, 'count' => 0, 'domain' => $domain];
+            $sourceCounts[$label]['count'] += (int) $rr->count;
         }
+        $trafficSources = collect($sourceCounts)->sortByDesc('count')->take(12)->values();
+
 
         // ── Recent visits ─────────────────────────────────────────────────────
         $recent = Analytics::latest()->limit(12)->get();
@@ -784,7 +866,7 @@ class DashboardController extends Controller
             'labels', 'visitsSeries', 'uniqueSeries',
             'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'topCountries', 'recent',
             'activeNow', 'newVisitors', 'returningVisitors', 'sessions', 'bounceRate', 'pagesPerSession', 'channels',
-            'ecommerce'
+            'visitorsByCountry', 'trafficSources'
         ));
     }
 

@@ -173,6 +173,39 @@
             </div>
         </div>
 
+        <!-- Visitors by Country — dynamic world map -->
+        <style>
+            #visitor-map svg { width: 100% !important; height: 360px !important; min-height: 360px !important; max-height: none !important; max-width: none !important; min-width: 0 !important; display: block !important; }
+            #visitor-map svg path { transition: fill .15s; }
+            #visitor-map svg path:hover { fill: #1d4ed8 !important; }
+        </style>
+        <div class="classic-card">
+            <div class="classic-card-header">
+                <span class="classic-card-title">Visitors by Country</span>
+            </div>
+            <div class="p-4 grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div class="lg:col-span-2">
+                    <div id="visitor-map" style="height:360px;width:100%;min-height:360px;position:relative"></div>
+                </div>
+                <div>
+                    <div class="text-[12px] font-semibold text-[#646970] uppercase tracking-wide mb-3">Top countries</div>
+                    <div class="space-y-2.5">
+                        @forelse(collect($visitorsByCountry)->take(8) as $c)
+                        <div class="flex items-center justify-between gap-2 {{ !$loop->first ? 'border-t border-[#f0f0f1] pt-2.5' : '' }}">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <img src="https://flagcdn.com/20x15/{{ strtolower($c['code']) }}.png" width="20" height="15" style="border-radius:2px;flex-shrink:0" alt="{{ $c['code'] }}" onerror="this.style.display='none'">
+                                <span class="text-[13px] font-medium text-[#1d2327] truncate">{{ $c['name'] }}</span>
+                            </div>
+                            <div class="text-[13px] font-bold text-[#1d2327] flex-shrink-0">{{ number_format($c['visitors']) }} <span class="text-[10px] font-normal text-[#646970]">visits</span></div>
+                        </div>
+                        @empty
+                        <div class="py-6 text-center text-[13px] text-[#646970]">No geo data yet — visitor countries appear once IPs are resolved.</div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Distribution donuts: Channels / New vs Returning / Top Countries -->
         @php
             $newRetSet = collect([
@@ -210,78 +243,6 @@
                 </div>
             @endforeach
         </div>
-
-        @if($ecommerce)
-        <!-- E-commerce KPIs -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-2">
-            <div class="classic-card">
-                <div class="classic-stat-box">
-                    <div class="classic-stat-icon bg-[#16a34a]"><span class="material-symbols-outlined text-[24px]">payments</span></div>
-                    <div>
-                        <div class="classic-stat-value">{{ function_exists('falcon_price_format') ? falcon_price_format($ecommerce['revenue']) : number_format($ecommerce['revenue'], 2) }}</div>
-                        <div class="classic-stat-label">Revenue</div>
-                        <div class="text-[11px] text-[#646970] mt-0.5">net, this period</div>
-                    </div>
-                </div>
-            </div>
-            <div class="classic-card">
-                <div class="classic-stat-box">
-                    <div class="classic-stat-icon bg-[#2271b1]"><span class="material-symbols-outlined text-[24px]">shopping_bag</span></div>
-                    <div>
-                        <div class="classic-stat-value">{{ number_format($ecommerce['orderCount']) }}</div>
-                        <div class="classic-stat-label">Orders</div>
-                    </div>
-                </div>
-            </div>
-            <div class="classic-card">
-                <div class="classic-stat-box">
-                    <div class="classic-stat-icon bg-[#9333ea]"><span class="material-symbols-outlined text-[24px]">conversion_path</span></div>
-                    <div>
-                        <div class="classic-stat-value">{{ $ecommerce['convRate'] }}%</div>
-                        <div class="classic-stat-label">Conversion Rate</div>
-                        <div class="text-[11px] text-[#646970] mt-0.5">orders ÷ unique visitors</div>
-                    </div>
-                </div>
-            </div>
-            <div class="classic-card">
-                <div class="classic-stat-box">
-                    <div class="classic-stat-icon bg-[#ea580c]"><span class="material-symbols-outlined text-[24px]">receipt_long</span></div>
-                    <div>
-                        <div class="classic-stat-value">{{ function_exists('falcon_price_format') ? falcon_price_format($ecommerce['aov']) : number_format($ecommerce['aov'], 2) }}</div>
-                        <div class="classic-stat-label">Avg. Order Value</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Conversion funnel -->
-        <div class="classic-card">
-            <div class="classic-card-header"><span class="classic-card-title">Conversion Funnel</span></div>
-            <div class="p-4 space-y-3">
-                @php $funnelTop = $ecommerce['funnel'][0]['count'] ?: 1; @endphp
-                @foreach($ecommerce['funnel'] as $i => $step)
-                    @php
-                        $pct = round($step['count'] / $funnelTop * 100, 1);
-                        $prev = $i > 0 ? $ecommerce['funnel'][$i - 1]['count'] : null;
-                        $drop = ($prev && $prev > 0) ? round(($prev - $step['count']) / $prev * 100, 1) : null;
-                    @endphp
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-[12px] font-medium text-[#1d2327]">{{ $step['label'] }}</span>
-                            <span class="text-[12px] text-[#646970]">
-                                <strong class="text-[#1d2327]">{{ number_format($step['count']) }}</strong>
-                                &middot; {{ $pct }}%@if(!is_null($drop)) <span class="text-[#d63638]">(−{{ $drop }}%)</span>@endif
-                            </span>
-                        </div>
-                        <div class="h-2.5 bg-[#f0f0f1] rounded-full overflow-hidden">
-                            <div class="h-full rounded-full" style="width:{{ max(2, $pct) }}%;background:linear-gradient(90deg,#2271b1,#46b450)"></div>
-                        </div>
-                    </div>
-                @endforeach
-                <p class="text-[11px] text-[#646970] pt-1">Funnel steps are estimated from page-view URLs (product / cart / checkout) vs. unique visitors.</p>
-            </div>
-        </div>
-        @endif
 
         <!-- Traffic over time -->
         <div class="classic-card">
@@ -322,6 +283,40 @@
         </div>
 
         <!-- Top pages & Top referrers -->
+        <!-- Traffic Sources — named sources (Google / Facebook / Instagram / Direct / other sites) -->
+        @php $maxSrc = collect($trafficSources)->max('count') ?: 1; $totalSrc = collect($trafficSources)->sum('count') ?: 1; @endphp
+        <div class="classic-card">
+            <div class="classic-card-header">
+                <span class="classic-card-title">Traffic Sources</span>
+                <span class="text-[12px] text-[#646970]">where your visitors come from</span>
+            </div>
+            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                @forelse($trafficSources as $s)
+                    <div>
+                        <div class="flex items-center justify-between mb-1 gap-2">
+                            <span class="flex items-center gap-2 text-[12px] text-[#1d2327] min-w-0">
+                                @if($s['domain'])
+                                    <img src="https://www.google.com/s2/favicons?domain={{ $s['domain'] }}&sz=32" width="16" height="16" style="border-radius:3px;flex-shrink:0" alt="" onerror="this.style.display='none'">
+                                @else
+                                    <span class="material-symbols-outlined text-[15px] text-[#646970]" style="flex-shrink:0">public</span>
+                                @endif
+                                <span class="font-medium truncate">{{ $s['label'] }}</span>
+                            </span>
+                            <span class="text-[12px] text-[#646970] whitespace-nowrap flex-shrink-0">
+                                <strong class="text-[#1d2327]">{{ number_format($s['count']) }}</strong>
+                                <span class="text-[#9ca3af]">· {{ round($s['count'] / $totalSrc * 100) }}%</span>
+                            </span>
+                        </div>
+                        <div class="h-1.5 bg-[#f0f0f1] rounded-full overflow-hidden">
+                            <div class="h-full rounded-full" style="width:{{ round($s['count'] / $maxSrc * 100) }}%;background:#6366f1"></div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="md:col-span-2 py-6 text-center text-[13px] text-[#646970]">No referrer data yet — sources appear as visitors arrive from Google, social, or other sites.</div>
+                @endforelse
+            </div>
+        </div>
+
         @php $maxPage = $topPages->max('count') ?: 1; $maxRef = $topReferrers->max('count') ?: 1; $host = request()->getSchemeAndHttpHost(); @endphp
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div class="classic-card">
@@ -455,8 +450,8 @@
             if (sparkEl && window.Chart) {
                 spark = new Chart(sparkEl.getContext('2d'), {
                     type: 'bar',
-                    data: { labels: Array.from({ length: 30 }, () => ''), datasets: [{ data: Array(30).fill(0), backgroundColor: '#22c55e', borderRadius: 2, barPercentage: .9, categoryPercentage: 1 }] },
-                    options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { display: false }, y: { display: false, beginAtZero: true } }, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                    data: { labels: Array.from({ length: 30 }, (_, i) => { const m = 29 - i; return m === 0 ? 'just now' : m + ' min ago'; }), datasets: [{ data: Array(30).fill(0), backgroundColor: '#22c55e', hoverBackgroundColor: '#16a34a', borderRadius: 2, barPercentage: .9, categoryPercentage: 1 }] },
+                    options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { x: { display: false }, y: { display: false, beginAtZero: true } }, plugins: { legend: { display: false }, tooltip: { enabled: true, displayColors: false, callbacks: { label: ctx => ctx.parsed.y + ' active user' + (ctx.parsed.y === 1 ? '' : 's') } } } }
                 });
             }
             const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -483,6 +478,71 @@
             }
             poll();
             setInterval(poll, 12000);
+        })();
+    </script>
+    <script>
+        // Visitors by Country — inline SVG world map (same proven technique as the dashboard map).
+        (function () {
+            const el = document.getElementById('visitor-map');
+            if (!el) return;
+            const data = @json(collect($visitorsByCountry)->keyBy('code'));
+            const codes = Object.keys(data);
+            if (!codes.length) { el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#646970;font-size:13px">No geo-located visits yet.</div>'; return; }
+            const counts = {}; codes.forEach(c => { counts[c.toUpperCase()] = data[c].visitors; });
+            const max = Math.max(1, ...codes.map(c => data[c].visitors));
+            const shade = n => '#' + 'bfdbfe'.match(/\w\w/g).map((h, i) => {
+                const t = max > 1 ? n / max : 1;
+                const v = Math.round(parseInt(h, 16) + (parseInt('1d4ed8'.match(/\w\w/g)[i], 16) - parseInt(h, 16)) * t);
+                return v.toString(16).padStart(2, '0');
+            }).join('');
+            const escp = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            const ld = s => new Promise((res, rej) => { const x = document.createElement('script'); x.src = s; x.onload = res; x.onerror = () => rej(new Error('load fail')); document.head.appendChild(x); });
+            const base = 'https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/';
+            const fail = () => { el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#646970;font-size:13px">Map unavailable — see the list.</div>'; };
+            let mapData = null;
+            ld(base + 'js/jsvectormap.min.js')
+                .then(() => {
+                    if (window.jsVectorMap && typeof jsVectorMap.addMap === 'function') {
+                        const orig = jsVectorMap.addMap;
+                        jsVectorMap.addMap = function (name, obj) { if (obj && obj.paths) mapData = obj; return orig.apply(this, arguments); };
+                    }
+                    return ld(base + 'maps/world.js');
+                })
+                .then(() => {
+                    const md = mapData;
+                    if (!md || !md.paths) { fail(); return; }
+                    const inset = (md.insets && md.insets[0]) || { width: 900, height: 440 };
+                    const W = Math.ceil(inset.width), H = Math.ceil(inset.height);
+                    let paths = '';
+                    for (const code in md.paths) {
+                        const p = md.paths[code];
+                        const has = counts[code] != null;
+                        const name = (data[code] && data[code].name) || p.name || code;
+                        const title = has ? name + ' (' + counts[code] + ' visit' + (counts[code] === 1 ? '' : 's') + ')' : name;
+                        paths += '<path d="' + p.path + '" fill="' + (has ? shade(counts[code]) : '#cbd5e1') + '" stroke="#ffffff" stroke-width="0.5"><title>' + escp(title) + '</title></path>';
+                    }
+                    const sStyle = 'display:block;width:100%!important;height:360px!important;min-height:360px!important;max-height:none!important;max-width:none!important;min-width:0!important;cursor:grab';
+                    const bStyle = 'width:26px;height:26px;line-height:1;text-align:center;font-size:16px;font-weight:700;color:#1d2327;background:#fff;border:1px solid #c3c4c7;border-radius:4px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.08);padding:0';
+                    el.innerHTML =
+                        '<svg id="vm-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" style="' + sStyle + '">' + paths + '</svg>' +
+                        '<div style="position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:5px;z-index:5">' +
+                        '<button type="button" id="vm-zin" title="Zoom in" style="' + bStyle + '">+</button>' +
+                        '<button type="button" id="vm-zout" title="Zoom out" style="' + bStyle + '">&minus;</button></div>';
+                    const svg = el.querySelector('#vm-svg');
+                    const m0 = { x: 0, y: 0, w: W, h: H }, vb = { x: 0, y: 0, w: W, h: H };
+                    const apply = () => svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h);
+                    const clamp = () => { vb.w = Math.min(vb.w, m0.w); vb.h = Math.min(vb.h, m0.h); vb.x = Math.max(m0.x, Math.min(vb.x, m0.x + m0.w - vb.w)); vb.y = Math.max(m0.y, Math.min(vb.y, m0.y + m0.h - vb.h)); };
+                    const zoomAt = (f, cx, cy) => { let nw = vb.w * f, nh = vb.h * f; if (nw > m0.w) { nw = m0.w; nh = m0.h; } if (nw < m0.w * 0.12) return; vb.x = cx - (cx - vb.x) * (nw / vb.w); vb.y = cy - (cy - vb.y) * (nh / vb.h); vb.w = nw; vb.h = nh; clamp(); apply(); };
+                    const ctr = () => ({ x: vb.x + vb.w / 2, y: vb.y + vb.h / 2 });
+                    el.querySelector('#vm-zin').onclick = () => { const p = ctr(); zoomAt(0.65, p.x, p.y); };
+                    el.querySelector('#vm-zout').onclick = () => { const p = ctr(); zoomAt(1.55, p.x, p.y); };
+                    let drag = false, last = null;
+                    svg.addEventListener('mousedown', e => { drag = true; last = { x: e.clientX, y: e.clientY }; svg.style.cursor = 'grabbing'; e.preventDefault(); });
+                    window.addEventListener('mouseup', () => { if (drag) { drag = false; svg.style.cursor = 'grab'; } });
+                    window.addEventListener('mousemove', e => { if (!drag) return; const r = svg.getBoundingClientRect(); vb.x -= (e.clientX - last.x) / r.width * vb.w; vb.y -= (e.clientY - last.y) / r.height * vb.h; last = { x: e.clientX, y: e.clientY }; clamp(); apply(); });
+                    svg.addEventListener('wheel', e => { e.preventDefault(); const r = svg.getBoundingClientRect(); const cx = vb.x + (e.clientX - r.left) / r.width * vb.w; const cy = vb.y + (e.clientY - r.top) / r.height * vb.h; zoomAt(e.deltaY < 0 ? 0.85 : 1.18, cx, cy); }, { passive: false });
+                })
+                .catch(fail);
         })();
     </script>
     @endpush

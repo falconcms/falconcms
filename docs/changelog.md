@@ -5,7 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.3 <Badge type="tip" text="Latest" /> {#v1-5-3}
+## v1.5.4 <Badge type="tip" text="Latest" /> {#v1-5-4}
+
+**Released: 2026-06-24**
+
+### Added
+- **Dashboard — Orders by Country map** — An interactive world map highlighting the countries orders came from (shaded by volume), with zoom buttons, mouse-wheel zoom, drag-to-pan and per-country hover (country name + order count), plus a top-countries list. Country values are normalized to ISO-2 from mixed order data
+- **Dashboard — Top Selling Products, Low Stock & Recent Orders** — The redundant "Quick Stats" panel is replaced by a best-sellers list (units sold + revenue) and a low-stock alert list; a Recent Orders table now fills the space under the revenue chart
+- **Analytics — Visitors by Country map** — The same interactive world map for geo-located visits
+- **Analytics — Traffic Sources** — A named-source breakdown (Google, Bing, Facebook, Instagram, YouTube, X, LinkedIn, TikTok, … Direct, and any other site by domain) with visit counts, percentages and favicons
+- **Analytics — Real-time sparkline tooltip** — Hovering the real-time active-users bars now shows the visitor count for that minute
+
+### Changed
+- **Dashboard — E-commerce KPI cards redesigned** — Accent strip, soft-tint icon, month-over-month trend delta (↑/↓ %) and a contextual subtext per card
+- **Dashboard — Shop section permission-gated** — The whole e-commerce section (revenue, orders, customer names) now requires the `access_shop` permission (admins bypass), so it is no longer shown to every dashboard-accessing role
+- **Shop → Overview — Conversion Funnel** — The conversion funnel (visitors → product → cart → checkout → orders) and conversion rate now live on the Shop Overview, moved from Analytics to keep shop metrics together
+
+## v1.5.3 {#v1-5-3}
 
 **Released: 2026-06-23**
 

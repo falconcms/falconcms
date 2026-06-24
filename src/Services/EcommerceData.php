@@ -91,6 +91,80 @@ class EcommerceData
         return self::getCountriesWithStates($filtered);
     }
 
+    /**
+     * Normalize a stored order "country" value (which may be an ISO-2 code, a full
+     * name, or a name with a region suffix like "Bangladesh — Barisal") to an
+     * ISO 3166-1 alpha-2 code (uppercase). Returns null when it can't be resolved.
+     */
+    public static function countryToIso2(?string $value): ?string
+    {
+        if (!$value) return null;
+
+        // Drop a region suffix written with a spaced dash ("Name — Region" / "Name - Region").
+        $v = preg_split('/\s+[–—-]\s+/u', trim($value))[0] ?? '';
+        // Drop a trailing parenthetical, e.g. "United States (US)".
+        $v = trim(preg_replace('/\s*\(.*?\)\s*/u', '', $v));
+        if ($v === '') return null;
+
+        $codes = self::countryNameMap();
+
+        // Already an ISO-2 code?
+        if (preg_match('/^[A-Za-z]{2}$/', $v) && in_array(strtoupper($v), $codes, true)) {
+            return strtoupper($v);
+        }
+
+        return $codes[strtolower($v)] ?? null;
+    }
+
+    /** ISO 3166-1 alpha-2 => English display name (uses intl when available). */
+    public static function iso2ToName(string $code): string
+    {
+        $code = strtoupper($code);
+        if (class_exists('\Locale')) {
+            $name = \Locale::getDisplayRegion('-' . $code, 'en');
+            if ($name && strtoupper($name) !== $code) return $name;
+        }
+        $rev = [];
+        foreach (self::countryNameMap() as $name => $c) {
+            if (!isset($rev[$c])) $rev[$c] = ucwords($name);
+        }
+        return $rev[$code] ?? $code;
+    }
+
+    /** Lowercase country name (and common aliases) => ISO 3166-1 alpha-2. */
+    protected static function countryNameMap(): array
+    {
+        return [
+            'afghanistan' => 'AF', 'albania' => 'AL', 'algeria' => 'DZ', 'argentina' => 'AR', 'armenia' => 'AM',
+            'australia' => 'AU', 'austria' => 'AT', 'azerbaijan' => 'AZ', 'bahrain' => 'BH', 'bangladesh' => 'BD',
+            'belarus' => 'BY', 'belgium' => 'BE', 'bhutan' => 'BT', 'bolivia' => 'BO', 'brazil' => 'BR',
+            'brunei' => 'BN', 'bulgaria' => 'BG', 'cambodia' => 'KH', 'cameroon' => 'CM', 'canada' => 'CA',
+            'chile' => 'CL', 'china' => 'CN', 'colombia' => 'CO', 'croatia' => 'HR', 'cuba' => 'CU',
+            'cyprus' => 'CY', 'czechia' => 'CZ', 'czech republic' => 'CZ', 'denmark' => 'DK', 'ecuador' => 'EC',
+            'egypt' => 'EG', 'estonia' => 'EE', 'ethiopia' => 'ET', 'finland' => 'FI', 'france' => 'FR',
+            'georgia' => 'GE', 'germany' => 'DE', 'ghana' => 'GH', 'greece' => 'GR', 'hong kong' => 'HK',
+            'hungary' => 'HU', 'iceland' => 'IS', 'india' => 'IN', 'indonesia' => 'ID', 'iran' => 'IR',
+            'iraq' => 'IQ', 'ireland' => 'IE', 'israel' => 'IL', 'italy' => 'IT', 'ivory coast' => 'CI',
+            'jamaica' => 'JM', 'japan' => 'JP', 'jordan' => 'JO', 'kazakhstan' => 'KZ', 'kenya' => 'KE',
+            'kuwait' => 'KW', 'kyrgyzstan' => 'KG', 'laos' => 'LA', 'latvia' => 'LV', 'lebanon' => 'LB',
+            'libya' => 'LY', 'lithuania' => 'LT', 'luxembourg' => 'LU', 'malaysia' => 'MY', 'maldives' => 'MV',
+            'malta' => 'MT', 'mexico' => 'MX', 'moldova' => 'MD', 'mongolia' => 'MN', 'morocco' => 'MA',
+            'myanmar' => 'MM', 'nepal' => 'NP', 'netherlands' => 'NL', 'new zealand' => 'NZ', 'nigeria' => 'NG',
+            'north macedonia' => 'MK', 'norway' => 'NO', 'oman' => 'OM', 'pakistan' => 'PK', 'palestine' => 'PS',
+            'panama' => 'PA', 'paraguay' => 'PY', 'peru' => 'PE', 'philippines' => 'PH', 'poland' => 'PL',
+            'portugal' => 'PT', 'qatar' => 'QA', 'romania' => 'RO', 'russia' => 'RU', 'rwanda' => 'RW',
+            'saudi arabia' => 'SA', 'senegal' => 'SN', 'serbia' => 'RS', 'singapore' => 'SG', 'slovakia' => 'SK',
+            'slovenia' => 'SI', 'somalia' => 'SO', 'south africa' => 'ZA', 'south korea' => 'KR', 'korea' => 'KR',
+            'spain' => 'ES', 'sri lanka' => 'LK', 'sudan' => 'SD', 'sweden' => 'SE', 'switzerland' => 'CH',
+            'syria' => 'SY', 'taiwan' => 'TW', 'tajikistan' => 'TJ', 'tanzania' => 'TZ', 'thailand' => 'TH',
+            'tunisia' => 'TN', 'turkey' => 'TR', 'turkmenistan' => 'TM', 'uganda' => 'UG', 'ukraine' => 'UA',
+            'united arab emirates' => 'AE', 'uae' => 'AE', 'united kingdom' => 'GB', 'uk' => 'GB',
+            'great britain' => 'GB', 'england' => 'GB', 'united states' => 'US', 'united states of america' => 'US',
+            'usa' => 'US', 'america' => 'US', 'uruguay' => 'UY', 'uzbekistan' => 'UZ', 'venezuela' => 'VE',
+            'vietnam' => 'VN', 'yemen' => 'YE', 'zambia' => 'ZM', 'zimbabwe' => 'ZW',
+        ];
+    }
+
     public static function getCurrencies(): array
     {
         $currencies = [

@@ -44,6 +44,19 @@
             color: #646970;
             font-weight: 500;
         }
+        /* The admin applies icon sizing to every <svg> (e.g. `svg,.material-symbols-outlined{max-height:349px}`),
+           which shrinks the map. Force the map SVG to fill its container and drop those caps. */
+        #world-map svg {
+            width: 100% !important;
+            height: 360px !important;
+            min-height: 360px !important;
+            max-height: none !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            display: block !important;
+        }
+        #world-map svg path { transition: fill .15s; }
+        #world-map svg path:hover { fill: #16a34a !important; }
     </style>
 
     <div class="p-4 sm:p-6 bg-[#f0f0f1] min-h-screen">
@@ -192,52 +205,64 @@
         </div>
 
         @if($hasShop)
-        <!-- Ecommerce Stat Cards -->
+        <!-- Ecommerce KPI Cards -->
+        @php
+            $kpis = [
+                [
+                    'label' => 'Total Revenue', 'icon' => 'payments',
+                    'value' => $currency . number_format($ecoStats['total_revenue'], 2),
+                    'color' => '#2a8a3e', 'accent' => '#46b450', 'tint' => '#eafaef',
+                    'delta' => $ecoStats['revenue_delta'],
+                    'sub'   => $currency . number_format($ecoStats['revenue_this_month'] ?? 0, 0) . ' this month',
+                ],
+                [
+                    'label' => 'Total Orders', 'icon' => 'shopping_bag',
+                    'value' => number_format($ecoStats['total_orders']),
+                    'color' => '#1f6fb2', 'accent' => '#2271b1', 'tint' => '#eef4fb',
+                    'delta' => $ecoStats['orders_delta'],
+                    'sub'   => $ecoStats['orders_month'] . ' this month',
+                ],
+                [
+                    'label' => 'Pending Orders', 'icon' => 'pending_actions',
+                    'value' => number_format($ecoStats['pending_orders']),
+                    'color' => '#b8860b', 'accent' => '#dba617', 'tint' => '#fef9ee',
+                    'delta' => null,
+                    'sub'   => $ecoStats['pending_orders'] > 0 ? 'Awaiting processing' : 'All caught up',
+                ],
+                [
+                    'label' => 'Total Products', 'icon' => 'inventory_2',
+                    'value' => number_format($ecoStats['total_products']),
+                    'color' => '#7c3aed', 'accent' => '#8c44db', 'tint' => '#f5eefb',
+                    'delta' => null,
+                    'sub'   => ($ecoStats['low_stock_count'] ?? 0) > 0
+                                ? $ecoStats['low_stock_count'] . ' low on stock' : 'In catalog',
+                ],
+            ];
+        @endphp
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 mt-6">
-            <div class="classic-card">
-                <div class="classic-stat-box">
-                    <div class="classic-stat-icon bg-[#46b450]">
-                        <span class="material-symbols-outlined text-[24px]">payments</span>
+            @foreach($kpis as $k)
+            <div class="bg-white rounded-lg border border-[#e2e4e7] overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md" style="box-shadow:0 1px 2px rgba(0,0,0,.05)">
+                <div style="height:3px;background:{{ $k['accent'] }}"></div>
+                <div class="p-4">
+                    <div class="flex items-start justify-between">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:{{ $k['tint'] }}">
+                            <span class="material-symbols-outlined text-[22px]" style="color:{{ $k['color'] }}">{{ $k['icon'] }}</span>
+                        </div>
+                        @if(!is_null($k['delta']))
+                            @php $up = $k['delta'] >= 0; $mag = abs($k['delta']); @endphp
+                            <span class="inline-flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded"
+                                  style="color:{{ $up ? '#1a7f37' : '#d63638' }};background:{{ $up ? '#eafaef' : '#fdecec' }}"
+                                  title="vs last month">
+                                {{ $up ? '↑' : '↓' }} {{ $mag > 999 ? '999+' : $mag }}%
+                            </span>
+                        @endif
                     </div>
-                    <div>
-                        <div class="classic-stat-value">{{ $currency }}{{ number_format($ecoStats['total_revenue'], 2) }}</div>
-                        <div class="classic-stat-label">Total Revenue</div>
-                    </div>
+                    <div class="text-[24px] font-bold text-[#1d2327] leading-tight mt-3">{{ $k['value'] }}</div>
+                    <div class="text-[12px] text-[#646970] font-medium mt-0.5">{{ $k['label'] }}</div>
+                    <div class="text-[11px] text-[#8c8f94] mt-1">{{ $k['sub'] }}</div>
                 </div>
             </div>
-            <div class="classic-card">
-                <div class="classic-stat-box">
-                    <div class="classic-stat-icon bg-[#2271b1]">
-                        <span class="material-symbols-outlined text-[24px]">shopping_bag</span>
-                    </div>
-                    <div>
-                        <div class="classic-stat-value">{{ $ecoStats['total_orders'] }}</div>
-                        <div class="classic-stat-label">Total Orders</div>
-                    </div>
-                </div>
-            </div>
-            <div class="classic-card">
-                <div class="classic-stat-box">
-                    <div class="classic-stat-icon bg-[#dba617]">
-                        <span class="material-symbols-outlined text-[24px]">pending_actions</span>
-                    </div>
-                    <div>
-                        <div class="classic-stat-value">{{ $ecoStats['pending_orders'] }}</div>
-                        <div class="classic-stat-label">Pending Orders</div>
-                    </div>
-                </div>
-            </div>
-            <div class="classic-card">
-                <div class="classic-stat-box">
-                    <div class="classic-stat-icon bg-[#8c44db]">
-                        <span class="material-symbols-outlined text-[24px]">inventory_2</span>
-                    </div>
-                    <div>
-                        <div class="classic-stat-value">{{ $ecoStats['total_products'] }}</div>
-                        <div class="classic-stat-label">Total Products</div>
-                    </div>
-                </div>
-            </div>
+            @endforeach
         </div>
 
         <!-- Ecommerce Section: Revenue Chart + Recent Orders -->
@@ -254,6 +279,52 @@
                         <div class="h-[260px]">
                             <canvas id="revenueChart"></canvas>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="classic-card" style="margin-bottom:0">
+                    <div class="classic-card-header">
+                        <span class="classic-card-title">Recent Orders</span>
+                        <a href="{{ route('admin.shop.orders.index') }}" class="text-[12px] text-[#2271b1] hover:underline">View all →</a>
+                    </div>
+                    @php
+                        $rStatusColors = [
+                            'pending' => 'bg-[#fef9ee] text-[#b8860b]', 'processing' => 'bg-[#eef4fb] text-[#1f6fb2]',
+                            'completed' => 'bg-[#edfaee] text-[#2a8a3e]', 'cancelled' => 'bg-[#fef0f0] text-[#d63638]',
+                            'partially-refunded' => 'bg-[#f5eefb] text-[#7c3aed]', 'refunded' => 'bg-[#f5eefb] text-[#7c3aed]',
+                            'on-hold' => 'bg-[#f6f7f7] text-[#646970]', 'failed' => 'bg-[#fef0f0] text-[#d63638]',
+                        ];
+                    @endphp
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-[13px]">
+                            <thead>
+                                <tr class="bg-[#f6f7f7] text-left text-[#646970]">
+                                    <th class="px-4 py-2 font-semibold">Order</th>
+                                    <th class="px-4 py-2 font-semibold">Customer</th>
+                                    <th class="px-4 py-2 font-semibold">Date</th>
+                                    <th class="px-4 py-2 font-semibold">Status</th>
+                                    <th class="px-4 py-2 font-semibold text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($ecoStats['recent_orders'] as $o)
+                                <tr class="border-t border-[#f0f0f1] hover:bg-[#f6f7f7]">
+                                    <td class="px-4 py-2.5">
+                                        <a href="{{ route('admin.shop.orders.show', $o->id) }}" class="text-[#2271b1] font-bold hover:underline">#{{ $o->order_number ?: $o->id }}</a>
+                                    </td>
+                                    <td class="px-4 py-2.5 text-[#1d2327]">{{ trim($o->first_name . ' ' . $o->last_name) ?: '—' }}</td>
+                                    <td class="px-4 py-2.5 text-[#646970] whitespace-nowrap">{{ cms_date($o->created_at, 'M d, Y') }}</td>
+                                    <td class="px-4 py-2.5">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $rStatusColors[$o->status] ?? 'bg-gray-100 text-gray-700' }}">{{ str_replace('-', ' ', $o->status) }}</span>
+                                    </td>
+                                    <td class="px-4 py-2.5 text-right font-bold whitespace-nowrap">{{ falcon_price_format($o->total, $o) }}</td>
+                                </tr>
+                                @empty
+                                <tr><td colspan="5" class="px-6 py-10 text-center text-[#646970] italic">No orders yet.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -312,37 +383,87 @@
                     </div>
                 </div>
 
-                <!-- Today & This Month -->
+                <!-- Top Selling Products -->
+                <div class="classic-card" style="margin-bottom:16px">
+                    <div class="classic-card-header">
+                        <span class="classic-card-title">Top Selling Products</span>
+                        <a href="{{ route('admin.shop.reports.index') }}" class="text-[12px] text-[#2271b1] hover:underline">Reports →</a>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        @forelse($ecoStats['top_products'] as $i => $tp)
+                        <div class="flex items-center justify-between gap-2 {{ !$loop->first ? 'border-t border-[#f0f0f1] pt-2' : '' }}">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="flex-shrink-0 w-5 h-5 rounded-full bg-[#eef4fb] text-[#2271b1] text-[11px] font-bold flex items-center justify-center">{{ $i + 1 }}</span>
+                                <a href="{{ route('admin.posts.edit', $tp->product_id) }}" class="text-[12px] font-medium text-[#1d2327] hover:text-[#2271b1] truncate">{{ $tp->product_name }}</a>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="text-[12px] font-bold text-[#1d2327]">{{ $currency }}{{ number_format((float) $tp->revenue, 0) }}</div>
+                                <div class="text-[10px] text-[#646970]">{{ (int) $tp->qty }} sold</div>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="py-5 text-center text-[13px] text-[#646970]">No sales yet — best sellers will appear here.</div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <!-- Low Stock Alerts -->
                 <div class="classic-card" style="margin-bottom:0">
                     <div class="classic-card-header">
-                        <span class="classic-card-title">Quick Stats</span>
+                        <span class="classic-card-title">Low Stock</span>
+                        <span class="text-[12px] text-[#646970]">≤ 5 left</span>
                     </div>
-                    <div class="p-4 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#2271b1] text-[18px]">today</span>
-                                <span class="text-[13px] font-medium">Orders Today</span>
+                    <div class="p-3 space-y-2">
+                        @forelse($ecoStats['low_stock'] as $lp)
+                        @php $qty = (int) ($lp->shopData->stock_quantity ?? 0); @endphp
+                        <div class="flex items-center justify-between gap-2 {{ !$loop->first ? 'border-t border-[#f0f0f1] pt-2' : '' }}">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-[16px] flex-shrink-0 {{ $qty <= 0 ? 'text-[#d63638]' : 'text-[#dba617]' }}">{{ $qty <= 0 ? 'error' : 'warning' }}</span>
+                                <a href="{{ route('admin.posts.edit', $lp->id) }}" class="text-[12px] font-medium text-[#1d2327] hover:text-[#2271b1] truncate">{{ $lp->title }}</a>
                             </div>
-                            <span class="font-bold text-[#1d2327]">{{ $ecoStats['orders_today'] }}</span>
+                            <span class="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full {{ $qty <= 0 ? 'bg-[#fef0f0] text-[#d63638]' : 'bg-[#fef9ee] text-[#dba617]' }}">
+                                {{ $qty <= 0 ? 'Out of stock' : $qty . ' left' }}
+                            </span>
                         </div>
-                        <div class="flex items-center justify-between border-t border-[#f0f0f1] pt-3">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#46b450] text-[18px]">calendar_month</span>
-                                <span class="text-[13px] font-medium">Orders This Month</span>
-                            </div>
-                            <span class="font-bold text-[#1d2327]">{{ $ecoStats['orders_month'] }}</span>
-                        </div>
-                        <div class="flex items-center justify-between border-t border-[#f0f0f1] pt-3">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[#dba617] text-[18px]">inventory_2</span>
-                                <span class="text-[13px] font-medium">Total Products</span>
-                            </div>
-                            <span class="font-bold text-[#1d2327]">{{ $ecoStats['total_products'] }}</span>
-                        </div>
+                        @empty
+                        <div class="py-5 text-center text-[13px] text-[#646970]">All products are well stocked.</div>
+                        @endforelse
                     </div>
                 </div>
             </div>
 
+        </div>
+
+        {{-- Orders by Country — dynamic world map (highlights countries orders came from) --}}
+        <div class="classic-card mt-6">
+            <div class="classic-card-header">
+                <span class="classic-card-title">Orders by Country</span>
+                <span class="text-[12px] text-[#646970]">All time</span>
+            </div>
+            <div class="p-4 grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div class="lg:col-span-2">
+                    <div id="world-map" style="height:360px;width:100%;min-height:360px;position:relative"></div>
+                </div>
+                <div>
+                    <div class="text-[12px] font-semibold text-[#646970] uppercase tracking-wide mb-3">Top countries</div>
+                    <div class="space-y-2.5">
+                        @forelse($ecoStats['orders_by_country']->take(8) as $c)
+                        <div class="flex items-center justify-between gap-2 {{ !$loop->first ? 'border-t border-[#f0f0f1] pt-2.5' : '' }}">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <img src="https://flagcdn.com/20x15/{{ strtolower($c['code']) }}.png" width="20" height="15" style="border-radius:2px;flex-shrink:0" alt="{{ $c['code'] }}" onerror="this.style.display='none'">
+                                <span class="text-[13px] font-medium text-[#1d2327] truncate">{{ $c['name'] }}</span>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <div class="text-[13px] font-bold text-[#1d2327]">{{ $c['orders'] }} <span class="text-[10px] font-normal text-[#646970]">orders</span></div>
+                                @if($c['revenue'] > 0)<div class="text-[10px] text-[#46b450] font-semibold">{{ $currency }}{{ number_format($c['revenue'], 0) }}</div>@endif
+                            </div>
+                        </div>
+                        @empty
+                        <div class="py-6 text-center text-[13px] text-[#646970]">No orders with a country yet.</div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
         </div>
         @endif
 
@@ -467,6 +588,109 @@
             },
             plugins: [revValueLabels]
         });
+    </script>
+    <script>
+        // Orders by Country — builds a plain inline SVG from jsVectorMap's map DATA (no library
+        // rendering, so none of its sizing quirks apply; the browser scales the viewBox natively).
+        (function () {
+            const el  = document.getElementById('world-map');
+            const dbg = document.getElementById('world-map-debug');
+            const setDbg = t => { if (dbg) dbg.textContent = t; };
+            if (!el) return;
+            const data = @json($ecoStats['orders_by_country']->keyBy('code'));
+            const codes = Object.keys(data);
+            if (!codes.length) { el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#646970;font-size:13px">No order locations yet.</div>'; return; }
+            const counts = {}; codes.forEach(c => { counts[c.toUpperCase()] = data[c].orders; });
+            const max = Math.max(1, ...codes.map(c => data[c].orders));
+            const shade = n => '#' + 'bbf7d0'.match(/\w\w/g).map((h, i) => {
+                const t = max > 1 ? n / max : 1;
+                const v = Math.round(parseInt(h, 16) + (parseInt('15803d'.match(/\w\w/g)[i], 16) - parseInt(h, 16)) * t);
+                return v.toString(16).padStart(2, '0');
+            }).join('');
+            const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+            setDbg('');
+            const js = s => new Promise((res, rej) => { const x = document.createElement('script'); x.src = s; x.onload = res; x.onerror = () => rej(new Error('load fail')); document.head.appendChild(x); });
+            const base = 'https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/';
+
+            let mapData = null;
+            js(base + 'js/jsvectormap.min.js')
+                .then(() => {
+                    // world.js registers via jsVectorMap.addMap(name, data); intercept it to grab the data.
+                    if (window.jsVectorMap && typeof jsVectorMap.addMap === 'function') {
+                        const orig = jsVectorMap.addMap;
+                        jsVectorMap.addMap = function (name, obj) { if (obj && obj.paths) mapData = obj; return orig.apply(this, arguments); };
+                    }
+                    return js(base + 'maps/world.js');
+                })
+                .then(() => {
+                    const md = mapData;
+                    if (!md || !md.paths) { setDbg('map data unavailable'); return; }
+                    const inset = (md.insets && md.insets[0]) || { width: 900, height: 440 };
+                    const W = Math.ceil(inset.width), H = Math.ceil(inset.height);
+                    let paths = '';
+                    for (const code in md.paths) {
+                        const p = md.paths[code];
+                        const has = counts[code] != null;
+                        const name = (data[code] && data[code].name) || p.name || code;
+                        const title = has ? name + ' (' + counts[code] + ' order' + (counts[code] === 1 ? '' : 's') + ')' : name;
+                        paths += '<path d="' + p.path + '" fill="' + (has ? shade(counts[code]) : '#cbd5e1') + '" stroke="#ffffff" stroke-width="0.5">'
+                              +  '<title>' + esc(title) + '</title></path>';
+                    }
+                    // Inline !important defeats the admin's global icon sizing on <svg> (max-height:349px, etc.).
+                    const sStyle = 'display:block;width:100%!important;height:360px!important;min-height:360px!important;max-height:none!important;max-width:none!important;min-width:0!important;cursor:grab';
+                    const bStyle = 'width:26px;height:26px;line-height:1;text-align:center;font-size:16px;font-weight:700;color:#1d2327;background:#fff;border:1px solid #c3c4c7;border-radius:4px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.08);padding:0';
+                    el.innerHTML =
+                        '<svg id="wm-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" style="' + sStyle + '">' + paths + '</svg>' +
+                        '<div style="position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:5px;z-index:5">' +
+                        '<button type="button" id="wm-zin" title="Zoom in" style="' + bStyle + '">+</button>' +
+                        '<button type="button" id="wm-zout" title="Zoom out" style="' + bStyle + '">&minus;</button></div>';
+
+                    // Zoom & pan by manipulating the SVG viewBox (buttons + drag-to-pan).
+                    const svg = el.querySelector('#wm-svg');
+                    const m0 = { x: 0, y: 0, w: W, h: H };
+                    const vb = { x: 0, y: 0, w: W, h: H };
+                    const apply = () => svg.setAttribute('viewBox', vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h);
+                    const clamp = () => {
+                        vb.w = Math.min(vb.w, m0.w); vb.h = Math.min(vb.h, m0.h);
+                        vb.x = Math.max(m0.x, Math.min(vb.x, m0.x + m0.w - vb.w));
+                        vb.y = Math.max(m0.y, Math.min(vb.y, m0.y + m0.h - vb.h));
+                    };
+                    const zoomAt = (f, cx, cy) => {
+                        let nw = vb.w * f, nh = vb.h * f;
+                        if (nw > m0.w) { nw = m0.w; nh = m0.h; }
+                        if (nw < m0.w * 0.12) return;
+                        vb.x = cx - (cx - vb.x) * (nw / vb.w);
+                        vb.y = cy - (cy - vb.y) * (nh / vb.h);
+                        vb.w = nw; vb.h = nh; clamp(); apply();
+                    };
+                    const ctr = () => ({ x: vb.x + vb.w / 2, y: vb.y + vb.h / 2 });
+                    el.querySelector('#wm-zin').onclick = () => { const p = ctr(); zoomAt(0.65, p.x, p.y); };
+                    el.querySelector('#wm-zout').onclick = () => { const p = ctr(); zoomAt(1.55, p.x, p.y); };
+                    let drag = false, last = null;
+                    svg.addEventListener('mousedown', e => { drag = true; last = { x: e.clientX, y: e.clientY }; svg.style.cursor = 'grabbing'; e.preventDefault(); });
+                    window.addEventListener('mouseup', () => { if (drag) { drag = false; svg.style.cursor = 'grab'; } });
+                    window.addEventListener('mousemove', e => {
+                        if (!drag) return;
+                        const r = svg.getBoundingClientRect();
+                        vb.x -= (e.clientX - last.x) / r.width * vb.w;
+                        vb.y -= (e.clientY - last.y) / r.height * vb.h;
+                        last = { x: e.clientX, y: e.clientY }; clamp(); apply();
+                    });
+                    // Mouse-wheel zoom, centred on the cursor.
+                    svg.addEventListener('wheel', e => {
+                        e.preventDefault();
+                        const r = svg.getBoundingClientRect();
+                        const cx = vb.x + (e.clientX - r.left) / r.width * vb.w;
+                        const cy = vb.y + (e.clientY - r.top) / r.height * vb.h;
+                        zoomAt(e.deltaY < 0 ? 0.85 : 1.18, cx, cy);
+                    }, { passive: false });
+                })
+                .catch(() => {
+                    setDbg('');
+                    el.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:#646970;font-size:13px">Map unavailable — see the country list.</div>';
+                });
+        })();
     </script>
     @endif
     @endif {{-- access_dashboard permission --}}

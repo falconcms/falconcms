@@ -58,6 +58,39 @@
         @endforeach
     </div>
 
+    {{-- Conversion funnel (visitors → product → cart → checkout → orders) --}}
+    @if($ecommerce)
+    <div class="bg-white border border-[#c3c4c7] rounded-sm mb-6">
+        <div class="px-4 py-3 border-b border-[#f0f0f1] flex flex-wrap justify-between items-center gap-2">
+            <span class="font-semibold text-[#1d2327]">Conversion Funnel</span>
+            <span class="text-[12px] text-[#646970]"><strong class="text-[#1d2327]">{{ $ecommerce['convRate'] }}%</strong> conversion · orders ÷ unique visitors</span>
+        </div>
+        <div class="p-4 space-y-3">
+            @php $funnelTop = $ecommerce['funnel'][0]['count'] ?: 1; @endphp
+            @foreach($ecommerce['funnel'] as $i => $step)
+                @php
+                    $pct  = round($step['count'] / $funnelTop * 100, 1);
+                    $prev = $i > 0 ? $ecommerce['funnel'][$i - 1]['count'] : null;
+                    $drop = ($prev && $prev > 0) ? round(($prev - $step['count']) / $prev * 100, 1) : null;
+                @endphp
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[12px] font-medium text-[#1d2327]">{{ $step['label'] }}</span>
+                        <span class="text-[12px] text-[#646970]">
+                            <strong class="text-[#1d2327]">{{ number_format($step['count']) }}</strong>
+                            &middot; {{ $pct }}%@if(!is_null($drop)) <span class="text-[#d63638]">(−{{ $drop }}%)</span>@endif
+                        </span>
+                    </div>
+                    <div class="h-2.5 bg-[#f0f0f1] rounded-full overflow-hidden">
+                        <div class="h-full rounded-full" style="width:{{ max(2, $pct) }}%;background:linear-gradient(90deg,#2271b1,#46b450)"></div>
+                    </div>
+                </div>
+            @endforeach
+            <p class="text-[11px] text-[#646970] pt-1">Funnel steps are estimated from page-view URLs (product / cart / checkout) vs. unique visitors.</p>
+        </div>
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- Orders table --}}
         <div class="lg:col-span-2 bg-white border border-[#c3c4c7] rounded-sm overflow-hidden">
