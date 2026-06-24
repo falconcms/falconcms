@@ -74,3 +74,40 @@ php artisan falcon:update
 ```
 
 The `falcon:update` command refreshes assets, themes, and permissions without touching your content.
+
+---
+
+## Uninstalling
+
+FalconCMS ships with two uninstall commands.
+
+### Full removal
+
+Removes everything cleanly — database tables, the trait the installer added to `App\Models\User`, published files, and the Composer package itself — so your app keeps booting with no leftover errors:
+
+```bash
+php artisan falcon:uninstall
+```
+
+::: warning Run it before `composer remove`
+`falcon:uninstall` is part of the package, so run it **while the package is still installed** — it performs the `composer remove` for you at the end. Running `composer remove falconcms/falconcms` first would leave the `HasCmsPermissions` trait referenced in your `User` model and crash the app.
+:::
+
+Options:
+
+| Option | Effect |
+| --- | --- |
+| `--all` | Also drop shared Laravel tables (`users`, `sessions`, `cache`, `jobs`, …) for a full wipe |
+| `--force` | Skip the confirmation prompt |
+| `--keep-files` | Keep published views, themes and assets |
+| `--no-composer` | Don't run `composer remove` automatically |
+
+### Database only
+
+Drops just the FalconCMS tables (and their migration records), leaving the package code, published files and `User` model trait in place — handy to wipe data and start fresh with `php artisan falcon:install` or `php artisan migrate`:
+
+```bash
+php artisan falcon:uninstall-db
+```
+
+Supports `--all` and `--force`.

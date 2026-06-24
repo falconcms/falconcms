@@ -182,6 +182,22 @@ falcon_log_activity('create', 'Created post: My First Post', $post);
 falcon_log_activity('login', 'User logged in from IP 192.168.1.1');
 ```
 
+## Geolocation
+
+```php
+// Resolve an IP address to geo / network details (cached 30 days via ip-api.com).
+// Uses the Laravel HTTP client with a timeout — reliable on hosts where
+// file_get_contents() to external URLs is disabled. Private/local IPs return nulls.
+falcon_geoip(?string $ip): array
+// => ['country' => ?string, 'country_code' => ?string, 'city' => ?string, 'region' => ?string, 'isp' => ?string]
+
+// Example
+$geo = falcon_geoip(request()->ip());
+echo $geo['country'];   // "United States"
+echo $geo['city'];      // "Ashburn"
+echo $geo['isp'];       // "Google LLC"
+```
+
 ## Dynamic Tokens
 
 ```php
