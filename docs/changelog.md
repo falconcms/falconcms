@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.6 <Badge type="tip" text="Latest" /> {#v1-5-6}
+## v1.5.7 <Badge type="tip" text="Latest" /> {#v1-5-7}
+
+**Released: 2026-06-24**
+
+### Added
+- **`falcon:uninstall` command** — Cleanly removes FalconCMS: drops its database tables, deletes its rows from the `migrations` table (so a later reinstall re-runs cleanly), and removes published views, themes and assets. Shared Laravel tables (`users`, `sessions`, `cache`, `jobs`, …) are **kept by default** to avoid breaking the host app; `--all` drops them too for a full wipe. Options: `--force` (skip the confirmation), `--all`, `--keep-files`. Finish with `composer remove falconcms/falconcms`
+
+## v1.5.6 {#v1-5-6}
 
 **Released: 2026-06-24**
 
