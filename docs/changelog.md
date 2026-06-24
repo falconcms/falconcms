@@ -5,7 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.10 <Badge type="tip" text="Latest" /> {#v1-5-10}
+## v1.6.0 <Badge type="tip" text="Latest" /> {#v1-6-0}
+
+**Released: 2026-06-24**
+
+A consolidation milestone that brings together everything shipped across the 1.5.x line.
+
+### Highlights
+- **Dashboard** — Redesigned e-commerce KPI cards with month-over-month trend deltas; **Top Selling Products**, **Low Stock** and **Recent Orders** widgets; and an interactive **Orders by Country** world map (zoom, pan and per-country hover). The whole e-commerce section is now gated behind the `access_shop` permission
+- **Analytics** — A **Visitors by Country** world map, a named **Traffic Sources** breakdown (Google, Facebook, Instagram, YouTube, … Direct, and other sites), and hover tooltips on the real-time active-users sparkline
+- **Shop** — The **Conversion Funnel** (visitors → product → cart → checkout → orders) now lives on the Shop Overview
+- **Security & reliability** — Internal AJAX fragment endpoints redirect on direct visits instead of leaking raw JSON; reliable geolocation via the shared `falcon_geoip()` helper; a richer IP blacklist (location, ISP, first/last seen)
+- **Lifecycle** — New `falcon:uninstall` (full, leaves the app booting cleanly) and `falcon:uninstall-db` (database-only) commands, plus idempotent core migrations so a reinstall always succeeds
+
+For the granular history of these changes, see the 1.5.x entries below.
+
+## v1.5.10 {#v1-5-10}
 
 **Released: 2026-06-24**
 
