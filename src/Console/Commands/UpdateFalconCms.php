@@ -2,10 +2,13 @@
 
 namespace FalconCms\Core\Console\Commands;
 
+use FalconCms\Core\Console\Concerns\ReconcilesMigrations;
 use Illuminate\Console\Command;
 
 class UpdateFalconCms extends Command
 {
+    use ReconcilesMigrations;
+
     protected $signature = 'falcon:update';
     protected $description = 'Update Falcon CMS: run migrations, sync system data, and refresh assets/themes.';
 
@@ -13,8 +16,10 @@ class UpdateFalconCms extends Command
     {
         $this->info('--- Starting Falcon CMS Update ---');
 
-        // 1. Run Migrations
+        // 1. Run Migrations (reconcile already-existing tables first so migrate never fails
+        //    with "table already exists" on a partial / pre-existing database).
         $this->info('Step 1: Running migrations...');
+        $this->reconcileExistingMigrations();
         $this->call('migrate', ['--force' => true]);
 
         // 2. Sync System Data (Permissions, Roles, Menus)

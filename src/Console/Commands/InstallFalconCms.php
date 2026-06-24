@@ -4,6 +4,7 @@ namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use FalconCms\Core\Console\Concerns\ReconcilesMigrations;
 use FalconCms\Core\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class InstallFalconCms extends Command
 {
+    use ReconcilesMigrations;
+
     protected $signature = 'falcon:install';
     protected $description = 'Full installation of Falcon CMS: migrations, assets, themes, and default data.';
 
@@ -18,8 +21,10 @@ class InstallFalconCms extends Command
     {
         $this->info('--- Starting Falcon CMS Installation ---');
 
-        // 1. Run Migrations
+        // 1. Run Migrations (first reconcile any tables that already exist so migrate never
+        //    fails with "table already exists" when installing over a partial / existing DB).
         $this->info('Step 1: Running migrations...');
+        $this->reconcileExistingMigrations();
         $this->call('migrate', ['--force' => true]);
 
         // 2. Publish Assets

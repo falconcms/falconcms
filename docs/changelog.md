@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.6.2 <Badge type="tip" text="Latest" /> {#v1-6-2}
+## v1.6.3 <Badge type="tip" text="Latest" /> {#v1-6-3}
+
+**Released: 2026-06-25**
+
+### Fixed
+- **Reinstalling over an existing database failed with "table already exists"** — Running `falcon:install` (or `falcon:update`) on top of a database that still had some tables — after `falcon:uninstall-db`, or when installing onto an existing Laravel app whose `users` / `cache` / `jobs` tables remained — made `migrate` try to recreate them and abort. The commands now **reconcile first**: any migration whose created tables already exist is recorded as run, so `migrate` skips it and only creates what is genuinely missing. This works for both the app's own and the package's migrations, without editing any migration file
+
+## v1.6.2 {#v1-6-2}
 
 **Released: 2026-06-24**
 
