@@ -2,74 +2,47 @@
 
 namespace FalconCms\Core\Console\Commands;
 
+use FalconCms\Core\Console\Concerns\RemovesFalconData;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
+use Symfony\Component\Process\Process;
 
 class UninstallFalconCms extends Command
 {
+    use RemovesFalconData;
+
     protected $signature = 'falcon:uninstall
         {--force : Skip the confirmation prompt}
         {--all : Also drop shared Laravel tables (users, sessions, cache, jobs) — full wipe}
-        {--keep-files : Keep published views, themes and assets}';
+        {--keep-files : Keep published views, themes and assets}
+        {--no-composer : Do not run "composer remove" automatically}';
 
-    protected $description = 'Uninstall FalconCMS: drop its database tables, remove migration records and published files.';
-
-    /** CMS-owned tables — always removed (child/pivot tables first so FK order is safe). */
-    protected array $cmsTables = [
-        'shop_order_downloads', 'shop_order_items', 'shop_order_status_history', 'shop_orders',
-        'shop_product_downloads', 'shop_product_variations', 'shop_products', 'shop_reviews',
-        'product_category_post', 'product_tag_post', 'product_categories', 'product_tags',
-        'post_custom_field_values', 'post_taxonomy_term', 'post_translations', 'post_tag',
-        'category_post', 'taxonomy_terms', 'custom_taxonomies', 'custom_field_groups', 'custom_fields',
-        'posts', 'post_types', 'categories', 'tags',
-        'navigation_menu_items', 'navigation_menus', 'menus', 'widgets', 'media', 'comments',
-        'cms_analytics', 'cms_form_submissions', 'cms_forms', 'cms_languages', 'cms_redirects',
-        'cms_revisions', 'cms_settings',
-        'role_permission', 'role_user', 'permissions', 'roles',
-        'activity_logs', 'api_tokens', 'magic_login_tokens', 'blocked_ips',
-    ];
-
-    /** Shared Laravel tables — only removed with --all. */
-    protected array $sharedTables = [
-        'users', 'sessions', 'cache', 'cache_locks', 'jobs', 'job_batches',
-        'failed_jobs', 'password_reset_tokens',
-    ];
+    protected $description = 'Fully remove FalconCMS: database tables, app code references, published files and the Composer package.';
 
     public function handle(): int
     {
         $dropShared = (bool) $this->option('all');
-        $tables = $dropShared ? array_merge($this->cmsTables, $this->sharedTables) : $this->cmsTables;
 
-        $this->warn('  This will PERMANENTLY DROP FalconCMS database tables and delete all of its data.');
-        if ($dropShared) {
-            $this->warn('  --all is set: shared Laravel tables (users, sessions, cache, jobs) will ALSO be dropped.');
-        } else {
-            $this->line('  Shared Laravel tables (users, sessions, cache, jobs) are kept. Pass --all to drop them too.');
-        }
+        $this->warn('  This will PERMANENTLY remove FalconCMS — database tables, the trait added to your User model,');
+        $this->warn('  published files, and the Composer package itself.');
+        $this->line($dropShared
+            ? '  --all is set: shared Laravel tables (users, sessions, cache, jobs) will ALSO be dropped.'
+            : '  Shared Laravel tables (users, sessions, cache, jobs) are kept. Pass --all to drop them too.');
 
         if (! $this->option('force') && ! $this->confirm('Are you absolutely sure you want to uninstall FalconCMS?', false)) {
             $this->info('Aborted. Nothing was changed.');
             return self::SUCCESS;
         }
 
-        // 1) Drop tables (foreign-key checks off so drop order never matters).
-        $this->info('Dropping tables…');
-        Schema::disableForeignKeyConstraints();
-        $dropped = 0;
-        foreach ($tables as $table) {
-            if (Schema::hasTable($table)) {
-                Schema::drop($table);
-                $dropped++;
-                $this->line("  • dropped {$table}");
-            }
-        }
-        Schema::enableForeignKeyConstraints();
-        $this->info("Dropped {$dropped} table(s).");
+        // 1) Revert the App\Models\User changes FIRST, so the app keeps booting once the package is gone.
+        $this->revertUserModel();
 
-        // 2) Remove this package's migration records so a future reinstall re-runs cleanly.
-        $this->removeMigrationRecords();
+        // 2) Drop tables + migration records.
+        $this->info('Dropping tables…');
+        $dropped = $this->dropFalconTables($dropShared);
+        $this->info("Dropped {$dropped} table(s).");
+        $migrations = $this->removeFalconMigrationRecords();
+        $this->info("Removed {$migrations} migration record(s).");
 
         // 3) Remove published files.
         if (! $this->option('keep-files')) {
@@ -78,38 +51,45 @@ class UninstallFalconCms extends Command
             $this->line('Kept published files (--keep-files).');
         }
 
-        // 4) Clear caches that do not depend on the (now dropped) tables.
+        // 4) Clear caches that don't depend on the (now dropped) tables — before touching Composer.
         foreach (['view:clear', 'route:clear', 'config:clear'] as $cmd) {
             try { $this->callSilently($cmd); } catch (\Throwable $e) {}
         }
 
+        // 5) Remove the Composer package itself.
+        if ($this->option('no-composer')) {
+            $this->line('Skipped Composer removal (--no-composer). Run it yourself with:');
+            $this->line('    composer remove falconcms/falconcms');
+        } else {
+            $this->removeComposerPackage();
+        }
+
         $this->newLine();
-        $this->info('✔ FalconCMS database and files removed.');
-        $this->warn('Final step — remove the package code itself with Composer:');
-        $this->line('    composer remove falconcms/falconcms');
-        $this->line('    (then remove the FalconCms trait/provider references from your app if you added any)');
+        $this->info('✔ FalconCMS has been fully removed. Your application should boot cleanly.');
 
         return self::SUCCESS;
     }
 
-    /** Delete this package's rows from the migrations table (so reinstall re-runs them). */
-    protected function removeMigrationRecords(): void
+    /** Remove the HasCmsPermissions trait + import that the installer added to App\Models\User. */
+    protected function revertUserModel(): void
     {
-        try {
-            if (! Schema::hasTable('migrations')) {
-                return;
-            }
-            $dir = __DIR__ . '/../../../database/migrations';
-            if (! is_dir($dir)) {
-                return;
-            }
-            $names = array_map(fn ($p) => basename($p, '.php'), glob($dir . '/*.php') ?: []);
-            if ($names) {
-                $count = DB::table('migrations')->whereIn('migration', $names)->delete();
-                $this->info("Removed {$count} migration record(s).");
-            }
-        } catch (\Throwable $e) {
-            $this->warn('Could not clean migration records: ' . $e->getMessage());
+        $path = app_path('Models/User.php');
+        if (! file_exists($path)) {
+            return;
+        }
+        $content  = file_get_contents($path);
+        $original = $content;
+
+        // Drop the trait usage line inside the class body.
+        $content = preg_replace('/\R[ \t]*use\s+HasCmsPermissions\s*;/', '', $content);
+        // Drop the namespace import (handles "use FalconCms\Core\Traits\HasCmsPermissions;").
+        $content = preg_replace('/\R[ \t]*use\s+FalconCms\\\\Core\\\\Traits\\\\HasCmsPermissions\s*;/', '', $content);
+
+        if ($content !== null && $content !== $original) {
+            file_put_contents($path, $content);
+            $this->info('Reverted App\\Models\\User (removed the HasCmsPermissions trait).');
+        } else {
+            $this->line('App\\Models\\User had no FalconCMS trait to remove.');
         }
     }
 
@@ -131,5 +111,33 @@ class UninstallFalconCms extends Command
             }
         }
         $this->info("Removed {$removed} published path(s).");
+    }
+
+    /** Run "composer remove falconcms/falconcms"; fall back to a printed instruction on failure. */
+    protected function removeComposerPackage(): void
+    {
+        $this->info('Removing the Composer package…');
+        $composer = file_exists(base_path('composer.phar'))
+            ? '"' . PHP_BINARY . '" composer.phar'
+            : 'composer';
+
+        try {
+            $process = Process::fromShellCommandline(
+                $composer . ' remove falconcms/falconcms --no-interaction --no-scripts',
+                base_path()
+            );
+            $process->setTimeout(600);
+            $process->run(fn ($type, $buffer) => $this->output->write($buffer));
+
+            if ($process->isSuccessful()) {
+                $this->info('Composer package removed.');
+                return;
+            }
+        } catch (\Throwable $e) {
+            // fall through to the manual instruction
+        }
+
+        $this->warn('Could not run Composer automatically. Finish the removal manually with:');
+        $this->line('    composer remove falconcms/falconcms');
     }
 }

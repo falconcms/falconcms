@@ -61,6 +61,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             \FalconCms\Core\Console\Commands\MakeDashboardPage::class,
             \FalconCms\Core\Console\Commands\InstallFalconCms::class,
             \FalconCms\Core\Console\Commands\UninstallFalconCms::class,
+            \FalconCms\Core\Console\Commands\UninstallFalconDatabase::class,
             \FalconCms\Core\Console\Commands\SeedFalconCms::class,
             \FalconCms\Core\Console\Commands\UpdateFalconCms::class,
             \FalconCms\Core\Console\Commands\PublishScheduledPosts::class,

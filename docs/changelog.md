@@ -5,7 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.5.7 <Badge type="tip" text="Latest" /> {#v1-5-7}
+## v1.5.8 <Badge type="tip" text="Latest" /> {#v1-5-8}
+
+**Released: 2026-06-24**
+
+### Fixed
+- **Uninstall left a broken `User` model** — The earlier uninstall dropped tables and files but did not remove the `HasCmsPermissions` trait the installer added to `App\Models\User`, so after `composer remove` the app crashed with *"Trait FalconCms\Core\Traits\HasCmsPermissions not found"*. The full uninstall now reverts that automatically
+
+### Added
+- **`falcon:uninstall` — full removal (no leftovers)** — Reverts the trait/import added to `App\Models\User`, drops tables + migration records, removes published files, and runs `composer remove falconcms/falconcms` — leaving the app booting cleanly. Options: `--all` (also drop shared Laravel tables), `--force`, `--keep-files`, `--no-composer`
+- **`falcon:uninstall-db` — database-only removal** — Drops just the FalconCMS tables (and migration records); the package code, files and User model trait stay in place (e.g. to wipe data and re-`migrate`). Options: `--all`, `--force`
+
+## v1.5.7 {#v1-5-7}
 
 **Released: 2026-06-24**
 
