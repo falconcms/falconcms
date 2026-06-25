@@ -18,7 +18,11 @@ Most Laravel CMS solutions are either too simple or require you to rebuild every
 |---|---|
 | PHP | 8.1+ |
 | Laravel | 10, 11, or 12 |
-| Database | MySQL 5.7+ / MariaDB 10.3+ / SQLite 3.x |
+| Database | **MySQL 5.7+** (recommended) or **MariaDB 10.3+** |
+
+::: tip Database support
+**MySQL / MariaDB** are the only fully supported databases (MySQL 8+ recommended for production). **SQLite is not recommended** — it only partially works and some features depend on MySQL-specific behaviour. PostgreSQL and SQL Server are not supported.
+:::
 
 ## Quick Start
 

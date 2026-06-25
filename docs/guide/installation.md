@@ -6,8 +6,15 @@ Before installing, make sure your environment meets these requirements:
 
 - PHP **8.1** or higher
 - Laravel **10, 11, or 12**
-- MySQL 5.7+ / MariaDB 10.3+ / **SQLite** (all supported)
-- `php_pdo_sqlite` extension enabled (for SQLite)
+- **MySQL 5.7+** (recommended) or **MariaDB 10.3+** — the officially supported database
+
+::: warning Database support
+FalconCMS is built and tested on **MySQL / MariaDB**, which are the only fully supported databases. We strongly recommend MySQL 8+ for production.
+
+**SQLite is not recommended.** It may work for a quick local look, but some features rely on MySQL-specific behaviour and will not work correctly on SQLite. Do not use SQLite for production or for evaluating the full feature set.
+
+PostgreSQL and SQL Server are not supported.
+:::
 
 ## Install via Composer
 
