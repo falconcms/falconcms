@@ -35,7 +35,7 @@
     $saleColor    = $s['saleColor']       ?? '#e02b2b';
     $instockColor = $s['instockColor']    ?? '#15803d';
     $outColor     = $s['outofstockColor'] ?? '#b91c1c';
-    $fontSize     = ($s['fontSize'] ?? 14) . ($s['fontSizeUnit'] ?? 'px');
+    $fontSize     = getUnitVal($s['fontSize'] ?? 14, $s['fontSizeUnit'] ?? 'px');
     $fontWeight   = $s['fontWeight'] ?? '400';
     $gap          = ($s['gap'] ?? 8) . ($s['gapUnit'] ?? 'px');
     $mt = (isset($s['marginTop'])    && $s['marginTop']    !== '' ? $s['marginTop']    : 0) . ($s['marginTopUnit']    ?? 'px');

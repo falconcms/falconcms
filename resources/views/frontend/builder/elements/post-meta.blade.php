@@ -37,7 +37,7 @@
 
     $fontFamily     = $s['meta_family']         ?? 'inherit';
     $fontWeight     = $s['meta_weight']         ?? ($s['fontWeight']    ?? '400');
-    $fontSize       = $s['meta_size']           ?? (($s['fontSize'] ?? 13) . ($s['fontSizeUnit'] ?? 'px'));
+    $fontSize       = $s['meta_size']           ?? getUnitVal($s['fontSize'] ?? 13, $s['fontSizeUnit'] ?? 'px');
     $lineHeight     = $s['meta_line_height']     ?? 'inherit';
     $letterSpacing  = $s['meta_letter_spacing']  ?? 'normal';
     $textTransform  = $s['meta_transform']       ?? 'none';

@@ -22,7 +22,7 @@
                  @click.stop="el.settings.defaultActive = idx"
                  :style="{
                      padding: '8px 16px',
-                     fontSize: (el.settings.tabFontSize || 14) + 'px',
+                     fontSize: getUnitVal(el.settings.tabFontSize || 14, el.settings.tabFontSizeUnit || 'px'),
                      fontWeight: el.settings.tabFontWeight || '500',
                      fontFamily: el.settings.tabFontFamily || 'inherit',
                      letterSpacing: el.settings.tabLetterSpacing || '0px',
@@ -57,7 +57,7 @@
             <div v-if="idx === (el.settings.defaultActive ?? 0)"
                  :style="{
                      padding: (el.settings.contentPadding ?? 20) + 'px',
-                     fontSize: (el.settings.contentFontSize || 14) + 'px',
+                     fontSize: getUnitVal(el.settings.contentFontSize || 14, el.settings.contentFontSizeUnit || 'px'),
                      fontFamily: el.settings.contentFontFamily || 'inherit',
                      letterSpacing: el.settings.contentLetterSpacing || '0px',
                      lineHeight: el.settings.contentLineHeight || 1.6,

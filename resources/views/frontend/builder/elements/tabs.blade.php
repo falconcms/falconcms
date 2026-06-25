@@ -14,14 +14,14 @@
     $style         = $s['style']     ?? 'underline';
     $alignment     = $s['alignment'] ?? 'left';
 
-    $tabFontSize      = ($s['tabFontSize']      ?? 14) . 'px';
+    $tabFontSize      = getUnitVal($s['tabFontSize'] ?? 14, $s['tabFontSizeUnit'] ?? 'px');
     $tabFontWeight    = $s['tabFontWeight']    ?? '500';
     $tabFontFamily    = $s['tabFontFamily']    ?? 'inherit';
     $tabLetterSpacing = $s['tabLetterSpacing'] ?? '0px';
     $tabColor         = $s['tabColor']         ?? '#666666';
     $activeColor      = $s['activeColor']      ?? '#0091ea';
 
-    $contentFontSize      = ($s['contentFontSize']     ?? 14) . 'px';
+    $contentFontSize      = getUnitVal($s['contentFontSize'] ?? 14, $s['contentFontSizeUnit'] ?? 'px');
     $contentFontFamily    = $s['contentFontFamily']    ?? 'inherit';
     $contentLetterSpacing = $s['contentLetterSpacing'] ?? '0px';
     $contentLineHeight    = $s['contentLineHeight']    ?? 1.6;

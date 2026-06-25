@@ -94,53 +94,21 @@
             </select>
         </div>
 
-        <!-- Font Size / Line Height / Letter Spacing (responsive) -->
-        <div>
-            <div class="flex justify-between items-center mb-2">
-                <label class="text-[9px] font-bold text-slate-400 uppercase">Size &amp; Spacing</label>
-                <div class="flex gap-1 items-center">
-                    <button @click="setResponsiveVal(editingElement.settings, 'fontSize', device, ''); setResponsiveVal(editingElement.settings, 'lineHeight', device, ''); setResponsiveVal(editingElement.settings, 'letterSpacing', device, '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
-                        <i class="fa fa-undo text-[10px]"></i>
-                    </button>
-                    <div class="relative inline-block">
-                        <button @click="activeResponsiveMenu = activeResponsiveMenu === 'titleTypo' ? null : 'titleTypo'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
-                            <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
-                            <i class="fa fa-caret-down text-[8px] text-slate-400"></i>
-                        </button>
-                        <div v-show="activeResponsiveMenu === 'titleTypo'" class="absolute right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 flex gap-0.5 p-1 min-w-max">
-                            <button @click="device = 'desktop'; activeResponsiveMenu = null" :class="device === 'desktop' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Large (Desktop)"><i class="fa fa-desktop text-[11px]"></i></button>
-                            <button @click="device = 'tablet'; activeResponsiveMenu = null" :class="device === 'tablet' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Medium (Tablet)"><i class="fa fa-tablet-alt text-[11px]"></i></button>
-                            <button @click="device = 'mobile'; activeResponsiveMenu = null" :class="device === 'mobile' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Small (Mobile)"><i class="fa fa-mobile-alt text-[11px]"></i></button>
-                        </div>
-                    </div>
-                </div>
+        <div class="grid grid-cols-3 gap-3">
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
+                <input type="text" v-model="editingElement.settings.fontSize"
+                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center">
             </div>
-            <div class="grid grid-cols-3 gap-3">
-                <div>
-                    <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
-                    <input type="text" v-model="editingElement.settings.fontSize"
-                           placeholder="36px / 2rem / calc()"
-                           class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center">
-                    <div class="flex gap-0.5 mt-1">
-                        <button v-for="u in ['px','rem','em','%','vw','vh']" :key="u"
-                                @click="editingElement.settings.fontSize = (parseFloat(editingElement.settings.fontSize) || 36) + u"
-                                class="flex-1 text-[9px] py-0.5 border border-slate-200 rounded text-slate-400 hover:bg-[#2271b1] hover:text-white hover:border-[#2271b1] transition-all">
-                            @{{ u }}
-                        </button>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Hei...</label>
-                    <input type="text" :value="getResponsiveVal(editingElement.settings, 'lineHeight', device)" @input="setResponsiveVal(editingElement.settings, 'lineHeight', device, $event.target.value)"
-                           :placeholder="getResponsiveVal(editingElement.settings, 'lineHeight', 'desktop') || '1.2'"
-                           class="w-full border border-slate-200 rounded px-2 py-2 text-[11px] text-center">
-                </div>
-                <div>
-                    <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter S...</label>
-                    <input type="text" :value="getResponsiveVal(editingElement.settings, 'letterSpacing', device)" @input="setResponsiveVal(editingElement.settings, 'letterSpacing', device, $event.target.value)"
-                           :placeholder="getResponsiveVal(editingElement.settings, 'letterSpacing', 'desktop') || '0'"
-                           class="w-full border border-slate-200 rounded px-2 py-2 text-[11px] text-center">
-                </div>
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Hei...</label>
+                <input type="text" v-model="editingElement.settings.lineHeight"
+                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center">
+            </div>
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter S...</label>
+                <input type="text" v-model="editingElement.settings.letterSpacing"
+                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center">
             </div>
         </div>
 

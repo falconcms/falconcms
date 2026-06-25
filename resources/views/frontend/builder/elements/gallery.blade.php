@@ -20,7 +20,7 @@
 
     $capAlign  = $s['captionAlign']         ?? 'center';
     $capFamily = $s['captionFontFamily']    ?? 'inherit';
-    $capSize   = $s['captionFontSize']      ?? '13px';
+    $capSize   = getUnitVal($s['captionFontSize'] ?? 13, $s['captionFontSizeUnit'] ?? 'px');
     $capWeight = $s['captionFontWeight']    ?? '400';
     $capLh     = $s['captionLineHeight']    ?? '1.4';
     $capLs     = $s['captionLetterSpacing'] ?? '0px';

@@ -14,7 +14,7 @@
     $gap          = (int)($s['gap']        ?? 10);
     $itemSpacing  = (int)($s['itemSpacing'] ?? 10);
     $textColor    = $s['textColor']    ?? '#333333';
-    $fontSize     = ($s['fontSize']    ?? 15) . ($s['fontSizeUnit'] ?? 'px');
+    $fontSize     = getUnitVal($s['fontSize'] ?? 15, $s['fontSizeUnit'] ?? 'px');
     $fontWeight   = $s['fontWeight']   ?? '400';
     $fontFamily   = $s['fontFamily']   ?? 'inherit';
     $lineHeight   = $s['lineHeight']   ?? '1.5';

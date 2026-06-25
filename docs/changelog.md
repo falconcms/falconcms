@@ -5,7 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.6.3 <Badge type="tip" text="Latest" /> {#v1-6-3}
+## v1.7.0 <Badge type="tip" text="Latest" /> {#v1-7-0}
+
+**Released: 2026-06-26**
+
+A builder & design-tooling release: one unified colour picker everywhere, responsive background **hover** colours, full CSS-unit support for font sizes, plus several builder and analytics fixes.
+
+### Added
+- **Background Hover Color for Containers, Columns & Nested Columns** — a new **responsive** hover colour (separate desktop / tablet / mobile values). It previews live on hover in the builder canvas and renders as a real `:hover` rule (with media queries) on the front end
+- **Custom Text Color for Buttons** — when *Button Style → Custom* is selected, a dedicated text-colour picker sits with the gradient colours; the default style keeps its own text colour
+
+### Changed
+- **One unified colour picker across the whole CMS** — the main builder, the mega-menu & post-card builders, the Theme Customizer and the Form builder now share a single clean picker: a round swatch, an editable hex field, and a compact popup (saturation square + hue + alpha sliders) with the **alpha bar tinted to the current colour**. The Form-builder picker also gained an **opacity slider**
+- **Opacity-aware colour fields** — fields that store opacity separately now show the full 8-digit `#RRGGBBAA` code, and the alpha slider opens at the correct position
+- **CSS units for every font size** — all typography / font-size inputs across builder elements (and inside header / footer / nested layouts) now accept `px`, `rem`, `em`, `%`, `vw`, `vh` and `calc()`. Values apply on both the canvas and the front end and survive the shortcode round-trip
+- **Title element typography** now mirrors the Text Block (font family, weight, size, line-height, letter-spacing, transform) for a consistent editing experience
+
+### Fixed
+- **Column / nested-column background colour ignored responsive values** — tablet/mobile background colours were rendered with the desktop value on both the canvas and the front end; per-device colours are now honoured
+- **A per-device colour was discarded when switching device** — picking a tablet/mobile colour and then toggling the device preview reverted it; the colour is now committed instead of reverted
+- **Analytics "Page" column showed the raw server IP** — visitors who reached the site directly by IP (bots/scanners) appeared as `https://<ip>`; the column now shows a clean request path
+- **Documentation** clarifies that **MySQL / MariaDB** are the only fully supported databases (SQLite is partial and not recommended; PostgreSQL / SQL Server are unsupported)
+
+## v1.6.3 {#v1-6-3}
 
 **Released: 2026-06-25**
 

@@ -266,7 +266,7 @@
                             </button>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                            <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
                                  @click="openColorPicker($event, editingElement.settings, 'itemBgColor')">
                                 <div :style="{ backgroundColor: editingElement.settings.itemBgColor }" class="w-full h-full"></div>
                             </div>
@@ -281,7 +281,7 @@
                             </button>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                            <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
                                  @click="openColorPicker($event, editingElement.settings, 'itemBgColorHover')">
                                 <div :style="{ backgroundColor: editingElement.settings.itemBgColorHover }" class="w-full h-full"></div>
                             </div>
@@ -300,7 +300,7 @@
                             </button>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                            <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
                                  @click="openColorPicker($event, editingElement.settings, 'itemColor')">
                                 <div :style="{ backgroundColor: editingElement.settings.itemColor }" class="w-full h-full"></div>
                             </div>
@@ -315,7 +315,7 @@
                             </button>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                            <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
                                  @click="openColorPicker($event, editingElement.settings, 'itemColorHover')">
                                 <div :style="{ backgroundColor: editingElement.settings.itemColorHover }" class="w-full h-full"></div>
                             </div>
@@ -358,7 +358,7 @@
                             </button>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                            <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
                                  @click="openColorPicker($event, editingElement.settings, 'itemBorderColor')">
                                 <div :style="{ backgroundColor: editingElement.settings.itemBorderColor }" class="w-full h-full"></div>
                             </div>
@@ -398,7 +398,7 @@
                             </button>
                         </div>
                         <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                            <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
                                  @click="openColorPicker($event, editingElement.settings, 'itemBorderColorHover')">
                                 <div :style="{ backgroundColor: editingElement.settings.itemBorderColorHover }" class="w-full h-full"></div>
                             </div>

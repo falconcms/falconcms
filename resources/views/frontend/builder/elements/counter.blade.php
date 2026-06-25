@@ -19,13 +19,13 @@
     $separator   = $s['separator']  ?? '';
 
     $textAlign  = $s['textAlign']       ?? 'center';
-    $numSize    = $s['numberFontSize'] ?? '48px';
+    $numSize    = getUnitVal($s['numberFontSize'] ?? 48, $s['numberFontSizeUnit'] ?? 'px');
     $numWeight  = $s['numberFontWeight'] ?? '700';
     $numColor   = $s['numberColor']      ?? '#222222';
     $numFamily        = $s['numberFontFamily']     ?? 'inherit';
     $numLineHeight    = $s['numberLineHeight']    ?? '1.1';
     $numLetterSpacing = $s['numberLetterSpacing'] ?? '0px';
-    $lblSize          = $s['labelFontSize']      ?? '14px';
+    $lblSize          = getUnitVal($s['labelFontSize'] ?? 14, $s['labelFontSizeUnit'] ?? 'px');
     $lblWeight        = $s['labelFontWeight']    ?? '400';
     $lblColor         = $s['labelColor']         ?? '#666666';
     $lblFamily        = $s['labelFontFamily']    ?? 'inherit';

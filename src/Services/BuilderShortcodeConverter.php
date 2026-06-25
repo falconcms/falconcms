@@ -317,6 +317,8 @@ class BuilderShortcodeConverter
         self::attr($a, 'bg_color',   $s['bgColor']       ?? null);
         self::respAttr($a, 'bg_color', $s, 'bgColor');
         self::attrIf($a, 'bg_opacity', $s['bgColorOpacity'] ?? null, 1);
+        self::attr($a, 'bg_hover_color', $s['bgHoverColor'] ?? null);
+        self::attrIf($a, 'bg_hover_opacity', $s['bgHoverColorOpacity'] ?? null, 1);
         self::respAttr($a, 'bg_opacity', $s, 'bgColorOpacity');
 
         // Gradient
@@ -493,6 +495,8 @@ class BuilderShortcodeConverter
         // Colors (responsive)
         self::attrIf($a, 'bg_color',       $s['bgColor']        ?? null, 'transparent');
         self::respAttr($a, 'bg_color', $s, 'bgColor');
+        self::attr($a, 'bg_hover_color',   $s['bgHoverColor']   ?? null);
+        self::attrIf($a, 'bg_hover_opacity', $s['bgHoverColorOpacity'] ?? null, 1);
         self::attr($a, 'text_color',        $s['textColor']      ?? null);
         self::attrIf($a, 'bg_opacity',      $s['bgColorOpacity'] ?? null, 1);
         self::respAttr($a, 'bg_opacity', $s, 'bgColorOpacity');
@@ -2726,6 +2730,8 @@ class BuilderShortcodeConverter
             'paddingRightUnit'  => $a['padding_right_unit']  ?? 'px',
             'bgColor'             => $a['bg_color']       ?? null,
             'bgColorOpacity'      => isset($a['bg_opacity']) ? (float)$a['bg_opacity'] : 1,
+            'bgHoverColor'        => $a['bg_hover_color'] ?? null,
+            'bgHoverColorOpacity' => isset($a['bg_hover_opacity']) ? (float)$a['bg_hover_opacity'] : null,
             'bgType'              => $a['bg_type']        ?? 'color',
             'bgGradientStartColor'=> $a['gradient_start'] ?? null,
             'bgGradientEndColor'  => $a['gradient_end']   ?? null,
@@ -2855,6 +2861,8 @@ class BuilderShortcodeConverter
             'textColor'         => $a['text_color']  ?? null,
             'bgColor'           => $a['bg_color']    ?? 'transparent',
             'bgColorOpacity'    => isset($a['bg_opacity']) ? (float)$a['bg_opacity'] : 1,
+            'bgHoverColor'      => $a['bg_hover_color'] ?? null,
+            'bgHoverColorOpacity' => isset($a['bg_hover_opacity']) ? (float)$a['bg_hover_opacity'] : null,
             'bgType'            => $a['bg_type']     ?? 'color',
             'hoverType'         => $a['hover_type']  ?? 'none',
             'bgGradientStartColor'    => $a['gradient_start']           ?? null,

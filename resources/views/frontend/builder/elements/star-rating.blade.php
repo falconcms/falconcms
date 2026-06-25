@@ -16,7 +16,7 @@
     $textAlign = $s['textAlign']               ?? 'center';
     $gap       = (int)($s['gap']              ?? 4);
     $lblFamily = $s['labelFontFamily']          ?? 'inherit';
-    $lblSize   = $s['labelFontSize']           ?? '13px';
+    $lblSize   = getUnitVal($s['labelFontSize'] ?? 13, $s['labelFontSizeUnit'] ?? 'px');
     $lblWeight = $s['labelFontWeight']         ?? '400';
     $lblLh     = $s['labelLineHeight']         ?? '1.4';
     $lblLs     = $s['labelLetterSpacing']      ?? '0px';

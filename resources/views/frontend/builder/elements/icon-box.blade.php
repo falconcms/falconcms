@@ -27,7 +27,7 @@
 
     $titleTag           = in_array($s['titleTag'] ?? 'h3', ['h1','h2','h3','h4','h5','h6','p','div']) ? $s['titleTag'] : 'h3';
     $titleFontFamily    = $s['titleFontFamily'] ?? 'inherit';
-    $titleSize          = ($s['titleFontSize'] ?? 20) . ($s['titleFontSizeUnit'] ?? 'px');
+    $titleSize          = getUnitVal($s['titleFontSize'] ?? 20, $s['titleFontSizeUnit'] ?? 'px');
     $titleWeight        = $s['titleFontWeight'] ?? '600';
     $titleColor         = $s['titleColor']  ?? '#222222';
     $titleGap           = ($s['titleSpacing'] ?? 8) . 'px';
@@ -36,7 +36,7 @@
     $titleTransform     = $s['titleTextTransform'] ?? 'none';
 
     $descFontFamily    = $s['descFontFamily'] ?? 'inherit';
-    $descSize          = ($s['descFontSize']  ?? 14) . ($s['descFontSizeUnit'] ?? 'px');
+    $descSize          = getUnitVal($s['descFontSize'] ?? 14, $s['descFontSizeUnit'] ?? 'px');
     $descWeight        = $s['descFontWeight'] ?? '400';
     $descColor         = $s['descColor']   ?? '#666666';
     $descLH            = $s['descLineHeight'] ?? 1.6;

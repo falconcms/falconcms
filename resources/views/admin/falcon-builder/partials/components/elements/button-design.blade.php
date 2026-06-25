@@ -73,7 +73,7 @@
                      @click="openColorPicker($event, editingElement.settings, 'bgGradientStartColor', 'bgGradientStartOpacity')">
                     <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgGradientStartColor, editingElement.settings.bgGradientStartOpacity) }" class="w-full h-full rounded-full"></div>
                 </div>
-                <input type="text" v-model="editingElement.settings.bgGradientStartColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                <input type="text" :value="falconColorDisplay(editingElement.settings, 'bgGradientStartColor', 'bgGradientStartOpacity')" @input="falconColorInput(editingElement.settings, 'bgGradientStartColor', 'bgGradientStartOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
             </div>
         </div>
 
@@ -91,7 +91,25 @@
                      @click="openColorPicker($event, editingElement.settings, 'bgGradientEndColor', 'bgGradientEndOpacity')">
                     <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgGradientEndColor, editingElement.settings.bgGradientEndOpacity) }" class="w-full h-full rounded-full"></div>
                 </div>
-                <input type="text" v-model="editingElement.settings.bgGradientEndColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                <input type="text" :value="falconColorDisplay(editingElement.settings, 'bgGradientEndColor', 'bgGradientEndOpacity')" @input="falconColorInput(editingElement.settings, 'bgGradientEndColor', 'bgGradientEndOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+            </div>
+        </div>
+
+        <!-- Custom Text Color (used when Button Style = Custom) -->
+        <div>
+            <div class="flex justify-between items-center mb-1.5">
+                <label class="text-[9px] font-bold text-slate-400 uppercase block">Text Color</label>
+                <button @click="clearColorField(editingElement.settings, 'customTextColor', 'customTextColorOpacity')"
+                        class="text-slate-300 hover:text-red-500 transition-colors" title="Reset">
+                    <i class="fa fa-undo text-[10px]"></i>
+                </button>
+            </div>
+            <div class="flex gap-2 items-center">
+                <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                     @click="openColorPicker($event, editingElement.settings, 'customTextColor', 'customTextColorOpacity')">
+                    <div :style="{ backgroundColor: hexToRgba(editingElement.settings.customTextColor, editingElement.settings.customTextColorOpacity) }" class="w-full h-full rounded-full"></div>
+                </div>
+                <input type="text" :value="falconColorDisplay(editingElement.settings, 'customTextColor', 'customTextColorOpacity')" @input="falconColorInput(editingElement.settings, 'customTextColor', 'customTextColorOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
             </div>
         </div>
 
@@ -190,7 +208,7 @@
                          @click="openColorPicker($event, editingElement.settings, 'bgGradientHoverStartColor', 'bgGradientHoverStartOpacity')">
                         <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgGradientHoverStartColor, editingElement.settings.bgGradientHoverStartOpacity) }" class="w-full h-full rounded-full"></div>
                     </div>
-                    <input type="text" v-model="editingElement.settings.bgGradientHoverStartColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                    <input type="text" :value="falconColorDisplay(editingElement.settings, 'bgGradientHoverStartColor', 'bgGradientHoverStartOpacity')" @input="falconColorInput(editingElement.settings, 'bgGradientHoverStartColor', 'bgGradientHoverStartOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                 </div>
             </div>
             <div>
@@ -205,7 +223,7 @@
                          @click="openColorPicker($event, editingElement.settings, 'bgGradientHoverEndColor', 'bgGradientHoverEndOpacity')">
                         <div :style="{ backgroundColor: hexToRgba(editingElement.settings.bgGradientHoverEndColor, editingElement.settings.bgGradientHoverEndOpacity) }" class="w-full h-full rounded-full"></div>
                     </div>
-                    <input type="text" v-model="editingElement.settings.bgGradientHoverEndColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                    <input type="text" :value="falconColorDisplay(editingElement.settings, 'bgGradientHoverEndColor', 'bgGradientHoverEndOpacity')" @input="falconColorInput(editingElement.settings, 'bgGradientHoverEndColor', 'bgGradientHoverEndOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                 </div>
             </div>
         </div>

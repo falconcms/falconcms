@@ -36,7 +36,7 @@
             <div v-if="img.caption"
                  :style="{
                      fontFamily:     el.settings.captionFontFamily    || 'inherit',
-                     fontSize:       el.settings.captionFontSize      || '13px',
+                     fontSize:       getUnitVal(el.settings.captionFontSize || 13, el.settings.captionFontSizeUnit || 'px'),
                      fontWeight:     el.settings.captionFontWeight    || '400',
                      lineHeight:     el.settings.captionLineHeight    || '1.4',
                      letterSpacing:  el.settings.captionLetterSpacing || '0px',

@@ -3239,8 +3239,8 @@
                                  <!-- Typography -->
                                  <div class="grid grid-cols-2 gap-3">
                                      <div>
-                                         <label class="text-[12px] font-bold text-[#333] block mb-2">Font Size (px)</label>
-                                         <input type="number" min="8" max="60" v-model.number="editingElement.settings.fontSize"
+                                         <label class="text-[12px] font-bold text-[#333] block mb-2">Font Size</label>
+                                         <input type="text" v-model="editingElement.settings.fontSize" placeholder="14px, 1rem, 2vw, calc()…"
                                                 class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                      </div>
                                      <div>
@@ -3461,7 +3461,7 @@
                                                       @click="openColorPicker($event, editingElement.settings, 'iconBgColor', 'iconBgColorOpacity')">
                                                      <div :style="{ backgroundColor: hexToRgba(editingElement.settings.iconBgColor, editingElement.settings.iconBgColorOpacity) }" class="w-full h-full rounded-full"></div>
                                                  </div>
-                                                 <input type="text" v-model="editingElement.settings.iconBgColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                                                 <input type="text" :value="falconColorDisplay(editingElement.settings, 'iconBgColor', 'iconBgColorOpacity')" @input="falconColorInput(editingElement.settings, 'iconBgColor', 'iconBgColorOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                                              </div>
                                          </div>
                                          <!-- Border Radius + Padding: 2-col (when bg set) -->
@@ -3515,7 +3515,7 @@
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
                                                  <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                     <input type="number" min="1" v-model.number="editingElement.settings.titleFontSize"
+                                                     <input type="text" v-model="editingElement.settings.titleFontSize"
                                                             class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
                                                      <select v-model="editingElement.settings.titleFontSizeUnit"
                                                              class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
@@ -3615,7 +3615,7 @@
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
                                                  <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                     <input type="number" min="1" v-model.number="editingElement.settings.descFontSize"
+                                                     <input type="text" v-model="editingElement.settings.descFontSize"
                                                             class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
                                                      <select v-model="editingElement.settings.descFontSizeUnit"
                                                              class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
@@ -3754,8 +3754,8 @@
                                          <!-- Font Size + Padding -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size (px)</label>
-                                                 <input type="number" min="1" v-model.number="editingElement.settings.titleFontSize"
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <input type="text" v-model="editingElement.settings.titleFontSize"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -3892,8 +3892,8 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size (px)</label>
-                                                 <input type="number" min="1" v-model.number="editingElement.settings.contentFontSize"
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <input type="text" v-model="editingElement.settings.contentFontSize"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -4117,7 +4117,7 @@
                                          <div>
                                              <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Font Size</label>
                                              <div class="flex gap-1">
-                                                 <input type="number" min="8" max="80" v-model.number="editingElement.settings.fontSize"
+                                                 <input type="text" v-model="editingElement.settings.fontSize"
                                                         class="flex-1 border border-slate-200 rounded px-2 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                                  <select v-model="editingElement.settings.fontSizeUnit"
                                                          class="border border-slate-200 rounded px-2 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
@@ -4220,8 +4220,8 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size (px)</label>
-                                                 <input type="number" min="1" v-model.number="editingElement.settings.tabFontSize"
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <input type="text" v-model="editingElement.settings.tabFontSize"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -4297,8 +4297,8 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size (px)</label>
-                                                 <input type="number" min="1" v-model.number="editingElement.settings.contentFontSize"
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <input type="text" v-model="editingElement.settings.contentFontSize"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">

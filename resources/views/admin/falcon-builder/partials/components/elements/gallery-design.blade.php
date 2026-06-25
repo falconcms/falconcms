@@ -85,7 +85,7 @@
     <!-- Image Border -->
     <div>
         <label class="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block">Image Border</label>
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-2 gap-2">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Width (px)</label>
                 <input type="number" v-model.number="editingElement.settings.imgBorderWidth" min="0" max="20"
@@ -100,12 +100,16 @@
                     <option value="dotted">Dotted</option>
                 </select>
             </div>
-            <div>
-                <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Color</label>
-                <div class="checkerboard rounded overflow-hidden w-full h-9 border border-slate-200 cursor-pointer"
+        </div>
+        <div class="mt-2">
+            <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Color</label>
+            <div class="flex gap-2 items-center">
+                <div class="checkerboard rounded-full overflow-hidden w-9 h-9 flex-shrink-0 border border-slate-200 shadow-sm cursor-pointer"
                      @click="openColorPicker($event, editingElement.settings, 'imgBorderColor')">
                     <div :style="{ backgroundColor: editingElement.settings.imgBorderColor || '#e2e8f0' }" class="w-full h-full"></div>
                 </div>
+                <input type="text" v-model="editingElement.settings.imgBorderColor" placeholder="#e2e8f0"
+                       class="w-full border border-slate-200 rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
             </div>
         </div>
     </div>

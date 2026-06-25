@@ -31,7 +31,7 @@
 
     // Typography — text-align explicitly inherited so responsive overrides cascade properly
     $typoStyle  = "font-family:"    . ($s['fontFamily']    ?? 'inherit') . ";";
-    $typoStyle .= "font-size:"      . ($s['fontSize']      ?? 13) . ($s['fontSizeUnit'] ?? 'px') . ";";
+    $typoStyle .= "font-size:"      . getUnitVal($s['fontSize'] ?? 13, $s['fontSizeUnit'] ?? 'px') . ";";
     $typoStyle .= "font-weight:"    . ($s['fontWeight']    ?? '400') . ";";
     $typoStyle .= "line-height:"    . ($s['lineHeight']    ?? '1.6') . ";";
     $typoStyle .= "letter-spacing:" . ($s['letterSpacing'] ?? 0) . ($s['letterSpacingUnit'] ?? 'px') . ";";

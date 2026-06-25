@@ -2,6 +2,7 @@
     <x-slot name="title">Form Builder - {{ $form->title }}</x-slot>
 
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/pickr.classic.min.css') }}">
+    <style>@include('falcon-cms::admin.falcon-builder.partials.pcr-fnew')</style>
     <style>
         .field-item { transition: box-shadow 0.2s, border-color 0.15s; }
         .field-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -11,7 +12,7 @@
         #drop-zone.drag-over { border-color: #3b82f6; background: #eff6ff; }
         .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; }
         .col-badge { font-size: .6rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; background: #ede9fe; color: #7c3aed; }
-        .lz-fb-color-btn { width:2rem; height:2rem; border-radius:6px; border:1px solid #d1d5db; box-shadow:0 1px 3px rgba(0,0,0,.1); cursor:pointer; flex-shrink:0; transition:box-shadow .15s; }
+        .lz-fb-color-btn { width:2.25rem; height:2.25rem; border-radius:9999px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,.12); cursor:pointer; flex-shrink:0; transition:box-shadow .15s; }
         .lz-fb-color-btn:hover { box-shadow:0 2px 6px rgba(0,0,0,.18); }
         /* Compact Pickr */
         .pcr-app { width:222px !important; }
@@ -198,7 +199,7 @@
                                         data-target="app-{{ $af['id'] }}"
                                         data-hex-id="fbhex-{{ $af['id'] }}"></button>
                                 <input type="hidden" id="app-{{ $af['id'] }}" value="{{ $colorVal }}">
-                                <code id="fbhex-{{ $af['id'] }}" class="text-xs font-mono text-gray-500">{{ $colorVal }}</code>
+                                <input type="text" id="fbhex-{{ $af['id'] }}" value="{{ $colorVal }}" class="flex-1 w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-mono text-gray-600 focus:outline-none focus:border-blue-500">
                             </div>
                         @else
                             <input type="{{ $af['type'] }}" id="app-{{ $af['id'] }}" value="{{ $app[$af['id']] ?? $af['default'] }}"
@@ -657,27 +658,64 @@
                     el: btn,
                     useAsButton: true,
                     theme: 'classic',
+                    appClass: 'pcr-fnew',
                     default: input ? input.value : '#ffffff',
                     defaultRepresentation: 'HEXA',
                     position: 'left-middle',
                     components: {
-                        preview: true, opacity: false, hue: true,
+                        preview: true, opacity: true, hue: true,
                         interaction: { hex: true, rgba: false, input: true, clear: false, save: true }
                     },
                     swatches: ['#000000','#ffffff','#f44336','#e91e63','#9c27b0','#3f51b5',
                                '#2196f3','#00bcd4','#009688','#4caf50','#cddc39','#ff9800']
                 });
 
+                // Show the colour over a checkerboard so opacity is visible on the swatch.
+                var CHECK = 'linear-gradient(45deg,#eee 25%,transparent 25%,transparent 75%,#eee 75%,#eee 100%),linear-gradient(45deg,#eee 25%,transparent 25%,transparent 75%,#eee 75%,#eee 100%)';
+                function setSwatch(hex) {
+                    btn.style.backgroundColor = '#fff';
+                    btn.style.backgroundImage = 'linear-gradient(' + hex + ',' + hex + '),' + CHECK;
+                    btn.style.backgroundSize = '100% 100%,10px 10px,10px 10px';
+                    btn.style.backgroundPosition = '0 0,0 0,5px 5px';
+                }
+                setSwatch(input && input.value ? input.value : '#ffffff');
+
+                // Tint the opacity slider with the picked colour (instead of plain black).
+                function applyOpColor(color) {
+                    try {
+                        var root = pickr.getRoot();
+                        var appEl = root && root.app ? root.app : null;
+                        if (appEl) {
+                            var rgba = (color || pickr.getColor()).toRGBA();
+                            appEl.style.setProperty('--fnew-opcolor', 'rgb(' + Math.round(rgba[0]) + ',' + Math.round(rgba[1]) + ',' + Math.round(rgba[2]) + ')');
+                        }
+                    } catch (e) {}
+                }
+
                 function applyColor(color) {
                     if (!color) return;
-                    var hex = '#' + color.toHEXA()[0] + color.toHEXA()[1] + color.toHEXA()[2];
+                    var hex = color.toHEXA().toString();   // 8-digit (#RRGGBBAA) when opacity < 1
                     if (input) input.value = hex;
-                    btn.style.backgroundColor = hex;
-                    if (hexEl) hexEl.textContent = hex;
+                    setSwatch(hex);
+                    if (hexEl) hexEl.value = hex;
+                    applyOpColor(color);
                 }
 
                 pickr.on('save',   function (c, i) { applyColor(c); i.hide(); })
-                     .on('change', function (c)    { applyColor(c); });
+                     .on('change', function (c)    { applyColor(c); })
+                     .on('show',   function ()     { applyOpColor(); });
+
+                // Typing a 3/6/8-digit hex updates the swatch + picker (like the main builder).
+                if (hexEl) {
+                    hexEl.addEventListener('input', function () {
+                        var v = hexEl.value.trim();
+                        if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(v)) {
+                            if (input) input.value = v;
+                            setSwatch(v);
+                            try { pickr.setColor(v, true); } catch (e) {}
+                        }
+                    });
+                }
             });
         }
 

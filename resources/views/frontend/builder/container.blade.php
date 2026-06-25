@@ -289,6 +289,21 @@
             $css .= ".lazy-sticky-active.{$cid}{background-color:{$stickyBgRgba}!important;}";
         }
     }
+    // Container background hover color (responsive)
+    if ($bgType === 'color') {
+        $_hov = function($dev) use ($s, $hexToRgba) {
+            $sfx = $dev === 'desktop' ? '' : '_' . $dev;
+            $c = $s['bgHoverColor' . $sfx] ?? null;
+            return ($c === null || $c === '') ? null : $hexToRgba($c, $s['bgHoverColorOpacity' . $sfx] ?? 1);
+        };
+        $_hd = $_hov('desktop'); $_ht = $_hov('tablet'); $_hm = $_hov('mobile');
+        if ($_hd !== null || $_ht !== null || $_hm !== null) {
+            $css .= ".{$cid}{transition:background-color 0.3s ease;}";
+            if ($_hd !== null) $css .= ".{$cid}:hover{background-color:{$_hd}!important;}";
+            if ($_ht !== null) $css .= "@media(min-width:{$bpSmall1}px) and (max-width:{$bpMedium}px){.{$cid}:hover{background-color:{$_ht}!important;}}";
+            if ($_hm !== null) $css .= "@media(max-width:{$bpSmall}px){.{$cid}:hover{background-color:{$_hm}!important;}}";
+        }
+    }
     $css .= ".{$cid} .lazy-container-inner{";
     $css .= "flex-wrap:{$flexWrap}!important;";
     $css .= "align-items:{$alignItems}!important;";

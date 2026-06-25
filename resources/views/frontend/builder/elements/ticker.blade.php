@@ -24,7 +24,7 @@
     $textColor      = $s['textColor']      ?? '#ffffff';
     $labelBgColor   = $s['labelBgColor']   ?? '#ef4444';
     $labelTextColor = $s['labelTextColor'] ?? '#ffffff';
-    $fontSize       = $s['fontSize']       ?? '14px';
+    $fontSize       = getUnitVal($s['fontSize'] ?? 14, $s['fontSizeUnit'] ?? 'px');
     $fontWeight     = $s['fontWeight']     ?? '500';
     $height         = max(28, (int)($s['height'] ?? 44));
     $borderRadius   = (int)($s['borderRadius'] ?? 0);

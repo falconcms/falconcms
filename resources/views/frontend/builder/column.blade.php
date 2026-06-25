@@ -205,7 +205,7 @@
     if (!empty($bgImages)) {
         $innerStyles[] = "background-image: " . implode(', ', $bgImages);
     }
-    if (isset($s['fontSize']) && $s['fontSize'] !== '') $innerStyles[] = 'font-size: ' . $s['fontSize'] . ($s['fontSizeUnit'] ?? 'px');
+    if (isset($s['fontSize']) && $s['fontSize'] !== '') $innerStyles[] = 'font-size: ' . getUnitVal($s['fontSize'], $s['fontSizeUnit'] ?? 'px');
     if (!empty($s['fontWeight'])) $innerStyles[] = 'font-weight: '           . $s['fontWeight'];
     if (!empty($s['lineHeight'])) $innerStyles[] = 'line-height: '           . $s['lineHeight'];
     if (isset($s['letterSpacing']) && $s['letterSpacing'] !== '') $innerStyles[] = 'letter-spacing: ' . $s['letterSpacing'] . ($s['letterSpacingUnit'] ?? 'px');
@@ -523,6 +523,37 @@
         elseif (strpos((string)$basisMobile, '%') !== false) { $mobFb = $totalCols > 1 ? "calc({$basisMobile} - {$gapSub}px)" : $basisMobile; $mobMw = $mobFb; }
         else { $mobFb = $totalCols > 1 ? "calc({$basisMobile}% - {$gapSub}px)" : "{$basisMobile}%"; $mobMw = $mobFb; }
         $colCss .= "@media(max-width:{$rBp}px){.lazy-column.{$colCid}{flex-basis:{$mobFb}!important;max-width:{$mobMw}!important;width:{$mobFb}!important}}";
+    }
+
+    // Column background colour — responsive overrides (desktop value is applied inline above)
+    if ($bgType === 'color') {
+        $_cbg = function($dev) use ($s, $hexToRgba) {
+            $sfx = $dev === 'desktop' ? '' : '_' . $dev;
+            $c = $s['bgColor' . $sfx] ?? null;
+            if ($c === null || $c === '') return null;
+            return $hexToRgba($c, $s['bgColorOpacity' . $sfx] ?? ($s['bgColorOpacity'] ?? 1));
+        };
+        $_cbgSel = ".{$colCid}>.lazy-column-inner,.{$colCid}>a>.lazy-column-inner";
+        $_cbgT = $_cbg('tablet'); $_cbgM = $_cbg('mobile');
+        if ($_cbgT !== null) $colCss .= "@media(min-width:{$rBpSm1}px) and (max-width:{$rBpMed}px){{$_cbgSel}{background-color:{$_cbgT}!important;}}";
+        if ($_cbgM !== null) $colCss .= "@media(max-width:{$rBp}px){{$_cbgSel}{background-color:{$_cbgM}!important;}}";
+    }
+
+    // Column background hover color (responsive)
+    if ($bgType === 'color') {
+        $_chov = function($dev) use ($s, $hexToRgba) {
+            $sfx = $dev === 'desktop' ? '' : '_' . $dev;
+            $c = $s['bgHoverColor' . $sfx] ?? null;
+            return ($c === null || $c === '') ? null : $hexToRgba($c, $s['bgHoverColorOpacity' . $sfx] ?? 1);
+        };
+        $_chd = $_chov('desktop'); $_cht = $_chov('tablet'); $_chm = $_chov('mobile');
+        if ($_chd !== null || $_cht !== null || $_chm !== null) {
+            $_inSel = ".{$colCid}:hover>.lazy-column-inner,.{$colCid}:hover>a>.lazy-column-inner";
+            $colCss .= ".{$colCid}>.lazy-column-inner,.{$colCid}>a>.lazy-column-inner{transition:background-color 0.3s ease;}";
+            if ($_chd !== null) $colCss .= "{$_inSel}{background-color:{$_chd}!important;}";
+            if ($_cht !== null) $colCss .= "@media(min-width:{$rBpSm1}px) and (max-width:{$rBpMed}px){{$_inSel}{background-color:{$_cht}!important;}}";
+            if ($_chm !== null) $colCss .= "@media(max-width:{$rBp}px){{$_inSel}{background-color:{$_chm}!important;}}";
+        }
     }
 
     $htmlTag = in_array($s['htmlTag'] ?? 'div', ['div','section','article','aside','main','header','footer','nav','span']) ? ($s['htmlTag'] ?? 'div') : 'div';

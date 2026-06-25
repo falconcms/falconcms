@@ -7,7 +7,7 @@
              width:          '100%',
              marginTop:      getUnitVal(el.settings.marginTop    ?? 0, el.settings.marginTopUnit    || 'px'),
              marginBottom:   getUnitVal(el.settings.marginBottom ?? 0, el.settings.marginBottomUnit || 'px'),
-             fontSize:       (el.settings.fontSize ?? 14) + (el.settings.fontSizeUnit || 'px'),
+             fontSize:       getUnitVal(el.settings.fontSize ?? 14, el.settings.fontSizeUnit || 'px'),
              fontWeight:     el.settings.fontWeight || '400',
              lineHeight:     'normal',
              display:        'flex',

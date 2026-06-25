@@ -292,6 +292,8 @@
         attr(a, 'bg_color',   s.bgColor);
         rAttr(a, 'bg_color', s, 'bgColor');
         attrIf(a, 'bg_opacity', s.bgColorOpacity, 1);
+        attr(a, 'bg_hover_color', s.bgHoverColor);
+        attrIf(a, 'bg_hover_opacity', s.bgHoverColorOpacity, 1);
         rAttr(a, 'bg_opacity', s, 'bgColorOpacity');
 
         // Gradient
@@ -447,6 +449,8 @@
         // Colors (responsive)
         attrIf(a, 'bg_color',      s.bgColor, 'transparent');
         rAttr(a, 'bg_color', s, 'bgColor');
+        attr(a, 'bg_hover_color',  s.bgHoverColor);
+        attrIf(a, 'bg_hover_opacity', s.bgHoverColorOpacity, 1);
         attr(a, 'text_color',      s.textColor);
         attrIf(a, 'bg_opacity',    s.bgColorOpacity, 1);
         rAttr(a, 'bg_opacity', s, 'bgColorOpacity');
@@ -1438,6 +1442,8 @@
             paddingLeftUnit:   a.padding_left_unit   || 'px',
             paddingRightUnit:  a.padding_right_unit  || 'px',
             bgColor:              a.bg_color       || null,
+            bgHoverColor:         a.bg_hover_color || null,
+            bgHoverColorOpacity:  a.bg_hover_opacity !== undefined ? Number(a.bg_hover_opacity) : undefined,
             bgColorOpacity:       a.bg_opacity ? parseFloat(a.bg_opacity) : 1,
             bgType:               a.bg_type        || 'color',
             bgGradientStartColor: a.gradient_start || null,
@@ -1560,6 +1566,8 @@
             cssId:         a.css_id          || null,
             textColor:     a.text_color      || null,
             bgColor:       a.bg_color        || 'transparent',
+            bgHoverColor:  a.bg_hover_color  || null,
+            bgHoverColorOpacity: a.bg_hover_opacity !== undefined ? Number(a.bg_hover_opacity) : undefined,
             bgColorOpacity: a.bg_opacity ? parseFloat(a.bg_opacity) : 1,
             bgType:        a.bg_type         || 'color',
             hoverType:     a.hover_type      || 'none',

@@ -709,7 +709,7 @@
                              class="w-full h-full cursor-pointer"></div>
                     </div>
                     <div class="relative flex-1">
-                        <input type="text" v-model="{{ $base }}.settings.borderColor" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 pr-8 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                        <input type="text" :value="falconColorDisplay({{ $base }}.settings, 'borderColor', 'borderColorOpacity')" @input="falconColorInput({{ $base }}.settings, 'borderColor', 'borderColorOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 pr-8 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                         <i class="fa fa-globe absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400"></i>
                     </div>
                 </div>
@@ -802,7 +802,7 @@
                                  class="w-full h-full cursor-pointer"></div>
                         </div>
                         <div class="relative flex-1">
-                            <input type="text" v-model="{{ $base }}.settings.boxShadowColor" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 pr-8 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <input type="text" :value="falconColorDisplay({{ $base }}.settings, 'boxShadowColor', 'boxShadowColorOpacity')" @input="falconColorInput({{ $base }}.settings, 'boxShadowColor', 'boxShadowColorOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 pr-8 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                             <i class="fa fa-globe absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400"></i>
                         </div>
                     </div>
@@ -892,16 +892,42 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1 mb-2">
-                            <input type="text" v-model="{{ $base }}.settings[device === 'desktop' ? 'bgColor' : 'bgColor_' + device]" class="wp-input h-7 flex-1 text-[10px] text-center font-mono focus:outline-none focus:border-[#2271b1]">
-                            <button @click="setResponsiveVal({{ $base }}.settings, 'bgColor', device, '#ffffff'); setResponsiveVal({{ $base }}.settings, 'bgColorOpacity', device, 1)" class="wp-btn-secondary h-7 px-2 text-[10px]">Default</button>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 flex-shrink-0 border border-slate-200">
-                                <div @click="openColorPicker($event, {{ $base }}.settings, device === 'desktop' ? 'bgColor' : 'bgColor_' + device, device === 'desktop' ? 'bgColorOpacity' : 'bgColorOpacity_' + device, getResponsiveVal({{ $base }}.settings, 'bgColor', device))"
-                                     :style="{ backgroundColor: hexToRgba(getResponsiveVal({{ $base }}.settings, 'bgColor', device), getResponsiveVal({{ $base }}.settings, 'bgColorOpacity', device) !== undefined ? getResponsiveVal({{ $base }}.settings, 'bgColorOpacity', device) : 1) }"
-                                     class="w-full h-full cursor-pointer"></div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="checkerboard rounded-full overflow-hidden w-9 h-9 flex-shrink-0 border border-slate-200 shadow-sm cursor-pointer"
+                                 @click="openColorPicker($event, {{ $base }}.settings, device === 'desktop' ? 'bgColor' : 'bgColor_' + device, device === 'desktop' ? 'bgColorOpacity' : 'bgColorOpacity_' + device, getResponsiveVal({{ $base }}.settings, 'bgColor', device), 'pcr-fnew')">
+                                <div :style="{ backgroundColor: hexToRgba(getResponsiveVal({{ $base }}.settings, 'bgColor', device), getResponsiveVal({{ $base }}.settings, 'bgColorOpacity', device) !== undefined ? getResponsiveVal({{ $base }}.settings, 'bgColorOpacity', device) : 1) }" class="w-full h-full"></div>
                             </div>
+                            <input type="text" :value="falconColorDisplay({{ $base }}.settings, device === 'desktop' ? 'bgColor' : 'bgColor_' + device, device === 'desktop' ? 'bgColorOpacity' : 'bgColorOpacity_' + device)" @input="falconColorInput({{ $base }}.settings, device === 'desktop' ? 'bgColor' : 'bgColor_' + device, device === 'desktop' ? 'bgColorOpacity' : 'bgColorOpacity_' + device, $event.target.value)" placeholder="#ffffff" class="wp-input h-9 flex-1 text-[12px] font-mono px-3 focus:outline-none focus:border-[#2271b1]">
+                        </div>
+                    </div>
+
+                    <!-- Background Hover Color -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">{{ $label }} Background Hover Color</label>
+                            <div class="flex gap-1 items-center">
+                                <button @click="resetResponsiveVal({{ $base }}.settings, 'bgHoverColor', device, ''); resetResponsiveVal({{ $base }}.settings, 'bgHoverColorOpacity', device, 1)" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                                    <i class="fa fa-undo text-[10px]"></i>
+                                </button>
+                                <div class="relative inline-block">
+                                    <button @click="activeResponsiveMenu = activeResponsiveMenu === 'bgHoverColor' ? null : 'bgHoverColor'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
+                                        <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
+                                        <i class="fa fa-caret-down text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div v-show="activeResponsiveMenu === 'bgHoverColor'" class="absolute right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 flex gap-0.5 p-1 min-w-max">
+                                        <button @click="device = 'desktop'; activeResponsiveMenu = null" :class="device === 'desktop' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Large (Desktop)"><i class="fa fa-desktop text-[11px]"></i></button>
+                                        <button @click="device = 'tablet'; activeResponsiveMenu = null" :class="device === 'tablet' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Medium (Tablet)"><i class="fa fa-tablet-alt text-[11px]"></i></button>
+                                        <button @click="device = 'mobile'; activeResponsiveMenu = null" :class="device === 'mobile' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Small (Mobile)"><i class="fa fa-mobile-alt text-[11px]"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="checkerboard rounded-full overflow-hidden w-9 h-9 flex-shrink-0 border border-slate-200 shadow-sm cursor-pointer"
+                                 @click="openColorPicker($event, {{ $base }}.settings, device === 'desktop' ? 'bgHoverColor' : 'bgHoverColor_' + device, device === 'desktop' ? 'bgHoverColorOpacity' : 'bgHoverColorOpacity_' + device, getResponsiveVal({{ $base }}.settings, 'bgHoverColor', device), 'pcr-fnew')">
+                                <div :style="{ backgroundColor: hexToRgba(getResponsiveVal({{ $base }}.settings, 'bgHoverColor', device), getResponsiveVal({{ $base }}.settings, 'bgHoverColorOpacity', device) !== undefined ? getResponsiveVal({{ $base }}.settings, 'bgHoverColorOpacity', device) : 1) }" class="w-full h-full"></div>
+                            </div>
+                            <input type="text" :value="falconColorDisplay({{ $base }}.settings, device === 'desktop' ? 'bgHoverColor' : 'bgHoverColor_' + device, device === 'desktop' ? 'bgHoverColorOpacity' : 'bgHoverColorOpacity_' + device)" @input="falconColorInput({{ $base }}.settings, device === 'desktop' ? 'bgHoverColor' : 'bgHoverColor_' + device, device === 'desktop' ? 'bgHoverColorOpacity' : 'bgHoverColorOpacity_' + device, $event.target.value)" placeholder="None (e.g. #2271b1)" class="wp-input h-9 flex-1 text-[12px] font-mono px-3 focus:outline-none focus:border-[#2271b1]">
                         </div>
                     </div>
                 </div>
@@ -919,15 +945,12 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1 mb-2">
-                            <input type="text" v-model="{{ $base }}.settings.bgGradientStartColor" class="wp-input h-7 flex-1 text-[10px] text-center font-mono focus:outline-none focus:border-[#2271b1]">
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 flex-shrink-0 border border-slate-200">
-                                <div @click="openColorPicker($event, {{ $base }}.settings, 'bgGradientStartColor', 'bgGradientStartOpacity')" 
-                                     :style="{ backgroundColor: hexToRgba({{ $base }}.settings.bgGradientStartColor, {{ $base }}.settings.bgGradientStartOpacity) }"
-                                     class="w-full h-full cursor-pointer"></div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="checkerboard rounded-full overflow-hidden w-9 h-9 flex-shrink-0 border border-slate-200 shadow-sm cursor-pointer"
+                                 @click="openColorPicker($event, {{ $base }}.settings, 'bgGradientStartColor', 'bgGradientStartOpacity')">
+                                <div :style="{ backgroundColor: hexToRgba({{ $base }}.settings.bgGradientStartColor, {{ $base }}.settings.bgGradientStartOpacity) }" class="w-full h-full"></div>
                             </div>
+                            <input type="text" :value="falconColorDisplay({{ $base }}.settings, 'bgGradientStartColor', 'bgGradientStartOpacity')" @input="falconColorInput({{ $base }}.settings, 'bgGradientStartColor', 'bgGradientStartOpacity', $event.target.value)" placeholder="#000000" class="wp-input h-9 flex-1 text-[12px] font-mono px-3 focus:outline-none focus:border-[#2271b1]">
                         </div>
                     </div>
 
@@ -942,15 +965,12 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1 mb-2">
-                            <input type="text" v-model="{{ $base }}.settings.bgGradientEndColor" class="wp-input h-7 flex-1 text-[10px] text-center font-mono focus:outline-none focus:border-[#2271b1]">
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 flex-shrink-0 border border-slate-200">
-                                <div @click="openColorPicker($event, {{ $base }}.settings, 'bgGradientEndColor', 'bgGradientEndOpacity')" 
-                                     :style="{ backgroundColor: hexToRgba({{ $base }}.settings.bgGradientEndColor, {{ $base }}.settings.bgGradientEndOpacity) }"
-                                     class="w-full h-full cursor-pointer"></div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="checkerboard rounded-full overflow-hidden w-9 h-9 flex-shrink-0 border border-slate-200 shadow-sm cursor-pointer"
+                                 @click="openColorPicker($event, {{ $base }}.settings, 'bgGradientEndColor', 'bgGradientEndOpacity')">
+                                <div :style="{ backgroundColor: hexToRgba({{ $base }}.settings.bgGradientEndColor, {{ $base }}.settings.bgGradientEndOpacity) }" class="w-full h-full"></div>
                             </div>
+                            <input type="text" :value="falconColorDisplay({{ $base }}.settings, 'bgGradientEndColor', 'bgGradientEndOpacity')" @input="falconColorInput({{ $base }}.settings, 'bgGradientEndColor', 'bgGradientEndOpacity', $event.target.value)" placeholder="#000000" class="wp-input h-9 flex-1 text-[12px] font-mono px-3 focus:outline-none focus:border-[#2271b1]">
                         </div>
                     </div>
 
@@ -1306,7 +1326,7 @@
                                      :style="{ backgroundColor: hexToRgba({{ $base }}.settings.stickyBgColor, {{ $base }}.settings.stickyBgColorOpacity) }"
                                      class="w-full h-full cursor-pointer"></div>
                             </div>
-                            <input type="text" v-model="{{ $base }}.settings.stickyBgColor" placeholder="#ffffff"
+                            <input type="text" :value="falconColorDisplay({{ $base }}.settings, 'stickyBgColor', 'stickyBgColorOpacity')" @input="falconColorInput({{ $base }}.settings, 'stickyBgColor', 'stickyBgColorOpacity', $event.target.value)" placeholder="#ffffff"
                                    class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1">Applied when container is stuck</p>

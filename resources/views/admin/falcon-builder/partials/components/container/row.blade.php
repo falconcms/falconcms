@@ -4,8 +4,8 @@
      :class="[getVisibilityClasses(container.settings)]"
      :style="containerStyle(container, ci)"
      @click.stop="activeCi = ci"
-     @mouseenter="setHover('container', ci)"
-     @mouseleave="setHover(null)">
+     @mouseenter="setHover('container', ci); container._bgHover = true"
+     @mouseleave="setHover(null); container._bgHover = false">
 @else
 <div class="container-row relative group/cont"
      :class="[
@@ -19,8 +19,8 @@
      :style="containerStyle(container, ci)"
      @click.stop="activeCi = ci"
      @contextmenu.prevent.stop="openCtxMenu($event, 'container', ci)"
-     @mouseenter="setHover('container', ci)"
-     @mouseleave="setHover(null)"
+     @mouseenter="setHover('container', ci); container._bgHover = true"
+     @mouseleave="setHover(null); container._bgHover = false"
      @dragover="onDragOver($event, 'container', ci)"
      @drop="onDrop($event, 'container', ci)">
 @endif

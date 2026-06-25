@@ -53,9 +53,12 @@
     <div :style="containerInnerStyle(el)" class="w-full relative">
         <div v-for="(ncol, ncoli) in el.columns" 
              class="column-outer relative"
-             :class="[(ncol.settings.hoverType && ncol.settings.hoverType !== 'none') ? 'hover-effect-' + ncol.settings.hoverType : '', getVisibilityClasses(ncol.settings)]"
+             :class="['ncol-' + ncol.id, (ncol.settings.hoverType && ncol.settings.hoverType !== 'none') ? 'hover-effect-' + ncol.settings.hoverType : '', getVisibilityClasses(ncol.settings)]"
              :style="columnOuterStyle(el, ncol, el.columns.length)">
-             
+
+            <component :is="'style'" v-if="(!ncol.settings.bgType || ncol.settings.bgType === 'color') && getResponsiveVal(ncol.settings, 'bgHoverColor', device)"
+                       v-text="'.ncol-' + ncol.id + '>.column-inner{transition:background-color .25s ease}.ncol-' + ncol.id + ':hover>.column-inner{background-color:' + hexToRgba(getResponsiveVal(ncol.settings, 'bgHoverColor', device), getResponsiveVal(ncol.settings, 'bgHoverColorOpacity', device) !== undefined ? getResponsiveVal(ncol.settings, 'bgHoverColorOpacity', device) : 1) + ' !important}'"></component>
+
             <!-- Nested Column Inner (Handles Background, Padding, Border, Shadow) -->
             <div class="column-inner group/ncol-inner relative"
                  :class="[

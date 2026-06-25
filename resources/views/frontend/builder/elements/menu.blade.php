@@ -244,7 +244,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 
     $triggerIconExpand   = $s['mobileMenuTriggerExpandIcon'] ?? 'fa-bars';
     $triggerIconCollapse = $s['mobileMenuTriggerCollapseIcon'] ?? 'fa-times';
-    $triggerFontSize     = $s['mobileMenuTriggerFontSize'] ?? '24px';
+    $triggerFontSize     = getUnitVal($s['mobileMenuTriggerFontSize'] ?? 24, 'px');
     $triggerAlign        = $s['mobileMenuTriggerHorizontalAlign'] ?? 'flex-start';
 
     $menuBpSm  = (int) get_cms_option('theme_small_screen_breakpoint',  '800');

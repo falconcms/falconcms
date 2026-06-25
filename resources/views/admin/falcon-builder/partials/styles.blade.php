@@ -714,6 +714,10 @@
         height: 22px !important;
         border-radius: 3px !important;
     }
+
+    /* ===== FalconCMS color-picker skin (.pcr-fnew) — shared across CMS + builder ===== */
+@include('falcon-cms::admin.falcon-builder.partials.pcr-fnew')
+
     .toast-enter-active, .toast-leave-active {
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }

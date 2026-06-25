@@ -39,7 +39,7 @@
                  :style="{
                      width: '100%',
                      fontFamily: el.settings.titleFontFamily || 'inherit',
-                     fontSize: (el.settings.titleFontSize || 20) + (el.settings.titleFontSizeUnit || 'px'),
+                     fontSize: getUnitVal(el.settings.titleFontSize || 20, el.settings.titleFontSizeUnit || 'px'),
                      fontWeight: el.settings.titleFontWeight || '600',
                      color: el.settings.titleColor || '#222222',
                      marginBottom: (el.settings.titleSpacing ?? 8) + 'px',
@@ -52,7 +52,7 @@
                  :style="{
                      width: '100%',
                      fontFamily: el.settings.descFontFamily || 'inherit',
-                     fontSize: (el.settings.descFontSize || 14) + (el.settings.descFontSizeUnit || 'px'),
+                     fontSize: getUnitVal(el.settings.descFontSize || 14, el.settings.descFontSizeUnit || 'px'),
                      fontWeight: el.settings.descFontWeight || '400',
                      color: el.settings.descColor || '#666666',
                      lineHeight: el.settings.descLineHeight || 1.6,
@@ -93,7 +93,7 @@
             <div v-if="el.settings.title"
                  :style="{
                      fontFamily: el.settings.titleFontFamily || 'inherit',
-                     fontSize: (el.settings.titleFontSize || 20) + (el.settings.titleFontSizeUnit || 'px'),
+                     fontSize: getUnitVal(el.settings.titleFontSize || 20, el.settings.titleFontSizeUnit || 'px'),
                      fontWeight: el.settings.titleFontWeight || '600',
                      color: el.settings.titleColor || '#222222',
                      marginBottom: (el.settings.titleSpacing ?? 8) + 'px',
@@ -104,7 +104,7 @@
             <div v-if="el.settings.description"
                  :style="{
                      fontFamily: el.settings.descFontFamily || 'inherit',
-                     fontSize: (el.settings.descFontSize || 14) + (el.settings.descFontSizeUnit || 'px'),
+                     fontSize: getUnitVal(el.settings.descFontSize || 14, el.settings.descFontSizeUnit || 'px'),
                      fontWeight: el.settings.descFontWeight || '400',
                      color: el.settings.descColor || '#666666',
                      lineHeight: el.settings.descLineHeight || 1.6,

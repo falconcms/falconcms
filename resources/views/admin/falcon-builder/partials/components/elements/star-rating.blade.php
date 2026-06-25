@@ -34,7 +34,7 @@
     <div v-if="el.settings.label" style="margin-top:5px;"
          :style="{
              fontFamily:     el.settings.labelFontFamily    || 'inherit',
-             fontSize:       el.settings.labelFontSize      || '13px',
+             fontSize:       getUnitVal(el.settings.labelFontSize || 13, el.settings.labelFontSizeUnit || 'px'),
              fontWeight:     el.settings.labelFontWeight    || '400',
              lineHeight:     el.settings.labelLineHeight    || '1.4',
              letterSpacing:  el.settings.labelLetterSpacing || '0px',

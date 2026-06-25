@@ -603,6 +603,7 @@
 @push('scripts')
 <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/pickr.classic.min.css') }}">
 <script src="{{ asset('vendor/falcon-cms/js/pickr.min.js') }}"></script>
+<style>@include('falcon-cms::admin.falcon-builder.partials.pcr-fnew')</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 <script>
 // Field dependency: rows with data-depends="<masterKey>" are only active when the
@@ -756,6 +757,8 @@ function initCustomizerColorPickers() {
             el: btn,
             useAsButton: true,
             theme: 'classic',
+            appClass: 'pcr-fnew',
+            position: 'bottom-start',
             default: input.value || '#ffffff',
             defaultRepresentation: 'HEXA',
             components: {
@@ -775,8 +778,19 @@ function initCustomizerColorPickers() {
             input.dispatchEvent(new Event('input', { bubbles: true }));
         };
 
-        pickr.on('change', function (color) { applyColor(color); })
-             .on('save', function (color, instance) { if (color) applyColor(color); instance.hide(); });
+        var applyOpColor = function (color) {
+            try {
+                var root = pickr.getRoot();
+                var appEl = root && root.app ? root.app : null;
+                if (appEl) {
+                    var rgba = (color || pickr.getColor()).toRGBA();
+                    appEl.style.setProperty('--fnew-opcolor', 'rgb(' + Math.round(rgba[0]) + ',' + Math.round(rgba[1]) + ',' + Math.round(rgba[2]) + ')');
+                }
+            } catch (e) {}
+        };
+        pickr.on('change', function (color) { applyColor(color); applyOpColor(color); })
+             .on('save', function (color, instance) { if (color) applyColor(color); instance.hide(); })
+             .on('show', function () { applyOpColor(); });
 
         // Typing a hex in the input updates the swatch + picker.
         input.addEventListener('input', function () {

@@ -244,7 +244,9 @@
             };
 
             watch(device, () => {
-                _closeActivePickr(true);
+                // Commit (keep) the picked colour when switching device — reverting here wiped
+                // per-device responsive colours (e.g. a tablet bg colour) the user just set.
+                _closeActivePickr(false);
                 // Re-fetch card previews so the carousel shows the correct per-device "items per slide".
                 const walkCards = (items) => (items || []).forEach(it => {
                     if (it.type === 'card' && it.settings && it.settings.post_card_id) fetchCardPreview(it);
@@ -2069,7 +2071,46 @@
                 _galleryDragSrc = -1;
             };
 
-            const openColorPicker = (event, obj, colorKey, opacityKey = null, cascadeColor = null) => {
+            const _alphaToHex = (a) => {
+                let n = Math.round(Math.max(0, Math.min(1, Number(a))) * 255);
+                let h = n.toString(16);
+                return h.length === 1 ? '0' + h : h;
+            };
+            // Field display: show 8-digit #RRGGBBAA when opacity < 1, else 6-digit #RRGGBB.
+            const falconColorDisplay = (obj, colorKey, opacityKey) => {
+                let c = obj[colorKey];
+                if (c === undefined || c === null || c === '') return '';
+                let hex6 = String(c).replace('#', '').slice(0, 6);
+                if (opacityKey && /^[0-9a-fA-F]{6}$/.test(hex6)) {
+                    let o = obj[opacityKey];
+                    if (o !== undefined && o !== null && Number(o) < 1) return '#' + hex6 + _alphaToHex(o);
+                }
+                return String(c);
+            };
+            // Parse typed value back: 8-digit splits into colour + opacity, otherwise plain colour.
+            const falconColorInput = (obj, colorKey, opacityKey, value) => {
+                let raw = String(value || '').replace('#', '').trim();
+                if (opacityKey && /^[0-9a-fA-F]{8}$/.test(raw)) {
+                    obj[colorKey] = '#' + raw.slice(0, 6);
+                    obj[opacityKey] = parseInt(raw.slice(6, 8), 16) / 255;
+                } else {
+                    obj[colorKey] = (value && String(value).charAt(0) === '#') ? value : ('#' + raw);
+                }
+            };
+            // Opening default: bake opacity into an 8-digit hex so the alpha slider knob sits correctly.
+            const _pickerDefault = (obj, colorKey, opacityKey, cascadeColor) => {
+                let c = obj[colorKey] || cascadeColor || '#ffffff';
+                if (opacityKey) {
+                    let hex6 = String(c).replace('#', '').slice(0, 6);
+                    if (/^[0-9a-fA-F]{6}$/.test(hex6)) {
+                        let o = obj[opacityKey];
+                        if (o !== undefined && o !== null) return '#' + hex6 + _alphaToHex(o);
+                    }
+                }
+                return c;
+            };
+
+            const openColorPicker = (event, obj, colorKey, opacityKey = null, cascadeColor = null, appClass = 'pcr-fnew') => {
                 // Commit (don't revert) any previously open picker — its value was already applied live.
                 // Reverting here wiped colors set on other targets (e.g. column bg vs element color).
                 _closeActivePickr(false);
@@ -2087,7 +2128,9 @@
                     el: target,
                     useAsButton: true,
                     theme: 'classic',
-                    default: obj[colorKey] || cascadeColor || '#ffffff',
+                    appClass: appClass || undefined,
+                    position: appClass === 'pcr-fnew' ? 'bottom-start' : undefined,
+                    default: _pickerDefault(obj, colorKey, opacityKey, cascadeColor),
                     defaultRepresentation: 'HEXA',
                     components: {
                         preview: true,
@@ -2108,6 +2151,17 @@
                 });
 
                 activePickr.value = pickr;
+
+                // Tint the opacity slider with the current colour (instead of the default black).
+                const _applyOpColor = () => {
+                    try {
+                        const root = pickr.getRoot();
+                        const appEl = root && root.app ? root.app : null;
+                        if (!appEl) return;
+                        const rgba = pickr.getColor().toRGBA();
+                        appEl.style.setProperty('--fnew-opcolor', 'rgb(' + Math.round(rgba[0]) + ',' + Math.round(rgba[1]) + ',' + Math.round(rgba[2]) + ')');
+                    } catch (e) {}
+                };
 
                 pickr.on('save', (color, instance) => {
                     const rgba = color.toRGBA();
@@ -2141,9 +2195,20 @@
                     } else {
                         obj[colorKey] = color.toHEXA().toString();
                     }
+                    _applyOpColor();
                 });
 
                 pickr.show();
+                _applyOpColor();
+            };
+
+            // Browser EyeDropper API — pick a colour from anywhere on screen (Chromium browsers).
+            const falconEyeDropper = async (obj, colorKey) => {
+                if (!window.EyeDropper) return;
+                try {
+                    const res = await new window.EyeDropper().open();
+                    if (res && res.sRGBHex) obj[colorKey] = res.sRGBHex;
+                } catch (e) { /* user cancelled */ }
             };
 
             const saveLayout = async () => {
@@ -2474,10 +2539,14 @@
             };
 
             const getUnitVal = (val, unit = 'px') => {
-                if (val !== undefined && val !== null && val !== '') {
-                    return String(val) + unit;
-                }
-                return undefined;
+                if (val === undefined || val === null || val === '') return undefined;
+                const str = String(val).trim();
+                if (str === '') return undefined;
+                // Free-form values already carrying their own unit/function
+                // (rem, em, %, vw, vh, calc(), var(), clamp(), auto, …) are used as-is.
+                // Only bare numbers get the unit appended. Mirrors PHP getUnitVal().
+                if (isNaN(str)) return str;
+                return str + unit;
             };
 
             const containerStyle = (container, ci) => {
@@ -2554,7 +2623,7 @@
                     borderBottomLeftRadius: getUnitVal(s.borderRadiusBottomLeft, s.borderRadiusBottomLeftUnit) || '0px',
                     zIndex: getResponsiveVal(s, 'zIndex', dev) || s.zIndex || 'auto',
                     overflow: (() => { const rv = getResponsiveVal(s, 'overflow', dev) || s.overflow; return rv && rv !== 'default' ? rv : 'visible'; })(),
-                    backgroundColor: bgStyle,
+                    backgroundColor: (container._bgHover && bgType === 'color' && getResponsiveVal(s, 'bgHoverColor', dev)) ? hexToRgba(getResponsiveVal(s, 'bgHoverColor', dev), getResponsiveVal(s, 'bgHoverColorOpacity', dev) !== undefined ? getResponsiveVal(s, 'bgHoverColorOpacity', dev) : 1) : bgStyle,
                     backgroundImage: bgImageStr || undefined,
                     backgroundPosition: rBgImage ? bgPos : undefined,
                     backgroundRepeat: rBgImage ? bgRep : undefined,
@@ -2727,7 +2796,7 @@
                 const rML  = getResponsiveVal(s, 'marginLeft',       device.value); const rMLU  = getResponsiveVal(s, 'marginLeftUnit',    device.value) || s.marginLeftUnit    || 'px';
                 const rMR  = getResponsiveVal(s, 'marginRight',      device.value); const rMRU  = getResponsiveVal(s, 'marginRightUnit',   device.value) || s.marginRightUnit   || 'px';
                 const style = {
-                    backgroundColor: (!s.bgType || s.bgType === 'color') ? (s.bgColor || 'transparent') : 'transparent',
+                    backgroundColor: (!s.bgType || s.bgType === 'color') ? hexToRgba(getResponsiveVal(s, 'bgColor', device.value), getResponsiveVal(s, 'bgColorOpacity', device.value) !== undefined ? getResponsiveVal(s, 'bgColorOpacity', device.value) : 1) : 'transparent',
                     color: s.textColor || 'inherit',
                     paddingTop:    getUnitVal(rPT,  rPTU),
                     paddingLeft:   getUnitVal(rPL,  rPLU),
@@ -3807,7 +3876,7 @@
                 addElementFromElementModal, addNestedColumnFromElementModal,
                 showElementModal, elementModalTab, elementModalRestricted, elementModalAllowedTabs, openElementModal, selectNestedLayout,
                 editingColumn, editingElement,
-                addContainer, addColumn, addNestedColumn, addElement, duplicateContainer, duplicateColumn, duplicateElement, duplicateNestedColumn, duplicateNestedRow, duplicateNestedElement, saveLayout, openMediaModal, openMediaModalForTarget, openGalleryImageMedia, openGalleryBulkMedia, galleryDragStart, galleryDrop, openColorPicker,
+                addContainer, addColumn, addNestedColumn, addElement, duplicateContainer, duplicateColumn, duplicateElement, duplicateNestedColumn, duplicateNestedRow, duplicateNestedElement, saveLayout, openMediaModal, openMediaModalForTarget, openGalleryImageMedia, openGalleryBulkMedia, galleryDragStart, galleryDrop, openColorPicker, falconEyeDropper, falconColorDisplay, falconColorInput,
                 isDragging, isColumnDrag, dragType, dragSource, dragCi, dragColi, dragEli, dragNcoli, startDrag,
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal,

@@ -39,7 +39,7 @@
                         : `linear-gradient(${el.settings.bgGradientAngle ?? 180}deg, ${hexToRgba(el.settings.bgGradientStartColor, el.settings.bgGradientStartOpacity)} ${el.settings.bgGradientStartPosition ?? 0}%, ${hexToRgba(el.settings.bgGradientEndColor, el.settings.bgGradientEndOpacity)} ${el.settings.bgGradientEndPosition ?? 100}%)`)
                 )
                 : 'none',
-           color: el.isHovered ? hexToRgba(el.settings.hoverColor || '#ffffff', el.settings.hoverColorOpacity) : hexToRgba(el.settings.color || '#ffffff', el.settings.colorOpacity),
+           color: el.isHovered ? hexToRgba(el.settings.hoverColor || '#ffffff', el.settings.hoverColorOpacity) : hexToRgba((el.settings.buttonStyle === 'custom' ? (el.settings.customTextColor || el.settings.color) : el.settings.color) || '#ffffff', el.settings.buttonStyle === 'custom' ? (el.settings.customTextColorOpacity ?? el.settings.colorOpacity) : el.settings.colorOpacity),
            borderRadius: getUnitVal(el.settings.borderRadius ?? 5, 'px'),
            borderTopWidth: getUnitVal(el.settings.borderSizeTop ?? 0, 'px'),
            borderRightWidth: getUnitVal(el.settings.borderSizeRight ?? 0, 'px'),

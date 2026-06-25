@@ -57,7 +57,7 @@
         'margin-left: ' . ($s['marginLeft'] ?? 0) . ($s['marginLeftUnit'] ?? 'px'),
         'color: ' . ($s['color'] ?? '#333333'),
         'font-family: ' . ($s['fontFamily'] ?? 'inherit'),
-        'font-size: ' . ($s['fontSize'] ?? 16) . ($s['fontSizeUnit'] ?? 'px'),
+        'font-size: ' . getUnitVal($s['fontSize'] ?? 16, $s['fontSizeUnit'] ?? 'px'),
         'font-weight: ' . ($s['fontWeight'] ?? '400'),
         'line-height: ' . ($s['lineHeight'] ?? '1.5'),
         'letter-spacing: ' . ($s['letterSpacing'] ?? 0) . ($s['letterSpacingUnit'] ?? 'px'),

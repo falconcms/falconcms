@@ -15,7 +15,7 @@
     $iconType     = $s['iconType'] ?? 'plus';
     $iconPosition = $s['iconPosition'] ?? 'right';
 
-    $titleFontSize        = ($s['titleFontSize']       ?? 15) . 'px';
+    $titleFontSize        = getUnitVal($s['titleFontSize'] ?? 15, $s['titleFontSizeUnit'] ?? 'px');
     $titleFontWeight      = $s['titleFontWeight']      ?? '600';
     $titleFontFamily      = $s['titleFontFamily']      ?? 'inherit';
     $titleLetterSpacing   = $s['titleLetterSpacing']   ?? '0px';
@@ -27,7 +27,7 @@
     $titleActiveColor     = $s['titleActiveColor']     ?? '#ffffff';
     $titlePadding         = ($s['titlePadding']        ?? 16) . 'px';
 
-    $contentFontSize      = ($s['contentFontSize']     ?? 14) . 'px';
+    $contentFontSize      = getUnitVal($s['contentFontSize'] ?? 14, $s['contentFontSizeUnit'] ?? 'px');
     $contentFontFamily    = $s['contentFontFamily']    ?? 'inherit';
     $contentLetterSpacing = $s['contentLetterSpacing'] ?? '0px';
     $contentLineHeight    = $s['contentLineHeight']    ?? 1.6;

@@ -14,7 +14,7 @@
 <div class="element-text mb-4 {{ $visibilityClasses }}">
     <div class="prose prose-slate max-w-none" style="
         text-align: {{ $s['textAlign'] ?? 'left' }};
-        @if(!empty($s['fontSize'])) font-size: {{ $s['fontSize'] }}{{ $s['fontSizeUnit'] ?? 'px' }}; @endif
+        @if(!empty($s['fontSize'])) font-size: {{ getUnitVal($s['fontSize'], $s['fontSizeUnit'] ?? 'px') }}; @endif
     ">
         {!! falcon_sanitize_html($s['content'] ?? 'Start typing your content here...') !!}
     </div>

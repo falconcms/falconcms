@@ -4,7 +4,9 @@
      :class="['col-' + column.id, (column.settings.hoverType && column.settings.hoverType !== 'none') ? 'hover-effect-' + column.settings.hoverType : '', getVisibilityClasses(column.settings), isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '']"
      :style="columnOuterStyle(container, column, container.columns.length)">
 
-    
+    <component :is="'style'" v-if="(!column.settings.bgType || column.settings.bgType === 'color') && getResponsiveVal(column.settings, 'bgHoverColor', device)"
+               v-text="'.col-' + column.id + '>.column-inner{transition:background-color .25s ease}.col-' + column.id + ':hover>.column-inner{background-color:' + hexToRgba(getResponsiveVal(column.settings, 'bgHoverColor', device), getResponsiveVal(column.settings, 'bgHoverColorOpacity', device) !== undefined ? getResponsiveVal(column.settings, 'bgHoverColorOpacity', device) : 1) + ' !important}'"></component>
+
     <component :is="column.settings.htmlTag || 'div'" class="column-inner group/col relative"
          :class="[
             (!isPreview && activeColi === coli && activeColCi === ci) ? 'column-active' : '', 
