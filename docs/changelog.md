@@ -5,7 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.7.0 <Badge type="tip" text="Latest" /> {#v1-7-0}
+## v1.7.1 <Badge type="tip" text="Latest" /> {#v1-7-1}
+
+**Released: 2026-06-26**
+
+### Changed
+- **Analytics "Page" column shows the site domain for homepage visits** — homepage hits (including bots that reach the site by raw IP) now display the configured site domain (e.g. `demo.example.com`) instead of a bare `/`. Other pages still show their request path
+
+## v1.7.0 {#v1-7-0}
 
 **Released: 2026-06-26**
 

@@ -895,10 +895,10 @@ class DashboardController extends Controller
         $activePages = Analytics::where('created_at', '>=', $since5)
             ->select('url', DB::raw('count(*) as count'))
             ->groupBy('url')->orderByDesc('count')->limit(6)->get()
-            ->map(fn ($r) => ['path' => preg_replace('#^https?://[^/]+#i', '', (string) $r->url) ?: '/', 'count' => (int) $r->count]);
+            ->map(fn ($r) => ['path' => falcon_visit_page($r->url), 'count' => (int) $r->count]);
 
         $recent = Analytics::latest()->limit(8)->get()->map(fn ($v) => [
-            'path'    => \Illuminate\Support\Str::limit(preg_replace('#^https?://[^/]+#i', '', (string) $v->url) ?: '/', 40),
+            'path'    => \Illuminate\Support\Str::limit(falcon_visit_page($v->url), 40),
             'country' => $v->country,
             'code'    => $v->country_code ? strtolower($v->country_code) : null,
             'device'  => $v->device_type,

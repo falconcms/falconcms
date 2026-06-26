@@ -325,7 +325,7 @@
                     @forelse($topPages as $p)
                         <div>
                             <div class="flex items-center justify-between mb-1">
-                                <span class="text-[12px] text-[#1d2327] truncate max-w-[80%]" title="{{ $p->url }}">{{ preg_replace('#^https?://[^/]+#i', '', (string) $p->url) ?: '/' }}</span>
+                                <span class="text-[12px] text-[#1d2327] truncate max-w-[80%]" title="{{ $p->url }}">{{ falcon_visit_page($p->url) }}</span>
                                 <span class="text-[12px] font-bold text-[#1d2327]">{{ number_format($p->count) }}</span>
                             </div>
                             <div class="h-1.5 bg-[#f0f0f1] rounded-full overflow-hidden">
@@ -375,7 +375,7 @@
                     <tbody>
                         @forelse($recent as $v)
                             <tr class="border-b border-[#f6f7f7] hover:bg-[#f6f7f7]">
-                                <td class="px-4 py-2.5 text-[#1d2327] truncate max-w-[260px]" title="{{ $v->url }}">{{ preg_replace('#^https?://[^/]+#i', '', (string) $v->url) ?: '/' }}</td>
+                                <td class="px-4 py-2.5 text-[#1d2327] truncate max-w-[260px]" title="{{ $v->url }}">{{ falcon_visit_page($v->url) }}</td>
                                 <td class="px-4 py-2.5 text-[#646970] capitalize">{{ $v->device_type ?: '—' }}</td>
                                 <td class="px-4 py-2.5 text-[#646970]">{{ $v->browser ?: '—' }}</td>
                                 <td class="px-4 py-2.5 text-[#646970]">{{ $v->os ?: '—' }}</td>

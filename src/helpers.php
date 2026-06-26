@@ -665,6 +665,25 @@ if (!function_exists('getUnitVal')) {
     }
 }
 
+if (!function_exists('falcon_visit_page')) {
+    /**
+     * Human-friendly page label for an analytics visit URL.
+     * Strips the scheme + host (works for raw-IP visits too) and shows just the path;
+     * for the homepage (root) it shows the site domain instead of a bare "/".
+     */
+    function falcon_visit_page($url) {
+        $path = preg_replace('#^https?://[^/]+#i', '', (string) $url);
+        if ($path === '' || $path === '/') {
+            $host = parse_url((string) config('app.url'), PHP_URL_HOST);
+            if (empty($host) && function_exists('request')) {
+                try { $host = request()->getHost(); } catch (\Throwable $e) { $host = ''; }
+            }
+            return $host ?: '/';
+        }
+        return $path;
+    }
+}
+
 if (!function_exists('the_lazy_content')) {
     function the_lazy_content($content) { echo get_lazy_content($content); }
 }
