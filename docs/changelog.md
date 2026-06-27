@@ -5,7 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.7.1 <Badge type="tip" text="Latest" /> {#v1-7-1}
+## v1.7.2 <Badge type="tip" text="Latest" /> {#v1-7-2}
+
+**Released: 2026-06-27**
+
+A builder polish & tooling release: every Font Awesome free icon in the icon pickers, a media-files backup option, plus several nested-layout and colour-picker fixes that make the builder canvas match the front end.
+
+### Added
+- **Media files backup** — *Tools → Backup* now has a **Backup Media Files** button that zips everything under `storage/app/public` (uploads, generated images, etc.) into a downloadable archive, and restores media archives back into place. Database snapshots are unchanged
+- **Every Font Awesome free icon in the builder** — the icon pickers (Icon Box, Button icon, Icon List and custom icon fields) now list the full Font Awesome 6 free set — **2,060 icons** across Solid, Regular and Brands (up from a few hundred). A search box reaches any icon, with the grid capped for snappy scrolling
+
+### Changed
+- **Icon Box font size accepts any CSS unit** — the Title and Description **Font Size** fields lost their `px`/`rem` dropdown and now take a free-form value (`px`, `rem`, `em`, `%`, `vw`, `vh`, `calc()`), matching the Title element
+- **Nested-column Border & Box-Shadow colour pickers unified** — they now use the same round-swatch + editable hex design as every other picker, show the opacity-aware `#RRGGBBAA` code, and the colour renders **with its opacity** on canvas and front end (responsive per-device)
+
+### Fixed
+- **Nested rows match the front end on the canvas** — a nested row no longer shows a permanent whitish box; it renders transparent (like a normal element) and reveals its outline + **ROW** badge only on hover, with no extra padding gap between the row and its parent
+- **No more phantom vertical gap inside nested columns** — columns with **default** alignment no longer stretch their inner content to a taller sibling's height in the builder, so spacing inside nested columns now looks exactly like the published page
+
+## v1.7.1 {#v1-7-1}
 
 **Released: 2026-06-26**
 

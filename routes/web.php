@@ -259,6 +259,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     // Backups
     Route::get('tools/backup', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
     Route::post('tools/backup', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'create'])->name('backup.create');
+    Route::post('tools/backup/media', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'createMedia'])->name('backup.media');
     Route::post('tools/backup/upload', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'upload'])->name('backup.upload');
     Route::post('tools/backup/restore/{filename}', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backup.restore');
     Route::get('tools/backup/download/{filename}', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'download'])->name('backup.download');

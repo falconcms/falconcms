@@ -129,6 +129,87 @@ class BackupController extends Controller
         }
     }
 
+    public function createMedia()
+    {
+        if (!auth()->user()->hasPermission('manage_settings') && !auth()->user()->hasPermission('access_backups') && !auth()->user()->hasPermission('access_tools')) {
+            abort(403);
+        }
+
+        if (!class_exists('\ZipArchive')) {
+            return redirect()->back()->with('error', 'Media backup needs the PHP "zip" extension, which is not enabled on this server.');
+        }
+
+        try {
+            $mediaDir = storage_path('app/public');   // Laravel "public" disk = uploaded media
+            if (!is_dir($mediaDir)) {
+                return redirect()->back()->with('error', 'No media folder found to back up.');
+            }
+
+            $backupDir = storage_path('app/backups');
+            if (!file_exists($backupDir)) {
+                mkdir($backupDir, 0755, true);
+            }
+
+            $filename = 'media-backup-' . Carbon::now()->format('Y-m-d-H-i-s') . '.zip';
+            $path     = $backupDir . '/' . $filename;
+
+            $zip = new \ZipArchive();
+            if ($zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+                throw new \Exception('Could not create the zip archive.');
+            }
+
+            $count = 0;
+            $files = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($mediaDir, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::LEAVES_ONLY
+            );
+            foreach ($files as $file) {
+                if ($file->isDir()) continue;
+                $real = $file->getRealPath();
+                if ($real === false) continue;
+                $relative = ltrim(str_replace($mediaDir, '', $real), '/\\');
+                $zip->addFile($real, str_replace('\\', '/', $relative));
+                $count++;
+            }
+            $zip->close();
+
+            if ($count === 0) {
+                @unlink($path);
+                return redirect()->back()->with('error', 'No media files found to back up.');
+            }
+
+            falcon_log_activity('created', "Created a media files backup: {$filename} ({$count} files)");
+            return redirect()->back()->with('success', "Media backup created successfully ({$count} files).");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Media backup failed: ' . $e->getMessage());
+        }
+    }
+
+    private function restoreMedia(string $path, string $filename)
+    {
+        if (!class_exists('\ZipArchive')) {
+            return redirect()->back()->with('error', 'Restoring a media backup needs the PHP "zip" extension, which is not enabled on this server.');
+        }
+        try {
+            $zip = new \ZipArchive();
+            if ($zip->open($path) !== true) {
+                throw new \Exception('Could not open the media backup archive.');
+            }
+            $dest = storage_path('app/public');
+            if (!is_dir($dest)) {
+                mkdir($dest, 0755, true);
+            }
+            $count = $zip->numFiles;
+            $zip->extractTo($dest);
+            $zip->close();
+
+            falcon_log_activity('restored', "Restored media files from backup: {$filename} ({$count} files)");
+            return redirect()->back()->with('success', "Media files restored successfully from \"{$filename}\" ({$count} files).");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Media restoration failed: ' . $e->getMessage());
+        }
+    }
+
     public function restore($filename)
     {
         if (!auth()->user()->hasPermission('manage_settings') && !auth()->user()->hasPermission('access_backups') && !auth()->user()->hasPermission('access_tools')) {
@@ -139,6 +220,11 @@ class BackupController extends Controller
         $path = storage_path('app/backups/' . $filename);
         if (!file_exists($path)) {
             return redirect()->back()->with('error', 'Backup file not found.');
+        }
+
+        // Media backups are extracted to the public storage, not executed as SQL.
+        if (str_starts_with($filename, 'media-backup-')) {
+            return $this->restoreMedia($path, $filename);
         }
 
         try {

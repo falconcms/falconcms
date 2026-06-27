@@ -31,6 +31,9 @@
                     <i :class="[icon, 'text-base']"></i>
                 </button>
             </div>
+            <div v-if="!searchIconQuery && iconTabCount > filteredIcons.length" class="pt-2 text-center text-[10px] text-slate-400">
+                Showing @{{ filteredIcons.length }} of @{{ iconTabCount }} — type to search any icon
+            </div>
             <div v-if="filteredIcons.length === 0" class="py-10 text-center text-[10px] text-slate-400">No icons found</div>
         </div>
         <div class="p-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between">

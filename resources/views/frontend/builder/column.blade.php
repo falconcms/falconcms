@@ -214,7 +214,7 @@
     foreach (['Top', 'Right', 'Bottom', 'Left'] as $side) {
         $val = intval($s['borderSize' . $side] ?? 0);
         if ($val > 0) {
-            $innerStyles[] = 'border-' . strtolower($side) . ': ' . $val . 'px solid ' . ($s['borderColor'] ?? '#000000');
+            $innerStyles[] = 'border-' . strtolower($side) . ': ' . $val . 'px solid ' . $hexToRgba($s['borderColor'] ?? '#000000', $s['borderColorOpacity'] ?? 1);
         }
     }
     foreach (['TopLeft' => 'top-left', 'TopRight' => 'top-right', 'BottomRight' => 'bottom-right', 'BottomLeft' => 'bottom-left'] as $k => $css) {
@@ -413,7 +413,7 @@
         }
         // Responsive border color (inner)
         $rBorderColor = $getColRespOvr('borderColor', $rDev);
-        if ($rBorderColor !== null) $rInner[] = "border-color:{$rBorderColor}!important";
+        if ($rBorderColor !== null) $rInner[] = "border-color:" . $hexToRgba($rBorderColor, $getColRespOvr('borderColorOpacity', $rDev) ?? ($s['borderColorOpacity'] ?? 1)) . "!important";
         // Responsive border radius (inner)
         foreach ([
             'TopLeft'     => 'top-left',

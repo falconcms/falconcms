@@ -611,18 +611,15 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex gap-2 items-center">
-                    <div class="checkerboard rounded overflow-hidden w-6 h-6 flex-shrink-0 border border-slate-200">
-                        <div @click="openColorPicker($event, editingColumn.settings, device === 'desktop' ? 'borderColor' : 'borderColor_' + device, device === 'desktop' ? 'borderColorOpacity' : 'borderColorOpacity_' + device)"
-                             :style="{ backgroundColor: hexToRgba(getResponsiveVal(editingColumn.settings, 'borderColor', device), getResponsiveVal(editingColumn.settings, 'borderColorOpacity', device) ?? 1) }"
-                             class="w-full h-full cursor-pointer"></div>
+                <div class="flex items-center gap-2">
+                    <div class="checkerboard rounded-full overflow-hidden w-9 h-9 flex-shrink-0 border border-slate-200 shadow-sm cursor-pointer"
+                         @click="openColorPicker($event, editingColumn.settings, device === 'desktop' ? 'borderColor' : 'borderColor_' + device, device === 'desktop' ? 'borderColorOpacity' : 'borderColorOpacity_' + device, getResponsiveVal(editingColumn.settings, 'borderColor', device), 'pcr-fnew')">
+                        <div :style="{ backgroundColor: hexToRgba(getResponsiveVal(editingColumn.settings, 'borderColor', device), getResponsiveVal(editingColumn.settings, 'borderColorOpacity', device) ?? 1) }" class="w-full h-full"></div>
                     </div>
-                    <div class="relative flex-1">
-                        <input type="text"
-                               :value="getResponsiveVal(editingColumn.settings, 'borderColor', device)"
-                               @input="setResponsiveVal(editingColumn.settings, 'borderColor', device, $event.target.value)"
-                               class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
-                    </div>
+                    <input type="text"
+                           :value="falconColorDisplay(editingColumn.settings, device === 'desktop' ? 'borderColor' : 'borderColor_' + device, device === 'desktop' ? 'borderColorOpacity' : 'borderColorOpacity_' + device)"
+                           @input="falconColorInput(editingColumn.settings, device === 'desktop' ? 'borderColor' : 'borderColor_' + device, device === 'desktop' ? 'borderColorOpacity' : 'borderColorOpacity_' + device, $event.target.value)"
+                           placeholder="#000000" class="wp-input h-9 flex-1 text-[12px] font-mono px-3 focus:outline-none focus:border-[#2271b1]">
                 </div>
             </div>
 
@@ -724,16 +721,15 @@
                     </div>
                     <div>
                         <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">Box Shadow Color</label>
-                        <div class="flex gap-2 items-center">
-                            <div class="checkerboard rounded overflow-hidden w-8 h-8 flex-shrink-0 border border-slate-200">
-                                <div @click="openColorPicker($event, editingColumn.settings, device === 'desktop' ? 'boxShadowColor' : 'boxShadowColor_' + device, device === 'desktop' ? 'boxShadowColorOpacity' : 'boxShadowColorOpacity_' + device)"
-                                     :style="{ backgroundColor: hexToRgba(getResponsiveVal(editingColumn.settings, 'boxShadowColor', device), getResponsiveVal(editingColumn.settings, 'boxShadowColorOpacity', device) ?? 1) }"
-                                     class="w-full h-full cursor-pointer"></div>
+                        <div class="flex items-center gap-2">
+                            <div class="checkerboard rounded-full overflow-hidden w-9 h-9 flex-shrink-0 border border-slate-200 shadow-sm cursor-pointer"
+                                 @click="openColorPicker($event, editingColumn.settings, device === 'desktop' ? 'boxShadowColor' : 'boxShadowColor_' + device, device === 'desktop' ? 'boxShadowColorOpacity' : 'boxShadowColorOpacity_' + device, getResponsiveVal(editingColumn.settings, 'boxShadowColor', device), 'pcr-fnew')">
+                                <div :style="{ backgroundColor: hexToRgba(getResponsiveVal(editingColumn.settings, 'boxShadowColor', device), getResponsiveVal(editingColumn.settings, 'boxShadowColorOpacity', device) ?? 1) }" class="w-full h-full"></div>
                             </div>
                             <input type="text"
-                                   :value="getResponsiveVal(editingColumn.settings, 'boxShadowColor', device)"
-                                   @input="setResponsiveVal(editingColumn.settings, 'boxShadowColor', device, $event.target.value)"
-                                   class="flex-1 border border-slate-200 rounded px-3 py-1.5 text-[11px]">
+                                   :value="falconColorDisplay(editingColumn.settings, device === 'desktop' ? 'boxShadowColor' : 'boxShadowColor_' + device, device === 'desktop' ? 'boxShadowColorOpacity' : 'boxShadowColorOpacity_' + device)"
+                                   @input="falconColorInput(editingColumn.settings, device === 'desktop' ? 'boxShadowColor' : 'boxShadowColor_' + device, device === 'desktop' ? 'boxShadowColorOpacity' : 'boxShadowColorOpacity_' + device, $event.target.value)"
+                                   placeholder="#000000" class="wp-input h-9 flex-1 text-[12px] font-mono px-3 focus:outline-none focus:border-[#2271b1]">
                         </div>
                     </div>
                     <div>

@@ -5,13 +5,22 @@
     <div class="px-2">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Backup & Snapshots</h1>
-            <form action="{{ route('admin.backup.create') }}" method="POST">
-                @csrf
-                <button type="submit" class="wp-btn-primary">
-                    <span class="material-symbols-outlined mr-1">backup</span>
-                    Create New Snapshot
-                </button>
-            </form>
+            <div class="flex items-center gap-2">
+                <form action="{{ route('admin.backup.media') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="wp-btn-secondary">
+                        <span class="material-symbols-outlined mr-1">perm_media</span>
+                        Backup Media Files
+                    </button>
+                </form>
+                <form action="{{ route('admin.backup.create') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="wp-btn-primary">
+                        <span class="material-symbols-outlined mr-1">backup</span>
+                        Create New Snapshot
+                    </button>
+                </form>
+            </div>
         </div>
 
         @if(session('success'))

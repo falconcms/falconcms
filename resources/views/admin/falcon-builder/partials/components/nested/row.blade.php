@@ -1,9 +1,9 @@
-<div v-if="el.type === 'row'" class="nested-row-outer-wrapper w-full basis-full shrink-0 relative py-4 px-4 bg-slate-50/20 border border-slate-100 rounded-lg mb-2 mt-2 group/nrow shadow-sm"
+<div v-if="el.type === 'row'" class="nested-row-outer-wrapper w-full basis-full shrink-0 relative border border-transparent rounded-lg group/nrow transition-colors hover:bg-slate-50/20 hover:border-slate-100"
      @contextmenu.prevent.stop="openCtxMenu($event, 'nested-row', ci, coli, eli)"
      @mouseenter="setHover('nested-row', ci, coli, eli)"
      @mouseleave="setHover(null)">
     <!-- Header/Label for the nested row container -->
-    <div v-if="!isPreview" class="absolute top-2 left-2 bg-[#ff9800] text-white text-[8px] px-2 py-0.5 rounded shadow-sm z-[10] font-bold uppercase tracking-wider">Row</div>
+    <div v-if="!isPreview" class="absolute top-2 left-2 bg-[#ff9800] text-white text-[8px] px-2 py-0.5 rounded shadow-sm z-[10] font-bold uppercase tracking-wider opacity-0 group-hover/nrow:opacity-100 transition-opacity">Row</div>
     
     <!-- Row Toolbar (Horizontal Top-Right, Premium Red) -->
     <div v-if="!isPreview" class="absolute top-0 right-0 transition-all z-[1050] hover:z-[1200] p-1"
