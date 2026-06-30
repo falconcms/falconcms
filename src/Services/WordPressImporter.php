@@ -170,7 +170,7 @@ class WordPressImporter
                 ['slug' => $c['slug'], 'lang_code' => $lang],
                 ['name' => $c['name'] ?: $c['slug']]
             );
-            if ($cat->wasRecentlyCreated) $summary['categories']++;
+            if ($cat->wasRecentlyCreated) $summary['categories']++; else $summary['skipped']++;
             $catIdBySlug[$c['slug']] = ['id' => $cat->id, 'parent' => $c['parent'] ?? ''];
         }
         foreach ($catIdBySlug as $slug => $info) {
@@ -187,7 +187,7 @@ class WordPressImporter
                 ['slug' => $t['slug'], 'lang_code' => $lang],
                 ['name' => $t['name'] ?: $t['slug']]
             );
-            if ($tag->wasRecentlyCreated) $summary['tags']++;
+            if ($tag->wasRecentlyCreated) $summary['tags']++; else $summary['skipped']++;
             $tagIdBySlug[$t['slug']] = $tag->id;
         }
 

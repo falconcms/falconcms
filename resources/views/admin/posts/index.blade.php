@@ -155,7 +155,9 @@
                                 <button type="button" onclick="confirmForceDelete({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Delete Permanently</button>
                             @else
                                 <a href="{{ route('admin.posts.edit', $post) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
-                                <button type="button" onclick="moveToTrash({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> 
+                                <button type="button" onclick="moveToTrash({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button>
+                                <span class="text-[#c3c4c7]">|</span>
+                                <button type="submit" form="clone-form-{{ $post->id }}" class="text-[#2271b1] hover:underline cursor-pointer">Clone</button>
                                 @if(!isset($postType) || $postType->is_public)
                                 <span class="text-[#c3c4c7]">|</span>
                                 <a href="{{ get_falcon_permalink($post) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
@@ -383,6 +385,9 @@
         </form>
         <form id="force-delete-form-{{ $post->id }}" action="{{ route('admin.posts.force-delete', $post) }}" method="POST" class="hidden">
             @csrf @method('DELETE')
+        </form>
+        <form id="clone-form-{{ $post->id }}" action="{{ route('admin.posts.clone', $post->id) }}" method="POST" class="hidden">
+            @csrf
         </form>
     @endforeach
  

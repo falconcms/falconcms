@@ -8,6 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Idempotent: skip if the table already exists (e.g. created by an earlier
+        // run whose migration record was lost). Never touches existing data.
+        if (Schema::hasTable('magic_login_tokens')) {
+            return;
+        }
+
         Schema::create('magic_login_tokens', function (Blueprint $table) {
             $table->id();
             $table->string('email');

@@ -16,7 +16,7 @@
     <div class="bg-[#f6f7f7] border border-[#dcdcde] p-3 mb-5 flex flex-wrap items-center text-[13px] gap-3">
         <label class="font-medium">Select a menu to edit:</label>
         <form action="{{ route('admin.menus.index') }}" method="GET" class="flex items-center gap-2">
-            <select name="menu" class="wp-input h-7 py-0 px-2 min-w-[150px]" onchange="this.form.submit()">
+            <select name="menu" class="wp-input h-7 py-0 px-2 min-w-[150px]">
                 <option value="">— Select —</option>
                 @foreach($menus as $m)
                     <option value="{{ $m->id }}" {{ (isset($menu) && $menu->id == $m->id) ? 'selected' : '' }}>{{ $m->name }}</option>
@@ -346,7 +346,10 @@
 
                     <!-- Footer -->
                     <div class="bg-[#f6f7f7] border-t border-[#dcdcde] p-3 flex justify-between items-center">
-                        <button type="button" onclick="doDelete()" class="text-[#b32d2e] text-[13px] underline">Delete Menu</button>
+                        <div class="flex items-center gap-4">
+                            <button type="button" onclick="doDelete()" class="text-[#b32d2e] text-[13px] underline">Delete Menu</button>
+                            <button type="button" onclick="doDuplicate()" class="text-[#2271b1] text-[13px] underline">Duplicate Menu</button>
+                        </div>
                         <button type="button" onclick="doSave()" class="wp-btn-primary h-8 px-4">Save Menu</button>
                     </div>
                 </div>
@@ -833,6 +836,24 @@
         f.method = 'POST';
         f.action = '{{ $menu ? route("admin.menus.destroy", $menu->id) : "" }}';
         f.innerHTML = '{!! csrf_field() !!}{!! method_field("DELETE") !!}';
+        document.body.appendChild(f);
+        f.submit();
+    }
+
+    async function doDuplicate() {
+        const confirmed = await window.falconConfirm({
+            title: 'Duplicate Menu',
+            message: 'Create a copy of this menu including all of its items? The copy will not be assigned as a header or footer menu.',
+            confirmText: 'Duplicate Menu',
+            isDanger: false
+        });
+
+        if (!confirmed) return;
+
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = '{{ $menu ? route("admin.menus.duplicate", $menu->id) : "" }}';
+        f.innerHTML = '{!! csrf_field() !!}';
         document.body.appendChild(f);
         f.submit();
     }

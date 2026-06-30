@@ -396,6 +396,33 @@ if (!function_exists('get_custom_field')) {
     }
 }
 
+if (!function_exists('get_acpt_field')) {
+    /**
+     * Resolve a single ACPT / custom-field value for a post by the field's slug.
+     * The "Field Slug" entered in the builder maps to the `custom_fields.name` column.
+     * Returns the raw stored value, or $default when the field or its value is absent.
+     *
+     * Used by falcon_resolve_dynamic_value() for the `acpt_custom` dynamic source.
+     */
+    function get_acpt_field($post, string $slug, $default = '')
+    {
+        try {
+            $postId = is_object($post) ? ($post->id ?? null) : $post;
+            if (!$postId || $slug === '') return $default;
+
+            $value = DB::table('post_custom_field_values')
+                ->join('custom_fields', 'post_custom_field_values.field_id', '=', 'custom_fields.id')
+                ->where('post_custom_field_values.post_id', $postId)
+                ->where('custom_fields.name', $slug)
+                ->value('post_custom_field_values.value');
+
+            return $value !== null ? $value : $default;
+        } catch (\Throwable $e) {
+            return $default;
+        }
+    }
+}
+
 if (!function_exists('get_post_custom_fields')) {
     /**
      * Resolve ALL custom fields that apply to a post (by its type's field groups) as a
@@ -455,14 +482,17 @@ if (!function_exists('get_lazy_content')) {
             $layout = is_string($content) ? json_decode($content, true) : $content;
             
             if (!is_array($layout)) {
-                return do_lazy_shortcode($content);
+                // Classic / non-builder HTML: strip <script>, on* handlers and
+                // javascript: URLs before output (builder layouts are already
+                // sanitised per-element by the builder renderer).
+                return do_lazy_shortcode(falcon_sanitize_html((string) $content));
             }
-            
+
             $rendered = view('falcon-cms::frontend.builder.render', ['layout' => $layout])->render();
             return do_lazy_shortcode($rendered);
         } catch (\Exception $e) {
             \Log::error('Falcon Builder Error: ' . $e->getMessage());
-            return do_lazy_shortcode($content);
+            return do_lazy_shortcode(falcon_sanitize_html((string) $content));
         }
     }
 }

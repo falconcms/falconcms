@@ -71,6 +71,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('tags/bulk', [\FalconCms\Core\Http\Controllers\Admin\TagController::class, 'bulk'])->name('tags.bulk');
     Route::post('posts/{post}/restore', [PostController::class, 'restore'])->name('posts.restore')->withTrashed();
     Route::delete('posts/{post}/force-delete', [PostController::class, 'forceDelete'])->name('posts.force-delete')->withTrashed();
+    Route::post('posts/{id}/clone', [PostController::class, 'clonePost'])->name('posts.clone');
     // Classic editor revisions + autosave (must precede the resource route)
     Route::post('posts/{id}/autosave', [PostController::class, 'autosaveClassic'])->name('posts.autosave');
     Route::get('posts/{id}/revisions', [PostController::class, 'revisionsPage'])->name('posts.revisions');
@@ -183,6 +184,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('product-tags/{product_tag}', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'destroy'])->name('product-tags.destroy');
 
     // Navigation Menus
+    Route::post('menus/{id}/duplicate', [\FalconCms\Core\Http\Controllers\Admin\MenuManagementController::class, 'duplicate'])->name('menus.duplicate');
     Route::resource('menus', \FalconCms\Core\Http\Controllers\Admin\MenuManagementController::class);
     
     // Dynamic Taxonomy Terms
@@ -264,6 +266,14 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('tools/backup/restore/{filename}', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backup.restore');
     Route::get('tools/backup/download/{filename}', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'download'])->name('backup.download');
     Route::delete('tools/backup/{filename}', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backup.destroy');
+
+    // Export (dynamic, feature-driven WXR export)
+    Route::get('tools/export', [\FalconCms\Core\Http\Controllers\Admin\ExportController::class, 'index'])->name('export.index');
+    Route::post('tools/export/download', [\FalconCms\Core\Http\Controllers\Admin\ExportController::class, 'download'])->name('export.download');
+
+    // Import (counterpart to Export — imports the WXR export file)
+    Route::get('tools/import', [\FalconCms\Core\Http\Controllers\Admin\ImportController::class, 'index'])->name('import.index');
+    Route::post('tools/import', [\FalconCms\Core\Http\Controllers\Admin\ImportController::class, 'import'])->name('import.run');
 
     // WordPress Importer
     Route::get('tools/wp-import', [\FalconCms\Core\Http\Controllers\Admin\WordPressImportController::class, 'index'])->name('wp-import.index');

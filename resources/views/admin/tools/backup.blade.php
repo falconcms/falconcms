@@ -5,22 +5,6 @@
     <div class="px-2">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Backup & Snapshots</h1>
-            <div class="flex items-center gap-2">
-                <form action="{{ route('admin.backup.media') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="wp-btn-secondary">
-                        <span class="material-symbols-outlined mr-1">perm_media</span>
-                        Backup Media Files
-                    </button>
-                </form>
-                <form action="{{ route('admin.backup.create') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="wp-btn-primary">
-                        <span class="material-symbols-outlined mr-1">backup</span>
-                        Create New Snapshot
-                    </button>
-                </form>
-            </div>
         </div>
 
         @if(session('success'))
@@ -34,6 +18,47 @@
                 {{ session('error') }}
             </div>
         @endif
+
+        {{-- Create Backup --}}
+        <div class="bg-white border border-[#c3c4c7] shadow-sm mb-6">
+            <div class="p-4 border-b border-[#c3c4c7] bg-[#f6f7f7] flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px] text-[#646970]">backup</span>
+                <div>
+                    <h2 class="text-[14px] font-semibold text-[#1d2327]">Create a Backup</h2>
+                    <p class="text-[12px] text-[#646970]">Choose what to include. The file can be downloaded, re-uploaded and restored on any FalconCMS site.</p>
+                </div>
+            </div>
+            <form action="{{ route('admin.backup.create') }}" method="POST" class="p-5">
+                @csrf
+                <div class="flex flex-col gap-2 mb-4">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="radio" name="backup_type" value="database" checked class="mt-1 accent-[#2271b1]">
+                        <span>
+                            <span class="text-[13px] font-semibold text-[#1d2327]">Only Database</span>
+                            <span class="block text-[12px] text-[#646970]">All content &amp; settings (posts, pages, products, users…) as a <code>.sql</code> file.</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="radio" name="backup_type" value="media" class="mt-1 accent-[#2271b1]">
+                        <span>
+                            <span class="text-[13px] font-semibold text-[#1d2327]">Only Media</span>
+                            <span class="block text-[12px] text-[#646970]">Uploaded images &amp; files from <code>storage/app/public</code> as a <code>.zip</code>.</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="radio" name="backup_type" value="both" class="mt-1 accent-[#2271b1]">
+                        <span>
+                            <span class="text-[13px] font-semibold text-[#1d2327]">Database + Media</span>
+                            <span class="block text-[12px] text-[#646970]">Everything in one <code>.zip</code> (database <em>and</em> media together) — restoring it brings back both automatically.</span>
+                        </span>
+                    </label>
+                </div>
+                <button type="submit" class="wp-btn-primary flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[18px]">backup</span>
+                    Create Backup
+                </button>
+            </form>
+        </div>
 
         {{-- Upload Backup --}}
         <div class="bg-white border border-[#c3c4c7] shadow-sm mb-6">
@@ -97,6 +122,7 @@
                     <thead>
                         <tr class="border-b border-[#c3c4c7]">
                             <th class="p-3 font-semibold text-[#2c3338]">Filename</th>
+                            <th class="p-3 font-semibold text-[#2c3338]">Type</th>
                             <th class="p-3 font-semibold text-[#2c3338]">Size</th>
                             <th class="p-3 font-semibold text-[#2c3338]">Created Date</th>
                             <th class="p-3 font-semibold text-[#2c3338] text-right">Actions</th>
@@ -110,6 +136,12 @@
                                         <span class="material-symbols-outlined text-[#646970]">description</span>
                                         <span class="font-medium text-[#2271b1]">{{ $backup['name'] }}</span>
                                     </div>
+                                </td>
+                                <td class="p-3">
+                                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium
+                                        {{ $backup['type'] === 'Database + Media' ? 'bg-[#e7f3ff] text-[#0a5cad]' : ($backup['type'] === 'Media' ? 'bg-[#fcf3e7] text-[#b16d22]' : 'bg-[#edfaef] text-[#1a7a32]') }}">
+                                        {{ $backup['type'] }}
+                                    </span>
                                 </td>
                                 <td class="p-3 text-[#646970]">{{ $backup['size'] }}</td>
                                 <td class="p-3 text-[#646970]">{{ $backup['date'] }}</td>
@@ -139,7 +171,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="p-8 text-center text-[#646970] italic">
+                                <td colspan="5" class="p-8 text-center text-[#646970] italic">
                                     No snapshots found. Click "Create New Snapshot" to get started.
                                 </td>
                             </tr>
@@ -155,9 +187,9 @@
                 Pro Tip: Regular Backups
             </h3>
             <p class="text-[13px] text-[#1d2327] leading-relaxed">
-                Database snapshots capture your posts, pages, users, and settings. It is recommended to download your snapshots and store them in a secure offline location. 
+                Backups capture your posts, pages, users and settings (database) and your uploaded images &amp; files (media). It is recommended to download them and store them in a secure offline location.
                 <br>
-                <strong>Note:</strong> This tool currently only backs up the database structure and data. Uploaded images and files should be backed up separately from your <code>storage/app/public/uploads</code> directory.
+                <strong>Tip:</strong> Choose <strong>Database + Media</strong> for a complete site copy in a single file. Restore (or upload &amp; restore) detects automatically what a file contains — database, media, or both — and brings it back accordingly, so you can move a whole site to another FalconCMS install with one file.
             </p>
         </div>
     </div>

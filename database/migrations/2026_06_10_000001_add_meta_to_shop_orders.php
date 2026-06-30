@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('shop_orders') || Schema::hasColumn('shop_orders', 'meta')) {
+            return;
+        }
+
         Schema::table('shop_orders', function (Blueprint $table) {
             $table->text('meta')->nullable()->after('customer_note');
         });

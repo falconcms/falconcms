@@ -16,8 +16,13 @@
         ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig) ?: ($s['text'] ?? 'Click Here')) : ($postTitle ?? $s['text'] ?? 'Click Here'))
         : ($s['text'] ?? 'Click Here');
     $resolvedLinkUrl = $linkDynamic
-        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '#')) : ($postPermalink ?? $s['linkUrl'] ?? '#'))
-        : ($s['linkUrl'] ?? '#');
+        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
+        : ($s['linkUrl'] ?? '');
+
+    // Render an <a> whenever the Link URL has any value (including a bare "#").
+    // Only a truly empty field renders a plain <span> with no anchor.
+    $hasLink = $resolvedLinkUrl !== null && trim((string) $resolvedLinkUrl) !== '';
+    $linkTag = $hasLink ? 'a' : 'span';
 
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
     $visibilityClasses = '';
@@ -112,7 +117,7 @@
         'text-transform' => $s['textTransform'] ?? 'none',
         'text-decoration' => 'none',
         'transition' => 'all 0.3s ease',
-        'cursor' => 'pointer',
+        'cursor' => $hasLink ? 'pointer' : 'default',
         'text-align' => 'center',
     ];
 
@@ -150,9 +155,9 @@
 
 <div class="element-button-wrapper button-container-{{ $elemId }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
      style="{{ collect($wrapperStyles)->map(fn($v, $k) => "$k: $v")->implode('; ') }}">
-    <a href="{{ $resolvedLinkUrl }}"
+    <{{ $linkTag }}
+       @if($hasLink) href="{{ $resolvedLinkUrl }}" target="{{ $s['linkTarget'] ?? '_self' }}" @endif
        id="{{ $appliedId }}"
-       target="{{ $s['linkTarget'] ?? '_self' }}"
        style="{{ collect($btnStyles)->map(fn($v, $k) => "$k: $v")->implode('; ') }}">
         @if($icon && $iconPos !== 'right')
             <i class="{{ $icon }} mr-2"></i>
@@ -161,5 +166,5 @@
         @if($icon && $iconPos === 'right')
             <i class="{{ $icon }} ml-2"></i>
         @endif
-    </a>
+    </{{ $linkTag }}>
 </div>

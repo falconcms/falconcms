@@ -4,6 +4,10 @@
          marginBottom: getUnitVal(getResponsiveVal(el.settings, 'marginBottom', device), getResponsiveVal(el.settings, 'marginBottomUnit', device) || 'px')
      }]">
 
+    <!-- Live hover effect (matches front-end): inject scoped :hover CSS since inline styles can't do :hover -->
+    <component :is="'style'" v-if="el.settings.images && el.settings.images.length"
+               v-text="(el.settings.hoverEffect || 'zoom') === 'zoom' ? ('.lzg-' + el.id + '-img img{transition:transform .4s ease;} .lzg-' + el.id + '-img:hover img{transform:scale(1.07);}') : ''"></component>
+
     <!-- Grid preview -->
     <div v-if="el.settings.images && el.settings.images.length"
          :style="{
@@ -12,7 +16,7 @@
              gap: (el.settings.gap !== undefined ? el.settings.gap : 8) + 'px'
          }">
         <div v-for="(img, idx) in el.settings.images" :key="idx">
-            <div :style="{ overflow: 'hidden', borderRadius: (el.settings.borderRadius || 0) + 'px', border: el.settings.imgBorderWidth ? (el.settings.imgBorderWidth + 'px ' + (el.settings.imgBorderStyle || 'solid') + ' ' + (el.settings.imgBorderColor || '#e2e8f0')) : undefined }">
+            <div :class="'lzg-' + el.id + '-img'" :style="{ overflow: 'hidden', borderRadius: (el.settings.borderRadius || 0) + 'px', border: el.settings.imgBorderWidth ? (el.settings.imgBorderWidth + 'px ' + (el.settings.imgBorderStyle || 'solid') + ' ' + (el.settings.imgBorderColor || '#e2e8f0')) : undefined }">
                 <div v-if="(el.settings.aspectRatio || 'square') !== 'auto'"
                      :style="{
                          position: 'relative',

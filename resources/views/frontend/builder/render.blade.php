@@ -23,6 +23,15 @@
     .lz-anim-zoom-out:not(.lz-animated)   { opacity: 0; transform: scale(1.2); }
     .lz-anim-bounce-in:not(.lz-animated)  { opacity: 0; transform: scale(0.6); }
     .lz-anim.lz-animated { opacity: 1 !important; transform: none !important; }
+
+    /* Column / Container / Nested-column hover effects (mirror builder canvas) */
+    .hover-effect-zoom, .hover-effect-lift, .hover-effect-glow, .hover-effect-fade {
+        transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .hover-effect-zoom:hover { transform: scale(1.03) !important; z-index: 50 !important; }
+    .hover-effect-lift:hover { transform: translateY(-10px) !important; z-index: 50 !important; box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important; }
+    .hover-effect-glow:hover { box-shadow: 0 0 25px rgba(0,145,234,0.5) !important; z-index: 50 !important; }
+    .hover-effect-fade:hover { opacity: 0.7 !important; }
 </style>
 <script>
 (function(){

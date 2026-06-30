@@ -250,6 +250,7 @@
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
                      ]"
+                     :style="nestedEl.type === 'row' ? { width: '100%', maxWidth: '100%' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
                      @dragover="onDragOver($event, 'element', ci, coli, eli, ncoli, nestedEli)"
                      @drop="onDrop($event, 'element', ci, coli, eli, ncoli, nestedEli)">
                         

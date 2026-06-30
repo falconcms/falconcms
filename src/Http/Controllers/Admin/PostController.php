@@ -773,6 +773,78 @@ class PostController extends Controller
         return redirect()->route('admin.posts.edit', $post)->with('success', ucfirst($postData['type']) . ' created successfully.');
     }
 
+    /**
+     * Clone a post / page / product / CPT item into a fresh draft copy,
+     * including its taxonomies, ACPT custom fields and (for products) the
+     * shop data + variations + downloads.
+     */
+    public function clonePost($id)
+    {
+        $post = Post::findOrFail($id);
+
+        // 1) Duplicate the post itself as a standalone draft (not a translation).
+        $clone = $post->replicate();
+        $clone->title        = $post->title . ' (Copy)';
+        $clone->slug         = $this->generateUniqueSlug($post->title . ' copy', 0, $post->type, $post->lang_code ?? 'en');
+        $clone->status       = 'draft';
+        $clone->published_at = null;
+        $clone->origin_id    = null;
+        // Only reset columns that actually exist on this install (replicate() already
+        // copies whatever columns are present, so this stays schema-safe everywhere).
+        if (array_key_exists('is_sticky', $clone->getAttributes())) {
+            $clone->is_sticky = false;
+        }
+        $clone->push();
+
+        // 2) Taxonomy relations.
+        $clone->categories()->sync($post->categories->pluck('id')->all());
+        $clone->tags()->sync($post->tags->pluck('id')->all());
+        $clone->taxonomyTerms()->sync($post->taxonomyTerms->pluck('id')->all());
+        if ($post->type === 'product') {
+            $clone->productCategories()->sync($post->productCategories->pluck('id')->all());
+            $clone->productTags()->sync($post->productTags->pluck('id')->all());
+        }
+
+        // 3) ACPT custom field values.
+        foreach (DB::table('post_custom_field_values')->where('post_id', $post->id)->get() as $row) {
+            DB::table('post_custom_field_values')->insert([
+                'post_id'    => $clone->id,
+                'field_id'   => $row->field_id,
+                'value'      => $row->value,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // 4) Product shop data + variations + downloads (products only).
+        if ($post->type === 'product' && $post->shopData) {
+            $newData = $post->shopData->replicate();
+            $newData->post_id = $clone->id;
+            $newData->save();
+
+            foreach (\FalconCms\Core\Models\ProductVariation::where('product_id', $post->shopData->id)->get() as $var) {
+                $nv = $var->replicate();
+                $nv->product_id = $newData->id;
+                $nv->save();
+            }
+
+            if (class_exists(\FalconCms\Core\Models\ProductDownload::class)) {
+                foreach (\FalconCms\Core\Models\ProductDownload::where('product_id', $post->shopData->id)->get() as $dl) {
+                    $nd = $dl->replicate();
+                    $nd->product_id = $newData->id;
+                    $nd->save();
+                }
+            }
+        }
+
+        if (function_exists('falcon_log_activity')) {
+            falcon_log_activity('created', "Cloned {$post->type}: {$post->title}", $clone);
+        }
+        clear_page_cache();
+
+        return back()->with('success', ucfirst($post->type) . ' cloned successfully — the copy is saved as a draft.');
+    }
+
     public function edit(Post $post)
     {
         $type = $post->type;

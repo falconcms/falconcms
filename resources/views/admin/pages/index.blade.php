@@ -122,6 +122,7 @@
                             @else
                                 <a href="{{ route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                 <button type="button" onclick="moveToTrash({{ $item->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> <span class="text-[#c3c4c7]">|</span>
+                                <button type="submit" form="clone-form-{{ $item->id }}" class="text-[#2271b1] hover:underline cursor-pointer">Clone</button> <span class="text-[#c3c4c7]">|</span>
                                 <a href="{{ get_falcon_permalink($item) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
                             @endif
                         </div>
@@ -192,6 +193,9 @@
         </form>
         <form id="force-delete-form-{{ $item->id }}" action="{{ route('admin.pages.force-delete', $item) }}" method="POST" class="hidden">
             @csrf @method('DELETE')
+        </form>
+        <form id="clone-form-{{ $item->id }}" action="{{ route('admin.posts.clone', $item->id) }}" method="POST" class="hidden">
+            @csrf
         </form>
     @endforeach
 

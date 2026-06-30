@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // Extend shop_products with download metadata
-        Schema::table('shop_products', function (Blueprint $table) {
+        if (Schema::hasTable('shop_products')) Schema::table('shop_products', function (Blueprint $table) {
             if (!Schema::hasColumn('shop_products', 'is_downloadable')) {
                 $table->boolean('is_downloadable')->default(false)->after('sale_ends_at');
             }
@@ -19,7 +19,7 @@ return new class extends Migration
         });
 
         // Per-product downloadable files
-        Schema::create('shop_product_downloads', function (Blueprint $table) {
+        if (!Schema::hasTable('shop_product_downloads')) Schema::create('shop_product_downloads', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('product_id'); // FK → shop_products.id
             $table->string('name');
@@ -33,7 +33,7 @@ return new class extends Migration
         });
 
         // Per-order-item download tokens given to buyers
-        Schema::create('shop_order_downloads', function (Blueprint $table) {
+        if (!Schema::hasTable('shop_order_downloads')) Schema::create('shop_order_downloads', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_id');
             $table->unsignedBigInteger('order_item_id');

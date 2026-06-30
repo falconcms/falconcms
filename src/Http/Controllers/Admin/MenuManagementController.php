@@ -264,4 +264,47 @@ class MenuManagementController extends Controller
         falcon_log_activity('deleted', "Deleted menu: {$name}");
         return redirect()->route('admin.menus.index')->with('success', 'Menu deleted.');
     }
+
+    public function duplicate($id)
+    {
+        $menu = NavigationMenu::findOrFail($id);
+
+        // The copy is a plain menu — it must never inherit the header/footer slot
+        // (only one menu can hold each, and duplicating shouldn't steal it).
+        $newMenu = NavigationMenu::create([
+            'name'      => $menu->name . ' (Copy)',
+            'slug'      => Str::slug($menu->name) . '-copy-' . Str::lower(Str::random(5)),
+            'is_header' => false,
+            'is_footer' => false,
+        ]);
+
+        // Recreate every item, preserving the full parent/child hierarchy & order.
+        $this->copyItems($menu->id, $newMenu->id, null, null);
+
+        falcon_log_activity('created', "Duplicated menu: {$menu->name} → {$newMenu->name}", $newMenu);
+
+        return redirect()
+            ->route('admin.menus.index', ['menu' => $newMenu->id])
+            ->with('success', 'Menu duplicated successfully.');
+    }
+
+    private function copyItems($sourceMenuId, $newMenuId, $sourceParentId, $newParentId)
+    {
+        $query = NavigationMenuItem::where('navigation_menu_id', $sourceMenuId);
+        $query = is_null($sourceParentId)
+            ? $query->whereNull('parent_id')
+            : $query->where('parent_id', $sourceParentId);
+
+        foreach ($query->orderBy('order')->get() as $item) {
+            // replicate() copies every actual column (schema-agnostic), so new
+            // item fields stay in sync automatically as the model evolves.
+            $newItem = $item->replicate();
+            $newItem->navigation_menu_id = $newMenuId;
+            $newItem->parent_id          = $newParentId;
+            $newItem->save();
+
+            // Recurse into this item's children.
+            $this->copyItems($sourceMenuId, $newMenuId, $item->id, $newItem->id);
+        }
+    }
 }

@@ -5,7 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.7.2 <Badge type="tip" text="Latest" /> {#v1-7-2}
+## v1.7.3 <Badge type="tip" text="Latest" /> {#v1-7-3}
+
+**Released: 2026-06-30**
+
+A tooling & migration release: a new Export/Import pair, one-click Clone for every content type, a smarter Backup tool, plus several builder, security and migration fixes.
+
+### Added
+- **Tools → Export** — a feature-driven export screen: it lists every registered post type, taxonomy and the media library automatically (so future exportable features appear on their own) and downloads a WordPress-compatible `.xml` (WXR) file. Pick **All content** or a single source
+- **Tools → Import** — the counterpart to Export: upload an export `.xml` and it restores posts, pages, custom post types and taxonomy terms (also accepts standard WordPress WXR files)
+- **Clone for posts, pages, products & CPTs** — every list row now has a **Clone** action (next to View) that duplicates the item — and its taxonomies, custom fields and (for products) shop data, variations & downloads — into a fresh draft
+- **Duplicate menu** — the menu editor gains a **Duplicate Menu** action that copies a navigation menu with its full item hierarchy (the copy is never auto-assigned as header/footer)
+
+### Changed
+- **Backup tool reworked** — one **Create Backup** button with three choices: **Only Database**, **Only Media**, or **Database + Media** (a single archive carrying both). Restore is now content-aware — it detects from the file itself whether to restore the database, the media, or both, so a whole site can be moved to another install with one file. Uploaded backups are detected the same way
+- **Live gallery hover effect on the canvas** — the Gallery element's *Zoom* hover now previews in the builder, matching the front end
+- **Column / nested-column hover effects now work on the front end** — *Zoom / Lift / Glow / Fade* hover types rendered only in the builder before; they now render on the published page too
+- **Buttons without a link render cleanly** — a Button with an empty **Link URL** no longer outputs an empty `<a>` tag or a pointer cursor; any value (including `#`) makes it a real link again
+- **Clearer import results** — re-importing items that already exist now reports them as *skipped* (including taxonomy terms) with an explanatory note, instead of showing all zeros
+
+### Fixed
+- **Stored-XSS hardening** — classic (non-builder) post/page content is now sanitised on output (scripts, `on*` handlers and `javascript:` URLs are stripped), closing a gap that affected imported HTML content
+- **Menu save error** — saving a menu no longer fails with *Unknown column `mega_menu_id`*; the relevant migration now runs, and several migrations were made **idempotent** (guarded with `hasTable`/`hasColumn`) so `php artisan migrate` runs cleanly on fresh, partially-migrated or already-migrated installs — **without any data loss**
+- **Menu selector** — choosing a menu from the dropdown no longer auto-opens it; the **Select** button is the trigger
+- **Nested-row layout consistency** on the builder canvas
+
+## v1.7.2 {#v1-7-2}
 
 **Released: 2026-06-27**
 
