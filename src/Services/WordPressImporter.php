@@ -3,10 +3,15 @@
 namespace FalconCms\Core\Services;
 
 use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\NavigationMenu;
+use FalconCms\Core\Models\NavigationMenuItem;
 use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\ProductData;
 use FalconCms\Core\Models\Tag;
+use FalconCms\Core\Models\TaxonomyTerm;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -41,7 +46,7 @@ class WordPressImporter
      */
     public static function parse(string $xml): array
     {
-        $out = ['site' => [], 'authors' => [], 'categories' => [], 'tags' => [], 'attachments' => [], 'items' => []];
+        $out = ['site' => [], 'authors' => [], 'categories' => [], 'tags' => [], 'nav_menus' => [], 'attachments' => [], 'items' => []];
 
         $prev = libxml_use_internal_errors(true);
         $root = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA);
@@ -87,6 +92,24 @@ class WordPressImporter
             ];
         }
 
+        // Custom terms — including navigation menus, which FalconCMS exports as
+        // `nav_menu` terms carrying a `_falcon_menu` termmeta with the full tree.
+        foreach ($channel->children($wpNs)->term as $term) {
+            if ((string) $term->term_taxonomy !== 'nav_menu') {
+                continue;
+            }
+            $payload = null;
+            foreach ($term->termmeta as $tm) {
+                if ((string) $tm->meta_key === '_falcon_menu') {
+                    $decoded = json_decode((string) $tm->meta_value, true);
+                    if (is_array($decoded)) $payload = $decoded;
+                }
+            }
+            if ($payload) {
+                $out['nav_menus'][] = $payload;
+            }
+        }
+
         // Items (posts, pages, attachments, …)
         foreach ($channel->item as $item) {
             $wp = $item->children($wpNs);
@@ -104,6 +127,7 @@ class WordPressImporter
 
             $cats = [];
             $tags = [];
+            $taxTerms = [];
             foreach ($item->category as $cat) {
                 $domain   = (string) ($cat['domain'] ?? '');
                 $nicename = (string) ($cat['nicename'] ?? '');
@@ -112,6 +136,9 @@ class WordPressImporter
                     $tags[] = ['slug' => $nicename ?: Str::slug($label), 'name' => $label];
                 } elseif ($domain === 'category' || $domain === '') {
                     $cats[] = ['slug' => $nicename ?: Str::slug($label), 'name' => $label];
+                } else {
+                    // Custom taxonomy attachment (domain = taxonomy slug).
+                    $taxTerms[] = ['taxonomy' => $domain, 'slug' => $nicename ?: Str::slug($label), 'name' => $label];
                 }
             }
 
@@ -121,25 +148,47 @@ class WordPressImporter
             }
 
             $out['items'][] = [
-                'wp_id'        => (int) $wp->post_id,
-                'type'         => $type,                                   // post | page | <cpt>
-                'title'        => (string) $item->title,
-                'slug'         => (string) $wp->post_name,
-                'status'       => (string) $wp->status,
-                'content'      => (string) $item->children($cNs)->encoded,
-                'excerpt'      => (string) $item->children($excNs)->encoded,
-                'author_login' => (string) $item->children($dcNs)->creator,
-                'date'         => (string) $wp->post_date,
-                'date_gmt'     => (string) $wp->post_date_gmt,
-                'parent'       => (int) $wp->post_parent,
-                'menu_order'   => (int) $wp->menu_order,
-                'thumbnail_id' => isset($meta['_thumbnail_id']) ? (int) $meta['_thumbnail_id'] : null,
-                'categories'   => $cats,
-                'tags'         => $tags,
+                'wp_id'          => (int) $wp->post_id,
+                'type'           => $type,                                   // post | page | <cpt>
+                'title'          => (string) $item->title,
+                'slug'           => (string) $wp->post_name,
+                'status'         => (string) $wp->status,
+                'content'        => (string) $item->children($cNs)->encoded,
+                'excerpt'        => (string) $item->children($excNs)->encoded,
+                'author_login'   => (string) $item->children($dcNs)->creator,
+                'date'           => (string) $wp->post_date,
+                'date_gmt'       => (string) $wp->post_date_gmt,
+                'parent'         => (int) $wp->post_parent,
+                'menu_order'     => (int) $wp->menu_order,
+                'thumbnail_id'   => isset($meta['_thumbnail_id']) ? (int) $meta['_thumbnail_id'] : null,
+                'thumbnail_path' => $meta['_thumbnail_path'] ?? null,
+                'editor_type'    => $meta['_falcon_editor_type'] ?? null,
+                'template'       => $meta['_falcon_template'] ?? null,
+                'lang_code'      => $meta['_falcon_lang_code'] ?? null,
+                'seo_meta'       => self::decodeMeta($meta['_falcon_seo'] ?? null),
+                'gallery'        => self::decodeMeta($meta['_falcon_gallery'] ?? null),
+                'custom_fields'  => self::decodeMeta($meta['_falcon_custom_fields'] ?? null),
+                'product'        => self::decodeMeta($meta['_falcon_product'] ?? null),
+                'categories'     => $cats,
+                'tags'           => $tags,
+                'taxonomies'     => $taxTerms,
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * Decode a postmeta value that FalconCMS may have stored as a JSON array
+     * (custom fields, product data, gallery, seo). Returns the decoded array,
+     * or the original scalar string when it is not JSON, or null when empty.
+     */
+    private static function decodeMeta($value)
+    {
+        if ($value === null || $value === '') return null;
+        if (is_array($value)) return $value;
+        $decoded = json_decode((string) $value, true);
+        return json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
     }
 
     // =====================================================================
@@ -159,7 +208,7 @@ class WordPressImporter
 
         $summary = [
             'categories' => 0, 'tags' => 0, 'posts' => 0, 'pages' => 0,
-            'cpt' => 0, 'skipped' => 0, 'errors' => [],
+            'cpt' => 0, 'menus' => 0, 'skipped' => 0, 'errors' => [],
         ];
 
         // 1) Categories (two pass for parents)
@@ -191,6 +240,15 @@ class WordPressImporter
             $tagIdBySlug[$t['slug']] = $tag->id;
         }
 
+        // 2b) Navigation menus (header/footer/custom) with their full item tree.
+        foreach ($parsed['nav_menus'] ?? [] as $menuData) {
+            try {
+                $summary['menus'] += $this->importNavMenu($menuData, $lang) ? 1 : 0;
+            } catch (\Throwable $e) {
+                $summary['errors'][] = 'Menu ' . ($menuData['name'] ?? '?') . ': ' . $e->getMessage();
+            }
+        }
+
         $attachments = $parsed['attachments'] ?? [];
 
         // 3) Items -> posts / pages / cpt
@@ -220,9 +278,12 @@ class WordPressImporter
                 // A "future" post that's actually in the past becomes published.
                 $status = Post::resolveStatusForSchedule($status, $status === 'scheduled' ? $date : null);
 
-                // Featured image: map _thumbnail_id -> attachment URL (kept as remote URL in v1).
+                // Featured image: prefer FalconCMS's exported path; otherwise map
+                // WordPress's _thumbnail_id -> attachment URL (kept as a remote URL).
                 $featured = null;
-                if (!empty($it['thumbnail_id']) && isset($attachments[$it['thumbnail_id']])) {
+                if (!empty($it['thumbnail_path'])) {
+                    $featured = $it['thumbnail_path'];
+                } elseif (!empty($it['thumbnail_id']) && isset($attachments[$it['thumbnail_id']])) {
                     $featured = $attachments[$it['thumbnail_id']];
                 }
 
@@ -234,9 +295,9 @@ class WordPressImporter
                     'type'         => $type,
                     'status'       => $status,
                     'published_at' => $date,
-                    'editor_type'  => 'rich',
+                    'editor_type'  => $it['editor_type'] ?: 'rich',
                     'user_id'      => $userId,
-                    'lang_code'    => $lang,
+                    'lang_code'    => $it['lang_code'] ?: $lang,
                     'featured_image' => $featured,
                     'menu_order'   => $it['menu_order'] ?? 0,
                 ]);
@@ -245,6 +306,26 @@ class WordPressImporter
                 DB::table('posts')->where('id', $post->id)->update([
                     'created_at' => $date, 'updated_at' => $date,
                 ]);
+
+                // Optional Falcon-native fields (template, SEO, gallery) when present.
+                $extra = [];
+                if (!empty($it['template']) && Schema::hasColumn('posts', 'template')) {
+                    $extra['template'] = $it['template'];
+                }
+                if (!empty($it['seo_meta']) && Schema::hasColumn('posts', 'seo_meta')) {
+                    $extra['seo_meta'] = is_array($it['seo_meta']) ? json_encode($it['seo_meta']) : $it['seo_meta'];
+                }
+                if (!empty($it['gallery']) && Schema::hasColumn('posts', 'gallery')) {
+                    $extra['gallery'] = is_array($it['gallery']) ? json_encode($it['gallery']) : $it['gallery'];
+                }
+                if ($extra) {
+                    DB::table('posts')->where('id', $post->id)->update($extra);
+                }
+
+                // Restore ACPT custom-field values, product data & custom taxonomy terms.
+                $this->restoreCustomFields($post, $it['custom_fields'] ?? null);
+                $this->restoreProductData($post, $type, $it['product'] ?? null);
+                $this->restoreTaxonomyTerms($post, $it['taxonomies'] ?? [], $lang);
 
                 // Attach categories / tags (posts only — pages don't use them in WP)
                 if (!$isPage) {
@@ -282,6 +363,123 @@ class WordPressImporter
         }
 
         return $summary;
+    }
+
+    /**
+     * Recreate a navigation menu and its full item tree.
+     * Idempotent: an existing menu with the same slug + language is left untouched.
+     *
+     * @return bool  true if a menu was created.
+     */
+    private function importNavMenu(array $data, string $lang): bool
+    {
+        if (!Schema::hasTable('navigation_menus')) return false;
+
+        $name = (string) ($data['name'] ?? 'Imported Menu');
+        $slug = (string) ($data['slug'] ?? Str::slug($name) ?: 'menu');
+        $menuLang = $data['lang_code'] ?? $lang;
+
+        $existing = NavigationMenu::where('slug', $slug)
+            ->when(Schema::hasColumn('navigation_menus', 'lang_code'), fn ($q) => $q->where('lang_code', $menuLang))
+            ->first();
+        if ($existing) return false;
+
+        $menu = NavigationMenu::create([
+            'name'      => $name,
+            'slug'      => $slug,
+            'location'  => $data['location'] ?? null,
+            'lang_code' => $menuLang,
+            'is_header' => (int) ($data['is_header'] ?? 0),
+            'is_footer' => (int) ($data['is_footer'] ?? 0),
+        ]);
+
+        // Two-pass: create items, then remap parent ids from old -> new.
+        $idMap = [];
+        $rows  = is_array($data['items'] ?? null) ? $data['items'] : [];
+        foreach ($rows as $row) {
+            $item = NavigationMenuItem::create([
+                'navigation_menu_id' => $menu->id,
+                'parent_id'          => null,
+                'title'              => (string) ($row['title'] ?? ''),
+                'url'                => (string) ($row['url'] ?? ''),
+                'type'               => (string) ($row['type'] ?? 'custom'),
+                'object_id'          => $row['object_id'] ?? null,
+                'target'             => (string) ($row['target'] ?? ''),
+                'classes'            => (string) ($row['classes'] ?? ''),
+                'icon'               => (string) ($row['icon'] ?? ''),
+                'show_only_icon'     => (int) ($row['show_only_icon'] ?? 0),
+                'order'              => (int) ($row['order'] ?? 0),
+                'mega_menu_id'       => $row['mega_menu_id'] ?? null,
+            ]);
+            if (isset($row['id'])) $idMap[(int) $row['id']] = $item->id;
+        }
+        foreach ($rows as $row) {
+            if (empty($row['parent_id']) || !isset($idMap[(int) $row['id']], $idMap[(int) $row['parent_id']])) {
+                continue;
+            }
+            NavigationMenuItem::whereKey($idMap[(int) $row['id']])
+                ->update(['parent_id' => $idMap[(int) $row['parent_id']]]);
+        }
+
+        return true;
+    }
+
+    /** Restore ACPT / custom-field values, keyed by field slug (custom_fields.name). */
+    private function restoreCustomFields(Post $post, $fields): void
+    {
+        if (empty($fields) || !is_array($fields) || !Schema::hasTable('post_custom_field_values')) return;
+
+        foreach ($fields as $name => $value) {
+            if ($value === null || $value === '') continue;
+            $fieldId = DB::table('custom_fields')->where('name', $name)->value('id');
+            if (!$fieldId) continue;
+            DB::table('post_custom_field_values')->updateOrInsert(
+                ['post_id' => $post->id, 'field_id' => $fieldId],
+                ['value' => is_array($value) ? json_encode($value) : (string) $value, 'updated_at' => now(), 'created_at' => now()]
+            );
+        }
+    }
+
+    /** Restore the shop product row (+ variations) for product posts. */
+    private function restoreProductData(Post $post, string $type, $product): void
+    {
+        if ($type !== 'product' || empty($product) || !is_array($product) || !Schema::hasTable('shop_products')) return;
+
+        $variations = $product['variations'] ?? null;
+        unset($product['variations']);
+
+        $row = ProductData::updateOrCreate(
+            ['post_id' => $post->id],
+            array_merge($product, ['post_id' => $post->id])
+        );
+
+        if (is_array($variations) && Schema::hasTable('shop_product_variations')) {
+            foreach ($variations as $v) {
+                if (!is_array($v)) continue;
+                DB::table('shop_product_variations')->insert(array_merge($v, [
+                    'product_id' => $row->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]));
+            }
+        }
+    }
+
+    /** Attach custom-taxonomy terms, creating any that don't yet exist. */
+    private function restoreTaxonomyTerms(Post $post, array $terms, string $lang): void
+    {
+        if (empty($terms) || !Schema::hasTable('taxonomy_terms') || !method_exists($post, 'taxonomyTerms')) return;
+
+        $ids = [];
+        foreach ($terms as $t) {
+            if (empty($t['slug']) || empty($t['taxonomy'])) continue;
+            $term = TaxonomyTerm::firstOrCreate(
+                ['taxonomy_slug' => $t['taxonomy'], 'slug' => $t['slug']],
+                ['name' => $t['name'] ?: $t['slug'], 'lang_code' => $lang]
+            );
+            $ids[] = $term->id;
+        }
+        if ($ids) $post->taxonomyTerms()->syncWithoutDetaching(array_unique($ids));
     }
 
     /** Convenience: parse + import in one call. */

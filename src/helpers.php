@@ -84,6 +84,78 @@ if (!function_exists('falcon_elem_resp_css')) {
     }
 }
 
+if (!function_exists('falcon_max_upload_bytes')) {
+    /**
+     * The real maximum upload size (in bytes) the server allows — the smaller of
+     * PHP's `upload_max_filesize` and `post_max_size`. Returns 0 when unlimited.
+     */
+    function falcon_max_upload_bytes(): int {
+        $toBytes = function ($val): int {
+            $val = trim((string) $val);
+            if ($val === '') return 0;
+            $last = strtolower($val[strlen($val) - 1]);
+            $num  = (int) $val;
+            return match ($last) {
+                'g' => $num * 1024 * 1024 * 1024,
+                'm' => $num * 1024 * 1024,
+                'k' => $num * 1024,
+                default => $num,
+            };
+        };
+        $limits = array_filter([
+            $toBytes(ini_get('upload_max_filesize') ?: '0'),
+            $toBytes(ini_get('post_max_size') ?: '0'), // 0 = unlimited → ignored
+        ], fn ($v) => $v > 0);
+
+        return $limits ? min($limits) : 0;
+    }
+}
+
+if (!function_exists('falcon_max_upload_human')) {
+    /** Human-readable version of falcon_max_upload_bytes() (e.g. "40 MB", "1 GB"). */
+    function falcon_max_upload_human(): string {
+        $bytes = falcon_max_upload_bytes();
+        if ($bytes <= 0)                    return 'unlimited';
+        if ($bytes >= 1024 * 1024 * 1024)   return rtrim(rtrim(number_format($bytes / 1024 / 1024 / 1024, 1), '0'), '.') . ' GB';
+        if ($bytes >= 1024 * 1024)          return round($bytes / 1024 / 1024) . ' MB';
+        return round($bytes / 1024) . ' KB';
+    }
+}
+
+if (!function_exists('falcon_export_response')) {
+    /** Stream a typed payload as a pretty .json download (used by all import/export tools). */
+    function falcon_export_response(string $type, array $data, string $filename) {
+        $payload = [
+            '_type'       => $type,
+            'version'     => 1,
+            'exported_at' => now()->toIso8601String(),
+            'data'        => $data,
+        ];
+        $name = preg_replace('/[^A-Za-z0-9_\-]/', '-', $filename) ?: 'export';
+        return response()->json(
+            $payload,
+            200,
+            ['Content-Disposition' => 'attachment; filename="' . $name . '.json"'],
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+    }
+}
+
+if (!function_exists('falcon_read_import')) {
+    /** Validate + decode an uploaded .json export of the given type. Returns the `data`, or null. */
+    function falcon_read_import(\Illuminate\Http\Request $request, string $field, string $expectedType): ?array {
+        if (!$request->hasFile($field)) return null;
+        $file = $request->file($field);
+        if (strtolower($file->getClientOriginalExtension()) !== 'json') return null;
+
+        $decoded = json_decode((string) file_get_contents($file->getRealPath()), true);
+        if (!is_array($decoded) || ($decoded['_type'] ?? null) !== $expectedType || !array_key_exists('data', $decoded)) {
+            return null;
+        }
+        return is_array($decoded['data']) ? $decoded['data'] : null;
+    }
+}
+
 if (!function_exists('falcon_sanitize_html')) {
     /**
      * Strip dangerous HTML from user-supplied rich-text content.

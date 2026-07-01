@@ -74,6 +74,46 @@ class AcptTaxonomyController extends Controller
         return redirect()->route('admin.acpt.taxonomies.index')->with('success', 'Taxonomy created successfully!');
     }
 
+    public function exportTaxonomy($id)
+    {
+        $t = CustomTaxonomy::findOrFail($id);
+        return falcon_export_response('falcon_taxonomy', [
+            'name'          => $t->name,
+            'singular_name' => $t->singular_name,
+            'slug'          => $t->slug,
+            'description'   => $t->description,
+            'post_types'    => $t->post_types,
+            'hierarchical'  => (bool) $t->hierarchical,
+        ], ($t->slug ?: 'taxonomy') . '-taxonomy');
+    }
+
+    public function importTaxonomy(Request $request)
+    {
+        $request->validate(['import_file' => ['required', 'file', 'max:5120']]);
+        $d = falcon_read_import($request, 'import_file', 'falcon_taxonomy');
+        if ($d === null) {
+            return back()->with('error', 'That is not a valid Taxonomy export file.');
+        }
+
+        $base = \Illuminate\Support\Str::slug($d['slug'] ?? 'taxonomy') ?: 'taxonomy';
+        $slug = $base; $i = 1;
+        while (CustomTaxonomy::where('slug', $slug)->exists()) { $slug = $base . '-' . $i; $i++; }
+
+        $taxonomy = CustomTaxonomy::create([
+            'name'          => $d['name'] ?? 'Imported Taxonomy',
+            'singular_name' => $d['singular_name'] ?? ($d['name'] ?? 'Term'),
+            'slug'          => $slug,
+            'description'   => $d['description'] ?? null,
+            'post_types'    => is_array($d['post_types'] ?? null) ? $d['post_types'] : [],
+            'hierarchical'  => (bool) ($d['hierarchical'] ?? false),
+            'is_active'     => true,
+        ]);
+
+        $this->syncTaxonomyMenus($taxonomy);
+
+        return redirect()->route('admin.acpt.taxonomies.index')->with('success', 'Taxonomy imported successfully.');
+    }
+
     public function edit($id)
     {
         $taxonomy = CustomTaxonomy::findOrFail($id);

@@ -4,12 +4,23 @@
         <div class="flex items-center gap-4">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Field Groups</h1>
             <a href="{{ route('admin.acpt.fields.create') }}" class="wp-btn-secondary px-2 py-0.5 text-[13px]">Add New Group</a>
+            <button type="button" onclick="document.getElementById('acpt-fields-import-input').click()" class="wp-btn-outline font-normal px-2.5 py-0.5 border-[#2271b1] text-[13px]">Import</button>
+            <form id="acpt-fields-import-form" action="{{ route('admin.acpt.fields.import') }}" method="POST" enctype="multipart/form-data" class="hidden">
+                @csrf
+                <input type="file" id="acpt-fields-import-input" name="import_file" accept=".json,application/json" onchange="document.getElementById('acpt-fields-import-form').submit()">
+            </form>
         </div>
     </div>
 
     @if(session('success'))
         <div class="bg-white border-l-4 border-[#46b450] shadow-sm p-3 mb-4 text-[13px]">
             {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="bg-white border-l-4 border-[#d63638] shadow-sm p-3 mb-4 text-[13px]">
+            {{ session('error') }}
         </div>
     @endif
 
@@ -33,6 +44,8 @@
                         </div>
                         <div class="flex gap-2 text-[12px] opacity-0 group-hover:opacity-100 transition-opacity">
                             <a href="{{ route('admin.acpt.fields.edit', $group) }}" class="text-[#2271b1] hover:text-[#135e96]">Edit</a>
+                            <span class="text-[#c3c4c7]">|</span>
+                            <a href="{{ route('admin.acpt.fields.export', $group) }}" class="text-[#2271b1] hover:text-[#135e96]">Export</a>
                             <span class="text-[#c3c4c7]">|</span>
                             <form id="delete-group-{{ $group->id }}" action="{{ route('admin.acpt.fields.destroy', $group) }}" method="POST" class="inline">
                                 @csrf @method('DELETE')

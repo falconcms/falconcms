@@ -20,7 +20,7 @@
             <p class="text-[14px] text-[#646970] mb-4">or click to browse</p>
             <input type="file" id="media-page-upload-input" class="hidden" multiple {!! $accept ? 'accept="'.$accept.'"' : '' !!}>
             <span class="wp-btn-secondary px-6 pointer-events-none">Select Files</span>
-            <p class="mt-6 text-[12px] text-[#646970]">Maximum upload file size: 10 MB.</p>
+            <p class="mt-6 text-[12px] text-[#646970]">Maximum upload file size: {{ falcon_max_upload_human() }} <span class="text-[#9ca3af]">(server limit)</span>.</p>
         </div>
     </div>
 

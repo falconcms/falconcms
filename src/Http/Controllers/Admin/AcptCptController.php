@@ -251,6 +251,76 @@ class AcptCptController extends Controller
         return redirect()->route('admin.acpt.cpt.index')->with('success', 'Custom Post Type created successfully!');
     }
 
+    public function exportCpt($id)
+    {
+        $pt = \FalconCms\Core\Models\PostType::findOrFail($id);
+        return falcon_export_response('falcon_cpt', [
+            'name'          => $pt->name,
+            'singular_name' => $pt->singular_name,
+            'slug'          => $pt->slug,
+            'description'   => $pt->description,
+            'icon'          => $pt->icon,
+            'supports'      => $pt->supports,
+            'show_in_menu'  => (bool) $pt->show_in_menu,
+            'is_public'     => (bool) $pt->is_public,
+        ], ($pt->slug ?: 'cpt') . '-cpt');
+    }
+
+    public function importCpt(Request $request)
+    {
+        $request->validate(['import_file' => ['required', 'file', 'max:5120']]);
+        $d = falcon_read_import($request, 'import_file', 'falcon_cpt');
+        if ($d === null) {
+            return back()->with('error', 'That is not a valid Custom Post Type export file.');
+        }
+
+        $slug = $this->uniqueColumnValue('post_types', 'slug', \Illuminate\Support\Str::slug($d['slug'] ?? 'cpt') ?: 'cpt');
+
+        $pt = \FalconCms\Core\Models\PostType::create([
+            'name'          => $d['name'] ?? 'Imported Type',
+            'singular_name' => $d['singular_name'] ?? ($d['name'] ?? 'Item'),
+            'slug'          => $slug,
+            'description'   => $d['description'] ?? null,
+            'icon'          => $d['icon'] ?? null,
+            'supports'      => is_array($d['supports'] ?? null) ? $d['supports'] : ['title'],
+            'is_builtin'    => false,
+            'is_active'     => true,
+            'show_in_menu'  => (bool) ($d['show_in_menu'] ?? true),
+            'is_public'     => (bool) ($d['is_public'] ?? true),
+        ]);
+
+        if ($pt->is_active && $pt->show_in_menu) {
+            $this->buildCptMenu($pt);
+        }
+
+        return redirect()->route('admin.acpt.cpt.index')->with('success', 'Custom Post Type imported successfully.');
+    }
+
+    /** Create the admin sidebar menu (parent + All/Add New) for a CPT — mirrors store(). */
+    private function buildCptMenu(\FalconCms\Core\Models\PostType $pt): void
+    {
+        $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
+        $parentMenu = \FalconCms\Core\Models\Menu::create([
+            'title' => $pt->name,
+            'route' => '/admin/posts?type=' . $pt->slug,
+            'icon'  => $pt->icon ?: $defaultIcon,
+            'group' => 'Main',
+            'order' => 50 + $pt->id,
+        ]);
+        \FalconCms\Core\Models\Menu::create(['parent_id' => $parentMenu->id, 'title' => 'All ' . $pt->name, 'route' => '/admin/posts?type=' . $pt->slug, 'order' => 1]);
+        \FalconCms\Core\Models\Menu::create(['parent_id' => $parentMenu->id, 'title' => 'Add New', 'route' => '/admin/posts/create?type=' . $pt->slug, 'order' => 2]);
+    }
+
+    /** Return $value or $value-1, -2… so it is unique in the given table column. */
+    private function uniqueColumnValue(string $table, string $column, string $value): string
+    {
+        $base = $value; $i = 1;
+        while (\Illuminate\Support\Facades\DB::table($table)->where($column, $value)->exists()) {
+            $value = $base . '-' . $i; $i++;
+        }
+        return $value;
+    }
+
     public function edit($id)
     {
         $postType = \FalconCms\Core\Models\PostType::findOrFail($id);

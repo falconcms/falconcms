@@ -4,11 +4,22 @@
         <div class="flex items-center mb-4">
             <h1 class="text-[22px] font-normal text-[#1d2327] mr-3">Custom Post Types</h1>
             <a href="{{ route('admin.acpt.cpt.create') ?? '#' }}" class="wp-btn-outline font-normal px-2.5 py-0.5 border-[#2271b1]">Add New</a>
+            <button type="button" onclick="document.getElementById('acpt-cpt-import-input').click()" class="wp-btn-outline font-normal px-2.5 py-0.5 border-[#2271b1] ml-2">Import</button>
+            <form id="acpt-cpt-import-form" action="{{ route('admin.acpt.cpt.import') }}" method="POST" enctype="multipart/form-data" class="hidden">
+                @csrf
+                <input type="file" id="acpt-cpt-import-input" name="import_file" accept=".json,application/json" onchange="document.getElementById('acpt-cpt-import-form').submit()">
+            </form>
         </div>
 
         @if(session('success'))
             <div class="bg-white border-l-4 border-[#00a32a] p-3 mb-4 shadow-[0_1px_1px_rgba(0,0,0,0.04)] text-[13px] text-[#1d2327]">
                 <p>{{ session('success') }}</p>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="bg-white border-l-4 border-[#d63638] p-3 mb-4 shadow-[0_1px_1px_rgba(0,0,0,0.04)] text-[13px] text-[#1d2327]">
+                <p>{{ session('error') }}</p>
             </div>
         @endif
 
@@ -107,7 +118,8 @@
                                         <form action="{{ route('admin.acpt.cpt.duplicate', $type->id) }}" method="POST" class="inline m-0 p-0 leading-none">
                                             @csrf
                                             <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Duplicate</button>
-                                        </form> <span class="text-[#c3c4c7]">|</span> 
+                                        </form> <span class="text-[#c3c4c7]">|</span>
+                                        <a href="{{ route('admin.acpt.cpt.export', $type->id) }}" class="text-[#2271b1] hover:underline">Export</a> <span class="text-[#c3c4c7]">|</span>
                                         <form id="trash-form-{{ $type->id }}" action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
                                             @csrf
                                             <input type="hidden" name="action" value="trash">

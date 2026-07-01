@@ -5,11 +5,13 @@ namespace FalconCms\Core\Support;
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Comment;
 use FalconCms\Core\Models\CustomTaxonomy;
-use FalconCms\Core\Models\Media;
+use FalconCms\Core\Models\NavigationMenu;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Models\ProductData;
 use FalconCms\Core\Models\Tag;
 use FalconCms\Core\Models\TaxonomyTerm;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -98,13 +100,19 @@ class ExportManager
             ];
         }
 
-        // ── Media library ──
-        $sources[] = [
-            'key'   => 'media',
-            'label' => 'Media',
-            'group' => 'Library',
-            'count' => Media::count(),
-        ];
+        // Media is intentionally NOT an export source here — media export/import
+        // is handled by the Backup tool (Tools → Backup), which bundles the files
+        // and the media-library records together.
+
+        // ── Navigation menus (header/footer/custom) ──
+        if (self::tableExists('navigation_menus')) {
+            $sources[] = [
+                'key'   => 'nav_menu',
+                'label' => 'Navigation Menus',
+                'group' => 'Appearance',
+                'count' => NavigationMenu::count(),
+            ];
+        }
 
         /**
          * Let any feature contribute its own exportable source. Future features
@@ -163,8 +171,8 @@ class ExportManager
                 self::collectPostType($type, $itemsXml, $authors);
             } elseif (Str::startsWith($key, 'taxonomy:')) {
                 self::collectTaxonomy(Str::after($key, 'taxonomy:'), $termsXml);
-            } elseif ($key === 'media') {
-                self::collectMedia($itemsXml, $authors);
+            } elseif ($key === 'nav_menu') {
+                self::collectNavMenus($termsXml);
             }
         }
 
@@ -197,28 +205,6 @@ class ExportManager
         });
     }
 
-    protected static function collectMedia(array &$items, array &$authors): void
-    {
-        Media::orderBy('id')->chunk(200, function ($all) use (&$items, &$authors) {
-            foreach ($all as $m) {
-                $user = self::resolveUser($m->user_id ?? null);
-                if ($user) $authors[$user->id] = $user;
-                $items[] = self::mediaItem($m, $user);
-            }
-        });
-    }
-
-    protected static function resolveUser($id)
-    {
-        static $cache = [];
-        if (!$id) return null;
-        if (!array_key_exists($id, $cache)) {
-            $model = config('auth.providers.users.model', \App\Models\User::class);
-            $cache[$id] = class_exists($model) ? $model::find($id) : null;
-        }
-        return $cache[$id];
-    }
-
     protected static function collectTaxonomy(string $taxonomy, array &$terms): void
     {
         if ($taxonomy === 'category') {
@@ -236,6 +222,69 @@ class ExportManager
         foreach (TaxonomyTerm::where('taxonomy_slug', $taxonomy)->orderBy('id')->get() as $term) {
             $terms[] = self::customTerm($taxonomy, $term);
         }
+    }
+
+    /**
+     * Navigation menus are exported as `nav_menu` terms, each carrying a
+     * `_falcon_menu` termmeta with the complete menu tree (name, location,
+     * flags and every item). This round-trips losslessly through the WXR
+     * importer while remaining WordPress-compatible (WP ignores the meta).
+     */
+    protected static function collectNavMenus(array &$terms): void
+    {
+        foreach (NavigationMenu::orderBy('id')->get() as $menu) {
+            $terms[] = self::navMenuTerm($menu);
+        }
+    }
+
+    protected static function navMenuTerm(NavigationMenu $menu): string
+    {
+        $slug = $menu->slug ?: Str::slug($menu->name ?: ('menu-' . $menu->id)) ?: ('menu-' . $menu->id);
+        $payload = json_encode(self::menuPayload($menu), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        $xml  = "\t<wp:term>\n";
+        $xml .= "\t\t<wp:term_id>" . (int) $menu->id . "</wp:term_id>\n";
+        $xml .= "\t\t<wp:term_taxonomy>" . self::cdata('nav_menu') . "</wp:term_taxonomy>\n";
+        $xml .= "\t\t<wp:term_slug>" . self::cdata($slug) . "</wp:term_slug>\n";
+        $xml .= "\t\t<wp:term_name>" . self::cdata((string) ($menu->name ?: $slug)) . "</wp:term_name>\n";
+        $xml .= "\t\t<wp:termmeta>\n";
+        $xml .= "\t\t\t<wp:meta_key>" . self::cdata('_falcon_menu') . "</wp:meta_key>\n";
+        $xml .= "\t\t\t<wp:meta_value>" . self::cdata((string) $payload) . "</wp:meta_value>\n";
+        $xml .= "\t\t</wp:termmeta>\n";
+        $xml .= "\t</wp:term>\n";
+        return $xml;
+    }
+
+    /** Full, self-contained representation of a menu and its items. */
+    protected static function menuPayload(NavigationMenu $menu): array
+    {
+        $items = [];
+        foreach ($menu->allItems as $it) {
+            $items[] = [
+                'id'             => (int) $it->id,
+                'parent_id'      => $it->parent_id !== null ? (int) $it->parent_id : null,
+                'title'          => (string) $it->title,
+                'url'            => (string) $it->url,
+                'type'           => (string) $it->type,
+                'object_id'      => $it->object_id,
+                'target'         => (string) $it->target,
+                'classes'        => (string) $it->classes,
+                'icon'           => (string) $it->icon,
+                'show_only_icon' => (int) $it->show_only_icon,
+                'order'          => (int) $it->order,
+                'mega_menu_id'   => $it->mega_menu_id,
+            ];
+        }
+
+        return [
+            'name'      => (string) $menu->name,
+            'slug'      => (string) ($menu->slug ?: Str::slug($menu->name ?: ('menu-' . $menu->id))),
+            'location'  => $menu->location,
+            'lang_code' => $menu->lang_code,
+            'is_header' => (int) $menu->is_header,
+            'is_footer' => (int) $menu->is_footer,
+            'items'     => $items,
+        ];
     }
 
     // ───────────────────────────── item builders ──────────────────────────
@@ -325,7 +374,73 @@ class ExportManager
         if (!empty($post->gallery)) {
             $meta['_falcon_gallery'] = $post->gallery;
         }
+
+        // ACPT / custom-field values, keyed by field slug (custom_fields.name) so
+        // they can be re-mapped on import regardless of local field ids.
+        $customFields = self::postCustomFields($post);
+        if (!empty($customFields)) {
+            $meta['_falcon_custom_fields'] = $customFields;
+        }
+
+        // Full product (shop) data for e-commerce products.
+        $product = self::postProductData($post);
+        if (!empty($product)) {
+            $meta['_falcon_product'] = $product;
+        }
+
         return $meta;
+    }
+
+    /** Custom field values for a post as [field_slug => value]. */
+    protected static function postCustomFields(Post $post): array
+    {
+        if (!self::tableExists('post_custom_field_values') || !self::tableExists('custom_fields')) {
+            return [];
+        }
+        try {
+            return DB::table('post_custom_field_values')
+                ->join('custom_fields', 'post_custom_field_values.field_id', '=', 'custom_fields.id')
+                ->where('post_custom_field_values.post_id', $post->id)
+                ->whereNotNull('post_custom_field_values.value')
+                ->pluck('post_custom_field_values.value', 'custom_fields.name')
+                ->all();
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /** Shop product row (+ variations & downloads) for product posts. */
+    protected static function postProductData(Post $post): array
+    {
+        if (($post->type ?? null) !== 'product' || !self::tableExists('shop_products')) {
+            return [];
+        }
+        try {
+            $p = ProductData::where('post_id', $post->id)->first();
+            if (!$p) return [];
+
+            $data = [
+                'type'              => $p->type,
+                'product_type'      => $p->product_type,
+                'price'             => $p->price,
+                'sale_price'        => $p->sale_price,
+                'sale_ends_at'      => $p->sale_ends_at ? $p->sale_ends_at->format('Y-m-d H:i:s') : null,
+                'sku'               => $p->sku,
+                'stock_quantity'    => $p->stock_quantity,
+                'stock_status'      => $p->stock_status,
+                'manage_stock'      => (int) $p->manage_stock,
+                'short_description' => $p->short_description,
+                'attributes'        => $p->attributes,
+                'attributes_data'   => $p->attributes_data,
+            ];
+            if (method_exists($p, 'variations') && self::tableExists('shop_product_variations')) {
+                $data['variations'] = $p->variations->map(fn ($v) => collect($v->getAttributes())
+                    ->except(['id', 'product_id', 'created_at', 'updated_at'])->all())->all();
+            }
+            return $data;
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     protected static function commentBlock(Comment $comment): string
@@ -342,38 +457,6 @@ class ExportManager
         $xml .= "\t\t\t<wp:comment_approved>" . self::cdata($approved === 'approved' || $approved === '1' ? '1' : '0') . "</wp:comment_approved>\n";
         $xml .= "\t\t\t<wp:comment_parent>" . (int) ($comment->parent_id ?? 0) . "</wp:comment_parent>\n";
         $xml .= "\t\t</wp:comment>\n";
-        return $xml;
-    }
-
-    protected static function mediaItem(Media $m, $user = null): string
-    {
-        $url    = method_exists($m, 'getUrlAttribute') ? $m->url : asset('storage/' . $m->path);
-        $date   = $m->created_at ?: now();
-        $login  = self::authorLogin($user);
-        $title  = $m->title ?: $m->filename;
-
-        $xml  = "\t<item>\n";
-        $xml .= "\t\t<title>" . self::esc($title) . "</title>\n";
-        $xml .= "\t\t<link>" . self::esc($url) . "</link>\n";
-        $xml .= "\t\t<pubDate>" . self::esc($date->toRfc2822String()) . "</pubDate>\n";
-        $xml .= "\t\t<dc:creator>" . self::cdata($login) . "</dc:creator>\n";
-        $xml .= "\t\t<guid isPermaLink=\"false\">" . self::esc($url) . "</guid>\n";
-        $xml .= "\t\t<description></description>\n";
-        $xml .= "\t\t<content:encoded>" . self::cdata((string) $m->description) . "</content:encoded>\n";
-        $xml .= "\t\t<excerpt:encoded>" . self::cdata((string) $m->caption) . "</excerpt:encoded>\n";
-        $xml .= "\t\t<wp:post_id>" . (int) $m->id . "</wp:post_id>\n";
-        $xml .= "\t\t<wp:post_date>" . self::cdata($date->format('Y-m-d H:i:s')) . "</wp:post_date>\n";
-        $xml .= "\t\t<wp:post_name>" . self::cdata(Str::slug(pathinfo($m->filename, PATHINFO_FILENAME))) . "</wp:post_name>\n";
-        $xml .= "\t\t<wp:status>" . self::cdata('inherit') . "</wp:status>\n";
-        $xml .= "\t\t<wp:post_parent>0</wp:post_parent>\n";
-        $xml .= "\t\t<wp:menu_order>0</wp:menu_order>\n";
-        $xml .= "\t\t<wp:post_type>" . self::cdata('attachment') . "</wp:post_type>\n";
-        $xml .= "\t\t<wp:attachment_url>" . self::cdata($url) . "</wp:attachment_url>\n";
-        if (!empty($m->alt_text)) {
-            $xml .= "\t\t<wp:postmeta>\n\t\t\t<wp:meta_key>" . self::cdata('_wp_attachment_image_alt')
-                  . "</wp:meta_key>\n\t\t\t<wp:meta_value>" . self::cdata($m->alt_text) . "</wp:meta_value>\n\t\t</wp:postmeta>\n";
-        }
-        $xml .= "\t</item>\n";
         return $xml;
     }
 
@@ -507,6 +590,15 @@ class ExportManager
     {
         try {
             return \Illuminate\Support\Facades\Schema::hasColumn($table, $column);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    protected static function tableExists(string $table): bool
+    {
+        try {
+            return \Illuminate\Support\Facades\Schema::hasTable($table);
         } catch (\Throwable $e) {
             return false;
         }

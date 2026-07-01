@@ -71,6 +71,62 @@ class CustomFieldController extends Controller
         return redirect()->route('admin.acpt.fields.index')->with('success', 'Field group and fields created successfully.');
     }
 
+    public function exportGroup(FieldGroup $field)
+    {
+        $field->load('fields');
+        return falcon_export_response('falcon_field_group', [
+            'title'       => $field->title,
+            'description' => $field->description,
+            'rules'       => $field->rules,
+            'order'       => (int) $field->order,
+            'is_active'   => (bool) $field->is_active,
+            'fields'      => $field->fields->map(fn ($f) => [
+                'label'        => $f->label,
+                'name'         => $f->name,
+                'type'         => $f->type,
+                'instructions' => $f->instructions,
+                'required'     => (bool) $f->required,
+                'params'       => $f->params,
+                'order'        => (int) $f->order,
+            ])->values()->all(),
+        ], (\Illuminate\Support\Str::slug($field->title ?: 'field-group') ?: 'field-group') . '-fields');
+    }
+
+    public function importGroup(Request $request)
+    {
+        $request->validate(['import_file' => ['required', 'file', 'max:5120']]);
+        $d = falcon_read_import($request, 'import_file', 'falcon_field_group');
+        if ($d === null) {
+            return back()->with('error', 'That is not a valid Field Group export file.');
+        }
+
+        $group = FieldGroup::create([
+            'title'       => $d['title'] ?? 'Imported Field Group',
+            'description' => $d['description'] ?? null,
+            'rules'       => is_array($d['rules'] ?? null) ? $d['rules'] : null,
+            'order'       => (int) ($d['order'] ?? 0),
+            'is_active'   => (bool) ($d['is_active'] ?? true),
+        ]);
+
+        $order = 0;
+        foreach ((is_array($d['fields'] ?? null) ? $d['fields'] : []) as $f) {
+            if (empty($f['label']) || empty($f['name'])) continue;
+            Field::create([
+                'field_group_id' => $group->id,
+                'label'          => $f['label'],
+                'name'           => $f['name'],
+                'type'           => $f['type'] ?? 'text',
+                'instructions'   => $f['instructions'] ?? null,
+                'required'       => (bool) ($f['required'] ?? false),
+                'params'         => is_array($f['params'] ?? null) ? $f['params'] : [],
+                'order'          => (int) ($f['order'] ?? $order),
+            ]);
+            $order++;
+        }
+
+        return redirect()->route('admin.acpt.fields.index')->with('success', 'Field group imported successfully.');
+    }
+
     public function edit(FieldGroup $field)
     {
         $field->load('fields');

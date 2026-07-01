@@ -23,15 +23,15 @@
                     <h2 class="text-[14px] font-semibold text-[#1d2327]">Import Result</h2>
                 </div>
                 <div class="p-5">
-                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 text-center mb-4">
-                        @foreach(['posts'=>'Posts','pages'=>'Pages','cpt'=>'Custom','categories'=>'Categories','tags'=>'Tags','skipped'=>'Skipped'] as $k => $label)
+                    <div class="grid grid-cols-3 sm:grid-cols-7 gap-3 text-center mb-4">
+                        @foreach(['posts'=>'Posts','pages'=>'Pages','cpt'=>'Custom','categories'=>'Categories','tags'=>'Tags','menus'=>'Menus','skipped'=>'Skipped'] as $k => $label)
                             <div class="border border-[#f0f0f1] rounded py-3">
                                 <div class="text-[22px] font-semibold text-[#1d2327]">{{ $s[$k] ?? 0 }}</div>
                                 <div class="text-[11px] text-[#646970] uppercase">{{ $label }}</div>
                             </div>
                         @endforeach
                     </div>
-                    @php $__new = ($s['posts']??0)+($s['pages']??0)+($s['cpt']??0)+($s['categories']??0)+($s['tags']??0); @endphp
+                    @php $__new = ($s['posts']??0)+($s['pages']??0)+($s['cpt']??0)+($s['categories']??0)+($s['tags']??0)+($s['menus']??0); @endphp
                     @if($__new === 0)
                         <div class="bg-[#fcf9e8] border-l-4 border-[#dba617] p-3 text-[13px] text-[#1d2327] mb-2">
                             <strong>Nothing new was imported.</strong> Every item in this file already exists on this site, so it was skipped — existing content is never overwritten. This is expected when re-importing an export back into the same site. To populate a different or empty site, run the import there instead.

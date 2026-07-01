@@ -202,9 +202,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         Route::post('cpt/bulk', [AcptCptController::class, 'bulk'])->name('cpt.bulk');
         Route::post('cpt/{id}/toggle-status', [AcptCptController::class, 'toggleStatus'])->name('cpt.toggle-status');
         Route::post('cpt/{id}/duplicate', [AcptCptController::class, 'duplicate'])->name('cpt.duplicate');
+        Route::get('cpt/{id}/export', [AcptCptController::class, 'exportCpt'])->name('cpt.export');
+        Route::post('cpt-import', [AcptCptController::class, 'importCpt'])->name('cpt.import');
         Route::resource('cpt', AcptCptController::class);
-        
+
         Route::post('taxonomies/bulk', [AcptTaxonomyController::class, 'bulk'])->name('taxonomies.bulk');
+        Route::get('taxonomies/{id}/export', [AcptTaxonomyController::class, 'exportTaxonomy'])->name('taxonomies.export');
+        Route::post('taxonomies-import', [AcptTaxonomyController::class, 'importTaxonomy'])->name('taxonomies.import');
         Route::resource('taxonomies', AcptTaxonomyController::class)->except(['show']);
         Route::post('tax-terms/ajax', [AcptTermController::class, 'ajax'])->name('terms.ajax');
         Route::get('tax-terms/{taxonomySlug}', [AcptTermController::class, 'index'])->name('terms.index');
@@ -215,6 +219,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         Route::delete('tax-terms/{taxonomySlug}/{id}', [AcptTermController::class, 'destroy'])->name('terms.destroy');
         Route::delete('fields/delete-field/{field}', [CustomFieldController::class, 'deleteField'])->name('fields.delete-field');
         Route::post('fields/store-field', [CustomFieldController::class, 'storeField'])->name('fields.store-field');
+        Route::get('fields/{field}/export', [CustomFieldController::class, 'exportGroup'])->name('fields.export');
+        Route::post('fields-import', [CustomFieldController::class, 'importGroup'])->name('fields.import');
         Route::resource('fields', CustomFieldController::class);
     });
  

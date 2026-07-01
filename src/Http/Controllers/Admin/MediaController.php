@@ -77,8 +77,11 @@ class MediaController extends Controller
     public function store(Request $request)
     {
         try {
+            // Cap uploads at the real server limit (upload_max_filesize / post_max_size)
+            // so the accepted size matches what the upload page shows.
+            $maxKb = (int) (falcon_max_upload_bytes() / 1024);
             $request->validate([
-                'file' => 'required|file|max:51200', // 50MB max
+                'file' => 'required|file' . ($maxKb > 0 ? '|max:' . $maxKb : ''),
             ]);
 
             $file = $request->file('file');
