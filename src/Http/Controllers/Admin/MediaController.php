@@ -231,7 +231,7 @@ class MediaController extends Controller
         $mediaItems = Media::whereIn('id', $ids)->get();
         foreach ($mediaItems as $item) {
             $name = $item->filename;
-            Storage::disk('public')->delete($item->path);
+            $this->deleteMediaFiles($item->path);
             $item->delete();
             falcon_log_activity('deleted', "Deleted media: {$name}");
         }
@@ -287,10 +287,36 @@ class MediaController extends Controller
     public function destroy(Media $media)
     {
         $name = $media->filename;
-        Storage::disk('public')->delete($media->path);
+        $this->deleteMediaFiles($media->path);
         $media->delete();
         falcon_log_activity('deleted', "Deleted media: {$name}");
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Delete a media file plus any generated size variants ("name-WIDTHxHEIGHT.ext")
+     * sitting next to it — matching WordPress' behaviour of removing every size when
+     * an attachment is deleted. Variant files that are themselves tracked as their
+     * own media item are left alone.
+     */
+    private function deleteMediaFiles(string $path): void
+    {
+        $disk = Storage::disk('public');
+        $disk->delete($path); // the original
+
+        $info = pathinfo($path);
+        if (empty($info['filename'])) return;
+
+        $folder  = (!isset($info['dirname']) || $info['dirname'] === '.' || $info['dirname'] === '') ? '' : $info['dirname'];
+        $ext     = $info['extension'] ?? '';
+        $pattern = '/^' . preg_quote($info['filename'], '/') . '-\d+x\d+'
+                 . ($ext !== '' ? '\.' . preg_quote($ext, '/') : '') . '$/i';
+
+        foreach ($disk->files($folder) as $f) {
+            if (preg_match($pattern, basename($f)) && !Media::where('path', $f)->exists()) {
+                $disk->delete($f);
+            }
+        }
     }
 
     public function bulkOptimize()

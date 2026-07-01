@@ -26,10 +26,26 @@
                     class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white text-[13px] font-semibold rounded transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-[16px]">add</span> New Post Card
             </button>
+            <form id="btn-import-post-card" action="{{ route('admin.falcon-builder.post-cards.import') }}" method="POST" enctype="multipart/form-data" class="inline">
+                @csrf
+                <input type="file" name="library_file" accept=".json,application/json" class="hidden" id="pc-import-file" onchange="this.form.submit()">
+                <button type="button" onclick="document.getElementById('pc-import-file').click()"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] text-[13px] font-semibold rounded transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">upload</span> Import
+                </button>
+            </form>
             <button id="btn-new-mega-menu" onclick="openMegaMenuModal()" style="display:none"
                     class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white text-[13px] font-semibold rounded transition-colors shadow-sm">
                 <span class="material-symbols-outlined text-[16px]">add</span> New Mega Menu
             </button>
+            <form id="btn-import-mega-menu" action="{{ route('admin.falcon-builder.mega-menus.import') }}" method="POST" enctype="multipart/form-data" class="inline" style="display:none">
+                @csrf
+                <input type="file" name="library_file" accept=".json,application/json" class="hidden" id="mm-import-file" onchange="this.form.submit()">
+                <button type="button" onclick="document.getElementById('mm-import-file').click()"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] text-[13px] font-semibold rounded transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">upload</span> Import
+                </button>
+            </form>
         </div>
     </div>
 
@@ -50,6 +66,13 @@
             'elements'       => $library['elements'],
         ];
     @endphp
+
+    @if(session('success'))
+        <div class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-2.5 rounded text-[13px]">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-2.5 rounded text-[13px]">{{ session('error') }}</div>
+    @endif
 
     <div class="bg-white border border-[#c3c4c7] rounded-sm shadow-sm overflow-hidden">
 
@@ -125,6 +148,10 @@
                                    class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center gap-1">
                                     <span class="material-symbols-outlined text-[13px]">edit</span> Edit
                                 </a>
+                                <a href="{{ route('admin.falcon-builder.post-cards.export', $card['id']) }}" title="Export as .json"
+                                   class="py-1.5 px-2 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[13px]">download</span>
+                                </a>
                                 <button onclick="deletePostCard('{{ $card['id'] }}')"
                                         class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors flex items-center justify-center gap-1">
                                     <span class="material-symbols-outlined text-[13px]">delete</span> Delete
@@ -160,6 +187,10 @@
                                 <a href="{{ route('admin.falcon-builder.mega-menus.builder', $mm['id']) }}"
                                    class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center gap-1">
                                     <span class="material-symbols-outlined text-[13px]">edit</span> Edit
+                                </a>
+                                <a href="{{ route('admin.falcon-builder.mega-menus.export', $mm['id']) }}" title="Export as .json"
+                                   class="py-1.5 px-2 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[13px]">download</span>
                                 </a>
                                 <button onclick="deleteMegaMenu('{{ $mm['id'] }}')"
                                         class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors flex items-center justify-center gap-1">
@@ -262,8 +293,12 @@ function switchTab(key) {
     // Toggle header action buttons
     const btnCard = document.getElementById('btn-new-post-card');
     const btnMega = document.getElementById('btn-new-mega-menu');
+    const impCard = document.getElementById('btn-import-post-card');
+    const impMega = document.getElementById('btn-import-mega-menu');
     if (btnCard) btnCard.style.display = key === 'post_cards' ? '' : 'none';
     if (btnMega) btnMega.style.display = key === 'mega_menus' ? '' : 'none';
+    if (impCard) impCard.style.display = key === 'post_cards' ? 'inline' : 'none';
+    if (impMega) impMega.style.display = key === 'mega_menus' ? 'inline' : 'none';
 }
 
 function deleteLibItem(type, id) {

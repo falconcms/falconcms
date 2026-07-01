@@ -94,8 +94,9 @@ class LoginController extends Controller
                 return back()->withErrors(['email' => 'Your account is restricted.'])->onlyInput('email');
             }
 
-            // Block sign-in until the email address has been verified.
-            if (is_null($user->email_verified_at)) {
+            // Block sign-in until the email address has been verified — but only when
+            // the site requires it (Settings → Membership → "Require email verification").
+            if (get_cms_option('require_email_verification', '1') === '1' && is_null($user->email_verified_at)) {
                 Auth::logout();
                 $request->session()->put('pending_verification_email', $user->email);
                 return redirect()->route('admin.verify.notice')

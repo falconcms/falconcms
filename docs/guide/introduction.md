@@ -17,7 +17,7 @@ Most Laravel CMS solutions are either too simple or require you to rebuild every
 | Requirement | Version |
 |---|---|
 | PHP | 8.1+ |
-| Laravel | 10, 11, or 12 |
+| Laravel | 10, 11, 12, or 13 |
 | Database | **MySQL 5.7+** (recommended) or **MariaDB 10.3+** |
 
 ::: tip Database support

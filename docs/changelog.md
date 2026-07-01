@@ -5,7 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.7.3 <Badge type="tip" text="Latest" /> {#v1-7-3}
+## v1.7.4 <Badge type="tip" text="Latest" /> {#v1-7-4}
+
+**Released: 2026-06-30**
+
+A portability & accounts release: import/export for forms and builder-library items, an email-verification toggle, and a much smarter media backup/restore. Now officially runs on **Laravel 13** as well.
+
+### Added
+- **Form import/export** — every form can be exported to a portable `.json` file (structure + settings) and imported on any FalconCMS site as a new form, straight from the Forms list
+- **Post Card & Mega Menu import/export** — builder-library items export to `.json` and import back as new items (with fresh IDs), so designs move easily between sites
+- **"Require email verification" toggle** — *Settings → Membership* now lets the site owner choose whether new users must verify their email before signing in, or are logged in immediately after registering
+
+### Changed
+- **Smarter media backup & restore** — a *media-only* backup now bundles the Media Library records too, so restoring brings the library entries back (not just the files); restore also **auto-detects and strips a wrapper folder** (e.g. when a downloaded backup was unzipped and re-zipped), and preserves the full `Year/Month` folder structure
+- **Deleting a media item now removes its generated size variants** too (e.g. `image-300x200.jpg`), matching WordPress — files that are tracked as their own media item are left alone
+- **Honest registration feedback** — if the verification email can't be sent, registration now says so plainly instead of falsely claiming a link was sent
+- **Laravel 13 support** — added to the documented requirements (Laravel 10, 11, 12, or 13)
+
+### Fixed
+- Media-only restore now places files at their correct paths (including the `media/` sub-folder) instead of flattening them
+
+## v1.7.3 {#v1-7-3}
 
 **Released: 2026-06-30**
 

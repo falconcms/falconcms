@@ -55,6 +55,86 @@ class FormController extends Controller
         return response()->json(['success' => true, 'message' => 'Form saved successfully.']);
     }
 
+    /** Download a form (structure + settings, no submissions) as a portable .json file. */
+    public function export($id)
+    {
+        $form = Form::findOrFail($id);
+
+        $payload = [
+            '_type'       => 'falcon_form',
+            'version'     => 1,
+            'exported_at' => now()->toIso8601String(),
+            'form'        => [
+                // The whole form (labels, validation, success message, layout,
+                // colours, etc.) lives in fields + settings — that's everything.
+                'title'    => $form->title,
+                'fields'   => $form->fields   ?? [],
+                'settings' => $form->settings ?? [],
+            ],
+        ];
+
+        $filename = (Str::slug($form->title ?: 'form') ?: 'form') . '-form.json';
+
+        return response()->json(
+            $payload,
+            200,
+            ['Content-Disposition' => 'attachment; filename="' . $filename . '"'],
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+    }
+
+    /** Create a new form from an uploaded .json export (portable across FalconCMS sites). */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'form_file' => [
+                'required', 'file', 'max:5120',
+                function ($attribute, $value, $fail) {
+                    if (strtolower($value->getClientOriginalExtension()) !== 'json') {
+                        $fail('Please upload a .json form export file.');
+                    }
+                },
+            ],
+        ], ['form_file.max' => 'The file is too large (max 5 MB).']);
+
+        $data = json_decode((string) file_get_contents($request->file('form_file')->getRealPath()), true);
+
+        if (!is_array($data) || ($data['_type'] ?? null) !== 'falcon_form' || empty($data['form']) || !is_array($data['form'])) {
+            return back()->with('error', 'That file is not a valid FalconCMS form export.');
+        }
+
+        $f     = $data['form'];
+        $title = trim((string) ($f['title'] ?? '')) ?: 'Imported Form';
+
+        $form = Form::create([
+            'title'    => $title,
+            'slug'     => $this->uniqueFormSlug($title),
+            'fields'   => is_array($f['fields']   ?? null) ? $f['fields']   : [],
+            'settings' => is_array($f['settings'] ?? null) ? $f['settings'] : [],
+            'status'   => true,
+        ]);
+
+        if (function_exists('falcon_log_activity')) {
+            falcon_log_activity('created', "Imported form: {$form->title}", $form);
+        }
+
+        return redirect()->route('admin.forms.builder', $form->id)
+            ->with('success', 'Form imported successfully — review it and save.');
+    }
+
+    /** Build a slug that doesn't collide with an existing form. */
+    private function uniqueFormSlug(string $title): string
+    {
+        $base = Str::slug($title) ?: 'form';
+        $slug = $base;
+        $i = 1;
+        while (Form::where('slug', $slug)->exists()) {
+            $slug = $base . '-' . $i;
+            $i++;
+        }
+        return $slug;
+    }
+
     public function submissions($id)
     {
         $form = Form::findOrFail($id);

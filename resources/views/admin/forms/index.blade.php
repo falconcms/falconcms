@@ -8,14 +8,29 @@
                 <h1 class="text-2xl font-black text-gray-900">Forms</h1>
                 <p class="text-gray-500 text-sm mt-1">Create and manage your contact forms.</p>
             </div>
-            <a href="{{ route('admin.forms.create') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                New Form
-            </a>
+            <div class="flex items-center gap-2">
+                <form action="{{ route('admin.forms.import') }}" method="POST" enctype="multipart/form-data" id="form-import-form" class="inline">
+                    @csrf
+                    <input type="file" name="form_file" id="form_file" accept=".json,application/json" class="hidden"
+                           onchange="document.getElementById('form-import-form').submit()">
+                    <button type="button" onclick="document.getElementById('form_file').click()"
+                            class="inline-flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">upload</span>
+                        Import
+                    </button>
+                </form>
+                <a href="{{ route('admin.forms.create') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                    New Form
+                </a>
+            </div>
         </div>
 
         @if(session('success'))
             <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6 text-sm">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 text-sm">{{ session('error') }}</div>
         @endif
 
         @if($forms->isEmpty())
@@ -59,6 +74,9 @@
                                         </a>
                                         <a href="{{ route('admin.forms.submissions', $form->id) }}" class="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
                                             <span class="material-symbols-outlined text-[14px]">inbox</span> Entries
+                                        </a>
+                                        <a href="{{ route('admin.forms.export', $form->id) }}" class="inline-flex items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors" title="Export this form as a .json file">
+                                            <span class="material-symbols-outlined text-[14px]">download</span> Export
                                         </a>
                                         <form id="delete-form-{{ $form->id }}" method="POST" action="{{ route('admin.forms.destroy', $form) }}">
                                             @csrf @method('DELETE')

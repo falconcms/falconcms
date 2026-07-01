@@ -216,6 +216,105 @@ class BuilderLibraryController extends Controller
         return response()->json(['success' => true]);
     }
 
+    // ───────────────────────── Import / Export ─────────────────────────
+
+    public function exportPostCard(string $id)
+    {
+        $card = collect($this->getPostCards())->firstWhere('id', $id);
+        if (!$card) abort(404);
+        return $this->downloadLibraryItem('falcon_post_card', $card, 'post-card');
+    }
+
+    public function importPostCard(Request $request)
+    {
+        $item = $this->readLibraryItem($request, 'falcon_post_card');
+        if ($item === null) {
+            return redirect()->route('admin.falcon-builder.library', ['tab' => 'post_cards'])
+                ->with('error', 'That file is not a valid post-card export.');
+        }
+        $cards = $this->getPostCards();
+        array_unshift($cards, $this->newLibraryItem($item));
+        update_cms_option('falcon_post_cards', json_encode($cards));
+        return redirect()->route('admin.falcon-builder.library', ['tab' => 'post_cards'])
+            ->with('success', 'Post card imported successfully.');
+    }
+
+    public function exportMegaMenu(string $id)
+    {
+        $menu = collect($this->getMegaMenus())->firstWhere('id', $id);
+        if (!$menu) abort(404);
+        return $this->downloadLibraryItem('falcon_mega_menu', $menu, 'mega-menu');
+    }
+
+    public function importMegaMenu(Request $request)
+    {
+        $item = $this->readLibraryItem($request, 'falcon_mega_menu');
+        if ($item === null) {
+            return redirect()->route('admin.falcon-builder.library', ['tab' => 'mega_menus'])
+                ->with('error', 'That file is not a valid mega-menu export.');
+        }
+        $menus = $this->getMegaMenus();
+        array_unshift($menus, $this->newLibraryItem($item));
+        update_cms_option(self::MEGA_MENUS_KEY, json_encode($menus));
+        return redirect()->route('admin.falcon-builder.library', ['tab' => 'mega_menus'])
+            ->with('success', 'Mega menu imported successfully.');
+    }
+
+    /** Stream a library item (name + config only — no id/timestamps) as a .json download. */
+    private function downloadLibraryItem(string $type, array $item, string $suffix)
+    {
+        $payload = [
+            '_type'       => $type,
+            'version'     => 1,
+            'exported_at' => now()->toIso8601String(),
+            'item'        => [
+                'name'   => $item['name']   ?? '',
+                'config' => $item['config'] ?? [],
+            ],
+        ];
+        $filename = (\Illuminate\Support\Str::slug($item['name'] ?? $suffix) ?: $suffix) . '-' . $suffix . '.json';
+
+        return response()->json(
+            $payload,
+            200,
+            ['Content-Disposition' => 'attachment; filename="' . $filename . '"'],
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+    }
+
+    /** Validate + parse an uploaded library export. Returns the item array, or null if invalid. */
+    private function readLibraryItem(Request $request, string $expectedType): ?array
+    {
+        $request->validate([
+            'library_file' => [
+                'required', 'file', 'max:5120',
+                function ($attribute, $value, $fail) {
+                    if (strtolower($value->getClientOriginalExtension()) !== 'json') {
+                        $fail('Please upload a .json export file.');
+                    }
+                },
+            ],
+        ], ['library_file.max' => 'The file is too large (max 5 MB).']);
+
+        $data = json_decode((string) file_get_contents($request->file('library_file')->getRealPath()), true);
+
+        if (!is_array($data) || ($data['_type'] ?? null) !== $expectedType || empty($data['item']) || !is_array($data['item'])) {
+            return null;
+        }
+        return $data['item'];
+    }
+
+    /** Build a fresh library entry (new id + timestamp) from an imported item. */
+    private function newLibraryItem(array $item): array
+    {
+        return [
+            'id'         => (string) \Illuminate\Support\Str::uuid(),
+            'name'       => trim((string) ($item['name'] ?? '')) ?: 'Imported',
+            'config'     => is_array($item['config'] ?? null) ? $item['config'] : [],
+            'created_at' => now()->format('Y-m-d H:i'),
+        ];
+    }
+
     public function save(Request $request)
     {
         $request->validate([

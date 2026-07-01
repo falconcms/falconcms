@@ -130,6 +130,22 @@
                     </td>
                 </tr>
 
+                <!-- Email Verification -->
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Email Verification</label>
+                    </th>
+                    <td>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="require_email_verification" id="require_email_verification"
+                                class="w-4 h-4 mr-2"
+                                {{ ($settings['require_email_verification'] ?? '1') == '1' ? 'checked' : '' }}>
+                            <span class="text-[14px] text-[#1d2327]">Require email verification before users can sign in</span>
+                        </label>
+                        <p class="text-[12px] text-[#646970] mt-1">If unchecked, new users are signed in immediately after registering — no verification email is sent or required.</p>
+                    </td>
+                </tr>
+
                 <!-- Documentation Access -->
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2">

@@ -59,22 +59,40 @@ class RegisterController extends Controller
         $defaultRole = \FalconCms\Core\Models\Role::where('slug', $defaultRoleSlug)->first()
             ?: \FalconCms\Core\Models\Role::where('slug', 'subscriber')->first();
 
+        // Site setting (Settings → Membership): require email verification before login?
+        $requireVerification = get_cms_option('require_email_verification', '1') === '1';
+
         $user = User::create([
             'name' => $request->name,
             'username' => $this->uniqueUsername($request->email),
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role_id' => $defaultRole ? $defaultRole->id : null,
-            'email_verified_at' => null, // must verify before logging in
         ]);
 
-        // Do NOT log the user in. Send a time-limited verification link instead.
-        $this->sendVerificationLink($user);
+        // Verification disabled → mark the account verified (so it stays valid even
+        // if verification is re-enabled later) and log the new user straight in.
+        if (!$requireVerification) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+            Auth::login($user);
+            $request->session()->regenerate();
+            return redirect()->route('admin.dashboard.index')
+                ->with('success', 'Welcome, ' . $user->name . '! Your account is ready.');
+        }
 
+        // Verification required → do NOT log in; send a time-limited verification link.
+        $sent = $this->sendVerificationLink($user);
         $request->session()->put('pending_verification_email', $user->email);
 
+        if ($sent) {
+            return redirect()->route('admin.verify.notice')
+                ->with('success', 'Account created! We sent a verification link to ' . $user->email . '. Please confirm your email to sign in.');
+        }
+
+        // The account exists, but the mail server rejected/failed the message — say so
+        // plainly rather than claiming an email was sent, so the issue can be fixed.
         return redirect()->route('admin.verify.notice')
-            ->with('success', 'Account created! We sent a verification link to ' . $user->email . '. Please confirm your email to sign in.');
+            ->with('error', 'Your account was created, but the verification email could not be sent right now. Please use "Resend" below, or contact the site administrator to check the email (SMTP) settings.');
     }
 
     /** Notice page shown after registration / when an unverified user tries to log in. */
@@ -147,8 +165,12 @@ class RegisterController extends Controller
         return $username;
     }
 
-    /** Build a signed, time-limited verification URL and email it to the user. */
-    protected function sendVerificationLink(User $user): void
+    /**
+     * Build a signed, time-limited verification URL and email it to the user.
+     * Returns true if the mail was handed off without error, false if it failed
+     * (so callers can tell the user honestly instead of claiming it was sent).
+     */
+    protected function sendVerificationLink(User $user): bool
     {
         $verifyUrl = URL::temporarySignedRoute(
             'admin.verify.email',
@@ -158,8 +180,10 @@ class RegisterController extends Controller
 
         try {
             Mail::to($user->email)->send(new EmailVerificationMail($verifyUrl, $user->name ?? '', $this->verifyTtl));
+            return true;
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Email verification send failed for ' . $user->email . ': ' . $e->getMessage());
+            return false;
         }
     }
 }

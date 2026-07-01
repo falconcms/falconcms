@@ -85,6 +85,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::patch('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updatePostCard'])->name('falcon-builder.post-cards.update');
     Route::get('falcon-builder-library/post-cards/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'editPostCardBuilder'])->name('falcon-builder.post-cards.builder');
     Route::post('falcon-builder-library/post-cards/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCardLayout'])->name('falcon-builder.post-cards.save-layout');
+    Route::get('falcon-builder-library/post-cards/{id}/export', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'exportPostCard'])->name('falcon-builder.post-cards.export');
+    Route::post('falcon-builder-library/post-cards-import', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'importPostCard'])->name('falcon-builder.post-cards.import');
+    Route::get('falcon-builder-library/mega-menus/{id}/export', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'exportMegaMenu'])->name('falcon-builder.mega-menus.export');
+    Route::post('falcon-builder-library/mega-menus-import', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'importMegaMenu'])->name('falcon-builder.mega-menus.import');
     Route::post('falcon-builder-library/mega-menus', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenu'])->name('falcon-builder.mega-menus.save');
     Route::delete('falcon-builder-library/mega-menus/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteMegaMenu'])->name('falcon-builder.mega-menus.delete');
     Route::patch('falcon-builder-library/mega-menus/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateMegaMenu'])->name('falcon-builder.mega-menus.update');
@@ -336,6 +340,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('forms', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'store'])->name('forms.store');
     Route::get('forms/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'builder'])->name('forms.builder');
     Route::post('forms/{id}/save', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'saveBuilder'])->name('forms.save');
+    Route::get('forms/{id}/export', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'export'])->name('forms.export');
+    Route::post('forms/import', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'import'])->name('forms.import');
     Route::get('forms/{id}/submissions', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'submissions'])->name('forms.submissions');
     Route::get('forms/all-submissions', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'allSubmissions'])->name('forms.all-submissions');
     Route::delete('forms/submissions/{submission}', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');

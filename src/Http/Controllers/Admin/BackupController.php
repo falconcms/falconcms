@@ -168,6 +168,12 @@ class BackupController extends Controller
             throw new \Exception('Could not create the zip archive.');
         }
         $count = $this->addMediaToZip($zip, '');
+
+        // Bundle the Media Library records too, so restoring brings back the library
+        // entries (not just the physical files — the library is database-driven).
+        if (\Illuminate\Support\Facades\Schema::hasTable('media')) {
+            $zip->addFromString('_media-records.json', DB::table('media')->get()->toJson());
+        }
         $zip->close();
 
         if ($count === 0) {
@@ -295,6 +301,24 @@ class BackupController extends Controller
     }
 
     /**
+     * If every entry sits under one shared top-level folder, return that "folder/"
+     * prefix so it can be stripped; otherwise ''. Makes restore tolerant of backups
+     * that were extracted and re-zipped inside a folder (e.g. by Windows Explorer).
+     */
+    private function commonWrapperPrefix(array $names): string
+    {
+        if (empty($names)) return '';
+        $first = reset($names);
+        $slash = strpos($first, '/');
+        if ($slash === false) return ''; // first entry is a root-level file → no wrapper
+        $candidate = substr($first, 0, $slash + 1);
+        foreach ($names as $n) {
+            if (!str_starts_with($n, $candidate)) return '';
+        }
+        return $candidate;
+    }
+
+    /**
      * Inspect a zip and restore whatever it contains:
      *  - a *.sql entry  → run it as the database
      *  - any other files → extracted into the media folder (a leading "media/" is stripped)
@@ -311,19 +335,34 @@ class BackupController extends Controller
             throw new \Exception('Could not open the backup archive.');
         }
 
-        // Classify entries.
-        $sqlIndex     = null;
-        $mediaEntries = [];
+        // Gather file entries (skip directory entries).
+        $entries = [];
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if ($name === false || str_ends_with($name, '/')) continue; // skip dirs
-            if (str_ends_with(strtolower($name), '.sql')) {
-                // Prefer a file literally named database.sql when several exist.
-                if ($sqlIndex === null || strtolower(basename($name)) === 'database.sql') {
+            if ($name === false || str_ends_with($name, '/')) continue;
+            $entries[$i] = $name;
+        }
+
+        // If the whole archive lives inside a single wrapper folder (common when a
+        // downloaded backup is extracted then re-zipped by the OS), strip that
+        // folder so the inner paths resolve correctly.
+        $wrapper = $this->commonWrapperPrefix($entries);
+
+        // Classify by logical (wrapper-stripped) name; read content by index.
+        $sqlIndex     = null;
+        $recordsIndex = null;
+        $mediaEntries = []; // index => logical path
+        foreach ($entries as $i => $name) {
+            $logical = $wrapper !== '' ? substr($name, strlen($wrapper)) : $name;
+            if ($logical === '') continue;
+            if (str_ends_with(strtolower($logical), '.sql')) {
+                if ($sqlIndex === null || strtolower(basename($logical)) === 'database.sql') {
                     $sqlIndex = $i;
                 }
+            } elseif (basename($logical) === '_media-records.json') {
+                $recordsIndex = $i; // Media Library rows bundled with a media-only backup
             } else {
-                $mediaEntries[] = $name;
+                $mediaEntries[$i] = $logical;
             }
         }
 
@@ -345,23 +384,45 @@ class BackupController extends Controller
             $dest = $this->mediaDir();
             if (!is_dir($dest)) mkdir($dest, 0755, true);
 
+            // A *full* backup (one that also carries database.sql) nests its media
+            // under a "media/" folder, so we strip that one prefix to land files at
+            // the public-disk root. A *media-only* backup already stores paths
+            // relative to that root (which themselves can include a real "media/"
+            // sub-folder), so those must be kept exactly as-is.
+            $stripMediaPrefix = ($sqlIndex !== null);
+
             $count = 0;
-            foreach ($mediaEntries as $name) {
-                // Combined backups nest media under "media/"; strip that so files
-                // land directly in storage/app/public. Old root-level zips just work.
-                $target = preg_replace('#^media/#', '', $name);
+            foreach ($mediaEntries as $i => $logical) {
+                $target = $stripMediaPrefix ? preg_replace('#^media/#', '', $logical) : $logical;
                 if ($target === '' || str_contains($target, '..')) continue; // safety
 
-                $content = $zip->getFromName($name);
+                $content = $zip->getFromIndex($i);
                 if ($content === false) continue;
 
                 $full = $dest . '/' . $target;
                 $dir  = dirname($full);
                 if (!is_dir($dir)) mkdir($dir, 0755, true);
-                file_put_contents($full, $content);
-                $count++;
+                if (file_put_contents($full, $content) !== false) $count++; // count only real writes
             }
             $done[] = "{$count} media files";
+        }
+
+        // 3) Media Library records — only in a media-only backup. (A full backup
+        // restores these through database.sql instead.) updateOrInsert brings back
+        // deleted library entries without disturbing rows added since the backup.
+        if ($recordsIndex !== null && \Illuminate\Support\Facades\Schema::hasTable('media')) {
+            $records = json_decode((string) $zip->getFromIndex($recordsIndex), true);
+            if (is_array($records)) {
+                $cols = \Illuminate\Support\Facades\Schema::getColumnListing('media');
+                $n = 0;
+                foreach ($records as $rec) {
+                    $row = array_intersect_key((array) $rec, array_flip($cols));
+                    if (empty($row['id'])) continue;
+                    DB::table('media')->updateOrInsert(['id' => $row['id']], $row);
+                    $n++;
+                }
+                if ($n > 0) $done[] = "{$n} media library records";
+            }
         }
 
         $zip->close();
