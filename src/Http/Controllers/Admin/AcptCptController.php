@@ -274,26 +274,37 @@ class AcptCptController extends Controller
             return back()->with('error', 'That is not a valid Custom Post Type export file.');
         }
 
-        $slug = $this->uniqueColumnValue('post_types', 'slug', \Illuminate\Support\Str::slug($d['slug'] ?? 'cpt') ?: 'cpt');
-
-        $pt = \FalconCms\Core\Models\PostType::create([
+        $slug = \Illuminate\Support\Str::slug($d['slug'] ?? 'cpt') ?: 'cpt';
+        $attrs = [
             'name'          => $d['name'] ?? 'Imported Type',
             'singular_name' => $d['singular_name'] ?? ($d['name'] ?? 'Item'),
-            'slug'          => $slug,
             'description'   => $d['description'] ?? null,
             'icon'          => $d['icon'] ?? null,
             'supports'      => is_array($d['supports'] ?? null) ? $d['supports'] : ['title'],
-            'is_builtin'    => false,
             'is_active'     => true,
             'show_in_menu'  => (bool) ($d['show_in_menu'] ?? true),
             'is_public'     => (bool) ($d['is_public'] ?? true),
-        ]);
+        ];
 
-        if ($pt->is_active && $pt->show_in_menu) {
-            $this->buildCptMenu($pt);
+        // Idempotent: update an existing (non-builtin) post type with the same slug
+        // rather than creating a duplicate. Built-in types are never overwritten.
+        $existing = \FalconCms\Core\Models\PostType::where('slug', $slug)->first();
+        if ($existing && !$existing->is_builtin) {
+            $existing->update($attrs);
+            $pt = $existing;
+            $verb = 'updated';
+        } else {
+            if ($existing) {
+                $slug = $this->uniqueColumnValue('post_types', 'slug', $slug); // clash with a built-in
+            }
+            $pt = \FalconCms\Core\Models\PostType::create(array_merge($attrs, ['slug' => $slug, 'is_builtin' => false]));
+            if ($pt->is_active && $pt->show_in_menu) {
+                $this->buildCptMenu($pt);
+            }
+            $verb = 'imported';
         }
 
-        return redirect()->route('admin.acpt.cpt.index')->with('success', 'Custom Post Type imported successfully.');
+        return redirect()->route('admin.acpt.cpt.index')->with('success', "Custom Post Type {$verb} successfully.");
     }
 
     /** Create the admin sidebar menu (parent + All/Add New) for a CPT — mirrors store(). */

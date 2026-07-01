@@ -95,23 +95,33 @@ class AcptTaxonomyController extends Controller
             return back()->with('error', 'That is not a valid Taxonomy export file.');
         }
 
-        $base = \Illuminate\Support\Str::slug($d['slug'] ?? 'taxonomy') ?: 'taxonomy';
-        $slug = $base; $i = 1;
-        while (CustomTaxonomy::where('slug', $slug)->exists()) { $slug = $base . '-' . $i; $i++; }
-
-        $taxonomy = CustomTaxonomy::create([
+        $slug = \Illuminate\Support\Str::slug($d['slug'] ?? 'taxonomy') ?: 'taxonomy';
+        $attrs = [
             'name'          => $d['name'] ?? 'Imported Taxonomy',
             'singular_name' => $d['singular_name'] ?? ($d['name'] ?? 'Term'),
-            'slug'          => $slug,
             'description'   => $d['description'] ?? null,
             'post_types'    => is_array($d['post_types'] ?? null) ? $d['post_types'] : [],
             'hierarchical'  => (bool) ($d['hierarchical'] ?? false),
             'is_active'     => true,
-        ]);
+        ];
+
+        // Idempotent: update an existing taxonomy with the same slug instead of
+        // creating a duplicate. Re-importing used to spawn "subjects-1" clones, so
+        // deleting the original left a same-named copy that looked like it "came back".
+        $existing = CustomTaxonomy::withTrashed()->where('slug', $slug)->first();
+        if ($existing) {
+            if ($existing->trashed()) $existing->restore();
+            $existing->update($attrs);
+            $taxonomy = $existing;
+            $verb = 'updated';
+        } else {
+            $taxonomy = CustomTaxonomy::create(array_merge($attrs, ['slug' => $slug]));
+            $verb = 'imported';
+        }
 
         $this->syncTaxonomyMenus($taxonomy);
 
-        return redirect()->route('admin.acpt.taxonomies.index')->with('success', 'Taxonomy imported successfully.');
+        return redirect()->route('admin.acpt.taxonomies.index')->with('success', "Taxonomy {$verb} successfully.");
     }
 
     public function edit($id)

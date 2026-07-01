@@ -100,31 +100,46 @@ class CustomFieldController extends Controller
             return back()->with('error', 'That is not a valid Field Group export file.');
         }
 
-        $group = FieldGroup::create([
+        $groupAttrs = [
             'title'       => $d['title'] ?? 'Imported Field Group',
             'description' => $d['description'] ?? null,
             'rules'       => is_array($d['rules'] ?? null) ? $d['rules'] : null,
             'order'       => (int) ($d['order'] ?? 0),
             'is_active'   => (bool) ($d['is_active'] ?? true),
-        ]);
+        ];
+
+        // Idempotent: update an existing group with the same title instead of
+        // creating a duplicate. Duplicate groups produced duplicate fields (new
+        // ids), which is why imported custom-field VALUES stopped showing on posts.
+        $group = FieldGroup::where('title', $groupAttrs['title'])->first();
+        if ($group) {
+            $group->update($groupAttrs);
+            $verb = 'updated';
+        } else {
+            $group = FieldGroup::create($groupAttrs);
+            $verb = 'imported';
+        }
 
         $order = 0;
         foreach ((is_array($d['fields'] ?? null) ? $d['fields'] : []) as $f) {
             if (empty($f['label']) || empty($f['name'])) continue;
-            Field::create([
-                'field_group_id' => $group->id,
-                'label'          => $f['label'],
-                'name'           => $f['name'],
-                'type'           => $f['type'] ?? 'text',
-                'instructions'   => $f['instructions'] ?? null,
-                'required'       => (bool) ($f['required'] ?? false),
-                'params'         => is_array($f['params'] ?? null) ? $f['params'] : [],
-                'order'          => (int) ($f['order'] ?? $order),
-            ]);
+            // Upsert each field by (group, name) so field ids stay stable across
+            // re-imports and existing post_custom_field_values keep resolving.
+            Field::updateOrCreate(
+                ['field_group_id' => $group->id, 'name' => $f['name']],
+                [
+                    'label'        => $f['label'],
+                    'type'         => $f['type'] ?? 'text',
+                    'instructions' => $f['instructions'] ?? null,
+                    'required'     => (bool) ($f['required'] ?? false),
+                    'params'       => is_array($f['params'] ?? null) ? $f['params'] : [],
+                    'order'        => (int) ($f['order'] ?? $order),
+                ]
+            );
             $order++;
         }
 
-        return redirect()->route('admin.acpt.fields.index')->with('success', 'Field group imported successfully.');
+        return redirect()->route('admin.acpt.fields.index')->with('success', "Field group {$verb} successfully.");
     }
 
     public function edit(FieldGroup $field)
