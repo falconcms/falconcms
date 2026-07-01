@@ -262,8 +262,15 @@ class WordPressImporter
 
                 $slug = $it['slug'] ?: Str::slug($it['title'] ?: 'untitled');
 
-                // Idempotent: skip if a same-type post with this slug already exists.
-                if (Post::withTrashed()->where('type', $type)->where('slug', $slug)->exists()) {
+                // Idempotent: an existing same-type post with this slug is never
+                // overwritten — but we still top up any custom fields, product data
+                // and taxonomy attachments it is missing, so re-importing an export
+                // enriches posts that were created on a previous run (or by a seed).
+                $existing = Post::withTrashed()->where('type', $type)->where('slug', $slug)->first();
+                if ($existing) {
+                    $this->restoreCustomFields($existing, $it['custom_fields'] ?? null);
+                    $this->restoreProductData($existing, $type, $it['product'] ?? null);
+                    $this->restoreTaxonomyTerms($existing, $it['taxonomies'] ?? [], $lang);
                     $summary['skipped']++;
                     continue;
                 }
@@ -424,7 +431,11 @@ class WordPressImporter
         return true;
     }
 
-    /** Restore ACPT / custom-field values, keyed by field slug (custom_fields.name). */
+    /**
+     * Restore ACPT / custom-field values, keyed by field slug (custom_fields.name).
+     * Existing values are never overwritten, so this is safe to run when enriching
+     * a post that already existed.
+     */
     private function restoreCustomFields(Post $post, $fields): void
     {
         if (empty($fields) || !is_array($fields) || !Schema::hasTable('post_custom_field_values')) return;
@@ -433,25 +444,29 @@ class WordPressImporter
             if ($value === null || $value === '') continue;
             $fieldId = DB::table('custom_fields')->where('name', $name)->value('id');
             if (!$fieldId) continue;
-            DB::table('post_custom_field_values')->updateOrInsert(
-                ['post_id' => $post->id, 'field_id' => $fieldId],
-                ['value' => is_array($value) ? json_encode($value) : (string) $value, 'updated_at' => now(), 'created_at' => now()]
-            );
+            $hasValue = DB::table('post_custom_field_values')
+                ->where('post_id', $post->id)->where('field_id', $fieldId)->exists();
+            if ($hasValue) continue; // don't clobber an existing value
+            DB::table('post_custom_field_values')->insert([
+                'post_id'    => $post->id,
+                'field_id'   => $fieldId,
+                'value'      => is_array($value) ? json_encode($value) : (string) $value,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
     }
 
-    /** Restore the shop product row (+ variations) for product posts. */
+    /** Restore the shop product row (+ variations) for product posts (create if absent). */
     private function restoreProductData(Post $post, string $type, $product): void
     {
         if ($type !== 'product' || empty($product) || !is_array($product) || !Schema::hasTable('shop_products')) return;
+        if (ProductData::where('post_id', $post->id)->exists()) return; // don't clobber
 
         $variations = $product['variations'] ?? null;
         unset($product['variations']);
 
-        $row = ProductData::updateOrCreate(
-            ['post_id' => $post->id],
-            array_merge($product, ['post_id' => $post->id])
-        );
+        $row = ProductData::create(array_merge($product, ['post_id' => $post->id]));
 
         if (is_array($variations) && Schema::hasTable('shop_product_variations')) {
             foreach ($variations as $v) {
@@ -465,17 +480,22 @@ class WordPressImporter
         }
     }
 
-    /** Attach custom-taxonomy terms, creating any that don't yet exist. */
+    /**
+     * Attach custom-taxonomy terms, creating any that don't yet exist. Terms are
+     * scoped by cpt_slug (the post's type) so they line up with the custom post
+     * type in the taxonomy-terms admin screen (which filters by ?cpt=…).
+     */
     private function restoreTaxonomyTerms(Post $post, array $terms, string $lang): void
     {
         if (empty($terms) || !Schema::hasTable('taxonomy_terms') || !method_exists($post, 'taxonomyTerms')) return;
 
+        $cptSlug = $post->type ?: 'post'; // cpt_slug is NOT NULL in the schema
         $ids = [];
         foreach ($terms as $t) {
             if (empty($t['slug']) || empty($t['taxonomy'])) continue;
             $term = TaxonomyTerm::firstOrCreate(
-                ['taxonomy_slug' => $t['taxonomy'], 'slug' => $t['slug']],
-                ['name' => $t['name'] ?: $t['slug'], 'lang_code' => $lang]
+                ['taxonomy_slug' => $t['taxonomy'], 'cpt_slug' => $cptSlug, 'slug' => $t['slug'], 'lang_code' => $lang],
+                ['name' => $t['name'] ?: $t['slug']]
             );
             $ids[] = $term->id;
         }
