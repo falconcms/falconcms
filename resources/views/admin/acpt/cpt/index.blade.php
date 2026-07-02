@@ -85,47 +85,21 @@
                                 <a href="{{ $type->trashed() ? '#' : route('admin.acpt.cpt.edit', $type->id) }}" class="{{ $type->trashed() ? 'cursor-default pointer-events-none' : 'hover:underline' }}">{{ $type->name }} {!! !$type->is_active && !$type->trashed() ? '<span class="text-[#d63638] text-[11px] font-normal">(Inactive)</span>' : '' !!} {!! $type->trashed() ? '<span class="text-[#646970] text-[11px] font-normal">(Trashed)</span>' : '' !!}</a>
                                 <div class="invisible group-hover:visible mt-1 text-[13px] font-normal space-x-1 text-[#646970] flex items-center">
                                     @if($type->trashed())
-                                        <form action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                            @csrf
-                                            <input type="hidden" name="action" value="restore">
-                                            <input type="hidden" name="post_types[]" value="{{ $type->id }}">
-                                            <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Restore</button>
-                                        </form> <span class="text-[#c3c4c7]">|</span> 
-                                        <form id="delete-form-{{ $type->id }}" action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                            @csrf
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="post_types[]" value="{{ $type->id }}">
-                                            <button type="button" onclick="confirmForceDelete({{ $type->id }})" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Delete Permanently</button>
-                                        </form>
+                                        <button type="button" onclick="cptRowAction({{ $type->id }}, 'restore')" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Restore</button>
+                                        <span class="text-[#c3c4c7]">|</span>
+                                        <button type="button" onclick="cptRowAction({{ $type->id }}, 'delete')" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Delete Permanently</button>
                                     @else
                                         @if($type->is_active)
                                             <a href="{{ route('admin.acpt.cpt.edit', $type->id) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
-                                            <form action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                                @csrf
-                                                <input type="hidden" name="action" value="deactivate">
-                                                <input type="hidden" name="post_types[]" value="{{ $type->id }}">
-                                                <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Deactivate</button>
-                                            </form>
+                                            <button type="button" onclick="cptRowAction({{ $type->id }}, 'deactivate')" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Deactivate</button>
                                         @else
-                                            <form action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                                @csrf
-                                                <input type="hidden" name="action" value="activate">
-                                                <input type="hidden" name="post_types[]" value="{{ $type->id }}">
-                                                <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Activate</button>
-                                            </form>
+                                            <button type="button" onclick="cptRowAction({{ $type->id }}, 'activate')" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Activate</button>
                                         @endif
                                         <span class="text-[#c3c4c7]">|</span>
-                                        <form action="{{ route('admin.acpt.cpt.duplicate', $type->id) }}" method="POST" class="inline m-0 p-0 leading-none">
-                                            @csrf
-                                            <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Duplicate</button>
-                                        </form> <span class="text-[#c3c4c7]">|</span>
+                                        <button type="button" onclick="cptDuplicate({{ $type->id }})" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Duplicate</button>
+                                        <span class="text-[#c3c4c7]">|</span>
                                         <a href="{{ route('admin.acpt.cpt.export', $type->id) }}" class="text-[#2271b1] hover:underline">Export</a> <span class="text-[#c3c4c7]">|</span>
-                                        <form id="trash-form-{{ $type->id }}" action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                            @csrf
-                                            <input type="hidden" name="action" value="trash">
-                                            <input type="hidden" name="post_types[]" value="{{ $type->id }}">
-                                            <button type="button" onclick="moveToTrash({{ $type->id }})" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Trash</button>
-                                        </form>
+                                        <button type="button" onclick="cptRowAction({{ $type->id }}, 'trash')" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Trash</button>
                                     @endif
                                 </div>
                             </td>
@@ -171,6 +145,17 @@
         </div>
         </form>
 
+        {{-- Row-action forms kept OUTSIDE the bulk form (nesting forms is invalid HTML
+             and made single-row actions leak into / corrupt the bulk submit). --}}
+        <form id="row-action-form" action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="hidden">
+            @csrf
+            <input type="hidden" name="action" id="row-action-value">
+            <input type="hidden" name="post_types[]" id="row-action-id">
+        </form>
+        <form id="row-duplicate-form" method="POST" class="hidden" data-base="{{ route('admin.acpt.cpt.duplicate', '__ID__') }}">
+            @csrf
+        </form>
+
     </div>
     <script>
         window.handleBulkAction = async function(formId, selectName = 'action') {
@@ -201,20 +186,25 @@
             form.submit();
         };
 
-        window.moveToTrash = function(id) {
-            document.getElementById(`trash-form-${id}`).submit();
+        // Single-row actions submit the dedicated #row-action-form (outside the bulk form).
+        window.cptRowAction = async function(id, action) {
+            const dangerCopy = {
+                trash:  { title: 'Move to Trash', message: 'Are you sure you want to move this custom post type to trash?', confirmText: 'Move to Trash' },
+                delete: { title: 'Delete Permanently', message: 'Are you sure you want to permanently delete this custom post type? This action cannot be undone and all associated content will be lost!', confirmText: 'Delete Permanently' },
+            };
+            if (dangerCopy[action]) {
+                const ok = await window.falconConfirm({ ...dangerCopy[action], isDanger: true });
+                if (!ok) return;
+            }
+            document.getElementById('row-action-value').value = action;
+            document.getElementById('row-action-id').value = id;
+            document.getElementById('row-action-form').submit();
         };
 
-        window.confirmForceDelete = async function(id) {
-            const confirmed = await window.falconConfirm({
-                title: 'Delete Permanently',
-                message: 'Are you sure you want to permanently delete this custom post type? This action cannot be undone and all associated content will be lost!',
-                confirmText: 'Delete Permanently',
-                isDanger: true
-            });
-            if (confirmed) {
-                document.getElementById(`delete-form-${id}`).submit();
-            }
+        window.cptDuplicate = function(id) {
+            const form = document.getElementById('row-duplicate-form');
+            form.action = form.dataset.base.replace('__ID__', id);
+            form.submit();
         };
     </script>
 </x-falcon-cms::layouts.admin>

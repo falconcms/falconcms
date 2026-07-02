@@ -85,46 +85,19 @@
                                     <a href="{{ $taxonomy->trashed() ? '#' : route('admin.acpt.taxonomies.edit', $taxonomy->id) }}" class="{{ $taxonomy->trashed() ? 'cursor-default pointer-events-none' : 'hover:underline' }}">{{ $taxonomy->name }} {!! !$taxonomy->is_active && !$taxonomy->trashed() ? '<span class="text-[#d63638] text-[11px] font-normal">(Inactive)</span>' : '' !!} {!! $taxonomy->trashed() ? '<span class="text-[#646970] text-[11px] font-normal">(Trashed)</span>' : '' !!}</a>
                                     <div class="invisible group-hover:visible mt-1 text-[13px] font-normal space-x-1 text-[#646970] flex items-center">
                                          @if($taxonomy->trashed())
-                                             <form action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                                 @csrf
-                                                 <input type="hidden" name="action" value="restore">
-                                                 <input type="hidden" name="taxonomies[]" value="{{ $taxonomy->id }}">
-                                                 <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Restore</button>
-                                             </form>
+                                             <button type="button" onclick="rowAction({{ $taxonomy->id }}, 'restore')" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Restore</button>
                                              <span class="text-[#c3c4c7]">|</span>
-                                             <form id="delete-form-{{ $taxonomy->id }}" action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                                 @csrf
-                                                 <input type="hidden" name="action" value="delete">
-                                                 <input type="hidden" name="taxonomies[]" value="{{ $taxonomy->id }}">
-                                                 <button type="button" onclick="confirmForceDelete({{ $taxonomy->id }})" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Delete Permanently</button>
-                                             </form>
+                                             <button type="button" onclick="rowAction({{ $taxonomy->id }}, 'delete')" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Delete Permanently</button>
                                          @else
                                              @if($taxonomy->is_active)
                                                 <a href="{{ route('admin.acpt.taxonomies.edit', $taxonomy->id) }}" class="text-[#2271b1] hover:underline">Edit</a>
                                                 <span class="text-[#c3c4c7]">|</span>
-                                                <form action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                                    @csrf
-                                                    <input type="hidden" name="action" value="deactivate">
-                                                    <input type="hidden" name="taxonomies[]" value="{{ $taxonomy->id }}">
-                                                    <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Deactivate</button>
-                                                </form>
+                                                <button type="button" onclick="rowAction({{ $taxonomy->id }}, 'deactivate')" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Deactivate</button>
                                              @else
-                                                <form action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                                    @csrf
-                                                    <input type="hidden" name="action" value="activate">
-                                                    <input type="hidden" name="taxonomies[]" value="{{ $taxonomy->id }}">
-                                                    <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Activate</button>
-                                                </form>
+                                                <button type="button" onclick="rowAction({{ $taxonomy->id }}, 'activate')" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Activate</button>
                                              @endif
                                              <span class="text-[#c3c4c7]">|</span>
-                                             <a href="{{ route('admin.acpt.taxonomies.export', $taxonomy->id) }}" class="text-[#2271b1] hover:underline">Export</a>
-                                             <span class="text-[#c3c4c7]">|</span>
-                                             <form id="trash-form-{{ $taxonomy->id }}" action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
-                                                 @csrf
-                                                 <input type="hidden" name="action" value="trash">
-                                                 <input type="hidden" name="taxonomies[]" value="{{ $taxonomy->id }}">
-                                                 <button type="button" onclick="confirmTrash({{ $taxonomy->id }})" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Trash</button>
-                                             </form>
+                                             <button type="button" onclick="rowAction({{ $taxonomy->id }}, 'trash')" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Trash</button>
                                          @endif
                                     </div>
                                 </td>
@@ -180,6 +153,14 @@
             </div>
         </form>
 
+        {{-- Single row-action form, kept OUTSIDE the bulk form (nesting forms is invalid
+             HTML and made row actions leak into the bulk submit). --}}
+        <form id="row-action-form" action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="hidden">
+            @csrf
+            <input type="hidden" name="action" id="row-action-value">
+            <input type="hidden" name="taxonomies[]" id="row-action-id">
+        </form>
+
     </div>
     <script>
         window.handleBulkAction = async function(formId, selectName = 'action') {
@@ -232,28 +213,20 @@
             }
         };
 
-        window.confirmTrash = async function(id) {
-            const confirmed = await window.falconConfirm({
-                title: 'Move to Trash',
-                message: 'Are you sure you want to move this taxonomy to trash? It will no longer be active on the site.',
-                confirmText: 'Move to Trash',
-                isDanger: true
-            });
-            if (confirmed) {
-                document.getElementById(`trash-form-${id}`).submit();
+        // Single-row actions submit the dedicated #row-action-form (outside the
+        // bulk form), so they never interfere with bulk selections.
+        window.rowAction = async function(id, action) {
+            const dangerCopy = {
+                trash:  { title: 'Move to Trash', message: 'Are you sure you want to move this taxonomy to trash? It will no longer be active on the site.', confirmText: 'Move to Trash' },
+                delete: { title: 'Delete Permanently', message: 'Are you sure you want to permanently delete this taxonomy? This action cannot be undone and all associated terms will be affected!', confirmText: 'Delete Permanently' },
+            };
+            if (dangerCopy[action]) {
+                const ok = await window.falconConfirm({ ...dangerCopy[action], isDanger: true });
+                if (!ok) return;
             }
-        };
-
-        window.confirmForceDelete = async function(id) {
-            const confirmed = await window.falconConfirm({
-                title: 'Delete Permanently',
-                message: 'Are you sure you want to permanently delete this taxonomy? This action cannot be undone and all associated terms will be affected!',
-                confirmText: 'Delete Permanently',
-                isDanger: true
-            });
-            if (confirmed) {
-                document.getElementById(`delete-form-${id}`).submit();
-            }
+            document.getElementById('row-action-value').value = action;
+            document.getElementById('row-action-id').value = id;
+            document.getElementById('row-action-form').submit();
         };
     </script>
 </x-falcon-cms::layouts.admin>
