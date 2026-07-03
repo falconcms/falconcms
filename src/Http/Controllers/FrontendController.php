@@ -76,6 +76,7 @@ class FrontendController extends Controller
             }
             if ($post) {
                 view()->share('current_post', $post);
+                falcon_layout_context(['kind' => 'home', 'post_type' => $post->type, 'post_id' => $post->id]);
                 // If the home page is also the assigned Blog page, show the blog listing.
                 $blogPageId = get_cms_option('blog_page_id');
                 if ($blogPageId && $post->id == $blogPageId) {
@@ -86,6 +87,7 @@ class FrontendController extends Controller
             }
         }
 
+        falcon_layout_context(['kind' => 'home']);
         return view($this->resolveThemeView('index'));
     }
 
@@ -103,6 +105,8 @@ class FrontendController extends Controller
         $items           = collect();
         $title           = '';
         $archivePostType = 'post'; // 'post' or 'product'
+        $ctxTaxonomy     = null;   // which taxonomy this archive is for
+        $ctxTermId       = null;   // the resolved term id
 
         if (in_array($routeName, ['frontend.category', 'frontend.category.locale'])) {
             $slugs    = explode('/', urldecode($slug));
@@ -111,11 +115,13 @@ class FrontendController extends Controller
                 $category   = Category::where('slug', $lastSlug)->firstOrFail();
                 $postsQuery = $category->posts()->where('status', 'published');
                 $title      = $category->name;
+                $ctxTaxonomy = 'category'; $ctxTermId = $category->id;
             } catch (\Throwable $e) {
                 $term = TaxonomyTerm::where('slug', $lastSlug)->first();
                 abort_if(!$term, 404);
                 $postsQuery = $term->posts()->where('status', 'published');
                 $title      = $term->name;
+                $ctxTaxonomy = $term->taxonomy_slug; $ctxTermId = $term->id;
             }
             $archivePostType = 'post';
 
@@ -126,11 +132,13 @@ class FrontendController extends Controller
                 $tag        = Tag::where('slug', $lastSlug)->firstOrFail();
                 $postsQuery = $tag->posts()->where('status', 'published');
                 $title      = $tag->name;
+                $ctxTaxonomy = 'post_tag'; $ctxTermId = $tag->id;
             } catch (\Throwable $e) {
                 $term = TaxonomyTerm::where('slug', $lastSlug)->first();
                 abort_if(!$term, 404);
                 $postsQuery = $term->posts()->where('status', 'published');
                 $title      = $term->name;
+                $ctxTaxonomy = $term->taxonomy_slug; $ctxTermId = $term->id;
             }
             $archivePostType = 'post';
 
@@ -143,6 +151,7 @@ class FrontendController extends Controller
                 $category   = \FalconCms\Core\Models\ProductCategory::where('slug', $lastSlug)->firstOrFail();
                 $postsQuery = $category->posts()->where('status', 'published');
                 $title      = $category->name;
+                $ctxTaxonomy = 'product_category'; $ctxTermId = $category->id;
             } catch (\Throwable $e) {
                 $term = TaxonomyTerm::where('slug', $lastSlug)
                     ->where('taxonomy_slug', 'like', 'product%')
@@ -150,6 +159,7 @@ class FrontendController extends Controller
                 abort_if(!$term, 404);
                 $postsQuery = $term->posts()->where('status', 'published');
                 $title      = $term->name;
+                $ctxTaxonomy = $term->taxonomy_slug; $ctxTermId = $term->id;
             }
             $archivePostType = 'product';
 
@@ -159,6 +169,7 @@ class FrontendController extends Controller
                 $tag        = \FalconCms\Core\Models\ProductTag::where('slug', $slug)->firstOrFail();
                 $postsQuery = $tag->posts()->where('status', 'published');
                 $title      = $tag->name;
+                $ctxTaxonomy = 'product_tag'; $ctxTermId = $tag->id;
             } catch (\Throwable $e) {
                 $term = TaxonomyTerm::where('slug', $slug)
                     ->where(function ($q) {
@@ -169,6 +180,7 @@ class FrontendController extends Controller
                 abort_if(!$term, 404);
                 $postsQuery = $term->posts()->where('status', 'published');
                 $title      = $term->name;
+                $ctxTaxonomy = $term->taxonomy_slug; $ctxTermId = $term->id;
             }
             $archivePostType = 'product';
         }
@@ -203,6 +215,8 @@ class FrontendController extends Controller
             $items = $postsQuery->paginate(12)->withQueryString();
         }
 
+        falcon_layout_context(['kind' => 'archive', 'archive_type' => 'taxonomy', 'post_type' => $archivePostType, 'taxonomy' => $ctxTaxonomy, 'term_id' => $ctxTermId]);
+
         return view($this->resolveThemeView('archive'), [
             'posts'           => $items,
             'title'           => $title,
@@ -215,6 +229,8 @@ class FrontendController extends Controller
     {
         $user            = \App\Models\User::findOrFail($id);
         $archivePostType = request('type', 'post');
+
+        falcon_layout_context(['kind' => 'archive', 'archive_type' => 'author', 'post_type' => $archivePostType, 'author_id' => (int) $id]);
 
         $posts = Post::where('user_id', $id)
             ->where('type', $archivePostType)
@@ -283,6 +299,7 @@ class FrontendController extends Controller
                 $posts           = $term->posts()->where('status', 'published')->where('lang_code', app()->getLocale())->latest()->paginate(12)->withQueryString();
                 $title           = $term->name;
                 $archivePostType = $term->cpt_slug ?? 'post';
+                falcon_layout_context(['kind' => 'archive', 'archive_type' => 'taxonomy', 'post_type' => $archivePostType, 'taxonomy' => $type, 'term_id' => $term->id]);
                 return view($this->resolveThemeView('archive'), [
                     'posts'           => $posts,
                     'title'           => $title,
@@ -347,7 +364,8 @@ class FrontendController extends Controller
                     if (!view()->exists($resolvedArchiveView)) {
                         $resolvedArchiveView = $this->resolveThemeView('archive');
                     }
-                    
+
+                    falcon_layout_context(['kind' => 'archive', 'archive_type' => 'post_type', 'post_type' => $postType->slug]);
                     return view($resolvedArchiveView, compact('posts', 'title', 'type'));
                 }
             }
@@ -478,6 +496,7 @@ class FrontendController extends Controller
             $posts = $postsQuery->paginate(12)->withQueryString();
             $title = $post->title;
             $type = 'Shop';
+            falcon_layout_context(['kind' => 'archive', 'post_type' => 'product']);
             return view($this->resolveThemeView('archive-product', 'archive'), compact('posts', 'title', 'type', 'post'));
         }
 
@@ -512,6 +531,7 @@ class FrontendController extends Controller
 
         $post->load('comments.replies');
 
+        falcon_layout_context(['kind' => 'single', 'post_type' => $post->type, 'post_id' => $post->id]);
         return view($view, compact('post'));
     }
 
@@ -554,8 +574,9 @@ class FrontendController extends Controller
         }
 
         $posts = $postsQuery->latest()->paginate(12)->withQueryString();
-            
+
         $type = 'Search';
+        falcon_layout_context(['kind' => 'search']);
         return view($this->resolveThemeView('archive'), compact('posts', 'title', 'type'));
     }
 

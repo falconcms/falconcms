@@ -59,11 +59,27 @@
                 'post_title','post_excerpt','post_date','post_reading_time','post_id','post_type',
                 'post_author','author_bio','site_name','site_tagline','current_date','current_year','user_name',
                 'product_price','product_regular_price','product_sale_price','product_sku','product_stock_status','product_stock_quantity',
+                'feature_image','author_avatar','logo',
             ];
             $__dynPreview = [];
             foreach ($__dynKeys as $__dk) {
                 try { $__dynPreview[$__dk] = (string) (function_exists('falcon_resolve_dynamic_value') ? falcon_resolve_dynamic_value($__dk, $post, []) : ''); }
                 catch (\Throwable $e) { $__dynPreview[$__dk] = ''; }
+            }
+            // When editing a Layout template (PTB/Header/Footer/Content) or a post with no
+            // featured image, the Feature Image source resolves to empty — so the canvas can't
+            // preview the image layer (e.g. a gradient layered over the feature image). Rather
+            // than show an unrelated real post's image (which looks like a "wrong" image), use a
+            // neutral placeholder that clearly reads as "feature image" so the layering is still
+            // visible. On the frontend each page uses its own real featured image.
+            if (empty($__dynPreview['feature_image'])) {
+                $__phSvg = "<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='900' viewBox='0 0 1600 900'>"
+                    . "<rect width='1600' height='900' fill='#d7dde5'/>"
+                    . "<g fill='#a7b1c2'><circle cx='610' cy='330' r='58'/>"
+                    . "<path d='M360 650 L690 385 L905 560 L1120 360 L1360 650 Z'/></g>"
+                    . "<text x='800' y='770' font-family='Arial, Helvetica, sans-serif' font-size='46' font-weight='700' fill='#8a95a8' text-anchor='middle'>Feature Image</text>"
+                    . "</svg>";
+                $__dynPreview['feature_image'] = 'data:image/svg+xml;base64,' . base64_encode($__phSvg);
             }
         @endphp
         window.builderDynPreview = {!! json_encode($__dynPreview, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) !!};
@@ -125,6 +141,12 @@
             $builderPostCards = json_decode(get_cms_option('falcon_post_cards', '[]'), true) ?: [];
         @endphp
         window.falconPostCards = {!! json_encode($builderPostCards, JSON_HEX_TAG) !!};
+        @php
+            // Layout Builder sections (header/footer/page-title-bar/content) get the dynamic
+            // Post elements (Content, Post Meta, Product Meta), just like post cards do.
+            $__isLayoutSection = in_array($post->type ?? '', ['falcon_header', 'falcon_footer', 'falcon_ptb', 'falcon_content'], true);
+        @endphp
+        window.falconLayoutMode = {{ $__isLayoutSection ? 'true' : 'false' }};
         @php
             try {
                 $__previewPosts = get_falcon_posts(['limit' => 6, 'order' => 'desc', 'orderby' => 'created_at']);

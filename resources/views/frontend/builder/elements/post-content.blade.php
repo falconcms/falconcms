@@ -45,11 +45,15 @@
     $excerptLength  = max(10, (int)($s['excerptLength'] ?? 120));
 
     if ($contentDisplay === 'full') {
-        $rawContent = $postContent ?? strip_tags($postExcerpt ?? '');
-        $output     = $stripHtml ? strip_tags($rawContent) : ($postContent ?? '');
+        // Full content = the post's formatted content, rendered exactly as designed
+        // (inline styles, gradients, images and layout are preserved; only <script>
+        // and event handlers are removed by the sanitizer). "Strip HTML" applies to
+        // the excerpt preview only — stripping a full designed layout to text is
+        // never what "Full content" means.
+        $output = (string) ($postContent ?? '');
     } else {
         $rawContent = $postExcerpt ?? $postContent ?? '';
-        if ($stripHtml) $rawContent = strip_tags($rawContent);
+        if ($stripHtml) $rawContent = falcon_html_to_text($rawContent);
         $output = mb_strlen($rawContent) > $excerptLength
             ? mb_substr($rawContent, 0, $excerptLength) . '…'
             : $rawContent;
@@ -57,6 +61,17 @@
 
     $cssId  = $s['cssId']    ?? '';
     $cssCls = $s['cssClass'] ?? '';
+
+    $isFull = ($contentDisplay === 'full');
+    // Full content = the post rendered exactly as designed. Break the element out
+    // to the full viewport width (full-bleed) so the post's own full-width section
+    // backgrounds span edge-to-edge, just like when the page renders on its own.
+    // Its inner sections still box their content to the site width themselves.
+    // Only full-bleed when the content is ITSELF a builder layout (its own containers
+    // self-box to the site width). Plain/classic content has no self-boxing, so full-bleed
+    // would ignore the parent container's Site Width — keep it in-flow so it respects it.
+    $isBuilderContent = $isFull && (str_contains($output, 'lazy-container') || str_contains($output, 'falcon-builder'));
+    $fullBleedStyle = 'width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);';
 @endphp
 
 @if($respCss)
@@ -64,13 +79,19 @@
 @endif
 
 @if($output !== '')
-<div class="element-post-content {{ $elemId }} {{ $cssCls }} {{ $visibilityClasses }}"
-     @if($cssId) id="{{ $cssId }}" @endif
-     style="{{ $wrapStyle }}">
-    @if($contentDisplay === 'full' && !$stripHtml)
-        <div style="{{ $typoStyle }}">{!! falcon_sanitize_html($output) !!}</div>
+    @if($isFull && $isBuilderContent)
+        <div class="element-post-content element-post-content-full {{ $elemId }} {{ $cssCls }} {{ $visibilityClasses }}"
+             @if($cssId) id="{{ $cssId }}" @endif
+             style="{{ $fullBleedStyle }}">{!! falcon_sanitize_html($output) !!}</div>
+    @elseif($isFull)
+        <div class="element-post-content {{ $elemId }} {{ $cssCls }} {{ $visibilityClasses }}"
+             @if($cssId) id="{{ $cssId }}" @endif
+             style="{{ $wrapStyle }}">{!! falcon_sanitize_html($output) !!}</div>
     @else
-        <p style="{{ $typoStyle }}">{{ $output }}</p>
+        <div class="element-post-content {{ $elemId }} {{ $cssCls }} {{ $visibilityClasses }}"
+             @if($cssId) id="{{ $cssId }}" @endif
+             style="{{ $wrapStyle }}">
+            <p style="{{ $typoStyle }}">{{ $output }}</p>
+        </div>
     @endif
-</div>
 @endif

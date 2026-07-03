@@ -46,7 +46,7 @@ class WordPressImporter
      */
     public static function parse(string $xml): array
     {
-        $out = ['site' => [], 'authors' => [], 'categories' => [], 'tags' => [], 'nav_menus' => [], 'attachments' => [], 'items' => []];
+        $out = ['site' => [], 'authors' => [], 'categories' => [], 'tags' => [], 'nav_menus' => [], 'layouts' => [], 'attachments' => [], 'items' => []];
 
         $prev = libxml_use_internal_errors(true);
         $root = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA);
@@ -92,21 +92,27 @@ class WordPressImporter
             ];
         }
 
-        // Custom terms — including navigation menus, which FalconCMS exports as
-        // `nav_menu` terms carrying a `_falcon_menu` termmeta with the full tree.
+        // Custom terms — navigation menus (`nav_menu` + `_falcon_menu`) and the
+        // Layout Builder (`falcon_layout` + `_falcon_layouts`), each carrying a
+        // self-contained JSON payload in termmeta.
         foreach ($channel->children($wpNs)->term as $term) {
-            if ((string) $term->term_taxonomy !== 'nav_menu') {
+            $taxonomy = (string) $term->term_taxonomy;
+            if ($taxonomy !== 'nav_menu' && $taxonomy !== 'falcon_layout') {
                 continue;
             }
+            $wantKey = $taxonomy === 'nav_menu' ? '_falcon_menu' : '_falcon_layouts';
             $payload = null;
             foreach ($term->termmeta as $tm) {
-                if ((string) $tm->meta_key === '_falcon_menu') {
+                if ((string) $tm->meta_key === $wantKey) {
                     $decoded = json_decode((string) $tm->meta_value, true);
                     if (is_array($decoded)) $payload = $decoded;
                 }
             }
-            if ($payload) {
+            if (!$payload) continue;
+            if ($taxonomy === 'nav_menu') {
                 $out['nav_menus'][] = $payload;
+            } else {
+                $out['layouts'] = $payload;
             }
         }
 
@@ -208,7 +214,7 @@ class WordPressImporter
 
         $summary = [
             'categories' => 0, 'tags' => 0, 'posts' => 0, 'pages' => 0,
-            'cpt' => 0, 'menus' => 0, 'skipped' => 0, 'errors' => [],
+            'cpt' => 0, 'menus' => 0, 'layouts' => 0, 'skipped' => 0, 'errors' => [],
         ];
 
         // 1) Categories (two pass for parents)
@@ -246,6 +252,15 @@ class WordPressImporter
                 $summary['menus'] += $this->importNavMenu($menuData, $lang) ? 1 : 0;
             } catch (\Throwable $e) {
                 $summary['errors'][] = 'Menu ' . ($menuData['name'] ?? '?') . ': ' . $e->getMessage();
+            }
+        }
+
+        // 2c) Layout Builder (Global + custom layouts + their section posts).
+        if (!empty($parsed['layouts'])) {
+            try {
+                $summary['layouts'] = $this->importLayouts($parsed['layouts'], $lang);
+            } catch (\Throwable $e) {
+                $summary['errors'][] = 'Layouts: ' . $e->getMessage();
             }
         }
 
@@ -429,6 +444,104 @@ class WordPressImporter
         }
 
         return true;
+    }
+
+    private function optionArrayLocal(string $key): array
+    {
+        $raw = get_cms_option($key, null);
+        $val = is_string($raw) ? json_decode($raw, true) : $raw;
+        return is_array($val) ? $val : [];
+    }
+
+    /**
+     * Rebuild the Layout Builder from an export payload: recreate its section posts
+     * (idempotent by type+slug), remap every assignment id, then merge the Global
+     * Layout and append/update custom layouts. Returns how many layouts were applied.
+     */
+    private function importLayouts(array $data, string $lang): int
+    {
+        $userId = auth()->id() ?? optional(DB::table('users')->first())->id;
+
+        // 1) Recreate section posts; build old-id → new-id map.
+        $idMap = [];
+        foreach (($data['sections'] ?? []) as $oldId => $sec) {
+            if (!is_array($sec) || empty($sec['type'])) continue;
+            $type = $sec['type'];
+            $slug = $sec['slug'] ?: (Str::slug($sec['title'] ?? $type) ?: $type);
+            $post = Post::where('type', $type)->where('slug', $slug)->first();
+            if ($post) {
+                $post->update([
+                    'title'   => $sec['title']  ?? $post->title,
+                    'status'  => $sec['status'] ?? 'published',
+                    'content' => $sec['content'] ?? $post->content,
+                ]);
+            } else {
+                $post = Post::create([
+                    'title'       => $sec['title'] ?: ucfirst(str_replace('falcon_', '', $type)),
+                    'slug'        => $slug,
+                    'type'        => $type,
+                    'status'      => $sec['status'] ?? 'published',
+                    'content'     => $sec['content'] ?? '',
+                    'editor_type' => 'builder',
+                    'user_id'     => $userId,
+                    'lang_code'   => $lang,
+                ]);
+            }
+            $idMap[(string) $oldId] = $post->id;
+        }
+
+        // Normalise + remap an assignment value → ['id','active'] (or null).
+        $remap = function ($v) use ($idMap) {
+            $id = null; $active = true;
+            if (is_array($v) && !empty($v['id'])) { $id = (int) $v['id']; $active = !array_key_exists('active', $v) || (bool) $v['active']; }
+            elseif (is_numeric($v)) { $id = (int) $v; }
+            if (!$id) return null;
+            $newId = $idMap[(string) $id] ?? null;
+            return $newId ? ['id' => $newId, 'active' => $active] : null;
+        };
+
+        // 2) Global Layout — remap, merge into existing (imported wins for its slots).
+        $global = $this->optionArrayLocal('falcon_layout_global');
+        foreach (($data['global'] ?? []) as $slot => $v) {
+            if ($entry = $remap($v)) $global[$slot] = $entry;
+        }
+        update_cms_option('falcon_layout_global', json_encode($global));
+
+        // 3) Custom layouts — remap assignments; append, or update one with the same name.
+        $existing = $this->optionArrayLocal('falcon_layouts');
+        $byName = [];
+        foreach ($existing as $i => $l) {
+            if (!empty($l['name'])) $byName[$l['name']] = $i;
+        }
+        $count = 0;
+        foreach (($data['layouts'] ?? []) as $l) {
+            if (!is_array($l)) continue;
+            $assignments = [];
+            foreach (($l['assignments'] ?? []) as $slot => $v) {
+                if ($entry = $remap($v)) $assignments[$slot] = $entry;
+            }
+            $name = $l['name'] ?? 'Imported Layout';
+            $rebuilt = [
+                'id'          => 'lay_' . Str::lower(Str::random(8)),
+                'name'        => $name,
+                'conditions'  => is_array($l['conditions'] ?? null) ? $l['conditions'] : [],
+                'assignments' => $assignments,
+            ];
+            if (isset($byName[$name])) {
+                $idx = $byName[$name];
+                $rebuilt['id'] = $existing[$idx]['id'] ?? $rebuilt['id'];
+                $existing[$idx] = $rebuilt;
+            } else {
+                $existing[] = $rebuilt;
+                $byName[$name] = count($existing) - 1;
+            }
+            $count++;
+        }
+        update_cms_option('falcon_layouts', json_encode(array_values($existing)));
+
+        if (function_exists('clear_page_cache')) clear_page_cache();
+
+        return $count + (empty($data['global']) ? 0 : 1);
     }
 
     /**

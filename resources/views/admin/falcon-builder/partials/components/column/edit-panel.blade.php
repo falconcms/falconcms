@@ -949,6 +949,12 @@
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-[11px] font-bold text-[#444]">Background Image</label>
                             <div class="flex gap-1 items-center">
+                                <button @click.stop="openDynSrcMenu(editingColumn.settings, 'bgImageDynamicSource', 'image', $event)"
+                                        class="w-6 h-6 flex items-center justify-center rounded border transition-all"
+                                        :class="editingColumn.settings.bgImageDynamicSource ? 'bg-[#2271b1]/10 text-[#0091ea] border-[#0091ea]/30' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'"
+                                        title="Use Dynamic Image">
+                                    <i class="fa fa-database text-[10px]"></i>
+                                </button>
                                 <div class="relative inline-block">
                                     <button @click="activeResponsiveMenu = activeResponsiveMenu === 'colBgImage' ? null : 'colBgImage'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
                                         <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
@@ -968,7 +974,19 @@
                                 </div>
                             </div>
                         </div>
-                        <div v-if="getResponsiveVal(editingColumn.settings, 'bgImage', device)" class="relative group">
+                        <div v-if="editingColumn.settings.bgImageDynamicSource"
+                             class="flex items-center justify-between px-3 py-2.5 bg-[#2271b1]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
+                             @click.stop="openDynSrcMenu(editingColumn.settings, 'bgImageDynamicSource', 'image', $event)">
+                            <div class="flex items-center gap-2">
+                                <i :class="['fa', getDynSrcDef(editingColumn.settings.bgImageDynamicSource).icon, 'text-[#0091ea] text-sm']"></i>
+                                <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingColumn.settings.bgImageDynamicSource).label }}</span>
+                            </div>
+                            <button @click.stop="editingColumn.settings.bgImageDynamicSource = ''"
+                                    class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
+                                <i class="fa fa-times text-[10px]"></i>
+                            </button>
+                        </div>
+                        <div v-else-if="getResponsiveVal(editingColumn.settings, 'bgImage', device)" class="relative group">
                             <img :src="getResponsiveVal(editingColumn.settings, 'bgImage', device)" class="w-full h-[120px] object-cover rounded border border-slate-200">
                             <div class="flex justify-center gap-2 mt-2">
                                 <button @click="setResponsiveVal(editingColumn.settings, 'bgImage', device, '')" class="px-3 py-1.5 text-[11px] font-bold border border-slate-200 rounded text-[#444] hover:bg-slate-50 transition-colors">Remove</button>
@@ -982,7 +1000,7 @@
                         </div>
                     </div>
 
-                    <template v-if="getResponsiveVal(editingColumn.settings, 'bgImage', device)">
+                    <template v-if="getResponsiveVal(editingColumn.settings, 'bgImage', device) || editingColumn.settings.bgImageDynamicSource">
                         <!-- Skip Lazy Loading -->
                         <div class="border-b border-slate-100 pb-3">
                             <div class="flex justify-between items-center mb-2">

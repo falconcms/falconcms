@@ -147,7 +147,7 @@
              @click.stop="setEditingContext('element', ci, coli, eli)"
              @contextmenu.prevent.stop="openCtxMenu($event, 'element', ci, coli, eli)"
              :class="[
-                (column.settings.contentLayout === 'row' && el.type !== 'row') ? '' : (getResponsiveVal(column.settings, 'contentAlignH', device) && getResponsiveVal(column.settings, 'contentAlignH', device) !== 'stretch' && el.type !== 'title' && el.type !== 'menu' && el.type !== 'text_block' && el.type !== 'special_text' && el.type !== 'button' && el.type !== 'image' && el.type !== 'card' && el.type !== 'spacer' && el.type !== 'html' && el.type !== 'icon_box' && el.type !== 'icon_list' && el.type !== 'accordion' && el.type !== 'tabs' && el.type !== 'video' && el.type !== 'counter' && el.type !== 'star_rating' && el.type !== 'gallery' && el.type !== 'post_meta' && el.type !== 'product_meta' && el.type !== 'post_content' && el.type !== 'post_grid' && el.type !== 'ticker' && !Object.keys(customElements).includes(el.type) ? '' : 'w-full'),
+                (column.settings.contentLayout === 'row' && el.type !== 'row') ? '' : (getResponsiveVal(column.settings, 'contentAlignH', device) && getResponsiveVal(column.settings, 'contentAlignH', device) !== 'stretch' && el.type !== 'title' && el.type !== 'breadcrumb' && el.type !== 'menu' && el.type !== 'text_block' && el.type !== 'special_text' && el.type !== 'button' && el.type !== 'image' && el.type !== 'card' && el.type !== 'spacer' && el.type !== 'html' && el.type !== 'icon_box' && el.type !== 'icon_list' && el.type !== 'accordion' && el.type !== 'tabs' && el.type !== 'video' && el.type !== 'counter' && el.type !== 'star_rating' && el.type !== 'gallery' && el.type !== 'post_meta' && el.type !== 'product_meta' && el.type !== 'post_content' && el.type !== 'post_grid' && el.type !== 'ticker' && !Object.keys(customElements).includes(el.type) ? '' : 'w-full'),
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
              ]"
@@ -160,6 +160,7 @@
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.gallery')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.heading')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.title')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.breadcrumb')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.text')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.image')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.button')

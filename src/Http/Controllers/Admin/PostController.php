@@ -39,8 +39,25 @@ class PostController extends Controller
             }
         } catch (\Throwable $e) {}
 
+        // Where the builder's ✕ (close) returns to: the edit surface this item
+        // came from — a layout section → the Layout Builder; a page/post/CPT →
+        // its own edit screen. An explicit local ?return= overrides.
+        $layoutTypes = ['falcon_header', 'falcon_footer', 'falcon_ptb', 'falcon_content'];
+        $return = (string) request('return', '');
+        if ($return !== '' && str_starts_with($return, '/') && !str_starts_with($return, '//')) {
+            $builderBackUrl = $return;
+        } elseif (in_array($post->type, $layoutTypes, true)) {
+            $builderBackUrl = route('admin.falcon-builder.sections');
+        } elseif ($post->type === 'page' && \Illuminate\Support\Facades\Route::has('admin.pages.edit')) {
+            $builderBackUrl = route('admin.pages.edit', $post->id);
+        } elseif (\Illuminate\Support\Facades\Route::has('admin.posts.edit')) {
+            $builderBackUrl = route('admin.posts.edit', $post->id);
+        } else {
+            $builderBackUrl = route('admin.posts.index');
+        }
+
         return view('falcon-cms::admin.falcon-builder.index', compact(
-            'post', 'customElements', 'themeBodyFont', 'themeHeadingFont', 'pendingAutosave'
+            'post', 'customElements', 'themeBodyFont', 'themeHeadingFont', 'pendingAutosave', 'builderBackUrl'
         ));
     }
 

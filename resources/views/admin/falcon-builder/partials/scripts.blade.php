@@ -25,6 +25,9 @@
         setup() {
             const layout = ref([]);
             const postCardMode = ref(window.falconPostCardMode || false);
+            // Layout Builder sections (header/footer/page-title-bar/content) can also use
+            // the dynamic Post elements (Content, Post Meta, Product Meta).
+            const layoutMode = ref(window.falconLayoutMode || false);
             const isPreview = ref(false);
             const isSaving = ref(false);
             const isDirty = ref(false);
@@ -176,6 +179,16 @@
                 const all = [...dynSrcDefs.text, ...dynSrcDefs.link, ...dynSrcDefs.image];
                 return all.find(d => d.key === key) || { key, label: key, icon: 'fa-bolt', subFields: [] };
             };
+            // Resolve a dynamic background-image source (Feature Image / Author Avatar / Site Logo)
+            // to a real preview URL for the canvas. Empty when the current post has no value.
+            const dynBgUrl = (s) => {
+                const src = s && s.bgImageDynamicSource;
+                if (!src) return '';
+                return (window.builderDynPreview && window.builderDynPreview[src]) || '';
+            };
+            // Shown in-canvas when a dynamic bg source is set but resolves to no URL (e.g. a page
+            // with no featured image) — signals the dynamic bg is active without a broken image.
+            const DYN_BG_PLACEHOLDER = 'linear-gradient(135deg, rgba(34,113,177,0.14), rgba(0,145,234,0.06))';
             const getDynSrcGroups = (ctx) => {
                 const opts = dynSrcDefs[ctx] || dynSrcDefs.text;
                 const map = {};
@@ -505,15 +518,16 @@
                 { type: 'spacer', name: 'Spacer', icon: 'fa fa-arrows-alt-v' },
                 { type: 'tabs', name: 'Tabs', icon: 'fa fa-folder' },
                 { type: 'title', name: 'Title', icon: 'fa fa-heading' },
+                { type: 'breadcrumb', name: 'Bread Crumb', icon: 'fa fa-angle-right' },
                 { type: 'star_rating', name: 'Star Rating', icon: 'fa fa-star' },
                 { type: 'gallery', name: 'Gallery', icon: 'fa fa-images' },
                 { type: 'ticker', name: 'Ticker', icon: 'fa fa-rss' },
             ];
-            if (postCardMode.value) {
+            if (postCardMode.value || layoutMode.value) {
                 availableElements.push({ type: 'post_content', name: 'Content', icon: 'fa fa-paragraph' });
                 availableElements.push({ type: 'post_meta', name: 'Post Meta', icon: 'fa fa-tags' });
-                // Product Meta — post-card only (like Post Meta / Content); renders product
-                // price/SKU/stock when the card's post is a product, nothing otherwise.
+                // Product Meta — renders product price/SKU/stock when the current post is a
+                // product, nothing otherwise. Available in post cards and layout sections.
                 availableElements.push({ type: 'product_meta', name: 'Product Meta', icon: 'fa fa-tag' });
             }
 
@@ -1214,7 +1228,7 @@
                 bgGradientStartOpacity: 1, bgGradientEndOpacity: 1,
                 bgGradientStartPosition: 0, bgGradientEndPosition: 100,
                 bgGradientType: 'linear', bgGradientAngle: 180,
-                bgImage: '', bgImageSkipLazy: false, bgImagePosition: 'center center',
+                bgImage: '', bgImageDynamicSource: '', bgImageSkipLazy: false, bgImagePosition: 'center center',
                 bgImageRepeat: 'no-repeat', bgImageSize: 'auto',
                 bgImageFading: false, bgImageParallax: 'none', bgImageBlendMode: 'normal',
                 fontSize: '', fontWeight: '', lineHeight: '', letterSpacing: '', textAlign: '',
@@ -1367,7 +1381,7 @@
                             bgGradientStartColor: '', bgGradientEndColor: '',
                             bgGradientStartPosition: 0, bgGradientEndPosition: 100,
                             bgGradientType: 'linear', bgGradientAngle: 180,
-                            bgImage: '', bgImageSkipLazy: false, bgImagePosition: 'center center',
+                            bgImage: '', bgImageDynamicSource: '', bgImageSkipLazy: false, bgImagePosition: 'center center',
                             bgImageRepeat: 'no-repeat', bgImageSize: 'auto', bgImageFading: false,
                             bgImageParallax: 'none', bgImageBlendMode: 'normal',
                             contentWidth: 'site', height: 'auto', customHeight: '',
@@ -2520,9 +2534,12 @@
                     }
                 }
 
-                const rBgImage = bgType !== 'color' ? (getResponsiveVal(s, 'bgImage', dev) || s.bgImage) : null;
+                const dynBg = dynBgUrl(s);
+                const rBgImage = bgType !== 'color' ? (dynBg || getResponsiveVal(s, 'bgImage', dev) || s.bgImage) : null;
                 if (rBgImage) {
                     bgImages.push(`url('${rBgImage}')`);
+                } else if (bgType !== 'color' && s.bgImageDynamicSource) {
+                    bgImages.push(DYN_BG_PLACEHOLDER);
                 }
 
                 let bgImageStr = bgImages.length > 0 ? bgImages.join(', ') : undefined;
@@ -2543,6 +2560,7 @@
                 let bgPos = getResponsiveVal(s, 'bgImagePosition', dev) || s.bgImagePosition || 'center center';
                 let bgRep = getResponsiveVal(s, 'bgImageRepeat', dev) || s.bgImageRepeat || 'no-repeat';
                 let bgSz = getResponsiveVal(s, 'bgImageSize', dev) || s.bgImageSize || 'auto';
+                if (s.bgImageDynamicSource && (!bgSz || bgSz === 'auto')) bgSz = 'cover';
                 let bgBlend = getResponsiveVal(s, 'bgImageBlendMode', dev) || s.bgImageBlendMode || 'normal';
 
                 return {
@@ -2803,7 +2821,8 @@
                 const bgType     = s.bgType || 'color';
                 const rBgColor   = getResponsiveVal(s, 'bgColor',       device.value);
                 const rBgOpacity = getResponsiveVal(s, 'bgColorOpacity', device.value);
-                const activeBgImage = getResponsiveVal(s, 'bgImage', device.value);
+                const dynBg = dynBgUrl(s);
+                const activeBgImage = dynBg || getResponsiveVal(s, 'bgImage', device.value);
                 let bgImages = [];
 
                 // Gradient — only when bgType is 'gradient'
@@ -2822,11 +2841,13 @@
                 }
 
                 // BG Image — works when bgType is 'image' or 'gradient' (not 'color')
-                if (activeBgImage && bgType !== 'color') {
-                    bgImages.push(`url('${activeBgImage}')`);
+                if ((activeBgImage || s.bgImageDynamicSource) && bgType !== 'color') {
+                    bgImages.push(activeBgImage ? `url('${activeBgImage}')` : DYN_BG_PLACEHOLDER);
                     style.backgroundPosition   = getResponsiveVal(s, 'bgImagePosition',  device.value) || 'center center';
                     style.backgroundRepeat     = getResponsiveVal(s, 'bgImageRepeat',    device.value) || 'no-repeat';
-                    style.backgroundSize       = getResponsiveVal(s, 'bgImageSize',      device.value) || 'cover';
+                    let _colBgSz = getResponsiveVal(s, 'bgImageSize', device.value) || 'cover';
+                    if (s.bgImageDynamicSource && (!_colBgSz || _colBgSz === 'auto')) _colBgSz = 'cover';
+                    style.backgroundSize       = _colBgSz;
                     style.backgroundAttachment = s.bgImageParallax === 'fixed' ? 'fixed' : 'scroll';
                     style.backgroundBlendMode  = getResponsiveVal(s, 'bgImageBlendMode', device.value) || 'normal';
                 }
@@ -3070,6 +3091,20 @@
                             paddingTop: 20, paddingBottom: 20, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
                             visibility: { mobile: true, tablet: true, desktop: true },
                             dynamic_source: '', link_dynamic_source: ''
+                        } : {}),
+                        ...(type === 'breadcrumb' ? {
+                            showHome: true, homeLabel: 'Home', separator: '/', showCurrent: true,
+                            fontFamily: 'inherit', fontSize: 14, fontSizeUnit: 'px', fontWeight: '400',
+                            lineHeight: '', letterSpacing: '', textTransform: 'none',
+                            color: '#6b7280', linkColor: '#6b7280', linkHoverColor: '#2271b1',
+                            separatorColor: '#9ca3af', currentColor: '#111827',
+                            textAlign: 'left',
+                            marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0,
+                            marginTopUnit: 'px', marginRightUnit: 'px', marginBottomUnit: 'px', marginLeftUnit: 'px',
+                            paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0,
+                            paddingTopUnit: 'px', paddingRightUnit: 'px', paddingBottomUnit: 'px', paddingLeftUnit: 'px',
+                            cssClass: '', cssId: '',
+                            visibility: { mobile: true, tablet: true, desktop: true }
                         } : {}),
                         ...(type === 'text' ? { content: '<p>New text here...</p>' } : {}),
                         ...(type === 'button' ? {

@@ -1,5 +1,20 @@
 @php
     $s = $container['settings'] ?? [];
+
+    // Dynamic Background Image — resolve Feature Image / Author Avatar / Site Logo to a real URL
+    // for the viewed post, then feed it through the normal bgImage pipeline below.
+    if (!empty($s['bgImageDynamicSource']) && function_exists('falcon_resolve_dynamic_value')) {
+        $__dynBg = falcon_resolve_dynamic_value($s['bgImageDynamicSource'], $post ?? null);
+        $s['bgImage'] = $__dynBg ?: '';
+        unset($s['bgImage_tablet'], $s['bgImage_mobile']);
+        // A dynamic image background is meant to fill the area — default to cover unless the
+        // user chose an explicit size (the unconfigured default is 'auto', which centers it).
+        if (empty($s['bgImageSize']) || $s['bgImageSize'] === 'auto') $s['bgImageSize'] = 'cover';
+        // Resolved server-side already, so render it inline (skip lazy) — this guarantees the
+        // background paints immediately instead of depending on the IntersectionObserver swap.
+        $s['bgImageSkipLazy'] = true;
+    }
+
     $heightMode = $s['height'] ?? 'auto';
     
     $containerStyles = ['width: 100%'];
@@ -262,6 +277,17 @@
 
     // Build full CSS string in PHP to avoid Blade parsing @media as directives
     $css  = ".{$cid}{margin-top:{$dMarginTop};margin-bottom:{$dMarginBottom};{$dPaddingCss}--lc-col-gap:{$dColGap};{$dBgCss}{$dExtraCss}}";
+
+    // A "Site Width" container must stay constrained to the site width regardless of the
+    // Customizer's Boxed/Wide layout — in Wide mode the theme flips .container-custom to
+    // max-width:100%, which would make an explicit "Site Width" container render full-bleed.
+    // A higher-specificity rule (+ !important) pins it so the container's own choice always
+    // wins and matches the builder canvas (which always constrains Site Width to --site-width).
+    if ($contentWidth === 'site' && !$isNestedRow) {
+        $__siteW = get_cms_option('theme_site_width', '1200px');
+        if (is_numeric($__siteW)) $__siteW .= 'px';
+        $css .= ".{$cid} .lazy-container-inner{max-width:var(--site-width, {$__siteW})!important;margin-left:auto!important;margin-right:auto!important}";
+    }
 
     // Sticky
     if (!empty($s['sticky'])) {

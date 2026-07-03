@@ -31,6 +31,7 @@
                     Showing all results
                 @endif
             </div>
+            @if($posts->total() > 0)
             <div>
                 <form action="" method="GET" id="sorting-form">
                     <select name="orderby" class="border border-gray-200 rounded-sm bg-white focus:ring-0 focus:border-gray-300 text-[#777] cursor-pointer text-[14px] font-normal pl-3 pr-8 py-2" onchange="this.form.submit()">
@@ -43,6 +44,7 @@
                     </select>
                 </form>
             </div>
+            @endif
         </div>
 
         @if($posts->count() > 0)

@@ -430,6 +430,55 @@
                                 </div>
                             </div>
 
+                            <div v-else-if="editingElement?.type === 'breadcrumb'" class="space-y-8">
+                                <!-- Show Home -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">Show Home Link</label>
+                                        <div class="flex bg-slate-50 border border-slate-100 rounded p-1 w-fit">
+                                            <button @click="editingElement.settings.showHome = true"
+                                                    :class="editingElement.settings.showHome !== false ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                                                    class="px-5 py-1 text-[11px] font-black uppercase rounded transition-all">On</button>
+                                            <button @click="editingElement.settings.showHome = false"
+                                                    :class="editingElement.settings.showHome === false ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                                                    class="px-5 py-1 text-[11px] font-black uppercase rounded transition-all">Off</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Home Label -->
+                                <div v-if="editingElement.settings.showHome !== false">
+                                    <label class="block text-[12px] font-bold text-[#333] mb-3">Home Label</label>
+                                    <input type="text" v-model="editingElement.settings.homeLabel"
+                                           placeholder="Home"
+                                           class="w-full border border-slate-200 rounded p-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/10 transition-all">
+                                </div>
+
+                                <!-- Separator -->
+                                <div>
+                                    <label class="block text-[12px] font-bold text-[#333] mb-3">Separator</label>
+                                    <input type="text" v-model="editingElement.settings.separator"
+                                           placeholder="/"
+                                           class="w-full border border-slate-200 rounded p-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/10 transition-all">
+                                    <p class="text-[11px] text-slate-400 mt-2">e.g. <span class="font-bold">/</span>, <span class="font-bold">&raquo;</span>, <span class="font-bold">&rsaquo;</span>, <span class="font-bold">&mdash;</span></p>
+                                </div>
+
+                                <!-- Show Current -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">Show Current Page</label>
+                                        <div class="flex bg-slate-50 border border-slate-100 rounded p-1 w-fit">
+                                            <button @click="editingElement.settings.showCurrent = true"
+                                                    :class="editingElement.settings.showCurrent !== false ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                                                    class="px-5 py-1 text-[11px] font-black uppercase rounded transition-all">On</button>
+                                            <button @click="editingElement.settings.showCurrent = false"
+                                                    :class="editingElement.settings.showCurrent === false ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                                                    class="px-5 py-1 text-[11px] font-black uppercase rounded transition-all">Off</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div v-else-if="editingElement?.type === 'title'" class="space-y-8">
                                 <!-- Title Field -->
                                 <div>
@@ -3107,6 +3156,11 @@
                              <!-- Design Settings for Title -->
                              <div v-else-if="editingElement?.type === 'title'" class="space-y-6">
                                  @include('falcon-cms::admin.falcon-builder.partials.components.elements.title-design')
+                             </div>
+
+                             <!-- Design Settings for Bread Crumb -->
+                             <div v-else-if="editingElement?.type === 'breadcrumb'" class="space-y-6">
+                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.breadcrumb-design')
                              </div>
 
                              <!-- Design Settings for Button -->

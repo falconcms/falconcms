@@ -357,10 +357,18 @@
     @include('falcon-cms::themes.falcon-theme.partials.header')
 @endif
 
-@include('falcon-cms::themes.falcon-theme.partials.title-bar')
+@if($customTitleBar = get_falcon_page_title_bar())
+    {!! $customTitleBar !!}
+@else
+    @include('falcon-cms::themes.falcon-theme.partials.title-bar')
+@endif
 
 <main class="flex-grow">
-    @yield('content')
+    @if($customContent = get_falcon_content())
+        {!! $customContent !!}
+    @else
+        @yield('content')
+    @endif
 </main>
 
 @if($customFooter = get_falcon_footer())

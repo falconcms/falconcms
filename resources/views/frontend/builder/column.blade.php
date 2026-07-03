@@ -13,6 +13,20 @@
 </style>
 @php
     $s     = $column['settings'] ?? [];
+
+    // Dynamic Background Image — resolve Feature Image / Author Avatar / Site Logo to a real URL
+    // for the viewed post, then feed it through the normal bgImage pipeline below.
+    if (!empty($s['bgImageDynamicSource']) && function_exists('falcon_resolve_dynamic_value')) {
+        $__dynBg = falcon_resolve_dynamic_value($s['bgImageDynamicSource'], $post ?? null);
+        $s['bgImage'] = $__dynBg ?: '';
+        unset($s['bgImage_tablet'], $s['bgImage_mobile']);
+        // A dynamic image background is meant to fill the area — default to cover unless the
+        // user chose an explicit size (the unconfigured default is 'auto', which centers it).
+        if (empty($s['bgImageSize']) || $s['bgImageSize'] === 'auto') $s['bgImageSize'] = 'cover';
+        // Resolved server-side already, so render it inline (skip lazy) — guarantees immediate paint.
+        $s['bgImageSkipLazy'] = true;
+    }
+
     $basisRaw = $column['basis'] ?? null;
     if ($basisRaw === null) {
         $totalColumns = max(1, count($container['columns'] ?? [1]));

@@ -5,7 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.7.4 <Badge type="tip" text="Latest" /> {#v1-7-4}
+## v1.8.0 <Badge type="tip" text="Latest" /> {#v1-8-0}
+
+**Released: 2026-07-03**
+
+A major builder release: a dedicated **Layout Builder** for site-wide templates, a new **Bread Crumb** element, **dynamic image backgrounds** for containers and columns, and a far more consistent **Site Width / Full Width** system.
+
+### Added
+- **Layout Builder** — design site-wide **Header**, **Footer**, **Page Title Bar** and **Content** templates in the Falcon Builder and assign them globally or by condition. Includes an in-card layout picker, a **conditions** modal (target a custom layout to specific pages, post types or archives), a per-layout **enable/disable** toggle (AJAX), and **Export / Import** of layouts.
+- **Custom 404 page** — build your own "Not Found" page in the Layout Builder; the theme renders it automatically.
+- **Bread Crumb element** — a new builder element that outputs the current page's breadcrumb trail (Home → post type / category → current page), with full typography, colour, separator and alignment controls, plus Schema.org `BreadcrumbList` structured data for SEO.
+- **Dynamic image backgrounds** — containers, columns and nested columns can now use a **dynamic source** (Feature Image, Author Avatar or Site Logo) as their Background Image, resolved per-post on the frontend. It layers correctly beneath a Background Gradient, and the builder canvas previews it too.
+
+### Changed
+- **Consistent Site Width / Full Width** — a container set to **Site Width** now always constrains to your Customizer *Site Width* (centered), independent of the Customizer's Boxed/Wide layout, and matches the builder canvas exactly. **Full Width** containers always span edge-to-edge.
+- **Customizer moved under Falcon Builder** — *Appearance → Customize* now lives in the **Falcon Builder** menu; the sidebar's "Lazy Builder" was renamed to **Falcon Builder** with corrected submenu links, and the standalone Header/Footer builder entries were removed (they live in the Layout Builder now).
+- **Product sorting** on the shop and product archives only appears when products actually exist.
+- **Hardened ACPT import/export** — re-imports are idempotent, taxonomy terms keep their `cpt_slug`, and post export is more complete.
+
+### Fixed
+- The **Post Content** element set to *Full content* no longer breaks plain/classic content out to the viewport edge — it now respects its parent container's width (it still full-bleeds when the content is itself a builder layout with self-boxing sections).
+- Dynamic backgrounds render **inline** (no lazy-load dependency) so they paint reliably; the builder canvas shows a neutral **"Feature Image"** placeholder when editing a template that has no specific post, instead of an unrelated image.
+
+## v1.7.4 {#v1-7-4}
 
 **Released: 2026-06-30**
 

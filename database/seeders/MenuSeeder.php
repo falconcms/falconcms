@@ -114,10 +114,8 @@ class MenuSeeder extends Seeder
             'order' => 42,
         ]);
         $falconBuilderMenu->children()->createMany([
-            ['title' => 'Sections',       'route' => 'admin.falcon-builder.sections',     'order' => 1],
-            ['title' => 'Header Builder', 'route' => 'admin.falcon-builder.header',        'order' => 2],
-            ['title' => 'Footer Builder', 'route' => 'admin.falcon-builder.footer',        'order' => 3],
-            ['title' => 'Library',        'route' => 'admin.falcon-builder.library',       'order' => 4],
+            ['title' => 'Layout',  'route' => 'admin.falcon-builder.sections', 'order' => 1],
+            ['title' => 'Library', 'route' => 'admin.falcon-builder.library',  'order' => 2],
         ]);
 
         // 8. ACPT

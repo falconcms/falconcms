@@ -38,7 +38,7 @@
                     Showing all results
                 @endif
             </div>
-            @if($isProductArchive)
+            @if($isProductArchive && $posts->total() > 0)
             <div>
                 <form action="" method="GET" id="sorting-form">
                     @if(request('s')) <input type="hidden" name="s" value="{{ request('s') }}"> @endif

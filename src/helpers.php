@@ -560,7 +560,15 @@ if (!function_exists('get_lazy_content')) {
                 return do_lazy_shortcode(falcon_sanitize_html((string) $content));
             }
 
-            $rendered = view('falcon-cms::frontend.builder.render', ['layout' => $layout])->render();
+            $data = ['layout' => $layout];
+            // Expose current post context so dynamic sources (feature image, author, etc.) —
+            // including dynamic backgrounds on containers/columns — resolve to the viewed post.
+            $cp = view()->getShared()['current_post'] ?? null;
+            if ($cp && function_exists('_lazy_layout_post_context')) {
+                $data += _lazy_layout_post_context($cp);
+            }
+
+            $rendered = view('falcon-cms::frontend.builder.render', $data)->render();
             return do_lazy_shortcode($rendered);
         } catch (\Exception $e) {
             \Log::error('Falcon Builder Error: ' . $e->getMessage());
@@ -599,8 +607,64 @@ if (!function_exists('_lazy_parse_builder_layout')) {
 if (!function_exists('_lazy_render_layout')) {
     function _lazy_render_layout(array $layout): string
     {
-        $rendered = view('falcon-cms::frontend.builder.render', ['layout' => $layout])->render();
+        $data = ['layout' => $layout];
+
+        // When a single post/page/product is being viewed, expose its data so the
+        // dynamic Post elements (Content, Post Meta, Product Meta) placed inside a
+        // Layout Builder section resolve to the current post — the same variables
+        // the post-card renderer provides.
+        $cp = view()->getShared()['current_post'] ?? null;
+        if ($cp) {
+            $data += _lazy_layout_post_context($cp);
+        }
+
+        $rendered = view('falcon-cms::frontend.builder.render', $data)->render();
         return do_lazy_shortcode($rendered);
+    }
+}
+
+if (!function_exists('falcon_html_to_text')) {
+    /**
+     * Convert rendered HTML to clean plain text. Unlike strip_tags(), this first
+     * removes <script>/<style>/<noscript> blocks *including their contents*, so
+     * builder-injected CSS/JS never leaks out as visible text.
+     */
+    function falcon_html_to_text($html): string
+    {
+        $html = (string) $html;
+        $html = preg_replace('#<(script|style|noscript)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
+        $text = strip_tags($html);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return trim(preg_replace('/\s+/', ' ', $text) ?? $text);
+    }
+}
+
+if (!function_exists('_lazy_layout_post_context')) {
+    /** Post-context variables consumed by the Post elements (mirrors the card renderer). */
+    function _lazy_layout_post_context($post): array
+    {
+        if (!$post) return [];
+
+        $img = $post->featured_image ?? null;
+        if ($img && !str_starts_with((string) $img, 'http')) $img = asset('storage/' . $img);
+
+        // Full, rendered content for the Content element (builder JSON → HTML, or classic).
+        $fullContent = function_exists('get_lazy_content') ? get_lazy_content($post->content ?? '') : (string) ($post->content ?? '');
+        $plain = trim(strip_tags($fullContent));
+        $excerpt = $post->excerpt ?? (mb_strlen($plain) > 160 ? mb_substr($plain, 0, 160) . '…' : $plain);
+
+        return [
+            'post'              => $post,
+            'postTitle'         => $post->title ?? '',
+            'postContent'       => $fullContent,
+            'postExcerpt'       => $excerpt,
+            'postPublishedAt'   => $post->published_at ?? null,
+            'postCreatedAt'     => $post->created_at ?? null,
+            'postAuthor'        => optional($post->user)->name ?? '',
+            'postFeaturedImage' => $img,
+            'postPermalink'     => function_exists('get_falcon_permalink') ? get_falcon_permalink($post) : '#',
+            'postCategories'    => $post->categories ?? collect(),
+        ];
     }
 }
 
@@ -721,18 +785,193 @@ if (!function_exists('_lazy_builder_render_wrapper')) {
     }
 }
 
+if (!function_exists('falcon_layout_context')) {
+    /**
+     * Request-scoped description of what the frontend is currently rendering,
+     * used to decide which custom Layout (by its conditions) applies. The
+     * frontend controllers set this before returning their view; the header/
+     * footer resolvers read it while the view renders.
+     *
+     * Shape: ['kind' => 'home|single|archive|search', 'post_type' => ?, 'post_id' => ?, 'taxonomy' => ?]
+     */
+    function falcon_layout_context(?array $set = null): array
+    {
+        static $ctx = ['kind' => null];
+        if ($set !== null) {
+            $ctx = $set;
+        }
+        return $ctx;
+    }
+}
+
+if (!function_exists('falcon_get_custom_layouts')) {
+    /** All user-created custom layouts (name, conditions, per-slot assignments). */
+    function falcon_get_custom_layouts(): array
+    {
+        $raw = get_cms_option('falcon_layouts', null);
+        $layouts = is_string($raw) ? json_decode($raw, true) : $raw;
+        return is_array($layouts) ? array_values(array_filter($layouts, 'is_array')) : [];
+    }
+}
+
+if (!function_exists('falcon_condition_target_matches')) {
+    /** Does a single condition target match the current render context? */
+    function falcon_condition_target_matches(string $target, array $ctx): bool
+    {
+        $kind = $ctx['kind'] ?? null;
+        if ($target === 'entire_site')   return true;
+        if ($target === 'home')          return $kind === 'home';
+        if ($target === 'search')        return $kind === 'search';
+        if ($target === '404')           return $kind === '404';
+        if ($target === 'all_archives')  return $kind === 'archive';
+        if ($target === 'author_archive')return $kind === 'archive' && ($ctx['archive_type'] ?? null) === 'author';
+        if (str_starts_with($target, 'all:')) {
+            // All singular items of a post type (the front page counts if it is one).
+            return in_array($kind, ['single', 'home'], true) && ($ctx['post_type'] ?? null) === substr($target, 4);
+        }
+        if (str_starts_with($target, 'singular:')) { // legacy alias of all:
+            return in_array($kind, ['single', 'home'], true) && ($ctx['post_type'] ?? null) === substr($target, 9);
+        }
+        if (str_starts_with($target, 'archive:')) {
+            return $kind === 'archive' && ($ctx['post_type'] ?? null) === substr($target, 8);
+        }
+        if (str_starts_with($target, 'tax:')) {
+            return $kind === 'archive' && ($ctx['taxonomy'] ?? null) === substr($target, 4);
+        }
+        if (str_starts_with($target, 'taxonomy:')) { // legacy alias of tax:
+            return $kind === 'archive' && ($ctx['taxonomy'] ?? null) === substr($target, 9);
+        }
+        if (str_starts_with($target, 'term:')) {
+            [$tax, $id] = array_pad(explode(':', substr($target, 5), 2), 2, null);
+            return $kind === 'archive'
+                && ($ctx['taxonomy'] ?? null) === $tax
+                && (int) ($ctx['term_id'] ?? 0) === (int) $id;
+        }
+        if (str_starts_with($target, 'author:')) {
+            return $kind === 'archive'
+                && ($ctx['archive_type'] ?? null) === 'author'
+                && (int) ($ctx['author_id'] ?? 0) === (int) substr($target, 7);
+        }
+        if (str_starts_with($target, 'post:')) {
+            return (int) ($ctx['post_id'] ?? 0) === (int) substr($target, 5);
+        }
+        return false;
+    }
+}
+
+if (!function_exists('falcon_normalize_conditions')) {
+    /** Normalise stored conditions to a list of ['mode'=>'include|exclude','target'=>string]. */
+    function falcon_normalize_conditions($conditions): array
+    {
+        $out = [];
+        foreach ((array) $conditions as $c) {
+            if (is_string($c)) {                       // legacy flat target => include
+                $out[] = ['mode' => 'include', 'target' => $c];
+            } elseif (is_array($c) && !empty($c['target'])) {
+                $out[] = ['mode' => ($c['mode'] ?? 'include') === 'exclude' ? 'exclude' : 'include', 'target' => (string) $c['target']];
+            }
+        }
+        return $out;
+    }
+}
+
+if (!function_exists('falcon_layout_matches')) {
+    /**
+     * Does a layout apply to the given render context? A layout shows where at
+     * least one INCLUDE condition matches and no EXCLUDE condition matches.
+     * With no include conditions it applies nowhere.
+     */
+    function falcon_layout_matches($conditions, array $ctx): bool
+    {
+        $anyInclude = false;
+        $includeMatched = false;
+        foreach (falcon_normalize_conditions($conditions) as $c) {
+            $matches = falcon_condition_target_matches($c['target'], $ctx);
+            if ($c['mode'] === 'exclude') {
+                if ($matches) return false;             // an exclusion always wins
+            } else {
+                $anyInclude = true;
+                if ($matches) $includeMatched = true;
+            }
+        }
+        return $anyInclude && $includeMatched;
+    }
+}
+
+if (!function_exists('falcon_layout_assigned_section')) {
+    /**
+     * Resolve the section that fills a layout slot for the current request.
+     *
+     * Model ("Global = Pages, Custom = rest"):
+     *   • On a PAGE (single 'page' / front page): the Global Layout's explicit
+     *     assignment wins, then a matching custom layout, then (header/footer only)
+     *     the first published section as a legacy fallback, else the theme default.
+     *   • Everywhere else (posts, CPTs, archives, search): only a custom layout
+     *     whose conditions match applies; otherwise the theme default (null).
+     *
+     * Returns a published Post or null (null ⇒ theme renders its own default).
+     */
+    function falcon_layout_assigned_section(string $slot, string $type)
+    {
+        $ctx = falcon_layout_context();
+        $isPage = in_array($ctx['kind'] ?? null, ['single', 'home'], true)
+            && ($ctx['post_type'] ?? null) === 'page';
+
+        // Normalise a stored assignment (legacy int, or ['id','active']) into
+        // ['id','active']; the 'active' flag is this layout's own on/off switch.
+        $entryOf = function ($v) {
+            if (is_array($v) && !empty($v['id'])) {
+                return ['id' => (int) $v['id'], 'active' => !array_key_exists('active', $v) || (bool) $v['active']];
+            }
+            if (is_numeric($v) && (int) $v > 0) return ['id' => (int) $v, 'active' => true];
+            return null;
+        };
+        $resolve = function ($entry) use ($type) {
+            if (!$entry || !$entry['active']) return null;
+            return \FalconCms\Core\Models\Post::where('id', $entry['id'])->where('type', $type)->first();
+        };
+
+        // 1) PAGE context → the Global Layout's assignment wins first (if active).
+        if ($isPage) {
+            $raw = get_cms_option('falcon_layout_global', null);
+            $global = is_string($raw) ? json_decode($raw, true) : $raw;
+            $global = is_array($global) ? $global : [];
+            if (array_key_exists($slot, $global)) {
+                if ($section = $resolve($entryOf($global[$slot]))) return $section;
+                // assigned but this layout turned it off → fall through to custom.
+            }
+        }
+
+        // 2) Custom layouts whose conditions match the current context.
+        foreach (falcon_get_custom_layouts() as $layout) {
+            $conditions = is_array($layout['conditions'] ?? null) ? $layout['conditions'] : [];
+            $entry = $entryOf($layout['assignments'][$slot] ?? null);
+            if ($entry && falcon_layout_matches($conditions, $ctx)) {
+                if ($section = $resolve($entry)) return $section;
+            }
+        }
+
+        // 3) Legacy fallback (PAGE + chrome only): keep the built header/footer
+        //    showing on pages even when nothing has been explicitly assigned.
+        if ($isPage && in_array($slot, ['header', 'footer'], true)) {
+            return \FalconCms\Core\Models\Post::where('type', $type)
+                    ->where('status', 'published')
+                    ->where('lang_code', app()->getLocale())
+                    ->first()
+                ?: \FalconCms\Core\Models\Post::where('type', $type)
+                    ->where('status', 'published')
+                    ->first();
+        }
+
+        // 4) Theme default.
+        return null;
+    }
+}
+
 if (!function_exists('get_falcon_header')) {
     function get_falcon_header()
     {
-        $header = \FalconCms\Core\Models\Post::where('type', 'falcon_header')
-            ->where('status', 'published')
-            ->where('lang_code', app()->getLocale())
-            ->first();
-        if (!$header) {
-            $header = \FalconCms\Core\Models\Post::where('type', 'falcon_header')
-                ->where('status', 'published')
-                ->first();
-        }
+        $header = falcon_layout_assigned_section('header', 'falcon_header');
         if ($header) {
             return _lazy_builder_render_wrapper($header->content ?? '', 'header', 'falcon-builder-header');
         }
@@ -743,19 +982,50 @@ if (!function_exists('get_falcon_header')) {
 if (!function_exists('get_falcon_footer')) {
     function get_falcon_footer()
     {
-        $footer = \FalconCms\Core\Models\Post::where('type', 'falcon_footer')
-            ->where('status', 'published')
-            ->where('lang_code', app()->getLocale())
-            ->first();
-        if (!$footer) {
-            $footer = \FalconCms\Core\Models\Post::where('type', 'falcon_footer')
-                ->where('status', 'published')
-                ->first();
-        }
+        $footer = falcon_layout_assigned_section('footer', 'falcon_footer');
         if ($footer) {
             return _lazy_builder_render_wrapper($footer->content ?? '', 'footer', 'falcon-builder-footer');
         }
         return null;
+    }
+}
+
+if (!function_exists('get_falcon_page_title_bar')) {
+    function get_falcon_page_title_bar()
+    {
+        $ptb = falcon_layout_assigned_section('page_title_bar', 'falcon_ptb');
+        if ($ptb) {
+            return _lazy_builder_render_wrapper($ptb->content ?? '', 'div', 'falcon-builder-ptb');
+        }
+        return null;
+    }
+}
+
+if (!function_exists('get_falcon_content')) {
+    function get_falcon_content()
+    {
+        $content = falcon_layout_assigned_section('content', 'falcon_content');
+        if ($content) {
+            return _lazy_builder_render_wrapper($content->content ?? '', 'div', 'falcon-builder-content');
+        }
+        return null;
+    }
+}
+
+if (!function_exists('falcon_theme_view')) {
+    /**
+     * Resolve a theme view name for the active theme, mirroring the frontend
+     * controller's resolution: app-level theme → package theme → falcon-theme
+     * fallback. Usable anywhere (e.g. the 404 renderer).
+     */
+    function falcon_theme_view(string $view, ?string $fallback = null): string
+    {
+        $activeTheme = get_cms_option('active_theme', 'falcon-theme');
+        foreach (["themes.{$activeTheme}.{$view}", "falcon-cms::themes.{$activeTheme}.{$view}", "falcon-cms::themes.falcon-theme.{$view}"] as $candidate) {
+            if (view()->exists($candidate)) return $candidate;
+        }
+        if ($fallback && $fallback !== $view) return falcon_theme_view($fallback);
+        return "falcon-cms::themes.falcon-theme.{$view}";
     }
 }
 
@@ -1726,6 +1996,14 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
                     $img = '/storage/' . ltrim($img, '/');
                 }
                 $val = $img;
+                break;
+            case 'logo':
+            case 'site_logo':
+                $logo = get_cms_option('theme_site_logo', '');
+                if ($logo && !str_starts_with($logo, 'http') && !str_starts_with($logo, '/storage')) {
+                    $logo = '/storage/' . ltrim($logo, '/');
+                }
+                $val = $logo;
                 break;
             case 'current_date':
                 $dateFormat = $config['date_format'] ?? 'M j, Y';

@@ -336,9 +336,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
 
     // Falcon Builder Sections
     Route::get('/falcon-builder-sections', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'index'])->name('falcon-builder.sections');
-    Route::get('/falcon-builder-sections/header', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'editHeader'])->name('falcon-builder.header');
-    Route::get('/falcon-builder-sections/footer', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'editFooter'])->name('falcon-builder.footer');
-    Route::post('/falcon-builder-sections/toggle/{id}', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'toggleStatus'])->name('falcon-builder.toggle');
+    Route::post('/falcon-builder-sections/slot-toggle', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'toggleSlot'])->name('falcon-builder.slot.toggle');
+    Route::post('/falcon-builder-sections/section', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'createSection'])->name('falcon-builder.section.create');
+    Route::post('/falcon-builder-sections/assign', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'assignSection'])->name('falcon-builder.section.assign');
+    Route::post('/falcon-builder-sections/clear', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'clearSection'])->name('falcon-builder.section.clear');
+    Route::post('/falcon-builder-sections/section/delete', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'deleteSection'])->name('falcon-builder.section.delete');
+    Route::post('/falcon-builder-sections/layout', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'createLayout'])->name('falcon-builder.layout.create');
+    Route::post('/falcon-builder-sections/layout/rename', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'renameLayout'])->name('falcon-builder.layout.rename');
+    Route::post('/falcon-builder-sections/layout/delete', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'deleteLayout'])->name('falcon-builder.layout.delete');
+    Route::post('/falcon-builder-sections/layout/conditions', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'saveConditions'])->name('falcon-builder.layout.conditions');
+    Route::get('/falcon-builder-sections/condition-items', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'conditionItems'])->name('falcon-builder.condition-items');
 
     // Form Builder
     Route::get('forms', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'index'])->name('forms.index');

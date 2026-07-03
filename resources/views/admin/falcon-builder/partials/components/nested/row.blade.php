@@ -261,6 +261,7 @@
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.gallery')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.heading')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.title')
+                            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.breadcrumb')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.text')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.image')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.button')

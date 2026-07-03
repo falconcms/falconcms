@@ -114,6 +114,15 @@ class ExportManager
             ];
         }
 
+        // ── Layouts (Layout Builder: Global + custom layouts + their sections) ──
+        $globalCount = count(self::optionArray('falcon_layout_global')) > 0 ? 1 : 0;
+        $sources[] = [
+            'key'   => 'layout',
+            'label' => 'Layouts',
+            'group' => 'Appearance',
+            'count' => count(self::optionArray('falcon_layouts')) + $globalCount,
+        ];
+
         /**
          * Let any feature contribute its own exportable source. Future features
          * that are exportable simply hook in here and appear automatically.
@@ -173,6 +182,8 @@ class ExportManager
                 self::collectTaxonomy(Str::after($key, 'taxonomy:'), $termsXml);
             } elseif ($key === 'nav_menu') {
                 self::collectNavMenus($termsXml);
+            } elseif ($key === 'layout') {
+                self::collectLayouts($termsXml);
             }
         }
 
@@ -235,6 +246,62 @@ class ExportManager
         foreach (NavigationMenu::orderBy('id')->get() as $menu) {
             $terms[] = self::navMenuTerm($menu);
         }
+    }
+
+    /** Read a CMS option that stores a JSON array (layout config). */
+    protected static function optionArray(string $key): array
+    {
+        $raw = get_cms_option($key, null);
+        $val = is_string($raw) ? json_decode($raw, true) : $raw;
+        return is_array($val) ? $val : [];
+    }
+
+    /**
+     * Layouts export as a single `falcon_layout` term carrying a `_falcon_layouts`
+     * termmeta with the Global Layout, every custom layout (name/conditions/
+     * assignments) AND the full section posts they use (header/footer/page-title-bar/
+     * content) — so it round-trips losslessly and rebuilds ids on import.
+     */
+    protected static function collectLayouts(array &$terms): void
+    {
+        $payload = [
+            'global'   => self::optionArray('falcon_layout_global'),
+            'layouts'  => self::optionArray('falcon_layouts'),
+            'sections' => self::layoutSections(),
+        ];
+        if (empty($payload['global']) && empty($payload['layouts']) && empty($payload['sections'])) {
+            return;
+        }
+
+        $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $xml  = "\t<wp:term>\n";
+        $xml .= "\t\t<wp:term_id>0</wp:term_id>\n";
+        $xml .= "\t\t<wp:term_taxonomy>" . self::cdata('falcon_layout') . "</wp:term_taxonomy>\n";
+        $xml .= "\t\t<wp:term_slug>" . self::cdata('falcon-layouts') . "</wp:term_slug>\n";
+        $xml .= "\t\t<wp:term_name>" . self::cdata('Layouts') . "</wp:term_name>\n";
+        $xml .= "\t\t<wp:termmeta>\n";
+        $xml .= "\t\t\t<wp:meta_key>" . self::cdata('_falcon_layouts') . "</wp:meta_key>\n";
+        $xml .= "\t\t\t<wp:meta_value>" . self::cdata((string) $json) . "</wp:meta_value>\n";
+        $xml .= "\t\t</wp:termmeta>\n";
+        $xml .= "\t</wp:term>\n";
+        $terms[] = $xml;
+    }
+
+    /** Every Layout Builder section post (id-keyed) with its builder content. */
+    protected static function layoutSections(): array
+    {
+        $types = ['falcon_header', 'falcon_footer', 'falcon_ptb', 'falcon_content'];
+        $out = [];
+        foreach (Post::whereIn('type', $types)->orderBy('id')->get() as $p) {
+            $out[(string) $p->id] = [
+                'type'    => $p->type,
+                'title'   => (string) $p->title,
+                'slug'    => (string) $p->slug,
+                'status'  => (string) $p->status,
+                'content' => (string) $p->content,
+            ];
+        }
+        return $out;
     }
 
     protected static function navMenuTerm(NavigationMenu $menu): string

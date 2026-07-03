@@ -109,6 +109,22 @@ class FalconCmsServiceProvider extends ServiceProvider
             });
         }
 
+        // Render 404s through the active theme's 404 template so the Layout Builder
+        // (header/footer/page-title-bar/content hooks + "404 Page" conditions) applies.
+        $this->callAfterResolving(\Illuminate\Contracts\Debug\ExceptionHandler::class, function ($handler) {
+            if (!method_exists($handler, 'renderable')) return;
+            $handler->renderable(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+                if (!$request || $request->is('admin', 'admin/*') || $request->expectsJson()) {
+                    return null; // keep admin/API/default handling
+                }
+                try {
+                    return response()->view(falcon_theme_view('404'), ['exception' => $e], 404);
+                } catch (\Throwable $ex) {
+                    return null; // fall back to Laravel's default 404
+                }
+            });
+        });
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../resources/views' => resource_path('views/vendor/falcon-cms'),
