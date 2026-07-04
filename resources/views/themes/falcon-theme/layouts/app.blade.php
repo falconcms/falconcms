@@ -181,6 +181,11 @@
             padding-bottom: {{ get_cms_option('theme_page_padding_bottom', '60px') }};
         }
 
+        /* Kill the sub-pixel hairline (body bg peeking through) where the page content meets a
+           full-width Layout header/footer — pull them 1px into the adjacent section to cover it. */
+        .falcon-builder-footer { margin-top: -1px; }
+        .falcon-builder-header { margin-bottom: -1px; }
+
         a { color: {{ $linkColor }}; transition: color 0.2s; }
         a:hover { color: {{ $linkHoverColor }}; }
 
@@ -221,7 +226,11 @@
                 $optionName = "theme_typography_{$tag}";
                 $typo = json_decode(get_cms_option($optionName), true);
                 if($typo) {
-                    echo "{$tag}, .{$tag}-style { ";
+                    // `body {tag}` (specificity 0,0,2) so the Customizer heading sizes beat Tailwind's
+                    // preflight reset (`h1{font-size:inherit}`, 0,0,1) which is injected after this
+                    // <style> at runtime — yet still lose to inline styles (e.g. the builder's Title),
+                    // so the page builder is unaffected.
+                    echo "body {$tag}, .{$tag}-style { ";
                     if(isset($typo['family'])) echo "font-family: '{$typo['family']}', sans-serif; ";
                     if(isset($typo['size'])) {
                         $sizeOut = in_array($tag, $headingTags, true) ? $fluidFontSize($typo['size']) : $typo['size'];
@@ -349,20 +358,26 @@
 @php
     $bodyClasses = "antialiased selection:bg-primary selection:text-white";
 @endphp
-<body class="{{ $bodyClasses }}">
+<body class="{{ $bodyClasses }}{{ isset($builderFramePart) ? ' falcon-frame-preview falcon-frame-' . $builderFramePart : '' }}">
+@php $__fp = $builderFramePart ?? null; @endphp
 
-@if($customHeader = get_falcon_header())
-    {!! $customHeader !!}
-@else
-    @include('falcon-cms::themes.falcon-theme.partials.header')
+@if($__fp === null || $__fp === 'header')
+    @if($customHeader = get_falcon_header())
+        {!! $customHeader !!}
+    @elseif(!falcon_layout_is_active())
+        @include('falcon-cms::themes.falcon-theme.partials.header')
+    @endif
 @endif
 
+@if($__fp === null || $__fp === 'titlebar')
 @if($customTitleBar = get_falcon_page_title_bar())
     {!! $customTitleBar !!}
-@else
+@elseif(!falcon_layout_is_active())
     @include('falcon-cms::themes.falcon-theme.partials.title-bar')
 @endif
+@endif
 
+@if($__fp === null)
 <main class="flex-grow">
     @if($customContent = get_falcon_content())
         {!! $customContent !!}
@@ -370,11 +385,14 @@
         @yield('content')
     @endif
 </main>
+@endif
 
-@if($customFooter = get_falcon_footer())
-    {!! $customFooter !!}
-@else
-    @include('falcon-cms::themes.falcon-theme.partials.footer')
+@if($__fp === null || $__fp === 'footer')
+    @if($customFooter = get_falcon_footer())
+        {!! $customFooter !!}
+    @elseif(!falcon_layout_is_active())
+        @include('falcon-cms::themes.falcon-theme.partials.footer')
+    @endif
 @endif
 
     {{-- Off-canvas mini cart --}}
@@ -392,5 +410,25 @@
     @if(get_cms_option('theme_footer_script'))
         <script>{!! get_cms_option('theme_footer_script') !!}</script>
     @endif
+
+    {{-- Builder frame preview (header/footer shown read-only inside the page/post builder) --}}
+    @isset($builderFramePart)
+    <style>
+        html, body.falcon-frame-preview { margin:0 !important; padding:0 !important; min-height:0 !important; background:transparent !important; overflow:hidden; }
+        body.falcon-frame-preview main { min-height:0 !important; }
+        body.falcon-frame-preview .main-header { position:static !important; top:auto !important; }
+    </style>
+    <script>
+        (function () {
+            function postH() {
+                var h = Math.ceil(document.body.getBoundingClientRect().height);
+                if (h > 0) parent.postMessage({ falconFrame: @json($builderFramePart), height: h }, '*');
+            }
+            window.addEventListener('load', function () { postH(); setTimeout(postH, 250); setTimeout(postH, 800); });
+            window.addEventListener('resize', postH);
+            if (window.ResizeObserver) { try { new ResizeObserver(postH).observe(document.body); } catch (e) {} }
+        })();
+    </script>
+    @endisset
 </body>
 </html>

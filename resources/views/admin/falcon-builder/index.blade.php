@@ -206,6 +206,43 @@
     </script>
 
     @include('falcon-cms::admin.falcon-builder.partials.styles')
+
+    {{-- Read-only header/footer preview styles. Must live OUTSIDE #lazy-builder-app —
+         Vue strips <style>/<script> from its component template. --}}
+    @if(!empty($frameHeaderUrl ?? null) || !empty($frameTitleBarUrl ?? null) || !empty($frameFooterUrl ?? null))
+    <style>
+        .builder-frame { position: relative; }
+        .builder-frame::after {
+            content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none;
+            background: transparent; box-shadow: inset 0 0 0 2px transparent; transition: box-shadow .15s ease, background .15s ease;
+        }
+        .builder-frame:hover::after { box-shadow: inset 0 0 0 2px rgba(99,102,241,.55); background: rgba(99,102,241,.05); }
+        .builder-frame-edit {
+            position: absolute; left: 50%; z-index: 20;
+            width: 34px; height: 34px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            background: #1e293b; color: #fff; font-size: 13px; text-decoration: none;
+            box-shadow: 0 6px 16px rgba(0,0,0,.28);
+            opacity: 0; pointer-events: none; transform: translate(-50%, 0) scale(.9);
+            transition: opacity .15s ease, transform .15s ease;
+        }
+        /* Edit button centered vertically & horizontally in every preview frame. */
+        .builder-frame .builder-frame-edit { top: 50%; transform: translate(-50%, -50%) scale(.9); }
+        .builder-frame:hover .builder-frame-edit { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+        .builder-frame-edit:hover { background: #0f172a; }
+        .builder-frame-edit .builder-frame-tip {
+            position: absolute; bottom: calc(100% + 9px); left: 50%; transform: translateX(-50%);
+            white-space: nowrap; background: #1e293b; color: #fff;
+            font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+            padding: 5px 11px; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity .12s ease;
+        }
+        .builder-frame-tip::after {
+            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            border: 5px solid transparent; border-top-color: #1e293b;
+        }
+        .builder-frame-edit:hover .builder-frame-tip { opacity: 1; }
+    </style>
+    @endif
 </head>
 <body class="bg-[#f1f1f1]">
 
@@ -251,5 +288,36 @@
     <script src="{{ asset('vendor/falcon-cms/js/purify.min.js') }}"></script>
 
     @include('falcon-cms::admin.falcon-builder.partials.scripts')
+
+    {{-- Header/footer preview iframe auto-resize. OUTSIDE #lazy-builder-app + after the Vue
+         mount so it actually runs (Vue ignores <script> in its template). Same-origin frames,
+         so we can read their real content height directly; polling handles Vue re-renders and
+         the frame's Tailwind styling asynchronously. --}}
+    @if(!empty($frameHeaderUrl ?? null) || !empty($frameTitleBarUrl ?? null) || !empty($frameFooterUrl ?? null))
+    <script>
+        (function () {
+            function fit(f) {
+                try {
+                    var d = f.contentDocument || (f.contentWindow && f.contentWindow.document);
+                    if (!d || !d.body) return;
+                    var h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);
+                    if (h > 0 && Math.abs((parseInt(f.style.height, 10) || 0) - h) > 1) f.style.height = h + 'px';
+                } catch (e) {}
+            }
+            function fitAll() { document.querySelectorAll('iframe[data-falcon-frame]').forEach(fit); }
+            window.addEventListener('message', function (e) {
+                var d = e.data || {};
+                if (d && d.falconFrame && d.height) {
+                    document.querySelectorAll('iframe[data-falcon-frame="' + d.falconFrame + '"]').forEach(function (f) { f.style.height = d.height + 'px'; });
+                }
+            });
+            document.addEventListener('load', function (e) {
+                if (e.target && e.target.matches && e.target.matches('iframe[data-falcon-frame]')) fit(e.target);
+            }, true);
+            window.addEventListener('load', fitAll);
+            var n = 0, iv = setInterval(function () { fitAll(); if (++n > 25) clearInterval(iv); }, 400);
+        })();
+    </script>
+    @endif
 </body>
 </html>

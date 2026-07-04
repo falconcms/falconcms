@@ -99,13 +99,12 @@ class MenuSeeder extends Seeder
             'order' => 40,
         ]);
         $appearanceMenu->children()->createMany([
-            ['title' => 'Themes',     'route' => 'admin.themes.index',     'order' => 1],
-            ['title' => 'Customizer', 'route' => 'admin.customizer.index', 'order' => 2],
-            ['title' => 'Menus',      'route' => 'admin.menus.index',      'order' => 3],
-            ['title' => 'Widgets',    'route' => 'admin.widgets.index',    'order' => 4],
+            ['title' => 'Themes',  'route' => 'admin.themes.index',  'order' => 1],
+            ['title' => 'Menus',   'route' => 'admin.menus.index',   'order' => 2],
+            ['title' => 'Widgets', 'route' => 'admin.widgets.index', 'order' => 3],
         ]);
 
-        // 7b. Falcon Builder
+        // 7b. Falcon Builder (Customizer lives here, not under Appearance)
         $falconBuilderMenu = Menu::create([
             'title' => 'Falcon Builder',
             'route' => 'admin.falcon-builder.sections',
@@ -114,8 +113,9 @@ class MenuSeeder extends Seeder
             'order' => 42,
         ]);
         $falconBuilderMenu->children()->createMany([
-            ['title' => 'Layout',  'route' => 'admin.falcon-builder.sections', 'order' => 1],
-            ['title' => 'Library', 'route' => 'admin.falcon-builder.library',  'order' => 2],
+            ['title' => 'Layout',     'route' => 'admin.falcon-builder.sections', 'order' => 1],
+            ['title' => 'Library',    'route' => 'admin.falcon-builder.library',  'order' => 2],
+            ['title' => 'Customizer', 'route' => 'admin.customizer.index',         'order' => 3],
         ]);
 
         // 8. ACPT

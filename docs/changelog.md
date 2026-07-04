@@ -5,7 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.8.0 <Badge type="tip" text="Latest" /> {#v1-8-0}
+## v1.8.1 <Badge type="tip" text="Latest" /> {#v1-8-1}
+
+**Released: 2026-07-04**
+
+A builder-experience & polish release: the page/post builder canvas now previews the real header, page title bar and footer around your content, plus fixes for headings in the classic editor and the admin Customizer menu placement.
+
+### Added
+- **Live header / title bar / footer preview in the builder** — when you design a **page, post, CPT or product** (not a Layout template), the canvas now shows the actual **Header**, **Page Title Bar** and **Footer** that the applicable Layout assigns to it, rendered through the real theme so it looks like the live page. They're **read-only** here — hover shows an *Edit … Layout Section* button that opens that section in the Layout Builder. A slot is previewed **only when it's enabled** in the layout.
+
+### Changed
+- **Rich Editor headings** — the **Paragraph / Heading 1–6** dropdown is back in the classic editor (it was using a removed TinyMCE 5 control name).
+- **Customizer now lives under Falcon Builder** on existing sites too — a migration moves the *Customizer* menu item out of *Appearance* and under *Falcon Builder* (fresh installs already got this); a legacy *"Lazy Builder"* menu is renamed to *Falcon Builder*.
+- **Disabled Layout slots render nothing** — when the Layout Builder is in use, a header/title-bar/footer that is toggled **off** or unassigned no longer falls back to the theme's built-in chrome (on the frontend *and* in the builder preview).
+
+### Fixed
+- **Classic-editor headings now use your Customizer heading sizes** instead of shrinking to paragraph size (Tailwind's preflight was overriding bare `h1`–`h6`; the page builder was already unaffected).
+- **Hairline gap** between the page content and a full-width footer (a 1px sub-pixel seam showing the body background) is gone.
+- Fixed an infinite recursion that could return a 500 when a page is rendered as its own content (e.g. the Home page inside its assigned footer).
+
+## v1.8.0 {#v1-8-0}
 
 **Released: 2026-07-03**
 

@@ -376,7 +376,7 @@
                 selector: '#wp-editor',
                 menubar: false, height: 450,
                 plugins: ['lists', 'link', 'image', 'preview', 'code', 'fullscreen', 'media', 'table', 'wordcount'],
-                toolbar: 'formatselect | bold italic underline strikethrough | blockquote | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code fullscreen',
+                toolbar: 'blocks | bold italic underline strikethrough | blockquote | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code fullscreen',
                 content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size:14px }',
                 branding: false,
                 image_title: true, automatic_uploads: true, file_picker_types: 'image',

@@ -380,7 +380,7 @@
                     menubar: false,
                     height: 280,
                     plugins: ['lists', 'link', 'code'],
-                    toolbar: 'formatselect | bold italic underline | bullist numlist | link | code',
+                    toolbar: 'blocks | bold italic underline | bullist numlist | link | code',
                     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:14px; padding:12px; }',
                     branding: false,
                 });

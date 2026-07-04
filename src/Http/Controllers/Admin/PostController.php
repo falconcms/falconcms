@@ -56,9 +56,73 @@ class PostController extends Controller
             $builderBackUrl = route('admin.posts.index');
         }
 
+        // Real page/post/CPT/product (NOT a Layout section): show the Header, Page Title Bar and
+        // Footer that the applicable Layout (global or custom) assigns to this post as read-only
+        // previews around the editable content, so the canvas looks like the live page. A slot is
+        // previewed ONLY when it's enabled/assigned in the layout — a disabled or unassigned slot
+        // shows nothing. These are edited from the Layout Builder, never from here.
+        $frameHeaderUrl = $frameTitleBarUrl = $frameFooterUrl = null;
+        $frameHeaderEditUrl = $frameTitleBarEditUrl = $frameFooterEditUrl = null;
+        if (!in_array($post->type, $layoutTypes, true)) {
+            if (function_exists('falcon_layout_context')) {
+                falcon_layout_context(['kind' => 'single', 'post_type' => $post->type, 'post_id' => $post->id]);
+            }
+            if (function_exists('falcon_layout_assigned_section')) {
+                // [frame part => [section post type, layout slot key]]
+                $slots = [
+                    'header'   => ['falcon_header', 'header'],
+                    'titlebar' => ['falcon_ptb',    'page_title_bar'],
+                    'footer'   => ['falcon_footer', 'footer'],
+                ];
+                foreach ($slots as $part => $meta) {
+                    try {
+                        $sec = falcon_layout_assigned_section($meta[1], $meta[0]);
+                    } catch (\Throwable $e) {
+                        $sec = null;
+                    }
+                    if (!$sec) continue; // slot not enabled/assigned → no preview
+                    // Relative URL (absolute=false) so the iframe is always same-origin as the builder.
+                    $frameUrl = route('admin.falcon-builder.frame', ['id' => $post->id, 'part' => $part], false);
+                    $editUrl  = route('admin.falcon-builder', $sec->id);
+                    if ($part === 'header')   { $frameHeaderUrl   = $frameUrl; $frameHeaderEditUrl   = $editUrl; }
+                    if ($part === 'titlebar') { $frameTitleBarUrl = $frameUrl; $frameTitleBarEditUrl = $editUrl; }
+                    if ($part === 'footer')   { $frameFooterUrl   = $frameUrl; $frameFooterEditUrl   = $editUrl; }
+                }
+            }
+        }
+
         return view('falcon-cms::admin.falcon-builder.index', compact(
-            'post', 'customElements', 'themeBodyFont', 'themeHeadingFont', 'pendingAutosave', 'builderBackUrl'
+            'post', 'customElements', 'themeBodyFont', 'themeHeadingFont', 'pendingAutosave', 'builderBackUrl',
+            'frameHeaderUrl', 'frameTitleBarUrl', 'frameFooterUrl',
+            'frameHeaderEditUrl', 'frameTitleBarEditUrl', 'frameFooterEditUrl'
         ));
+    }
+
+    /**
+     * Read-only Header/Footer preview for the page/post builder canvas. Renders the assigned
+     * header or footer through the real theme layout (so it inherits all theme CSS) for the
+     * post being edited, and is embedded as an auto-resizing, non-interactive iframe.
+     */
+    public function framePreview($id, $part)
+    {
+        $part = in_array($part, ['header', 'titlebar', 'footer'], true) ? $part : 'header';
+        $post = Post::findOrFail($id);
+
+        // Establish the same context the frontend would for this post, so the Layout Builder
+        // resolves the header/footer that actually applies to it (and dynamic values resolve).
+        view()->share('current_post', $post);
+        if (function_exists('falcon_layout_context')) {
+            falcon_layout_context([
+                'kind'      => 'single',
+                'post_type' => $post->type,
+                'post_id'   => $post->id,
+            ]);
+        }
+
+        return response(view('falcon-cms::admin.falcon-builder.frame-preview', [
+            'post'             => $post,
+            'builderFramePart' => $part,
+        ])->render())->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     public function saveBuilder(Request $request, $id)

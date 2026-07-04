@@ -1,9 +1,36 @@
 <main class="builder-canvas-area flex flex-col bg-white">
-    <div class="canvas-container" 
+    <div class="canvas-container"
          @click="clearEditingContext"
-         :class="[isPreview ? 'preview-mode' : '', device]" 
+         :class="[isPreview ? 'preview-mode' : '', device]"
          :style="canvasStyle">
-        
+
+        {{-- Read-only HEADER preview (real theme header for this page/post/CPT/product).
+             Edited only from the Layout Builder — non-interactive here.
+             NOTE: the frame CSS + resize JS live in index.blade.php OUTSIDE the Vue mount,
+             because Vue strips <style>/<script> from its template. --}}
+        @if(!empty($frameHeaderUrl ?? null))
+        <div v-if="!isPreview" class="builder-frame builder-frame-header">
+            <iframe src="{{ $frameHeaderUrl }}" data-falcon-frame="header" scrolling="no" loading="eager"
+                    style="width:100%;border:0;display:block;height:90px;pointer-events:none;"></iframe>
+            <a href="{{ $frameHeaderEditUrl ?? '#' }}" target="_blank" rel="noopener" class="builder-frame-edit" aria-label="Edit Header Layout Section">
+                <i class="fa fa-window-maximize"></i>
+                <span class="builder-frame-tip">Edit Header Layout Section</span>
+            </a>
+        </div>
+        @endif
+
+        {{-- Read-only PAGE TITLE BAR preview (only when a PTB Layout section is enabled). --}}
+        @if(!empty($frameTitleBarUrl ?? null))
+        <div v-if="!isPreview" class="builder-frame builder-frame-titlebar">
+            <iframe src="{{ $frameTitleBarUrl }}" data-falcon-frame="titlebar" scrolling="no" loading="eager"
+                    style="width:100%;border:0;display:block;height:120px;pointer-events:none;"></iframe>
+            <a href="{{ $frameTitleBarEditUrl ?? '#' }}" target="_blank" rel="noopener" class="builder-frame-edit" aria-label="Edit Page Title Bar Layout Section">
+                <i class="fa fa-window-maximize"></i>
+                <span class="builder-frame-tip">Edit Page Title Bar Section</span>
+            </a>
+        </div>
+        @endif
+
         <!-- Empty State -->
         <div v-if="layout.length === 0" class="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] bg-white">
             <div class="w-full mx-auto border-2 border-dashed border-slate-200 rounded-lg p-20 flex flex-col items-center text-center">
@@ -35,5 +62,17 @@
                 @include('falcon-cms::admin.falcon-builder.partials.components.container.row')
             </template>
         </div>
+
+        {{-- Read-only FOOTER preview --}}
+        @if(!empty($frameFooterUrl ?? null))
+        <div v-if="!isPreview" class="builder-frame builder-frame-footer">
+            <iframe src="{{ $frameFooterUrl }}" data-falcon-frame="footer" scrolling="no" loading="eager"
+                    style="width:100%;border:0;display:block;height:300px;pointer-events:none;"></iframe>
+            <a href="{{ $frameFooterEditUrl ?? '#' }}" target="_blank" rel="noopener" class="builder-frame-edit" aria-label="Edit Footer Layout Section">
+                <i class="fa fa-window-maximize"></i>
+                <span class="builder-frame-tip">Edit Footer Layout Section</span>
+            </a>
+        </div>
+        @endif
     </div>
 </main>

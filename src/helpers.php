@@ -563,9 +563,19 @@ if (!function_exists('get_lazy_content')) {
             $data = ['layout' => $layout];
             // Expose current post context so dynamic sources (feature image, author, etc.) —
             // including dynamic backgrounds on containers/columns — resolve to the viewed post.
+            // Guard against recursion: _lazy_layout_post_context() computes $postContent by
+            // calling get_lazy_content($post->content) again, so only add the context at the
+            // top level — otherwise a post whose content is rendered while it is the current
+            // post (e.g. the Home page inside a footer section) loops forever.
+            static $ctxDepth = 0;
             $cp = view()->getShared()['current_post'] ?? null;
-            if ($cp && function_exists('_lazy_layout_post_context')) {
-                $data += _lazy_layout_post_context($cp);
+            if ($cp && $ctxDepth === 0 && function_exists('_lazy_layout_post_context')) {
+                $ctxDepth++;
+                try {
+                    $data += _lazy_layout_post_context($cp);
+                } finally {
+                    $ctxDepth--;
+                }
             }
 
             $rendered = view('falcon-cms::frontend.builder.render', $data)->render();
@@ -931,14 +941,18 @@ if (!function_exists('falcon_layout_assigned_section')) {
             return \FalconCms\Core\Models\Post::where('id', $entry['id'])->where('type', $type)->first();
         };
 
-        // 1) PAGE context → the Global Layout's assignment wins first (if active).
+        // 1) PAGE context → the Global Layout's assignment wins first, and its on/off decision
+        //    is AUTHORITATIVE: an assigned-but-inactive slot renders nothing (no legacy fallback).
+        $globalSlotConfigured = false;
         if ($isPage) {
             $raw = get_cms_option('falcon_layout_global', null);
             $global = is_string($raw) ? json_decode($raw, true) : $raw;
             $global = is_array($global) ? $global : [];
-            if (array_key_exists($slot, $global)) {
+            if (array_key_exists($slot, $global) && $entryOf($global[$slot]) !== null) {
+                $globalSlotConfigured = true; // slot explicitly assigned (active OR inactive)
                 if ($section = $resolve($entryOf($global[$slot]))) return $section;
-                // assigned but this layout turned it off → fall through to custom.
+                // assigned but turned OFF → the toggle wins; do not fall back to a built section.
+                return null;
             }
         }
 
@@ -951,9 +965,9 @@ if (!function_exists('falcon_layout_assigned_section')) {
             }
         }
 
-        // 3) Legacy fallback (PAGE + chrome only): keep the built header/footer
-        //    showing on pages even when nothing has been explicitly assigned.
-        if ($isPage && in_array($slot, ['header', 'footer'], true)) {
+        // 3) Legacy fallback (PAGE + chrome only): keep the built header/footer showing on pages
+        //    ONLY when the Global Layout never configured this slot at all.
+        if ($isPage && !$globalSlotConfigured && in_array($slot, ['header', 'footer'], true)) {
             return \FalconCms\Core\Models\Post::where('type', $type)
                     ->where('status', 'published')
                     ->where('lang_code', app()->getLocale())
@@ -965,6 +979,34 @@ if (!function_exists('falcon_layout_assigned_section')) {
 
         // 4) Theme default.
         return null;
+    }
+}
+
+if (!function_exists('falcon_layout_is_active')) {
+    /**
+     * True once the Layout Builder is actually in use — i.e. a Global Layout assignment or any
+     * custom layout exists. When active, the site's header/title-bar/footer are controlled by
+     * the Layout Builder, so a slot that is disabled or unassigned renders NOTHING (the theme's
+     * built-in default chrome is only a fallback for sites that never touched the Layout Builder).
+     */
+    function falcon_layout_is_active(): bool
+    {
+        static $active = null;
+        if ($active !== null) return $active;
+
+        $global = get_cms_option('falcon_layout_global', null);
+        $global = is_string($global) ? json_decode($global, true) : $global;
+        if (is_array($global)) {
+            foreach ($global as $v) {
+                if ((is_array($v) && !empty($v['id'])) || (is_numeric($v) && (int) $v > 0)) return $active = true;
+            }
+        }
+
+        $custom = get_cms_option('falcon_layouts', null);
+        $custom = is_string($custom) ? json_decode($custom, true) : $custom;
+        if (is_array($custom) && !empty($custom)) return $active = true;
+
+        return $active = false;
     }
 }
 

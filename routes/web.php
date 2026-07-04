@@ -115,6 +115,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         }
     })->name('falcon-builder.card-preview');
     Route::get('falcon-builder/{id}', [PostController::class, 'builder'])->name('falcon-builder');
+    Route::get('falcon-builder/{id}/frame/{part}', [PostController::class, 'framePreview'])->name('falcon-builder.frame');
     Route::post('falcon-builder/{id}/save', [PostController::class, 'saveBuilder'])->name('falcon-builder.save');
     // Revisions + Autosave
     Route::post('falcon-builder/{id}/autosave', [PostController::class, 'autosaveBuilder'])->name('falcon-builder.autosave');

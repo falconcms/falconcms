@@ -1284,7 +1284,7 @@
                             menubar: false,
                             height: 350,
                             plugins: 'lists link code table lists wordcount preview fullscreen',
-                            toolbar1: 'formatselect | bold italic underline strikethrough blockquote',
+                            toolbar1: 'blocks | bold italic underline strikethrough blockquote',
                             toolbar2: 'alignleft aligncenter alignright alignjustify',
                             toolbar3: 'bullist numlist outdent indent link table | code fullscreen',
                             valid_elements: '*[*]',
