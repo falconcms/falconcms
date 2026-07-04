@@ -364,7 +364,7 @@
 @if($__fp === null || $__fp === 'header')
     @if($customHeader = get_falcon_header())
         {!! $customHeader !!}
-    @elseif(!falcon_layout_is_active())
+    @else
         @include('falcon-cms::themes.falcon-theme.partials.header')
     @endif
 @endif
@@ -372,7 +372,7 @@
 @if($__fp === null || $__fp === 'titlebar')
 @if($customTitleBar = get_falcon_page_title_bar())
     {!! $customTitleBar !!}
-@elseif(!falcon_layout_is_active())
+@else
     @include('falcon-cms::themes.falcon-theme.partials.title-bar')
 @endif
 @endif
@@ -390,7 +390,7 @@
 @if($__fp === null || $__fp === 'footer')
     @if($customFooter = get_falcon_footer())
         {!! $customFooter !!}
-    @elseif(!falcon_layout_is_active())
+    @else
         @include('falcon-cms::themes.falcon-theme.partials.footer')
     @endif
 @endif

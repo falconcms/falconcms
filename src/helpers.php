@@ -941,22 +941,25 @@ if (!function_exists('falcon_layout_assigned_section')) {
             return \FalconCms\Core\Models\Post::where('id', $entry['id'])->where('type', $type)->first();
         };
 
-        // 1) PAGE context → the Global Layout's assignment wins first, and its on/off decision
-        //    is AUTHORITATIVE: an assigned-but-inactive slot renders nothing (no legacy fallback).
-        $globalSlotConfigured = false;
+        // Resolution cascade — a slot renders the FIRST active assignment found:
+        //   custom layout (for its targeted content) → Global Layout → theme default.
+        // A slot that's toggled OFF or has no section selected resolves to null at that level and
+        // falls through to the next, so nothing "resurrects" a disabled section — it just yields.
+
+        // The Global Layout's assignment for this slot, decoded once (used as the fallback below).
+        $raw = get_cms_option('falcon_layout_global', null);
+        $global = is_string($raw) ? json_decode($raw, true) : $raw;
+        $global = is_array($global) ? $global : [];
+        $globalSection = function () use ($global, $slot, $entryOf, $resolve) {
+            return $resolve($entryOf($global[$slot] ?? null)); // active → section; off/invalid → null
+        };
+
+        // 1) PAGE context → the Global Layout owns pages; use it directly (no custom fallthrough).
         if ($isPage) {
-            $raw = get_cms_option('falcon_layout_global', null);
-            $global = is_string($raw) ? json_decode($raw, true) : $raw;
-            $global = is_array($global) ? $global : [];
-            if (array_key_exists($slot, $global) && $entryOf($global[$slot]) !== null) {
-                $globalSlotConfigured = true; // slot explicitly assigned (active OR inactive)
-                if ($section = $resolve($entryOf($global[$slot]))) return $section;
-                // assigned but turned OFF → the toggle wins; do not fall back to a built section.
-                return null;
-            }
+            return $globalSection(); // active → section; off/unselected → null → theme default
         }
 
-        // 2) Custom layouts whose conditions match the current context.
+        // 2) Custom layouts whose conditions match this content — highest priority when active.
         foreach (falcon_get_custom_layouts() as $layout) {
             $conditions = is_array($layout['conditions'] ?? null) ? $layout['conditions'] : [];
             $entry = $entryOf($layout['assignments'][$slot] ?? null);
@@ -965,20 +968,60 @@ if (!function_exists('falcon_layout_assigned_section')) {
             }
         }
 
-        // 3) Legacy fallback (PAGE + chrome only): keep the built header/footer showing on pages
-        //    ONLY when the Global Layout never configured this slot at all.
-        if ($isPage && !$globalSlotConfigured && in_array($slot, ['header', 'footer'], true)) {
-            return \FalconCms\Core\Models\Post::where('type', $type)
-                    ->where('status', 'published')
-                    ->where('lang_code', app()->getLocale())
-                    ->first()
-                ?: \FalconCms\Core\Models\Post::where('type', $type)
-                    ->where('status', 'published')
-                    ->first();
+        // 3) No active custom assignment → fall back to the Global Layout's header/footer/etc.
+        if ($section = $globalSection()) return $section;
+
+        // 4) Global also off/unselected → theme default.
+        return null;
+    }
+}
+
+if (!function_exists('falcon_layout_slot_off')) {
+    /**
+     * Whether a Layout slot is EXPLICITLY turned off for the current context — i.e. a section was
+     * selected for it but its toggle is inactive. This is the "render nothing" state. It is NOT
+     * true when the slot has no section selected at all (that case falls back to the theme default).
+     *
+     * Three states, distinguished with falcon_layout_assigned_section():
+     *   - assigned + active   → assigned_section() returns the section  (slot_off = false)
+     *   - assigned + inactive → assigned_section() returns null         (slot_off = TRUE  → nothing)
+     *   - not selected        → assigned_section() returns null         (slot_off = false → theme default)
+     */
+    function falcon_layout_slot_off(string $slot, string $type): bool
+    {
+        $ctx = falcon_layout_context();
+        $isPage = in_array($ctx['kind'] ?? null, ['single', 'home'], true)
+            && ($ctx['post_type'] ?? null) === 'page';
+
+        // Mirror falcon_layout_assigned_section(): a valid entry has a section id; missing/0 → null.
+        $entryOf = function ($v) {
+            if (is_array($v) && !empty($v['id'])) {
+                return ['id' => (int) $v['id'], 'active' => !array_key_exists('active', $v) || (bool) $v['active']];
+            }
+            if (is_numeric($v) && (int) $v > 0) return ['id' => (int) $v, 'active' => true];
+            return null;
+        };
+
+        // PAGE → the Global Layout's assignment is authoritative.
+        if ($isPage) {
+            $raw = get_cms_option('falcon_layout_global', null);
+            $global = is_string($raw) ? json_decode($raw, true) : $raw;
+            $global = is_array($global) ? $global : [];
+            if (array_key_exists($slot, $global)) {
+                $e = $entryOf($global[$slot]);
+                if ($e !== null) return !$e['active']; // selected → off iff inactive
+            }
+            return false; // no section selected → not "off" (→ theme default)
         }
 
-        // 4) Theme default.
-        return null;
+        // Custom layouts whose conditions match: first matching layout that HAS this slot selected wins.
+        foreach (falcon_get_custom_layouts() as $layout) {
+            $conditions = is_array($layout['conditions'] ?? null) ? $layout['conditions'] : [];
+            if (!falcon_layout_matches($conditions, $ctx)) continue;
+            $e = $entryOf($layout['assignments'][$slot] ?? null);
+            if ($e !== null) return !$e['active']; // selected → off iff inactive
+        }
+        return false; // not selected in any matching layout → theme default
     }
 }
 

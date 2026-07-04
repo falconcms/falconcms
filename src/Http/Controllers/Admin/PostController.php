@@ -75,15 +75,17 @@ class PostController extends Controller
                     'footer'   => ['falcon_footer', 'footer'],
                 ];
                 foreach ($slots as $part => $meta) {
+                    // Always preview the slot: it renders the active custom section, or the theme
+                    // default header/title-bar/footer — exactly what the frontend shows.
                     try {
                         $sec = falcon_layout_assigned_section($meta[1], $meta[0]);
                     } catch (\Throwable $e) {
                         $sec = null;
                     }
-                    if (!$sec) continue; // slot not enabled/assigned → no preview
                     // Relative URL (absolute=false) so the iframe is always same-origin as the builder.
                     $frameUrl = route('admin.falcon-builder.frame', ['id' => $post->id, 'part' => $part], false);
-                    $editUrl  = route('admin.falcon-builder', $sec->id);
+                    // Edit → the assigned custom section if there is one, else the Layout Builder overview.
+                    $editUrl  = $sec ? route('admin.falcon-builder', $sec->id) : route('admin.falcon-builder.sections');
                     if ($part === 'header')   { $frameHeaderUrl   = $frameUrl; $frameHeaderEditUrl   = $editUrl; }
                     if ($part === 'titlebar') { $frameTitleBarUrl = $frameUrl; $frameTitleBarEditUrl = $editUrl; }
                     if ($part === 'footer')   { $frameFooterUrl   = $frameUrl; $frameFooterEditUrl   = $editUrl; }

@@ -5,7 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.8.1 <Badge type="tip" text="Latest" /> {#v1-8-1}
+## v1.8.2 <Badge type="tip" text="Latest" /> {#v1-8-2}
+
+**Released: 2026-07-04**
+
+A Layout resolution refinement: header, title bar and footer now **cascade** cleanly from the custom layout down to your defaults, so content is never left without chrome.
+
+### Changed
+- **Layout slots now cascade: custom layout → Global Layout → theme default.** For content matched by a **custom layout**, if its Header/Title Bar/Footer is toggled **off** or left unassigned, the slot now inherits the **Global Layout's** header/footer for that content. If the Global Layout has nothing selected either, the theme's **built-in default** renders — everywhere (frontend *and* the builder canvas preview). This supersedes v1.8.1's "disabled slots render nothing": a slot with no active assignment always falls through to the next level rather than showing blank space.
+
+## v1.8.1 {#v1-8-1}
 
 **Released: 2026-07-04**
 
