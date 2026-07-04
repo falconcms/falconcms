@@ -301,22 +301,21 @@ class FalconBuilderController extends Controller
             $sections[$slot] = Post::where('type', $meta['type'])->orderBy('title')->get(['id', 'title', 'status', 'updated_at']);
         }
 
-        // Build the layout list: Global first, then customs. Each slot resolves to
-        // the assigned section (or null) plus this layout's own active flag for it.
-        $resolveAssigned = function (array $assignments, bool $withFallback) use ($sections) {
+        // Build the layout list: Global first, then customs. Each slot reflects ONLY this
+        // layout's own explicit assignment + active flag — no cross-layout coupling. (There is
+        // deliberately no "adopt the first published section" fallback: it made a section enabled
+        // in one layout appear active in the Global Layout too. Every slot of every layout is
+        // toggled independently, matching what the frontend actually renders.)
+        $resolveAssigned = function (array $assignments) use ($sections) {
             $assignedOut = [];
             $activeOut = [];
             foreach (self::SLOTS as $slot => $meta) {
                 $current = null;
-                $active = true;
+                $active = false;
                 $entry = self::assignEntry($assignments[$slot] ?? null);
                 if ($entry) {
                     $current = $sections[$slot]->firstWhere('id', $entry['id']);
                     $active = $entry['active'];
-                }
-                if (!$current && $withFallback) {
-                    // Legacy fallback: adopt the first published section (shown active).
-                    $current = $sections[$slot]->firstWhere('status', 'published');
                 }
                 $assignedOut[$slot] = $current;
                 $activeOut[$slot] = $active;
@@ -325,7 +324,7 @@ class FalconBuilderController extends Controller
         };
 
         $layouts = [];
-        $g = $resolveAssigned($this->globalAssignments(), true);
+        $g = $resolveAssigned($this->globalAssignments());
         $layouts[] = [
             'id'         => 'global',
             'name'       => 'Global Layout',
@@ -335,7 +334,7 @@ class FalconBuilderController extends Controller
             'conditions' => [],
         ];
         foreach ($this->customLayouts() as $l) {
-            $r = $resolveAssigned(is_array($l['assignments'] ?? null) ? $l['assignments'] : [], false);
+            $r = $resolveAssigned(is_array($l['assignments'] ?? null) ? $l['assignments'] : []);
             $layouts[] = [
                 'id'            => $l['id'] ?? '',
                 'name'          => $l['name'] ?? 'Layout',

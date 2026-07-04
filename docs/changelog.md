@@ -5,7 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.8.2 <Badge type="tip" text="Latest" /> {#v1-8-2}
+## v1.8.3 <Badge type="tip" text="Latest" /> {#v1-8-3}
+
+**Released: 2026-07-04**
+
+A Layout Builder fix: every layout's every section now toggles fully independently.
+
+### Fixed
+- **Layout sections are now independent per layout.** Enabling a section (notably **Content**) in one layout no longer makes it appear active in the **Global Layout** too. The Layout Builder was falling back to "the first published section" for any slot the Global Layout hadn't explicitly assigned, which made a section enabled elsewhere show up as active on Global. Each slot of each layout now reflects only its own assignment and on/off state — matching what the frontend renders.
+
+## v1.8.2 {#v1-8-2}
 
 **Released: 2026-07-04**
 
