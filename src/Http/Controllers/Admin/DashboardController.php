@@ -711,6 +711,14 @@ class DashboardController extends Controller
         // ── Date range (dynamic) ──────────────────────────────────────────────
         $range = (int) request()->query('range', 30);
         if (!in_array($range, [7, 30, 90, 365], true)) $range = 30;
+
+        // Locked preview: without Pro (analytics), show believable SAMPLE data behind an
+        // upgrade overlay — never the site's real figures. Buying Pro makes it live.
+        if (! falcon_pro('analytics')) {
+            return view('falcon-cms::admin.analytics.index',
+                $this->sampleAnalyticsData($range) + ['analyticsLocked' => true]);
+        }
+
         $start     = now()->subDays($range - 1)->startOfDay();
         $prevStart = (clone $start)->subDays($range);
         $prevEnd   = (clone $start)->subSecond();
@@ -868,7 +876,80 @@ class DashboardController extends Controller
             'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'topCountries', 'recent',
             'activeNow', 'newVisitors', 'returningVisitors', 'sessions', 'bounceRate', 'pagesPerSession', 'channels',
             'visitorsByCountry', 'trafficSources'
-        ));
+        ) + ['analyticsLocked' => false]);
+    }
+
+    /**
+     * Believable SAMPLE analytics for the locked preview — no real data touched. Buying Pro
+     * swaps this for the live queries above. Shapes mirror the real variables exactly.
+     */
+    private function sampleAnalyticsData(int $range): array
+    {
+        $labels = $visitsSeries = $uniqueSeries = [];
+        for ($i = $range - 1; $i >= 0; $i--) {
+            $day = now()->subDays($i);
+            $labels[] = $day->format('M j');
+            $v = (int) max(45, round(300 + 130 * sin($i / 3.2) + ($range - $i) * 1.4 + mt_rand(-45, 70)));
+            $visitsSeries[] = $v;
+            $uniqueSeries[] = (int) round($v * 0.66);
+        }
+        $totalVisits    = array_sum($visitsSeries);
+        $uniqueVisitors = array_sum($uniqueSeries);
+        $pct = fn ($n) => (int) round($uniqueVisitors * $n);
+
+        $arr = fn (array $rows) => collect($rows)->map(fn ($r) => ['label' => $r[0], 'count' => $r[1]])->values();
+        $obj = fn (array $rows, string $k) => collect($rows)->map(fn ($r) => (object) [$k => $r[0], 'count' => $r[1]])->values();
+
+        $recent = collect([
+            ['/',                'Chrome',  'Desktop', 'Windows', 'US', 'New York',     'United States', 2],
+            ['/pricing',         'Safari',  'Mobile',  'iOS',     'GB', 'London',       'United Kingdom', 5],
+            ['/blog/getting-started', 'Chrome', 'Mobile', 'Android', 'IN', 'Mumbai',   'India', 9],
+            ['/contact',         'Edge',    'Desktop', 'Windows', 'CA', 'Toronto',      'Canada', 14],
+            ['/features',        'Firefox', 'Desktop', 'Linux',   'DE', 'Berlin',       'Germany', 21],
+            ['/',                'Chrome',  'Tablet',  'Android', 'AU', 'Sydney',       'Australia', 33],
+            ['/about',           'Safari',  'Mobile',  'iOS',     'FR', 'Paris',        'France', 48],
+            ['/blog',            'Chrome',  'Desktop', 'macOS',   'BR', 'São Paulo',    'Brazil', 60],
+        ])->map(fn ($r) => (object) [
+            'url' => $r[0], 'browser' => $r[1], 'device_type' => $r[2], 'os' => $r[3],
+            'country_code' => $r[4], 'city' => $r[5], 'country' => $r[6],
+            'ip_address' => '203.0.113.' . mt_rand(2, 250), 'referrer' => null,
+            'created_at' => now()->subMinutes($r[7]),
+        ]);
+
+        return [
+            'range' => $range,
+            'totalVisits' => $totalVisits, 'uniqueVisitors' => $uniqueVisitors,
+            'visitsChange' => 14.2, 'today' => end($visitsSeries) ?: 0,
+            'thisMonth' => (int) round($totalVisits * (30 / max(1, $range))),
+            'labels' => $labels, 'visitsSeries' => $visitsSeries, 'uniqueSeries' => $uniqueSeries,
+            'browsers' => $arr([['Chrome', $pct(0.62)], ['Safari', $pct(0.19)], ['Firefox', $pct(0.09)], ['Edge', $pct(0.07)], ['Opera', $pct(0.03)]]),
+            'devices'  => $arr([['Desktop', $pct(0.57)], ['Mobile', $pct(0.37)], ['Tablet', $pct(0.06)]]),
+            'osDist'   => $arr([['Windows', $pct(0.46)], ['Android', $pct(0.24)], ['iOS', $pct(0.17)], ['macOS', $pct(0.10)], ['Linux', $pct(0.03)]]),
+            'topPages' => $obj([['/', $pct(0.28)], ['/pricing', $pct(0.14)], ['/features', $pct(0.11)], ['/blog', $pct(0.09)], ['/about', $pct(0.07)], ['/contact', $pct(0.05)], ['/blog/getting-started', $pct(0.04)], ['/docs', $pct(0.03)]], 'url'),
+            'topReferrers' => $obj([['Direct', $pct(0.42)], ['google.com', $pct(0.24)], ['facebook.com', $pct(0.12)], ['x.com', $pct(0.06)], ['linkedin.com', $pct(0.05)], ['github.com', $pct(0.03)]], 'ref'),
+            'topCountries' => $arr([['United States', $pct(0.34)], ['United Kingdom', $pct(0.13)], ['India', $pct(0.11)], ['Germany', $pct(0.08)], ['Canada', $pct(0.07)], ['Australia', $pct(0.05)], ['France', $pct(0.04)], ['Brazil', $pct(0.03)]]),
+            'visitorsByCountry' => [
+                ['code' => 'US', 'name' => 'United States', 'visitors' => $pct(0.34)],
+                ['code' => 'GB', 'name' => 'United Kingdom', 'visitors' => $pct(0.13)],
+                ['code' => 'IN', 'name' => 'India', 'visitors' => $pct(0.11)],
+                ['code' => 'DE', 'name' => 'Germany', 'visitors' => $pct(0.08)],
+                ['code' => 'CA', 'name' => 'Canada', 'visitors' => $pct(0.07)],
+                ['code' => 'AU', 'name' => 'Australia', 'visitors' => $pct(0.05)],
+                ['code' => 'FR', 'name' => 'France', 'visitors' => $pct(0.04)],
+                ['code' => 'BR', 'name' => 'Brazil', 'visitors' => $pct(0.03)],
+            ],
+            'activeNow' => mt_rand(18, 42), 'newVisitors' => $pct(0.61), 'returningVisitors' => $pct(0.39),
+            'sessions' => (int) round($totalVisits / 2.3), 'bounceRate' => 42.5, 'pagesPerSession' => 2.3,
+            'channels' => $arr([['Direct', $pct(0.42)], ['Organic Search', $pct(0.30)], ['Social', $pct(0.18)], ['Referral', $pct(0.10)]]),
+            'trafficSources' => collect([
+                ['label' => 'Google', 'count' => $pct(0.24), 'domain' => 'google.com'],
+                ['label' => 'Direct', 'count' => $pct(0.42), 'domain' => null],
+                ['label' => 'Facebook', 'count' => $pct(0.12), 'domain' => 'facebook.com'],
+                ['label' => 'X (Twitter)', 'count' => $pct(0.06), 'domain' => 'x.com'],
+                ['label' => 'LinkedIn', 'count' => $pct(0.05), 'domain' => 'linkedin.com'],
+            ])->values(),
+            'recent' => $recent,
+        ];
     }
 
     /** Live real-time data for the analytics page (polled by JS). */
@@ -876,6 +957,25 @@ class DashboardController extends Controller
     {
         if (!auth()->user()->hasPermission('manage_analytics')) {
             abort(403);
+        }
+
+        // Locked preview → sample live figures, never the site's real real-time data.
+        if (! falcon_pro('analytics')) {
+            return response()->json([
+                'active'      => mt_rand(18, 42),
+                'minutes'     => collect(range(1, 30))->map(fn () => mt_rand(2, 22))->all(),
+                'activePages' => [
+                    ['path' => '/', 'count' => mt_rand(6, 16)],
+                    ['path' => '/pricing', 'count' => mt_rand(3, 9)],
+                    ['path' => '/features', 'count' => mt_rand(2, 7)],
+                ],
+                'recent' => [
+                    ['path' => '/',        'country' => 'United States',  'code' => 'us', 'device' => 'Desktop', 'ago' => 'just now'],
+                    ['path' => '/pricing', 'country' => 'United Kingdom', 'code' => 'gb', 'device' => 'Mobile',  'ago' => '1 min ago'],
+                    ['path' => '/blog',    'country' => 'India',          'code' => 'in', 'device' => 'Mobile',  'ago' => '3 mins ago'],
+                ],
+                'time' => now()->format('g:i:s A'),
+            ]);
         }
 
         $since5  = now()->subMinutes(5);

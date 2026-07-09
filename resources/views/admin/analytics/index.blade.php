@@ -18,6 +18,17 @@
     @endphp
 
     <div class="p-4 sm:p-6 bg-[#f0f0f1] min-h-screen">
+
+        @if($analyticsLocked ?? false)
+        <div class="mb-5 flex items-center gap-3 rounded-lg border border-[#f0c47a] bg-[#fdf6e9] px-4 py-3">
+            <span class="shrink-0 material-symbols-outlined text-[#c98a1a]" style="font-size:26px">lock</span>
+            <div class="flex-1">
+                <div class="text-[14px] font-bold text-[#5b4a1f]">You're viewing sample analytics</div>
+                <div class="text-[12.5px] text-[#7a663a]">These figures are a demo. Upgrade to Pro to see your site's real visitors, live map and traffic sources.</div>
+            </div>
+            <a href="#" class="shrink-0 rounded-md bg-[#e8912b] px-4 py-2 text-[13px] font-bold text-[#171c23] hover:brightness-105 no-underline">Upgrade to Pro</a>
+        </div>
+        @endif
         <!-- Header -->
         <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
             <div>

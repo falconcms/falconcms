@@ -235,11 +235,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
  
     // Dashboard index
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    // Analytics — Pro. Registered so links don't break; access-gated + menu hidden when off.
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':analytics')->group(function () {
+    // Analytics — Pro (preview model). Always reachable so users can look around; the
+    // controller shows a locked preview with SAMPLE data when unlicensed, real data with Pro.
     Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('analytics/realtime', [DashboardController::class, 'analyticsRealtime'])->name('analytics.realtime');
-    });
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
  
     // Users

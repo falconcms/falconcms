@@ -63,7 +63,8 @@ class Sidebar extends Component
             'admin.product-categories.'     => 'ecommerce',
             'admin.product-tags.'           => 'ecommerce',
             'admin.languages.'              => 'multilang',
-            'admin.analytics'               => 'analytics',
+            // 'admin.analytics' is intentionally NOT hidden — it uses the "locked preview"
+            // model: the page stays reachable and shows sample data behind an upgrade overlay.
             'admin.falcon-builder.sections' => 'builder_pro',
             'admin.falcon-builder.library'  => 'builder_pro',
             'admin.acpt.fields.'            => 'custom_fields',
