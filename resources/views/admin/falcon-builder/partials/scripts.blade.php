@@ -518,7 +518,7 @@
                 { type: 'card', name: 'Card', icon: 'fa fa-th-large' },
                 { type: 'counter', name: 'Counter', icon: 'fa fa-hashtag' },
                 { type: 'html', name: 'HTML Block', icon: 'fa fa-code' },
-                { type: 'icon_list', name: 'Icon List', icon: 'fa fa-list-check' },
+                { type: 'icon_list', name: 'Item List', icon: 'fa fa-list-check' },
                 { type: 'video', name: 'Video', icon: 'fa fa-play-circle' },
                 { type: 'icon_box', name: 'Icon Box', icon: 'fa fa-star-half-alt' },
                 { type: 'spacer', name: 'Spacer', icon: 'fa fa-arrows-alt-v' },
@@ -531,7 +531,7 @@
             ];
             // Advanced elements — available only with a builder_pro license. The palette shows
             // them with a lock badge; adding one without a license shows an upgrade prompt.
-            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html'];
+            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'icon_list', 'menu'];
             const isElementPro   = (type) => proElementTypes.includes(type);
             const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
             if (postCardMode.value || layoutMode.value) {

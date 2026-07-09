@@ -4038,7 +4038,7 @@
 
                              </div>
 
-                             <!-- Design Settings for Icon List -->
+                             <!-- Design Settings for Item List (icon_list) -->
                              <div v-else-if="editingElement?.type === 'icon_list'" class="space-y-6 pb-10">
 
                                  <!-- ICON -->
