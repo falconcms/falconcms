@@ -351,6 +351,12 @@ class PostController extends Controller
 
     protected function checkTypeActive($slug)
     {
+        // Products are an e-commerce (Pro) feature — block managing them without a license.
+        // This one method backs index/create/store/edit/update, so it gates every path.
+        if ($slug === 'product' && ! falcon_pro('ecommerce')) {
+            abort(404);
+        }
+
         // Admin users can always access any CPT regardless of is_active status.
         // is_active controls frontend visibility only, not admin management access.
     }

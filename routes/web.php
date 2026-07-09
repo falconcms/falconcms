@@ -222,11 +222,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         Route::get('tax-terms/{taxonomySlug}/edit/{id}', [AcptTermController::class, 'edit'])->name('terms.edit');
         Route::put('tax-terms/{taxonomySlug}/{id}', [AcptTermController::class, 'update'])->name('terms.update');
         Route::delete('tax-terms/{taxonomySlug}/{id}', [AcptTermController::class, 'destroy'])->name('terms.destroy');
+        // Custom Fields (Field Groups) — Pro (custom_fields). Registered so linking views
+        // don't break; access-gated by EnsurePro and the sidebar hides the menu when off.
+        Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':custom_fields')->group(function () {
         Route::delete('fields/delete-field/{field}', [CustomFieldController::class, 'deleteField'])->name('fields.delete-field');
         Route::post('fields/store-field', [CustomFieldController::class, 'storeField'])->name('fields.store-field');
         Route::get('fields/{field}/export', [CustomFieldController::class, 'exportGroup'])->name('fields.export');
         Route::post('fields-import', [CustomFieldController::class, 'importGroup'])->name('fields.import');
         Route::resource('fields', CustomFieldController::class);
+        });
     });
  
     // Dashboard index

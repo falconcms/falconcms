@@ -66,10 +66,19 @@ class Sidebar extends Component
             'admin.analytics'               => 'analytics',
             'admin.falcon-builder.sections' => 'builder_pro',
             'admin.falcon-builder.library'  => 'builder_pro',
+            'admin.acpt.fields.'            => 'custom_fields',
         ];
         foreach ($proPrefixes as $prefix => $feature) {
             if (str_starts_with($route, $prefix)) {
                 return falcon_pro($feature);
+            }
+        }
+        // Products ride on the core posts routes (via a type=product param) but are an
+        // e-commerce feature — hide those menu items when it's inactive.
+        if (in_array($route, ['admin.posts.index', 'admin.posts.create'], true)) {
+            $params = json_decode($menu->params ?? 'null', true);
+            if (is_array($params) && ($params['type'] ?? null) === 'product') {
+                return falcon_pro('ecommerce');
             }
         }
         if (str_contains($route, '.')) {

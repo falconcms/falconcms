@@ -3619,6 +3619,10 @@
             };
 
             const saveAsGlobal = async () => {
+                if (!window.falconBuilderPro) {
+                    showToast('Global sections are a Pro feature — upgrade to save one.', 'error');
+                    return;
+                }
                 if (!globalModalName.value.trim() || isSavingGlobal.value) return;
                 const ci = globalModalCi.value;
                 if (ci === null || !layout.value[ci]) return;
