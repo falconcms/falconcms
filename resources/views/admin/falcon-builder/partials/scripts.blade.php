@@ -1322,8 +1322,13 @@
             const lockedElementAt = (type, ci, coli, eli, ncoli, neli) => {
                 let el = null;
                 try {
-                    if (type === 'element') el = layout.value?.[ci]?.columns?.[coli]?.elements?.[eli];
-                    else if (type === 'nested-element') el = layout.value?.[ci]?.columns?.[coli]?.elements?.[eli]?.columns?.[ncoli]?.elements?.[neli];
+                    // A nested element (inside a row) is edited as type 'element' but WITH ncoli/neli,
+                    // so resolve by their presence rather than the type string.
+                    if (ncoli !== null && ncoli !== undefined && neli !== null && neli !== undefined) {
+                        el = layout.value?.[ci]?.columns?.[coli]?.elements?.[eli]?.columns?.[ncoli]?.elements?.[neli];
+                    } else {
+                        el = layout.value?.[ci]?.columns?.[coli]?.elements?.[eli];
+                    }
                 } catch (e) {}
                 return !!(el && elementLocked(el.type));
             };

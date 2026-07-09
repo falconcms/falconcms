@@ -253,6 +253,9 @@
                      :style="nestedEl.type === 'row' ? { width: '100%', maxWidth: '100%' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
                      @dragover="onDragOver($event, 'element', ci, coli, eli, ncoli, nestedEli)"
                      @drop="onDrop($event, 'element', ci, coli, eli, ncoli, nestedEli)">
+                        <div v-if="elementLocked(nestedEl.type)" class="absolute top-1 right-1 z-30 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm pointer-events-none" title="Pro element — upgrade to edit or move">
+                            <i class="fa fa-lock text-[8px]"></i> Pro
+                        </div>
                         
                         <!-- All element types rendered via shared partials (mirrors col.blade.php for full live preview) -->
                         <template v-for="el in [nestedEl]" :key="el.id">
