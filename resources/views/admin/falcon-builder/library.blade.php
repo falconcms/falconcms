@@ -158,7 +158,8 @@
                             <p class="text-[13px] font-semibold text-[#1d2327] truncate leading-snug mb-0.5" title="{{ $card['name'] }}">{{ $card['name'] }}</p>
                             <p class="text-[11px] text-[#9ca3af] mb-4">{{ $card['created_at'] }}</p>
                             <div class="flex gap-2">
-                                <a href="{{ route('admin.falcon-builder.post-cards.builder', $card['id']) }}"
+                                <a href="{{ $libLocked ? '#' : route('admin.falcon-builder.post-cards.builder', $card['id']) }}"
+                                   @if($libLocked) onclick="event.preventDefault(); window.showToast && window.showToast('This feature is available in the Pro version.','error');" @endif
                                    class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center gap-1">
                                     <span class="material-symbols-outlined text-[13px]">edit</span> Edit
                                 </a>
@@ -199,7 +200,8 @@
                             <p class="text-[13px] font-semibold text-[#1d2327] truncate leading-snug mb-0.5" title="{{ $mm['name'] }}">{{ $mm['name'] }}</p>
                             <p class="text-[11px] text-[#9ca3af] mb-4">{{ $mm['created_at'] }}</p>
                             <div class="flex gap-2">
-                                <a href="{{ route('admin.falcon-builder.mega-menus.builder', $mm['id']) }}"
+                                <a href="{{ $libLocked ? '#' : route('admin.falcon-builder.mega-menus.builder', $mm['id']) }}"
+                                   @if($libLocked) onclick="event.preventDefault(); window.showToast && window.showToast('This feature is available in the Pro version.','error');" @endif
                                    class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center gap-1">
                                     <span class="material-symbols-outlined text-[13px]">edit</span> Edit
                                 </a>
@@ -335,6 +337,7 @@ function deletePostCard(id) {
 
 // ── Modal ──────────────────────────────────────────────
 function openCardModal() {
+    @if($libLocked ?? false) window.showToast && window.showToast('This feature is available in the Pro version.', 'error'); return; @endif
     const m = document.getElementById('cardModal');
     m.style.removeProperty('display');
     m.style.display = 'flex';
@@ -360,6 +363,7 @@ function savePostCard() {
 
 // ── Mega Menu Modal ────────────────────────────────────
 function openMegaMenuModal() {
+    @if($libLocked ?? false) window.showToast && window.showToast('This feature is available in the Pro version.', 'error'); return; @endif
     const m = document.getElementById('megaMenuModal');
     m.style.removeProperty('display');
     m.style.display = 'flex';

@@ -75,6 +75,12 @@ class BuilderLibraryController extends Controller
 
     public function editMegaMenuBuilder(string $id)
     {
+        // Editing needs Pro (licensed or grace, not merely grandfathered) — backstop for a
+        // direct URL; the Library's Edit button is also disabled in the locked preview.
+        if (! falcon_pro_editable('builder_pro')) {
+            return response()->view('falcon-cms::pro-required', ['message' => 'This feature is available in the Pro version.'], 200);
+        }
+
         $menus    = $this->getMegaMenus();
         $megaMenu = collect($menus)->firstWhere('id', $id);
         if (!$megaMenu) abort(404);
@@ -166,6 +172,12 @@ class BuilderLibraryController extends Controller
 
     public function editPostCardBuilder(string $id)
     {
+        // Editing needs Pro (licensed or grace, not merely grandfathered) — backstop for a
+        // direct URL; the Library's Edit button is also disabled in the locked preview.
+        if (! falcon_pro_editable('builder_pro')) {
+            return response()->view('falcon-cms::pro-required', ['message' => 'This feature is available in the Pro version.'], 200);
+        }
+
         $cards = $this->getPostCards();
         $postCard = collect($cards)->firstWhere('id', $id);
         if (!$postCard) abort(404);
