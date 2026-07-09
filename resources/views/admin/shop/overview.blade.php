@@ -7,6 +7,8 @@
             : ($presets[$preset] ?? 'Last 30 Days');
     @endphp
 
+    @include('falcon-cms::admin.partials.pro-preview-banner', ['feature' => 'ecommerce', 'previewTitle' => "You're viewing the Shop in preview"])
+
     <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Shop Overview</h1>
         <span class="text-[13px] text-[#646970]">Showing: <strong>{{ $rangeLabel }}</strong></span>

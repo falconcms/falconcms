@@ -56,32 +56,9 @@ class Sidebar extends Component
         if (! $route || $route === '#' || str_starts_with($route, '/') || str_starts_with($route, 'http')) {
             return true;
         }
-        // Pro-feature routes stay registered (so linking views don't break) but access is
-        // middleware-gated — hide the menu item when its feature is inactive.
-        $proPrefixes = [
-            'admin.shop.'                   => 'ecommerce',
-            'admin.product-categories.'     => 'ecommerce',
-            'admin.product-tags.'           => 'ecommerce',
-            'admin.languages.'              => 'multilang',
-            // 'admin.analytics' is intentionally NOT hidden — it uses the "locked preview"
-            // model: the page stays reachable and shows sample data behind an upgrade overlay.
-            // Layout Builder & Library are NOT hidden — they use the "browse but locked" model:
-            // the pages are reachable; write actions return a Pro toast (EnsureProEditable).
-            'admin.acpt.fields.'            => 'custom_fields',
-        ];
-        foreach ($proPrefixes as $prefix => $feature) {
-            if (str_starts_with($route, $prefix)) {
-                return falcon_pro($feature);
-            }
-        }
-        // Products ride on the core posts routes (via a type=product param) but are an
-        // e-commerce feature — hide those menu items when it's inactive.
-        if (in_array($route, ['admin.posts.index', 'admin.posts.create'], true)) {
-            $params = json_decode($menu->params ?? 'null', true);
-            if (is_array($params) && ($params['type'] ?? null) === 'product') {
-                return falcon_pro('ecommerce');
-            }
-        }
+        // Every Pro feature is now VISIBLE in the menu: each uses either the "browse but locked"
+        // model (view the page freely; write actions are gated by EnsureProEditable + a toast) or
+        // the analytics "locked preview". So no Pro menu item is hidden here anymore.
         if (str_contains($route, '.')) {
             return Route::has($route);
         }

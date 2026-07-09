@@ -1,5 +1,6 @@
 <x-falcon-cms::layouts.admin>
     <x-falcon-cms::admin.delete-modal />
+    @include('falcon-cms::admin.partials.pro-preview-banner', ['feature' => 'custom_fields', 'previewTitle' => "You're viewing Field Groups in preview"])
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-4">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Field Groups</h1>

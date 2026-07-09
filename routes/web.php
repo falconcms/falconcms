@@ -174,9 +174,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         return response()->json($category);
     })->name('categories.ajax');
 
-    // Product Categories & Tags — Pro (e-commerce). Registered but access-gated by
-    // EnsurePro:ecommerce so linking views never break; the sidebar hides them when off.
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce')->group(function () {
+    // Product Categories & Tags — Pro (e-commerce), "browse but locked": the pages are viewable;
+    // EnsureProEditable (method-aware) gates only the write methods.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':ecommerce')->group(function () {
     // Product Categories (dedicated, first-class — mirrors Categories)
     Route::get('product-categories', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'index'])->name('product-categories.index');
     Route::post('product-categories', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'store'])->name('product-categories.store');
@@ -226,9 +226,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         Route::get('tax-terms/{taxonomySlug}/edit/{id}', [AcptTermController::class, 'edit'])->name('terms.edit');
         Route::put('tax-terms/{taxonomySlug}/{id}', [AcptTermController::class, 'update'])->name('terms.update');
         Route::delete('tax-terms/{taxonomySlug}/{id}', [AcptTermController::class, 'destroy'])->name('terms.destroy');
-        // Custom Fields (Field Groups) — Pro (custom_fields). Registered so linking views
-        // don't break; access-gated by EnsurePro and the sidebar hides the menu when off.
-        Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':custom_fields')->group(function () {
+        // Custom Fields (Field Groups) — Pro (custom_fields), "browse but locked": the pages
+        // are viewable; EnsureProEditable (method-aware) gates only the write methods.
+        Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':custom_fields')->group(function () {
         Route::delete('fields/delete-field/{field}', [CustomFieldController::class, 'deleteField'])->name('fields.delete-field');
         Route::post('fields/store-field', [CustomFieldController::class, 'storeField'])->name('fields.store-field');
         Route::get('fields/{field}/export', [CustomFieldController::class, 'exportGroup'])->name('fields.export');
@@ -262,9 +262,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
 
     Route::resource('roles', RoleController::class);
     
-    // Languages — Pro (multi-language). Registered so linking views don't break; access
-    // is gated by EnsurePro:multilang and the sidebar hides the menu when inactive.
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':multilang')->group(function () {
+    // Languages — Pro (multi-language), "browse but locked": the pages are viewable;
+    // EnsureProEditable (method-aware) gates only the write methods.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':multilang')->group(function () {
     Route::post('languages/settings', [LanguageController::class, 'updateSettings'])->name('languages.settings.update');
     Route::post('languages/{id}/default', [\FalconCms\Core\Http\Controllers\Admin\LanguageController::class, 'setDefault'])->name('languages.set-default');
     Route::resource('languages', \FalconCms\Core\Http\Controllers\Admin\LanguageController::class)->names('languages');
@@ -383,10 +383,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('forms/submissions/{submission}', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');
     Route::delete('forms/{form}', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'destroy'])->name('forms.destroy');
 
-    // Shop Management — Pro (e-commerce). Routes stay registered so admin views that link
-    // to them with route('admin.shop.*') never break; EnsurePro:ecommerce 404s the actual
-    // screens on an unlicensed site, and the sidebar hides the menu.
-    Route::prefix('shop')->name('shop.')->middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce')->group(function() {
+    // Shop Management — Pro (e-commerce), "browse but locked": the shop back-office is viewable
+    // so owners can look around; EnsureProEditable (method-aware) gates only the write actions.
+    Route::prefix('shop')->name('shop.')->middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':ecommerce')->group(function() {
         Route::get('overview', [ShopController::class, 'overview'])->name('overview');
         Route::get('orders', [ShopController::class, 'orders'])->name('orders.index');
         Route::post('orders/bulk', [ShopController::class, 'ordersBulk'])->name('orders.bulk');

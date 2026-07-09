@@ -3,6 +3,7 @@
     <x-falcon-cms::admin.delete-modal />
 
     <div class="px-2">
+        @include('falcon-cms::admin.partials.pro-preview-banner', ['feature' => 'multilang', 'previewTitle' => "You're viewing Languages in preview"])
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-6">Languages</h1>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
