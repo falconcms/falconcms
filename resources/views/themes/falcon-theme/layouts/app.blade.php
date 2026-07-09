@@ -88,6 +88,22 @@
     <!-- SweetAlert2 -->
     <script src="{{ asset('vendor/falcon-cms/js/sweetalert2.all.min.js') }}"></script>
     <script>
+        // Any storefront dialog carrying the Pro message reads as an intentional
+        // "Pro Feature" prompt, not an error — patched once so it covers every add-to-cart handler.
+        (function () {
+            if (!window.Swal || typeof Swal.fire !== 'function') return;
+            var _fire = Swal.fire.bind(Swal);
+            Swal.fire = function (opts) {
+                if (opts && typeof opts === 'object' && typeof opts.text === 'string'
+                    && opts.text.indexOf('available in the Pro version') !== -1) {
+                    opts.title = 'Pro Feature';
+                    opts.icon = 'info';
+                }
+                return _fire.apply(this, arguments);
+            };
+        })();
+    </script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
