@@ -125,6 +125,7 @@
 
     <!-- Main Content -->
     <div class="p-4 sm:p-5">
+        @include('falcon-cms::admin.partials.freemium-banner')
         {{ $slot }}
     </div>
 

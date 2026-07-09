@@ -4106,7 +4106,52 @@ if (!function_exists('falcon_pro')) {
     function falcon_pro(?string $feature = null): bool
     {
         try {
-            return app(\FalconCms\Core\Pro\LicenseGateway::class)->active($feature);
+            if (app(\FalconCms\Core\Pro\LicenseGateway::class)->active($feature)) {
+                return true;
+            }
+        } catch (\Throwable $e) {}
+
+        // Grace window after an upgrade — nothing locks yet.
+        if (falcon_freemium_grace_active()) {
+            return true;
+        }
+
+        // Grandfathered — features already in use before freemium stay free on this install.
+        return falcon_feature_grandfathered($feature);
+    }
+}
+
+if (!function_exists('falcon_freemium_grace_active')) {
+    /**
+     * Whether the site is still inside its freemium grace window — the transition period
+     * (set on upgrade) during which every Pro feature stays unlocked before gating begins.
+     */
+    function falcon_freemium_grace_active(): bool
+    {
+        try {
+            $until = get_cms_option('falcon_freemium_grace_until', null);
+            if (!$until) return false;
+            return \Illuminate\Support\Carbon::now()->lt(\Illuminate\Support\Carbon::parse($until));
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('falcon_feature_grandfathered')) {
+    /**
+     * Whether a feature was grandfathered — already in use when the site upgraded into
+     * freemium, so it stays free forever on this install. Pass null to ask "is anything
+     * grandfathered?".
+     */
+    function falcon_feature_grandfathered(?string $feature = null): bool
+    {
+        try {
+            $raw  = get_cms_option('falcon_grandfathered_features', null);
+            $list = is_array($raw) ? $raw : (is_string($raw) ? json_decode($raw, true) : []);
+            $list = is_array($list) ? $list : [];
+            if ($feature === null) return !empty($list);
+            return in_array($feature, $list, true);
         } catch (\Throwable $e) {
             return false;
         }
