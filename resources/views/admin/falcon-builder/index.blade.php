@@ -147,7 +147,9 @@
             $__isLayoutSection = in_array($post->type ?? '', ['falcon_header', 'falcon_footer', 'falcon_ptb', 'falcon_content'], true);
         @endphp
         window.falconLayoutMode = {{ $__isLayoutSection ? 'true' : 'false' }};
-        window.falconBuilderPro = @json(falcon_pro('builder_pro'));
+        // Editing/adding Pro elements needs real Pro (licensed or grace) — NOT grandfather.
+        // Grandfathered pro elements still render on the frontend, but become read-only here.
+        window.falconBuilderPro = @json(falcon_pro_editable('builder_pro'));
         @php
             try {
                 $__previewPosts = get_falcon_posts(['limit' => 6, 'order' => 'desc', 'orderby' => 'created_at']);

@@ -4157,3 +4157,22 @@ if (!function_exists('falcon_feature_grandfathered')) {
         }
     }
 }
+
+if (!function_exists('falcon_pro_editable')) {
+    /**
+     * Whether a Pro feature is FULLY unlocked for creating/editing — i.e. covered by an active
+     * license or the grace window, but NOT merely grandfathered. Grandfathering keeps already-
+     * created content working (it still renders), but editing/moving it — or adding more — needs
+     * real Pro. The builder uses this to lock Pro elements read-only once the grace window ends.
+     */
+    function falcon_pro_editable(?string $feature = null): bool
+    {
+        try {
+            if (app(\FalconCms\Core\Pro\LicenseGateway::class)->active($feature)) {
+                return true;
+            }
+        } catch (\Throwable $e) {}
+
+        return falcon_freemium_grace_active();
+    }
+}

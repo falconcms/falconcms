@@ -1316,7 +1316,23 @@
                 }, 100);
             };
 
+            // A Pro element already on the canvas is read-only once builder Pro is locked
+            // (grandfathered, after grace): it still renders on the frontend, but it can't be
+            // edited, moved or dragged without upgrading. Resolves the element + checks elementLocked().
+            const lockedElementAt = (type, ci, coli, eli, ncoli, neli) => {
+                let el = null;
+                try {
+                    if (type === 'element') el = layout.value?.[ci]?.columns?.[coli]?.elements?.[eli];
+                    else if (type === 'nested-element') el = layout.value?.[ci]?.columns?.[coli]?.elements?.[eli]?.columns?.[ncoli]?.elements?.[neli];
+                } catch (e) {}
+                return !!(el && elementLocked(el.type));
+            };
+
             const setEditingContext = (type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
+                if ((type === 'element' || type === 'nested-element') && lockedElementAt(type, ci, coli, eli, ncoli, neli)) {
+                    showToast('This is a Pro element — upgrade to Pro to edit it.', 'error');
+                    return;
+                }
                 editingContext.value = {
                     type, ci, coli, eli, ncoli, neli,
                     tab: editingContext.value.tab || 'content'
@@ -1507,6 +1523,11 @@
             const navDragOver = ref(null);
 
             const navDragStart = (e, type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
+                if ((type === 'element' || type === 'nested-element') && lockedElementAt(type, ci, coli, eli, ncoli, neli)) {
+                    e.preventDefault();
+                    showToast('This is a Pro element — upgrade to Pro to move it.', 'error');
+                    return;
+                }
                 navDragSrc.value = { type, ci, coli, eli, ncoli, neli };
                 e.dataTransfer.effectAllowed = 'move';
             };
