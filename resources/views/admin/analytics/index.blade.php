@@ -17,16 +17,21 @@
         $rangeLabels = [7=>'7 days', 30=>'30 days', 90=>'90 days', 365=>'1 year'];
     @endphp
 
-    <div class="p-4 sm:p-6 bg-[#f0f0f1] min-h-screen">
+    <div class="p-4 sm:p-6 bg-[#f0f0f1] min-h-screen {{ ($analyticsLocked ?? false) ? 'relative overflow-hidden' : '' }}">
 
         @if($analyticsLocked ?? false)
-        <div class="mb-5 flex items-center gap-3 rounded-lg border border-[#f0c47a] bg-[#fdf6e9] px-4 py-3">
-            <span class="shrink-0 material-symbols-outlined text-[#c98a1a]" style="font-size:26px">lock</span>
-            <div class="flex-1">
-                <div class="text-[14px] font-bold text-[#5b4a1f]">You're viewing sample analytics</div>
-                <div class="text-[12.5px] text-[#7a663a]">These figures are a demo. Upgrade to Pro to see your site's real visitors, live map and traffic sources.</div>
+        {{-- Locked preview: the sample dashboard renders behind a frosted blur with an unlock CTA. --}}
+        <div class="absolute inset-0 z-30 flex items-start justify-center pt-16 px-4"
+             style="backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); background: rgba(240,240,241,.5);">
+            <div class="text-center bg-white rounded-2xl shadow-2xl border border-[#e2e4e7] px-9 py-9 max-w-md">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#fbe9cf] text-[#c98a1a] flex items-center justify-center">
+                    <span class="material-symbols-outlined" style="font-size:36px">lock</span>
+                </div>
+                <div class="inline-block mb-3 text-[11px] font-bold uppercase tracking-wider text-[#c98a1a] bg-[#fbe9cf] px-2.5 py-1 rounded-full">Pro feature</div>
+                <h2 class="text-[20px] font-bold text-[#1d2327] mb-2">Unlock your Analytics</h2>
+                <p class="text-[13.5px] text-[#646970] mb-6 leading-relaxed">See your site's real visitors, a live world map, traffic sources and engagement — in real time. Upgrade to Pro to turn it on.</p>
+                <a href="#" class="inline-block rounded-md bg-[#e8912b] px-6 py-2.5 text-[13.5px] font-bold text-[#171c23] hover:brightness-105 no-underline shadow">Upgrade to Pro</a>
             </div>
-            <a href="#" class="shrink-0 rounded-md bg-[#e8912b] px-4 py-2 text-[13px] font-bold text-[#171c23] hover:brightness-105 no-underline">Upgrade to Pro</a>
         </div>
         @endif
         <!-- Header -->
