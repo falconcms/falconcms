@@ -460,9 +460,10 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::post('/comment', [FrontendController::class, 'storeComment'])->name('frontend.comment.store')->middleware('throttle:10,1');
     Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit')->middleware('throttle:5,1');
 
-    // Shop Frontend. NB: route names stay registered even without a Pro license because
-    // published themes reference route('shop.*') directly — gating them here would 500 the
-    // storefront. Enforcement lives in the admin (managing the shop is the paid surface).
+    // Shop Frontend — Pro (e-commerce). Route names stay REGISTERED (published themes call
+    // route('shop.*') directly, so removing them would 500 the whole site); EnsurePro:ecommerce
+    // 404s the actual storefront pages on an unlicensed site instead.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce')->group(function() {
     Route::prefix('cart')->name('shop.')->group(function() {
         Route::get('/',         [ShopFrontendController::class, 'cart'])->name('cart');
         Route::get('/fragment', [ShopFrontendController::class, 'miniCart'])->name('cart.fragment');
@@ -506,6 +507,7 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::match(['get', 'post'], '/payment/cancel/{id}', [ShopFrontendController::class, 'paymentCancel'])
         ->name('shop.payment.cancel')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+    }); // end EnsurePro:ecommerce — Shop Frontend
 
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
     Route::get('/sitemap.xml', [\FalconCms\Core\Http\Controllers\SitemapController::class, 'index'])->name('frontend.sitemap');
