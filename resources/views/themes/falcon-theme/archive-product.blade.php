@@ -170,9 +170,9 @@ function addToCart(productId) {
             updateCartBadge(data.cart_count);
         } else {
             Swal.fire({
-                title: 'Error',
+                title: data.pro ? 'Pro Feature' : 'Error',
                 text: data.message || 'Error adding to cart',
-                icon: 'error',
+                icon: data.pro ? 'info' : 'error',
                 confirmButtonColor: '{{ get_cms_option('theme_primary_color', '#0091ea') }}'
             });
         }

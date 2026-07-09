@@ -291,7 +291,7 @@ function addToCart(productId) {
                 b.classList.toggle('hidden', !data.cart_count);
             });
         } else {
-            Swal.fire({ title: 'Error', text: data.message || 'Error adding to cart', icon: 'error', confirmButtonColor: '{{ $primaryColor }}' });
+            Swal.fire({ title: data.pro ? 'Pro Feature' : 'Error', text: data.message || 'Error adding to cart', icon: data.pro ? 'info' : 'error', confirmButtonColor: '{{ $primaryColor }}' });
         }
     })
     .catch(() => {
