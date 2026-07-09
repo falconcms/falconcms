@@ -204,6 +204,12 @@
                 });
             };
             const openDynSrcMenu = (settings, sourceKey, ctx, event) => {
+                // Dynamic content is a Pro (builder_pro) feature. Existing dynamic bindings keep
+                // rendering; only adding/changing one is gated so unlicensed sites aren't broken.
+                if (!window.falconBuilderPro) {
+                    showToast('Dynamic content is a Pro feature — upgrade to unlock dynamic sources.', 'error');
+                    return;
+                }
                 dynMenu.open = false;
                 const rect = event.currentTarget.getBoundingClientRect();
                 dynSrcMenu.settings = settings;
@@ -523,6 +529,11 @@
                 { type: 'gallery', name: 'Gallery', icon: 'fa fa-images' },
                 { type: 'ticker', name: 'Ticker', icon: 'fa fa-rss' },
             ];
+            // Advanced elements — available only with a builder_pro license. The palette shows
+            // them with a lock badge; adding one without a license shows an upgrade prompt.
+            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html'];
+            const isElementPro   = (type) => proElementTypes.includes(type);
+            const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
             if (postCardMode.value || layoutMode.value) {
                 availableElements.push({ type: 'post_content', name: 'Content', icon: 'fa fa-paragraph' });
                 availableElements.push({ type: 'post_meta', name: 'Post Meta', icon: 'fa fa-tags' });
@@ -3037,6 +3048,10 @@
             };
 
             const addElement = (type) => {
+                if (elementLocked(type)) {
+                    showToast('This is a Pro element — upgrade to use it.', 'error');
+                    return;
+                }
                 if (currentTargetCi.value === null || currentTargetColi.value === null) return;
 
                 const newEl = {
@@ -3862,7 +3877,7 @@
                 canvasStyle, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
                 cardPerView, cardPreviewCols, cardPreviewCount,
-                searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements,
+                searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements, elementLocked, isElementPro,
                 shouldShowGuide,
                 toasts, showToast,
                 showLibraryModal, libraryActiveTab, libraryNewName, isSavingToLibrary, saveAsGlobalChecked, libraryItems, libraryContext,

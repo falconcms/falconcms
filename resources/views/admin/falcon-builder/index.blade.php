@@ -147,6 +147,7 @@
             $__isLayoutSection = in_array($post->type ?? '', ['falcon_header', 'falcon_footer', 'falcon_ptb', 'falcon_content'], true);
         @endphp
         window.falconLayoutMode = {{ $__isLayoutSection ? 'true' : 'false' }};
+        window.falconBuilderPro = @json(falcon_pro('builder_pro'));
         @php
             try {
                 $__previewPosts = get_falcon_posts(['limit' => 6, 'order' => 'desc', 'orderby' => 'created_at']);

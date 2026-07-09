@@ -55,8 +55,12 @@
                 <div v-for="el in filteredAvailableElements" :key="el.type"
                      @click="addElement(el.type)"
                      class="group flex flex-col items-center gap-3 cursor-pointer">
-                    <div class="w-full aspect-square bg-white border-2 border-slate-200 flex flex-col items-center justify-center rounded-lg group-hover:border-[#0091ea] group-hover:shadow-md transition-all transform group-hover:-translate-y-1">
+                    <div class="relative w-full aspect-square bg-white border-2 border-slate-200 flex flex-col items-center justify-center rounded-lg group-hover:border-[#0091ea] group-hover:shadow-md transition-all transform group-hover:-translate-y-1"
+                         :class="{ 'opacity-70': elementLocked(el.type) }">
                         <i :class="el.icon" style="font-size:24px" class="text-slate-400 group-hover:text-[#0091ea] transition-colors"></i>
+                        <span v-if="elementLocked(el.type)" class="absolute top-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide" title="Pro feature">
+                            <i class="fa fa-lock text-[8px]"></i> Pro
+                        </span>
                     </div>
                     <span class="text-[12px] font-bold uppercase text-slate-500 group-hover:text-[#0091ea] transition-colors">@{{ el.name || el.type }}</span>
                 </div>
