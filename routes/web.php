@@ -79,7 +79,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('posts/{id}/revisions/{revision}', [PostController::class, 'deleteRevision'])->name('posts.revisions.delete');
     Route::delete('posts/{id}/revisions', [PostController::class, 'clearRevisions'])->name('posts.revisions.clear');
     Route::resource('posts', PostController::class);
-    Route::get('falcon-builder-library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'page'])->name('falcon-builder.library');
+    Route::get('falcon-builder-library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'page'])->middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':builder_pro')->name('falcon-builder.library');
     Route::post('falcon-builder-library/post-cards', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCard'])->name('falcon-builder.post-cards.save');
     Route::delete('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deletePostCard'])->name('falcon-builder.post-cards.delete');
     Route::patch('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updatePostCard'])->name('falcon-builder.post-cards.update');
@@ -170,6 +170,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         return response()->json($category);
     })->name('categories.ajax');
 
+    // Product Categories & Tags — Pro (e-commerce). Registered but access-gated by
+    // EnsurePro:ecommerce so linking views never break; the sidebar hides them when off.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce')->group(function () {
     // Product Categories (dedicated, first-class — mirrors Categories)
     Route::get('product-categories', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'index'])->name('product-categories.index');
     Route::post('product-categories', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'store'])->name('product-categories.store');
@@ -187,6 +190,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::get('product-tags/edit/{product_tag}', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'edit'])->name('product-tags.edit');
     Route::put('product-tags/{product_tag}', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'update'])->name('product-tags.update');
     Route::delete('product-tags/{product_tag}', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'destroy'])->name('product-tags.destroy');
+    }); // end EnsurePro:ecommerce — Product Categories & Tags
 
     // Navigation Menus
     Route::post('menus/{id}/duplicate', [\FalconCms\Core\Http\Controllers\Admin\MenuManagementController::class, 'duplicate'])->name('menus.duplicate');
@@ -227,8 +231,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
  
     // Dashboard index
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Analytics — Pro. Registered so links don't break; access-gated + menu hidden when off.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':analytics')->group(function () {
     Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('analytics/realtime', [DashboardController::class, 'analyticsRealtime'])->name('analytics.realtime');
+    });
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
  
     // Users
@@ -248,10 +255,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
 
     Route::resource('roles', RoleController::class);
     
-    // Languages
+    // Languages — Pro (multi-language). Registered so linking views don't break; access
+    // is gated by EnsurePro:multilang and the sidebar hides the menu when inactive.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':multilang')->group(function () {
     Route::post('languages/settings', [LanguageController::class, 'updateSettings'])->name('languages.settings.update');
     Route::post('languages/{id}/default', [\FalconCms\Core\Http\Controllers\Admin\LanguageController::class, 'setDefault'])->name('languages.set-default');
     Route::resource('languages', \FalconCms\Core\Http\Controllers\Admin\LanguageController::class)->names('languages');
+    });
  
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
@@ -335,7 +345,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('/themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
     Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
 
-    // Falcon Builder Sections
+    // Falcon Builder Sections (Layout Builder) — Pro (builder_pro). Standalone admin page;
+    // the core page builder (editing a post/page) is unaffected and stays free.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':builder_pro')->group(function () {
     Route::get('/falcon-builder-sections', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'index'])->name('falcon-builder.sections');
     Route::post('/falcon-builder-sections/slot-toggle', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'toggleSlot'])->name('falcon-builder.slot.toggle');
     Route::post('/falcon-builder-sections/section', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'createSection'])->name('falcon-builder.section.create');
@@ -347,6 +359,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('/falcon-builder-sections/layout/delete', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'deleteLayout'])->name('falcon-builder.layout.delete');
     Route::post('/falcon-builder-sections/layout/conditions', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'saveConditions'])->name('falcon-builder.layout.conditions');
     Route::get('/falcon-builder-sections/condition-items', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'conditionItems'])->name('falcon-builder.condition-items');
+    }); // end EnsurePro:builder_pro — Layout Builder
 
     // Form Builder
     Route::get('forms', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'index'])->name('forms.index');
@@ -361,8 +374,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('forms/submissions/{submission}', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');
     Route::delete('forms/{form}', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'destroy'])->name('forms.destroy');
 
-    // Shop Management
-    Route::prefix('shop')->name('shop.')->group(function() {
+    // Shop Management — Pro (e-commerce). Routes stay registered so admin views that link
+    // to them with route('admin.shop.*') never break; EnsurePro:ecommerce 404s the actual
+    // screens on an unlicensed site, and the sidebar hides the menu.
+    Route::prefix('shop')->name('shop.')->middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce')->group(function() {
         Route::get('overview', [ShopController::class, 'overview'])->name('overview');
         Route::get('orders', [ShopController::class, 'orders'])->name('orders.index');
         Route::post('orders/bulk', [ShopController::class, 'ordersBulk'])->name('orders.bulk');
@@ -441,7 +456,9 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::post('/comment', [FrontendController::class, 'storeComment'])->name('frontend.comment.store')->middleware('throttle:10,1');
     Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit')->middleware('throttle:5,1');
 
-    // Shop Frontend
+    // Shop Frontend. NB: route names stay registered even without a Pro license because
+    // published themes reference route('shop.*') directly — gating them here would 500 the
+    // storefront. Enforcement lives in the admin (managing the shop is the paid surface).
     Route::prefix('cart')->name('shop.')->group(function() {
         Route::get('/',         [ShopFrontendController::class, 'cart'])->name('cart');
         Route::get('/fragment', [ShopFrontendController::class, 'miniCart'])->name('cart.fragment');

@@ -20,6 +20,62 @@ class Sidebar extends Component
             ->orderBy('order')
             ->get()
             ->groupBy('group');
+
+        // Drop menu items that point at a route which isn't registered — e.g. Pro
+        // features (the Shop back-office) gated off on an unlicensed site. Generic and
+        // self-maintaining: any item targeting an unregistered named route disappears,
+        // and a parent left with no visible children goes with it.
+        $this->menuGroups = $this->menuGroups
+            ->map(function ($menus) {
+                return $menus
+                    ->map(function ($menu) {
+                        if ($menu->relationLoaded('children') && $menu->children) {
+                            $menu->setRelation('children', $menu->children
+                                ->filter(fn ($child) => $this->routeAvailable($child))
+                                ->values());
+                        }
+                        return $menu;
+                    })
+                    ->filter(function ($menu) {
+                        return $this->routeAvailable($menu)
+                            || ($menu->children && $menu->children->isNotEmpty());
+                    })
+                    ->values();
+            })
+            ->filter(fn ($menus) => $menus->isNotEmpty());
+    }
+
+    /**
+     * Whether a menu item's target route is available. Items without a named route
+     * (blank, '#', or a raw URL/path) are always shown; an item pointing at a named
+     * route is shown only when that route is actually registered.
+     */
+    protected function routeAvailable($menu): bool
+    {
+        $route = $menu->route ?? null;
+        if (! $route || $route === '#' || str_starts_with($route, '/') || str_starts_with($route, 'http')) {
+            return true;
+        }
+        // Pro-feature routes stay registered (so linking views don't break) but access is
+        // middleware-gated — hide the menu item when its feature is inactive.
+        $proPrefixes = [
+            'admin.shop.'                   => 'ecommerce',
+            'admin.product-categories.'     => 'ecommerce',
+            'admin.product-tags.'           => 'ecommerce',
+            'admin.languages.'              => 'multilang',
+            'admin.analytics'               => 'analytics',
+            'admin.falcon-builder.sections' => 'builder_pro',
+            'admin.falcon-builder.library'  => 'builder_pro',
+        ];
+        foreach ($proPrefixes as $prefix => $feature) {
+            if (str_starts_with($route, $prefix)) {
+                return falcon_pro($feature);
+            }
+        }
+        if (str_contains($route, '.')) {
+            return Route::has($route);
+        }
+        return true;
     }
 
     public static function isUrlActive($url, $strict = false)

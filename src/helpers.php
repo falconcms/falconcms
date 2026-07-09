@@ -4091,3 +4091,24 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
     ];
     return $elements;
 });
+
+if (!function_exists('falcon_pro')) {
+    /**
+     * Whether a FalconCMS Pro feature is available. Core uses this to gate paid
+     * features and decide when to show an "upgrade to Pro" prompt; the Pro package
+     * flips these on once its license validates.
+     *
+     *   falcon_pro()             → is any Pro license active?
+     *   falcon_pro('ecommerce')  → is the e-commerce feature available?
+     *
+     * Known feature keys: 'ecommerce', 'multilang', 'analytics', 'builder_pro'.
+     */
+    function falcon_pro(?string $feature = null): bool
+    {
+        try {
+            return app(\FalconCms\Core\Pro\LicenseGateway::class)->active($feature);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+}

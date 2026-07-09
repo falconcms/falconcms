@@ -160,6 +160,15 @@ class FalconCmsServiceProvider extends ServiceProvider
         require_once __DIR__ . '/ecommerce_helpers.php';
         $this->mergeConfigFrom(__DIR__ . '/../config/falcon-options.php', 'falcon-options');
 
+        // Pro license gateway. Core binds a Null gateway where every paid feature is
+        // inactive; when the falconcms/pro package is installed and licensed, its provider
+        // rebinds this to a live gateway. Core asks it (via falcon_pro()) before exposing
+        // any paid feature — it never checks for the Pro package directly.
+        $this->app->singleton(
+            \FalconCms\Core\Pro\LicenseGateway::class,
+            \FalconCms\Core\Pro\NullLicenseGateway::class
+        );
+
         // 1. Get Active Theme
         // We use a simple way to get it since DB might not be ready in early register
         $activeTheme = 'falcon-theme';
