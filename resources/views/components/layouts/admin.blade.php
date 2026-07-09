@@ -167,6 +167,26 @@
                 setTimeout(() => toast.remove(), 300);
             }, duration);
         };
+
+        // Global Pro-gate feedback: any admin AJAX response of {pro:true} (a write blocked by
+        // EnsureProEditable / EnsurePro) surfaces one toast, so gated actions never fail silently.
+        (function () {
+            if (window.__falconProFetchPatched || !window.fetch) return;
+            window.__falconProFetchPatched = true;
+            var _fetch = window.fetch;
+            window.fetch = function () {
+                return _fetch.apply(this, arguments).then(function (res) {
+                    try {
+                        if ((res.headers.get('content-type') || '').indexOf('application/json') !== -1) {
+                            res.clone().json().then(function (d) {
+                                if (d && d.pro === true && d.message) window.showToast(d.message, 'error');
+                            }).catch(function () {});
+                        }
+                    } catch (e) {}
+                    return res;
+                });
+            };
+        })();
     </script>
 
     {{-- Classic-editor metabox cards: make the chevron toggle collapse/expand the card, and remember the state. --}}

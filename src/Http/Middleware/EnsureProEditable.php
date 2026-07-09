@@ -17,7 +17,9 @@ class EnsureProEditable
 {
     public function handle(Request $request, Closure $next, string $feature)
     {
-        if (falcon_pro_editable($feature)) {
+        // Only WRITE requests are gated — GET/HEAD (viewing & browsing) always pass, so a whole
+        // feature route block can be wrapped and the read routes stay reachable automatically.
+        if ($request->isMethodSafe() || falcon_pro_editable($feature)) {
             return $next($request);
         }
 

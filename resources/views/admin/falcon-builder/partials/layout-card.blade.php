@@ -4,9 +4,11 @@
     $isGlobal = $layout['is_global'] ?? false;
     $summary = collect($layout['conditions_ui'] ?? [])->where('mode', 'include')->pluck('label')->all();
     $excludeCount = collect($layout['conditions_ui'] ?? [])->where('mode', 'exclude')->count();
+    $layoutLocked = ! falcon_pro_editable('builder_pro');
 @endphp
 
-<div class="bg-white border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,0.04)] rounded-sm overflow-hidden flex flex-col" data-layout-card id="card-{{ $lid }}">
+<div class="relative bg-white border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,0.04)] rounded-sm overflow-hidden flex flex-col" data-layout-card id="card-{{ $lid }}">
+    @if($layoutLocked)<span class="absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm" title="Pro feature"><span class="material-symbols-outlined" style="font-size:11px">lock</span> Pro</span>@endif
 
     {{-- STATE: slot list --}}
     <div class="layout-view flex flex-col flex-1">

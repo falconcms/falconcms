@@ -13,6 +13,18 @@
 </style>
 
 <div class="p-6 bg-[#f0f0f1] min-h-screen">
+    @php $libLocked = ! falcon_pro_editable('builder_pro'); @endphp
+
+    @if($libLocked)
+    <div class="mb-5 flex items-center gap-3 rounded-lg border border-[#f0c47a] bg-[#fdf6e9] px-4 py-3">
+        <span class="shrink-0 material-symbols-outlined text-[#c98a1a]" style="font-size:24px">lock</span>
+        <div class="flex-1">
+            <div class="text-[13.5px] font-bold text-[#5b4a1f]">You're viewing the Library in preview</div>
+            <div class="text-[12.5px] text-[#7a663a]">Browse your saved items freely — creating, editing or deleting needs Pro.</div>
+        </div>
+        <a href="#" class="shrink-0 rounded-md bg-[#e8912b] px-4 py-2 text-[12.5px] font-bold text-[#171c23] hover:brightness-105 no-underline">Upgrade to Pro</a>
+    </div>
+    @endif
 
     {{-- ── Header ── --}}
     <div class="flex justify-between items-center mb-6">
@@ -104,7 +116,8 @@
             @else
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
                     @foreach($items as $item)
-                    <div class="lib-card bg-white border border-[#dcdcde] rounded overflow-hidden group" id="item-{{ $item['id'] }}">
+                    <div class="lib-card relative bg-white border border-[#dcdcde] rounded overflow-hidden group" id="item-{{ $item['id'] }}">
+                        @if($libLocked)<span class="absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm" title="Pro feature"><span class="material-symbols-outlined" style="font-size:11px">lock</span> Pro</span>@endif
                         <div class="bg-gradient-to-br from-[#f9fafb] to-[#f0f0f1] h-28 flex items-center justify-center border-b border-[#f0f0f1]">
                             <span class="material-symbols-outlined text-[44px] text-[#c3c4c7] group-hover:text-[#2271b1]/40 transition-colors">{{ $meta['icon'] }}</span>
                         </div>
@@ -139,7 +152,8 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     @foreach($postCards as $card)
                     @php $cfg = $card['config']; @endphp
-                    <div class="lib-card bg-white border border-[#dcdcde] rounded overflow-hidden group" id="pcard-{{ $card['id'] }}">
+                    <div class="lib-card relative bg-white border border-[#dcdcde] rounded overflow-hidden group" id="pcard-{{ $card['id'] }}">
+                        @if($libLocked)<span class="absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm" title="Pro feature"><span class="material-symbols-outlined" style="font-size:11px">lock</span> Pro</span>@endif
                         <div class="p-4">
                             <p class="text-[13px] font-semibold text-[#1d2327] truncate leading-snug mb-0.5" title="{{ $card['name'] }}">{{ $card['name'] }}</p>
                             <p class="text-[11px] text-[#9ca3af] mb-4">{{ $card['created_at'] }}</p>
@@ -179,7 +193,8 @@
             @else
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                     @foreach($megaMenus as $mm)
-                    <div class="lib-card bg-white border border-[#dcdcde] rounded overflow-hidden group" id="mmcard-{{ $mm['id'] }}">
+                    <div class="lib-card relative bg-white border border-[#dcdcde] rounded overflow-hidden group" id="mmcard-{{ $mm['id'] }}">
+                        @if($libLocked)<span class="absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm" title="Pro feature"><span class="material-symbols-outlined" style="font-size:11px">lock</span> Pro</span>@endif
                         <div class="p-4">
                             <p class="text-[13px] font-semibold text-[#1d2327] truncate leading-snug mb-0.5" title="{{ $mm['name'] }}">{{ $mm['name'] }}</p>
                             <p class="text-[11px] text-[#9ca3af] mb-4">{{ $mm['created_at'] }}</p>

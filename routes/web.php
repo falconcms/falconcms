@@ -79,7 +79,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('posts/{id}/revisions/{revision}', [PostController::class, 'deleteRevision'])->name('posts.revisions.delete');
     Route::delete('posts/{id}/revisions', [PostController::class, 'clearRevisions'])->name('posts.revisions.clear');
     Route::resource('posts', PostController::class);
-    Route::get('falcon-builder-library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'page'])->middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':builder_pro')->name('falcon-builder.library');
+    // Library — Pro (builder_pro), "browse but locked": the page and every read route stay open
+    // so users can look around; EnsureProEditable (method-aware) gates only the write methods.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':builder_pro')->group(function () {
+    Route::get('falcon-builder-library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'page'])->name('falcon-builder.library');
     Route::post('falcon-builder-library/post-cards', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCard'])->name('falcon-builder.post-cards.save');
     Route::delete('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deletePostCard'])->name('falcon-builder.post-cards.delete');
     Route::patch('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updatePostCard'])->name('falcon-builder.post-cards.update');
@@ -102,6 +105,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('falcon-builder/global-sections', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveGlobalSection'])->name('falcon-builder.global-sections.save');
     Route::patch('falcon-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateGlobalSection'])->name('falcon-builder.global-sections.update');
     Route::delete('falcon-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteGlobalSection'])->name('falcon-builder.global-sections.delete');
+    }); // end EnsureProEditable:builder_pro — Library writes
     Route::post('falcon-builder/card-preview', function(\Illuminate\Http\Request $r) {
         $s = $r->input('settings', []);
         try {

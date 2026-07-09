@@ -65,9 +65,8 @@ class Sidebar extends Component
             'admin.languages.'              => 'multilang',
             // 'admin.analytics' is intentionally NOT hidden — it uses the "locked preview"
             // model: the page stays reachable and shows sample data behind an upgrade overlay.
-            // 'admin.falcon-builder.sections' (Layout Builder) is NOT hidden — it uses the
-            // "browse but locked" model: the page is reachable, write actions show a Pro toast.
-            'admin.falcon-builder.library'  => 'builder_pro',
+            // Layout Builder & Library are NOT hidden — they use the "browse but locked" model:
+            // the pages are reachable; write actions return a Pro toast (EnsureProEditable).
             'admin.acpt.fields.'            => 'custom_fields',
         ];
         foreach ($proPrefixes as $prefix => $feature) {
