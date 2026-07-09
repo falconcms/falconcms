@@ -17,6 +17,17 @@
 
     <div class="p-6 bg-[#f0f0f1] min-h-screen">
 
+        @if(! falcon_pro_editable('builder_pro'))
+        <div class="mb-5 flex items-center gap-3 rounded-lg border border-[#f0c47a] bg-[#fdf6e9] px-4 py-3">
+            <span class="shrink-0 material-symbols-outlined text-[#c98a1a]" style="font-size:24px">lock</span>
+            <div class="flex-1">
+                <div class="text-[13.5px] font-bold text-[#5b4a1f]">You're viewing the Layout Builder in preview</div>
+                <div class="text-[12.5px] text-[#7a663a]">Look around freely — creating, editing or assigning layouts needs Pro.</div>
+            </div>
+            <a href="#" class="shrink-0 rounded-md bg-[#e8912b] px-4 py-2 text-[12.5px] font-bold text-[#171c23] hover:brightness-105 no-underline">Upgrade to Pro</a>
+        </div>
+        @endif
+
         @if(session('success'))
             <div class="bg-white border-l-4 border-[#00a32a] p-3 mb-4 shadow-[0_1px_1px_rgba(0,0,0,0.04)] text-[13px] text-[#1d2327]">
                 <p>{{ session('success') }}</p>
@@ -108,6 +119,24 @@
         }
         function toast(msg, type = 'success') { if (window.showToast) window.showToast(msg, type); }
 
+        // "Browse but locked": the Layout Builder is viewable, but editing needs Pro (licensed
+        // or grace — NOT grandfathered). Every write action shows a Pro toast and does nothing.
+        window.falconBuilderProEdit = @json(falcon_pro_editable('builder_pro'));
+        function requirePro() {
+            if (window.falconBuilderProEdit) return true;
+            toast('This feature is available in the Pro version.', 'error');
+            return false;
+        }
+        // Real form submits to a gated write endpoint (e.g. the Create Layout form) — block + toast.
+        document.addEventListener('submit', function (e) {
+            if (window.falconBuilderProEdit) return;
+            var action = (e.target && e.target.getAttribute && e.target.getAttribute('action')) || '';
+            if (/\/falcon-builder-sections\/(layout|assign|section|clear|slot-toggle)/.test(action)) {
+                e.preventDefault();
+                toast('This feature is available in the Pro version.', 'error');
+            }
+        }, true);
+
         // ── Section picker (in-card) ─────────────────────────────────────
         window.openPicker = function (lid, slot) {
             activePicker = { layout: lid, slot: slot };
@@ -144,6 +173,7 @@
             eb.classList.toggle('bg-[#2271b1]', !isNew); eb.classList.toggle('bg-[#2c92e0]', isNew);
         };
         window.selectExisting = function (sectionId) {
+            if (!requirePro()) return;
             if (!activePicker.layout) return;
             document.getElementById('assign-layout').value = activePicker.layout;
             document.getElementById('assign-slot').value = activePicker.slot;
@@ -154,6 +184,7 @@
         // Create a new section via AJAX (no navigation). It's created + assigned to
         // the slot; the user then clicks the section to open the page builder.
         window.createSectionAjax = function (lid) {
+            if (!requirePro()) return;
             const c = card(lid);
             const slot = c.querySelector('.create-slot').value;
             const nameEl = c.querySelector('.create-name');
@@ -200,6 +231,7 @@
                 '</div>';
         };
         window.deleteSectionConfirm = async function (sectionId, title) {
+            if (!requirePro()) return;
             const ok = window.falconConfirm ? await window.falconConfirm({ title: 'Delete Section', message: `Delete the section “${title}”? It will be removed from any layout that uses it. This cannot be undone.`, confirmText: 'Delete', isDanger: true }) : confirm(`Delete “${title}”?`);
             if (!ok) return;
             document.getElementById('delete-section-id').value = sectionId;
@@ -207,6 +239,7 @@
         };
         // Inline rename: click the name → edit in place → blur/Enter saves via AJAX.
         window.startRenameLayout = function (el) {
+            if (!requirePro()) return;
             if (el.querySelector('input')) return;               // already editing
             const lid = el.dataset.lid;
             const current = el.textContent.trim();
@@ -254,6 +287,7 @@
 
         // AJAX per-layout slot on/off — no page reload.
         window.slotToggle = function (lid, slot, checkbox) {
+            if (!window.falconBuilderProEdit) { checkbox.checked = !checkbox.checked; toast('This feature is available in the Pro version.', 'error'); return; }
             const want = checkbox.checked;
             checkbox.disabled = true;
             fetch(URL_SLOT_TOGGLE, {
@@ -276,6 +310,7 @@
         };
 
         window.deleteLayout = async function (lid, name) {
+            if (!requirePro()) return;
             const ok = window.falconConfirm ? await window.falconConfirm({ title: 'Delete Layout', message: `Delete the layout “${name}”? Its section assignments and conditions will be removed (the sections themselves stay).`, confirmText: 'Delete', isDanger: true }) : confirm(`Delete the layout “${name}”?`);
             if (ok) document.getElementById('del-' + lid).submit();
         };
@@ -408,6 +443,7 @@
 
         let saveTimer = null;
         function saveConditions() {
+            if (!window.falconBuilderProEdit) { toast('This feature is available in the Pro version.', 'error'); return; }
             clearTimeout(saveTimer);
             saveTimer = setTimeout(() => {
                 fetch(URL_CONDITIONS, {
