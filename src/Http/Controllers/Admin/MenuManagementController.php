@@ -191,6 +191,7 @@ class MenuManagementController extends Controller
 
         falcon_log_activity('created', "Created a new menu: {$menu->name}", $menu);
 
+        forget_nav_menu_cache();
         return redirect()->route('admin.menus.index', ['menu' => $menu->id])->with('success', 'Menu created successfully.');
     }
 
@@ -226,6 +227,7 @@ class MenuManagementController extends Controller
             }
         }
 
+        forget_nav_menu_cache();
         falcon_log_activity('updated', "Updated menu structure: {$menu->name}", $menu);
 
         return redirect()
@@ -261,6 +263,7 @@ class MenuManagementController extends Controller
         $menu = NavigationMenu::findOrFail($id);
         $name = $menu->name;
         $menu->delete();
+        forget_nav_menu_cache();
         falcon_log_activity('deleted', "Deleted menu: {$name}");
         return redirect()->route('admin.menus.index')->with('success', 'Menu deleted.');
     }
@@ -281,6 +284,7 @@ class MenuManagementController extends Controller
         // Recreate every item, preserving the full parent/child hierarchy & order.
         $this->copyItems($menu->id, $newMenu->id, null, null);
 
+        forget_nav_menu_cache();
         falcon_log_activity('created', "Duplicated menu: {$menu->name} → {$newMenu->name}", $newMenu);
 
         return redirect()

@@ -1421,10 +1421,94 @@ if (!function_exists('get_lazy_categories')) {
     }
 }
 
+if (!function_exists('falcon_nav_menu_version')) {
+    /**
+     * Version token embedded in every cached nav-menu key. Bumping it (via
+     * forget_nav_menu_cache) instantly invalidates all cached menus across every
+     * location and locale, without needing wildcard cache deletes.
+     */
+    function falcon_nav_menu_version(): string
+    {
+        try {
+            return (string) \Illuminate\Support\Facades\Cache::rememberForever(
+                'falcon:nav_menu_ver',
+                fn () => uniqid('', true)
+            );
+        } catch (\Throwable $e) {
+            return '0';
+        }
+    }
+}
+
+if (!function_exists('forget_nav_menu_cache')) {
+    /** Invalidate every cached nav menu. Call after any menu / CPT / taxonomy edit. */
+    function forget_nav_menu_cache(): void
+    {
+        try {
+            \Illuminate\Support\Facades\Cache::forever('falcon:nav_menu_ver', uniqid('', true));
+        } catch (\Throwable $e) {
+        }
+    }
+}
+
 if (!function_exists('get_lazy_menu')) {
     function get_lazy_menu($slugOrLocation) {
+        // Nav menus resolve on every frontend page (header + footer) and each fans
+        // out into many queries (per-item post/term lookups + permalinks). Cache the
+        // resolved tree per location+locale; the version token lets any menu/CPT/
+        // taxonomy edit invalidate all of them at once, with a 10-min TTL backstop.
+        // Cache a PURE ARRAY tree (no Eloquent/objects — those don't round-trip
+        // through every cache store reliably), then hydrate to stdClass on the way
+        // out so the theme keeps its object property access unchanged.
+        try {
+            $key = 'falcon:nav_menu:' . falcon_nav_menu_version() . ':' . $slugOrLocation . ':' . app()->getLocale();
+            $tree = \Illuminate\Support\Facades\Cache::remember(
+                $key,
+                now()->addMinutes(10),
+                fn () => _falcon_menu_items_to_array(_falcon_resolve_lazy_menu($slugOrLocation))
+            );
+        } catch (\Throwable $e) {
+            $tree = _falcon_menu_items_to_array(_falcon_resolve_lazy_menu($slugOrLocation));
+        }
+
+        return _falcon_menu_array_to_objects($tree);
+    }
+}
+
+if (!function_exists('_falcon_menu_items_to_array')) {
+    /** Resolved menu items -> plain nested arrays (cache-safe). */
+    function _falcon_menu_items_to_array($items): array
+    {
+        return collect($items)->map(function ($item) {
+            $data = method_exists($item, 'getAttributes') ? $item->getAttributes() : (array) $item;
+            $data['url'] = $item->url ?? ($data['url'] ?? '#');
+            $children = $item->children ?? null;
+            $data['children'] = ($children && count($children))
+                ? _falcon_menu_items_to_array($children)
+                : [];
+            return $data;
+        })->values()->all();
+    }
+}
+
+if (!function_exists('_falcon_menu_array_to_objects')) {
+    /** Cached array tree -> Collection of stdClass (children as nested Collections). */
+    function _falcon_menu_array_to_objects($tree)
+    {
+        return collect($tree)->map(function ($data) {
+            $data = (array) $data;
+            $children = $data['children'] ?? [];
+            $obj = (object) $data;
+            $obj->children = _falcon_menu_array_to_objects($children);
+            return $obj;
+        })->values();
+    }
+}
+
+if (!function_exists('_falcon_resolve_lazy_menu')) {
+    function _falcon_resolve_lazy_menu($slugOrLocation) {
         $query = \FalconCms\Core\Models\NavigationMenu::query();
-        
+
         if ($slugOrLocation === 'header') {
             $query->where('is_header', true);
         } elseif ($slugOrLocation === 'footer') {
