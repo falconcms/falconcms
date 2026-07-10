@@ -5,7 +5,7 @@
             <h1 class="text-[23px] font-normal text-[#1d2327]">Edit Field Group: <span class="font-bold">{{ $fieldGroup->title }}</span></h1>
             <div class="flex gap-2">
                 <a href="{{ route('admin.acpt.fields.index') }}" class="wp-btn-secondary px-4 py-1.5 shadow-sm">Back</a>
-                <button type="button" onclick="document.getElementById('field-group-form').submit()" class="wp-btn-primary px-6 py-1.5 shadow-md">Update Group</button>
+                <button type="button" onclick="document.getElementById('field-group-form').submit()" class="wp-btn-primary px-6 py-1.5 shadow-md inline-flex items-center gap-1" @if(! falcon_pro_editable('custom_fields')) title="This feature is available in the Pro version." @endif>@if(! falcon_pro_editable('custom_fields'))<span class="material-symbols-outlined" style="font-size:15px">lock</span>@endif Update Group</button>
             </div>
         </div>
 
