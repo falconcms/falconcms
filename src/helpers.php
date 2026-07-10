@@ -1622,6 +1622,30 @@ if (!function_exists('is_lazy_homepage')) {
     }
 }
 
+if (!function_exists('falcon_default_language')) {
+    /**
+     * The site's default language code, memoized for the request. Called from
+     * get_falcon_permalink() which runs many times per page, so this avoids a
+     * repeated `cms_languages where is_default` query on every link.
+     */
+    function falcon_default_language(): string
+    {
+        static $code = null;
+        if ($code !== null) {
+            return $code;
+        }
+        $code = 'en';
+        try {
+            $dbDefault = \Illuminate\Support\Facades\DB::table('cms_languages')->where('is_default', true)->value('code');
+            if ($dbDefault) {
+                $code = $dbDefault;
+            }
+        } catch (\Throwable $e) {
+        }
+        return $code;
+    }
+}
+
 if (!function_exists('get_falcon_permalink')) {
     function get_falcon_permalink($post) {
         if (!$post) return '#';
@@ -1636,12 +1660,9 @@ if (!function_exists('get_falcon_permalink')) {
             // ... (rest of homepage logic)
         }
 
-        // Find actual default language from DB
-        $defaultLang = 'en';
-        try {
-            $dbDefault = \Illuminate\Support\Facades\DB::table('cms_languages')->where('is_default', true)->value('code');
-            if ($dbDefault) $defaultLang = $dbDefault;
-        } catch (\Exception $e) {}
+        // Find actual default language (memoized per request — permalinks are built
+        // dozens of times per page and the default language is constant).
+        $defaultLang = falcon_default_language();
 
         // Language prefix logic: If it's not the default language, we MUST add the prefix
         $langPrefix = ($postLang === $defaultLang) ? '' : '/' . $postLang;
@@ -3825,10 +3846,15 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
  * Register Menu Element for Falcon Builder
  */
 add_falcon_filter('falcon_builder_elements', function($elements) {
-    $menus = [];
-    try {
-        $menus = \Illuminate\Support\Facades\DB::table('navigation_menus')->pluck('name', 'id')->toArray();
-    } catch (\Exception $e) {}
+    // This filter is applied many times per render; the menu dropdown only feeds
+    // the builder editor, so resolve the list once per request.
+    static $menus = null;
+    if ($menus === null) {
+        $menus = [];
+        try {
+            $menus = \Illuminate\Support\Facades\DB::table('navigation_menus')->pluck('name', 'id')->toArray();
+        } catch (\Exception $e) {}
+    }
 
     $elements['menu'] = [
         'type' => 'menu',
@@ -4172,13 +4198,18 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
  */
 add_falcon_filter('falcon_builder_elements', function($elements) {
     // Dynamic post-type options (active types). Multi-select; none selected = all content.
-    $ptOptions = [];
-    try {
-        foreach (\FalconCms\Core\Models\PostType::where('is_active', true)->orderBy('name')->get() as $pt) {
-            $ptOptions[$pt->slug] = $pt->name;
+    // Resolved once per request — this filter runs many times per render and the
+    // options only feed the builder editor UI.
+    static $ptOptions = null;
+    if ($ptOptions === null) {
+        $ptOptions = [];
+        try {
+            foreach (\FalconCms\Core\Models\PostType::where('is_active', true)->orderBy('name')->get() as $pt) {
+                $ptOptions[$pt->slug] = $pt->name;
+            }
+        } catch (\Throwable $e) {
+            $ptOptions = ['post' => 'Posts', 'page' => 'Pages'];
         }
-    } catch (\Throwable $e) {
-        $ptOptions = ['post' => 'Posts', 'page' => 'Pages'];
     }
 
     $elements['advanced_search'] = [
