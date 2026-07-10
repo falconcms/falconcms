@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin>
+<x-falcon-cms::layouts.admin pro-lock-feature="custom_fields">
     <x-falcon-cms::admin.delete-modal />
     @include('falcon-cms::admin.partials.pro-preview-banner', ['feature' => 'custom_fields', 'previewTitle' => "You're viewing Field Groups in preview"])
     <div class="flex items-center justify-between mb-6">

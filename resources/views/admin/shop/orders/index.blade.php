@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Orders" active-menu="shop">
+<x-falcon-cms::layouts.admin pro-lock-feature="ecommerce" title="Orders" active-menu="shop">
     <div class="flex justify-between items-center mb-5">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Orders</h1>
     </div>

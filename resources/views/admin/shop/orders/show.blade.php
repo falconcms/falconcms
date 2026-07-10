@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Order #{{ $order->order_number ?: $order->id }}" active-menu="shop">
+<x-falcon-cms::layouts.admin pro-lock-feature="ecommerce" title="Order #{{ $order->order_number ?: $order->id }}" active-menu="shop">
     <div class="flex justify-between items-center mb-5">
         <div class="flex items-center space-x-3">
             <a href="{{ route('admin.shop.orders.index') }}" class="wp-btn-secondary h-8 px-2">

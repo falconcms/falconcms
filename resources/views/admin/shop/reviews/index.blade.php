@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Product Reviews">
+<x-falcon-cms::layouts.admin pro-lock-feature="ecommerce" title="Product Reviews">
     <x-falcon-cms::admin.delete-modal />
     <div class="flex items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] mr-3">Product Reviews</h1>

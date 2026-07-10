@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin>
+<x-falcon-cms::layouts.admin pro-lock-feature="custom_fields">
     <div class="max-w-5xl mx-auto">
         <div class="mb-6 flex justify-between items-center">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Add New Field Group</h1>

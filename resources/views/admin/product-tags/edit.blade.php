@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Edit Tag">
+<x-falcon-cms::layouts.admin pro-lock-feature="ecommerce" title="Edit Tag">
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Edit Tag</h1>
     </div>

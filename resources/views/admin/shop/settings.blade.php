@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Shop Settings" active-menu="shop">
+<x-falcon-cms::layouts.admin pro-lock-feature="ecommerce" title="Shop Settings" active-menu="shop">
     <div class="px-2" x-data="{
         tab: '{{ request('tab', session('active_shop_tab', 'general')) }}',
         sellingLocations: '{{ get_shop_option('shop_selling_locations', 'all') }}',

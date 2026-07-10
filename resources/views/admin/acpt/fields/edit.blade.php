@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin>
+<x-falcon-cms::layouts.admin pro-lock-feature="custom_fields">
     <x-falcon-cms::admin.delete-modal />
     <div class="max-w-5xl mx-auto">
         <div class="mb-6 flex justify-between items-center">

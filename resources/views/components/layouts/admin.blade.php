@@ -187,6 +187,37 @@
                 });
             };
         })();
+
+        @php $__proLockFeature = $proLockFeature ?? null; @endphp
+        @if($__proLockFeature && ! falcon_pro_editable($__proLockFeature))
+        // ── "Browse but locked" write gate ──
+        // The page is fully viewable, but every create / publish / update / save / delete /
+        // import action is intercepted client-side and turned into a Pro toast (writes are
+        // also blocked server-side by EnsureProEditable as a backstop).
+        (function () {
+            var MSG = 'This feature is available in the Pro version.';
+            var WRITE_RE = /(^|\W)(create|publish|update|save|add new|delete|remove|import|trash|make default|set as default|set default|duplicate)(\W|$)/i;
+            function toast(){ if (window.showToast) { window.showToast(MSG, 'error'); } else { alert(MSG); } }
+            function block(e){ e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) { e.stopImmediatePropagation(); } toast(); return false; }
+            // Any non-GET form submission is a write.
+            document.addEventListener('submit', function (e) {
+                var f = e.target;
+                if (!f || f.tagName !== 'FORM' || f.hasAttribute('data-pro-allow')) { return; }
+                if ((f.getAttribute('method') || 'get').toLowerCase() === 'get') { return; }
+                block(e);
+            }, true);
+            // Clicks on write controls: create/edit/new links, submit buttons, write-verb buttons.
+            document.addEventListener('click', function (e) {
+                var el = e.target.closest('a, button, [role="button"], input[type="submit"], input[type="button"]');
+                if (!el || el.closest('[data-pro-allow]')) { return; }
+                var href = (el.getAttribute && el.getAttribute('href')) || '';
+                var isCreateEdit = /\/(create|edit|new)(\/|\?|#|$)/i.test(href);
+                var isBtn = el.tagName === 'BUTTON' || el.type === 'submit' || el.type === 'button' || el.getAttribute('role') === 'button';
+                var txt = (el.innerText || el.value || (el.getAttribute && el.getAttribute('aria-label')) || '').trim();
+                if (el.hasAttribute('data-pro-write') || isCreateEdit || (isBtn && WRITE_RE.test(txt))) { block(e); }
+            }, true);
+        })();
+        @endif
     </script>
 
     {{-- Classic-editor metabox cards: make the chevron toggle collapse/expand the card, and remember the state. --}}

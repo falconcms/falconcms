@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Product Tags">
+<x-falcon-cms::layouts.admin pro-lock-feature="ecommerce" title="Product Tags">
     <x-falcon-cms::admin.delete-modal />
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Product Tags</h1>    </div>

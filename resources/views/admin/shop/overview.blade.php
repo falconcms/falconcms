@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Shop Overview" active-menu="shop">
+<x-falcon-cms::layouts.admin pro-lock-feature="ecommerce" title="Shop Overview" active-menu="shop">
     @php
         $money = fn ($v) => $currency . number_format((float) $v, 2);
         $presets = ['today' => 'Today', '7d' => 'Last 7 Days', '30d' => 'Last 30 Days', 'month' => 'This Month', 'year' => 'This Year', 'all' => 'All Time'];

@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Edit Category">
+<x-falcon-cms::layouts.admin pro-lock-feature="ecommerce" title="Edit Category">
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Edit Category</h1>
     </div>

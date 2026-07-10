@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin>
+<x-falcon-cms::layouts.admin pro-lock-feature="multilang">
     <x-slot name="title">Languages - FalconCMS</x-slot>
     <x-falcon-cms::admin.delete-modal />
 
