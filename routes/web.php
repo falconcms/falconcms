@@ -465,9 +465,10 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit')->middleware('throttle:5,1');
 
     // Shop Frontend — Pro (e-commerce). Route names stay REGISTERED (published themes call
-    // route('shop.*') directly, so removing them would 500 the whole site); EnsurePro:ecommerce
-    // 404s the actual storefront pages on an unlicensed site instead.
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce')->group(function() {
+    // route('shop.*') directly, so removing them would 500 the whole site). 'strict' mode
+    // ignores grandfathering: the storefront (cart/checkout/account/add-to-cart) locks the
+    // moment the freemium grace window ends — browsing products stays open elsewhere.
+    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict')->group(function() {
     Route::prefix('cart')->name('shop.')->group(function() {
         Route::get('/',         [ShopFrontendController::class, 'cart'])->name('cart');
         Route::get('/fragment', [ShopFrontendController::class, 'miniCart'])->name('cart.fragment');

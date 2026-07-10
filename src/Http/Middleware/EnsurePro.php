@@ -18,9 +18,14 @@ use Illuminate\Http\Request;
  */
 class EnsurePro
 {
-    public function handle(Request $request, Closure $next, string $feature)
+    public function handle(Request $request, Closure $next, string $feature, string $mode = '')
     {
-        if (falcon_pro($feature)) {
+        // Default: grandfather-inclusive (falcon_pro) — a feature used before freemium
+        // stays reachable. 'strict' mode ignores grandfathering (license OR grace only),
+        // so the feature locks the moment the grace window ends — used for the storefront
+        // (browsing products stays open, but cart/checkout/account become Pro-only).
+        $available = $mode === 'strict' ? falcon_pro_editable($feature) : falcon_pro($feature);
+        if ($available) {
             return $next($request);
         }
 

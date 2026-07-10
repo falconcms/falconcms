@@ -7,6 +7,22 @@
     <div class="container-custom">
         <h1 class="text-[36px] font-normal text-[#2c3338] mb-8">Cart</h1>
 
+        @if(function_exists('falcon_freemium_grace_active') && falcon_freemium_grace_active())
+            <div class="border border-amber-300 bg-amber-50 text-amber-900 p-4 mb-8 rounded flex items-start gap-3 text-sm">
+                <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+                <div>
+                    <strong>Action needed:</strong> The online store (cart &amp; checkout) is a Pro feature.
+                    @php $graceUntil = get_cms_option('falcon_freemium_grace_until'); @endphp
+                    @if($graceUntil)
+                        You can keep using it until <strong>{{ \Illuminate\Support\Carbon::parse($graceUntil)->format('M j, Y') }}</strong>, after which cart &amp; checkout will be locked.
+                    @else
+                        It will be locked soon.
+                    @endif
+                    Please upgrade to Pro to keep selling.
+                </div>
+            </div>
+        @endif
+
         @if(session('success'))
             <div class="bg-blue-50 border-t-2 border-blue-500 p-4 mb-8 text-blue-800 text-sm flex items-center gap-2">
                 <i data-lucide="check-circle" class="w-4 h-4"></i>
