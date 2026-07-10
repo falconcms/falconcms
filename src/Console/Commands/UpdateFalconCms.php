@@ -104,6 +104,7 @@ class UpdateFalconCms extends Command
         // Users can set a custom footer logo via Customizer at any time after this.
         \DB::table('cms_settings')->where('key', 'theme_footer_logo')->delete();
         \DB::table('cms_settings')->where('key', 'theme_site_logo')->delete();
+        forget_cms_options_cache();
     }
 
     protected function createEcommercePages()

@@ -108,6 +108,7 @@ class ThemeController extends Controller
             ['value' => $slug, 'updated_at' => now()]
         );
 
+        forget_cms_options_cache();
         falcon_log_activity('theme_activated', "Activated theme: {$slug}");
 
         return redirect()->back()->with('success', "Theme '{$slug}' activated successfully!");

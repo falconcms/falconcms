@@ -918,6 +918,8 @@ class CustomizerController extends \Illuminate\Routing\Controller
             }
         }
 
+        forget_cms_options_cache();
+
         if ($request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Settings saved successfully.']);
         }
@@ -944,6 +946,7 @@ class CustomizerController extends \Illuminate\Routing\Controller
                     DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $field['default'] ?? '']);
                 }
             }
+            forget_cms_options_cache();
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'All settings reset to defaults.', 'reload' => true]);
             }
@@ -958,6 +961,7 @@ class CustomizerController extends \Illuminate\Routing\Controller
             }
         }
 
+        forget_cms_options_cache();
         if ($request->ajax()) {
             return response()->json(['success' => true, 'message' => 'Section reset to defaults.', 'reload' => true]);
         }
@@ -1010,6 +1014,7 @@ class CustomizerController extends \Illuminate\Routing\Controller
                 DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $val]);
             }
 
+            forget_cms_options_cache();
             return redirect()->back()->with('success', 'Settings imported successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Import failed: ' . $e->getMessage());

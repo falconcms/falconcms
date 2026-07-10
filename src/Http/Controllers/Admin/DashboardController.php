@@ -415,6 +415,7 @@ class DashboardController extends Controller
             );
         }
 
+        forget_cms_options_cache();
         falcon_log_activity('settings_updated', "Updated CMS settings");
 
         return redirect()->back()->with('success', 'Settings updated successfully!');
@@ -459,6 +460,7 @@ class DashboardController extends Controller
             );
         }
 
+        forget_cms_options_cache();
         return redirect()->back()->with('success', 'SEO Settings updated successfully!');
     }
 
@@ -577,6 +579,7 @@ class DashboardController extends Controller
             );
         }
 
+        forget_cms_options_cache();
         falcon_log_activity('settings_updated', 'Updated integrations settings');
 
         return redirect()->back()->with('success', 'Integrations settings saved successfully!');
@@ -648,6 +651,7 @@ class DashboardController extends Controller
             ['value' => json_encode($data), 'updated_at' => now()]
         );
 
+        forget_cms_options_cache();
         falcon_log_activity('settings_updated', "Updated email template: {$key}");
 
         return redirect()->route('admin.settings.email-templates', ['tab' => $key])

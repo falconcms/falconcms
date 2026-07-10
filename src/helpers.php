@@ -321,12 +321,21 @@ if (!function_exists('get_cms_option')) {
         try {
             $store = &_falcon_cms_options_store();
 
-            // Bulk-load all settings on first call — 1 DB query per request
+            // Bulk-load all settings on first use. Cross-request cache (Redis/file/etc.)
+            // so most requests skip the DB entirely; per-request static store avoids
+            // repeat cache hits. Invalidated by forget_cms_options_cache() on every write.
             if (!$store['loaded']) {
-                $rows = DB::table('cms_settings')->get(['key', 'value']);
-                foreach ($rows as $row) {
-                    $store['data'][$row->key] = $row->value;
-                }
+                $store['data'] = \Illuminate\Support\Facades\Cache::remember(
+                    'falcon:cms_options',
+                    now()->addHour(),
+                    function () {
+                        $data = [];
+                        foreach (DB::table('cms_settings')->get(['key', 'value']) as $row) {
+                            $data[$row->key] = $row->value;
+                        }
+                        return $data;
+                    }
+                );
                 $store['loaded'] = true;
             }
 
@@ -353,13 +362,30 @@ if (!function_exists('update_cms_option')) {
                 ['key' => $key],
                 ['value' => $value, 'updated_at' => now()]
             );
-            // Keep in-memory cache consistent within the same request
-            $store = &_falcon_cms_options_store();
-            $store['data'][$key] = $value;
+            // Drop the cross-request cache and the per-request store so the new
+            // value is picked up immediately (here and on the next request).
+            forget_cms_options_cache();
             return true;
         } catch (\Exception $e) {
             return false;
         }
+    }
+}
+
+if (!function_exists('forget_cms_options_cache')) {
+    /**
+     * Invalidate the CMS options cache. Call after ANY direct write to the
+     * cms_settings table so cached settings never go stale.
+     */
+    function forget_cms_options_cache(): void
+    {
+        try {
+            \Illuminate\Support\Facades\Cache::forget('falcon:cms_options');
+        } catch (\Throwable $e) {
+        }
+        $store = &_falcon_cms_options_store();
+        $store['loaded'] = false;
+        $store['data'] = [];
     }
 }
 

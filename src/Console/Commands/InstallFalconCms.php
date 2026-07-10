@@ -82,6 +82,7 @@ class InstallFalconCms extends Command
         foreach ($options as $key => $value) {
             DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value]);
         }
+        forget_cms_options_cache();
 
         // 6. Sync System Data (Permissions, Roles, Menus)
         $this->info('Step 6: Syncing Roles, Permissions and Menus...');

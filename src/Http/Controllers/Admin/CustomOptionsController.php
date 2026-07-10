@@ -78,6 +78,7 @@ class CustomOptionsController extends Controller
             );
         }
 
+        forget_cms_options_cache();
         return redirect()->back()->with('success', "{$config['title']} updated successfully!");
     }
 }

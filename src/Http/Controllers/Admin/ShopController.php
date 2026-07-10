@@ -442,6 +442,7 @@ class ShopController extends Controller
             session()->save();
         }
 
+        forget_cms_options_cache();
         return redirect()->back()->with('success', 'Shop settings saved successfully!');
     }
 }

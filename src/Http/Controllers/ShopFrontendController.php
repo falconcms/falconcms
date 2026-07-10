@@ -727,6 +727,7 @@ class ShopFrontendController extends Controller
                     ['key' => 'shop_coupons'],
                     ['value' => json_encode($allCoupons), 'updated_at' => now()]
                 );
+                forget_cms_options_cache();
             }
         }
 
