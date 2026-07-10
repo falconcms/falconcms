@@ -383,8 +383,15 @@ class DashboardController extends Controller
         // Handle Checkboxes
         $data['users_can_register']         = $request->has('users_can_register') ? '1' : '0';
         $data['require_email_verification'] = $request->has('require_email_verification') ? '1' : '0';
-        $data['allow_multi_device']         = $request->has('allow_multi_device') ? '1' : '0';
-        $data['magic_login_enabled']        = $request->has('magic_login_enabled') ? '1' : '0';
+        // Multi-device Login & Magic Login are Pro features. Only accept changes to them
+        // when the site can edit Pro features; otherwise preserve the stored values so a
+        // locked (or crafted) request can never enable them.
+        if (falcon_pro_editable('advanced_login')) {
+            $data['allow_multi_device']  = $request->has('allow_multi_device') ? '1' : '0';
+            $data['magic_login_enabled'] = $request->has('magic_login_enabled') ? '1' : '0';
+        } else {
+            unset($data['allow_multi_device'], $data['magic_login_enabled'], $data['max_devices']);
+        }
         
         // Only update these if we are on the page that contains them to avoid overwriting theme options
         if ($request->has('site_title')) {

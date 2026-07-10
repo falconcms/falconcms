@@ -241,35 +241,23 @@
                     </td>
                 </tr>
 
-                <!-- Multi-device Login -->
+                @php $loginLocked = ! falcon_pro_editable('advanced_login'); @endphp
+
+                <!-- Multi-device Login (Pro) -->
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2">
-                        <label class="text-[14px] font-semibold text-[#1d2327]">Multi-device Login</label>
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Multi-device Login
+                            @if($loginLocked)<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wide ml-1 align-middle" title="This feature is available in the Pro version."><span class="material-symbols-outlined" style="font-size:11px">lock</span> Pro</span>@endif
+                        </label>
                     </th>
                     <td>
                         <label class="inline-flex items-center cursor-pointer">
                             <input type="checkbox" name="allow_multi_device" id="allow_multi_device"
-                                class="w-4 h-4 mr-2"
+                                class="w-4 h-4 mr-2 pro-login-lock"
                                 {{ ($settings['allow_multi_device'] ?? '0') == '1' ? 'checked' : '' }}>
                             <span class="text-[14px] text-[#1d2327]">Limit the number of devices per account</span>
                         </label>
                         <p class="text-[12px] text-[#646970] mt-1">When unchecked, users can stay logged in on <strong>unlimited</strong> devices. Check this to cap concurrent logins at the number set below.</p>
-                    </td>
-                </tr>
-
-                <!-- Magic Login -->
-                <tr>
-                    <th scope="row" class="w-[200px] text-left align-top pt-2">
-                        <label class="text-[14px] font-semibold text-[#1d2327]">Magic Login</label>
-                    </th>
-                    <td>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="magic_login_enabled" id="magic_login_enabled"
-                                class="w-4 h-4 mr-2"
-                                {{ ($settings['magic_login_enabled'] ?? '0') == '1' ? 'checked' : '' }}>
-                            <span class="text-[14px] text-[#1d2327]">Enable passwordless login via magic link (sent to email)</span>
-                        </label>
-                        <p class="text-[12px] text-[#646970] mt-1">When enabled, users can sign in without a password — both on the shop account page and the admin login form.</p>
                     </td>
                 </tr>
 
@@ -282,6 +270,24 @@
                             value="{{ $settings['max_devices'] ?? '3' }}" min="1"
                             class="wp-input w-[100px] h-8 shadow-sm mb-1">
                         <p class="text-[12px] text-[#646970]">Maximum number of devices a user can be logged in on at once. (Default: 3)</p>
+                    </td>
+                </tr>
+
+                <!-- Magic Login (Pro) -->
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Magic Login
+                            @if($loginLocked)<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wide ml-1 align-middle" title="This feature is available in the Pro version."><span class="material-symbols-outlined" style="font-size:11px">lock</span> Pro</span>@endif
+                        </label>
+                    </th>
+                    <td>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="magic_login_enabled" id="magic_login_enabled"
+                                class="w-4 h-4 mr-2 pro-login-lock"
+                                {{ ($settings['magic_login_enabled'] ?? '0') == '1' ? 'checked' : '' }}>
+                            <span class="text-[14px] text-[#1d2327]">Enable passwordless login via magic link (sent to email)</span>
+                        </label>
+                        <p class="text-[12px] text-[#646970] mt-1">When enabled, users can sign in without a password — both on the shop account page and the admin login form.</p>
                     </td>
                 </tr>
             </table>
@@ -329,6 +335,16 @@
                 // Listen for changes
                 registerCheckbox.addEventListener('change', toggleRegistrationFields);
                 multiDeviceCheckbox.addEventListener('change', toggleMultiDeviceFields);
+
+                // Multi-device Login & Magic Login are Pro: block toggling when locked + toast.
+                @if($loginLocked)
+                document.querySelectorAll('.pro-login-lock').forEach(function (cb) {
+                    cb.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (window.showToast) { window.showToast('This feature is available in the Pro version.', 'error'); }
+                    });
+                });
+                @endif
                 
                 // Media Modal for settings
                 document.querySelectorAll('.open-media-for-setting').forEach(btn => {
