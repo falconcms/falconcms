@@ -734,11 +734,11 @@ class FrontendController extends Controller
                     if (!$token) {
                         return response()->json(['success' => false, 'message' => 'Please complete the security check.'], 422);
                     }
-                    $verify = \Illuminate\Support\Facades\Http::asForm()->post(
+                    $verify = falcon_gateway_http(fn ($h) => $h->asForm()->post(
                         'https://challenges.cloudflare.com/turnstile/v0/siteverify',
                         ['secret' => $secretKey, 'response' => $token, 'remoteip' => $request->ip()]
-                    );
-                    if (!($verify->json('success') ?? false)) {
+                    ));
+                    if (!$verify || !($verify->json('success') ?? false)) {
                         return response()->json(['success' => false, 'message' => 'Security check failed. Please try again.'], 422);
                     }
                 }

@@ -1691,6 +1691,26 @@ if (!function_exists('clear_page_cache')) {
     }
 }
 
+if (!function_exists('falcon_gateway_http')) {
+    /**
+     * Send a payment-gateway HTTP request with a hard timeout so a slow or
+     * unreachable gateway can never hang (or 500) the checkout request.
+     *
+     * $fn receives a pre-configured PendingRequest and returns the Response.
+     * Returns null on any connection/timeout failure (logged) — callers must
+     * treat a null response as "not verified / failed", never as success.
+     */
+    function falcon_gateway_http(callable $fn): ?\Illuminate\Http\Client\Response
+    {
+        try {
+            return $fn(\Illuminate\Support\Facades\Http::timeout(15)->connectTimeout(5));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Payment gateway connection error: ' . $e->getMessage());
+            return null;
+        }
+    }
+}
+
 if (!function_exists('falcon_geoip')) {
     /**
      * Resolve an IP address to geo/network details via ip-api.com, cached for 30 days.

@@ -900,7 +900,7 @@ class ShopFrontendController extends Controller
         $secret = get_shop_option('shop_payment_stripe_secret');
         if (!$secret) return null;
 
-        $resp = \Illuminate\Support\Facades\Http::asForm()->withToken($secret)->post('https://api.stripe.com/v1/payment_intents', [
+        $resp = falcon_gateway_http(fn ($h) => $h->asForm()->withToken($secret)->post('https://api.stripe.com/v1/payment_intents', [
             'amount'                 => $this->stripeAmount($order),
             'currency'               => strtolower(get_shop_option('shop_currency', 'usd')),
             'description'            => 'Order ' . $order->order_number,
@@ -908,12 +908,12 @@ class ShopFrontendController extends Controller
             'payment_method_types[0]'=> 'card',
             'metadata[order_id]'     => (string) $order->id,
             'metadata[order_number]' => $order->order_number,
-        ]);
+        ]));
 
-        if ($resp->successful() && !empty($resp->json('client_secret'))) {
+        if ($resp && $resp->successful() && !empty($resp->json('client_secret'))) {
             return ['id' => $resp->json('id'), 'client_secret' => $resp->json('client_secret')];
         }
-        \Illuminate\Support\Facades\Log::error('Stripe PaymentIntent error: ' . $resp->body());
+        \Illuminate\Support\Facades\Log::error('Stripe PaymentIntent error: ' . ($resp ? $resp->body() : 'connection failed'));
         return null;
     }
 
@@ -949,7 +949,7 @@ class ShopFrontendController extends Controller
                 ? 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php'
                 : 'https://securepay.sslcommerz.com/gwprocess/v4/api.php';
 
-            $resp = \Illuminate\Support\Facades\Http::asForm()->post($apiUrl, [
+            $resp = falcon_gateway_http(fn ($h) => $h->asForm()->post($apiUrl, [
                 'store_id'         => $storeId,
                 'store_passwd'     => $storePass,
                 'total_amount'     => number_format((float) $order->total, 2, '.', ''),
@@ -969,13 +969,13 @@ class ShopFrontendController extends Controller
                 'cus_add1'         => $order->address_line_1,
                 'cus_city'         => $order->city,
                 'cus_country'      => $order->country,
-            ]);
+            ]));
 
-            if ($resp->successful() && $resp->json('status') === 'SUCCESS' && !empty($resp->json('GatewayPageURL'))) {
+            if ($resp && $resp->successful() && $resp->json('status') === 'SUCCESS' && !empty($resp->json('GatewayPageURL'))) {
                 $order->update(['transaction_id' => $resp->json('sessionkey')]);
                 return $resp->json('GatewayPageURL');
             }
-            \Illuminate\Support\Facades\Log::error('SSLCommerz session error: ' . $resp->body());
+            \Illuminate\Support\Facades\Log::error('SSLCommerz session error: ' . ($resp ? $resp->body() : 'connection failed'));
             return null;
         }
 
@@ -1015,15 +1015,15 @@ class ShopFrontendController extends Controller
             $sessionId     = $request->get('session_id');
             if ($secret && $paymentIntent) {
                 // Inline (Stripe Elements) — verify the PaymentIntent.
-                $resp = \Illuminate\Support\Facades\Http::withToken($secret)->get('https://api.stripe.com/v1/payment_intents/' . $paymentIntent);
-                if ($resp->successful() && $resp->json('status') === 'succeeded') {
+                $resp = falcon_gateway_http(fn ($h) => $h->withToken($secret)->get('https://api.stripe.com/v1/payment_intents/' . $paymentIntent));
+                if ($resp && $resp->successful() && $resp->json('status') === 'succeeded') {
                     $paid = true;
                     $order->update(['transaction_id' => $paymentIntent]);
                 }
             } elseif ($secret && $sessionId) {
                 // Hosted Stripe Checkout (fallback) — verify the session.
-                $resp = \Illuminate\Support\Facades\Http::withToken($secret)->get('https://api.stripe.com/v1/checkout/sessions/' . $sessionId);
-                if ($resp->successful() && $resp->json('payment_status') === 'paid') {
+                $resp = falcon_gateway_http(fn ($h) => $h->withToken($secret)->get('https://api.stripe.com/v1/checkout/sessions/' . $sessionId));
+                if ($resp && $resp->successful() && $resp->json('payment_status') === 'paid') {
                     $paid = true;
                     $order->update(['transaction_id' => $resp->json('payment_intent') ?: $sessionId]);
                 }
@@ -1038,13 +1038,13 @@ class ShopFrontendController extends Controller
                 $valApi  = $sandbox
                     ? 'https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php'
                     : 'https://securepay.sslcommerz.com/validator/api/validationserverAPI.php';
-                $resp = \Illuminate\Support\Facades\Http::get($valApi, [
+                $resp = falcon_gateway_http(fn ($h) => $h->get($valApi, [
                     'val_id'       => $valId,
                     'store_id'     => $storeId,
                     'store_passwd' => $storePass,
                     'format'       => 'json',
-                ]);
-                if ($resp->successful()) {
+                ]));
+                if ($resp && $resp->successful()) {
                     $st  = $resp->json('status');
                     $amt = (float) $resp->json('amount');
                     // Confirm the gateway validated it AND the amount matches the order total.

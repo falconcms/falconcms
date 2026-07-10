@@ -240,7 +240,7 @@ class ShopController extends Controller
         $stripeUnits = in_array($currency, $zeroDecimal, true) ? (int) round($refundAmount) : (int) round($refundAmount * 100);
 
         try {
-            $resp = \Illuminate\Support\Facades\Http::asForm()->withToken($secret)->post('https://api.stripe.com/v1/refunds', [
+            $resp = \Illuminate\Support\Facades\Http::timeout(15)->connectTimeout(5)->asForm()->withToken($secret)->post('https://api.stripe.com/v1/refunds', [
                 'payment_intent'     => $order->transaction_id,
                 'amount'             => $stripeUnits,
                 'metadata[order_id]' => (string) $order->id,
