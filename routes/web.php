@@ -482,10 +482,15 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     });
     Route::get('/checkout', [ShopFrontendController::class, 'checkout'])->name('shop.checkout');
     Route::post('/checkout', [ShopFrontendController::class, 'placeOrder'])->name('shop.place-order');
-    Route::get('/order-confirmation/{id}', [ShopFrontendController::class, 'confirmation'])->name('shop.confirmation');
+    // Post-purchase customer access stays open even after grace ends — a paid
+    // customer must always reach their order confirmation, tracking and digital
+    // downloads (each verifies ownership in the controller).
+    Route::get('/order-confirmation/{id}', [ShopFrontendController::class, 'confirmation'])->name('shop.confirmation')
+        ->withoutMiddleware([\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
 
     // Order tracking
-    Route::match(['get', 'post'], '/track-order', [ShopFrontendController::class, 'trackOrder'])->name('shop.track');
+    Route::match(['get', 'post'], '/track-order', [ShopFrontendController::class, 'trackOrder'])->name('shop.track')
+        ->withoutMiddleware([\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
 
     // Account page login / logout / profile / password
     Route::post('/account-login', [ShopFrontendController::class, 'accountLogin'])->name('shop.account.login');
@@ -494,7 +499,8 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::post('/account-password-update', [ShopFrontendController::class, 'updatePassword'])->name('shop.account.password.update');
 
     // Digital downloads (token-based, no auth required)
-    Route::get('/download/{token}', [ShopFrontendController::class, 'downloadFile'])->name('shop.download')->middleware('throttle:30,1');
+    Route::get('/download/{token}', [ShopFrontendController::class, 'downloadFile'])->name('shop.download')->middleware('throttle:30,1')
+        ->withoutMiddleware([\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
 
     // Magic login (passwordless)
     Route::post('/magic-login', [ShopFrontendController::class, 'requestMagicLink'])->name('shop.magic.request')->middleware('throttle:5,1');
@@ -508,10 +514,10 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     // Online payment gateway return / cancel — gateways (e.g. SSLCommerz) POST here without a CSRF token.
     Route::match(['get', 'post'], '/payment/return/{id}', [ShopFrontendController::class, 'paymentReturn'])
         ->name('shop.payment.return')
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class, \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
     Route::match(['get', 'post'], '/payment/cancel/{id}', [ShopFrontendController::class, 'paymentCancel'])
         ->name('shop.payment.cancel')
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class, \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
     }); // end EnsurePro:ecommerce — Shop Frontend
 
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
