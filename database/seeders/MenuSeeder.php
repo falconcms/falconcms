@@ -116,6 +116,7 @@ class MenuSeeder extends Seeder
             ['title' => 'Layout',     'route' => 'admin.falcon-builder.sections', 'order' => 1],
             ['title' => 'Library',    'route' => 'admin.falcon-builder.library',  'order' => 2],
             ['title' => 'Customizer', 'route' => 'admin.customizer.index',         'order' => 3],
+            ['title' => 'License',    'route' => 'admin.license.index',            'order' => 4],
         ]);
 
         // 8. ACPT

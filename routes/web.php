@@ -270,6 +270,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::resource('languages', \FalconCms\Core\Http\Controllers\Admin\LanguageController::class)->names('languages');
     });
  
+    // Pro License — paste / activate / deactivate the license key
+    Route::get('license', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'index'])->name('license.index');
+    Route::post('license/activate', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'activate'])->name('license.activate');
+    Route::post('license/deactivate', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'deactivate'])->name('license.deactivate');
+
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
     Route::post('settings', [DashboardController::class, 'updateSettings'])->name('settings.update');
