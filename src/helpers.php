@@ -1481,7 +1481,20 @@ if (!function_exists('_falcon_menu_items_to_array')) {
     {
         return collect($items)->map(function ($item) {
             $data = method_exists($item, 'getAttributes') ? $item->getAttributes() : (array) $item;
-            $data['url'] = $item->url ?? ($data['url'] ?? '#');
+            $url  = $item->url ?? ($data['url'] ?? '#');
+
+            // Internal links (page/post/cpt/category) are cached as ROOT-RELATIVE paths
+            // so the browser resolves them against whatever domain it's on — the cached
+            // value must never freeze the host that happened to populate it. Only
+            // user-entered 'custom' items keep their URL verbatim (may be external).
+            if (($data['type'] ?? '') !== 'custom' && preg_match('#^https?://#i', $url)) {
+                $p   = parse_url($url);
+                $url = ($p['path'] ?? '/')
+                    . (isset($p['query']) ? '?' . $p['query'] : '')
+                    . (isset($p['fragment']) ? '#' . $p['fragment'] : '');
+            }
+
+            $data['url'] = $url;
             $children = $item->children ?? null;
             $data['children'] = ($children && count($children))
                 ? _falcon_menu_items_to_array($children)
