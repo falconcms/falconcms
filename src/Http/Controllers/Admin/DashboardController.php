@@ -128,7 +128,7 @@ class DashboardController extends Controller
         try {
             // Only expose ecommerce figures (revenue, orders, customer names) to users who can
             // access the shop. Without this gate every dashboard-accessing role would see them.
-            if (\Illuminate\Support\Facades\Schema::hasTable('shop_orders') && auth()->user()->hasPermission('access_shop') && falcon_pro('ecommerce')) {
+            if (\Illuminate\Support\Facades\Schema::hasTable('shop_orders') && auth()->user()->hasPermission('access_shop') && falcon_pro_editable('ecommerce')) {
                 $hasShop = true;
                 // Statuses that represent earned revenue. Net = total minus any amount refunded.
                 $revenueStatuses = ['completed', 'processing', 'partially-refunded'];
@@ -725,7 +725,7 @@ class DashboardController extends Controller
 
         // Locked preview: without Pro (analytics), show believable SAMPLE data behind an
         // upgrade overlay — never the site's real figures. Buying Pro makes it live.
-        if (! falcon_pro('analytics')) {
+        if (! falcon_pro_editable('analytics')) {
             return view('falcon-cms::admin.analytics.index',
                 $this->sampleAnalyticsData($range) + ['analyticsLocked' => true]);
         }
@@ -971,7 +971,7 @@ class DashboardController extends Controller
         }
 
         // Locked preview → sample live figures, never the site's real real-time data.
-        if (! falcon_pro('analytics')) {
+        if (! falcon_pro_editable('analytics')) {
             return response()->json([
                 'active'      => mt_rand(18, 42),
                 'minutes'     => collect(range(1, 30))->map(fn () => mt_rand(2, 22))->all(),
