@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin title="Edit {{ ucfirst($post->type) }}" active-menu="{{ $post->type === 'page' ? 'pages' : ($post->type ?: 'posts') }}">
+<x-falcon-cms::layouts.admin pro-lock-feature="{{ ($post->type ?? '') === 'product' ? 'ecommerce' : '' }}" title="Edit {{ ucfirst($post->type) }}" active-menu="{{ $post->type === 'page' ? 'pages' : ($post->type ?: 'posts') }}">
     
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">Edit {{ ucfirst($post->type) }}</h1>
