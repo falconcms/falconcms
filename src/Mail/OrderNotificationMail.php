@@ -7,11 +7,13 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
 use FalconCms\Core\Models\Order;
 
-class OrderNotificationMail extends Mailable
+class OrderNotificationMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, QueueableViaConfig;
 
     public $order;
     public $notificationType;
@@ -26,6 +28,7 @@ class OrderNotificationMail extends Mailable
         $this->customMessage = $customMessage;
         $this->recipientType = $recipientType; // 'customer', 'admin'
         $this->refundAmount = $refundAmount;      // amount refunded in this action (for refund emails)
+        $this->configureQueue();
     }
 
     public function envelope(): Envelope

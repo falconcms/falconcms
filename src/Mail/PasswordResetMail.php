@@ -7,10 +7,12 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
 
-class PasswordResetMail extends Mailable
+class PasswordResetMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, QueueableViaConfig;
 
     public string $resetUrl;
     public string $userName;
@@ -23,6 +25,7 @@ class PasswordResetMail extends Mailable
         $this->userName  = $userName ?: 'there';
         $this->siteName  = get_cms_option('site_title') ?: config('app.name', 'Falcon CMS');
         $this->siteUrl   = config('app.url', url('/'));
+        $this->configureQueue();
     }
 
     public function envelope(): Envelope

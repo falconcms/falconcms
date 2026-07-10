@@ -7,10 +7,12 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
 
-class EmailVerificationMail extends Mailable
+class EmailVerificationMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, QueueableViaConfig;
 
     public string $verifyUrl;
     public string $userName;
@@ -25,6 +27,7 @@ class EmailVerificationMail extends Mailable
         $this->expiresMinutes = $expiresMinutes;
         $this->siteName       = get_cms_option('site_title') ?: config('app.name', 'Falcon CMS');
         $this->siteUrl        = config('app.url', url('/'));
+        $this->configureQueue();
     }
 
     public function envelope(): Envelope
