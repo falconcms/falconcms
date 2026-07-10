@@ -196,6 +196,9 @@
         // also blocked server-side by EnsureProEditable as a backstop).
         (function () {
             var MSG = 'This feature is available in the Pro version.';
+            // When true, users may open create/edit forms (browse them) — only the actual
+            // save/publish/update action inside gets the toast. Used for the product editor.
+            var ALLOW_FORMS = @json((bool) ($proLockAllowForms ?? false));
             var WRITE_RE = /(^|\W)(create|publish|update|save|add new|delete|remove|import|trash|make default|set as default|set default|duplicate)(\W|$)/i;
             function toast(){ if (window.showToast) { window.showToast(MSG, 'error'); } else { alert(MSG); } }
             function block(e){ e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) { e.stopImmediatePropagation(); } toast(); return false; }
@@ -211,7 +214,7 @@
                 var el = e.target.closest('a, button, [role="button"], input[type="submit"], input[type="button"]');
                 if (!el || el.closest('[data-pro-allow]')) { return; }
                 var href = (el.getAttribute && el.getAttribute('href')) || '';
-                var isCreateEdit = /\/(create|edit|new)(\/|\?|#|$)/i.test(href);
+                var isCreateEdit = !ALLOW_FORMS && /\/(create|edit|new)(\/|\?|#|$)/i.test(href);
                 var isBtn = el.tagName === 'BUTTON' || el.type === 'submit' || el.type === 'button' || el.getAttribute('role') === 'button';
                 var txt = (el.innerText || el.value || (el.getAttribute && el.getAttribute('aria-label')) || '').trim();
                 if (el.hasAttribute('data-pro-write') || isCreateEdit || (isBtn && WRITE_RE.test(txt))) { block(e); }

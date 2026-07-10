@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin pro-lock-feature="{{ ($type ?? '') === 'product' ? 'ecommerce' : '' }}" title="Add New {{ ucfirst($type) }}" active-menu="{{ $type === 'page' ? 'pages' : ($type ?: 'posts') }}">
+<x-falcon-cms::layouts.admin pro-lock-allow-forms="1" pro-lock-feature="{{ ($type ?? '') === 'product' ? 'ecommerce' : '' }}" title="Add New {{ ucfirst($type) }}" active-menu="{{ $type === 'page' ? 'pages' : ($type ?: 'posts') }}">
     
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">Add New {{ ucfirst($type) }}</h1>

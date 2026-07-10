@@ -1,4 +1,4 @@
-<x-falcon-cms::layouts.admin pro-lock-feature="{{ ($type ?? '') === 'product' ? 'ecommerce' : '' }}" title="{{ ucfirst($type ?? 'Posts') }}" active-menu="{{ ($type ?? 'post') === 'page' ? 'pages' : ($type ?? 'posts') }}">
+<x-falcon-cms::layouts.admin pro-lock-allow-forms="1" pro-lock-feature="{{ ($type ?? '') === 'product' ? 'ecommerce' : '' }}" title="{{ ucfirst($type ?? 'Posts') }}" active-menu="{{ ($type ?? 'post') === 'page' ? 'pages' : ($type ?? 'posts') }}">
     <x-falcon-cms::admin.delete-modal />
     <div class="mb-4 flex items-center">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">{{ ucfirst($type ?? 'Posts') }}</h1>
