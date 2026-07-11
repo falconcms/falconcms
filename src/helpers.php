@@ -4290,6 +4290,14 @@ if (!function_exists('falcon_pro')) {
     }
 }
 
+if (!function_exists('falcon_upgrade_url')) {
+    /** Where every "Upgrade to Pro" call-to-action points (config falcon-options.upgrade_url). */
+    function falcon_upgrade_url(): string
+    {
+        return (string) config('falcon-options.upgrade_url', 'https://falconcms.com/#pricing');
+    }
+}
+
 if (!function_exists('falcon_freemium_grace_active')) {
     /**
      * Whether the site is still inside its freemium grace window — the transition period

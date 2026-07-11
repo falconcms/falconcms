@@ -62,6 +62,10 @@
                         <span class="material-symbols-outlined" style="font-size:16px">key</span> {{ $hasKey ? 'Update key' : 'Activate' }}
                     </button>
                 </div>
+                <p class="mt-2 text-[12px] text-[#646970]">
+                    Don't have a key yet?
+                    <a href="{{ falcon_upgrade_url() }}" target="_blank" rel="noopener" class="text-[#2271b1] hover:text-[#135e96] font-semibold hover:underline">Buy a license</a>.
+                </p>
             </form>
 
             @if($hasKey)

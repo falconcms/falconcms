@@ -18,7 +18,7 @@
                     @else
                         It will be locked soon.
                     @endif
-                    Please upgrade to Pro to keep selling.
+                    Please <a href="{{ falcon_upgrade_url() }}" target="_blank" rel="noopener" class="font-semibold underline">upgrade to Pro</a> to keep selling.
                 </div>
             </div>
         @endif

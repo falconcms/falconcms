@@ -27,6 +27,16 @@ return [
     */
     'freemium_grace_until' => env('FALCON_GRACE_UNTIL', '2026-08-01'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Upgrade / pricing URL
+    |--------------------------------------------------------------------------
+    | Where every "Upgrade to Pro" call-to-action points (Pro-required page,
+    | freemium banners, analytics/library/layout upgrade buttons, etc.).
+    | Override with FALCON_UPGRADE_URL.
+    */
+    'upgrade_url' => env('FALCON_UPGRADE_URL', 'https://falconcms.com/#pricing'),
+
     'hooks' => [
         'general-settings' => [
             'fields' => []

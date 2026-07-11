@@ -33,7 +33,7 @@
         <strong>{{ $graceDays }} more {{ \Illuminate\Support\Str::plural('day', $graceDays) }}</strong>@if($graceDate) (until {{ $graceDate }})@endif,
         then it needs a Pro license.
     </div>
-    <a href="#" class="shrink-0 rounded-md bg-[#e8912b] px-3 py-1.5 text-[12.5px] font-semibold text-[#171c23] hover:brightness-105">Upgrade to Pro</a>
+    <a href="{{ falcon_upgrade_url() }}" target="_blank" rel="noopener" class="shrink-0 rounded-md bg-[#e8912b] px-3 py-1.5 text-[12.5px] font-semibold text-[#171c23] hover:brightness-105">Upgrade to Pro</a>
     <button type="button" onclick="falconDismissFreemiumBanner()" class="shrink-0 text-[#b08a3e] hover:text-[#5b4a1f]" title="Dismiss for today" aria-label="Dismiss">
         <span class="material-symbols-outlined" style="font-size:20px">close</span>
     </button>

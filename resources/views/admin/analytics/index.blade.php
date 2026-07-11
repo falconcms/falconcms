@@ -30,7 +30,7 @@
                 <div class="inline-block mb-3 text-[11px] font-bold uppercase tracking-wider text-[#c98a1a] bg-[#fbe9cf] px-2.5 py-1 rounded-full">Pro feature</div>
                 <h2 class="text-[20px] font-bold text-[#1d2327] mb-2">Unlock your Analytics</h2>
                 <p class="text-[13.5px] text-[#646970] mb-6 leading-relaxed">See your site's real visitors, a live world map, traffic sources and engagement — in real time. Upgrade to Pro to turn it on.</p>
-                <a href="#" class="inline-block rounded-md bg-[#e8912b] px-6 py-2.5 text-[13.5px] font-bold text-[#171c23] hover:brightness-105 no-underline shadow">Upgrade to Pro</a>
+                <a href="{{ falcon_upgrade_url() }}" target="_blank" rel="noopener" class="inline-block rounded-md bg-[#e8912b] px-6 py-2.5 text-[13.5px] font-bold text-[#171c23] hover:brightness-105 no-underline shadow">Upgrade to Pro</a>
             </div>
         </div>
         @endif

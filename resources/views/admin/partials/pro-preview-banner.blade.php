@@ -6,6 +6,6 @@
         <div class="text-[13.5px] font-bold text-[#5b4a1f]">{{ $previewTitle ?? "You're viewing this in preview" }}</div>
         <div class="text-[12.5px] text-[#7a663a]">Look around freely — creating, editing or deleting needs Pro.</div>
     </div>
-    <a href="#" class="shrink-0 rounded-md bg-[#e8912b] px-4 py-2 text-[12.5px] font-bold text-[#171c23] hover:brightness-105 no-underline">Upgrade to Pro</a>
+    <a href="{{ falcon_upgrade_url() }}" target="_blank" rel="noopener" class="shrink-0 rounded-md bg-[#e8912b] px-4 py-2 text-[12.5px] font-bold text-[#171c23] hover:brightness-105 no-underline">Upgrade to Pro</a>
 </div>
 @endif

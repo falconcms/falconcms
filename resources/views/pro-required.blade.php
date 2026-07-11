@@ -54,7 +54,8 @@
         <span class="tag">Pro feature</span>
         <h1>Not available right now</h1>
         <p>{{ $message ?? 'This feature is available in the Pro version.' }}</p>
-        <a class="btn" href="{{ url('/') }}">Back to home</a>
+        <a class="btn" href="{{ falcon_upgrade_url() }}" target="_blank" rel="noopener">Upgrade to Pro</a>
+        <a class="btn" href="{{ url('/') }}" style="background:transparent;color:inherit;box-shadow:none;border:1px solid rgba(148,163,184,.4);margin-left:8px;">Back to home</a>
     </div>
 </body>
 </html>
