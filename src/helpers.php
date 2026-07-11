@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\DB;
 
-if (!defined('LAZY_CMS_VERSION')) {
+if (!defined('FALCON_CMS_VERSION')) {
     $__versionFile = __DIR__ . '/../version.json';
     $__versionData = file_exists($__versionFile) ? json_decode(file_get_contents($__versionFile), true) : [];
-    define('LAZY_CMS_VERSION', $__versionData['version'] ?? '1.2.0');
+    define('FALCON_CMS_VERSION', $__versionData['version'] ?? '1.2.0');
     unset($__versionFile, $__versionData);
 }
 
@@ -205,32 +205,27 @@ if (!function_exists('lazy_sanitize_builder_json')) {
 
 if (!function_exists('falcon_cms_installed_version')) {
     /**
-     * The version actually installed by Composer (falls back to LAZY_CMS_VERSION).
-     * Reading it live keeps the "update available" check accurate after every
-     * `composer update`, even if the LAZY_CMS_VERSION constant isn't hand-bumped.
+     * The installed code version. version.json ships inside the package and is bumped
+     * on every release, so it is the source of truth — it is accurate for both real
+     * Composer installs and path-repo/dev installs (where Composer's reported version
+     * can be a stale pinned alias). Composer's version is only a last-resort fallback.
      */
     function falcon_cms_installed_version(): string
     {
-        // version.json ships inside the package and is bumped on every release, so it is the most
-        // reliable source of the installed *code* version. Composer's reported version can be a
-        // pinned alias (path repositories) or otherwise out of step, so it is only a fallback.
-        if (defined('LAZY_CMS_VERSION') && preg_match('/^v?\d+\.\d+\.\d+/', LAZY_CMS_VERSION)) {
-            return ltrim(LAZY_CMS_VERSION, 'v');
+        if (defined('FALCON_CMS_VERSION') && preg_match('/^v?\d+\.\d+\.\d+/', FALCON_CMS_VERSION)) {
+            return ltrim(FALCON_CMS_VERSION, 'v');
         }
 
         if (class_exists(\Composer\InstalledVersions::class)) {
             try {
-                $v = \Composer\InstalledVersions::getPrettyVersion('falconcms/falconcms');
-                if ($v) {
-                    $clean = ltrim($v, 'v');
-                    if (preg_match('/^\d+\.\d+\.\d+$/', $clean)) {
-                        return $clean;
-                    }
+                $clean = ltrim((string) \Composer\InstalledVersions::getPrettyVersion('falconcms/falconcms'), 'v');
+                if (preg_match('/^\d+\.\d+\.\d+$/', $clean)) {
+                    return $clean;
                 }
             } catch (\Throwable $e) {}
         }
 
-        return LAZY_CMS_VERSION;
+        return defined('FALCON_CMS_VERSION') ? FALCON_CMS_VERSION : '1.2.0';
     }
 }
 

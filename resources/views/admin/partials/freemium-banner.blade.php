@@ -1,6 +1,6 @@
 @php
     $graceActive = function_exists('falcon_freemium_grace_active') && falcon_freemium_grace_active();
-    $graceUntil  = $graceActive ? get_cms_option('falcon_freemium_grace_until', null) : null;
+    $graceUntil  = $graceActive ? config('falcon-options.freemium_grace_until', null) : null;
     $graceDays   = null;
     $graceDate   = null;
     if ($graceUntil) {
