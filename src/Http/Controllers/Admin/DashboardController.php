@@ -257,15 +257,30 @@ class DashboardController extends Controller
         $steps   = [];
         $hasError = false;
 
-        // Step 1: composer update
+        // Step 1: pull the latest release. Use `composer require` pinned to the latest
+        // MAJOR line so the update can cross a major version bump — a plain
+        // `composer update` is capped by the existing "^1.x" constraint in composer.json
+        // and would never reach 2.x (the update would silently do nothing).
         $composerBin = $this->findComposer();
         if ($composerBin) {
-            $cmd = $composerBin . ' update falconcms/falconcms --no-interaction --prefer-dist --no-progress 2>&1';
+            $check  = function_exists('lazy_check_update') ? lazy_check_update(true) : [];
+            $latest = $check['latest'] ?? null;
+
+            if ($latest && preg_match('/^(\d+)\./', $latest, $m)) {
+                // e.g. latest 2.0.2 -> require falconcms/falconcms:^2.0 (bumps the
+                // constraint and moves to the newest release in that major line).
+                $cmd   = $composerBin . ' require falconcms/falconcms:^' . $m[1] . '.0 -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $label = 'composer require falconcms/falconcms:^' . $m[1] . '.0';
+            } else {
+                $cmd   = $composerBin . ' update falconcms/falconcms -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $label = 'composer update';
+            }
+
             exec('cd ' . escapeshellarg(base_path()) . ' && ' . $cmd, $composerOut, $exitCode);
-            $steps[] = ['label' => 'composer update', 'output' => implode("\n", $composerOut), 'ok' => $exitCode === 0];
+            $steps[] = ['label' => $label, 'output' => implode("\n", $composerOut), 'ok' => $exitCode === 0];
             if ($exitCode !== 0) $hasError = true;
         } else {
-            $steps[] = ['label' => 'composer update', 'output' => 'composer not found in PATH. Run manually: composer update falconcms/falconcms', 'ok' => false];
+            $steps[] = ['label' => 'composer update', 'output' => 'composer not found in PATH. Run manually: composer require falconcms/falconcms:^2.0 -W', 'ok' => false];
             $hasError = true;
         }
 

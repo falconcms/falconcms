@@ -242,7 +242,7 @@ if (!function_exists('lazy_check_update')) {
 
         try {
             $res = \Illuminate\Support\Facades\Http::timeout(5)
-                ->withHeaders(['Accept' => 'application/json', 'User-Agent' => 'LazyCMS/' . $current])
+                ->withHeaders(['Accept' => 'application/json', 'User-Agent' => 'FalconCMS/' . $current])
                 ->get('https://repo.packagist.org/p2/falconcms/falconcms.json');
 
             if ($res->successful()) {
