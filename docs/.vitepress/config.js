@@ -31,6 +31,7 @@ export default defineConfig({
 
     nav: [
       { text: 'Guide', link: '/guide/introduction' },
+      { text: 'Pro', link: '/guide/pro' },
       { text: 'Builder', link: '/builder/overview' },
       { text: 'E-commerce', link: '/ecommerce/overview' },
       { text: 'Hooks API', link: '/api/hooks' },
@@ -53,6 +54,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/introduction' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Configuration', link: '/guide/configuration' },
+            { text: 'Installing Pro', link: '/guide/pro' },
             { text: 'Upgrade Guide', link: '/guide/upgrade' },
           ]
         },

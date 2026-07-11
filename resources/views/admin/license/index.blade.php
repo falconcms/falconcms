@@ -34,8 +34,13 @@
                     <span class="text-[15px] font-bold text-[#5b4a1f]">Key saved, but Pro is not active</span>
                 </div>
                 @if(! $proInstalled)
-                    <p class="text-[12.5px] text-[#7a663a] mb-2">The <strong>falconcms/pro</strong> package is not installed on this site yet. Install it to activate your key:</p>
-                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>composer require falconcms/pro</code></pre>
+                    <p class="text-[12.5px] text-[#7a663a] mb-2">The <strong>falconcms/pro</strong> package is not installed on this site yet. Using the <strong>Composer token</strong> from your purchase email, run these in your project root:</p>
+                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>composer config repositories.falconcms-pro composer https://repo.packagist.com/falconcms/
+composer config --global --auth http-basic.repo.packagist.com token YOUR-COMPOSER-TOKEN
+composer require falconcms/pro</code></pre>
+                    <p class="text-[12px] text-[#7a663a] mt-2">Full guide, deployment &amp; CI setup:
+                        <a href="https://falconcms.github.io/falconcms/guide/pro" target="_blank" rel="noopener" class="text-[#2271b1] hover:text-[#135e96] font-semibold hover:underline">Installing FalconCMS Pro</a>.
+                    </p>
                 @else
                     <p class="text-[12.5px] text-[#7a663a]">The key <code class="px-1 bg-white/60 rounded">{{ $maskedKey }}</code> did not resolve to a valid plan. Double-check the key, or deactivate and try again.</p>
                 @endif
@@ -83,7 +88,7 @@
             <ul class="list-disc pl-5 space-y-1">
                 <li>Your key is stored privately on this site and validated against your plan.</li>
                 <li>Pro features (e-commerce, multi-language, analytics, advanced builder, custom fields) unlock only while a valid license is active.</li>
-                <li>Pro code is delivered via <code>composer require falconcms/pro</code> from the private repository — it is never bundled in the free download.</li>
+                <li>Pro code is delivered via <code>composer require falconcms/pro</code> from the private repository — it is never bundled in the free download. See the <a href="https://falconcms.github.io/falconcms/guide/pro" target="_blank" rel="noopener" class="text-[#2271b1] hover:underline">install guide</a>.</li>
             </ul>
         </div>
     </div>
