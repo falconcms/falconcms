@@ -4303,7 +4303,9 @@ if (!function_exists('falcon_freemium_grace_active')) {
     function falcon_freemium_grace_active(): bool
     {
         try {
-            $until = get_cms_option('falcon_freemium_grace_until', null);
+            // Global fixed launch cutoff (same date for every site) — free until
+            // this date, Pro features lock after it unless licensed.
+            $until = config('falcon-options.freemium_grace_until', '2026-08-01');
             if (!$until) return false;
             return \Illuminate\Support\Carbon::now()->lt(\Illuminate\Support\Carbon::parse($until));
         } catch (\Throwable $e) {

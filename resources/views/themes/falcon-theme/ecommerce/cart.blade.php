@@ -12,7 +12,7 @@
                 <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
                 <div>
                     <strong>Action needed:</strong> The online store (cart &amp; checkout) is a Pro feature.
-                    @php $graceUntil = get_cms_option('falcon_freemium_grace_until'); @endphp
+                    @php $graceUntil = config('falcon-options.freemium_grace_until'); @endphp
                     @if($graceUntil)
                         You can keep using it until <strong>{{ \Illuminate\Support\Carbon::parse($graceUntil)->format('M j, Y') }}</strong>, after which cart &amp; checkout will be locked.
                     @else

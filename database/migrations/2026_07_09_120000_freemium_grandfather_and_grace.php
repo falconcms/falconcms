@@ -60,8 +60,8 @@ return new class extends Migration
             update_cms_option('falcon_grandfathered_features', json_encode(array_values(array_unique($used))));
         }
 
-        // A grace window for every upgraded site, so nothing locks the moment they update.
-        update_cms_option('falcon_freemium_grace_until', now()->addDays(30)->toIso8601String());
+        // The grace window is now a single global date (config falcon-options.freemium_grace_until),
+        // not a per-install option — every site becomes free until that fixed launch date.
     }
 
     public function down(): void
