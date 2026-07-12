@@ -18,12 +18,15 @@ with Composer using the credentials you receive when you buy a license.
 
 ::: tip You need two things
 1. A **license key** (`PRO-…` or `AGENCY-…`) — activates the features inside the dashboard.
-2. A **Composer token** — lets Composer download the private `falconcms/pro` package.
+2. An **access token** — lets Composer download the private `falconcms/pro` package.
 
-Both are emailed to you right after purchase (and are always available in your
-account portal). The license key is public-facing; **keep the Composer token secret** —
-treat it like a password.
+Both are emailed to you right after purchase. The license key is public-facing;
+**keep the access token secret** — treat it like a password.
 :::
+
+Downloading the code and unlocking the features are **two separate steps**: the access
+token gets the code onto your server (Composer), and the license key turns the features
+on (in the dashboard).
 
 ## Requirements
 
@@ -38,19 +41,19 @@ If you are on core v1.x, [upgrade to v2](/guide/upgrade) first.
 Tell Composer where the Pro package lives. Run this in your project root:
 
 ```bash
-composer config repositories.falconcms-pro composer https://repo.packagist.com/falconcms/
+composer config repositories.falconcms-pro vcs https://github.com/falconcms/falconcms-pro.git
 ```
 
 This adds a `repositories` entry to your `composer.json`. You only do it once per project.
 
-## Step 2 — Authenticate with your Composer token
+## Step 2 — Authenticate with your access token
 
 Store the token you received by email. This writes it to Composer's **global** auth
 file (`~/.composer/auth.json` or `COMPOSER_HOME/auth.json`), so it is **not** committed
 with your project:
 
 ```bash
-composer config --global --auth http-basic.repo.packagist.com token YOUR-COMPOSER-TOKEN
+composer config --global --auth github-oauth.github.com YOUR-ACCESS-TOKEN
 ```
 
 ::: warning Never commit the token
@@ -97,18 +100,15 @@ v2 → v3), update both at once so their constraints resolve.
 
 ## Deploying to production
 
-Your production server and CI pipeline also need the Composer token to install Pro.
+Your production server and CI pipeline also need the access token to install Pro.
 Pick whichever fits your setup — **do not** hard-code the token in tracked files.
 
 **Option A — `auth.json` on the server** (git-ignored):
 
 ```json
 {
-  "http-basic": {
-    "repo.packagist.com": {
-      "username": "token",
-      "password": "YOUR-COMPOSER-TOKEN"
-    }
+  "github-oauth": {
+    "github.com": "YOUR-ACCESS-TOKEN"
   }
 }
 ```
@@ -116,7 +116,7 @@ Pick whichever fits your setup — **do not** hard-code the token in tracked fil
 **Option B — environment variable** (great for CI / Docker):
 
 ```bash
-export COMPOSER_AUTH='{"http-basic":{"repo.packagist.com":{"username":"token","password":"YOUR-COMPOSER-TOKEN"}}}'
+export COMPOSER_AUTH='{"github-oauth":{"github.com":"YOUR-ACCESS-TOKEN"}}'
 composer install --no-dev
 ```
 
@@ -126,9 +126,9 @@ composer install --no-dev
 The license key is stored but the `falconcms/pro` package isn't installed on this site
 yet. Run Steps 1–3 above, then reload the License page.
 
-**Composer: `Could not authenticate against repo.packagist.com`**
-The token is missing or wrong. Re-run Step 2, or check your `auth.json`. Confirm the
-token in your account portal hasn't been revoked.
+**Composer: `Could not authenticate` / `404` on github.com**
+The access token is missing or wrong. Re-run Step 2, or check your `auth.json`. Confirm
+the token from your purchase email hasn't been revoked.
 
 **Composer: `Could not find package falconcms/pro`**
 The private repository entry is missing. Re-run Step 1, then `composer require falconcms/pro`.
@@ -138,6 +138,6 @@ Double-check the key was copied in full. If it still fails, deactivate and re-ac
 or contact support with your order reference.
 
 ::: tip Lost your key or token?
-Both are always available in your account portal, and a leaked Composer token can be
-revoked and reissued there without affecting your license key.
+Contact support with your order reference. A leaked access token can be revoked and
+reissued without affecting your license key.
 :::
