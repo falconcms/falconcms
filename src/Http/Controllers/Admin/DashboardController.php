@@ -257,6 +257,19 @@ class DashboardController extends Controller
         $steps   = [];
         $hasError = false;
 
+        // Step 0: pre-flight writability check. In containerised installs the vendor
+        // tree is often owned by root (created at image build) while php-fpm serves
+        // requests as www-data. Composer can then download the new release but fails
+        // to delete the old files ("Could not delete .../composer.json"), leaving a
+        // half-updated install. Detect that up front and stop cleanly with the exact
+        // fix, instead of letting Composer break mid-extraction.
+        if (($permError = $this->updateWritabilityError()) !== null) {
+            $steps[] = ['label' => 'Pre-flight check', 'output' => $permError, 'ok' => false];
+            return redirect()->route('admin.update')
+                ->with('update_steps', $steps)
+                ->with('update_had_error', true);
+        }
+
         // Step 1: pull the latest release. Use `composer require` pinned to the latest
         // MAJOR line so the update can cross a major version bump — a plain
         // `composer update` is capped by the existing "^1.x" constraint in composer.json
@@ -277,7 +290,13 @@ class DashboardController extends Controller
             }
 
             exec('cd ' . escapeshellarg(base_path()) . ' && ' . $cmd, $composerOut, $exitCode);
-            $steps[] = ['label' => $label, 'output' => implode("\n", $composerOut), 'ok' => $exitCode === 0];
+            $composerText = implode("\n", $composerOut);
+            // If Composer choked on a permission/delete error, append the concrete fix
+            // so the raw output isn't the last word the admin sees.
+            if ($exitCode !== 0 && preg_match('/could not delete|permission denied|failed to (?:open|remove)/i', $composerText)) {
+                $composerText .= "\n\n" . $this->permissionFixHint();
+            }
+            $steps[] = ['label' => $label, 'output' => $composerText, 'ok' => $exitCode === 0];
             if ($exitCode !== 0) $hasError = true;
         } else {
             $steps[] = ['label' => 'composer update', 'output' => 'composer not found in PATH. Run manually: composer require falconcms/falconcms:^2.0 -W', 'ok' => false];
@@ -373,6 +392,60 @@ class DashboardController extends Controller
         $where = shell_exec('where composer 2>nul');
         if ($where && trim($where)) return 'composer';
         return null;
+    }
+
+    /**
+     * Verify the web process can actually rewrite the installed package before
+     * Composer touches anything. Returns a human-readable error (with the fix) when
+     * it cannot, or null when the update is safe to run.
+     *
+     * A directory must be writable for its entries to be deleted/replaced, so we
+     * check the package dir, Composer's metadata dir and the root manifest — those
+     * are exactly what `composer require` rewrites.
+     */
+    protected function updateWritabilityError(): ?string
+    {
+        $targets = array_filter([
+            base_path('composer.json'),
+            base_path('vendor/falconcms/falconcms'),
+            base_path('vendor/composer'),
+        ], 'file_exists');
+
+        $unwritable = array_values(array_filter($targets, fn ($p) => !is_writable($p)));
+        if (empty($unwritable)) {
+            return null;
+        }
+
+        return "Update stopped before making any changes.\n\n"
+            . "The web server process cannot modify the installed package files, so Composer "
+            . "would download the new version and then fail while replacing the old files — "
+            . "leaving a half-updated site.\n\n"
+            . "Not writable:\n  - " . implode("\n  - ", $unwritable) . "\n\n"
+            . $this->permissionFixHint();
+    }
+
+    /**
+     * The concrete "make it work" instruction: hand ownership of the app's Composer
+     * files to whatever user is running this process, so future in-app updates work.
+     */
+    protected function permissionFixHint(): string
+    {
+        $me = 'the web-server user';
+        if (function_exists('posix_geteuid') && function_exists('posix_getpwuid')) {
+            $pw = @posix_getpwuid(posix_geteuid());
+            if (!empty($pw['name'])) {
+                $me = $pw['name'];
+            }
+        }
+
+        $vendor = base_path('vendor');
+        $json   = base_path('composer.json');
+        $lock   = base_path('composer.lock');
+
+        return "How to fix (run once on the server, then retry this update):\n"
+            . "  chown -R {$me} {$vendor} {$json} {$lock}\n\n"
+            . "If the site runs in Docker, run it against the container (user often 'www-data'):\n"
+            . "  docker exec -u root <container> chown -R {$me} {$vendor} {$json} {$lock}";
     }
 
     public function settings()

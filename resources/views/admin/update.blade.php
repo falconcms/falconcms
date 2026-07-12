@@ -116,8 +116,7 @@
                     <form method="POST" action="{{ route('admin.update.run') }}" id="update-form">
                         @csrf
                         <button type="submit" id="run-update-btn" disabled
-                            class="inline-flex items-center gap-2 bg-[#2271b1] text-white font-semibold text-[13px] px-5 py-2 rounded transition-colors opacity-50 cursor-not-allowed"
-                            onclick="return confirm('This will run composer update + falcon:update — migrations, asset publishing and cache clearing will happen. Continue?')">
+                            class="inline-flex items-center gap-2 bg-[#2271b1] text-white font-semibold text-[13px] px-5 py-2 rounded transition-colors opacity-50 cursor-not-allowed">
                             <span class="material-symbols-outlined text-[18px]">system_update</span>
                             Run Update Now
                         </button>
@@ -187,11 +186,14 @@
 
     @if($update['has_update'])
     @push('scripts')
+    <script src="{{ asset('vendor/falcon-cms/js/sweetalert2.all.min.js') }}"></script>
     <script>
         (function () {
-            var cb  = document.getElementById('backup-confirm-checkbox');
-            var btn = document.getElementById('run-update-btn');
-            if (!cb || !btn) return;
+            var cb   = document.getElementById('backup-confirm-checkbox');
+            var btn  = document.getElementById('run-update-btn');
+            var form = document.getElementById('update-form');
+            if (!cb || !btn || !form) return;
+
             cb.addEventListener('change', function () {
                 if (this.checked) {
                     btn.disabled = false;
@@ -202,6 +204,45 @@
                     btn.classList.add('opacity-50', 'cursor-not-allowed');
                     btn.classList.remove('hover:bg-[#135e96]', 'cursor-pointer');
                 }
+            });
+
+            var confirmed = false;
+            form.addEventListener('submit', function (e) {
+                if (confirmed) return; // second pass — let it through
+                e.preventDefault();
+                if (btn.disabled) return;
+
+                if (typeof Swal === 'undefined') { // safety net if the asset failed to load
+                    if (window.confirm('This will run composer update + falcon:update — migrations, asset publishing and cache clearing will happen. Continue?')) {
+                        confirmed = true; form.submit();
+                    }
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Update FalconCMS to v{{ $update['latest'] }}?',
+                    html: 'This runs <b>composer update</b> and <b>falcon:update</b> — database migrations, asset &amp; theme publishing and cache clearing will happen.<br><br>Make sure you have a recent backup.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, update now',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#2271b1',
+                    cancelButtonColor: '#646970',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        confirmed = true;
+                        Swal.fire({
+                            title: 'Updating…',
+                            html: 'Please keep this tab open while the update runs.',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            didOpen: function () { Swal.showLoading(); }
+                        });
+                        form.submit();
+                    }
+                });
             });
         })();
     </script>
