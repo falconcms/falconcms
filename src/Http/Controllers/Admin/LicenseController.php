@@ -59,7 +59,7 @@ class LicenseController extends Controller
         falcon_log_activity('license_deactivated', 'Removed the Pro license key');
 
         return redirect()->route('admin.license.index')
-            ->with('success', 'License deactivated. Pro features are now locked.');
+            ->with('warning', 'License deactivated. Pro features are now locked.');
     }
 
     private function authorizeAccess(): void

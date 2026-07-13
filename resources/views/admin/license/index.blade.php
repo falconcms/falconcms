@@ -8,6 +8,9 @@
         @if(session('success'))
             <div class="bg-white border-l-4 border-[#46b450] shadow-sm p-3 mb-5 text-[13px]">{{ session('success') }}</div>
         @endif
+        @if(session('warning'))
+            <div class="bg-white border-l-4 border-[#d63638] shadow-sm p-3 mb-5 text-[13px] text-[#8a1f21]">{{ session('warning') }}</div>
+        @endif
         @if($errors->any())
             <div class="bg-white border-l-4 border-[#d63638] shadow-sm p-3 mb-5 text-[13px]">{{ $errors->first() }}</div>
         @endif

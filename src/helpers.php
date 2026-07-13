@@ -4261,6 +4261,22 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
     return $elements;
 });
 
+if (!function_exists('falcon_licensed')) {
+    /**
+     * Whether a valid paid Pro license is active on this site — regardless of the
+     * freemium grace window or grandfathering. Used to hide the "now freemium /
+     * upgrade" banners once the customer has actually licensed the site.
+     */
+    function falcon_licensed(): bool
+    {
+        try {
+            return app(\FalconCms\Core\Pro\LicenseGateway::class)->licensed();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+}
+
 if (!function_exists('falcon_pro')) {
     /**
      * Whether a FalconCMS Pro feature is available. Core uses this to gate paid

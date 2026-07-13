@@ -1,5 +1,7 @@
 @php
-    $graceActive = function_exists('falcon_freemium_grace_active') && falcon_freemium_grace_active();
+    // Hide the freemium/upgrade banner entirely once the site holds a valid Pro license.
+    $graceActive = function_exists('falcon_freemium_grace_active') && falcon_freemium_grace_active()
+        && ! (function_exists('falcon_licensed') && falcon_licensed());
     $graceUntil  = $graceActive ? config('falcon-options.freemium_grace_until', null) : null;
     $graceDays   = null;
     $graceDate   = null;
