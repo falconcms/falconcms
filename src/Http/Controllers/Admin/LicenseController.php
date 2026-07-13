@@ -92,8 +92,10 @@ class LicenseController extends Controller
 
         // Release the activation slot with the provider first (so the key can be
         // re-activated here or moved to another site), then clear the local key.
-        if ($this->proInstalled()) {
-            app(LicenseGateway::class)->deactivate();
+        // Guarded: older Pro gateways may not implement deactivate().
+        $gateway = app(LicenseGateway::class);
+        if (method_exists($gateway, 'deactivate')) {
+            $gateway->deactivate();
         }
         update_cms_option('falcon_license_key', '');
         update_cms_option('falcon_license_state', '');

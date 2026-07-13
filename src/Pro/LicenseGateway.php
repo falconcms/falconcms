@@ -32,10 +32,8 @@ interface LicenseGateway
     /** All active feature keys (empty when unlicensed). */
     public function features(): array;
 
-    /**
-     * Release this site's activation with the provider (e.g. free the Lemon
-     * Squeezy instance slot) so the key can be re-used on another site, then
-     * forget any cached state. Returns false only on a provider error.
-     */
-    public function deactivate(): bool;
+    // NOTE: a live gateway may also implement `deactivate(): bool` to release its
+    // provider activation slot. It is intentionally NOT part of this interface —
+    // adding a required method here would fatal any already-installed Pro package
+    // that predates it. Core calls it defensively via method_exists() instead.
 }
