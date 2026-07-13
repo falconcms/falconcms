@@ -116,6 +116,36 @@ class LicenseController extends Controller
     }
 
     /**
+     * Force an immediate re-validation with the provider — for when a license was
+     * just deactivated/moved at the provider and the admin doesn't want to wait for
+     * the cached result to expire.
+     */
+    public function recheck()
+    {
+        $this->authorizeAccess();
+
+        // Drop the cached result and the resolved gateway so the next resolve hits
+        // the provider fresh.
+        update_cms_option('falcon_license_state', '');
+        app()->forgetInstance(\FalconCms\Pro\License\LicenseManager::class);
+        app()->forgetInstance(LicenseGateway::class);
+
+        if (! $this->proInstalled()) {
+            return redirect()->route('admin.license.index')
+                ->with('warning', 'Re-checked, but the Pro package is not installed on this site.');
+        }
+
+        $gateway = app(LicenseGateway::class);
+        if ($gateway->licensed()) {
+            return redirect()->route('admin.license.index')
+                ->with('success', 'Re-checked — Pro (' . $gateway->plan() . ') is active.');
+        }
+
+        return redirect()->route('admin.license.index')
+            ->with('warning', 'Re-checked — ' . ($this->currentLicenseError() ?? 'the license is not active.'));
+    }
+
+    /**
      * Save the GitHub access token into the project's auth.json so Composer can
      * download the private falconcms/pro package — the customer pastes it here
      * instead of hand-editing the file or fighting shell escaping.

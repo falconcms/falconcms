@@ -113,11 +113,20 @@ composer require falconcms/pro</code></pre>
             </form>
 
             @if($hasKey)
-                <form action="{{ route('admin.license.deactivate') }}" method="POST" class="mt-3"
-                      onsubmit="return confirm('Deactivate the license? Pro features will lock immediately.');">
-                    @csrf
-                    <button type="submit" class="text-[12.5px] text-[#b32d2e] hover:text-[#d63638] hover:underline">Deactivate this license</button>
-                </form>
+                <div class="mt-3 flex items-center gap-4">
+                    <form action="{{ route('admin.license.recheck') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-1 text-[12.5px] text-[#2271b1] hover:text-[#135e96] hover:underline">
+                            <span class="material-symbols-outlined" style="font-size:15px">refresh</span> Re-check now
+                        </button>
+                    </form>
+                    <form action="{{ route('admin.license.deactivate') }}" method="POST"
+                          onsubmit="return confirm('Deactivate the license on this site? This frees the activation so the key can be used elsewhere.');">
+                        @csrf
+                        <button type="submit" class="text-[12.5px] text-[#b32d2e] hover:text-[#d63638] hover:underline">Deactivate this license</button>
+                    </form>
+                </div>
+                <p class="mt-1.5 text-[11.5px] text-[#8a8f94]">A license deactivated at the store re-checks automatically within an hour — use <strong>Re-check now</strong> to apply it immediately.</p>
             @endif
         </div>
 
