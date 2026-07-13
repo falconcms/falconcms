@@ -81,7 +81,7 @@ composer require falconcms/pro</code></pre>
                         <a href="https://falconcms.github.io/falconcms/guide/pro" target="_blank" rel="noopener" class="text-[#2271b1] hover:text-[#135e96] font-semibold hover:underline">Installing FalconCMS Pro</a>.
                     </p>
                 @else
-                    <p class="text-[12.5px] text-[#8a1f21]">The key <code class="px-1 bg-white/60 rounded">{{ $maskedKey }}</code> did not resolve to a valid plan — double-check that it is correct, or deactivate and try again.</p>
+                    <p class="text-[12.5px] text-[#8a1f21]">Key <code class="px-1 bg-white/60 rounded">{{ $maskedKey }}</code> — {{ $licenseError ?? 'it did not resolve to a valid plan. Double-check that it is correct, or deactivate and try again.' }}</p>
                 @endif
             </div>
         @else

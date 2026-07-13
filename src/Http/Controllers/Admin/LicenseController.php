@@ -31,7 +31,17 @@ class LicenseController extends Controller
             'maskedKey'   => $this->maskKey((string) get_cms_option('falcon_license_key', '')),
             'hasKey'      => (string) get_cms_option('falcon_license_key', '') !== '',
             'hasToken'    => $this->hasAccessToken(),
+            'licenseError'=> $this->currentLicenseError(),
         ]);
+    }
+
+    /** The human-readable reason the stored key isn't active right now, or null. */
+    private function currentLicenseError(): ?string
+    {
+        $state = json_decode((string) get_cms_option('falcon_license_state', ''), true);
+        $error = is_array($state) ? ($state['error'] ?? null) : null;
+
+        return $error ? $this->explainError($error) : null;
     }
 
     public function activate(Request $request)
