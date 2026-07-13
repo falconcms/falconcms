@@ -46,20 +46,25 @@ composer config repositories.falconcms-pro vcs https://github.com/falconcms/falc
 
 This adds a `repositories` entry to your `composer.json`. You only do it once per project.
 
-## Step 2 — Authenticate with your access token
+## Step 2 — Add your access token
 
-Store the token you received by email. This writes it to Composer's **global** auth
-file (`~/.composer/auth.json` or `COMPOSER_HOME/auth.json`), so it is **not** committed
-with your project:
+Create a file named **`auth.json`** in your project root (next to `composer.json`) and
+paste your token from the purchase email:
 
-```bash
-composer config --global --auth github-oauth.github.com YOUR-ACCESS-TOKEN
+```json
+{
+    "github-oauth": {
+        "github.com": "YOUR-ACCESS-TOKEN"
+    }
+}
 ```
 
+Composer reads this file automatically. Using a file (instead of a shell command) avoids
+copy-paste and escaping issues with the long token.
+
 ::: warning Never commit the token
-Do not put the token in your project's `composer.json` or in version control. Use the
-global auth file (above), or an `auth.json` in the project root that is listed in
-`.gitignore`. For servers and CI, see [Deploying to production](#deploying-to-production).
+Add `auth.json` to your `.gitignore` so the token is not committed to version control.
+For servers and CI, see [Deploying to production](#deploying-to-production).
 :::
 
 ## Step 3 — Install the package

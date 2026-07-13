@@ -34,10 +34,16 @@
                     <span class="text-[15px] font-bold text-[#5b4a1f]">Key saved, but Pro is not active</span>
                 </div>
                 @if(! $proInstalled)
-                    <p class="text-[12.5px] text-[#7a663a] mb-2">The <strong>falconcms/pro</strong> package is not installed on this site yet. Using the <strong>access token</strong> from your purchase email, run these in your project root:</p>
-                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>composer config repositories.falconcms-pro vcs https://github.com/falconcms/falconcms-pro.git
-composer config --global --auth github-oauth.github.com YOUR-ACCESS-TOKEN
-composer require falconcms/pro</code></pre>
+                    <p class="text-[12.5px] text-[#7a663a] mb-2">The <strong>falconcms/pro</strong> package is not installed on this site yet. In your project root, add the repository:</p>
+                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>composer config repositories.falconcms-pro vcs https://github.com/falconcms/falconcms-pro.git</code></pre>
+                    <p class="text-[12.5px] text-[#7a663a] my-2">Create an <code>auth.json</code> file (next to <code>composer.json</code>) with the <strong>access token</strong> from your purchase email, then add it to <code>.gitignore</code>:</p>
+                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>{
+    "github-oauth": {
+        "github.com": "YOUR-ACCESS-TOKEN"
+    }
+}</code></pre>
+                    <p class="text-[12.5px] text-[#7a663a] my-2">Then install:</p>
+                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>composer require falconcms/pro</code></pre>
                     <p class="text-[12px] text-[#7a663a] mt-2">Full guide, deployment &amp; CI setup:
                         <a href="https://falconcms.github.io/falconcms/guide/pro" target="_blank" rel="noopener" class="text-[#2271b1] hover:text-[#135e96] font-semibold hover:underline">Installing FalconCMS Pro</a>.
                     </p>
