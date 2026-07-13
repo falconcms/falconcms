@@ -145,10 +145,89 @@ class LicenseController extends Controller
         $this->gitignore('auth.json');
         falcon_log_activity('license_token_saved', 'Saved the Pro access token to auth.json');
 
+        // Pro already installed → nothing more to do.
+        if ($this->proInstalled()) {
+            return redirect()->route('admin.license.index')
+                ->with('success', 'Access token updated.');
+        }
+
+        // Try to install Pro automatically with the token we just saved, so the
+        // customer never has to touch a terminal. Falls back to the manual
+        // commands (shown on the page) if Composer isn't runnable here.
+        $install = $this->installProPackage();
+
+        if ($install['ok']) {
+            return redirect()->route('admin.license.index')->with(
+                'success',
+                'Access token saved and the Pro package was installed. Reload in a moment — if your license key is set, Pro is now active.'
+            );
+        }
+
         return redirect()->route('admin.license.index')->with(
-            'success',
-            'Access token saved to auth.json. Now run  composer require falconcms/pro  to install Pro.'
+            'warning',
+            'Access token saved, but the Pro package could not be installed automatically (' . $install['reason'] . '). Run the two commands below manually.'
         );
+    }
+
+    /**
+     * Add the private repository and `composer require falconcms/pro`, using the
+     * token already written to auth.json. Best effort — many shared hosts disable
+     * exec() or ship without a CLI Composer, hence the manual fallback.
+     *
+     * @return array{ok:bool,reason?:string,output?:string}
+     */
+    private function installProPackage(): array
+    {
+        @set_time_limit(300);
+
+        $composer = $this->findComposerBinary();
+        if (! $composer) {
+            return ['ok' => false, 'reason' => 'Composer was not found on the server'];
+        }
+        if (! is_writable(base_path('composer.json')) || ! is_writable(base_path('vendor'))) {
+            return ['ok' => false, 'reason' => 'the project files are not writable by the web server'];
+        }
+
+        $base = escapeshellarg(base_path());
+        $repo = 'https://github.com/falconcms/falconcms-pro.git';
+
+        exec('cd ' . $base . ' && ' . $composer . ' config repositories.falconcms-pro vcs ' . escapeshellarg($repo) . ' 2>&1', $o1, $e1);
+        exec('cd ' . $base . ' && ' . $composer . ' require falconcms/pro --no-interaction --prefer-dist --no-progress 2>&1', $o2, $e2);
+
+        if ($e2 !== 0) {
+            $output = implode("\n", array_merge((array) $o1, (array) $o2));
+            $reason = preg_match('/authenticat|denied|\b40[34]\b|could not find package|not authorized/i', $output)
+                ? 'the access token may be wrong or lacks access to the repository'
+                : 'see the manual commands below';
+
+            return ['ok' => false, 'reason' => $reason, 'output' => $output];
+        }
+
+        // Refresh the php-fpm OPcache so the just-installed provider is picked up
+        // on the redirect instead of serving stale bytecode.
+        if (function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
+        cache()->forget('falcon_cms_update_check');
+
+        return ['ok' => true];
+    }
+
+    /** Locate a runnable Composer binary (mirrors the dashboard updater). */
+    private function findComposerBinary(): ?string
+    {
+        foreach ([base_path('composer.phar'), '/usr/local/bin/composer', '/usr/bin/composer', '/usr/local/bin/composer.phar'] as $p) {
+            if (is_file($p)) {
+                return str_ends_with($p, '.phar') ? 'php ' . escapeshellarg($p) : escapeshellarg($p);
+            }
+        }
+        $which = shell_exec('which composer 2>/dev/null');
+        if ($which && trim($which)) {
+            return 'composer';
+        }
+        $where = shell_exec('where composer 2>nul');
+
+        return ($where && trim($where)) ? 'composer' : null;
     }
 
     /** Ensure a path is listed in the project's .gitignore (best effort). */

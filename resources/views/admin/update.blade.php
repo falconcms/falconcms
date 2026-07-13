@@ -186,7 +186,9 @@
 
     @if($update['has_update'])
     @push('scripts')
-    <script src="{{ asset('vendor/falcon-cms/js/sweetalert2.all.min.js') }}"></script>
+    {{-- Root-relative so it loads from the page's own origin even when APP_URL
+         is misconfigured (e.g. APP_URL=localhost while served on 127.0.0.1:8000). --}}
+    <script src="{{ \Illuminate\Support\Str::start((string) parse_url(asset('vendor/falcon-cms/js/sweetalert2.all.min.js'), PHP_URL_PATH), '/') }}"></script>
     <script>
         (function () {
             var cb   = document.getElementById('backup-confirm-checkbox');
