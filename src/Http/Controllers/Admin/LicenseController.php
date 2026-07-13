@@ -42,6 +42,9 @@ class LicenseController extends Controller
         ]);
 
         update_cms_option('falcon_license_key', trim($validated['license_key']));
+        // Drop any cached validation result so the new key is re-checked with the
+        // provider immediately, instead of serving a stale result for up to 12h.
+        update_cms_option('falcon_license_state', '');
 
         // The saved key takes effect on the next request (the redirect below),
         // where the gateway resolves it. index() then reports the real status.
@@ -56,6 +59,7 @@ class LicenseController extends Controller
         $this->authorizeAccess();
 
         update_cms_option('falcon_license_key', '');
+        update_cms_option('falcon_license_state', '');
         falcon_log_activity('license_deactivated', 'Removed the Pro license key');
 
         return redirect()->route('admin.license.index')
