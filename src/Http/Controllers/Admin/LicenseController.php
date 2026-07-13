@@ -30,6 +30,7 @@ class LicenseController extends Controller
             'proInstalled'=> $this->proInstalled(),
             'maskedKey'   => $this->maskKey((string) get_cms_option('falcon_license_key', '')),
             'hasKey'      => (string) get_cms_option('falcon_license_key', '') !== '',
+            'hasToken'    => $this->hasAccessToken(),
         ]);
     }
 
@@ -64,6 +65,74 @@ class LicenseController extends Controller
 
         return redirect()->route('admin.license.index')
             ->with('warning', 'License deactivated. Pro features are now locked.');
+    }
+
+    /**
+     * Save the GitHub access token into the project's auth.json so Composer can
+     * download the private falconcms/pro package — the customer pastes it here
+     * instead of hand-editing the file or fighting shell escaping.
+     */
+    public function saveToken(Request $request)
+    {
+        $this->authorizeAccess();
+
+        $data  = $request->validate([
+            'access_token' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9_\-]+$/'],
+        ]);
+        $token = trim($data['access_token']);
+
+        $path = base_path('auth.json');
+        $auth = [];
+        if (is_file($path)) {
+            $existing = json_decode((string) @file_get_contents($path), true);
+            if (is_array($existing)) {
+                $auth = $existing;
+            }
+        }
+        $auth['github-oauth'] = array_merge($auth['github-oauth'] ?? [], ['github.com' => $token]);
+
+        $ok = @file_put_contents(
+            $path,
+            json_encode($auth, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+        );
+
+        if ($ok === false) {
+            return redirect()->route('admin.license.index')->with(
+                'warning',
+                'Could not write auth.json — the web server has no write permission on the project root. '
+                . 'Create the file manually using the instructions below.'
+            );
+        }
+
+        $this->gitignore('auth.json');
+        falcon_log_activity('license_token_saved', 'Saved the Pro access token to auth.json');
+
+        return redirect()->route('admin.license.index')->with(
+            'success',
+            'Access token saved to auth.json. Now run  composer require falconcms/pro  to install Pro.'
+        );
+    }
+
+    /** Ensure a path is listed in the project's .gitignore (best effort). */
+    private function gitignore(string $entry): void
+    {
+        $file = base_path('.gitignore');
+        $body = is_file($file) ? (string) @file_get_contents($file) : '';
+        if (! preg_match('/^\s*\/?' . preg_quote($entry, '/') . '\s*$/m', $body)) {
+            @file_put_contents($file, rtrim($body) . "\n" . $entry . "\n");
+        }
+    }
+
+    /** Whether a GitHub token is already stored in the project's auth.json. */
+    private function hasAccessToken(): bool
+    {
+        $path = base_path('auth.json');
+        if (! is_file($path)) {
+            return false;
+        }
+        $auth = json_decode((string) @file_get_contents($path), true);
+
+        return ! empty($auth['github-oauth']['github.com'] ?? null);
     }
 
     private function authorizeAccess(): void

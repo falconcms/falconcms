@@ -274,6 +274,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::get('license', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'index'])->name('license.index');
     Route::post('license/activate', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'activate'])->name('license.activate');
     Route::post('license/deactivate', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'deactivate'])->name('license.deactivate');
+    Route::post('license/token', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'saveToken'])->name('license.token');
 
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');

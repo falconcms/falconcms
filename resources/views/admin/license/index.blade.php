@@ -24,9 +24,17 @@
                     <span class="ml-1 px-2 py-0.5 rounded-full bg-[#1a8a1a] text-white text-[11px] font-bold uppercase tracking-wide">{{ $plan }} plan</span>
                 </div>
                 <p class="text-[12.5px] text-[#3a6a3a] mb-3">Key <code class="px-1 bg-white/60 rounded">{{ $maskedKey }}</code> — the following features are unlocked:</p>
+                @php
+                    $featureLabels = [
+                        'ecommerce' => 'E-commerce', 'multilang' => 'Multi-language',
+                        'analytics' => 'Analytics', 'builder_pro' => 'Advanced Builder',
+                        'custom_fields' => 'Custom Fields', 'advanced_login' => 'Advanced Login',
+                        'white_label' => 'White-label',
+                    ];
+                @endphp
                 <div class="flex flex-wrap gap-1.5">
                     @foreach($features as $f)
-                        <span class="px-2 py-0.5 rounded bg-white border border-[#cfe8cf] text-[11.5px] text-[#2c5a2c]">{{ str_replace('_', ' ', $f) }}</span>
+                        <span class="px-2 py-0.5 rounded bg-white border border-[#cfe8cf] text-[11.5px] text-[#2c5a2c]">{{ $featureLabels[$f] ?? ucwords(str_replace('_', ' ', $f)) }}</span>
                     @endforeach
                 </div>
             </div>
@@ -37,16 +45,42 @@
                     <span class="text-[15px] font-bold text-[#5b4a1f]">Key saved, but Pro is not active</span>
                 </div>
                 @if(! $proInstalled)
-                    <p class="text-[12.5px] text-[#7a663a] mb-2">The <strong>falconcms/pro</strong> package is not installed on this site yet. In your project root, add the repository:</p>
-                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>composer config repositories.falconcms-pro vcs https://github.com/falconcms/falconcms-pro.git</code></pre>
-                    <p class="text-[12.5px] text-[#7a663a] my-2">Create an <code>auth.json</code> file (next to <code>composer.json</code>) with the <strong>access token</strong> from your purchase email, then add it to <code>.gitignore</code>:</p>
-                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>{
+                    <p class="text-[12.5px] text-[#7a663a] mb-3">The <strong>falconcms/pro</strong> package is not installed on this site yet. Two quick steps:</p>
+
+                    {{-- Step 1 — access token (we write auth.json for you) --}}
+                    <p class="text-[12.5px] font-semibold text-[#5b4a1f] mb-1">1. Paste the access token from your purchase email</p>
+                    <form action="{{ route('admin.license.token') }}" method="POST">
+                        @csrf
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="password" name="access_token" autocomplete="off" spellcheck="false"
+                                   placeholder="github_pat_…"
+                                   class="flex-1 rounded border border-[#d3b880] px-3 h-9 text-[13px] font-mono bg-white focus:border-[#c98a1a] focus:ring-1 focus:ring-[#c98a1a] outline-none">
+                            <button type="submit" class="shrink-0 inline-flex items-center justify-center gap-1.5 px-5 h-9 bg-[#c98a1a] hover:bg-[#a8720f] text-white text-[13px] font-semibold rounded transition-colors">
+                                <span class="material-symbols-outlined" style="font-size:16px">vpn_key</span> {{ $hasToken ? 'Update token' : 'Save token' }}
+                            </button>
+                        </div>
+                        @if($hasToken)
+                            <p class="text-[11.5px] text-[#1a8a1a] mt-1">✓ A token is saved in <code>auth.json</code>. Now run the command in step 2.</p>
+                        @else
+                            <p class="text-[11.5px] text-[#7a663a] mt-1">We save it to <code>auth.json</code> in your project root (and add it to <code>.gitignore</code>) — no file editing needed.</p>
+                        @endif
+                    </form>
+
+                    {{-- Step 2 — install --}}
+                    <p class="text-[12.5px] font-semibold text-[#5b4a1f] mt-4 mb-1">2. Add the repository and install</p>
+                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>composer config repositories.falconcms-pro vcs https://github.com/falconcms/falconcms-pro.git
+composer require falconcms/pro</code></pre>
+
+                    <details class="mt-2">
+                        <summary class="text-[12px] text-[#7a663a] cursor-pointer">Prefer to create <code>auth.json</code> yourself? (e.g. no write permission)</summary>
+                        <p class="text-[12px] text-[#7a663a] mt-2">Create <code>auth.json</code> next to <code>composer.json</code> with:</p>
+                        <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>{
     "github-oauth": {
         "github.com": "YOUR-ACCESS-TOKEN"
     }
 }</code></pre>
-                    <p class="text-[12.5px] text-[#7a663a] my-2">Then install:</p>
-                    <pre class="bg-[#1d2327] text-[#e6e6e6] text-[12.5px] rounded p-3 overflow-x-auto"><code>composer require falconcms/pro</code></pre>
+                    </details>
+
                     <p class="text-[12px] text-[#7a663a] mt-2">Full guide, deployment &amp; CI setup:
                         <a href="https://falconcms.github.io/falconcms/guide/pro" target="_blank" rel="noopener" class="text-[#2271b1] hover:text-[#135e96] font-semibold hover:underline">Installing FalconCMS Pro</a>.
                     </p>
