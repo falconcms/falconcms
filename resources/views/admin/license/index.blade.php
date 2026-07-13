@@ -11,6 +11,9 @@
         @if(session('warning'))
             <div class="bg-white border-l-4 border-[#d63638] shadow-sm p-3 mb-5 text-[13px] text-[#8a1f21]">{{ session('warning') }}</div>
         @endif
+        @if(session('error'))
+            <div class="bg-white border-l-4 border-[#d63638] shadow-sm p-3 mb-5 text-[13px] text-[#8a1f21]">{{ session('error') }}</div>
+        @endif
         @if($errors->any())
             <div class="bg-white border-l-4 border-[#d63638] shadow-sm p-3 mb-5 text-[13px]">{{ $errors->first() }}</div>
         @endif
@@ -39,10 +42,10 @@
                 </div>
             </div>
         @elseif($hasKey)
-            <div class="rounded-lg border border-[#f0c47a] bg-[#fdf6e9] p-5 mb-6">
+            <div class="rounded-lg border {{ $proInstalled ? 'border-[#e6a3a3] bg-[#fdf0f0]' : 'border-[#f0c47a] bg-[#fdf6e9]' }} p-5 mb-6">
                 <div class="flex items-center gap-2 mb-1">
-                    <span class="material-symbols-outlined text-[#c98a1a]" style="font-size:22px">error</span>
-                    <span class="text-[15px] font-bold text-[#5b4a1f]">Key saved, but Pro is not active</span>
+                    <span class="material-symbols-outlined {{ $proInstalled ? 'text-[#d63638]' : 'text-[#c98a1a]' }}" style="font-size:22px">error</span>
+                    <span class="text-[15px] font-bold {{ $proInstalled ? 'text-[#8a1f21]' : 'text-[#5b4a1f]' }}">{{ $proInstalled ? 'This license key is not active' : 'Key saved — install Pro to activate' }}</span>
                 </div>
                 @if(! $proInstalled)
                     <p class="text-[12.5px] text-[#7a663a] mb-3">The <strong>falconcms/pro</strong> package is not installed on this site yet. Two quick steps:</p>
@@ -85,7 +88,7 @@ composer require falconcms/pro</code></pre>
                         <a href="https://falconcms.github.io/falconcms/guide/pro" target="_blank" rel="noopener" class="text-[#2271b1] hover:text-[#135e96] font-semibold hover:underline">Installing FalconCMS Pro</a>.
                     </p>
                 @else
-                    <p class="text-[12.5px] text-[#7a663a]">The key <code class="px-1 bg-white/60 rounded">{{ $maskedKey }}</code> did not resolve to a valid plan. Double-check the key, or deactivate and try again.</p>
+                    <p class="text-[12.5px] text-[#8a1f21]">The key <code class="px-1 bg-white/60 rounded">{{ $maskedKey }}</code> did not resolve to a valid plan — double-check that it is correct, or deactivate and try again.</p>
                 @endif
             </div>
         @else

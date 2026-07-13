@@ -46,19 +46,55 @@ class LicenseController extends Controller
         // Drop any cached validation result so the new key is re-checked with the
         // provider immediately, instead of serving a stale result for up to 12h.
         update_cms_option('falcon_license_state', '');
-
-        // The saved key takes effect on the next request (the redirect below),
-        // where the gateway resolves it. index() then reports the real status.
         falcon_log_activity('license_activated', 'Saved a Pro license key');
 
+        // Without the Pro package there is nothing to validate against yet.
+        if (! $this->proInstalled()) {
+            return redirect()->route('admin.license.index')
+                ->with('success', 'License key saved. Now install the Pro package below to activate it.');
+        }
+
+        // Pro is installed → resolve the new key right now so we can tell the admin
+        // whether it actually worked, instead of a vague "saved". Forget the cached
+        // gateway so it rebuilds with the key we just stored.
+        app()->forgetInstance(\FalconCms\Pro\License\LicenseManager::class);
+        app()->forgetInstance(LicenseGateway::class);
+        $gateway = app(LicenseGateway::class);
+
+        if ($gateway->licensed()) {
+            return redirect()->route('admin.license.index')
+                ->with('success', 'License activated — Pro (' . $gateway->plan() . ') is now active on this site.');
+        }
+
+        $state = json_decode((string) get_cms_option('falcon_license_state', ''), true);
         return redirect()->route('admin.license.index')
-            ->with('success', 'License key saved — see the status below.');
+            ->with('error', $this->explainError(is_array($state) ? ($state['error'] ?? null) : null));
+    }
+
+    /** Turn a validator error code into a message the admin can act on. */
+    private function explainError(?string $error): string
+    {
+        $error = strtolower((string) $error);
+
+        return match (true) {
+            str_contains($error, 'activation limit') => 'This license key has reached its activation limit — it is already active on another site. Deactivate it there first, or buy another license.',
+            str_contains($error, 'instance')         => 'This site\'s activation was removed. Click Deactivate, then activate the key again.',
+            str_contains($error, 'expired')           => 'This license key has expired. Renew it to continue using Pro.',
+            str_contains($error, 'disabled')          => 'This license key has been disabled. Contact support with your order reference.',
+            str_contains($error, 'offline'), str_contains($error, 'transient') => 'Could not reach the license server. Check your connection and try again.',
+            default => 'This license key is not valid. Double-check that you pasted it correctly and try again.',
+        };
     }
 
     public function deactivate()
     {
         $this->authorizeAccess();
 
+        // Release the activation slot with the provider first (so the key can be
+        // re-activated here or moved to another site), then clear the local key.
+        if ($this->proInstalled()) {
+            app(LicenseGateway::class)->deactivate();
+        }
         update_cms_option('falcon_license_key', '');
         update_cms_option('falcon_license_state', '');
         falcon_log_activity('license_deactivated', 'Removed the Pro license key');

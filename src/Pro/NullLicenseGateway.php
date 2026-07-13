@@ -28,4 +28,9 @@ class NullLicenseGateway implements LicenseGateway
     {
         return [];
     }
+
+    public function deactivate(): bool
+    {
+        return true;
+    }
 }
