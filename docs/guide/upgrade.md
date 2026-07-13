@@ -2,6 +2,23 @@
 
 ## Upgrading to a New Version
 
+### From the dashboard (recommended)
+
+**Dashboard → Updates** shows your installed version and the latest release. When
+an update is available, tick **"I have created a backup"** and click **Run Update
+Now**. FalconCMS installs the exact latest version, runs `falcon:update` and
+clears caches — all from the browser, no terminal required.
+
+::: tip Nothing to click? Already up to date.
+The page reads the latest version from Packagist; if it matches what you have,
+it shows **"You're up to date"**. A freshly-published release can take a few
+minutes to appear.
+:::
+
+### Manually (if the dashboard updater can't run)
+
+On hosts where `exec()` is disabled or Composer isn't on the CLI, run:
+
 ```bash
 # 1. Update the package
 composer update falconcms/falconcms

@@ -73,14 +73,26 @@ php artisan storage:link
 
 ## Updating
 
-When a new version is released:
+### From the dashboard (recommended)
+
+Go to **Dashboard → Updates**. When a new version is available, tick the backup
+confirmation and click **Run Update Now** — FalconCMS pulls the latest release
+with Composer, runs `falcon:update` (migrations, assets, themes, cache) and
+refreshes the OPcache for you. No terminal needed.
+
+### Manually (if the dashboard updater can't run)
+
+Some hosts disable `exec()` or ship without a CLI Composer. In that case, run:
 
 ```bash
 composer update falconcms/falconcms
 php artisan falcon:update
 ```
 
-The `falcon:update` command refreshes assets, themes, and permissions without touching your content.
+::: info
+`falcon:update` refreshes assets, themes and permissions without touching your
+content. The dashboard updater runs exactly these steps for you.
+:::
 
 ---
 

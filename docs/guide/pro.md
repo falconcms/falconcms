@@ -36,20 +36,33 @@ on (in the dashboard).
 
 If you are on core v1.x, [upgrade to v2](/guide/upgrade) first.
 
-## Step 1 — Add the private repository
+## Install from the dashboard (recommended)
 
-Tell Composer where the Pro package lives. Run this in your project root:
+FalconCMS can install Pro for you — no terminal needed:
+
+1. Open your dashboard → **Falcon Builder → License**.
+2. Paste your **license key** (`PRO-…` or `AGENCY-…`) and click **Activate**. The key is
+   saved; the page notes that the Pro package still needs installing.
+3. In the same page, paste your **access token** and click **Save token & install Pro**.
+   FalconCMS writes your `auth.json`, adds the private repository and runs
+   `composer require falconcms/pro` on the server (this can take up to a minute).
+4. Reload the page — the status card turns green and every Pro feature unlocks.
+
+That's the whole flow. Under the hood it does exactly the manual steps below, so use
+those if your host blocks server-side Composer (some shared hosts disable `exec()`).
+
+## Install manually (fallback)
+
+Run these in your project root, using the **access token** from your purchase email.
+
+**1. Add the private repository:**
 
 ```bash
 composer config repositories.falconcms-pro vcs https://github.com/falconcms/falconcms-pro.git
 ```
 
-This adds a `repositories` entry to your `composer.json`. You only do it once per project.
-
-## Step 2 — Add your access token
-
-Create a file named **`auth.json`** in your project root (next to `composer.json`) and
-paste your token from the purchase email:
+**2. Create an `auth.json`** next to `composer.json` (Composer reads it automatically —
+a file avoids copy-paste/escaping issues with the long token):
 
 ```json
 {
@@ -59,34 +72,28 @@ paste your token from the purchase email:
 }
 ```
 
-Composer reads this file automatically. Using a file (instead of a shell command) avoids
-copy-paste and escaping issues with the long token.
-
 ::: warning Never commit the token
-Add `auth.json` to your `.gitignore` so the token is not committed to version control.
-For servers and CI, see [Deploying to production](#deploying-to-production).
+Add `auth.json` to your `.gitignore`. For servers and CI, see
+[Deploying to production](#deploying-to-production).
 :::
 
-## Step 3 — Install the package
+**3. Install:**
 
 ```bash
 composer require falconcms/pro
 ```
 
-Composer pulls `falconcms/pro` from the private repository and registers its service
-provider automatically (Laravel package discovery).
-
-## Step 4 — Activate your license key
-
-1. Open your dashboard → **Falcon Builder → License**.
-2. Paste your **license key** (`PRO-…` or `AGENCY-…`) and click **Activate**.
-3. The status card turns green and every Pro feature unlocks.
-
-That's it. The key is validated against your plan and stored privately on your site.
+**4. Activate:** dashboard → **Falcon Builder → License** → paste your license key →
+**Activate**.
 
 ## Updating Pro
 
-When a new Pro version is released, update it exactly like the core package:
+### From the dashboard
+
+Pro updates ride along with the core updater — **Dashboard → Updates → Run Update Now**
+refreshes both. To bump only Pro, re-run the install (or use the command below).
+
+### Manually
 
 ```bash
 composer update falconcms/pro
@@ -127,20 +134,26 @@ composer install --no-dev
 
 ## Troubleshooting
 
+**“Access token saved, but the Pro package could not be installed automatically.”**
+Your host can't run Composer from the browser (or the project isn't writable). The token
+is still saved — just follow [Install manually](#install-manually-fallback), starting at
+step 1.
+
+**“This license key is not valid.”**
+The key wasn't recognised. Double-check you pasted it in full (no spaces). If it still
+fails, deactivate and try again, or contact support with your order reference.
+
+**“This license key has reached its activation limit.”**
+The key is already active on another site (Pro allows one site). Deactivate it there
+first — **Falcon Builder → License → Deactivate** frees the slot so you can activate here.
+
 **“Key saved, but Pro is not active.”**
-The license key is stored but the `falconcms/pro` package isn't installed on this site
-yet. Run Steps 1–3 above, then reload the License page.
+The key is valid but the `falconcms/pro` package isn't installed yet. Paste your access
+token on the License page (or [install manually](#install-manually-fallback)).
 
 **Composer: `Could not authenticate` / `404` on github.com**
-The access token is missing or wrong. Re-run Step 2, or check your `auth.json`. Confirm
-the token from your purchase email hasn't been revoked.
-
-**Composer: `Could not find package falconcms/pro`**
-The private repository entry is missing. Re-run Step 1, then `composer require falconcms/pro`.
-
-**A key `did not resolve to a valid plan.`**
-Double-check the key was copied in full. If it still fails, deactivate and re-activate,
-or contact support with your order reference.
+The access token is missing or wrong. Re-check your `auth.json`, and confirm the token
+from your purchase email hasn't been revoked.
 
 ::: tip Lost your key or token?
 Contact support with your order reference. A leaked access token can be revoked and
