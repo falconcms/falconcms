@@ -212,20 +212,33 @@ if (!function_exists('falcon_cms_installed_version')) {
      */
     function falcon_cms_installed_version(): string
     {
-        if (defined('FALCON_CMS_VERSION') && preg_match('/^v?\d+\.\d+\.\d+/', FALCON_CMS_VERSION)) {
-            return ltrim(FALCON_CMS_VERSION, 'v');
-        }
+        // Two possible sources, each unreliable in a different way:
+        //  - version.json ships in the code, but a release that forgot to bump it
+        //    reports an old number (e.g. v2.0.0 still said 1.8.3).
+        //  - Composer's installed version is exact for real installs but bogus for
+        //    path-repo / symlink dev installs (reports a stale pinned alias).
+        // Taking the HIGHER of the two is correct in every case: a real install on a
+        // stale-version.json release is rescued by Composer, and a dev/symlink install
+        // (where Composer lies low) is rescued by version.json.
+        $fromJson = (defined('FALCON_CMS_VERSION') && preg_match('/^v?\d+\.\d+\.\d+$/', FALCON_CMS_VERSION))
+            ? ltrim(FALCON_CMS_VERSION, 'v')
+            : null;
 
+        $fromComposer = null;
         if (class_exists(\Composer\InstalledVersions::class)) {
             try {
                 $clean = ltrim((string) \Composer\InstalledVersions::getPrettyVersion('falconcms/falconcms'), 'v');
                 if (preg_match('/^\d+\.\d+\.\d+$/', $clean)) {
-                    return $clean;
+                    $fromComposer = $clean;
                 }
             } catch (\Throwable $e) {}
         }
 
-        return defined('FALCON_CMS_VERSION') ? FALCON_CMS_VERSION : '1.2.0';
+        if ($fromJson && $fromComposer) {
+            return version_compare($fromComposer, $fromJson, '>') ? $fromComposer : $fromJson;
+        }
+
+        return $fromJson ?? $fromComposer ?? (defined('FALCON_CMS_VERSION') ? FALCON_CMS_VERSION : '1.2.0');
     }
 }
 

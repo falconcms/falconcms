@@ -279,11 +279,13 @@ class DashboardController extends Controller
             $check  = function_exists('lazy_check_update') ? lazy_check_update(true) : [];
             $latest = $check['latest'] ?? null;
 
-            if ($latest && preg_match('/^(\d+)\./', $latest, $m)) {
-                // e.g. latest 2.0.2 -> require falconcms/falconcms:^2.0 (bumps the
-                // constraint and moves to the newest release in that major line).
-                $cmd   = $composerBin . ' require falconcms/falconcms:^' . $m[1] . '.0 -W --no-interaction --prefer-dist --no-progress 2>&1';
-                $label = 'composer require falconcms/falconcms:^' . $m[1] . '.0';
+            if ($latest && preg_match('/^\d+\.\d+\.\d+$/', $latest)) {
+                // Pin to the EXACT latest release. A range like "^2.0" let Composer's
+                // solver settle on an older 2.0.x (e.g. v2.0.0, whose version.json was
+                // stale), so the dashboard kept reporting an out-of-date version right
+                // after "updating". An exact version also crosses a major bump.
+                $cmd   = $composerBin . ' require falconcms/falconcms:' . $latest . ' -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $label = 'composer require falconcms/falconcms:' . $latest;
             } else {
                 $cmd   = $composerBin . ' update falconcms/falconcms -W --no-interaction --prefer-dist --no-progress 2>&1';
                 $label = 'composer update';
