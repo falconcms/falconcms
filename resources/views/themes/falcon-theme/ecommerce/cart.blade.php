@@ -7,7 +7,7 @@
     <div class="container-custom">
         <h1 class="text-[36px] font-normal text-[#2c3338] mb-8">Cart</h1>
 
-        @if(function_exists('falcon_freemium_grace_active') && falcon_freemium_grace_active())
+        @if(function_exists('falcon_freemium_grace_active') && falcon_freemium_grace_active() && ! (function_exists('falcon_licensed') && falcon_licensed()))
             <div class="border border-amber-300 bg-amber-50 text-amber-900 p-4 mb-8 rounded flex items-start gap-3 text-sm">
                 <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
                 <div>

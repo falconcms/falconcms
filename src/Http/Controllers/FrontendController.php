@@ -483,7 +483,10 @@ class FrontendController extends Controller
         if ($post->id == $shopPageId) {
             $postsQuery = Post::where('posts.type', 'product')
                 ->where('posts.lang_code', app()->getLocale())
-                ->where('posts.status', 'published');
+                ->where('posts.status', 'published')
+                // Eager-load what the product card needs so the category shows and
+                // there's no N+1 (and it works under strict lazy-loading in prod).
+                ->with(['taxonomyTerms', 'productCategories', 'shopData']);
 
             $orderby = request('orderby', 'latest');
             switch ($orderby) {
