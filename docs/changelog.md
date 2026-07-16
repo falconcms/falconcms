@@ -5,7 +5,45 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v1.8.3 <Badge type="tip" text="Latest" /> {#v1-8-3}
+## v2.0 <Badge type="tip" text="Latest" /> {#v2-0}
+
+**Released: 2026-07-14** · latest patch **v2.0.19**
+
+**FalconCMS is now open-core.** The core stays free and MIT-licensed; a new
+**Pro** edition unlocks the commercial features (e-commerce, multi-language,
+analytics, the advanced page builder, custom fields and advanced login). Existing
+sites keep working — nothing is taken away — and there is a launch **grace window**
+during which every Pro feature stays free. Features a site already used are
+**grandfathered free on that site forever**.
+
+### Added
+- **Pro License page** (Falcon Builder → License). Paste your license key to
+  activate Pro, deactivate to release it, or hit **Re-check now** to re-validate
+  on the spot. Each key is enforced **per site** (Pro = 1 site, Agency = unlimited).
+- **One-click Pro install.** Paste the access token from your purchase and FalconCMS
+  writes `auth.json` and installs the `falconcms/pro` package for you — no terminal
+  needed. Manual Composer instructions remain as a fallback.
+- **In-app updater** (Dashboard → Updates). Check for and install the latest release
+  from the browser, with a backup confirmation and a clear progress dialog.
+- **Freemium grace** — a single fixed cutoff date (not a rolling per-site window), so
+  the transition happens everywhere at once.
+
+### Changed
+- The "now freemium / upgrade to Pro" banners (admin and cart) disappear once a site
+  holds a valid Pro license.
+- Renamed the internal version constant to `FALCON_CMS_VERSION`.
+
+### Fixed
+- **Reliable updates & version reporting.** The updater installs the exact latest
+  release and reports the installed version correctly — no more "update available"
+  immediately after updating.
+- **Shop product category** now shows on the shop listing (some products previously
+  read "Uncategorized"), with the category eager-loaded to avoid N+1 queries.
+- **Clear license messages** — invalid key, activation-limit-reached and expired keys
+  now say exactly what's wrong and how to fix it, instead of a generic notice.
+- Updating core ahead of the Pro package no longer causes a fatal error.
+
+## v1.8.3 {#v1-8-3}
 
 **Released: 2026-07-04**
 
