@@ -40,7 +40,6 @@
                                             }
                                         }
                                     }
-                                    if ($menu->title === 'Help' && get_cms_option('enable_documentation', '1') !== '1') continue;
                                     $isActive = \FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($href);
                                     if (!$isActive && $hasChildren) {
                                         foreach($menu->children as $child) {

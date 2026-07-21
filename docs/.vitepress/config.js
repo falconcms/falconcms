@@ -34,6 +34,7 @@ export default defineConfig({
       { text: 'Pro', link: '/guide/pro' },
       { text: 'Builder', link: '/builder/overview' },
       { text: 'E-commerce', link: '/ecommerce/overview' },
+      { text: 'Plugins', link: '/guide/plugins' },
       { text: 'Hooks API', link: '/api/hooks' },
       { text: 'Changelog', link: '/changelog' },
       { text: '🚀 Live Demo', link: '/demo' },
@@ -82,6 +83,14 @@ export default defineConfig({
             { text: 'Template Tags', link: '/guide/template-tags' },
           ]
         },
+        {
+          text: 'Plugin Development',
+          items: [
+            { text: 'Plugins', link: '/guide/plugins' },
+            { text: 'Admin Menu API', link: '/api/admin-menu' },
+            { text: 'Settings Fields API', link: '/api/settings-fields' },
+          ]
+        },
       ],
       '/builder/': [
         {
@@ -113,6 +122,15 @@ export default defineConfig({
           items: [
             { text: 'Hooks', link: '/api/hooks' },
             { text: 'Helper Functions', link: '/api/helpers' },
+            { text: 'Admin Menu API', link: '/api/admin-menu' },
+            { text: 'Settings Fields API', link: '/api/settings-fields' },
+          ]
+        },
+        {
+          text: 'Extending FalconCMS',
+          items: [
+            { text: 'Plugins', link: '/guide/plugins' },
+            { text: 'Themes', link: '/guide/themes' },
           ]
         },
       ],

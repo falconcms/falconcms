@@ -2,6 +2,13 @@
 
 Falcon CMS uses a file-based theme system similar to WordPress. Themes live in `resources/views/themes/{theme-name}/`.
 
+::: tip Themes vs plugins
+Themes own **presentation**; [plugins](/guide/plugins) own **functionality**.
+Both are loaded at the same point in the boot cycle and share the same hook API,
+so build anything design-related here and anything feature-related as a plugin —
+that way it survives a theme switch.
+:::
+
 ## Theme Structure
 
 ```

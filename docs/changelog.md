@@ -7,7 +7,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ## v2.0 <Badge type="tip" text="Latest" /> {#v2-0}
 
-**Released: 2026-07-14** · latest patch **v2.0.19**
+**Released: 2026-07-14** · current release **v2.1.0**
 
 **FalconCMS is now open-core.** The core stays free and MIT-licensed; a new
 **Pro** edition unlocks the commercial features (e-commerce, multi-language,
@@ -42,6 +42,83 @@ during which every Pro feature stays free. Features a site already used are
 - **Clear license messages** — invalid key, activation-limit-reached and expired keys
   now say exactly what's wrong and how to fix it, instead of a generic notice.
 - Updating core ahead of the Pro package no longer causes a fatal error.
+
+**Extensibility update.** FalconCMS also gains a full **plugin system** — the
+functional counterpart to themes — plus a runtime API for adding admin menus,
+settings pages and settings fields without writing controllers, routes or views,
+and a security hardening pass on how settings are saved.
+
+### Added — Plugins & extensibility APIs
+
+**Plugin system** — see [Plugins](/guide/plugins)
+- **Drop-in plugins.** A plugin is a folder in `plugins/` with a `plugin.json`
+  manifest and an optional `plugin.php` bootstrap. Free and unrestricted —
+  anyone can write, install and share them.
+- **Plugins admin screen** with two sub-pages: **Installed Plugins** (filter by
+  All / Active / Inactive, search, and Activate / Deactivate / Update /
+  Uninstall from row actions) and **Add New** (drag-and-drop `.zip` upload, or
+  install from a direct URL).
+- **Convention-based loading.** `src/` is PSR-4 autoloaded, `routes/web.php` is
+  registered, `resources/views/` becomes a `slug::` namespace, and
+  `database/migrations/` runs on activation — no ServiceProvider needed (though
+  one can be declared).
+- **Lifecycle hooks** — optional `activate()`, `deactivate()`, `uninstall()` and
+  `upgrade($previousVersion)` on a class named in the manifest.
+- **Dependencies** — declared plugins must be active first, are loaded in
+  dependency order, and can't be deactivated or uninstalled while depended upon.
+- **Update detection** — a newer version on disk than the one activated shows
+  *Update available*; applying it runs new migrations and records the version.
+- **Requirement checks** on activation for `requires_php` and `requires_cms`.
+- **Fatal-safe loading** — a plugin that throws while loading is automatically
+  deactivated and logged instead of taking the site down. A plugin that fails to
+  load is never marked active.
+- **CLI**: `plugin:list`, `plugin:activate`, `plugin:deactivate`, and
+  `make:plugin "Name"` to scaffold one.
+- **`manage_plugins` permission**, assignable to any role.
+
+**Admin Menu API** — see [Admin Menu API](/api/admin-menu)
+- `falcon_add_menu_page()` / `falcon_add_submenu_page()` register sidebar items
+  at runtime, merged into the DB-driven sidebar so they survive `falcon:update`.
+- `falcon_add_options_page()` renders a complete settings page — fields, saving
+  and all — from an array. Supports a tabbed layout with deep-linkable `?tab=`.
+- New `falcon_admin_menu` action for deferred registration.
+
+**Settings Fields API** — see [Settings Fields API](/api/settings-fields)
+- `falcon_add_settings_field()` injects fields into the **existing** settings
+  screens — General, SEO, REST API, Integrations and Shop — rendered as native
+  rows and saved by that screen's own Save button.
+- `falcon_add_settings_tab()` adds a **new top-level tab** to the Settings nav,
+  with its own page at `/admin/settings/{id}`.
+- **18 field types**: text, number, email, password, url, textarea, checkbox,
+  select, radio, color, date, range, multiselect (searchable, chip-based), tags,
+  image, file, wysiwyg and repeater.
+- Shop fields can target a specific Shop settings tab.
+- New `falcon_register_settings` action, plus form hooks for the REST API,
+  Integrations and Shop screens.
+
+### Changed — Plugins & extensibility
+- Plugin routes are registered **before** the frontend catch-all, so plugin URLs
+  resolve instead of falling through to a 404.
+- Themes and plugins now load at the **same point** in the boot cycle, giving
+  plugins access to every hook a theme has — including register-time filters.
+- The dashboard's built-in documentation viewer was removed; the documentation
+  site is the single source of truth.
+
+### Security
+- **Protected options.** Internal keys — `falcon_license_*` and
+  `falcon_grandfathered_features` — can no longer be written through settings
+  saves, injected fields or options pages. Previously a crafted settings request
+  could overwrite the cached license state and unlock Pro features.
+- **URL scheme validation** on `image` and `file` fields: only `http`, `https`
+  and relative paths are rendered, blocking stored `javascript:` payloads.
+- **Identifier sanitisation** — field and tab ids are restricted to
+  `A–Z a–z 0–9 _ -` before reaching markup or inline scripts.
+
+### Fixed — Plugins & extensibility
+- Shop settings nav highlighted two tabs at once (a static class fought the
+  reactive one).
+- The **Installed Plugins** sidebar item no longer stays highlighted while on
+  **Add New**.
 
 ## v1.8.3 {#v1-8-3}
 

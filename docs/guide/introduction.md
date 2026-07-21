@@ -11,6 +11,7 @@ Most Laravel CMS solutions are either too simple or require you to rebuild every
 - **Falcon Builder** — a visual drag-and-drop page builder (think Elementor, but for Laravel)
 - **E-commerce ready** — shop, cart, checkout, orders, coupons out of the box
 - **Extensible** — WordPress-like hooks let you customize everything without modifying core files
+- **Plugins** — drop-in [plugins](/guide/plugins) add features, admin pages and settings; install one by dragging a `.zip`
 
 ## Requirements
 

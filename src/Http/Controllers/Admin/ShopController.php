@@ -429,6 +429,9 @@ class ShopController extends Controller
         $skip = array_merge(['_token', 'active_tab'], array_keys($toggles));
         foreach ($request->except($skip) as $key => $value) {
             $optKey = 'shop_' . $key;
+            if (falcon_is_protected_option($optKey) || falcon_is_protected_option($key)) {
+                continue;
+            }
             update_shop_option($optKey, $value);
             
             // Ensure global settings take precedence by deleting localized overrides

@@ -43,6 +43,28 @@ class Sidebar extends Component
                     ->values();
             })
             ->filter(fn ($menus) => $menus->isNotEmpty());
+
+        $this->mergeRegisteredMenus();
+    }
+
+    /**
+     * Merge runtime-registered menus (falcon_add_menu_page) into the database-driven
+     * groups. Custom items are appended to their group — matching an existing section
+     * or creating a new one at the bottom — so packages can extend the sidebar without
+     * touching the menus table.
+     */
+    protected function mergeRegisteredMenus(): void
+    {
+        try {
+            $registered = app(\FalconCms\Core\Support\AdminMenu::class)->grouped();
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        foreach ($registered as $group => $items) {
+            $existing = $this->menuGroups->get($group, collect());
+            $this->menuGroups->put($group, $existing->concat($items)->values());
+        }
     }
 
     /**
@@ -79,7 +101,7 @@ class Sidebar extends Component
         }
 
         // 2. Base path check
-        $indexPaths = ['admin/posts', 'admin/pages', 'admin/users', 'admin/settings', 'admin/roles', 'admin/categories', 'admin/tags', 'admin/product-categories', 'admin/product-tags', 'admin/comments', 'admin/profile'];
+        $indexPaths = ['admin/posts', 'admin/pages', 'admin/users', 'admin/settings', 'admin/roles', 'admin/categories', 'admin/tags', 'admin/product-categories', 'admin/product-tags', 'admin/comments', 'admin/profile', 'admin/plugins'];
         
         // Special case: Your Profile belongs to Users group
         if ($targetPath === 'admin/users' && ($currentPath === 'admin/profile' || str_starts_with($currentPath, 'admin/users/') && str_ends_with($currentPath, '/edit'))) {

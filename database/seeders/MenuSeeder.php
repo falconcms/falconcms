@@ -119,6 +119,20 @@ class MenuSeeder extends Seeder
             ['title' => 'License',    'route' => 'admin.license.index',            'order' => 4],
         ]);
 
+        // 7c. Plugins
+        $pluginMenu = Menu::create([
+            'title'      => 'Plugins',
+            'route'      => 'admin.plugins.index',
+            'icon'       => 'extension',
+            'group'      => 'Main',
+            'order'      => 43,
+            'permission' => 'manage_plugins',
+        ]);
+        $pluginMenu->children()->createMany([
+            ['title' => 'Installed Plugins', 'route' => 'admin.plugins.index',  'order' => 1, 'permission' => 'manage_plugins'],
+            ['title' => 'Add New',           'route' => 'admin.plugins.create', 'order' => 2, 'permission' => 'manage_plugins'],
+        ]);
+
         // 8. ACPT
         $acptMenu = Menu::create([
             'title' => 'ACPT',
@@ -190,18 +204,6 @@ class MenuSeeder extends Seeder
             ['title' => 'REST API',        'route' => 'admin.settings.api',             'order' => 5],
             ['title' => 'Integrations',    'route' => 'admin.settings.integrations',    'order' => 6],
             ['title' => 'Email Templates', 'route' => 'admin.settings.email-templates', 'order' => 7],
-        ]);
-
-        // 13. Help
-        $helpMenu = Menu::create([
-            'title' => 'Help',
-            'route' => 'admin.documentation',
-            'icon'  => 'help',
-            'group' => 'System',
-            'order' => 100,
-        ]);
-        $helpMenu->children()->createMany([
-            ['title' => 'Documentation', 'route' => 'admin.documentation', 'order' => 1],
         ]);
 
         // 14. Products

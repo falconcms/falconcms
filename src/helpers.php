@@ -1879,6 +1879,61 @@ if (!function_exists('has_falcon_filter')) {
     }
 }
 
+if (!function_exists('falcon_is_protected_option')) {
+    /**
+     * Option keys that must NEVER be written from user-supplied settings input —
+     * generic settings saves ($request->except), injected fields, options pages,
+     * etc. These are managed internally (licensing / Pro entitlement); letting a
+     * crafted request or a registered field overwrite them would forge a license
+     * and bypass Pro gating. Internal code writes them through their own services.
+     */
+    function falcon_is_protected_option($key): bool
+    {
+        $key = strtolower(trim((string) $key));
+        if ($key === '') {
+            return false;
+        }
+
+        // Any current/future license key or cached license state.
+        if (str_starts_with($key, 'falcon_license')) {
+            return true;
+        }
+
+        $protected = [
+            'falcon_grandfathered_features', // grants grandfathered Pro access
+        ];
+
+        return in_array($key, $protected, true);
+    }
+}
+
+if (!function_exists('falcon_safe_url')) {
+    /**
+     * Return $url only when it uses a safe scheme (http/https) or is a
+     * relative/root-relative/protocol-relative path; blocks javascript:, data:,
+     * vbscript: and similar. Use wherever a stored field value is placed into an
+     * href/src to prevent stored XSS.
+     */
+    function falcon_safe_url($url): string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return '';
+        }
+        // Relative, root-relative, or protocol-relative URLs are fine.
+        if ($url[0] === '/' || str_starts_with($url, './') || str_starts_with($url, '../')) {
+            return $url;
+        }
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        if ($scheme === null || $scheme === false || $scheme === '') {
+            return $url; // e.g. "media/foo.jpg" — a relative path, no scheme
+        }
+        $scheme = strtolower($scheme);
+
+        return ($scheme === 'http' || $scheme === 'https') ? $url : '';
+    }
+}
+
 if (!function_exists('lazy_render_product_field')) {
     function lazy_render_product_field(array $field): string
     {

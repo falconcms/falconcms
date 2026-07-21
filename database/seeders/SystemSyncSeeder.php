@@ -31,6 +31,7 @@ class SystemSyncSeeder extends Seeder
             ['name' => 'Manage ACPT',       'slug' => 'manage_acpt'],
             ['name' => 'Manage Tools',      'slug' => 'manage_tools'],
             ['name' => 'Manage SEO',        'slug' => 'manage_seo'],
+            ['name' => 'Manage Plugins',    'slug' => 'manage_plugins'],
         ];
 
         foreach ($permissions as $p) {

@@ -1,6 +1,6 @@
 # Hooks API
 
-Falcon CMS uses a WordPress-style hook system with **Actions** and **Filters**. There are **104 hooks** total — 58 actions and 46 filters.
+Falcon CMS uses a WordPress-style hook system with **Actions** and **Filters**. There are **109 hooks** total — 63 actions and 46 filters.
 
 ## How It Works
 
@@ -35,7 +35,10 @@ remove_falcon_action(string $tag, callable $callback, int $priority = 10): void
 remove_falcon_filter(string $tag, callable $callback, int $priority = 10): void
 ```
 
-All hook registrations go in your theme's **`functions.php`** or in a Laravel service provider.
+All hook registrations go in your theme's **`functions.php`**, a
+[plugin's](/guide/plugins) **`plugin.php`**, or a Laravel service provider.
+Themes and plugins load at the same point in the boot cycle, so every hook below
+is available to both.
 
 ---
 
@@ -105,6 +108,56 @@ add_falcon_action('falcon_settings_form_bottom', function() {
 
 #### `falcon_seo_settings_form_top` / `falcon_seo_settings_form_bottom`
 Same pattern as general settings, but for the SEO settings page.
+
+---
+
+#### `falcon_api_settings_form_bottom` / `falcon_integrations_settings_form_bottom` / `falcon_shop_settings_form_bottom`
+The same injection point on the **REST API**, **Integrations** and **Shop**
+settings forms. Anything echoed here renders inside that form and saves with it.
+
+::: tip
+Instead of echoing raw markup, prefer
+[`falcon_add_settings_field()`](/api/settings-fields) — it renders native rows,
+escapes values and handles saving on every one of these screens.
+:::
+
+---
+
+#### `falcon_register_settings`
+Fires once, the first time settings fields are collected. The place to register
+fields and tabs for the settings screens.
+
+```php
+add_falcon_action('falcon_register_settings', function () {
+    falcon_add_settings_field([
+        'id'     => 'my_api_key',
+        'label'  => 'API Key',
+        'type'   => 'text',
+        'screen' => 'general',
+    ]);
+});
+```
+
+See the [Settings Fields API](/api/settings-fields).
+
+---
+
+#### `falcon_admin_menu`
+Fires once, when the admin sidebar is first built. Register menu items and
+options pages here.
+
+```php
+add_falcon_action('falcon_admin_menu', function () {
+    falcon_add_menu_page([
+        'slug'  => 'my-plugin',
+        'title' => 'My Plugin',
+        'icon'  => 'extension',
+        'route' => 'my-plugin.index',
+    ]);
+});
+```
+
+See the [Admin Menu API](/api/admin-menu).
 
 ---
 
@@ -1074,6 +1127,11 @@ return [
 | `falcon_settings_form_bottom` | — |
 | `falcon_seo_settings_form_top` | — |
 | `falcon_seo_settings_form_bottom` | — |
+| `falcon_api_settings_form_bottom` | — |
+| `falcon_integrations_settings_form_bottom` | — |
+| `falcon_shop_settings_form_bottom` | — |
+| `falcon_register_settings` | `SettingsExtension $registry` |
+| `falcon_admin_menu` | — |
 | `falcon_before_content` | `$post` |
 | `falcon_after_content` | `$post` |
 | `falcon_admin_before_save_product` | `$data, $post, $request` |

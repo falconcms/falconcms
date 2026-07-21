@@ -84,6 +84,8 @@
 
             </table>
 
+            {!! do_falcon_action('falcon_integrations_settings_form_bottom') !!}
+
             <div class="pt-6 border-t border-gray-100 mt-2">
                 <button type="submit" class="wp-btn-primary px-4 h-8 font-semibold">Save Changes</button>
             </div>

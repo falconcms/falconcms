@@ -483,11 +483,6 @@ class DashboardController extends Controller
             unset($data['allow_multi_device'], $data['magic_login_enabled'], $data['max_devices']);
         }
         
-        // Only update these if we are on the page that contains them to avoid overwriting theme options
-        if ($request->has('site_title')) {
-            $data['enable_documentation'] = $request->has('enable_documentation') ? '1' : '0';
-        }
-
         if ($request->has('enable_rest_api')) {
             $data['enable_rest_api'] = '1';
         } elseif ($request->is('*/settings/api')) {
@@ -499,6 +494,16 @@ class DashboardController extends Controller
         if (isset($data['register_url'])) $data['register_url'] = Str::slug($data['register_url']);
 
         foreach ($data as $key => $value) {
+            // Never let internal/licensing keys be written through the generic
+            // settings save — that would forge a license and bypass Pro gating.
+            if (falcon_is_protected_option($key)) {
+                continue;
+            }
+            // Custom multiselect/tags/repeater fields (added via falcon_add_settings_field)
+            // post as arrays; store them as JSON so get_cms_option() round-trips cleanly.
+            if (is_array($value)) {
+                $value = json_encode(array_values($value));
+            }
             DB::table('cms_settings')->updateOrInsert(
                 ['key' => $key],
                 ['value' => $value, 'updated_at' => now()]
@@ -544,6 +549,13 @@ class DashboardController extends Controller
         }
         
         foreach ($data as $key => $value) {
+            if (falcon_is_protected_option($key)) {
+                continue;
+            }
+            // Custom multiselect/tags/repeater fields post as arrays — store as JSON.
+            if (is_array($value)) {
+                $value = json_encode(array_values($value));
+            }
             DB::table('cms_settings')->updateOrInsert(
                 ['key' => $key],
                 ['value' => $value, 'updated_at' => now()]
@@ -668,6 +680,10 @@ class DashboardController extends Controller
                 ['value' => $request->input($key, ''), 'updated_at' => now()]
             );
         }
+
+        // Persist any theme/plugin fields injected into this screen — this
+        // controller only saves a fixed whitelist, so they need explicit saving.
+        app(\FalconCms\Core\Support\SettingsExtension::class)->persist('integrations', $request);
 
         forget_cms_options_cache();
         falcon_log_activity('settings_updated', 'Updated integrations settings');
@@ -1116,20 +1132,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function documentation()
-    {
-        if (get_cms_option('enable_documentation', '1') !== '1') {
-            abort(403, 'Documentation is disabled by the administrator.');
-        }
-
-        $readmePath = __DIR__ . '/../../../../README.md';
-        $content = '';
-        if (file_exists($readmePath)) {
-            $content = file_get_contents($readmePath);
-        }
-
-        return view('falcon-cms::admin.documentation', compact('content'));
-    }
     
     public function bulkDeleteLogs(Request $request)
     {

@@ -1,6 +1,6 @@
 # Falcon CMS — Hook Reference
 
-> Hook system is WordPress-style. Use `add_falcon_action()` / `add_falcon_filter()` in your theme's `functions.php`.
+> Hook system is WordPress-style. Use `add_falcon_action()` / `add_falcon_filter()` in your theme's `functions.php` or a [plugin's](/guide/plugins) `plugin.php` — both load at the same point, so the same hooks are available to each.
 
 ---
 

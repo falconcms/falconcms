@@ -146,21 +146,6 @@
                     </td>
                 </tr>
 
-                <!-- Documentation Access -->
-                <tr>
-                    <th scope="row" class="w-[200px] text-left align-top pt-2">
-                        <label class="text-[14px] font-semibold text-[#1d2327]">Enable Documentation</label>
-                    </th>
-                    <td>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="enable_documentation" id="enable_documentation"
-                                class="w-4 h-4 mr-2"
-                                {{ ($settings['enable_documentation'] ?? '1') == '1' ? 'checked' : '' }}>
-                            <span class="text-[14px] text-[#1d2327]">Show documentation in admin menu and allow access</span>
-                        </label>
-                        <p class="text-[12px] text-[#646970] mt-1">If unchecked, the documentation link will be hidden and direct access will be forbidden.</p>
-                    </td>
-                </tr>
 
                 <!-- Themes Group -->
                 <tr id="reg-theme-row">

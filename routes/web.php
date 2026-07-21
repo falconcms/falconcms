@@ -277,6 +277,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('license/token', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'saveToken'])->name('license.token');
     Route::post('license/recheck', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'recheck'])->name('license.recheck');
 
+    // Developer-registered options pages (falcon_add_options_page) — one generic
+    // controller renders/saves any page looked up by slug.
+    Route::get('options/{slug}', [\FalconCms\Core\Http\Controllers\Admin\OptionsPageController::class, 'show'])->name('options.show');
+    Route::post('options/{slug}', [\FalconCms\Core\Http\Controllers\Admin\OptionsPageController::class, 'save'])->name('options.save');
+
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
     Route::post('settings', [DashboardController::class, 'updateSettings'])->name('settings.update');
@@ -292,7 +297,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::get('settings/email-templates', [DashboardController::class, 'emailTemplates'])->name('settings.email-templates');
     Route::post('settings/email-templates', [DashboardController::class, 'updateEmailTemplate'])->name('settings.email-templates.update');
     Route::post('settings/email-templates/test', [DashboardController::class, 'testEmailTemplate'])->name('settings.email-templates.test');
-    
+    // Custom top-level settings tabs (falcon_add_settings_tab). Registered LAST so
+    // every native settings/* route matches first; this only catches unknown slugs,
+    // which the controller resolves against the registry (404 if not a real tab).
+    Route::get('settings/{tab}', [\FalconCms\Core\Http\Controllers\Admin\SettingsTabController::class, 'show'])->name('settings.custom-tab.show');
+    Route::post('settings/{tab}', [\FalconCms\Core\Http\Controllers\Admin\SettingsTabController::class, 'save'])->name('settings.custom-tab.save');
+
     // Backups
     Route::get('tools/backup', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
     Route::post('tools/backup', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'create'])->name('backup.create');
@@ -322,7 +332,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('seo/redirects/bulk', [\FalconCms\Core\Http\Controllers\Admin\RedirectController::class, 'bulk'])->name('redirects.bulk');
     Route::get('seo/related-posts', [DashboardController::class, 'getRelatedPosts'])->name('seo.related-posts');
 
-    Route::get('documentation', [DashboardController::class, 'documentation'])->name('documentation');
     Route::get('update', [DashboardController::class, 'updateCheck'])->name('update');
     Route::post('update/run', [DashboardController::class, 'runUpdate'])->name('update.run');
  
@@ -358,6 +367,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('/themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
     Route::post('/themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
     Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
+
+    // Plugins
+    Route::get('/plugins', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'index'])->name('plugins.index');
+    Route::get('/plugins/add', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'create'])->name('plugins.create');
+    Route::post('/plugins/upload', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'upload'])->name('plugins.upload');
+    Route::post('/plugins/install-url', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'installUrl'])->name('plugins.install-url');
+    Route::post('/plugins/{slug}/activate', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'activate'])->name('plugins.activate');
+    Route::post('/plugins/{slug}/deactivate', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'deactivate'])->name('plugins.deactivate');
+    Route::post('/plugins/{slug}/update', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'update'])->name('plugins.update');
+    Route::delete('/plugins/{slug}', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'destroy'])->name('plugins.destroy');
 
     // Layout Builder — Pro (builder_pro), "browse but locked" model. The page and its read-only
     // AJAX stay reachable so users can look around; every WRITE action is gated by EnsurePro,

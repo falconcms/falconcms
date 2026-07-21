@@ -17,6 +17,17 @@ class FalconCmsServiceProvider extends ServiceProvider
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         view()->share('activeTheme', $activeTheme);
 
+        // Load active drop-in plugins. Done in boot() (not register()) so the DB —
+        // which tells us which plugins are active — is ready in both web and console.
+        // Each plugin's provider is registered and its plugin.php bootstrap required
+        // here; the view/migration/route wiring below then picks up what loaded.
+        // Fatal-safe: a throwing plugin is auto-deactivated, never crashes the CMS.
+        try {
+            $this->app->make(\FalconCms\Core\Support\PluginManager::class)->loadActive($this->app);
+        } catch (\Throwable $e) {
+            // Never let plugin loading stop the CMS from booting.
+        }
+
         // Register Middlewares
         $this->app['router']->prependMiddlewareToGroup('web', \FalconCms\Core\Http\Middleware\RedirectMiddleware::class);
         $this->app['router']->pushMiddlewareToGroup('web', \FalconCms\Core\Http\Middleware\TrackVisits::class);
@@ -27,10 +38,33 @@ class FalconCmsServiceProvider extends ServiceProvider
 
         $this->app->booted(function () {
             $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
+
+            // Active plugins' own routes are registered BEFORE the CMS web routes
+            // so a plugin route can be reached — otherwise the frontend catch-all
+            // (a greedy /{slug} at the end of web.php) would shadow every plugin URL.
+            foreach ($this->loadedPlugins() as $manifest) {
+                $routes = $manifest['dir'] . '/routes/web.php';
+                if (is_file($routes)) {
+                    $this->loadRoutesFrom($routes);
+                }
+            }
+
             $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
         });
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'falcon-cms');
+
+        // Active plugins' views ("<slug>::view") and migrations, by convention.
+        foreach ($this->loadedPlugins() as $slug => $manifest) {
+            $views = $manifest['dir'] . '/resources/views';
+            if (is_dir($views)) {
+                $this->loadViewsFrom($views, $slug);
+            }
+            $migrations = $manifest['dir'] . '/database/migrations';
+            if (is_dir($migrations)) {
+                $this->loadMigrationsFrom($migrations);
+            }
+        }
 
         // Register View Composers for Magic Keys
         $viewMap = [
@@ -55,6 +89,34 @@ class FalconCmsServiceProvider extends ServiceProvider
         Blade::componentNamespace('FalconCms\\Core\\View\\Components', 'falcon-cms');
         Blade::component('falcon-cms::components.frontend.breadcrumbs', 'falcon-breadcrumbs');
 
+        // Render theme/plugin-registered settings fields into the native settings
+        // screens. The extension view echoes inside the native <form>, so custom
+        // fields save through each screen's existing controller (no route changes).
+        // Screen id => the hook tag fired at the bottom of that screen's form.
+        // Each entry: screen id => [hook tag fired in that screen's form, option
+        // prefix its controller stores keys under, Alpine tab variable if the
+        // screen has its own client-side tab UI]. '' prefix = cms_settings as-is;
+        // 'shop_' = the Shop screen namespaces every posted key. A non-null tab
+        // var (Shop's 'tab') groups injected fields into their tab's panel.
+        if (function_exists('add_falcon_action')) {
+            $settingsScreens = [
+                'general'      => ['falcon_settings_form_bottom', '', null],
+                'seo'          => ['falcon_seo_settings_form_bottom', '', null],
+                'api'          => ['falcon_api_settings_form_bottom', '', null],
+                'integrations' => ['falcon_integrations_settings_form_bottom', '', null],
+                'shop'         => ['falcon_shop_settings_form_bottom', 'shop_', 'tab'],
+            ];
+            foreach ($settingsScreens as $screen => [$hook, $prefix, $tabVar]) {
+                add_falcon_action($hook, function () use ($screen, $prefix, $tabVar) {
+                    echo view('falcon-cms::admin.settings.extension', [
+                        'screen'       => $screen,
+                        'optionPrefix' => $prefix,
+                        'alpineTabVar' => $tabVar,
+                    ])->render();
+                });
+            }
+        }
+
         // Register commands always (not just in console) so Artisan::call() works from web requests
         $this->commands([
             \FalconCms\Core\Console\Commands\FalconList::class,
@@ -67,6 +129,10 @@ class FalconCmsServiceProvider extends ServiceProvider
             \FalconCms\Core\Console\Commands\PublishScheduledPosts::class,
             \FalconCms\Core\Console\Commands\ExpireSalePrices::class,
             \FalconCms\Core\Console\Commands\PruneAnalytics::class,
+            \FalconCms\Core\Console\Commands\PluginList::class,
+            \FalconCms\Core\Console\Commands\PluginActivate::class,
+            \FalconCms\Core\Console\Commands\PluginDeactivate::class,
+            \FalconCms\Core\Console\Commands\MakePlugin::class,
         ]);
 
         // Register scheduled tasks from within the package
@@ -158,7 +224,22 @@ class FalconCmsServiceProvider extends ServiceProvider
     {
         require_once __DIR__ . '/helpers.php';
         require_once __DIR__ . '/ecommerce_helpers.php';
+        require_once __DIR__ . '/admin-menu.php';
+        require_once __DIR__ . '/settings-fields.php';
         $this->mergeConfigFrom(__DIR__ . '/../config/falcon-options.php', 'falcon-options');
+
+        // Runtime admin sidebar menu registry (WordPress-style add_menu_page). Shared
+        // for the request so all falcon_add_menu_page() calls land in one place.
+        $this->app->singleton(\FalconCms\Core\Support\AdminMenu::class);
+
+        // Registry for extending the native Settings screens (add_settings_field /
+        // add_settings_tab). Bound before theme functions.php loads so registrations
+        // made there land in one shared instance.
+        $this->app->singleton(\FalconCms\Core\Support\SettingsExtension::class);
+
+        // Drop-in plugin manager. Shared for the request so discovery/loading and
+        // the boot-phase wiring (views, migrations, routes) use one instance.
+        $this->app->singleton(\FalconCms\Core\Support\PluginManager::class);
 
         // Pro license gateway. Core binds a Null gateway where every paid feature is
         // inactive; when the falconcms/pro package is installed and licensed, its provider
@@ -219,6 +300,18 @@ class FalconCmsServiceProvider extends ServiceProvider
             require_once $functionsFile;
         }
 
+        // 3b. Load active plugins right after the theme's functions.php so plugins
+        // get the SAME timing as a theme: their bootstrap runs during register(),
+        // letting them hook register-time filters too (e.g. cms_theme_options).
+        // loadActive() reads the active list with the query builder (Eloquent isn't
+        // wired up yet here) and, if the DB/table isn't ready, returns without
+        // marking itself done so boot() retries. Safe in web and console alike.
+        try {
+            $this->app->make(\FalconCms\Core\Support\PluginManager::class)->loadActive($this->app);
+        } catch (\Throwable $e) {
+            // Never let plugin loading break the CMS from coming up.
+        }
+
         // 4. Load options.php — parent first, then child merged on top
         $themeOptions = [];
         if ($parentThemePath) {
@@ -267,5 +360,15 @@ class FalconCmsServiceProvider extends ServiceProvider
             array_unshift($paths, $themePath);
         }
         config(['view.paths' => array_unique($paths)]);
+    }
+
+    /** Manifests of plugins successfully loaded this request (safe if none). */
+    protected function loadedPlugins(): array
+    {
+        try {
+            return $this->app->make(\FalconCms\Core\Support\PluginManager::class)->loaded();
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 }
