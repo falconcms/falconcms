@@ -21,6 +21,10 @@ features:
     title: Drag & Drop Page Builder
     details: Build stunning pages visually with Falcon Builder — containers, columns, and 22 built-in elements including text, image, gallery, counter, accordion, tabs, ticker, card, and more.
 
+  - icon: 🎞️
+    title: Falcon Slider (Pro)
+    details: A layer-based, Slider-Revolution-class slider builder. Design slides on a visual canvas with per-layer timeline animation, text reveals, video & Ken-Burns backgrounds, and responsive per-device layouts.
+
   - icon: 🛒
     title: Full E-commerce
     details: Complete shop system with products, variants, cart, checkout, orders, coupons, and order status management — built into the CMS.

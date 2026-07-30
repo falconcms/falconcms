@@ -5,7 +5,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.0 <Badge type="tip" text="Latest" /> {#v2-0}
+## v2.2 <Badge type="tip" text="Latest" /> {#v2-2}
+
+**Released: 2026-07-30**
+
+### Added
+- **Falcon Slider** — a new Pro plugin: a layer-based, Slider-Revolution-class slider
+  builder. Design slides on a full-screen visual canvas with:
+  - **Layers** — text (with SEO `h1`–`h6` tags), image, button, shape, icon, video
+    (self-hosted / YouTube / Vimeo), audio, live countdown, and raw HTML/embed.
+  - **Per-layer timeline animation** — 15 entrance/exit presets, text reveals
+    (typewriter / split chars / split words), idle loops (float / bob / pulse / sway /
+    spin), and per-layer delay · duration · easing.
+  - **Backgrounds** — colour, gradient, image, background video, colour & gradient
+    overlays, Ken Burns and mouse parallax.
+  - **Responsive** — position, size, font-size and visibility per device
+    (desktop / tablet / mobile), plus layer groups and global (every-slide) layers.
+  - **Navigation** — arrows, bullets, progress bar, thumbnails, autoplay, loop and
+    pause-on-hover; auto / full-width / full-screen sizing.
+  - **Productivity** — pre-built template gallery, save-as-template, duplicate,
+    import / export, **version history** (auto-snapshot on every save, 20 kept),
+    **full-screen live preview** of unsaved changes, and **whole-slide links**.
+  - **Performance** — LCP background preload, layout-shift-free reservation, lazy
+    media, and subset font/icon loading for Core Web Vitals.
+  - Embed with the `[falcon_slider id="…"]` shortcode or the **Falcon Slider**
+    Falcon Builder element. Governed by the `manage_sliders` permission.
+
+  See the [Falcon Slider documentation](/slider/overview).
+
+---
+
+## v2.0 {#v2-0}
 
 **Released: 2026-07-14** · current release **v2.1.0**
 

@@ -33,6 +33,7 @@ export default defineConfig({
       { text: 'Guide', link: '/guide/introduction' },
       { text: 'Pro', link: '/guide/pro' },
       { text: 'Builder', link: '/builder/overview' },
+      { text: 'Slider', link: '/slider/overview' },
       { text: 'E-commerce', link: '/ecommerce/overview' },
       { text: 'Plugins', link: '/guide/plugins' },
       { text: 'Hooks API', link: '/api/hooks' },
@@ -105,6 +106,18 @@ export default defineConfig({
           ]
         },
       ],
+      '/slider/': [
+        {
+          text: 'Falcon Slider',
+          items: [
+            { text: 'Overview', link: '/slider/overview' },
+            { text: 'Slides & Backgrounds', link: '/slider/slides' },
+            { text: 'Layers', link: '/slider/layers' },
+            { text: 'Animations', link: '/slider/animations' },
+            { text: 'Navigation & Managing', link: '/slider/navigation' },
+          ]
+        },
+      ],
       '/ecommerce/': [
         {
           text: 'E-commerce',
@@ -138,7 +151,8 @@ export default defineConfig({
         {
           text: 'Changelog',
           items: [
-            { text: 'v2.0 (Latest)', link: '/changelog#v2-0' },
+            { text: 'v2.2 (Latest)', link: '/changelog#v2-2' },
+            { text: 'v2.0', link: '/changelog#v2-0' },
             { text: 'v1.8.3', link: '/changelog#v1-8-3' },
             { text: 'v1.8.2', link: '/changelog#v1-8-2' },
             { text: 'v1.8.1', link: '/changelog#v1-8-1' },
