@@ -1,16 +1,18 @@
 # Installing FalconCMS Pro
 
 FalconCMS is **open-core**. The free `falconcms/falconcms` package (MIT, on public
-Packagist) gives you the CMS, page builder, themes, menus, media and hooks API.
+Packagist) gives you the CMS, page builder, themes, menus, media, hooks API — and the
+full **e-commerce** system (storefront, cart, checkout, orders, coupons), which is now
+part of the free core.
 
-**Pro** unlocks the commercial features:
+**Pro** unlocks the remaining commercial features:
 
-- **E-commerce** — storefront, cart, checkout, orders, coupons
 - **Multi-language** — translated content and language switching
 - **Analytics** — dashboard insights and reports
 - **Advanced page builder** — the Pro elements, Library and Global Sections
 - **Custom fields** — ACPT field groups
 - **Advanced login** — multi-device & magic login
+- **Falcon Slider** — the layer-based slider builder ([docs](/slider/overview))
 
 Pro ships as a separate, proprietary package — `falconcms/pro` — delivered from a
 **private repository**. It is never bundled in the free download, so you install it

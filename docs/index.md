@@ -26,8 +26,8 @@ features:
     details: A layer-based, Slider-Revolution-class slider builder. Design slides on a visual canvas with per-layer timeline animation, text reveals, video & Ken-Burns backgrounds, and responsive per-device layouts.
 
   - icon: 🛒
-    title: Full E-commerce
-    details: Complete shop system with products, variants, cart, checkout, orders, coupons, and order status management — built into the CMS.
+    title: Full E-commerce — Free
+    details: Complete shop system with products, variants, cart, checkout, orders, coupons, and order status management — built into the free core. No Pro license required.
 
   - icon: 🌐
     title: Multi-language

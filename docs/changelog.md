@@ -9,6 +9,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 **Released: 2026-07-30**
 
+### Changed
+- **E-commerce is now part of the free core.** The complete shop system — products,
+  variants, cart, checkout, orders, coupons, reviews and wishlist — no longer requires
+  a Pro license. It works on every FalconCMS site, free forever. (Multi-language,
+  analytics, the advanced builder, custom fields and Falcon Slider remain Pro.)
+
 ### Added
 - **Falcon Slider** — a new Pro plugin: a layer-based, Slider-Revolution-class slider
   builder. Design slides on a full-screen visual canvas with:
