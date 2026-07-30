@@ -372,6 +372,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::get('/plugins', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'index'])->name('plugins.index');
     Route::get('/plugins/add', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'create'])->name('plugins.create');
     Route::post('/plugins/upload', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'upload'])->name('plugins.upload');
+    Route::post('/plugins/bulk', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'bulk'])->name('plugins.bulk');
     Route::post('/plugins/install-url', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'installUrl'])->name('plugins.install-url');
     Route::post('/plugins/{slug}/activate', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'activate'])->name('plugins.activate');
     Route::post('/plugins/{slug}/deactivate', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'deactivate'])->name('plugins.deactivate');

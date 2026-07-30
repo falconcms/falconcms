@@ -774,6 +774,26 @@
                 const s = el.settings || {};
                 const elId = el.id || 'x';
 
+                // Falcon Slider: show a tidy placeholder card with the chosen slider's name
+                // (the real slider renders on the front-end) instead of the raw ID.
+                if (el.type === 'falcon_slider') {
+                    // No slider chosen yet → hint card. Chosen → live preview through a
+                    // same-origin iframe (the canvas inserts HTML with v-html, which won't
+                    // run the slider runtime <script>, so an iframe is the only way to get
+                    // a real, animating preview here).
+                    let html;
+                    if (s.sliderId) {
+                        const src = '{{ url('admin/falcon-slider') }}/' + encodeURIComponent(s.sliderId) + '/preview';
+                        html = '<iframe src="' + src + '" title="Falcon Slider preview" scrolling="no" '
+                            + 'style="width:100%;height:360px;border:0;display:block;background:#0f172a;overflow:hidden;"></iframe>';
+                    } else {
+                        html = '<div style="padding:26px 20px;text-align:center;border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc;font-size:14px;color:#64748b;">'
+                            + '<div style="font-size:26px;margin-bottom:8px;">🖼️</div>Falcon Slider — '
+                            + '<span style="color:#94a3b8;">choose a slider in General → Slider</span></div>';
+                    }
+                    return { wrapperStyle: { width: '100%' }, wrapperHoverClass: '', items: [{ kind: 'html', value: html, style: { width: '100%' }, hoverClass: '' }], hoverCss: '' };
+                }
+
                 // Social Icons: fixed per-platform fields → render real icon chips for any filled URL.
                 if (el.type === 'social_icons' && def.fields) {
                     const box   = Math.max(0, parseInt(s.boxSize)  || 38);
@@ -1342,6 +1362,13 @@
                     type, ci, coli, eli, ncoli, neli,
                     tab: editingContext.value.tab || 'content'
                 };
+                // Single-tab custom elements (e.g. Falcon Slider) always open on General.
+                try {
+                    const _e = (type === 'nested-element')
+                        ? layout.value?.[ci]?.columns?.[coli]?.elements?.[eli]?.columns?.[ncoli]?.elements?.[neli]
+                        : layout.value?.[ci]?.columns?.[coli]?.elements?.[eli];
+                    if (_e && customElements[_e.type] && customElements[_e.type].singleTab) editingContext.value.tab = 'content';
+                } catch (e) {}
                 activeTab.value = 'settings';
                 
                 // Reset highlights

@@ -133,6 +133,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             \FalconCms\Core\Console\Commands\PluginActivate::class,
             \FalconCms\Core\Console\Commands\PluginDeactivate::class,
             \FalconCms\Core\Console\Commands\MakePlugin::class,
+            \FalconCms\Core\Console\Commands\MakeTheme::class,
         ]);
 
         // Register scheduled tasks from within the package

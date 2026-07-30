@@ -135,7 +135,7 @@ composer require falconcms/pro</code></pre>
             <p class="font-semibold text-[#50575e] mb-1">How licensing works</p>
             <ul class="list-disc pl-5 space-y-1">
                 <li>Your key is stored privately on this site and validated against your plan.</li>
-                <li>Pro features (e-commerce, multi-language, analytics, advanced builder, custom fields) unlock only while a valid license is active.</li>
+                <li>Pro features (multi-language, analytics, advanced builder, custom fields) unlock only while a valid license is active. <strong>E-commerce is now part of the free core.</strong></li>
                 <li>Pro code is delivered via <code>composer require falconcms/pro</code> from the private repository — it is never bundled in the free download. See the <a href="https://falconcms.github.io/falconcms/guide/pro" target="_blank" rel="noopener" class="text-[#2271b1] hover:underline">install guide</a>.</li>
             </ul>
         </div>

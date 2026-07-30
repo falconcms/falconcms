@@ -32,6 +32,7 @@ class PluginController extends Controller
             'all'      => count($all),
             'active'   => count(array_filter($all, fn ($p) => $p['active'])),
             'inactive' => count(array_filter($all, fn ($p) => ! $p['active'])),
+            'update'   => count(array_filter($all, fn ($p) => ! empty($p['update_available']))),
         ];
 
         $status = $request->query('status');
@@ -39,6 +40,8 @@ class PluginController extends Controller
             $all = array_filter($all, fn ($p) => $p['active']);
         } elseif ($status === 'inactive') {
             $all = array_filter($all, fn ($p) => ! $p['active']);
+        } elseif ($status === 'update') {
+            $all = array_filter($all, fn ($p) => ! empty($p['update_available']));
         }
 
         if ($search = trim((string) $request->query('s'))) {
@@ -58,6 +61,31 @@ class PluginController extends Controller
     public function create()
     {
         return view('falcon-cms::admin.plugins.create');
+    }
+
+    /** Bulk activate / deactivate / update / uninstall selected plugins. */
+    public function bulk(Request $request, PluginManager $plugins)
+    {
+        $action = $request->input('action');
+        $slugs  = (array) $request->input('slugs', []);
+
+        if (! in_array($action, ['activate', 'deactivate', 'update', 'delete'], true) || empty($slugs)) {
+            return redirect()->route('admin.plugins.index')->with('error', 'Select plugins and an action.');
+        }
+
+        $done = 0;
+        foreach ($slugs as $slug) {
+            $result = match ($action) {
+                'activate'   => $plugins->activate($slug),
+                'deactivate' => $plugins->deactivate($slug),
+                'update'     => $plugins->update($slug),
+                'delete'     => $plugins->uninstall($slug),
+            };
+            $done += $result['ok'] ? 1 : 0;
+        }
+
+        return redirect()->route('admin.plugins.index')
+            ->with('success', "{$done} plugin(s) {$action}d.");
     }
 
     public function activate(string $slug, PluginManager $plugins)

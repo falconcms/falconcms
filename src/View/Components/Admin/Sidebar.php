@@ -63,7 +63,9 @@ class Sidebar extends Component
 
         foreach ($registered as $group => $items) {
             $existing = $this->menuGroups->get($group, collect());
-            $this->menuGroups->put($group, $existing->concat($items)->values());
+            // Interleave by `order` so a registered menu's `position` places it among the
+            // DB-driven items (not just appended at the end of the group).
+            $this->menuGroups->put($group, $existing->concat($items)->sortBy('order')->values());
         }
     }
 

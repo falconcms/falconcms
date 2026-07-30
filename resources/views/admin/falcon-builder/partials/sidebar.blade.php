@@ -277,7 +277,8 @@
                             <i v-else class="fa fa-cog text-xs"></i>
                         </button>
 
-                        <button @click="editingContext.tab = 'design'"
+                        <button v-if="!customElements[editingElement?.type]?.singleTab"
+                                @click="editingContext.tab = 'design'"
                                 :class="editingContext.tab === 'design' ? 'bg-[#0091EA] text-white flex-grow-[2]' : 'text-white/70 hover:text-white flex-grow-[1]'"
                                 class="builder-tab-btn py-3 text-[10px] font-black uppercase tracking-widest transition-all">
                             <template v-if="editingContext.tab === 'design'">
@@ -304,7 +305,8 @@
                             <i v-else class="fa fa-mobile-screen text-xs"></i>
                         </button>
 
-                        <button @click="editingContext.tab = 'extras'"
+                        <button v-if="!customElements[editingElement?.type]?.singleTab"
+                                @click="editingContext.tab = 'extras'"
                                 :class="editingContext.tab === 'extras' ? 'bg-[#0091EA] text-white flex-grow-[2]' : 'text-white/70 hover:text-white flex-grow-[1]'"
                                 class="builder-tab-btn py-3 text-[10px] font-black uppercase tracking-widest transition-all">
                             <span v-if="editingContext.tab === 'extras'">Extras</span>
