@@ -315,6 +315,73 @@ if (!function_exists('lazy_check_update')) {
     }
 }
 
+if (!function_exists('falcon_pro_installed_version')) {
+    /** The installed falconcms/pro package version, or null when Pro isn't installed. */
+    function falcon_pro_installed_version(): ?string
+    {
+        try {
+            if (class_exists(\Composer\InstalledVersions::class)
+                && \Composer\InstalledVersions::isInstalled('falconcms/pro')) {
+                return ltrim((string) \Composer\InstalledVersions::getPrettyVersion('falconcms/pro'), 'v');
+            }
+        } catch (\Throwable $e) {}
+        return null;
+    }
+}
+
+if (!function_exists('falcon_pro_check_update')) {
+    /**
+     * Check whether a newer falconcms/pro release is available. The Pro package lives in
+     * a private repo (no Packagist), so the latest version is published as a small public
+     * manifest (config falcon-options.pro_version_url). Mirrors lazy_check_update().
+     *
+     * @return array{installed:?string,latest:?string,has_update:bool,installed_pro:bool,url:?string,min_cms:?string,checked_at:string}
+     */
+    function falcon_pro_check_update(bool $force = false): array
+    {
+        $cacheKey = 'falcon_pro_update_check';
+        if (!$force && cache()->has($cacheKey)) {
+            return cache()->get($cacheKey);
+        }
+
+        $installed = falcon_pro_installed_version();
+        $result = [
+            'installed'     => $installed,
+            'installed_pro' => $installed !== null,
+            'latest'        => null,
+            'has_update'    => false,
+            'url'           => null,
+            'min_cms'       => null,
+            'checked_at'    => now()->toDateTimeString(),
+        ];
+
+        $manifestUrl = (string) config('falcon-options.pro_version_url', 'https://falconcms.com/pro-version.json');
+
+        try {
+            $res = \Illuminate\Support\Facades\Http::timeout(5)
+                ->withHeaders(['Accept' => 'application/json', 'User-Agent' => 'FalconCMS-Pro-Check'])
+                ->get($manifestUrl);
+            if ($res->successful()) {
+                $data = $res->json();
+                $latest = ltrim((string) ($data['version'] ?? ''), 'v');
+                if (preg_match('/^\d+\.\d+\.\d+$/', $latest)) {
+                    $result['latest']  = $latest;
+                    $result['url']     = $data['url'] ?? null;
+                    $result['min_cms'] = $data['min_cms'] ?? null;
+                }
+            }
+        } catch (\Exception $e) {}
+
+        // Only meaningful when Pro is actually installed AND a newer version exists.
+        if ($result['installed_pro'] && $result['latest'] && $installed) {
+            $result['has_update'] = version_compare($result['latest'], $installed, '>');
+        }
+
+        cache()->put($cacheKey, $result, now()->addHours(6));
+        return $result;
+    }
+}
+
 if (!function_exists('_falcon_cms_options_store')) {
     function &_falcon_cms_options_store(): array
     {

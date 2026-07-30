@@ -5,7 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.2 <Badge type="tip" text="Latest" /> {#v2-2}
+## v2.2.1 <Badge type="tip" text="Latest" /> {#v2-2-1}
+
+**Released: 2026-07-31**
+
+### Added
+- **In-dashboard Pro updates.** Dashboard → Updates now shows a **FalconCMS Pro** card
+  alongside the core one: it detects a newer Pro release (via a public version manifest,
+  since Pro is a private package), flags it with a **NEW** badge in the sidebar, and
+  offers a one-click **Update Pro Now** button. The update is **licence-gated** — a
+  valid, in-date subscription is required; an expired licence is prompted to renew
+  instead of updating. On success, Pro's boot-time sync delivers any newly-bundled code
+  and plugins (e.g. Falcon Slider) automatically.
+
+---
+
+## v2.2 {#v2-2}
 
 **Released: 2026-07-30**
 

@@ -150,6 +150,86 @@
                 </div>
             </div>
 
+            {{-- FalconCMS Pro version card — shown only when the Pro package is installed. --}}
+            @if(!empty($proUpdate['installed_pro']))
+            <div class="bg-white border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)] mb-5">
+                <div class="px-4 py-3 border-b border-[#f0f0f1] flex items-center justify-between">
+                    <span class="text-[14px] font-semibold text-[#1d2327] flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[#8b5cf6] text-[18px]">workspace_premium</span> FalconCMS Pro
+                    </span>
+                    @if($proUpdate['has_update'])
+                        <span class="px-2 py-0.5 bg-[#46b450] text-white text-[11px] font-bold rounded uppercase tracking-wide">Update Available</span>
+                    @elseif($proUpdate['latest'])
+                        <span class="px-2 py-0.5 bg-[#c3c4c7] text-[#1d2327] text-[11px] font-bold rounded uppercase tracking-wide">Up to Date</span>
+                    @else
+                        <span class="px-2 py-0.5 bg-[#dba617] text-white text-[11px] font-bold rounded uppercase tracking-wide">Unable to Check</span>
+                    @endif
+                </div>
+
+                <div class="p-5">
+                    <div class="grid grid-cols-2 gap-4 mb-5">
+                        <div class="bg-[#f6f7f7] rounded p-3 text-center">
+                            <div class="text-[11px] text-[#646970] font-semibold uppercase tracking-wide mb-1">Installed Version</div>
+                            <div class="text-[20px] font-bold text-[#1d2327]">v{{ $proUpdate['installed'] }}</div>
+                        </div>
+                        <div class="rounded p-3 text-center {{ $proUpdate['has_update'] ? 'bg-[#edfaee] border border-[#46b450]' : 'bg-[#f6f7f7]' }}">
+                            <div class="text-[11px] text-[#646970] font-semibold uppercase tracking-wide mb-1">Latest Version</div>
+                            <div class="text-[20px] font-bold {{ $proUpdate['has_update'] ? 'text-[#46b450]' : 'text-[#1d2327]' }}">
+                                {{ $proUpdate['latest'] ? 'v' . $proUpdate['latest'] : '—' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($proUpdate['has_update'])
+                        @if(!empty($proLicensed))
+                        {{-- Licensed → allow the Pro update --}}
+                        <div class="bg-[#eef4fb] border border-[#2271b1]/30 rounded p-3 mb-4 flex items-start gap-3">
+                            <span class="material-symbols-outlined text-[#2271b1] text-[20px] mt-0.5 flex-shrink-0">info</span>
+                            <div class="text-[13px] text-[#1d2327]">
+                                Pro <strong>v{{ $proUpdate['latest'] }}</strong> is available — new features, fixes and bundled plugins (e.g. Falcon Slider) are delivered automatically.
+                                @if($proUpdate['url'])<a href="{{ $proUpdate['url'] }}" target="_blank" class="text-[#2271b1] underline ml-1">Details →</a>@endif
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('admin.update.pro') }}">
+                            @csrf
+                            <button type="submit"
+                                class="inline-flex items-center gap-2 bg-[#8b5cf6] text-white font-semibold text-[13px] px-5 py-2 rounded hover:bg-[#7c3aed] transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">system_update</span>
+                                Update Pro Now
+                            </button>
+                        </form>
+                        @else
+                        {{-- Update exists but no valid licence → prompt renewal, block the update --}}
+                        <div class="bg-[#fcf0d5] border border-[#dba617] rounded p-4 flex items-start gap-3">
+                            <span class="material-symbols-outlined text-[#dba617] text-[22px] mt-0.5 flex-shrink-0">lock_clock</span>
+                            <div>
+                                <p class="text-[13px] font-semibold text-[#1d2327] mb-1">Your Pro subscription isn't active</p>
+                                <p class="text-[13px] text-[#646970]">
+                                    Pro <strong>v{{ $proUpdate['latest'] }}</strong> is available, but updating Pro needs a valid, in-date subscription.
+                                    <a href="{{ route('admin.license.index') }}" class="text-[#2271b1] underline font-medium">Renew or activate your licence</a>, then update.
+                                </p>
+                            </div>
+                        </div>
+                        @endif
+                    @elseif($proUpdate['latest'])
+                    <div class="bg-[#edfaee] border border-[#46b450] rounded p-4 flex items-start gap-3">
+                        <span class="material-symbols-outlined text-[#46b450] text-[24px] flex-shrink-0">verified</span>
+                        <div>
+                            <p class="text-[14px] font-semibold text-[#1a6b20] mb-0.5">Pro is up to date!</p>
+                            <p class="text-[13px] text-[#1a6b20]">FalconCMS Pro <strong>v{{ $proUpdate['installed'] }}</strong> is the latest version.</p>
+                        </div>
+                    </div>
+                    @else
+                    <p class="text-[13px] text-[#646970]">Could not reach the Pro update server. Check your connection and try again.</p>
+                    @endif
+                </div>
+
+                <div class="px-4 py-2.5 bg-[#f6f7f7] border-t border-[#c3c4c7] text-[11px] text-[#646970]">
+                    Last checked: {{ $proUpdate['checked_at'] ?? 'Just now' }}
+                </div>
+            </div>
+            @endif
+
             {{-- Package Info --}}
             <div class="bg-white border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)]">
                 <div class="px-4 py-3 border-b border-[#f0f0f1]">

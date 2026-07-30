@@ -223,6 +223,10 @@ class DashboardController extends Controller
         if (!cache()->has('falcon_cms_update_check')) {
             try { lazy_check_update(); } catch (\Exception $e) {}
         }
+        // Same for the Pro package, so the sidebar can flag a Pro update.
+        if (function_exists('falcon_pro_check_update') && !cache()->has('falcon_pro_update_check')) {
+            try { falcon_pro_check_update(); } catch (\Exception $e) {}
+        }
 
         return view('falcon-cms::admin.dashboard', compact('stats', 'hasShop', 'ecoStats', 'currency'));
     }
@@ -247,7 +251,11 @@ class DashboardController extends Controller
     public function updateCheck()
     {
         $update = lazy_check_update(force: true);
-        return view('falcon-cms::admin.update', compact('update'));
+        // Pro update status (private package → checked via a public version manifest).
+        $proUpdate = function_exists('falcon_pro_check_update') ? falcon_pro_check_update(true) : ['installed_pro' => false];
+        $proLicensed = false;
+        try { $proLicensed = app(\FalconCms\Core\Pro\LicenseGateway::class)->licensed(); } catch (\Throwable $e) {}
+        return view('falcon-cms::admin.update', compact('update', 'proUpdate', 'proLicensed'));
     }
 
     public function runUpdate()
@@ -326,6 +334,82 @@ class DashboardController extends Controller
         }
 
         cache()->forget('falcon_cms_update_check');
+
+        return redirect()->route('admin.update')
+            ->with('update_steps', $steps)
+            ->with('update_had_error', $hasError);
+    }
+
+    /**
+     * Update the FalconCMS Pro package. Gated behind a valid, in-date Pro licence — the
+     * private package can only be pulled with the buyer's Composer token, and we don't
+     * let an expired subscription upgrade. On success the Pro provider's boot-time sync
+     * delivers any newly-bundled code / plugins automatically.
+     */
+    public function runProUpdate()
+    {
+        set_time_limit(300);
+        $steps = [];
+        $hasError = false;
+
+        // Gate: a valid, active Pro licence (real licence, not the freemium grace window).
+        $licensed = false;
+        try { $licensed = app(\FalconCms\Core\Pro\LicenseGateway::class)->licensed(); } catch (\Throwable $e) {}
+        if (! $licensed) {
+            return redirect()->route('admin.update')
+                ->with('update_steps', [[
+                    'label'  => 'Licence check',
+                    'output' => 'A valid, active FalconCMS Pro subscription is required to update Pro. Please renew your licence on the License page, then try again.',
+                    'ok'     => false,
+                ]])
+                ->with('update_had_error', true);
+        }
+
+        if (($permError = $this->updateWritabilityError()) !== null) {
+            return redirect()->route('admin.update')
+                ->with('update_steps', [['label' => 'Pre-flight check', 'output' => $permError, 'ok' => false]])
+                ->with('update_had_error', true);
+        }
+
+        $composerBin = $this->findComposer();
+        if ($composerBin) {
+            $check  = function_exists('falcon_pro_check_update') ? falcon_pro_check_update(true) : [];
+            $latest = $check['latest'] ?? null;
+
+            if ($latest && preg_match('/^\d+\.\d+\.\d+$/', $latest)) {
+                $cmd   = $composerBin . ' require falconcms/pro:' . $latest . ' -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $label = 'composer require falconcms/pro:' . $latest;
+            } else {
+                $cmd   = $composerBin . ' update falconcms/pro -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $label = 'composer update falconcms/pro';
+            }
+
+            exec('cd ' . escapeshellarg(base_path()) . ' && ' . $cmd, $composerOut, $exitCode);
+            $composerText = implode("\n", $composerOut);
+            if ($exitCode !== 0 && preg_match('/could not delete|permission denied|failed to (?:open|remove)/i', $composerText)) {
+                $composerText .= "\n\n" . $this->permissionFixHint();
+            }
+            $steps[] = ['label' => $label, 'output' => $composerText, 'ok' => $exitCode === 0];
+            if ($exitCode !== 0) $hasError = true;
+        } else {
+            $steps[] = ['label' => 'composer', 'output' => 'composer not found in PATH. Run manually: composer require falconcms/pro -W', 'ok' => false];
+            $hasError = true;
+        }
+
+        // Reconcile: migrations for freshly-synced Pro plugins + clear caches so their
+        // routes/views register (mirrors the core updater).
+        $phpBin  = $this->findPhpCli();
+        $artisan = base_path('artisan');
+        exec(escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' falcon:update --no-ansi 2>&1', $falconOut, $falconExit);
+        $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $falconOut)), 'ok' => $falconExit === 0];
+        if ($falconExit !== 0) $hasError = true;
+
+        if (function_exists('opcache_reset')) {
+            $reset = @opcache_reset();
+            $steps[] = ['label' => 'opcache reset (php-fpm)', 'output' => $reset ? 'php-fpm OPcache cleared' : 'OPcache not enabled / nothing to clear', 'ok' => true];
+        }
+
+        cache()->forget('falcon_pro_update_check');
 
         return redirect()->route('admin.update')
             ->with('update_steps', $steps)

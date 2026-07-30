@@ -334,6 +334,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
 
     Route::get('update', [DashboardController::class, 'updateCheck'])->name('update');
     Route::post('update/run', [DashboardController::class, 'runUpdate'])->name('update.run');
+    Route::post('update/pro', [DashboardController::class, 'runProUpdate'])->name('update.pro');
  
     // Comments Management
     Route::get('comments', [\FalconCms\Core\Http\Controllers\Admin\CommentController::class, 'index'])->name('comments.index');
