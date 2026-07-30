@@ -119,16 +119,24 @@ class UpdateFalconCms extends Command
         $adminId = \App\Models\User::first()->id ?? 1;
 
         foreach ($pages as $page) {
-            \FalconCms\Core\Models\Post::firstOrCreate(
-                ['slug' => $page['slug'], 'type' => 'page'],
-                [
-                    'title' => $page['title'],
-                    'status' => 'published',
-                    'lang_code' => 'en',
-                    'user_id' => $adminId,
-                    'editor_type' => 'rich'
-                ]
-            );
+            try {
+                // Match on the FULL unique key (slug + type + lang_code) and drop any
+                // language global scope, so an existing shop page is found instead of
+                // re-inserted — otherwise firstOrCreate hits the unique constraint and
+                // the whole update reports "completed with errors".
+                \FalconCms\Core\Models\Post::withoutGlobalScopes()->firstOrCreate(
+                    ['slug' => $page['slug'], 'type' => 'page', 'lang_code' => 'en'],
+                    [
+                        'title' => $page['title'],
+                        'status' => 'published',
+                        'user_id' => $adminId,
+                        'editor_type' => 'rich',
+                    ]
+                );
+            } catch (\Throwable $e) {
+                // Page already exists (or a benign race) — never fail the update for this.
+                \Illuminate\Support\Facades\Log::warning('createEcommercePages [' . $page['slug'] . ']: ' . $e->getMessage());
+            }
         }
     }
 }

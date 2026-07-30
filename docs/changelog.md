@@ -5,7 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.2.1 <Badge type="tip" text="Latest" /> {#v2-2-1}
+## v2.2.2 <Badge type="tip" text="Latest" /> {#v2-2-2}
+
+**Released: 2026-07-31**
+
+### Fixed
+- **Update no longer reports "completed with errors" when the shop pages already exist.**
+  `falcon:update`'s e-commerce page creation now matches on the full unique key
+  (slug + type + language) and ignores language scopes, so existing Shop/Cart/Checkout/
+  Account pages are found instead of re-inserted (which hit a duplicate-slug constraint).
+
+---
+
+## v2.2.1 {#v2-2-1}
 
 **Released: 2026-07-31**
 
