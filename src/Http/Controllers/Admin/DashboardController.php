@@ -365,7 +365,11 @@ class DashboardController extends Controller
                 ->with('update_had_error', true);
         }
 
-        if (($permError = $this->updateWritabilityError()) !== null) {
+        // Pre-flight: the Pro update rewrites vendor/falconcms/pro, so that directory must
+        // also be deletable/replaceable — otherwise Composer downloads the new version and
+        // fails while removing the old files ("Could not delete .../pro/composer.json"),
+        // leaving composer.json half-modified. Check it up front and stop cleanly.
+        if (($permError = $this->updateWritabilityError([base_path('vendor/falconcms/pro')])) !== null) {
             return redirect()->route('admin.update')
                 ->with('update_steps', [['label' => 'Pre-flight check', 'output' => $permError, 'ok' => false]])
                 ->with('update_had_error', true);
@@ -489,13 +493,13 @@ class DashboardController extends Controller
      * check the package dir, Composer's metadata dir and the root manifest — those
      * are exactly what `composer require` rewrites.
      */
-    protected function updateWritabilityError(): ?string
+    protected function updateWritabilityError(array $extraTargets = []): ?string
     {
-        $targets = array_filter([
+        $targets = array_filter(array_merge([
             base_path('composer.json'),
             base_path('vendor/falconcms/falconcms'),
             base_path('vendor/composer'),
-        ], 'file_exists');
+        ], $extraTargets), 'file_exists');
 
         $unwritable = array_values(array_filter($targets, fn ($p) => !is_writable($p)));
         if (empty($unwritable)) {

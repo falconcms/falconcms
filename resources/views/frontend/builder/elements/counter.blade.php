@@ -80,9 +80,13 @@
 
 </div>
 
-@once('lz-counter-js')
 <script>
 (function(){
+    // NOTE: emitted with EVERY counter (intentionally NOT wrapped in a Blade render-once
+    // guard). Such a guard can be consumed by a hidden/earlier render pass (Layout Builder
+    // sections, meta/excerpt, nested renders) — stripping this script from the visible content
+    // and leaving the number static (no count-up). Emitting it every time guarantees it
+    // reaches the visible DOM; the JS below self-dedupes so nothing runs twice.
     function runCounter(el){
         var end      = parseFloat(el.dataset.end)      || 0;
         var start    = parseFloat(el.dataset.start)    || 0;
@@ -124,9 +128,10 @@
         });
     }
 
-    document.readyState === 'loading'
-        ? document.addEventListener('DOMContentLoaded', initCounters)
-        : initCounters();
+    // First copy defines + binds; every later copy just re-scans for its own counter.
+    if (window.__falconCounterScan) { window.__falconCounterScan(); return; }
+    window.__falconCounterScan = initCounters;
+    initCounters();                                                 // counters present so far
+    document.addEventListener('DOMContentLoaded', initCounters);    // + any that follow
 })();
 </script>
-@endonce

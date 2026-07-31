@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'icon_box'"
+<div v-if="el.type === 'icon_box'"
      class="w-full"
      :class="[el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"
@@ -34,7 +34,7 @@
                }"></i>
         </div>
 
-        <div v-if="el.settings.title || el.settings.description" style="width:100%;">
+        <div v-if="el.settings.title || el.settings.description || el.settings.readMoreText" style="width:100%;">
             <div v-if="el.settings.title"
                  :style="{
                      width: '100%',
@@ -60,6 +60,7 @@
                      textTransform: el.settings.descTextTransform || 'none',
                      textAlign: el.settings.alignment || 'center',
                  }">@{{ el.settings.description }}</div>
+            <div v-if="el.settings.readMoreText" :style="{ marginTop:'12px', color: el.settings.readMoreColor || el.settings.iconColor || '#2271b1', fontWeight:600, display:'inline-flex', alignItems:'center', gap:'6px', fontSize:'13px' }">@{{ el.settings.readMoreText }} <span>&rarr;</span></div>
         </div>
 
         <div v-else class="text-slate-400 text-[11px] font-medium py-1">Icon Box</div>
@@ -111,6 +112,7 @@
                      letterSpacing: el.settings.descLetterSpacing || '0px',
                      textTransform: el.settings.descTextTransform || 'none',
                  }">@{{ el.settings.description }}</div>
+            <div v-if="el.settings.readMoreText" :style="{ marginTop:'12px', color: el.settings.readMoreColor || el.settings.iconColor || '#2271b1', fontWeight:600, display:'inline-flex', alignItems:'center', gap:'6px', fontSize:'13px' }">@{{ el.settings.readMoreText }} <span>&rarr;</span></div>
         </div>
     </div>
 </div>

@@ -5,7 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.2.4 <Badge type="tip" text="Latest" /> {#v2-2-4}
+## v2.2.5 <Badge type="tip" text="Latest" /> {#v2-2-5}
+
+**Released: 2026-07-31**
+
+### Added
+- **Icon Box — Read More link.** A Read More / Learn More link can now be shown under the
+  description (text + URL), rendered only when set.
+- **Icon Box — Link Mode.** Choose what the link applies to: **Full Box**, **Only Icon**, or
+  **Only Title**. Defaults to Full Box, so existing icon boxes are unchanged.
+
+### Fixed
+- **Counter animation no longer disappears.** The count-up script is now emitted with every
+  Counter and self-dedupes in JavaScript, instead of being gated by a render-once guard that
+  a hidden/earlier render pass (Layout Builder sections, meta/excerpt, nested renders) could
+  consume — which stripped the script from the visible page and left the number static.
+- **Pro update stops cleanly on read-only vendor files.** The Pro updater's pre-flight check
+  now also verifies `vendor/falconcms/pro` is writable, so a containerised install with a
+  root-owned vendor tree aborts up front (with the exact `chown` fix) instead of letting
+  Composer half-modify `composer.json` mid-update.
+
+---
+
+## v2.2.4 {#v2-2-4}
 
 **Released: 2026-07-31**
 

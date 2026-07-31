@@ -1484,7 +1484,33 @@
                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea] resize-y"></textarea>
                                 </div>
 
-                                <!-- Link URL -->
+                                <!-- Read More / Learn More (shown under the description) -->
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-[12px] font-bold text-[#333]">Read More</label>
+                                        <span class="text-[10px] text-slate-400">under description</span>
+                                    </div>
+                                    <input type="text" v-model="editingElement.settings.readMoreText"
+                                           placeholder="Text, e.g. Learn More"
+                                           class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    <input v-if="editingElement.settings.readMoreText" type="text" v-model="editingElement.settings.readMoreUrl"
+                                           placeholder="https://  (Read More link)"
+                                           class="mt-2 w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                </div>
+
+                                <!-- Link Mode -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Link Mode</label>
+                                    <select :value="editingElement.settings.linkMode || 'box'"
+                                            @change="editingElement.settings.linkMode = $event.target.value"
+                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                        <option value="box">Link Full Box</option>
+                                        <option value="icon">Link Only Icon</option>
+                                        <option value="title">Link Only Title</option>
+                                    </select>
+                                </div>
+
+                                <!-- Link URL (applies to the selected Link Mode) -->
                                 <div>
                                     <div class="flex justify-between items-center mb-2">
                                         <label class="text-[12px] font-bold text-[#333]">Link URL</label>
