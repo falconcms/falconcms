@@ -36,18 +36,32 @@ class DefaultContentSeeder extends Seeder
         ];
 
         foreach ($pages as $p) {
-            $page = Post::firstOrCreate(
-                ['slug' => $p['slug'], 'type' => 'page'],
-                [
-                    'title'       => $p['title'],
-                    'status'      => 'published',
-                    'lang_code'   => 'en',
-                    'user_id'     => $adminId,
-                    'editor_type' => 'rich',
-                ]
-            );
+            // Match on the FULL unique key (slug + type + lang_code) and drop global
+            // scopes — SoftDeletes hides a trashed page from the lookup while the unique
+            // index still counts it, so a plain firstOrCreate would hit the constraint and
+            // fatal the boot-seeder (container crash-loop). Restore a trashed storefront
+            // page so the shop always has a live page. try/catch never fails the seed.
+            try {
+                $page = Post::withoutGlobalScopes()->firstOrCreate(
+                    ['slug' => $p['slug'], 'type' => 'page', 'lang_code' => 'en'],
+                    [
+                        'title'       => $p['title'],
+                        'status'      => 'published',
+                        'user_id'     => $adminId,
+                        'editor_type' => 'rich',
+                    ]
+                );
+                if ($page && method_exists($page, 'trashed') && $page->trashed()) {
+                    $page->restore();
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('DefaultContentSeeder [' . $p['slug'] . ']: ' . $e->getMessage());
+                $page = Post::withoutGlobalScopes()
+                    ->where(['slug' => $p['slug'], 'type' => 'page', 'lang_code' => 'en'])
+                    ->first();
+            }
 
-            if (!DB::table('cms_settings')->where('key', $p['setting'])->exists()) {
+            if ($page && !DB::table('cms_settings')->where('key', $p['setting'])->exists()) {
                 DB::table('cms_settings')->insert([
                     'key'        => $p['setting'],
                     'value'      => $page->id,
@@ -58,8 +72,9 @@ class DefaultContentSeeder extends Seeder
         }
 
         // ── Sample blog post so the blog listing has content right after install ──
-        Post::firstOrCreate(
-            ['slug' => 'hello-world', 'type' => 'post'],
+        try {
+        Post::withoutGlobalScopes()->firstOrCreate(
+            ['slug' => 'hello-world', 'type' => 'post', 'lang_code' => 'en'],
             [
                 'title'       => 'Hello World — Welcome to Falcon CMS',
                 'status'      => 'published',
@@ -77,10 +92,14 @@ class DefaultContentSeeder extends Seeder
                     . "<p>Happy publishing!</p>",
             ]
         );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('DefaultContentSeeder [hello-world]: ' . $e->getMessage());
+        }
 
         // ── A ready-to-use "Blog" page ───────────────────────────────────────
-        Post::firstOrCreate(
-            ['slug' => 'blog', 'type' => 'page'],
+        try {
+        Post::withoutGlobalScopes()->firstOrCreate(
+            ['slug' => 'blog', 'type' => 'page', 'lang_code' => 'en'],
             [
                 'title'       => 'Blog',
                 'status'      => 'published',
@@ -89,5 +108,8 @@ class DefaultContentSeeder extends Seeder
                 'editor_type' => 'rich',
             ]
         );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('DefaultContentSeeder [blog]: ' . $e->getMessage());
+        }
     }
 }

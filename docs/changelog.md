@@ -5,7 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.2.3 <Badge type="tip" text="Latest" /> {#v2-2-3}
+## v2.2.4 <Badge type="tip" text="Latest" /> {#v2-2-4}
+
+**Released: 2026-07-31**
+
+### Fixed
+- **Boot-seeder no longer crashes when a storefront page was trashed.** The default-content
+  seeder now matches on the full unique key (slug + type + language) and ignores global
+  scopes, so a **soft-deleted** Shop/Cart/Checkout/Account/Blog page is found (and restored)
+  instead of re-inserted. Previously a trashed shop page made the seeder hit a duplicate-slug
+  constraint on boot — on containerised installs this could crash-loop the app container
+  (502 Bad Gateway). Each create is now wrapped so the seed can never fail the boot.
+
+---
+
+## v2.2.3 {#v2-2-3}
 
 **Released: 2026-07-31**
 
