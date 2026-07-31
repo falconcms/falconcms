@@ -21,7 +21,7 @@
 <script>
     const { createApp, ref, reactive, computed, onMounted, nextTick, watch, watchEffect } = Vue;
 
-    createApp({
+    const __builderApp = createApp({
         setup() {
             const layout = ref([]);
             const postCardMode = ref(window.falconPostCardMode || false);
@@ -423,42 +423,7 @@
             const themeHeadingFont = @json($themeHeadingFont ?? null);
 
             // Google Fonts database (mirrors customizer list)
-            const BUILDER_FONTS = [
-                { family: 'Inter', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
-                { family: 'Roboto', category: 'Sans-serif', variants: ['100','300','400','500','700','900'] },
-                { family: 'Open Sans', category: 'Sans-serif', variants: ['300','400','500','600','700','800'] },
-                { family: 'Lato', category: 'Sans-serif', variants: ['100','300','400','700','900'] },
-                { family: 'Poppins', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
-                { family: 'Nunito', category: 'Sans-serif', variants: ['200','300','400','500','600','700','800','900'] },
-                { family: 'Montserrat', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
-                { family: 'Raleway', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
-                { family: 'Ubuntu', category: 'Sans-serif', variants: ['300','400','500','700'] },
-                { family: 'Oswald', category: 'Sans-serif', variants: ['200','300','400','500','600','700'] },
-                { family: 'Quicksand', category: 'Sans-serif', variants: ['300','400','500','600','700'] },
-                { family: 'Work Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
-                { family: 'Noto Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
-                { family: 'Rubik', category: 'Sans-serif', variants: ['300','400','500','600','700','800','900'] },
-                { family: 'DM Sans', category: 'Sans-serif', variants: ['400','500','700'] },
-                { family: 'Cairo', category: 'Sans-serif', variants: ['200','300','400','500','600','700','800','900'] },
-                { family: 'Josefin Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700'] },
-                { family: 'Public Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
-                { family: 'Fira Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
-                { family: 'Playfair Display', category: 'Serif', variants: ['400','500','600','700','800','900'] },
-                { family: 'Merriweather', category: 'Serif', variants: ['300','400','700','900'] },
-                { family: 'Lora', category: 'Serif', variants: ['400','500','600','700'] },
-                { family: 'PT Serif', category: 'Serif', variants: ['400','700'] },
-                { family: 'Libre Baskerville', category: 'Serif', variants: ['400','700'] },
-                { family: 'Crimson Text', category: 'Serif', variants: ['400','600','700'] },
-                { family: 'EB Garamond', category: 'Serif', variants: ['400','500','600','700','800'] },
-                { family: 'Fira Code', category: 'Monospace', variants: ['300','400','500','600','700'] },
-                { family: 'Source Code Pro', category: 'Monospace', variants: ['200','300','400','500','600','700','800','900'] },
-                { family: 'Roboto Mono', category: 'Monospace', variants: ['100','200','300','400','500','600','700'] },
-                { family: 'Lobster', category: 'Display', variants: ['400'] },
-                { family: 'Pacifico', category: 'Display', variants: ['400'] },
-                { family: 'Dancing Script', category: 'Display', variants: ['400','500','600','700'] },
-                { family: 'Bebas Neue', category: 'Display', variants: ['400'] },
-                { family: 'Comfortaa', category: 'Display', variants: ['300','400','500','600','700'] },
-            ];
+            const BUILDER_FONTS = @json(falcon_google_fonts());
 
             const builderFontGroups = BUILDER_FONTS.reduce((acc, font) => {
                 if (!acc[font.category]) acc[font.category] = [];
@@ -4015,5 +3980,63 @@
                 ? DOMPurify.sanitize(binding.value ?? '', { FORCE_BODY: false })
                 : (binding.value ?? '');
         }
-    }).mount('#lazy-builder-app');
+    });
+
+    // Reusable searchable font-family picker — same look as the old native select, plus a
+    // search box (like the Customizer / Slider). Used by every element's typography control.
+    __builderApp.component('font-select', {
+        props: {
+            modelValue: { default: 'inherit' },
+            fontGroups: { type: Object, required: true },
+            themeFont: { type: String, default: '' },
+        },
+        emits: ['update:modelValue', 'change'],
+        data() { return { open: false, q: '' }; },
+        computed: {
+            defaultLabel() { return this.themeFont ? 'Default (' + this.themeFont + ')' : 'Default'; },
+            label() { const v = this.modelValue; return (!v || v === 'inherit') ? this.defaultLabel : String(v).split(',')[0]; },
+            selectedFamily() { const v = this.modelValue; return (!v || v === 'inherit') ? '' : String(v).split(',')[0]; },
+            filtered() {
+                const q = (this.q || '').toLowerCase().trim(); const out = {}; let shown = 0;
+                for (const cat in this.fontGroups) {
+                    let list = this.fontGroups[cat];
+                    if (q) { list = list.filter(f => f.family.toLowerCase().indexOf(q) >= 0); }
+                    else { if (shown >= 200) continue; list = list.slice(0, 200 - shown); shown += list.length; }
+                    if (list.length) out[cat] = list;
+                }
+                return out;
+            }
+        },
+        methods: {
+            toggle() { this.open = !this.open; if (this.open) this.$nextTick(() => this.$refs.q && this.$refs.q.focus()); },
+            close() { this.open = false; this.q = ''; },
+            fbOf(f) { return f.category === 'Monospace' ? 'monospace' : (f.category === 'Serif' ? 'serif' : 'sans-serif'); },
+            pick(f) { const val = f.family + ', ' + this.fbOf(f); this.$emit('update:modelValue', val); this.$emit('change', val); this.close(); },
+            pickDefault() { this.$emit('update:modelValue', 'inherit'); this.$emit('change', 'inherit'); this.close(); }
+        },
+        template: `
+            <div class="relative">
+                <button type="button" @click="toggle" class="w-full border border-slate-300 rounded px-3 py-2 pr-7 text-[12px] focus:outline-none focus:border-[#0091ea] bg-white text-left relative truncate cursor-pointer">
+                    @{{ label }}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <template v-if="open">
+                    <div class="fixed inset-0 z-40" @click="close"></div>
+                    <div class="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg p-2">
+                        <input ref="q" v-model="q" type="text" placeholder="Search fonts…" @click.stop class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] mb-1.5 focus:outline-none focus:border-[#0091ea]">
+                        <div class="max-h-56 overflow-y-auto">
+                            <div @click="pickDefault" class="px-2 py-1.5 text-[12px] rounded cursor-pointer hover:bg-slate-100" :class="!selectedFamily ? 'bg-slate-100 font-semibold' : ''">@{{ defaultLabel }}</div>
+                            <template v-for="(list, category) in filtered" :key="category">
+                                <div class="px-2 pt-2 pb-0.5 text-[10px] font-bold text-slate-400 uppercase">@{{ category }}</div>
+                                <div v-for="f in list" :key="f.family" @click="pick(f)" class="px-2 py-1.5 text-[12px] rounded cursor-pointer hover:bg-[#0091ea] hover:text-white" :class="selectedFamily === f.family ? 'bg-[#e6f4fb] text-[#0091ea] font-medium' : ''">@{{ f.family }}</div>
+                            </template>
+                            <div v-if="Object.keys(filtered).length === 0" class="px-2 py-3 text-[12px] text-slate-400 text-center">No fonts match “@{{ q }}”.</div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        `
+    });
+
+    __builderApp.mount('#lazy-builder-app');
 </script>

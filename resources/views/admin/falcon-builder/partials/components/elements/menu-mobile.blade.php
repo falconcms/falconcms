@@ -373,13 +373,7 @@
             <div class="space-y-4">
                 <div>
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">Font Family</label>
-                    <select v-model="editingElement.settings.mobileMenuFontFamily" 
-                            class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea] bg-white">
-                        <option value="inherit">Default</option>
-                        <optgroup v-for="(fonts, category) in builderFontGroups" :label="category">
-                            <option v-for="font in fonts" :value="font.family">@{{ font.family }}</option>
-                        </optgroup>
-                    </select>
+                    <font-select v-model="editingElement.settings.mobileMenuFontFamily" @change="loadBuilderFont($event)" :font-groups="builderFontGroups" :theme-font="themeBodyFont"></font-select>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">

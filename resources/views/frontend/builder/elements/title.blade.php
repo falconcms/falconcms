@@ -185,8 +185,9 @@
         <a href="{{ $linkUrl }}" id="{{ $linkId }}" target="{{ $s['linkTarget'] ?? '_self' }}">
     @endif
 
+    {{-- Title supports inline HTML (authored in the builder) — rendered raw like WordPress headings. --}}
     <{{ $htmlTag }} class="main-title"@if($titleElemId) id="{{ $titleElemId }}"@endif style="{{ implode('; ', $titleStyles) }}">
-        {{ $titleText }}
+        {!! $titleText !!}
     </{{ $htmlTag }}>
 
     @if($useLink)

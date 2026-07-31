@@ -130,19 +130,7 @@
             <!-- Font Family -->
             <div>
                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-2">FONT FAMILY</label>
-                <select v-model="editingElement.settings.submenuFontFamily"
-                        @change="loadBuilderFont(editingElement.settings.submenuFontFamily)"
-                        class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea] bg-white">
-                    <option value="inherit">Inherit from Menu</option>
-                    <template v-for="(fonts, category) in builderFontGroups" :key="category">
-                        <optgroup :label="category">
-                            <option v-for="font in fonts" :key="font.family" 
-                                    :value="font.family + ', ' + (font.category === 'Monospace' ? 'monospace' : (font.category === 'Serif' ? 'serif' : 'sans-serif'))">
-                                @{{ font.family }}
-                            </option>
-                        </optgroup>
-                    </template>
-                </select>
+                <font-select v-model="editingElement.settings.submenuFontFamily" @change="loadBuilderFont($event)" :font-groups="builderFontGroups" :theme-font="themeBodyFont"></font-select>
             </div>
 
             <!-- Font Size, Line Height, Letter Spacing -->

@@ -5,7 +5,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.2.2 <Badge type="tip" text="Latest" /> {#v2-2-2}
+## v2.2.3 <Badge type="tip" text="Latest" /> {#v2-2-3}
+
+**Released: 2026-07-31**
+
+### Added
+- **All Google Fonts everywhere.** Typography pickers now list the full Google Fonts
+  catalogue (~1,900 families, grouped by category) instead of a short hand-picked set —
+  in the **Customizer** and in every **Falcon Builder** element. Each font shows its own
+  real weights, and fonts load on demand.
+- **Searchable font picker in the Builder.** The element font-family control is now a
+  searchable dropdown (like the Customizer), so you can type to find any font.
+- **One shared font source.** A single `falcon_google_fonts()` catalog feeds every
+  typography UI — add a font once and it appears everywhere, no per-place lists to sync.
+- **Title element supports inline HTML.** Markup typed into a Title (e.g. `<b>`, `<span
+  style>`, `<br>`) now renders on the canvas and the front-end instead of showing as text.
+
+### Changed
+- **Customizer URL simplified** — `/admin/appearance/customizer` is now `/admin/customizer`.
+
+### Fixed
+- **E-commerce is part of the free core** (carried from v2.2) — no Pro licence required.
+
+---
+
+## v2.2.2 {#v2-2-2}
 
 **Released: 2026-07-31**
 

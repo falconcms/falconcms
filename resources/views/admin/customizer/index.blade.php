@@ -912,7 +912,7 @@ function customizerApp(initialSection) {
             btn.innerHTML = '<span class="animate-spin inline-block mr-2">↻</span> Processing...';
 
             try {
-                const res = await fetch(`{{ url('admin/appearance/customizer/action') }}/${action}`, {
+                const res = await fetch(`{{ url('admin/customizer/action') }}/${action}`, {
                     method: 'POST',
                     headers: { 
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1036,82 +1036,7 @@ async function custConfirmImport() {
 }
 
 // Typography Component Logic
-const GOOGLE_FONTS = {
-    'Sans-serif': [
-        { family: 'Inter', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Roboto', variants: ['100', '300', '400', '500', '700', '900'] },
-        { family: 'Open Sans', variants: ['300', '400', '500', '600', '700', '800'] },
-        { family: 'Lato', variants: ['100', '300', '400', '700', '900'] },
-        { family: 'Poppins', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Nunito', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Montserrat', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Source Sans 3', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Raleway', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Ubuntu', variants: ['300', '400', '500', '700'] },
-        { family: 'Oswald', variants: ['200', '300', '400', '500', '600', '700'] },
-        { family: 'Quicksand', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'PT Sans', variants: ['400', '700'] },
-        { family: 'Mukta', variants: ['200', '300', '400', '500', '600', '700', '800'] },
-        { family: 'Work Sans', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Nanum Gothic', variants: ['400', '700', '800'] },
-        { family: 'Noto Sans', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Rubik', variants: ['300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Heebo', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Karla', variants: ['200', '300', '400', '500', '600', '700', '800'] },
-        { family: 'Arimo', variants: ['400', '500', '600', '700'] },
-        { family: 'Cabin', variants: ['400', '500', '600', '700'] },
-        { family: 'Libre Franklin', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Barlow', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'DM Sans', variants: ['400', '500', '700'] },
-        { family: 'Questrial', variants: ['400'] },
-        { family: 'Cairo', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Titillium Web', variants: ['200', '300', '400', '600', '700', '900'] },
-        { family: 'Hind', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'Josefin Sans', variants: ['100', '200', '300', '400', '500', '600', '700'] },
-        { family: 'Public Sans', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Signika', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'Exo 2', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Maven Pro', variants: ['400', '500', '600', '700', '800', '900'] },
-        { family: 'Assistant', variants: ['200', '300', '400', '500', '600', '700', '800'] },
-        { family: 'Oxygen', variants: ['300', '400', '700'] },
-        { family: 'Fira Sans', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] }
-    ],
-    'Serif': [
-        { family: 'Playfair Display', variants: ['400', '500', '600', '700', '800', '900'] },
-        { family: 'Merriweather', variants: ['300', '400', '700', '900'] },
-        { family: 'Lora', variants: ['400', '500', '600', '700'] },
-        { family: 'PT Serif', variants: ['400', '700'] },
-        { family: 'Libre Baskerville', variants: ['400', '700'] },
-        { family: 'Crimson Text', variants: ['400', '600', '700'] },
-        { family: 'Arvo', variants: ['400', '700'] },
-        { family: 'Bitter', variants: ['400', '700'] },
-        { family: 'EB Garamond', variants: ['400', '500', '600', '700', '800'] },
-        { family: 'Noticia Text', variants: ['400', '700'] },
-        { family: 'Old Standard TT', variants: ['400', '700'] },
-        { family: 'Cardo', variants: ['400'] }
-    ],
-    'Monospace': [
-        { family: 'Fira Code', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'Source Code Pro', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Roboto Mono', variants: ['100', '200', '300', '400', '500', '600', '700'] },
-        { family: 'Inconsolata', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Ubuntu Mono', variants: ['400', '700'] },
-        { family: 'Space Mono', variants: ['400', '700'] },
-        { family: 'VT323', variants: ['400'] }
-    ],
-    'Display': [
-        { family: 'Lobster', variants: ['400'] },
-        { family: 'Pacifico', variants: ['400'] },
-        { family: 'Dancing Script', variants: ['400', '500', '600', '700'] },
-        { family: 'Abril Fatface', variants: ['400'] },
-        { family: 'Righteous', variants: ['400'] },
-        { family: 'Comfortaa', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'Bebas Neue', variants: ['400'] },
-        { family: 'Caveat', variants: ['400', '500', '600', '700'] },
-        { family: 'Satisfy', variants: ['400'] },
-        { family: 'Patua One', variants: ['400'] }
-    ]
-};
+const GOOGLE_FONTS = @json($googleFonts);
 
 function typographyComponent(key, initialData) {
     return {

@@ -315,6 +315,40 @@ if (!function_exists('lazy_check_update')) {
     }
 }
 
+if (!function_exists('falcon_google_fonts')) {
+    /**
+     * The single shared Google-Fonts catalog for every typography UI (Customizer,
+     * Falcon Builder, …). Reads one data file so adding a font in the catalog surfaces
+     * it everywhere at once — no per-place font lists to keep in sync.
+     *
+     * @return array<int,array{family:string,category:string,variants:array<int,string>}>
+     */
+    function falcon_google_fonts(): array
+    {
+        static $flat = null;
+        if ($flat !== null) {
+            return $flat;
+        }
+        $file = __DIR__ . '/../resources/google-fonts.json';
+        $grouped = is_file($file) ? json_decode((string) file_get_contents($file), true) : [];
+        $flat = [];
+        if (is_array($grouped)) {
+            foreach ($grouped as $category => $list) {
+                foreach ((array) $list as $f) {
+                    if (!empty($f['family'])) {
+                        $flat[] = [
+                            'family'   => $f['family'],
+                            'category' => $category,
+                            'variants' => $f['variants'] ?? ['400'],
+                        ];
+                    }
+                }
+            }
+        }
+        return $flat;
+    }
+}
+
 if (!function_exists('falcon_pro_installed_version')) {
     /** The installed falconcms/pro package version, or null when Pro isn't installed. */
     function falcon_pro_installed_version(): ?string

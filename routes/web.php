@@ -356,12 +356,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('/widgets/order', [WidgetController::class, 'updateOrder'])->name('widgets.update-order');
 
     // Customizer (Appearance > Customizer)
-    Route::get('/appearance/customizer', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'index'])->name('customizer.index');
-    Route::post('/appearance/customizer', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'save'])->name('customizer.save');
-    Route::post('/appearance/customizer/reset', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'resetSection'])->name('customizer.reset');
-    Route::get('/appearance/customizer/export', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'export'])->name('customizer.export');
-    Route::post('/appearance/customizer/import', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'import'])->name('customizer.import');
-    Route::post('/appearance/customizer/action/{action}', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'runAction'])->name('customizer.action');
+    Route::get('/customizer', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'index'])->name('customizer.index');
+    Route::post('/customizer', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'save'])->name('customizer.save');
+    Route::post('/customizer/reset', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'resetSection'])->name('customizer.reset');
+    Route::get('/customizer/export', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'export'])->name('customizer.export');
+    Route::post('/customizer/import', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'import'])->name('customizer.import');
+    Route::post('/customizer/action/{action}', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'runAction'])->name('customizer.action');
 
     // Themes
     Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');

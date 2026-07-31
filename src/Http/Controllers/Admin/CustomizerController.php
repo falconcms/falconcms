@@ -882,7 +882,17 @@ class CustomizerController extends \Illuminate\Routing\Controller
         $builderHeaderActive = function_exists('get_falcon_header') ? (bool) get_falcon_header() : false;
         $builderFooterActive = function_exists('get_falcon_footer') ? (bool) get_falcon_footer() : false;
 
-        return view('falcon-cms::admin.customizer.index', compact('section', 'sections', 'settings', 'builderHeaderActive', 'builderFooterActive'));
+        // Typography picker fonts — grouped by category from the single shared catalog
+        // (falcon_google_fonts()), so the Customizer and the Builder always show the same list.
+        $googleFonts = [];
+        foreach (falcon_google_fonts() as $f) {
+            $googleFonts[$f['category']][] = ['family' => $f['family'], 'variants' => $f['variants']];
+        }
+        if (!$googleFonts) {
+            $googleFonts = ['Sans-serif' => [['family' => 'Inter', 'variants' => ['400', '700']]]];
+        }
+
+        return view('falcon-cms::admin.customizer.index', compact('section', 'sections', 'settings', 'builderHeaderActive', 'builderFooterActive', 'googleFonts'));
     }
 
     public function save(Request $request)
