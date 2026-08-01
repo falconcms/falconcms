@@ -253,9 +253,12 @@ class DashboardController extends Controller
         $update = lazy_check_update(force: true);
         // Pro update status (private package → checked via a public version manifest).
         $proUpdate = function_exists('falcon_pro_check_update') ? falcon_pro_check_update(true) : ['installed_pro' => false];
-        $proLicensed = false;
-        try { $proLicensed = app(\FalconCms\Core\Pro\LicenseGateway::class)->licensed(); } catch (\Throwable $e) {}
-        return view('falcon-cms::admin.update', compact('update', 'proUpdate', 'proLicensed'));
+        // Features are perpetual; the Pro UPDATE button is gated by the licence's update
+        // window. $proExpired distinguishes "licensed but out-of-updates" (renew for updates,
+        // features still active) from "not licensed at all".
+        $proCanUpdate = function_exists('falcon_pro_updates_allowed') ? falcon_pro_updates_allowed() : false;
+        $proExpired   = function_exists('falcon_pro_expired') ? falcon_pro_expired() : false;
+        return view('falcon-cms::admin.update', compact('update', 'proUpdate', 'proCanUpdate', 'proExpired'));
     }
 
     public function runUpdate()
@@ -352,14 +355,28 @@ class DashboardController extends Controller
         $steps = [];
         $hasError = false;
 
-        // Gate: a valid, active Pro licence (real licence, not the freemium grace window).
-        $licensed = false;
-        try { $licensed = app(\FalconCms\Core\Pro\LicenseGateway::class)->licensed(); } catch (\Throwable $e) {}
+        // Gate the UPDATE (not the features): Pro features are perpetual, but pulling new
+        // releases needs a licence whose update window is still open. Distinguish "not
+        // licensed" from "licensed but out of updates" (features stay active — renew for updates).
+        $gw = null;
+        try { $gw = app(\FalconCms\Core\Pro\LicenseGateway::class); } catch (\Throwable $e) {}
+        $licensed  = $gw && $gw->licensed();
+        $canUpdate = $gw && (method_exists($gw, 'updatesAllowed') ? $gw->updatesAllowed() : $gw->licensed());
+
         if (! $licensed) {
             return redirect()->route('admin.update')
                 ->with('update_steps', [[
                     'label'  => 'Licence check',
-                    'output' => 'A valid, active FalconCMS Pro subscription is required to update Pro. Please renew your licence on the License page, then try again.',
+                    'output' => 'A valid FalconCMS Pro licence is required to update Pro. Please activate your licence on the License page, then try again.',
+                    'ok'     => false,
+                ]])
+                ->with('update_had_error', true);
+        }
+        if (! $canUpdate) {
+            return redirect()->route('admin.update')
+                ->with('update_steps', [[
+                    'label'  => 'Licence check',
+                    'output' => "Your Pro licence's update window has ended. Your Pro features stay fully active — but to download new releases, please renew your licence on the License page, then try again.",
                     'ok'     => false,
                 ]])
                 ->with('update_had_error', true);

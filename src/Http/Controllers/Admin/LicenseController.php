@@ -27,6 +27,10 @@ class LicenseController extends Controller
             'licensed'    => $gateway->licensed(),
             'plan'        => $gateway->plan(),
             'features'    => $gateway->features(),
+            // Features are perpetual; expiry only ends the update window. Surface it so the
+            // page reads "active — renew for updates" rather than looking locked out.
+            'expired'     => function_exists('falcon_pro_expired') ? falcon_pro_expired() : false,
+            'expiresAt'   => method_exists($gateway, 'expiresAt') ? $gateway->expiresAt() : null,
             'proInstalled'=> $this->proInstalled(),
             'maskedKey'   => $this->maskKey((string) get_cms_option('falcon_license_key', '')),
             'hasKey'      => (string) get_cms_option('falcon_license_key', '') !== '',

@@ -181,8 +181,8 @@
                     </div>
 
                     @if($proUpdate['has_update'])
-                        @if(!empty($proLicensed))
-                        {{-- Licensed → allow the Pro update --}}
+                        @if(!empty($proCanUpdate))
+                        {{-- Licence in its update window → allow the Pro update --}}
                         <div class="bg-[#eef4fb] border border-[#2271b1]/30 rounded p-3 mb-4 flex items-start gap-3">
                             <span class="material-symbols-outlined text-[#2271b1] text-[20px] mt-0.5 flex-shrink-0">info</span>
                             <div class="text-[13px] text-[#1d2327]">
@@ -198,15 +198,27 @@
                                 Update Pro Now
                             </button>
                         </form>
-                        @else
-                        {{-- Update exists but no valid licence → prompt renewal, block the update --}}
+                        @elseif(!empty($proExpired))
+                        {{-- Licensed but out of updates → features stay active; renew for updates --}}
                         <div class="bg-[#fcf0d5] border border-[#dba617] rounded p-4 flex items-start gap-3">
                             <span class="material-symbols-outlined text-[#dba617] text-[22px] mt-0.5 flex-shrink-0">lock_clock</span>
                             <div>
-                                <p class="text-[13px] font-semibold text-[#1d2327] mb-1">Your Pro subscription isn't active</p>
+                                <p class="text-[13px] font-semibold text-[#1d2327] mb-1">Your update window has ended</p>
                                 <p class="text-[13px] text-[#646970]">
-                                    Pro <strong>v{{ $proUpdate['latest'] }}</strong> is available, but updating Pro needs a valid, in-date subscription.
-                                    <a href="{{ route('admin.license.index') }}" class="text-[#2271b1] underline font-medium">Renew or activate your licence</a>, then update.
+                                    Pro <strong>v{{ $proUpdate['latest'] }}</strong> is available. Your Pro features stay fully active — renewing only restores access to new updates.
+                                    <a href="{{ route('admin.license.index') }}" class="text-[#2271b1] underline font-medium">Renew your licence</a>, then update.
+                                </p>
+                            </div>
+                        </div>
+                        @else
+                        {{-- Update exists but no valid licence → prompt activation, block the update --}}
+                        <div class="bg-[#fcf0d5] border border-[#dba617] rounded p-4 flex items-start gap-3">
+                            <span class="material-symbols-outlined text-[#dba617] text-[22px] mt-0.5 flex-shrink-0">lock_clock</span>
+                            <div>
+                                <p class="text-[13px] font-semibold text-[#1d2327] mb-1">Your Pro licence isn't active</p>
+                                <p class="text-[13px] text-[#646970]">
+                                    Pro <strong>v{{ $proUpdate['latest'] }}</strong> is available, but updating Pro needs a valid licence.
+                                    <a href="{{ route('admin.license.index') }}" class="text-[#2271b1] underline font-medium">Activate your licence</a>, then update.
                                 </p>
                             </div>
                         </div>

@@ -40,6 +40,14 @@
                         <span class="px-2 py-0.5 rounded bg-white border border-[#cfe8cf] text-[11.5px] text-[#2c5a2c]">{{ $featureLabels[$f] ?? ucwords(str_replace('_', ' ', $f)) }}</span>
                     @endforeach
                 </div>
+                @if(!empty($expired))
+                <div class="mt-3 pt-3 border-t border-[#cfe8cf] flex items-start gap-2">
+                    <span class="material-symbols-outlined text-[#c98a1a]" style="font-size:18px">lock_clock</span>
+                    <p class="text-[12px] text-[#7a663a]"><strong>Update window ended.</strong> All Pro features stay active on this site — renew your license to receive new updates again.</p>
+                </div>
+                @elseif(!empty($expiresAt))
+                <p class="mt-3 pt-3 border-t border-[#cfe8cf] text-[12px] text-[#3a6a3a]">Updates included until <strong>{{ \Illuminate\Support\Carbon::parse($expiresAt)->format('M j, Y') }}</strong>.</p>
+                @endif
             </div>
         @elseif($hasKey)
             <div class="rounded-lg border {{ $proInstalled ? 'border-[#e6a3a3] bg-[#fdf0f0]' : 'border-[#f0c47a] bg-[#fdf6e9]' }} p-5 mb-6">

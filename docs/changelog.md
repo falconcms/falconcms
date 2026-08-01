@@ -5,7 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.2.5 <Badge type="tip" text="Latest" /> {#v2-2-5}
+## v2.2.6 <Badge type="tip" text="Latest" /> {#v2-2-6}
+
+**Released: 2026-08-01**
+
+### Changed
+- **Pro is a one-time, perpetual license.** Paid Pro **features never expire** — a purchase is
+  owned forever. A license's expiry now only limits **updates**: when the update window ends,
+  the site keeps every Pro feature and simply needs a renewal to pull newer Pro releases.
+  Refunded/disabled licenses still revoke access. The **free core (including e-commerce) stays
+  free for everyone, always** — licensing never touches it.
+- The **License** and **Updates** pages now show "Update window ended — features stay active,
+  renew for updates" instead of looking locked out, and the Pro update button is gated by the
+  update window rather than by raw license validity.
+
+---
+
+## v2.2.5 {#v2-2-5}
 
 **Released: 2026-07-31**
 

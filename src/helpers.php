@@ -4491,6 +4491,44 @@ if (!function_exists('falcon_licensed')) {
     }
 }
 
+if (!function_exists('falcon_pro_updates_allowed')) {
+    /**
+     * Whether Pro UPDATES may be fetched right now. Pro FEATURES are perpetual — a one-time
+     * purchase is owned forever (see falcon_pro()) — but new releases are limited to the
+     * licence's update window; once it lapses the site keeps every feature and must renew to
+     * pull newer versions. Falls back to licensed() for older Pro gateways that predate the
+     * update-window methods, and is never relevant to the free core (its updates are ungated).
+     */
+    function falcon_pro_updates_allowed(): bool
+    {
+        try {
+            $gw = app(\FalconCms\Core\Pro\LicenseGateway::class);
+            if (method_exists($gw, 'updatesAllowed')) {
+                return (bool) $gw->updatesAllowed();
+            }
+            return $gw->licensed();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('falcon_pro_expired')) {
+    /**
+     * Whether the site has a licensed-but-expired Pro plan — features still work, only the
+     * update window has ended. Used to show a "renew for updates" notice (not a lockout).
+     */
+    function falcon_pro_expired(): bool
+    {
+        try {
+            $gw = app(\FalconCms\Core\Pro\LicenseGateway::class);
+            return $gw->licensed() && method_exists($gw, 'expired') && (bool) $gw->expired();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+}
+
 if (!function_exists('falcon_pro')) {
     /**
      * Whether a FalconCMS Pro feature is available. Core uses this to gate paid
