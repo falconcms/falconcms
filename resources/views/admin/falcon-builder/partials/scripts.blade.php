@@ -19,6 +19,13 @@
 </style>
 
 <script>
+    // Editing/adding Pro elements needs real Pro (licensed or grace) — NOT grandfather.
+    // Grandfathered pro elements still render on the frontend, but become read-only here.
+    // Defined in this shared partial (not in the host page) so every builder screen that
+    // includes it — page/section builder, post-card builder, mega-menu builder — gets the
+    // same answer: a host page that forgot to set it read as "locked" on a licensed site.
+    window.falconBuilderPro = @json(falcon_pro_editable('builder_pro'));
+
     const { createApp, ref, reactive, computed, onMounted, nextTick, watch, watchEffect } = Vue;
 
     const __builderApp = createApp({

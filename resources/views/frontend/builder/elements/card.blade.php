@@ -221,8 +221,6 @@
         $gCss .= "@media(min-width:{$bpSm1}px) and (max-width:{$bpMed}px){#{$gridId}>*{flex:0 0 {$cwT};width:{$cwT}}}";
         $gCss .= "@media(max-width:{$bpSm}px){#{$gridId}>*{flex:0 0 {$cwM};width:{$cwM}}}";
         $gCss .= "#{$gridId} img{-webkit-user-drag:none}";
-        // The card grid is itself a flex item in its column — let it shrink to the column width.
-        $gCss .= ".lazy-card-grid{min-width:0;max-width:100%}";
         // Equal Height: make the whole card chain fill the stretched slide height.
         // The builder card-inner uses flex-wrap + align-content:flex-start (packs to top), so we
         // override align-content:stretch (high specificity via the #id) to let the column stretch.
@@ -264,6 +262,13 @@
         }
     }
     $gCss .= "#{$gridId} .container-custom{padding-left:0!important;padding-right:0!important}";
+    // Span the full column, like every other layout block — and like the builder canvas, which
+    // wraps this same markup in a w-full div. A column's inner is a column-direction flex box
+    // whose default align-items is flex-start, so without this the card element is sized to
+    // fit-content: the cards collapse to their text width and the row leaves dead space on the
+    // right. It only looked correct when the card content happened to be wider than the column.
+    // align-self (not width:100%) so side margins on the element still stay inside the column.
+    $gCss .= ".lazy-card-grid{align-self:stretch;min-width:0;max-width:100%}";
 @endphp
 <style>
 {!! $gCss !!}

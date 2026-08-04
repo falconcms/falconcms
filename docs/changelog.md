@@ -5,7 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.2.6 <Badge type="tip" text="Latest" /> {#v2-2-6}
+## v2.2.7 <Badge type="tip" text="Latest" /> {#v2-2-7}
+
+**Released: 2026-08-04**
+
+### Fixed
+- **Pro builder options no longer show as locked on a licensed site.** The builder's Pro-edit
+  flag was set only by the page/section builder screen, so the **Post Card builder** and
+  **Mega Menu builder** — which share the same builder scripts — read it as missing and locked
+  every Pro element (accordion, tabs, counter, gallery, ticker, breadcrumb, star rating, HTML,
+  card, icon box, icon list, menu, advanced search), dynamic content and global sections even
+  with a valid license. The flag now lives in the shared builder partial, so every builder
+  screen answers from the license.
+- **Card element now fills its column on the front-end.** A column's inner box is a
+  column-direction flex container whose default content alignment is `flex-start`, so the card
+  element was sized to fit-content: the cards collapsed to their text width and the row left
+  dead space on the right — while the builder canvas (which wraps the same markup in a
+  full-width div) looked correct. The card element now stretches to the column like every
+  other layout block, for grid, list, masonry and carousel alike.
+
+---
+
+## v2.2.6 {#v2-2-6}
 
 **Released: 2026-08-01**
 
