@@ -48,6 +48,21 @@
     $titleLetterSpacing = $s['titleLetterSpacing'] ?? '0px';
     $titleTransform     = $s['titleTextTransform'] ?? 'none';
 
+    // Read More gets its own typography, like the title and description. Every value falls
+    // back to what the link used before these controls existed, so saved icon boxes are
+    // pixel-identical until the new fields are touched.
+    $moreFontFamily    = $s['readMoreFontFamily'] ?? 'inherit';
+    $moreSize          = getUnitVal($s['readMoreFontSize'] ?? 13, $s['readMoreFontSizeUnit'] ?? 'px');
+    $moreWeight        = $s['readMoreFontWeight'] ?? '600';
+    $moreLH            = $s['readMoreLineHeight'] ?? 1.4;
+    $moreLetterSpacing = $s['readMoreLetterSpacing'] ?? '0px';
+    $moreTransform     = $s['readMoreTextTransform'] ?? 'none';
+    // Distance from the description above; 0 is a real value, so only an unset key defaults.
+    $moreGap           = (isset($s['readMoreSpacing'])  && $s['readMoreSpacing']  !== '' ? (int) $s['readMoreSpacing']  : 12) . 'px';
+    $moreArrowGap      = (isset($s['readMoreArrowGap']) && $s['readMoreArrowGap'] !== '' ? (int) $s['readMoreArrowGap'] : 6) . 'px';
+    $moreArrow         = ($s['readMoreArrow'] ?? true) !== false;
+    $moreHoverColor    = $s['readMoreHoverColor'] ?? '';
+
     $descFontFamily    = $s['descFontFamily'] ?? 'inherit';
     $descSize          = getUnitVal($s['descFontSize'] ?? 14, $s['descFontSizeUnit'] ?? 'px');
     $descWeight        = $s['descFontWeight'] ?? '400';
@@ -98,18 +113,28 @@
         if ($desc === '') return '';
         return '<p class="lazy-icon-box__desc" style="' . $extra . $descStyle . '">' . e($desc) . '</p>';
     };
-    $renderMore = function ($extra = '') use ($readMoreText, $readMoreUrl, $readMoreColor) {
+    $moreStyle = "font-family:{$moreFontFamily};font-size:{$moreSize};font-weight:{$moreWeight};color:{$readMoreColor};"
+               . "line-height:{$moreLH};letter-spacing:{$moreLetterSpacing};text-transform:{$moreTransform};"
+               . "text-decoration:none;display:inline-flex;align-items:center;gap:{$moreArrowGap};margin-top:{$moreGap};";
+    $renderMore = function ($extra = '') use ($readMoreText, $readMoreUrl, $moreStyle, $moreArrow, $elemId) {
         if ($readMoreText === '') return '';
-        $st = $extra . 'font-weight:600;color:' . $readMoreColor . ';text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-top:12px;';
-        if ($readMoreUrl !== '') return '<a href="' . e($readMoreUrl) . '" class="lazy-icon-box__more" style="' . $st . '">' . e($readMoreText) . ' <span aria-hidden="true">&rarr;</span></a>';
-        return '<span class="lazy-icon-box__more" style="' . $st . '">' . e($readMoreText) . '</span>';
+        $st    = $extra . $moreStyle;
+        $arrow = $moreArrow ? ' <span aria-hidden="true">&rarr;</span>' : '';
+        if ($readMoreUrl !== '') {
+            return '<a href="' . e($readMoreUrl) . '" class="lazy-icon-box__more" style="' . $st . '">' . e($readMoreText) . $arrow . '</a>';
+        }
+        return '<span class="lazy-icon-box__more" style="' . $st . '">' . e($readMoreText) . $arrow . '</span>';
     };
+    // Hover colour needs a rule (inline styles can't carry :hover), scoped to this element.
+    $moreHoverCss = ($moreHoverColor !== '' && $readMoreText !== '')
+        ? '#' . $elemId . ' .lazy-icon-box__more:hover{color:' . $moreHoverColor . ' !important;}'
+        : '';
 
     // Whole-box link wrapper (link mode = box)
     $innerTag   = $linkBox ? 'a' : 'div';
     $innerAttrs = $linkBox ? ' href="' . e($linkUrl) . '" target="' . e($linkTarget) . '"' : '';
 @endphp
-@if($respCss){!! '<style>' . $respCss . '</style>' !!}@endif
+@if($respCss || $moreHoverCss){!! '<style>' . $respCss . $moreHoverCss . '</style>' !!}@endif
 
 @if($layout === 'top')
 <div id="{{ $elemId }}"

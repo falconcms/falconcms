@@ -25,7 +25,7 @@
     $alt      = $s['alt']        ?? '';
     $linkDynamic = $s['link_dynamic_source'] ?? '';
     $linkUrl = $linkDynamic
-        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
+        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null, falcon_dynamic_config($s, 'link')) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
         : ($s['linkUrl'] ?? '');
     $target   = $s['linkTarget'] ?? '_self';
     $hoverType  = $s['hoverType'] ?? 'none';

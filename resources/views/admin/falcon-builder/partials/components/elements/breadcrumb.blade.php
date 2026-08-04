@@ -1,6 +1,6 @@
 <div v-if="el.type === 'breadcrumb'"
      class="element-breadcrumb-wrapper"
-     :class="[el.settings.cssClass || '']"
+     :class="['lzbc-' + el.id, el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"
      :style="[
         {
@@ -20,6 +20,11 @@
         },
         getCanvasVisibilityStyle(el.settings)
      ]">
+    {{-- Live hover preview: the front-end emits `#id a:hover{color:…}`, which an inline
+         style can't express — so the canvas needs the same scoped rule or Link Hover Color
+         reads as a setting that does nothing. --}}
+    <component :is="'style'" v-if="el.settings.linkHoverColor"
+               v-text="'.lzbc-' + el.id + ' .lzbc-link:hover{color:' + el.settings.linkHoverColor + ' !important;cursor:pointer;}'"></component>
     <nav class="element-breadcrumb"
          :style="{
             fontFamily: el.settings.fontFamily || 'inherit',
@@ -39,10 +44,10 @@
             justifyContent: el.settings.textAlign === 'right' ? 'flex-end' : (el.settings.textAlign === 'center' ? 'center' : 'flex-start')
          }">
         <template v-if="el.settings.showHome !== false">
-            <span :style="{ color: el.settings.linkColor || el.settings.color || '#6b7280' }">@{{ el.settings.homeLabel || 'Home' }}</span>
+            <span class="lzbc-link" :style="{ color: el.settings.linkColor || el.settings.color || '#6b7280' }">@{{ el.settings.homeLabel || 'Home' }}</span>
             <span :style="{ color: el.settings.separatorColor || '#9ca3af' }">@{{ el.settings.separator || '/' }}</span>
         </template>
-        <span :style="{ color: el.settings.linkColor || el.settings.color || '#6b7280' }">Sample Category</span>
+        <span class="lzbc-link" :style="{ color: el.settings.linkColor || el.settings.color || '#6b7280' }">Sample Category</span>
         <span :style="{ color: el.settings.separatorColor || '#9ca3af' }">@{{ el.settings.separator || '/' }}</span>
         <span v-if="el.settings.showCurrent !== false"
               :style="{ color: el.settings.currentColor || '#111827', fontWeight: '500' }">Current Page</span>

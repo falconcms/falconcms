@@ -66,33 +66,9 @@
         @php $builderPostCards = json_decode(get_cms_option('falcon_post_cards','[]'),true) ?: []; @endphp
         window.falconPostCards = {!! json_encode($builderPostCards) !!};
         window.falconPostCardMode = true;
-        @php
-            $__pcTaxonomies   = [
-                ['slug' => 'category', 'name' => 'Category', 'type' => 'built_in'],
-                ['slug' => 'tag',      'name' => 'Tag',      'type' => 'built_in'],
-            ];
-            $__pcTaxTerms   = [];
-            $__pcCustomTaxos = collect();
-            $__pcCptTaxonomies = ['post' => ['category', 'tag'], 'page' => [], 'product' => []];
-            try {
-                $__pcTaxTerms['category'] = \FalconCms\Core\Models\Category::select('id','name','slug')->orderBy('name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug])->values()->toArray();
-                $__pcTaxTerms['tag']      = \FalconCms\Core\Models\Tag::select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
-                $__pcCustomTaxos = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->get();
-                foreach ($__pcCustomTaxos as $__pct) {
-                    $__pcTaxonomies[] = ['slug' => $__pct->slug, 'name' => $__pct->name, 'type' => 'custom'];
-                    $__pcTaxTerms[$__pct->slug] = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $__pct->slug)->select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
-                    foreach (($__pct->post_types ?? []) as $__ptSlug) {
-                        if (!isset($__pcCptTaxonomies[$__ptSlug])) $__pcCptTaxonomies[$__ptSlug] = [];
-                        if (!in_array($__pct->slug, $__pcCptTaxonomies[$__ptSlug])) $__pcCptTaxonomies[$__ptSlug][] = $__pct->slug;
-                    }
-                }
-            } catch (\Exception $e) { /* built-ins already set */ }
-        @endphp
-        window.falconTaxonomies    = {!! json_encode($__pcTaxonomies) !!};
-        window.falconTaxonomyTerms = {!! json_encode($__pcTaxTerms) !!};
-        window.falconCptTaxonomies = {!! json_encode($__pcCptTaxonomies) !!};
-        window.falconCptList       = [];
-    </script>
+        </script>
+
+    @include('falcon-cms::admin.falcon-builder.partials.builder-data')
 
     @include('falcon-cms::admin.falcon-builder.partials.styles')
 </head>

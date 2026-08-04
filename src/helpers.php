@@ -315,6 +315,156 @@ if (!function_exists('lazy_check_update')) {
     }
 }
 
+if (!function_exists('falcon_icon_sets')) {
+    /**
+     * The icon libraries the builder can pick from, beyond Font Awesome.
+     *
+     * Every set here is CLASS-BASED (`<i class="bi bi-house">`), which is why they need no
+     * changes in any renderer — the existing icon markup already emits whatever class string
+     * was picked, in the builder canvas and on the front-end alike.
+     *
+     * Weight is handled at both ends: the builder fetches a set's icon list and stylesheet only
+     * when its tab is opened, and a page loads a set's stylesheet only when that page actually
+     * uses one of its icons (see falcon_icon_set_links()).
+     *
+     * @return array<string,array{label:string,class:string,base:string,asset:string}>
+     */
+    function falcon_icon_sets(): array
+    {
+        // `class` is the regex for the set's icon classes — Boxicons ships three families
+        // (bx-, bxs-, bxl-), the others one. `base` is the extra class the set needs alongside.
+        return [
+            'bootstrap' => ['label' => 'Bootstrap', 'class' => 'bi-',      'base' => 'bi', 'asset' => 'css/bootstrap-icons.min.css'],
+            'remix'     => ['label' => 'Remix',     'class' => 'ri-',      'base' => '',   'asset' => 'css/remixicon.min.css'],
+            'boxicons'  => ['label' => 'Boxicons',  'class' => 'bx[sl]?-', 'base' => 'bx', 'asset' => 'css/boxicons.min.css'],
+            // Lucide's own font claims every `icon-*` class with !important, which would hijack
+            // unrelated theme classes — the bundled copy is renamespaced to `lui-` for that reason.
+            'lucide'    => ['label' => 'Lucide',    'class' => 'lui-',      'base' => '',   'asset' => 'css/lucide.min.css'],
+        ];
+    }
+}
+
+if (!function_exists('falcon_icon_set_names')) {
+    /**
+     * Every icon class in one set, read from its bundled stylesheet.
+     *
+     * Deriving the list from the CSS that will actually render the icon means the picker can
+     * never offer something the shipped font can't draw, and upgrading a set's assets updates
+     * the picker with no code change. The parse is cached, since it is the same for every user.
+     *
+     * @return array<int,string> full class strings, e.g. "bi bi-house" / "ri-home-line"
+     */
+    function falcon_icon_set_names(string $set): array
+    {
+        $def = falcon_icon_sets()[$set] ?? null;
+        if (!$def) {
+            return [];
+        }
+
+        $file = __DIR__ . '/../public/' . ltrim(str_replace('css/', 'assets/css/', $def['asset']), '/');
+        if (!is_file($file)) {
+            return [];
+        }
+
+        $key = 'falcon_icons_' . $set . '_' . (int) @filemtime($file);
+        $get = function () use ($file, $def) {
+            $css = (string) @file_get_contents($file);
+            if ($css === '') return [];
+            // Icon rules look like `.bi-house::before{content:"\f425"}`; the prefix keeps us off
+            // the set's utility classes (sizing, spin, rotation…).
+            preg_match_all('/\.(' . $def['class'] . '[a-z0-9-]+)\s*:{1,2}before\s*\{/i', $css, $m);
+            $names = array_values(array_unique($m[1]));
+            sort($names);
+            // Sets differ: Bootstrap and Boxicons need their base class alongside the icon class,
+            // Remix carries everything on the one class.
+            $base = $def['base'] !== '' ? $def['base'] . ' ' : '';
+            return array_map(fn ($n) => $base . $n, $names);
+        };
+
+        try {
+            return \Illuminate\Support\Facades\Cache::remember($key, 86400, $get);
+        } catch (\Throwable $e) {
+            return $get();
+        }
+    }
+}
+
+if (!function_exists('falcon_icon_set_links')) {
+    /**
+     * Stylesheet URLs for the icon sets a chunk of rendered HTML actually uses.
+     *
+     * This is what keeps the extra libraries free: a page that uses no Bootstrap icon never
+     * downloads the Bootstrap icon CSS or its font. Font Awesome is deliberately not in here —
+     * the themes use it in their own markup, so it stays loaded site-wide.
+     *
+     * @return array<int,string>
+     */
+    function falcon_icon_set_links(string $html): array
+    {
+        $links = [];
+        foreach (falcon_icon_sets() as $def) {
+            // Match the icon class itself (bi-house, ri-home-line, bxs-star) rather than the base
+            // class, so an unrelated word in the markup can't pull a whole font in.
+            // The lookbehind keeps the match on a whole class token: without it an unrelated
+            // word like "big-box" would pull a whole icon font onto the page.
+            if (preg_match('/class="[^"]*(?<![a-z0-9-])' . $def['class'] . '[a-z0-9-]+/i', $html)) {
+                $links[] = asset('vendor/falcon-cms/' . $def['asset']);
+            }
+        }
+
+        return $links;
+    }
+}
+
+if (!function_exists('falcon_fontawesome_aliases')) {
+    /**
+     * Alternate names for the bundled Font Awesome icons, keyed by icon name.
+     *
+     * Font Awesome keeps every old name working as an alias of the current one — the CSS
+     * groups them on one rule (`.fa-ambulance,.fa-truck-medical{--fa:"\f0f9"}`). The picker
+     * only ever listed the current names, so searching for a name you remember ("ambulance",
+     * "trash-alt", "car") found nothing even though the icon is right there. Each icon now
+     * carries its whole name group as search keywords.
+     *
+     * Read from the shipped stylesheet, so upgrading the Font Awesome assets updates this
+     * automatically and it can never claim a name the bundled fonts can't render.
+     *
+     * @return array<string,string> icon name → its other names, space separated
+     */
+    function falcon_fontawesome_aliases(): array
+    {
+        static $map = null;
+        if ($map !== null) {
+            return $map;
+        }
+
+        $map  = [];
+        $file = __DIR__ . '/../public/assets/css/font-awesome.all.min.css';
+        $css  = is_file($file) ? (string) @file_get_contents($file) : '';
+        if ($css === '') {
+            return $map;
+        }
+
+        // Only multi-name rules matter; a lone name is already searchable as itself.
+        if (preg_match_all('/((?:\.fa-[a-z0-9-]+,)+\.fa-[a-z0-9-]+)\{--fa:/i', $css, $m)) {
+            foreach ($m[1] as $group) {
+                $names = [];
+                foreach (explode(',', $group) as $sel) {
+                    $n = preg_replace('/^fa-/', '', ltrim(trim($sel), '.'));
+                    if ($n !== '') $names[] = $n;
+                }
+                if (count($names) < 2) continue;
+                foreach ($names as $n) {
+                    $others = array_values(array_diff($names, [$n]));
+                    if ($others) $map[$n] = implode(' ', $others);
+                }
+            }
+        }
+
+        return $map;
+    }
+}
+
 if (!function_exists('falcon_google_fonts')) {
     /**
      * The single shared Google-Fonts catalog for every typography UI (Customizer,
@@ -2310,6 +2460,117 @@ if (!function_exists('falcon_normalize_custom_fields')) {
     }
 }
 
+if (!function_exists('falcon_dynamic_config')) {
+    /**
+     * Build the $config for falcon_resolve_dynamic_value() out of an element's settings.
+     *
+     * An element can carry a text source AND a link source at once, so the two contexts read
+     * separate setting keys — otherwise the link's fallback would double as the text's.
+     */
+    function falcon_dynamic_config(array $s, string $ctx = 'text'): array
+    {
+        if ($ctx === 'link') {
+            return [
+                'link_tax_post_type' => $s['dynamic_link_tax_post_type'] ?? '',
+                'link_tax_slug'      => $s['dynamic_link_tax_slug']      ?? '',
+                'link_tax_which'     => $s['dynamic_link_tax_which']     ?? 'first',
+                'fallback'           => $s['dynamic_link_tax_fallback']  ?? '',
+            ];
+        }
+
+        return [
+            'date_type'      => $s['dynamic_date_type']   ?? 'published',
+            'date_format'    => $s['dynamic_date_format'] ?? '',
+            'before'         => $s['dynamic_before']      ?? '',
+            'after'          => $s['dynamic_after']       ?? '',
+            'fallback'       => $s['dynamic_fallback']    ?? '',
+            'excerpt_length' => (int) ($s['dynamic_excerpt_length'] ?? 150),
+            'acpt_slug'      => $s['dynamic_acpt_slug']   ?? '',
+            'tax_post_type'  => $s['dynamic_tax_post_type'] ?? '',
+            'tax_slug'       => $s['dynamic_tax_slug']      ?? '',
+            'tax_separator'  => $s['dynamic_tax_separator'] ?? '',
+            'tax_limit'      => (int) ($s['dynamic_tax_limit'] ?? 0),
+        ];
+    }
+}
+
+if (!function_exists('falcon_post_terms')) {
+    /**
+     * Terms a post holds in one taxonomy, by taxonomy slug.
+     *
+     * Built-in taxonomies live in their own tables reached through an Eloquent relation;
+     * custom (ACPT) ones live in taxonomy_terms. Slugs are accepted in any of the spellings
+     * the builder may have saved (singular/plural, dash/underscore) — the same leniency the
+     * Post Meta element applies, kept here so every consumer resolves terms identically.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    function falcon_post_terms($post, string $taxonomySlug)
+    {
+        if (!$post || $taxonomySlug === '') return collect();
+
+        $relations = [
+            'category'           => 'categories',  'categories'         => 'categories',
+            'tag'                => 'tags',        'tags'               => 'tags',
+            'product-category'   => 'productCategories', 'product_category'   => 'productCategories',
+            'product-categories' => 'productCategories', 'product_categories' => 'productCategories',
+            'product-tag'        => 'productTags', 'product_tag'        => 'productTags',
+            'product-tags'       => 'productTags', 'product_tags'       => 'productTags',
+        ];
+
+        $candidates = array_unique(array_filter([
+            $relations[$taxonomySlug] ?? null,
+            \Illuminate\Support\Str::camel(str_replace(['-', '.'], '_', $taxonomySlug)),
+        ]));
+        foreach ($candidates as $rel) {
+            if (!method_exists($post, $rel)) continue;
+            try {
+                $r = $post->{$rel};
+                if ($r instanceof \Illuminate\Support\Collection) return $r;
+            } catch (\Throwable $e) {}
+        }
+
+        if (method_exists($post, 'taxonomyTerms')) {
+            try {
+                $variants = array_unique([
+                    $taxonomySlug,
+                    str_replace('-', '_', $taxonomySlug),
+                    str_replace('_', '-', $taxonomySlug),
+                ]);
+                return $post->taxonomyTerms()->whereIn('taxonomy_slug', $variants)->get();
+            } catch (\Throwable $e) {}
+        }
+
+        return collect();
+    }
+}
+
+if (!function_exists('falcon_term_archive_url')) {
+    /**
+     * Public archive URL for a term. Custom taxonomies have no route of their own — the
+     * /category/{slug} and /product-category/{slug} archives fall back to a taxonomy_terms
+     * lookup — so a custom taxonomy is routed through the prefix matching its post type.
+     */
+    function falcon_term_archive_url($term, string $taxonomySlug, string $postType = 'post'): string
+    {
+        $slug = is_object($term) ? ($term->slug ?? '') : (string) $term;
+        if ($slug === '') return '';
+
+        $prefixes = [
+            'category'           => 'category',        'categories'         => 'category',
+            'tag'                => 'tag',             'tags'               => 'tag',
+            'product-category'   => 'product-category','product_category'   => 'product-category',
+            'product-categories' => 'product-category','product_categories' => 'product-category',
+            'product-tag'        => 'product-tag',     'product_tag'        => 'product-tag',
+            'product-tags'       => 'product-tag',     'product_tags'       => 'product-tag',
+        ];
+        $prefix = $prefixes[$taxonomySlug]
+            ?? ($postType === 'product' ? 'product-category' : 'category');
+
+        return url('/' . $prefix . '/' . $slug);
+    }
+}
+
 if (!function_exists('falcon_resolve_dynamic_value')) {
     /**
      * Resolve a dynamic-source key to a real value using the current post context.
@@ -2380,6 +2641,36 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
             case 'post_type':
                 $val = $post->type ?? '';
                 break;
+            case 'post_taxonomy': {
+                // Both halves must match: the post has to BE the chosen post type, and the terms
+                // come from the chosen taxonomy. A mismatch yields '' so the fallback shows,
+                // which is what makes one template safe to reuse across post types.
+                if (!$post) break;
+                $wantType = (string) ($config['tax_post_type'] ?? '');
+                $taxSlug  = (string) ($config['tax_slug'] ?? '');
+                if ($taxSlug === '') break;
+                if ($wantType !== '' && ($post->type ?? '') !== $wantType) break;
+                $terms = falcon_post_terms($post, $taxSlug);
+                if ($terms->isEmpty()) break;
+                $limit = (int) ($config['tax_limit'] ?? 0);
+                if ($limit > 0) $terms = $terms->take($limit);
+                $sep = $config['tax_separator'] ?? '';
+                if ($sep === '') $sep = ', ';
+                $val = $terms->map(fn ($t) => (string) ($t->name ?? ''))->filter()->implode($sep);
+                break;
+            }
+            case 'taxonomy_url': {
+                if (!$post) break;
+                $wantType = (string) ($config['link_tax_post_type'] ?? '');
+                $taxSlug  = (string) ($config['link_tax_slug'] ?? '');
+                if ($taxSlug === '') break;
+                if ($wantType !== '' && ($post->type ?? '') !== $wantType) break;
+                $terms = falcon_post_terms($post, $taxSlug);
+                if ($terms->isEmpty()) break;
+                $term = ($config['link_tax_which'] ?? 'first') === 'last' ? $terms->last() : $terms->first();
+                $val  = falcon_term_archive_url($term, $taxSlug, (string) ($post->type ?? 'post'));
+                break;
+            }
             case 'post_comment_count':
                 if (!$post) break;
                 $val = (string)(isset($post->comments_count) ? $post->comments_count : (method_exists($post, 'comments') ? $post->comments()->count() : 0));
@@ -2501,15 +2792,7 @@ if (!function_exists('lazy_apply_custom_dynamic')) {
      */
     function lazy_apply_custom_dynamic(array $settings, $post = null): array
     {
-        $config = [
-            'date_type'      => $settings['dynamic_date_type']      ?? 'published',
-            'date_format'    => $settings['dynamic_date_format']     ?? '',
-            'before'         => $settings['dynamic_before']          ?? '',
-            'after'          => $settings['dynamic_after']           ?? '',
-            'fallback'       => $settings['dynamic_fallback']        ?? '',
-            'excerpt_length' => (int)($settings['dynamic_excerpt_length'] ?? 150),
-            'acpt_slug'      => $settings['dynamic_acpt_slug']       ?? '',
-        ];
+        $config = falcon_dynamic_config($settings);
         foreach ($settings as $k => $v) {
             if (is_string($k) && str_ends_with($k, '_dynamic') && !empty($v)) {
                 $base = substr($k, 0, -strlen('_dynamic'));
@@ -3971,27 +4254,80 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 });
 
 if (!function_exists('get_lazy_builder_fonts')) {
+    /**
+     * Every font family a builder layout uses, so the page can load them.
+     *
+     * Detection is by KEY NAME, not a fixed list: anything named `fontFamily`, `family`,
+     * `*FontFamily` or `*_family` counts. The old hard-coded list silently dropped every
+     * key that wasn't on it — Read More, submenu/mobile-menu, Post Meta (`meta_family`) and
+     * every ACPT custom field (`<slug>_family`) — so those fonts were chosen in the builder
+     * but never loaded on the front-end, and the text fell back to the theme font.
+     *
+     * The walk is fully recursive over ALL nested arrays (not just columns/elements), so a
+     * layout stored inside a setting — a post-card or mega-menu layout — is covered too.
+     */
     function get_lazy_builder_fonts($layout, &$fonts = []) {
-        if (empty($layout) || !is_array($layout)) return $fonts;
-        
-        $fontKeys = ['fontFamily', 'numberFontFamily', 'labelFontFamily', 'titleFontFamily', 'captionFontFamily', 'descFontFamily', 'contentFontFamily', 'tabFontFamily'];
-        foreach ($layout as $item) {
-            foreach ($fontKeys as $fk) {
-                if (!empty($item['settings'][$fk]) && $item['settings'][$fk] !== 'inherit') {
-                    $family = trim(trim(explode(',', $item['settings'][$fk])[0]), "'\"");
-                    if ($family) $fonts[] = $family;
-                }
+        if (!is_array($layout)) return array_values(array_unique($fonts));
+
+        foreach ($layout as $key => $value) {
+            if (is_array($value)) {
+                get_lazy_builder_fonts($value, $fonts);
+                continue;
             }
-            
-            // Check nested columns/elements
-            if (isset($item['columns'])) {
-                get_lazy_builder_fonts($item['columns'], $fonts);
-            }
-            if (isset($item['elements'])) {
-                get_lazy_builder_fonts($item['elements'], $fonts);
+            if (!is_string($key) || !is_string($value) || $value === '') continue;
+            if ($key !== 'fontFamily' && $key !== 'family'
+                && !str_ends_with($key, 'FontFamily') && !str_ends_with($key, '_family')) continue;
+
+            $family = trim(trim(explode(',', $value)[0]), " '\"");
+            if ($family === '' || strcasecmp($family, 'inherit') === 0) continue;
+            $fonts[] = $family;
+        }
+
+        return array_values(array_unique($fonts));
+    }
+}
+
+if (!function_exists('falcon_google_font_url')) {
+    /**
+     * A Google Fonts stylesheet URL for the given families, or '' when none are loadable.
+     *
+     * Families are matched against the bundled Google Fonts list first. That matters more
+     * than it looks: the css2 endpoint answers **400 for the whole request** if any single
+     * family is unknown, so one system font (Arial, Helvetica…) or a stray `sans-serif`
+     * anywhere in a layout would stop EVERY font on the page from loading. Filtering keeps
+     * one bad value from taking the rest down with it.
+     *
+     * The full 100–900 range is requested because the builder's weight pickers offer it —
+     * asking only for 300+ made Thin/Extra-Light silently render as something else.
+     */
+    function falcon_google_font_url(array $families, string $weights = '100;200;300;400;500;600;700;800;900'): string
+    {
+        static $known = null;
+        if ($known === null) {
+            $known = [];
+            foreach (falcon_google_fonts() as $f) {
+                if (!empty($f['family'])) $known[mb_strtolower($f['family'])] = $f['family'];
             }
         }
-        return array_unique($fonts);
+
+        $use = [];
+        foreach ($families as $family) {
+            $family = trim(trim((string) $family), " '\"");
+            if ($family === '') continue;
+            $canonical = $known[mb_strtolower($family)] ?? null;
+            // Unknown to the bundled list: keep it only when the list itself is missing,
+            // so a stripped install still behaves like before instead of losing all fonts.
+            if ($canonical === null) {
+                if ($known) continue;
+                $canonical = $family;
+            }
+            $use[$canonical] = true;
+        }
+        if (!$use) return '';
+
+        $parts = array_map(fn ($f) => 'family=' . str_replace(' ', '+', $f) . ':wght@' . $weights, array_keys($use));
+
+        return 'https://fonts.googleapis.com/css2?' . implode('&', $parts) . '&display=swap';
     }
 }
 

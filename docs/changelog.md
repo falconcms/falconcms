@@ -5,7 +5,61 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.2.7 <Badge type="tip" text="Latest" /> {#v2-2-7}
+## v2.3.0 <Badge type="tip" text="Latest" /> {#v2-3-0}
+
+**Released: 2026-08-05**
+
+### Added
+- **Content Box element** — a repeater element with eight layouts: Classic Icon With Title,
+  Classic Icon On Top, Classic Icon On Side, Classic Icon Boxed, Clean Layout Vertical,
+  Clean Layout Horizontal, Timeline Vertical and Timeline Horizontal. Each box carries its own
+  icon (or image), title, rich content, background and Read More link; the element adds column
+  count, alignment, link type (text or button), link area (the Read More link or the whole box),
+  and full typography, box and timeline-rail styling. Layouts collapse to two columns on tablet
+  and one on mobile.
+- **Four more icon libraries** — Bootstrap Icons, Remix Icon, Boxicons and Lucide join Font
+  Awesome, taking the picker from 2,060 to **10,115 icons**. They cost nothing until used: the
+  builder fetches a library's icon list and stylesheet only when its tab is opened, and a page
+  loads a library's stylesheet only when that page actually contains one of its icons.
+- **Font Awesome icons are findable by their older names.** Font Awesome keeps every previous
+  name working as an alias of the current one, but the picker only listed current names — so
+  searching "ambulance", "trash-alt" or "shopping-cart" found nothing even though the icon was
+  right there. 1,102 alias names are now searchable, read from the shipped stylesheet.
+- **Taxonomy dynamic sources.** A new **Taxonomy** text source prints a post's terms — pick a
+  post type, then one of its taxonomies, with separator, term limit and fallback — and a
+  matching **Taxonomy URL** link source points an element at the term's archive. The post type
+  and taxonomy must both match, so one template can be reused across post types safely.
+- **Icon Box — Read More typography.** The Read More link now has its own font family, size,
+  weight, line height, letter spacing, transform, colour, hover colour, arrow toggle, and
+  controls for its distance from the description and the gap before its arrow.
+
+### Fixed
+- **Every font picker in the builder is searchable.** Icon Box, Accordion, Tabs, Ticker, Post
+  Meta and every ACPT custom field still used a plain dropdown of ~1,700 fonts; they now use the
+  same searchable picker as the Title element.
+- **Front-end now loads every font the builder can choose.** Font collection ran off a
+  hard-coded list of setting keys, so fonts picked for Read More, sub/mobile menus, Post Meta
+  and custom fields were never loaded and silently fell back to the theme font. Detection is now
+  by key name and walks nested layouts, header/footer sections are included, the full 100–900
+  weight range is requested (Thin and Extra Light used to be missing), and families the bundled
+  catalog doesn't know are dropped — one unknown family made Google reject the whole request,
+  which had been taking every font on the page down with it.
+- **Post Meta no longer 500s a page.** Placed directly on a page or post, the element hit an
+  undefined `$post` and Blade's error handling reported it as "Cannot end a section without
+  first starting one", which pointed nowhere near the cause.
+- **Hover colours are visible in the builder again.** Icon Box's Read More hover colour and
+  Breadcrumb's link hover colour rendered on the front-end but looked dead in the canvas, since
+  an inline style can't express `:hover`.
+- **Element panels always open on their first tab.** After working in one element's Design tab,
+  the next element you opened — a duplicate most visibly — also opened on Design.
+- **The icon picker's search box no longer carries over.** A query typed for one element used to
+  filter the icon grid of the next element you opened.
+- **Boxes with a background or border get room inside them.** Content Box items whose padding was
+  never set sat flush against their own border, with the icon and Read More link crossing it.
+
+---
+
+## v2.2.7 {#v2-2-7}
 
 **Released: 2026-08-04**
 

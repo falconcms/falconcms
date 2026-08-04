@@ -106,6 +106,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::patch('falcon-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateGlobalSection'])->name('falcon-builder.global-sections.update');
     Route::delete('falcon-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteGlobalSection'])->name('falcon-builder.global-sections.delete');
     }); // end EnsureProEditable:builder_pro — Library writes
+    // Icon lists are fetched per set when a picker tab is first opened, so the builder page
+    // itself stays small no matter how many icon libraries are registered.
+    Route::get('falcon-builder/icons/{set}', function (string $set) {
+        return response()->json(['icons' => falcon_icon_set_names($set)])
+            ->header('Cache-Control', 'private, max-age=86400');
+    })->name('falcon-builder.icons');
+
     Route::post('falcon-builder/card-preview', function(\Illuminate\Http\Request $r) {
         $s = $r->input('settings', []);
         try {

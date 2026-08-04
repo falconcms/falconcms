@@ -1,4 +1,12 @@
 @php
+    // A nested element render doesn't inherit the parent view's variables, so $post is absent
+    // whenever this element sits directly on a page/post (it only arrives inside a card loop).
+    // The term resolver below closes over $post with `use ($post)`, which is evaluated
+    // unconditionally — an undefined $post threw there, and Blade's error handling flushed the
+    // section state on the way out, so the page died with a misleading "Cannot end a section
+    // without first starting one" instead of the real cause. Normalise it once, up front.
+    $post = $post ?? null;
+
     $s = $el['settings'] ?? [];
 
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];

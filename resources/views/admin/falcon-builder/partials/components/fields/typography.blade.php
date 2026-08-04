@@ -7,19 +7,7 @@
     {{-- Font Family --}}
     <div>
         <label class="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block">Font Family</label>
-        <select v-model="editingElement.settings.{{ $prefix }}_family"
-                @change="loadBuilderFont(editingElement.settings.{{ $prefix }}_family)"
-                class="w-full border border-slate-200 rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
-            <option value="inherit">Default@{{ themeBodyFont ? ' (' + themeBodyFont + ')' : '' }}</option>
-            <template v-for="(fonts, category) in builderFontGroups" :key="category">
-                <optgroup :label="category">
-                    <option v-for="font in fonts" :key="font.family"
-                            :value="font.family + ', ' + (font.category === 'Monospace' ? 'monospace' : (font.category === 'Serif' ? 'serif' : 'sans-serif'))">
-                        @{{ font.family }}
-                    </option>
-                </optgroup>
-            </template>
-        </select>
+        <font-select v-model="editingElement.settings.{{ $prefix }}_family" @change="loadBuilderFont($event)" :font-groups="builderFontGroups" :theme-font="themeBodyFont"></font-select>
     </div>
 
     {{-- Font Weight --}}

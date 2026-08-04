@@ -47,20 +47,30 @@
         if (isset($h1Typo['family'])) $fontsToLoad[] = $h1Typo['family'];
         if (isset($navTypo['family'])) $fontsToLoad[] = $navTypo['family'];
         
-        // Add builder fonts if we are on a post/page with builder content
+        // Add builder fonts from everything this page renders: its own content AND the
+        // assigned header/footer sections. Collecting only $post->content meant a font
+        // chosen in the Layout header or footer was never loaded on the front-end.
+        $__collectFonts = function ($content) use (&$fontsToLoad) {
+            if (empty($content)) return;
+            $layout = is_string($content) ? json_decode($content, true) : $content;
+            if (is_array($layout)) $fontsToLoad = array_merge($fontsToLoad, get_lazy_builder_fonts($layout));
+        };
         if (isset($post) && !empty($post->content)) {
             $isBuilder = $post->editor_type === 'builder' || (is_string($post->content) && (str_starts_with($post->content, '[') || str_starts_with($post->content, '{')));
-            if ($isBuilder) {
-                $layout = is_string($post->content) ? json_decode($post->content, true) : $post->content;
-                if (is_array($layout)) {
-                    $builderFonts = get_lazy_builder_fonts($layout);
-                    $fontsToLoad = array_merge($fontsToLoad, $builderFonts);
-                }
-            }
+            if ($isBuilder) $__collectFonts($post->content);
         }
-        
+        // Layout sections, via the resolver that returns the section POST — get_falcon_header()
+        // and friends return already-rendered HTML, which has no layout JSON to read fonts from.
+        foreach ([['header', 'falcon_header'], ['footer', 'falcon_footer'],
+                  ['page_title_bar', 'falcon_ptb'], ['content', 'falcon_content']] as [$__slot, $__type]) {
+            $__section = falcon_layout_assigned_section($__slot, $__type);
+            if ($__section) $__collectFonts($__section->content ?? null);
+        }
+
         $fontsToLoad = array_unique(array_filter($fontsToLoad));
-        $googleFontsUrl = "https://fonts.googleapis.com/css2?family=" . implode('&family=', array_map(fn($f) => str_replace(' ', '+', $f) . ':wght@300;400;500;600;700;800;900', $fontsToLoad)) . "&display=swap";
+        // Built here so unknown families are dropped instead of 400-ing the whole request,
+        // and so the full 100–900 weight range is available (the builder offers Thin/Black).
+        $googleFontsUrl = falcon_google_font_url($fontsToLoad);
 
         // Layout Type
         $layoutType = get_cms_option('theme_layout_type', 'boxed');
@@ -72,9 +82,11 @@
     @endif
 
     <!-- Dynamic Fonts -->
+    @if($googleFontsUrl)
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="{{ $googleFontsUrl }}" rel="stylesheet">
+    @endif
     
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -363,6 +375,26 @@
         {!! get_cms_option('theme_custom_css') !!}
     </style>
     
+    {{-- Extra icon libraries (Bootstrap Icons, Remix, Boxicons) load only on pages that use
+         them: their markup is already built by this point, so we can look before linking.
+         Font Awesome stays unconditional above because theme templates use it directly. --}}
+    @php
+        $__iconScan = '';
+        try {
+            foreach ($__env->getSections() as $__sec) $__iconScan .= is_string($__sec) ? $__sec : '';
+        } catch (\Throwable $e) {}
+        // Layout sections render further down, so pull them in now and reuse the same HTML there.
+        $customHeader    = get_falcon_header();
+        $customTitleBar  = get_falcon_page_title_bar();
+        $customContent   = get_falcon_content();
+        $customFooter    = get_falcon_footer();
+        $__iconScan .= $customHeader . $customTitleBar . $customContent . $customFooter;
+        $__iconLinks = function_exists('falcon_icon_set_links') ? falcon_icon_set_links($__iconScan) : [];
+    @endphp
+    @foreach($__iconLinks as $__iconLink)
+    <link rel="stylesheet" href="{{ $__iconLink }}">
+    @endforeach
+
     @yield('styles')
     {!! do_falcon_action('falcon_head') !!}
 
@@ -378,7 +410,7 @@
 @php $__fp = $builderFramePart ?? null; @endphp
 
 @if($__fp === null || $__fp === 'header')
-    @if($customHeader = get_falcon_header())
+    @if($customHeader)
         {!! $customHeader !!}
     @else
         @include('falcon-cms::themes.falcon-theme.partials.header')
@@ -386,7 +418,7 @@
 @endif
 
 @if($__fp === null || $__fp === 'titlebar')
-@if($customTitleBar = get_falcon_page_title_bar())
+@if($customTitleBar)
     {!! $customTitleBar !!}
 @else
     @include('falcon-cms::themes.falcon-theme.partials.title-bar')
@@ -395,7 +427,7 @@
 
 @if($__fp === null)
 <main class="flex-grow">
-    @if($customContent = get_falcon_content())
+    @if($customContent)
         {!! $customContent !!}
     @else
         @yield('content')
@@ -404,7 +436,7 @@
 @endif
 
 @if($__fp === null || $__fp === 'footer')
-    @if($customFooter = get_falcon_footer())
+    @if($customFooter)
         {!! $customFooter !!}
     @else
         @include('falcon-cms::themes.falcon-theme.partials.footer')

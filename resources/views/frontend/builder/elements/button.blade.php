@@ -3,20 +3,12 @@
 
     $dynamicSrc  = $s['dynamic_source']      ?? '';
     $linkDynamic = $s['link_dynamic_source'] ?? '';
-    $dynamicConfig = [
-        'date_type'      => $s['dynamic_date_type']      ?? 'published',
-        'date_format'    => $s['dynamic_date_format']     ?? '',
-        'before'         => $s['dynamic_before']          ?? '',
-        'after'          => $s['dynamic_after']           ?? '',
-        'fallback'       => $s['dynamic_fallback']        ?? '',
-        'excerpt_length' => (int)($s['dynamic_excerpt_length'] ?? 150),
-        'acpt_slug'      => $s['dynamic_acpt_slug']       ?? '',
-    ];
+    $dynamicConfig = falcon_dynamic_config($s);
     $buttonText  = $dynamicSrc
         ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($dynamicSrc, $post ?? null, $dynamicConfig) ?: ($s['text'] ?? 'Click Here')) : ($postTitle ?? $s['text'] ?? 'Click Here'))
         : ($s['text'] ?? 'Click Here');
     $resolvedLinkUrl = $linkDynamic
-        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
+        ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null, falcon_dynamic_config($s, 'link')) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
         : ($s['linkUrl'] ?? '');
 
     // Render an <a> whenever the Link URL has any value (including a bare "#").

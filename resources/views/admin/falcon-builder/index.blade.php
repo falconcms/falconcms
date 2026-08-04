@@ -160,50 +160,9 @@
             } catch(\Exception $e) { $__previewPostsData = []; }
         @endphp
         window.falconRecentPosts = {!! json_encode($__previewPostsData, JSON_HEX_TAG) !!};
-        @php
-            // Built-ins are declared outside try so they survive any DB exception
-            $__taxonomies   = [
-                ['slug' => 'category', 'name' => 'Category', 'type' => 'built_in'],
-                ['slug' => 'tag',      'name' => 'Tag',      'type' => 'built_in'],
-            ];
-            $__taxonomyTerms = [];
-            $__customTaxos   = collect();
-            try {
-                $__taxonomyTerms['category'] = \FalconCms\Core\Models\Category::select('id','name','slug')->orderBy('name')->get()->map(fn($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug])->values()->toArray();
-                $__taxonomyTerms['tag']      = \FalconCms\Core\Models\Tag::select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
-                $__customTaxos = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->get();
-                foreach ($__customTaxos as $__tax) {
-                    $__taxonomies[] = ['slug' => $__tax->slug, 'name' => $__tax->name, 'type' => 'custom'];
-                    $__taxonomyTerms[$__tax->slug] = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $__tax->slug)->select('id','name','slug')->orderBy('name')->get()->map(fn($t) => ['id' => $t->id, 'name' => $t->name, 'slug' => $t->slug])->values()->toArray();
-                }
-            } catch (\Exception $e) { /* built-ins already set above */ }
-        @endphp
-        window.falconTaxonomies    = {!! json_encode($__taxonomies, JSON_HEX_TAG) !!};
-        window.falconTaxonomyTerms = {!! json_encode($__taxonomyTerms, JSON_HEX_TAG) !!};
-        @php
-            try {
-                $__cptList = \FalconCms\Core\Models\PostType::where('is_builtin', false)
-                    ->where('is_active', true)
-                    ->whereNull('deleted_at')
-                    ->orderBy('name')
-                    ->get()
-                    ->map(fn($c) => ['slug' => $c->slug, 'name' => $c->name])
-                    ->values()->toArray();
-                // Build post_type → taxonomy slugs mapping
-                $__cptTaxonomies = ['post' => ['category', 'tag'], 'page' => [], 'product' => []];
-                foreach ($__customTaxos as $__tax) {
-                    foreach (($__tax->post_types ?? []) as $__ptSlug) {
-                        if (!isset($__cptTaxonomies[$__ptSlug])) $__cptTaxonomies[$__ptSlug] = [];
-                        if (!in_array($__tax->slug, $__cptTaxonomies[$__ptSlug])) {
-                            $__cptTaxonomies[$__ptSlug][] = $__tax->slug;
-                        }
-                    }
-                }
-            } catch (\Exception $e) { $__cptList = []; $__cptTaxonomies = ['post' => ['category','tag']]; }
-        @endphp
-        window.falconCptList        = {!! json_encode($__cptList, JSON_HEX_TAG) !!};
-        window.falconCptTaxonomies  = {!! json_encode($__cptTaxonomies, JSON_HEX_TAG) !!};
-    </script>
+        </script>
+
+    @include('falcon-cms::admin.falcon-builder.partials.builder-data')
 
     @include('falcon-cms::admin.falcon-builder.partials.styles')
 
