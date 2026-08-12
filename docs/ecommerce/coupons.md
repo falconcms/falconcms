@@ -33,12 +33,45 @@ Final total: $90
 ```
 
 ### Fixed Amount Discount
+
+Taken off the cart total once.
+
 ```
 Order total: $100
 Coupon: FLAT15 ($15 off)
 Discount: -$15
 Final total: $85
 ```
+
+### Fixed Product Discount
+
+Taken off **each unit** the coupon applies to. Restrict it to particular products or
+categories, or leave it unrestricted and it applies to every unit in the cart.
+
+```
+Cart: 3 × T-shirt ($20 each) = $60
+Coupon: TEE5 ($5 off each product)
+Discount: -$15   (3 units × $5)
+Final total: $45
+```
+
+### Free Shipping
+
+Zeroes every shipping method rather than discounting the goods, so the saving appears on the
+shipping line where the customer expects it.
+
+```
+Order total: $100
+Shipping:    $12
+Coupon: SHIPFREE
+Shipping:    $0
+Final total: $100
+```
+
+## Stacking
+
+**Shop → Settings → Coupons** decides whether more than one coupon may be applied to the same
+order. When stacking is off, applying a second coupon replaces the first.
 
 ## Coupon Model
 

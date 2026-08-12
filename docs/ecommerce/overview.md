@@ -8,17 +8,22 @@ As of **v2.2**, the full e-commerce system is part of the **free core** — no P
 
 ## Features
 
-- **Products** with images, pricing, inventory, SKU
-- **Variable products** — size, color, and custom options
+- **Products** with images, pricing, inventory, SKU, weight and dimensions
+- **Variable products** — size, colour and custom options, priced per variation
 - **Product Categories & Tags** — dedicated, first-class taxonomy
-- **Shopping cart** — session-based, persistent
-- **Coupon codes** — percentage or fixed discount
-- **Checkout** — guest or registered customer
-- **Multiple payment gateways** — PayPal, Stripe, SSLCommerz
+- **Shop filters** — search, price range, category, attributes, stock and sale
+- **Shopping cart** — session-based, persistent, prices re-checked against the catalogue
+- **Coupon codes** — four types, see [Coupons](/ecommerce/coupons)
+- **Promotions** — buy-one-get-one and similar automatic offers, see [Promotions](/ecommerce/promotions)
+- **Shipping** — flat rate, zones, and rates banded by quantity or weight
+- **Tax** — per-country rates, inclusive or exclusive pricing
+- **Checkout** — guest or registered customer, with a saved address book
+- **Multiple payment gateways** — PayPal, Stripe, SSLCommerz, bank transfer
 - **Order management** — status workflow, invoices, refunds
 - **Product reviews** with moderation
 - **Wishlist**
 - **Order tracking** — customers track by order number + email
+- **Structured data** — schema.org product markup for search results
 
 ## Setup Checklist
 
@@ -38,20 +43,26 @@ As of **v2.2**, the full e-commerce system is part of the **free core** — no P
 
 Navigate to **Admin → Shop → Settings**:
 
-| Setting | Description |
-|---|---|
-| Currency | USD, EUR, BDT, GBP, etc. |
-| Currency position | Before or after price |
-| Decimal places | Price formatting (e.g., 2 → `$10.00`) |
-| Shop page | Post ID of your main shop/products page |
-| Cart page | Post ID of cart page |
-| Checkout page | Post ID of checkout page |
-| Account page | Post ID of customer account page |
-| Guest checkout | Allow checkout without an account |
-| Shipping method | `flat_rate`, `free`, or `calculated` |
-| Flat rate | Cost for flat rate shipping |
-| Tax enabled | Enable/disable tax calculation |
-| Tax rate | Percentage (e.g., `10` for 10%) |
+Settings are grouped into tabs. The common ones:
+
+| Tab | Setting | Description |
+|---|---|---|
+| General | Currency | USD, EUR, BDT, GBP, etc. |
+| General | Currency position | Before or after the amount |
+| General | Decimal places | Price formatting (e.g. 2 → `$10.00`) |
+| General | Shop / Cart / Checkout / Account page | Which page serves each role |
+| General | Enable taxes | Master switch for the whole tax engine |
+| Products | Manage stock | Track quantities shop-wide |
+| Products | Out of stock threshold | At or below this, a product reads as sold out |
+| Shipping | Flat rate, zones, free-shipping threshold | See [Shipping & Tax](/ecommerce/shipping-tax) |
+| Tax | Rates, price entry, display | See [Shipping & Tax](/ecommerce/shipping-tax) |
+| Coupons | Enable coupons, stacking policy | See [Coupons](/ecommerce/coupons) |
+| Checkout | Guest checkout, force login | Who may place an order |
+
+::: tip
+Shipping and tax are more capable than a single rate — zones, per-country tax and
+inclusive/exclusive pricing each have their own page.
+:::
 
 ## Payment Gateways
 

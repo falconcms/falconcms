@@ -124,8 +124,11 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/ecommerce/overview' },
             { text: 'Products', link: '/ecommerce/products' },
+            { text: 'Storefront', link: '/ecommerce/storefront' },
+            { text: 'Shipping & Tax', link: '/ecommerce/shipping-tax' },
             { text: 'Orders', link: '/ecommerce/orders' },
             { text: 'Coupons', link: '/ecommerce/coupons' },
+            { text: 'Promotions', link: '/ecommerce/promotions' },
           ]
         },
       ],

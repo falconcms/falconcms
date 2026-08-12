@@ -5,7 +5,77 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.3.0 <Badge type="tip" text="Latest" /> {#v2-3-0}
+## v2.4.0 <Badge type="tip" text="Latest" /> {#v2-4-0}
+
+**Released: 2026-08-12**
+
+### Added
+
+- **Shop archive filters** — a sidebar with product search (title, excerpt and SKU), a
+  dual-handle price range slider, categories, attributes, *In stock only* and *On sale*.
+  Filtering happens over AJAX and rewrites the address bar, so a filtered view is a real
+  shareable URL and the back button behaves. With JavaScript switched off the panel is a
+  plain GET form and every filter still works.
+- **Attribute filters** — whatever attributes your products declare appear in the sidebar
+  automatically, with counts. Each attribute gains a **Show in filters** switch next to
+  *Visible on the product page*, so a noisy attribute can be kept out of the sidebar while
+  still showing on the product page.
+- **"Visible on the product page" now does something** — ticked attributes appear in the
+  *Additional information* table. The setting was previously stored but never read.
+- **Weight-based shipping** — shipping zones gain a *Weight Based (Per Weight Range)*
+  calculation type, banded exactly like the quantity rates. Product weights finally feed
+  into the shipping cost.
+- **Customer address book** — customers save addresses under *My Account → Addresses*,
+  with separate defaults for billing and shipping. Checkout is pre-filled server-side, and
+  a picker appears when more than one address is saved.
+- **Upsells and cross-sells** — chosen per product in a new *Linked Products* tab. Upsells
+  show on the product page, cross-sells in the cart. Related products are now drawn from
+  the product's category instead of "the four newest products in the shop".
+- **Product structured data** — product pages emit schema.org JSON-LD: `Offer` for simple
+  products, `AggregateOffer` for variable ones, plus availability and star ratings. This is
+  what puts price and stock into a Google result.
+- **`falcon:reindex-attributes`** — rebuilds the attribute filter index. Only needed after a
+  bulk import or a direct database edit; ordinary saves keep it current.
+
+### Fixed
+
+- **Cart prices are re-read from the catalogue** on every cart, checkout and order. They used
+  to be frozen at the moment an item went in, so an ended sale — or a price the shop owner
+  had since corrected — never reached a basket that already existed.
+- **An expired sale stops applying the moment it ends**, rather than whenever
+  `falcon:expire-sales` next runs. The stored sale price is left untouched, so the figure is
+  still there when the shop owner extends the sale.
+- **Variable products report stock from their variations.** Selling the last of every size no
+  longer leaves the product advertising itself as in stock. The *In stock only* filter follows
+  the same rule, so the badge and the filter cannot disagree.
+- **Variable products show a price range** (`৳1,500 – ৳2,500`) instead of the parent row's
+  `0.00`.
+- **The shop grid applies the tax display conversion.** With prices entered without tax and
+  displayed with it, a product used to cost one thing on the shop page and another on its own
+  page.
+- **Product type is no longer split across two columns.** `shop_products.type` and
+  `.product_type` had drifted apart — the editor only wrote one of them — so a product could
+  read as variable on the storefront and simple in the admin. Both are written now and a
+  migration reconciles existing rows.
+- **"Enable tax rates and calculations"** could not be ticked from the General tab: the same
+  field was posted twice by one form and the Tax tab's hidden value won.
+- **Unchecking "Show in filters" now sticks.** An unchecked box submits nothing, and the
+  stored `'0'` reads as truthy in JavaScript.
+- **Shop sits directly under Products in the admin menu**, and custom post types are numbered
+  above the pair so a new one cannot come between them.
+- Cart layout: *Update cart* keeps its place when coupons are switched off, and the cart and
+  checkout buttons share one hover treatment.
+
+### Upgrading
+
+Run `php artisan migrate` after updating. Ten migrations ship with this release; eight only
+add tables or columns. Two adjust existing rows — the product type reconcile and the admin
+menu order — and both are reversible. Nothing is demoted: a product that was being treated as
+variable stays variable.
+
+---
+
+## v2.3.0 {#v2-3-0}
 
 **Released: 2026-08-05**
 

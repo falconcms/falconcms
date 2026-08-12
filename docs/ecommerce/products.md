@@ -49,7 +49,51 @@ Variable products have options like size or color, each with their own price and
 3. Add variation attributes (e.g., Size: S, M, L)
 4. For each variation, set: price, sale price, SKU, stock status
 
-**Frontend:** Customers select from dropdowns, price updates dynamically.
+**Frontend:** the shop grid and the product page show a price range built from the variations
+(`৳1,500 – ৳2,500`, or a single figure when every variation costs the same). Once a customer
+picks a variation, the exact price replaces the range.
+
+A variable product is only as available as its variations: sell the last of every size and the
+product reads as out of stock, on the badge and in the *In stock only* filter alike.
+
+## Attributes
+
+**Product Data → Attributes.** Each attribute has a name, a `|`-separated list of values, and
+three switches:
+
+| Switch | Effect |
+|---|---|
+| **Visible on the product page** | Lists the attribute in the *Additional information* table |
+| **Used for variations** | Makes the values selectable, for variable products |
+| **Show in filters** | Offers the attribute in the shop's filter sidebar |
+
+The three are independent — an attribute can filter the shop without appearing on the product
+page, or the reverse. *Show in filters* defaults to on, so a new attribute is filterable
+without extra work.
+
+::: tip
+For a variable product, the filter offers the values its **variations** actually provide, not
+everything the parent declares — so a colour nobody built a variation for is not offered to
+shoppers who cannot buy it.
+:::
+
+## Shipping Details
+
+**Product Data → Shipping** holds weight and dimensions. Weight is used by
+[weight-based shipping rates](/ecommerce/shipping-tax#weight-based-rates); a variation may
+carry its own weight and otherwise inherits the product's.
+
+## Linked Products
+
+**Product Data → Linked Products** picks what to suggest alongside this one:
+
+| Link | Where it shows |
+|---|---|
+| **Upsells** | On this product's page, as *You may also like* — the better or larger version |
+| **Cross-sells** | In the cart, once this product is in it — the case, the cable, the spare |
+
+**Related products** need no setup: they are drawn from the product's own category, topped up
+with recent products when the category is thin.
 
 ## Inventory Management
 
@@ -59,7 +103,19 @@ Variable products have options like size or color, each with their own price and
 | `outofstock` | Cannot be added to cart |
 | `backorder` | Can be ordered but will ship when available |
 
-Enable **Manage Stock** to track exact quantities. Stock auto-decrements when an order is placed.
+Enable **Manage Stock** to track exact quantities. Stock is claimed when the order is placed,
+in a single conditional update — two shoppers racing for the last item cannot both win it.
+
+**Backorders** (Product Data → Inventory) decide what happens at zero:
+
+| Setting | Behaviour |
+|---|---|
+| `no` | Cannot be bought once the shelf is empty |
+| `notify` | Can be bought, and the cart says *Available on backorder* |
+| `yes` | Can be bought silently; stock is allowed to go negative |
+
+**Shop → Settings → Products → Out of stock threshold** sets the floor. At or below it a
+product reads as sold out — useful for holding back a safety margin.
 
 ## Product Custom Fields
 
