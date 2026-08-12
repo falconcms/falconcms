@@ -15,6 +15,12 @@
     $activeTab = request('tab', 'orders');
     if (session('profile_success') || $errors->hasAny(['name','email'])) $activeTab = 'profile';
     if (session('password_success') || $errors->hasAny(['current_password','password'])) $activeTab = 'password';
+    if (session('address_success') || $errors->has('address')) $activeTab = 'addresses';
+
+    $addresses = falcon_customer_addresses();
+    // Editing is driven by the URL so the form survives a reload; the id is only honoured when
+    // the address actually belongs to this customer.
+    $editing = request('edit') ? $addresses->firstWhere('id', (int) request('edit')) : null;
 @endphp
 
         {{-- Header --}}
@@ -41,7 +47,7 @@
         {{-- Tab Navigation --}}
         @php $tabBase = strtok(url()->current(), '?'); @endphp
         <div class="flex gap-1 border-b border-gray-200 mb-6">
-            @foreach([['orders','My Orders','package'],['downloads','Downloads','download'],['profile','Profile','user'],['password','Password','lock']] as [$slug,$label,$icon])
+            @foreach([['orders','My Orders','package'],['downloads','Downloads','download'],['addresses','Addresses','map-pin'],['profile','Profile','user'],['password','Password','lock']] as [$slug,$label,$icon])
             <a href="{{ $tabBase }}?tab={{ $slug }}"
                class="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold border-b-2 transition
                       {{ $activeTab === $slug
@@ -208,6 +214,163 @@
                     Save Changes
                 </button>
             </form>
+        </div>
+
+        {{-- ── ADDRESSES TAB ── --}}
+        @elseif($activeTab === 'addresses')
+        @php $addrBase = strtok(url()->current(), '?'); @endphp
+
+        @if(session('address_success'))
+            <div class="mb-5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i> {{ session('address_success') }}
+            </div>
+        @endif
+        @error('address')
+            <div class="mb-5 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i> {{ $message }}
+            </div>
+        @enderror
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {{-- Saved addresses --}}
+            <div class="space-y-4">
+                <h2 class="text-sm font-black uppercase tracking-widest text-heading">Saved Addresses</h2>
+
+                @forelse($addresses as $address)
+                    <div class="bg-white rounded-sm shadow-sm border {{ $editing && $editing->id === $address->id ? 'border-primary' : 'border-gray-100' }} p-5">
+                        <div class="flex items-start justify-between gap-3 mb-2">
+                            <div>
+                                <p class="font-bold text-heading">{{ $address->label ?: trim($address->first_name . ' ' . $address->last_name) }}</p>
+                                <div class="flex flex-wrap gap-1.5 mt-1.5">
+                                    @if($address->is_default_billing)
+                                        <span class="text-[11px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-sm">Default billing</span>
+                                    @endif
+                                    @if($address->is_default_shipping)
+                                        <span class="text-[11px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-sm">Default shipping</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <a href="{{ $addrBase }}?tab=addresses&edit={{ $address->id }}"
+                               class="text-[12px] font-bold text-primary hover:underline flex-shrink-0">Edit</a>
+                        </div>
+
+                        <p class="text-sm text-body leading-relaxed">{{ $address->summary }}</p>
+                        @if($address->phone || $address->email)
+                            <p class="text-[12px] text-slate-400 mt-1.5">{{ implode(' · ', array_filter([$address->phone, $address->email])) }}</p>
+                        @endif
+
+                        <div class="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-gray-100">
+                            @unless($address->is_default_billing)
+                                <form action="{{ route('shop.account.address.default', $address->id) }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="type" value="billing">
+                                    <button type="submit" class="text-[12px] font-semibold text-slate-500 hover:text-primary transition">Use for billing</button>
+                                </form>
+                            @endunless
+                            @unless($address->is_default_shipping)
+                                <form action="{{ route('shop.account.address.default', $address->id) }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="type" value="shipping">
+                                    <button type="submit" class="text-[12px] font-semibold text-slate-500 hover:text-primary transition">Use for shipping</button>
+                                </form>
+                            @endunless
+                            <form action="{{ route('shop.account.address.delete', $address->id) }}" method="POST"
+                                  onsubmit="return confirm('Delete this address?');" class="ml-auto">
+                                @csrf
+                                <button type="submit" class="text-[12px] font-semibold text-red-500 hover:text-red-700 transition">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                @empty
+                    <div class="bg-white rounded-sm shadow-sm border border-gray-100 p-8 text-center">
+                        <i data-lucide="map-pin" class="w-8 h-8 text-slate-300 mx-auto mb-3"></i>
+                        <p class="text-body text-sm">No saved addresses yet. Add one and it will fill in your checkout automatically.</p>
+                    </div>
+                @endforelse
+            </div>
+
+            {{-- Add / edit --}}
+            <div class="bg-white rounded-sm shadow-sm border border-gray-100 p-6 self-start">
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-sm font-black uppercase tracking-widest text-heading">{{ $editing ? 'Edit Address' : 'Add Address' }}</h2>
+                    @if($editing)
+                        <a href="{{ $addrBase }}?tab=addresses" class="text-[12px] font-bold text-slate-500 hover:text-primary">Cancel</a>
+                    @endif
+                </div>
+
+                <form action="{{ route('shop.account.address.save') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @csrf
+                    @if($editing)<input type="hidden" name="address_id" value="{{ $editing->id }}">@endif
+
+                    @php
+                        $addrInput = 'w-full border border-slate-200 rounded-sm px-3 py-2.5 text-sm outline-none focus:border-primary transition';
+                        // old() wins so a failed submit does not throw away what was typed.
+                        $val = fn ($field, $default = '') => old($field, $editing->{$field} ?? $default);
+                    @endphp
+
+                    <div class="md:col-span-2 space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">Label</label>
+                        <input type="text" name="label" value="{{ $val('label') }}" maxlength="60" placeholder="Home, Office&hellip;" class="{{ $addrInput }}">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">First name <span class="text-red-500">*</span></label>
+                        <input type="text" name="first_name" value="{{ $val('first_name') }}" required maxlength="100" class="{{ $addrInput }}">
+                        @error('first_name')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">Last name</label>
+                        <input type="text" name="last_name" value="{{ $val('last_name') }}" maxlength="100" class="{{ $addrInput }}">
+                    </div>
+
+                    <div class="md:col-span-2 space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">Country / Region</label>
+                        <select name="country" class="{{ $addrInput }} bg-white cursor-pointer">
+                            <option value="">Select a country&hellip;</option>
+                            @foreach(\FalconCms\Core\Services\EcommerceData::getCountriesWithStates() as $code => $cname)
+                                <option value="{{ $code }}" {{ (string) $val('country') === (string) $code ? 'selected' : '' }}>{{ $cname }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">Street address <span class="text-red-500">*</span></label>
+                        <input type="text" name="address_1" value="{{ $val('address_1') }}" required maxlength="191" placeholder="House number and street name" class="{{ $addrInput }}">
+                        @error('address_1')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="md:col-span-2 space-y-1.5">
+                        <input type="text" name="address_2" value="{{ $val('address_2') }}" maxlength="191" placeholder="Apartment, suite, unit, etc. (optional)" class="{{ $addrInput }}">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">Town / City</label>
+                        <input type="text" name="city" value="{{ $val('city') }}" maxlength="100" class="{{ $addrInput }}">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">State / Province</label>
+                        <input type="text" name="state" value="{{ $val('state') }}" maxlength="100" class="{{ $addrInput }}">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">ZIP Code</label>
+                        <input type="text" name="postcode" value="{{ $val('postcode') }}" maxlength="30" class="{{ $addrInput }}">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">Phone</label>
+                        <input type="tel" name="phone" value="{{ $val('phone') }}" maxlength="40" class="{{ $addrInput }}">
+                    </div>
+                    <div class="md:col-span-2 space-y-1.5">
+                        <label class="text-sm font-semibold text-heading">Email</label>
+                        <input type="email" name="email" value="{{ $val('email', $user->email ?? '') }}" maxlength="191" class="{{ $addrInput }}">
+                        @error('email')<p class="text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="md:col-span-2 pt-2">
+                        <button type="submit" class="w-full bg-primary text-white py-3 rounded-sm text-sm font-bold uppercase tracking-wider hover:opacity-90 transition">
+                            {{ $editing ? 'Update Address' : 'Save Address' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         {{-- ── PASSWORD TAB ── --}}

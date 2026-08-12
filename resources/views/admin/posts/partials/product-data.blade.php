@@ -1,7 +1,35 @@
 @if($type === 'product')
 @php
-    $productType = old('product_type', $post->shopData->type ?? 'simple');
+    // Read through isVariable(): the editor used to look at `type` alone, so a product whose
+    // variable flag sat in `product_type` opened as Simple and lost its variations on save.
+    $productType = old('product_type', ($post->shopData && $post->shopData->isVariable()) ? 'variable' : 'simple');
     $attributesData = old('attributes_data', $post->shopData->attributes_data ?? []);
+
+    // These three are checkboxes, and Alpine sets `checked = !!value`. The stored values are
+    // strings, and in JavaScript `!!'0'` is true — so a saved "off" would come back ticked.
+    // Casting to real booleans here is what makes unchecking stick.
+    //
+    // "Show in filters" was added after existing rows were saved: no key means the shop owner
+    // never chose to hide it, so it defaults to on. The other two default to off, as before.
+    $attributesData = collect($attributesData)->map(function ($attr) {
+        if (!is_array($attr)) {
+            return $attr;
+        }
+        $attr['filterable'] = (string) ($attr['filterable'] ?? '1') === '1';
+        $attr['visible']    = (string) ($attr['visible'] ?? '') === '1';
+        $attr['variation']  = (string) ($attr['variation'] ?? '') === '1';
+
+        return $attr;
+    })->all();
+    // Everything else in the catalogue, for the Linked Products pickers.
+    $linkableProducts = \FalconCms\Core\Models\Post::where('type', 'product')
+        ->when($post->id ?? null, fn ($q) => $q->where('id', '!=', $post->id))
+        ->orderBy('title')
+        ->limit(500)
+        ->get(['id', 'title']);
+    $selectedUpsells = collect(old('upsell_ids', $post->shopData->upsell_ids ?? []))->map(fn ($id) => (int) $id)->all();
+    $selectedCrossSells = collect(old('cross_sell_ids', $post->shopData->cross_sell_ids ?? []))->map(fn ($id) => (int) $id)->all();
+
     // Load existing variations if any
     $variations = $post->shopData ? $post->shopData->variations()->get()->map(function($v) {
         return [
@@ -42,6 +70,10 @@
         variations:    {!! json_encode($variations) !!},
         stockQuantity: {{ old('stock_quantity', $post->shopData->stock_quantity ?? 0) }},
         stockStatus:   {!! json_encode(old('stock_status', $post->shopData->stock_status ?? 'instock')) !!},
+        // Shop → Products → Out of stock threshold. The storefront treats a product as sold out
+        // at or below this number, so the editor has to use the same figure — with a hardcoded 0
+        // here, the panel said "In Stock" while the product page said "Out of stock".
+        outOfStockThreshold: {{ (int) get_shop_option('shop_out_of_stock_threshold', '0') }},
         downloadFiles: {!! json_encode($dlInitialFiles) !!},
         ajaxSaveUrl:   {!! json_encode(route('admin.posts.variations.ajax-save', $post->id ?? 0)) !!},
         csrf:          {!! json_encode(csrf_token()) !!},
@@ -79,17 +111,28 @@
                     }
                 }.bind(this), { deep: true });
 
-                this.$watch('stockQuantity', function (value) {
-                    if (this.manageStock) {
-                        this.stockStatus = parseInt(value) <= 0 ? 'outofstock' : 'instock';
-                    }
+                this.$watch('stockQuantity', function () {
+                    if (this.manageStock) this.stockStatus = this.autoStockStatus();
                 }.bind(this));
 
                 this.$watch('manageStock', function (value) {
-                    if (value) {
-                        this.stockStatus = parseInt(this.stockQuantity) <= 0 ? 'outofstock' : 'instock';
-                    }
+                    if (value) this.stockStatus = this.autoStockStatus();
                 }.bind(this));
+            },
+
+            outOfStockThreshold: _pdCfg.outOfStockThreshold,
+
+            /** The same rule the storefront applies: at or below the threshold means sold out. */
+            autoStockStatus() {
+                return parseInt(this.stockQuantity || 0) <= this.outOfStockThreshold ? 'outofstock' : 'instock';
+            },
+
+            /** True when a positive quantity still reads as sold out because of the threshold. */
+            belowThreshold() {
+                return this.manageStock
+                    && this.outOfStockThreshold > 0
+                    && parseInt(this.stockQuantity || 0) > 0
+                    && parseInt(this.stockQuantity || 0) <= this.outOfStockThreshold;
             },
 
             async saveVariations() {
@@ -120,7 +163,7 @@
             },
 
             addAttribute() {
-                this.attributes.push({ name: '', values: '', visible: true, variation: true });
+                this.attributes.push({ name: '', values: '', visible: true, variation: true, filterable: true });
             },
 
             removeAttribute(index) {
@@ -268,6 +311,14 @@
                         <span>Attributes</span>
                     </button>
                 </li>
+                {{-- Simple products keep their measurements here; variable products carry them
+                     per variation, so the tab is hidden for those. --}}
+                <li x-show="productType !== 'variable'">
+                    <button type="button" @click="activeTab = 'shipping'" :class="activeTab === 'shipping' ? 'bg-white border-y border-[#f0f0f1] border-r-transparent -mr-[1px] text-[#2271b1] font-semibold' : 'text-[#2271b1] hover:bg-white'" class="w-full text-left px-4 py-2.5 transition-colors flex items-center space-x-2">
+                        <span class="material-symbols-outlined text-[18px]">local_shipping</span>
+                        <span>Shipping</span>
+                    </button>
+                </li>
                 <li x-show="productType === 'variable'">
                     <button type="button" @click="activeTab = 'variations'" :class="activeTab === 'variations' ? 'bg-white border-y border-[#f0f0f1] border-r-transparent -mr-[1px] text-[#2271b1] font-semibold' : 'text-[#2271b1] hover:bg-white'" class="w-full text-left px-4 py-2.5 transition-colors flex items-center space-x-2">
                         <span class="material-symbols-outlined text-[18px]">layers</span>
@@ -278,6 +329,12 @@
                     <button type="button" @click="activeTab = 'downloads'" :class="activeTab === 'downloads' ? 'bg-white border-y border-[#f0f0f1] border-r-transparent -mr-[1px] text-[#2271b1] font-semibold' : 'text-[#2271b1] hover:bg-white'" class="w-full text-left px-4 py-2.5 transition-colors flex items-center space-x-2">
                         <span class="material-symbols-outlined text-[18px]">download</span>
                         <span>Downloads</span>
+                    </button>
+                </li>
+                <li>
+                    <button type="button" @click="activeTab = 'linked'" :class="activeTab === 'linked' ? 'bg-white border-y border-[#f0f0f1] border-r-transparent -mr-[1px] text-[#2271b1] font-semibold' : 'text-[#2271b1] hover:bg-white'" class="w-full text-left px-4 py-2.5 transition-colors flex items-center space-x-2">
+                        <span class="material-symbols-outlined text-[18px]">link</span>
+                        <span>Linked Products</span>
                     </button>
                 </li>
             </ul>
@@ -297,8 +354,22 @@
                     <div class="grid grid-cols-3 items-center">
                         <label class="text-[13px] font-semibold text-[#1d2327]">Sale Price (৳)</label>
                         <div class="col-span-2">
-                            <input type="number" name="sale_price" id="sale_price" step="0.01" value="{{ old('sale_price', $post->shopData->sale_price ?? '') }}" class="wp-input w-full max-w-[300px]">
+                            <input type="number" name="sale_price" id="sale_price" step="0.01" value="{{ old('sale_price', $post->shopData->sale_price ?? '') }}" class="wp-input w-full max-w-[300px]"
+                                   oninput="document.getElementById('sale-price-zero-warning').classList.toggle('hidden', !(this.value !== '' &amp;&amp; Number(this.value) === 0));">
                             <div id="price-error" class="hidden text-[#d63638] text-[11px] mt-1 italic">Sale price must be less than regular price.</div>
+                            {{-- A sale price of 0 really does make the product free; it is a plausible typo for
+                                 "turn the sale off", so say what it will actually do. --}}
+                            <div id="sale-price-zero-warning"
+                                 class="{{ (string) old('sale_price', $post->shopData->sale_price ?? '') !== '' && (float) old('sale_price', $post->shopData->sale_price ?? 0) == 0 ? '' : 'hidden' }} mt-2 flex items-start gap-2 border-l-4 border-[#dba617] bg-[#fcf9e8] px-3 py-2 text-[12px] text-[#674f00]">
+                                <span class="font-bold">&#9888;</span>
+                                <span>
+                                    A sale price of <strong>0</strong> makes this product <strong>completely free</strong> &mdash;
+                                    customers can order it without paying.<br>
+                                    To end a sale, leave this field <strong>empty</strong>. To sell a genuinely free item,
+                                    set <strong>Regular Price</strong> to 0 instead.
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-[#646970] mt-1">Leave empty if the product is not on sale.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 items-center">
@@ -326,11 +397,15 @@
                     <div class="grid grid-cols-3 items-center">
                         <label class="text-[13px] font-semibold text-[#1d2327]">Tax Status</label>
                         <div class="col-span-2">
+                            @php $taxStatus = old('tax_status', $post->shopData->tax_status ?? 'taxable'); @endphp
                             <select name="tax_status" class="wp-input h-8 py-0 w-full max-w-[300px]">
-                                <option value="taxable">Taxable</option>
-                                <option value="shipping">Shipping only</option>
-                                <option value="none">None</option>
+                                <option value="taxable" {{ $taxStatus === 'taxable' ? 'selected' : '' }}>Taxable</option>
+                                <option value="shipping" {{ $taxStatus === 'shipping' ? 'selected' : '' }}>Shipping only</option>
+                                <option value="none" {{ $taxStatus === 'none' ? 'selected' : '' }}>None</option>
                             </select>
+                            <p class="text-[11px] text-[#646970] mt-1">
+                                &ldquo;Shipping only&rdquo; taxes the shipping cost but not the product price. &ldquo;None&rdquo; exempts the product entirely.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -360,6 +435,23 @@
                     </div>
                 </div>
 
+                @php $backorders = old('backorders', $post->shopData->backorders ?? 'no'); @endphp
+                <div class="grid grid-cols-3 items-start" x-show="manageStock">
+                    <label class="text-[13px] font-semibold text-[#1d2327] pt-2">Allow backorders?</label>
+                    <div class="col-span-2">
+                        <select name="backorders" class="wp-input h-8 py-0 w-full max-w-[300px]">
+                            <option value="no" {{ $backorders === 'no' ? 'selected' : '' }}>Do not allow</option>
+                            <option value="notify" {{ $backorders === 'notify' ? 'selected' : '' }}>Allow, but notify customer</option>
+                            <option value="yes" {{ $backorders === 'yes' ? 'selected' : '' }}>Allow</option>
+                        </select>
+                        <p class="text-[11px] text-[#646970] mt-1">
+                            Lets customers keep ordering after stock runs out &mdash; stock goes negative and you
+                            fulfil when it arrives. &ldquo;Notify&rdquo; shows an <em>Available on backorder</em>
+                            note on the product page and in the cart.
+                        </p>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-3 items-center">
                     <label class="text-[13px] font-semibold text-[#1d2327]">Stock Status</label>
                     <div class="col-span-2">
@@ -368,12 +460,69 @@
                             <option value="outofstock">Out of Stock</option>
                             <option value="onbackorder">On Backorder</option>
                         </select>
+                        {{-- A disabled <select> is not submitted, so the auto-managed status was
+                             computed on screen and then never saved. This carries it through. --}}
+                        <template x-if="manageStock || productType === 'variable'">
+                            <input type="hidden" name="stock_status" :value="stockStatus">
+                        </template>
                         <template x-if="manageStock && productType !== 'variable'">
-                            <p class="text-[11px] text-[#646970] mt-1 italic">Status is automatically managed based on stock quantity.</p>
+                            <p class="text-[11px] text-[#646970] mt-1 italic">
+                                Status is automatically managed based on stock quantity<span x-show="outOfStockThreshold > 0">
+                                and the out-of-stock threshold (<span x-text="outOfStockThreshold"></span>)</span>.
+                            </p>
+                        </template>
+                        {{-- The storefront hides a product at or below the threshold. Without this the
+                             panel could read "In Stock" while the product page said "Out of stock". --}}
+                        <template x-if="belowThreshold()">
+                            <div class="mt-2 flex items-start gap-2 border-l-4 border-[#dba617] bg-[#fcf9e8] px-3 py-2 text-[12px] text-[#674f00]">
+                                <span class="font-bold">&#9888;</span>
+                                <span>
+                                    Stock is <strong x-text="stockQuantity"></strong> but the shop&rsquo;s
+                                    <strong>out-of-stock threshold is <span x-text="outOfStockThreshold"></span></strong>,
+                                    so customers will see this product as <strong>Out of Stock</strong>.<br>
+                                    Raise the quantity above <span x-text="outOfStockThreshold"></span>, or lower the threshold in
+                                    <strong>Shop &rarr; Product &amp; Inventory &rarr; Out of stock threshold</strong>.
+                                </span>
+                            </div>
                         </template>
                         <template x-if="productType === 'variable'">
                             <p class="text-[11px] text-[#2271b1] mt-1 italic">Overall status is automatically managed based on variation availability.</p>
                         </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Tab -->
+            @php
+                $wUnit = get_shop_option('shop_weight_unit', 'kg');
+                $dUnit = get_shop_option('shop_dimensions_unit', 'cm');
+            @endphp
+            <div x-show="activeTab === 'shipping' && productType !== 'variable'" class="space-y-6">
+                <div class="grid grid-cols-3 items-center">
+                    <label class="text-[13px] font-semibold text-[#1d2327]">Weight ({{ $wUnit }})</label>
+                    <div class="col-span-2">
+                        <input type="number" step="0.001" min="0" name="weight"
+                               value="{{ old('weight', $post->shopData->weight ?? '') }}"
+                               class="wp-input w-full max-w-[200px]" placeholder="0.000">
+                        <p class="text-[11px] text-[#646970] mt-1">Used by weight-based shipping rules. Leave empty if not applicable.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 items-start">
+                    <label class="text-[13px] font-semibold text-[#1d2327] pt-2">Dimensions ({{ $dUnit }})</label>
+                    <div class="col-span-2">
+                        <div class="flex items-center gap-2 max-w-[420px]">
+                            @foreach(['length' => 'Length', 'width' => 'Width', 'height' => 'Height'] as $dim => $dimLabel)
+                                <div class="flex-1">
+                                    <input type="number" step="0.001" min="0" name="{{ $dim }}"
+                                           value="{{ old($dim, $post->shopData->{$dim} ?? '') }}"
+                                           class="wp-input w-full" placeholder="{{ $dimLabel }}">
+                                    <span class="block text-[11px] text-[#646970] mt-0.5 text-center">{{ $dimLabel }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                        <p class="text-[11px] text-[#646970] mt-2">
+                            Units come from <strong>Shop &rarr; Product &amp; Inventory</strong>.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -414,6 +563,15 @@
                                     <label class="flex items-center text-[12px] text-[#646970]" x-show="productType === 'variable'">
                                         <input type="checkbox" x-model="attr.variation" :name="'attributes_data['+index+'][variation]'" value="1" class="mr-2 rounded-sm border-[#8c8f94]">
                                         Used for variations
+                                    </label>
+                                    <label class="flex items-center text-[12px] text-[#646970]" title="Adds this attribute to the shop's filter sidebar">
+                                        {{-- An unchecked checkbox submits nothing at all, and a missing
+                                             key means "yes" for attributes saved before this option
+                                             existed — so unchecking would silently switch back on.
+                                             This companion field makes "off" an explicit value. --}}
+                                        <input type="hidden" :name="'attributes_data['+index+'][filterable]'" value="0">
+                                        <input type="checkbox" x-model="attr.filterable" :name="'attributes_data['+index+'][filterable]'" value="1" class="mr-2 rounded-sm border-[#8c8f94]">
+                                        Show in filters
                                     </label>
                                 </div>
                             </div>
@@ -571,6 +729,44 @@
             </div>
 
             <!-- Downloads Tab -->
+            <!-- Linked Products Tab -->
+            <div x-show="activeTab === 'linked'" class="space-y-8">
+                <div>
+                    <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Upsells</label>
+                    <p class="text-[12px] text-[#646970] mb-2">
+                        Shown on this product's own page as &ldquo;You may also like&rdquo;. Use it for the better
+                        or larger version of what the shopper is already looking at.
+                    </p>
+                    <select id="linked-upsells" name="upsell_ids[]" multiple class="wp-input w-full">
+                        @foreach($linkableProducts as $linkable)
+                            <option value="{{ $linkable->id }}" {{ in_array($linkable->id, $selectedUpsells, true) ? 'selected' : '' }}>{{ $linkable->title }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Cross-sells</label>
+                    <p class="text-[12px] text-[#646970] mb-2">
+                        Shown in the cart once this product is in it. Use it for things that go alongside —
+                        a case, a cable, a spare.
+                    </p>
+                    <select id="linked-cross-sells" name="cross_sell_ids[]" multiple class="wp-input w-full">
+                        @foreach($linkableProducts as $linkable)
+                            <option value="{{ $linkable->id }}" {{ in_array($linkable->id, $selectedCrossSells, true) ? 'selected' : '' }}>{{ $linkable->title }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Posted even when both pickers are emptied: with no inputs at all the controller
+                     could not tell "cleared" from "not on this form". --}}
+                <input type="hidden" name="linked_products_submitted" value="1">
+
+                <p class="text-[12px] text-[#646970]">
+                    Related products are worked out automatically from the product's category — there is
+                    nothing to choose here for those.
+                </p>
+            </div>
+
             <div x-show="activeTab === 'downloads'" class="space-y-6">
                 <div class="space-y-4">
                     <div class="grid grid-cols-3 items-center">
@@ -775,6 +971,30 @@
         regPriceInput?.addEventListener('input', validatePrices);
         salePriceInput?.addEventListener('input', validatePrices);
         validatePrices();
+    });
+</script>
+
+{{-- The two Linked Products pickers. Same component the Promotions screen uses, so a long
+     catalogue stays searchable instead of being a wall of <option>s. --}}
+<link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/tom-select.default.min.css') }}">
+<script src="{{ asset('vendor/falcon-cms/js/tom-select.complete.min.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof TomSelect === 'undefined') return;
+
+        ['#linked-upsells', '#linked-cross-sells'].forEach(function (selector) {
+            var el = document.querySelector(selector);
+            if (!el) return;
+
+            new TomSelect(el, {
+                plugins: ['remove_button', 'dropdown_input'],
+                placeholder: 'Search and select products...',
+                maxOptions: 1000,
+                // Rendered on <body> so the list is not clipped by the metabox.
+                dropdownParent: 'body',
+                onItemAdd: function () { this.setTextboxValue(''); }
+            });
+        });
     });
 </script>
 @endif

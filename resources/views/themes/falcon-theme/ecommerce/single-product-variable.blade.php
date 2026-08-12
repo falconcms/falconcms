@@ -126,7 +126,7 @@
                 <?php do_falcon_action('falcon_variable_before_short_description', $post); ?>
                 @if($shortDescription)
                 <?php
-                    $shortDescHtml = '<div class="prose text-body mb-8">' . $shortDescription . '</div>';
+                    $shortDescHtml = '<div class="prose falcon-rich-text text-body mb-8">' . falcon_sanitize_html((string) $shortDescription) . '</div>';
                     $shortDescHtml = apply_falcon_filters('falcon_variable_short_description', $shortDescHtml, $post);
                     echo $shortDescHtml;
                 ?>
@@ -214,7 +214,7 @@
                 echo $descTitleHtml;
             ?>
             <?php
-                $descHtml = '<div class="prose max-w-none text-body">' . $post->content . '</div>';
+                $descHtml = '<div class="prose max-w-none falcon-rich-text text-body">' . falcon_sanitize_html((string) $post->content) . '</div>';
                 $descHtml = apply_falcon_filters('falcon_variable_product_description', $descHtml, $post);
                 echo $descHtml;
             ?>

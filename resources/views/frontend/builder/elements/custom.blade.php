@@ -51,7 +51,9 @@
 
         @elseif(in_array($it['kind'], ['text', 'textfield', 'textarea', 'wysiwyg']))
             @if($it['value'] !== null && $it['value'] !== '')
-                <div class="{{ $cls }}" @if($sty) style="{!! $sty !!}" @endif>{!! falcon_sanitize_html((string)$it['value']) !!}</div>
+                {{-- wysiwyg holds rich-editor HTML, so it gets the container that restores list
+                     bullets, table borders etc. after Tailwind's Preflight. --}}
+                <div class="{{ $cls }} @if($it['kind'] === 'wysiwyg') falcon-rich-text @endif" @if($sty) style="{!! $sty !!}" @endif>{!! falcon_sanitize_html((string)$it['value']) !!}</div>
             @endif
 
         @elseif(in_array($it['kind'], ['date', 'number', 'slider', 'select', 'radio', 'checkbox', 'url', 'link']))

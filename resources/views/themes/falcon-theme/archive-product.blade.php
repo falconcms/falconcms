@@ -23,6 +23,11 @@
     <div class="container-custom">
         <h1 class="text-[36px] md:text-[42px] font-normal text-heading mb-8">{{ $title ?? 'Shop' }}</h1>
 
+        <div class="flex flex-col lg:flex-row gap-10">
+        @include('falcon-cms::frontend.product-filters', ['filterOptions' => $filterOptions ?? null])
+        {{-- The filter panel swaps this block in place; keep the id in sync with it. --}}
+        <div class="flex-grow min-w-0" id="falcon-results">
+
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 text-[14px] text-[#777]">
             <div class="mb-4 md:mb-0">
                 @if($posts->count() > 0)
@@ -34,6 +39,14 @@
             @if($posts->total() > 0)
             <div>
                 <form action="" method="GET" id="sorting-form">
+                    {{-- Carry the active filters through, or changing the sort would clear them.
+                         http_build_query() is what keeps nested keys intact: `attr[color][]` has to
+                         come back as `attr[color][0]`, and flattening would collapse it to `attr[]`
+                         and silently drop the attribute filters. --}}
+                    @foreach(array_filter(explode('&', http_build_query(request()->except(['orderby', 'page'])))) as $fPair)
+                        @php [$fKey, $fVal] = array_pad(explode('=', $fPair, 2), 2, ''); @endphp
+                        <input type="hidden" name="{{ urldecode($fKey) }}" value="{{ urldecode($fVal) }}">
+                    @endforeach
                     <select name="orderby" class="border border-gray-200 rounded-sm bg-white focus:ring-0 focus:border-gray-300 text-[#777] cursor-pointer text-[14px] font-normal pl-3 pr-8 py-2" onchange="this.form.submit()">
                         <option value="latest" {{ request('orderby') == 'latest' ? 'selected' : '' }}>Default sorting</option>
                         <option value="popularity" {{ request('orderby') == 'popularity' ? 'selected' : '' }}>Sort by popularity</option>
@@ -61,7 +74,7 @@
                         @if(!$product->is_in_stock)
                             <span class="absolute top-3 right-3 bg-red-600 text-white text-[11px] font-bold px-3 py-1 rounded-sm shadow-md uppercase tracking-wider z-10">Out of Stock</span>
                         @endif
-                        @if($product->shopData && $product->shopData->sale_price)
+                        @if($product->shopData && $product->shopData->active_sale_price)
                             <span class="absolute top-3 left-3 bg-sky-100 text-sky-700 text-[13px] font-bold px-3 py-1 rounded-full shadow uppercase tracking-wide z-10">Sale!</span>
                         @endif
                     </a>
@@ -85,11 +98,15 @@
                             <a href="{{ get_falcon_permalink($product) }}">{{ $product->title }}</a>
                         </h2>
                         <div class="text-heading font-bold text-[14px] mb-3">
-                            @if($product->shopData && $product->shopData->sale_price)
-                                <span class="line-through text-[#a5a5a5] font-normal mr-1.5">{{ falcon_price_format($product->shopData->price) }}</span>
-                                <span>{{ falcon_price_format($product->shopData->sale_price) }}</span>
+                            {{-- A variable product is priced by its variations, so it shows a range;
+                                 price_range is null for everything else and the single price stands. --}}
+                            @if($product->shopData && $product->shopData->price_range)
+                                <span>{{ $product->shopData->price_range }}</span>
+                            @elseif($product->shopData && $product->shopData->active_sale_price)
+                                <span class="line-through text-[#a5a5a5] font-normal mr-1.5">{{ falcon_price_format(falcon_display_price($product->shopData->price, $product->id)) }}</span>
+                                <span>{{ falcon_price_format(falcon_display_price($product->shopData->active_sale_price, $product->id)) }}</span>
                             @else
-                                <span>{{ falcon_price_format($product->shopData->price ?? 0) }}</span>
+                                <span>{{ falcon_price_format(falcon_display_price($product->shopData->price ?? 0, $product->id)) }}</span>
                             @endif
                         </div>
                         <div class="mt-auto flex flex-wrap gap-2">
@@ -121,9 +138,18 @@
         @else
         <div class="bg-white p-10 text-center text-[#777]">
             <p class="text-lg mb-4">No products found.</p>
-            <a href="{{ url('/') }}" class="inline-block bg-primary text-white px-6 py-2 rounded hover:bg-primary-hover transition">Return to Home</a>
+            @php $anyFilter = collect(falcon_product_filters_active())->filter(fn ($v) => $v !== null && $v !== false && $v !== [])->isNotEmpty(); @endphp
+            @if($anyFilter)
+                {{-- Empty because of the filters, not because the shop is empty — offer the way out. --}}
+                <p class="text-[14px] mb-4">No products match the filters you selected.</p>
+                <a href="{{ url()->current() }}" data-falcon-clear class="inline-block bg-primary text-white px-6 py-2 rounded hover:bg-primary-hover transition">Clear filters</a>
+            @else
+                <a href="{{ url('/') }}" class="inline-block bg-primary text-white px-6 py-2 rounded hover:bg-primary-hover transition">Return to Home</a>
+            @endif
         </div>
         @endif
+        </div>{{-- /product column --}}
+        </div>{{-- /filters + products row --}}
     </div>
 </div>
 

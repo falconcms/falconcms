@@ -3,7 +3,11 @@
         tab: '{{ request('tab', session('active_shop_tab', 'general')) }}',
         sellingLocations: '{{ get_shop_option('shop_selling_locations', 'all') }}',
         shippingLocations: '{{ get_shop_option('shop_shipping_locations', 'all') }}',
-        manageStock: {{ get_shop_option('shop_manage_stock', '1') === '1' ? 'true' : 'false' }}
+        manageStock: {{ get_shop_option('shop_manage_stock', '1') === '1' ? 'true' : 'false' }},
+        {{-- Shown on both the General and Tax tabs. One shared value, because both controls post
+             the same `calc_taxes` name into the same form — with separate state the tab the user
+             did not touch silently overwrote the one they did. --}}
+        enableTax: {{ get_shop_option('shop_calc_taxes', '0') === '1' ? 'true' : 'false' }}
     }" x-init="$watch('tab', val => { localStorage.setItem('active_shop_tab', val); })"
     >
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Shop Settings</h1>
@@ -181,7 +185,7 @@
                         <td>
                             <label class="inline-flex items-center cursor-pointer">
                                 <input type="hidden" name="calc_taxes" value="0">
-                                <input type="checkbox" name="calc_taxes" value="1" {{ get_shop_option('shop_calc_taxes') === '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
+                                <input type="checkbox" name="calc_taxes" value="1" x-model="enableTax" class="w-4 h-4 mr-2">
                                 <span class="text-[14px] text-[#1d2327]">Enable tax rates and calculations</span>
                             </label>
                         </td>
@@ -418,6 +422,12 @@
                         </th>
                         <td>
                             <input type="number" name="out_of_stock_threshold" value="{{ get_shop_option('shop_out_of_stock_threshold', '0') }}" class="wp-input w-[100px] h-8 shadow-sm text-center">
+                            <p class="text-[12px] text-[#646970] mt-1">
+                                A product shows as <strong>Out of Stock</strong> once its quantity reaches
+                                <strong>this number or below</strong> &mdash; so <code>5</code> hides a product that still
+                                has 5 left. Keep it at <code>0</code> unless you deliberately hold back a buffer.
+                                Only applies to products with stock management switched on.
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -559,6 +569,27 @@
                                     <p class="text-[12px] text-[#646970] mt-1">Webhook signing secret from your Stripe Dashboard. Required to verify incoming payment events in production.</p>
                                 </td>
                             </tr>
+                            <tr>
+                                <th scope="row" class="w-[200px] text-left align-top pt-2">
+                                    <label class="text-[14px] font-semibold text-[#1d2327]">Webhook Endpoint URL</label>
+                                </th>
+                                <td>
+                                    {{-- No name attribute: this is a read-only reference, not a saved setting. --}}
+                                    <div class="flex items-center gap-2">
+                                        <input type="text" id="stripe-webhook-url" readonly
+                                               value="{{ route('shop.payment.stripe.webhook') }}"
+                                               onclick="this.select()"
+                                               class="wp-input w-full h-8 shadow-sm bg-white text-[#646970]">
+                                        <button type="button" class="wp-btn-secondary whitespace-nowrap"
+                                                onclick="const i = document.getElementById('stripe-webhook-url'); i.select(); navigator.clipboard.writeText(i.value); this.textContent = 'Copied'; setTimeout(() => this.textContent = 'Copy', 1500);">Copy</button>
+                                    </div>
+                                    <p class="text-[12px] text-[#646970] mt-1">
+                                        Add this URL in <strong>Stripe Dashboard &rarr; Developers &rarr; Webhooks</strong> and subscribe to
+                                        <code>payment_intent.succeeded</code>, <code>payment_intent.payment_failed</code> and <code>charge.refunded</code>.
+                                        Without it, a customer who closes the tab right after paying leaves the order stuck on <em>pending</em>.
+                                    </p>
+                                </td>
+                            </tr>
                         </table>
                     </div>
 
@@ -693,8 +724,9 @@
                                                         <select :name="'shipping_zones['+index+'][type]'" x-model="zone.type" class="wp-input w-full h-8 py-0">
                                                             <option value="order">Flat Rate (Per Order)</option>
                                                             <option value="item">Quantity Based (Per Item Range)</option>
+                                                            <option value="weight">Weight Based (Per Weight Range)</option>
                                                         </select>
-                                                        <p class="text-[11px] text-[#646970] mt-1">Choose 'Flat Rate' for a one-time fee per order, or 'Quantity Based' to define costs for different product count ranges.</p>
+                                                        <p class="text-[11px] text-[#646970] mt-1">'Flat Rate' charges once per order. 'Quantity Based' bands the cost by how many items are in the cart, 'Weight Based' by their total weight (taken from each product's Shipping tab).</p>
                                                     </div>
                                                     <div>
                                                         <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Free Shipping Threshold</label>
@@ -704,11 +736,13 @@
                                                 </div>
 
                                                 <!-- Quantity Rules - Expanded -->
-                                                <div x-show="zone.type === 'item'" class="md:col-span-2 border border-[#e5e7eb] rounded-lg bg-[#f9fafb] p-5 space-y-4">
+                                                <div x-show="zone.type === 'item' || zone.type === 'weight'" class="md:col-span-2 border border-[#e5e7eb] rounded-lg bg-[#f9fafb] p-5 space-y-4">
                                                     <div class="flex items-center justify-between border-b border-[#e5e7eb] pb-2">
                                                         <div>
-                                                            <label class="block text-[12px] font-bold text-[#374151] uppercase tracking-wider">Quantity Based Rules</label>
-                                                            <p class="text-[11px] text-[#646970]">Define shipping costs based on the number of items in the cart for more precise logistics pricing.</p>
+                                                            <label class="block text-[12px] font-bold text-[#374151] uppercase tracking-wider" x-text="zone.type === 'weight' ? 'Weight Based Rules' : 'Quantity Based Rules'"></label>
+                                                            <p class="text-[11px] text-[#646970]" x-text="zone.type === 'weight'
+                                                                ? 'Bands are measured in {{ get_shop_option('shop_weight_unit', 'kg') }}. A cart heavier than every band falls back to the base cost above.'
+                                                                : 'Define shipping costs based on the number of items in the cart for more precise logistics pricing.'"></p>
                                                         </div>
                                                     </div>
                                                     
@@ -717,12 +751,12 @@
                                                             <div class="flex items-center gap-3 bg-white p-3 rounded-md border border-[#e5e7eb] shadow-sm">
                                                                 <div class="flex-1 grid grid-cols-3 gap-4">
                                                                     <div>
-                                                                        <label class="block text-[11px] font-medium text-[#646970] mb-1">Min Qty</label>
-                                                                        <input type="number" :name="'shipping_zones['+index+'][rules]['+rIndex+'][min]'" x-model="rule.min" class="wp-input w-full h-8 text-[13px]">
+                                                                        <label class="block text-[11px] font-medium text-[#646970] mb-1" x-text="zone.type === 'weight' ? 'Min Weight ({{ get_shop_option('shop_weight_unit', 'kg') }})' : 'Min Qty'"></label>
+                                                                        <input type="number" :step="zone.type === 'weight' ? '0.001' : '1'" min="0" :name="'shipping_zones['+index+'][rules]['+rIndex+'][min]'" x-model="rule.min" class="wp-input w-full h-8 text-[13px]">
                                                                     </div>
                                                                     <div>
-                                                                        <label class="block text-[11px] font-medium text-[#646970] mb-1">Max Qty</label>
-                                                                        <input type="number" :name="'shipping_zones['+index+'][rules]['+rIndex+'][max]'" x-model="rule.max" placeholder="∞" class="wp-input w-full h-8 text-[13px]">
+                                                                        <label class="block text-[11px] font-medium text-[#646970] mb-1" x-text="zone.type === 'weight' ? 'Max Weight ({{ get_shop_option('shop_weight_unit', 'kg') }})' : 'Max Qty'"></label>
+                                                                        <input type="number" :step="zone.type === 'weight' ? '0.001' : '1'" min="0" :name="'shipping_zones['+index+'][rules]['+rIndex+'][max]'" x-model="rule.max" placeholder="∞" class="wp-input w-full h-8 text-[13px]">
                                                                     </div>
                                                                     <div>
                                                                         <label class="block text-[11px] font-medium text-[#646970] mb-1">Shipping Cost</label>
@@ -850,8 +884,7 @@
 
             <div x-show="tab === 'tax'" x-transition
                  x-data="{ 
-                    taxRates: {{ json_encode(get_shop_option('shop_tax_rates', [])) }},
-                    enableTax: {{ get_shop_option('shop_calc_taxes', '0') === '1' ? 'true' : 'false' }}
+                    taxRates: {{ json_encode(get_shop_option('shop_tax_rates', [])) }}
                  }">
                 <table class="w-full border-separate border-spacing-y-6">
                     <!-- Tax Enable -->
@@ -861,7 +894,8 @@
                         </th>
                         <td>
                             <label class="inline-flex items-center cursor-pointer">
-                                <input type="hidden" name="calc_taxes" value="0">
+                                {{-- No hidden reset here: the General tab already posts one, and a
+                                     second would depend on which control happens to come last. --}}
                                 <input type="checkbox" name="calc_taxes" value="1" x-model="enableTax" class="w-4 h-4 mr-2">
                                 <span class="text-[14px]">Enable tax calculations and display</span>
                             </label>
@@ -882,7 +916,12 @@
                                     <option value="billing" {{ get_shop_option('shop_tax_calculation_basis') === 'billing' ? 'selected' : '' }}>Customer billing address</option>
                                     <option value="base" {{ get_shop_option('shop_tax_calculation_basis') === 'base' ? 'selected' : '' }}>Shop base address</option>
                                 </select>
-                                <p class="text-[12px] text-[#646970] mt-1">Determines which address is used to calculate tax rates.</p>
+                                <p class="text-[12px] text-[#646970] mt-1">
+                                    Which address decides the rate.
+                                    <strong>Shop base address</strong> applies your own country&rsquo;s rate to every order &mdash;
+                                    the customer&rsquo;s country is ignored, so per-country rates below will never take effect.
+                                    Choose a customer address if you charge different rates per destination.
+                                </p>
                             </td>
                         </tr>
 
@@ -899,6 +938,11 @@
                                             <option value="exclusive" {{ get_shop_option('shop_tax_price_entry') === 'exclusive' ? 'selected' : '' }}>No, I will enter prices exclusive of tax</option>
                                             <option value="inclusive" {{ get_shop_option('shop_tax_price_entry') === 'inclusive' ? 'selected' : '' }}>Yes, I will enter prices inclusive of tax</option>
                                         </select>
+                                        <p class="text-[12px] text-[#646970] mt-1">
+                                            <strong>Exclusive</strong> &mdash; tax is added on top, so the order total grows by the tax.<br>
+                                            <strong>Inclusive</strong> &mdash; your prices already contain the tax, so it is shown as
+                                            &ldquo;included&rdquo; and the total does <em>not</em> increase.
+                                        </p>
                                     </div>
                                     <div>
                                         <label class="block text-[13px] font-semibold mb-1">Display prices in shop</label>
@@ -906,6 +950,10 @@
                                             <option value="exclusive" {{ get_shop_option('shop_tax_display_shop', 'exclusive') === 'exclusive' ? 'selected' : '' }}>Excluding tax</option>
                                             <option value="inclusive" {{ get_shop_option('shop_tax_display_shop') === 'inclusive' ? 'selected' : '' }}>Including tax</option>
                                         </select>
+                                        <p class="text-[12px] text-[#646970] mt-1">
+                                            Affects catalogue prices (product pages and cards) only. Cart and checkout always show
+                                            the real breakdown &mdash; subtotal, tax and total as they will be charged.
+                                        </p>
                                     </div>
                                 </div>
                                 <p class="text-[12px] text-[#646970] mt-2">Control how product prices are entered in the backend and displayed to your customers.</p>
@@ -990,9 +1038,12 @@
 
             <!-- Coupons Tab -->
             <div x-show="tab === 'coupons'" x-transition
-                 x-data="{ 
-                    coupons: {{ json_encode(get_shop_option('shop_coupons', [])) }}
+                 x-data="{
+                    coupons: {{ json_encode(falcon_all_coupons()) }}
                  }">
+                {{-- Always posted, so removing every coupon row still reaches the server as
+                     "the list is now empty" rather than looking like an untouched tab. --}}
+                <input type="hidden" name="coupons_submitted" value="1">
                 <table class="w-full border-separate border-spacing-y-6">
                     <!-- Global Coupon Settings -->
                     <tr>

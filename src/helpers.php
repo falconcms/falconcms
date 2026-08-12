@@ -3596,8 +3596,1465 @@ if (!function_exists('get_falcon_cart_shipping')) {
     }
 }
 
+if (!function_exists('falcon_attribute_slug')) {
+    /**
+     * URL-safe key for an attribute name or value.
+     *
+     * Str::slug() transliterates what it can (Bengali "নীল" becomes "neel") but returns an empty
+     * string for scripts it has no map for — Chinese, emoji, punctuation-only values. Falling
+     * back to the lower-cased original keeps those distinct; the slug only has to match itself.
+     */
+    function falcon_attribute_slug(string $text): string {
+        $slug = \Illuminate\Support\Str::slug($text);
+
+        return $slug !== '' ? $slug : mb_strtolower(trim($text));
+    }
+}
+
+if (!function_exists('falcon_product_attribute_definitions')) {
+    /**
+     * The attributes a product declares, normalised out of shop_products.attributes_data.
+     *
+     * The stored shape is `[{name, values: "Red | Green | Blue", visible: "1", variation: "1"}]`,
+     * written by the admin's Attributes tab.
+     *
+     * @return array<int, array{name: string, values: array<int, string>, visible: bool, variation: bool, filterable: bool}>
+     */
+    function falcon_product_attribute_definitions($shopData): array {
+        $raw = $shopData->attributes_data ?? null;
+
+        if (is_string($raw)) {
+            $raw = json_decode($raw, true);
+        }
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($raw as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+            $name = is_scalar($entry['name'] ?? null) ? trim((string) $entry['name']) : '';
+            if ($name === '') {
+                continue;
+            }
+
+            $values = [];
+            $rawValues = $entry['values'] ?? '';
+            foreach (is_array($rawValues) ? $rawValues : explode('|', (string) $rawValues) as $value) {
+                if (!is_scalar($value)) {
+                    continue;
+                }
+                $value = trim((string) $value);
+                if ($value !== '') {
+                    $values[] = $value;
+                }
+            }
+
+            $out[] = [
+                'name'      => $name,
+                'values'    => array_values(array_unique($values)),
+                'visible'   => (string) ($entry['visible'] ?? '') === '1',
+                'variation' => (string) ($entry['variation'] ?? '') === '1',
+                // Attributes saved before this option existed carry no key, and a shop owner who
+                // adds an attribute expects to filter by it — so absent means yes.
+                'filterable' => !array_key_exists('filterable', $entry) || (string) $entry['filterable'] === '1',
+            ];
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('falcon_sync_product_attribute_index')) {
+    /**
+     * Rebuild one product's rows in the attribute index.
+     *
+     * Called on every product save. The index is derived data, so this replaces it wholesale
+     * rather than patching it — a removed attribute or a renamed value cannot linger.
+     */
+    function falcon_sync_product_attribute_index($shopData): void {
+        if (!$shopData || !\Illuminate\Support\Facades\Schema::hasTable('shop_product_attribute_values')) {
+            return;
+        }
+
+        $postId = (int) ($shopData->post_id ?? 0);
+        if ($postId <= 0) {
+            return;
+        }
+
+        try {
+            $rows = [];
+            $seen = ['names' => [], 'values' => []];
+            $isVariable = $shopData->isVariable();
+
+            // Claims a slug, appending -2, -3 … when something already took it.
+            $unique = static function (string $slug, array &$taken): string {
+                if ($slug === '') {
+                    return '';
+                }
+                $candidate = $slug;
+                $n = 1;
+                while (isset($taken[$candidate])) {
+                    $candidate = $slug . '-' . (++$n);
+                }
+                $taken[$candidate] = true;
+
+                return $candidate;
+            };
+
+            // What the variations actually offer, keyed by attribute name.
+            $fromVariations = [];
+            if ($isVariable) {
+                foreach ($shopData->variations()->get(['attributes_data']) as $variation) {
+                    $attrs = $variation->attributes_data;
+                    if (is_string($attrs)) {
+                        $attrs = json_decode($attrs, true);
+                    }
+                    if (!is_array($attrs)) {
+                        continue;
+                    }
+                    foreach ($attrs as $name => $value) {
+                        if (is_scalar($value) && trim((string) $value) !== '') {
+                            $fromVariations[trim((string) $name)][] = trim((string) $value);
+                        }
+                    }
+                }
+            }
+
+            foreach (falcon_product_attribute_definitions($shopData) as $attribute) {
+                if (!$attribute['filterable']) {
+                    continue;
+                }
+
+                // For a variable product the variations are the honest answer: the parent may
+                // still list a colour nobody built a variation for, and filtering to it would
+                // surface a product the shopper cannot actually buy. Fall back to the declared
+                // list while no variations exist yet.
+                $values = $attribute['values'];
+                if ($isVariable && $attribute['variation'] && !empty($fromVariations[$attribute['name']])) {
+                    $values = array_values(array_unique($fromVariations[$attribute['name']]));
+                }
+                if (empty($values)) {
+                    continue;
+                }
+
+                $nameSlug = $unique(falcon_attribute_slug($attribute['name']), $seen['names']);
+                if ($nameSlug === '') {
+                    continue;
+                }
+                $seen['values'][$nameSlug] = $seen['values'][$nameSlug] ?? [];
+                $sameValue = [];
+
+                foreach ($values as $value) {
+                    // "Blue", "blue" and " Blue " are one value — collapse them before slugging so
+                    // they do not consume a disambiguation suffix.
+                    $normalised = mb_strtolower(trim($value));
+                    if ($normalised === '' || isset($sameValue[$normalised])) {
+                        continue;
+                    }
+                    $sameValue[$normalised] = true;
+
+                    // Genuinely different values can still slug the same ("XL" and "XL+" both
+                    // reduce to "xl"). Suffixing keeps both filterable instead of silently
+                    // dropping whichever came second.
+                    $valueSlug = $unique(falcon_attribute_slug($value), $seen['values'][$nameSlug]);
+                    if ($valueSlug === '') {
+                        continue;
+                    }
+
+                    $rows[] = [
+                        'post_id'    => $postId,
+                        'name'       => mb_substr($attribute['name'], 0, 60),
+                        'name_slug'  => mb_substr($nameSlug, 0, 60),
+                        'value'      => mb_substr($value, 0, 120),
+                        'value_slug' => mb_substr($valueSlug, 0, 120),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::transaction(function () use ($postId, $rows) {
+                \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')
+                    ->where('post_id', $postId)->delete();
+
+                foreach (array_chunk($rows, 200) as $chunk) {
+                    \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')->insert($chunk);
+                }
+            });
+        } catch (\Throwable $e) {
+            // A broken index must never stop a shop owner from saving a product.
+            \Illuminate\Support\Facades\Log::error('Attribute index sync failed for post ' . $postId . ': ' . $e->getMessage());
+        }
+    }
+}
+
+if (!function_exists('falcon_reindex_all_product_attributes')) {
+    /**
+     * Rebuild the whole attribute index. Used by the install migration and by
+     * `php artisan falcon:reindex-attributes`.
+     *
+     * @return int products processed
+     */
+    function falcon_reindex_all_product_attributes(): int {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('shop_product_attribute_values')
+            || !\Illuminate\Support\Facades\Schema::hasTable('shop_products')) {
+            return 0;
+        }
+
+        // Products whose post is gone (or whose foreign key was never created) leave orphans.
+        \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')
+            ->whereNotIn('post_id', \Illuminate\Support\Facades\DB::table('posts')->select('id'))
+            ->delete();
+
+        $count = 0;
+        \FalconCms\Core\Models\ProductData::query()
+            ->whereNotNull('attributes_data')
+            ->chunkById(100, function ($chunk) use (&$count) {
+                foreach ($chunk as $shopData) {
+                    falcon_sync_product_attribute_index($shopData);
+                    $count++;
+                }
+            });
+
+        return $count;
+    }
+}
+
+if (!function_exists('falcon_product_filters_active')) {
+    /**
+     * The archive filters currently in the URL, already validated.
+     *
+     * Everything is read through this one function so the query, the sidebar and the "active
+     * filters" chips can never disagree about what is being filtered.
+     *
+     * @return array{search: string, min_price: ?float, max_price: ?float, categories: array<int, string>, attributes: array<string, array<int, string>>, in_stock: bool, on_sale: bool}
+     */
+    function falcon_product_filters_active(): array {
+        $request = request();
+
+        $price = static function ($value): ?float {
+            // Arrays and objects arrive whenever someone hand-edits the query string.
+            if (!is_scalar($value) || $value === '' || !is_numeric($value)) {
+                return null;
+            }
+            $value = (float) $value;
+
+            // INF/NAN (e.g. `1e400`) would poison every comparison downstream.
+            return is_finite($value) ? max(0.0, $value) : null;
+        };
+
+        // Slugs only — they are matched against a column, never interpolated into SQL.
+        // Non-scalars (`product_cat[][]=x`) are dropped rather than stringified, so a nested
+        // array in the URL cannot reach the view and blow up htmlspecialchars().
+        $categories = array_values(array_filter(array_map(
+            static fn ($slug) => is_string($slug) ? trim($slug) : '',
+            array_filter((array) $request->query('product_cat', []), 'is_scalar')
+        )));
+
+        // Attribute filters arrive as `?attr[color][]=blue&attr[size][]=xl`. Both halves are
+        // slugs matched against indexed columns, never interpolated anywhere.
+        $attributes = [];
+        foreach ((array) $request->query('attr', []) as $name => $values) {
+            // Bounded on purpose: a hand-written URL with thousands of keys would otherwise turn
+            // into thousands of subqueries.
+            if (count($attributes) >= 12) {
+                break;
+            }
+            if (!is_string($name)) {
+                continue;
+            }
+            $name = trim($name);
+            if ($name === '' || mb_strlen($name) > 60) {
+                continue;
+            }
+
+            $clean = [];
+            foreach (array_filter((array) $values, 'is_scalar') as $value) {
+                if (count($clean) >= 60) {
+                    break;
+                }
+                $value = trim((string) $value);
+                if ($value !== '' && mb_strlen($value) <= 120) {
+                    $clean[] = $value;
+                }
+            }
+            if ($clean) {
+                $attributes[$name] = array_values(array_unique($clean));
+            }
+        }
+
+        // Free-text search. Capped so a pathological term cannot drive an expensive LIKE.
+        $search = $request->query('s');
+        $search = is_scalar($search) ? trim((string) $search) : '';
+        $search = $search !== '' ? mb_substr($search, 0, 120) : '';
+
+        $min = $price($request->query('min_price'));
+        $max = $price($request->query('max_price'));
+
+        // A reversed range would silently match nothing; swapping is what the shopper meant.
+        if ($min !== null && $max !== null && $min > $max) {
+            [$min, $max] = [$max, $min];
+        }
+
+        return [
+            'search'     => $search,
+            'min_price'  => $min,
+            'max_price'  => $max,
+            'categories' => $categories,
+            'attributes' => $attributes,
+            'in_stock'   => $request->query('in_stock') === '1',
+            'on_sale'    => $request->query('on_sale') === '1',
+        ];
+    }
+}
+
+if (!function_exists('falcon_apply_product_filters')) {
+    /**
+     * Narrow a product query by the archive filters.
+     *
+     * Deliberately uses whereHas subqueries rather than joins: the sorting code already joins
+     * shop_products for price ordering, and a second join on the same table would break the
+     * query. Subqueries compose with anything.
+     */
+    function falcon_apply_product_filters($query, ?array $filters = null) {
+        $filters = $filters ?? falcon_product_filters_active();
+
+        if (($filters['search'] ?? '') !== '') {
+            // `%` and `_` are LIKE wildcards. Left unescaped, a search for "100%" would match
+            // everything, and "_" would match any single character — neither is what was typed.
+            $term = '%' . addcslashes($filters['search'], '%_\\') . '%';
+
+            $query->where(function ($q) use ($term) {
+                $q->where('posts.title', 'like', $term)
+                    ->orWhere('posts.excerpt', 'like', $term)
+                    // SKU matters more than prose in a shop: staff and repeat buyers search by it.
+                    ->orWhereHas('shopData', fn ($sd) => $sd->where('sku', 'like', $term))
+                    ->orWhereHas('shopData.variations', fn ($v) => $v->where('sku', 'like', $term));
+            });
+        }
+
+        // Effective price = sale price when there is one, otherwise the regular price.
+        //
+        // Variable products keep their prices on the variations, not on the parent row — the
+        // admin hides the price fields for them — so a parent-only check would drop every
+        // variable product from any price filter. Both bounds are applied to the *same* row so
+        // "1000-2000" means one variation actually costs that, not that the range merely
+        // overlaps the product's spread.
+        if ($filters['min_price'] !== null || $filters['max_price'] !== null) {
+            $priceBounds = static function ($q) use ($filters) {
+                $expr = 'COALESCE(NULLIF(sale_price, 0), price)';
+                if ($filters['min_price'] !== null) {
+                    $q->whereRaw($expr . ' >= ?', [$filters['min_price']]);
+                }
+                if ($filters['max_price'] !== null) {
+                    $q->whereRaw($expr . ' <= ?', [$filters['max_price']]);
+                }
+            };
+
+            $query->where(function ($outer) use ($priceBounds) {
+                $outer->whereHas('shopData', function ($q) use ($priceBounds) {
+                        // Excluded so a stale parent price left over from when the product was
+                        // simple cannot match on a variable product's behalf.
+                        $q->notVariable();
+                        $priceBounds($q);
+                    })
+                    ->orWhereHas('shopData', function ($q) use ($priceBounds) {
+                        // Gated on the parent type: switching a product back to simple leaves its
+                        // old variation rows in place, and those must not match any more.
+                        $q->variable()->whereHas('variations', $priceBounds);
+                    });
+            });
+        }
+
+        if (!empty($filters['categories'])) {
+            $query->whereHas('productCategories', fn ($q) => $q->whereIn('product_categories.slug', $filters['categories']));
+        }
+
+        // Values within one attribute are OR'd, separate attributes are AND'd — picking Red and
+        // Blue widens the results, adding a size narrows them. That is what shoppers expect from
+        // a layered filter, and each attribute needs its own subquery to express it.
+        foreach ($filters['attributes'] ?? [] as $nameSlug => $valueSlugs) {
+            $query->whereHas(
+                'attributeValues',
+                fn ($q) => $q->where('name_slug', $nameSlug)->whereIn('value_slug', $valueSlugs)
+            );
+        }
+
+        if ($filters['on_sale']) {
+            // A variable product is on sale when any one of its variations is.
+            $onSale = static fn ($q) => $q->whereNotNull('sale_price')->where('sale_price', '>', 0);
+
+            // Variations carry no end date, but the parent does — and an expired sale must drop
+            // out of this filter the moment it ends, not whenever falcon:expire-sales next runs.
+            $liveSale = static fn ($q) => $q->whereNotNull('sale_price')
+                ->where('sale_price', '>', 0)
+                ->where(fn ($w) => $w->whereNull('sale_ends_at')->orWhere('sale_ends_at', '>', now()));
+
+            $query->where(function ($outer) use ($onSale, $liveSale) {
+                $outer->whereHas('shopData', function ($q) use ($liveSale) {
+                        $q->notVariable();
+                        $liveSale($q);
+                    })
+                    ->orWhereHas('shopData', function ($q) use ($onSale) {
+                        $q->variable()->whereHas('variations', $onSale);
+                    });
+            });
+        }
+
+        if ($filters['in_stock']) {
+            $threshold = (int) get_shop_option('shop_out_of_stock_threshold', '0');
+            $globalManage = get_shop_option('shop_manage_stock', '1') === '1';
+
+            // Mirrors ProductData::isInStock() in SQL. A product with no shop row is treated as
+            // available, exactly as the accessor does.
+
+            // The parent's own shelf: what a simple product — and a variation that does not track
+            // its own stock — is sold from.
+            $parentShelf = static function ($q) use ($threshold, $globalManage) {
+                if ($globalManage) {
+                    $q->where(fn ($inner) => $inner
+                        ->where('manage_stock', 0)
+                        ->orWhere('stock_quantity', '>', $threshold)
+                        ->orWhereIn('backorders', ['notify', 'yes']));
+                }
+            };
+
+            $query->where(function ($outer) use ($threshold, $globalManage, $parentShelf) {
+                $outer->whereDoesntHave('shopData')
+                    ->orWhereHas('shopData', function ($q) use ($threshold, $globalManage, $parentShelf) {
+                        $q->where('stock_status', '!=', 'outofstock')
+                            ->where(function ($w) use ($threshold, $globalManage, $parentShelf) {
+                                // Simple products, and variable ones with no variations built yet.
+                                $w->where(function ($simple) use ($parentShelf) {
+                                    $simple->where(fn ($t) => $t->notVariable()
+                                        ->orWhereDoesntHave('variations'));
+                                    $parentShelf($simple);
+                                })
+                                // A variable product is only as available as its variations.
+                                ->orWhere(function ($variable) use ($threshold, $globalManage, $parentShelf) {
+                                    $variable->variable()
+                                        ->where(function ($any) use ($threshold, $globalManage, $parentShelf) {
+                                            // Backorders are set on the parent, so once they are on,
+                                            // any variation still on the shelf can be sold.
+                                            $any->where(function ($bo) {
+                                                    $bo->whereIn('backorders', ['notify', 'yes'])
+                                                        ->whereHas('variations', fn ($v) => $v->where('stock_status', '!=', 'outofstock'));
+                                                })
+                                                // A variation holding its own stock.
+                                                ->orWhereHas('variations', function ($v) use ($threshold, $globalManage) {
+                                                    $v->where('stock_status', '!=', 'outofstock');
+                                                    if ($globalManage) {
+                                                        $v->where('manage_stock', 1)->where('stock_quantity', '>', $threshold);
+                                                    }
+                                                })
+                                                // A variation that inherits the parent's shelf.
+                                                ->orWhere(function ($inherit) use ($parentShelf) {
+                                                    $inherit->whereHas('variations', fn ($v) => $v->where('stock_status', '!=', 'outofstock')
+                                                        ->where('manage_stock', 0));
+                                                    $parentShelf($inherit);
+                                                });
+                                        });
+                                });
+                            });
+                    });
+            });
+        }
+
+        return $query;
+    }
+}
+
+if (!function_exists('falcon_apply_product_sorting')) {
+    /**
+     * Order a product query. Extracted so the shop page and the taxonomy archives cannot drift
+     * apart — they each had their own copy of this switch.
+     */
+    function falcon_apply_product_sorting($query, ?string $orderby = null) {
+        $orderby = $orderby ?? request('orderby', 'latest');
+
+        switch ($orderby) {
+            case 'price':
+            case 'price-desc':
+                $direction = $orderby === 'price' ? 'ASC' : 'DESC';
+
+                // Sort a variable product by the cheapest variation when going low-to-high and
+                // by the dearest when going high-to-low — matching the range a shopper sees.
+                // Without the subquery every variable product sorts as NULL and clumps at one end.
+                $agg = $orderby === 'price' ? 'MIN' : 'MAX';
+                $expr = 'COALESCE('
+                    . '(SELECT ' . $agg . '(COALESCE(NULLIF(v.sale_price, 0), v.price))'
+                    . ' FROM shop_product_variations v WHERE v.product_id = shop_products.id'
+                    . " AND (shop_products.type = 'variable' OR shop_products.product_type = 'variable')),"
+                    . ' COALESCE(NULLIF(shop_products.sale_price, 0), shop_products.price))';
+
+                $query->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
+                    ->orderByRaw($expr . ' ' . $direction)
+                    ->select('posts.*');
+                break;
+
+            case 'rating':
+                $query->withCount(['reviews as average_rating' => fn ($q) => $q->select(\Illuminate\Support\Facades\DB::raw('avg(rating)'))])
+                    ->orderBy('average_rating', 'desc');
+                break;
+
+            case 'popularity':
+                $query->withCount('reviews')->orderBy('reviews_count', 'desc');
+                break;
+
+            case 'latest':
+            default:
+                $query->latest();
+                break;
+        }
+
+        return $query;
+    }
+}
+
+if (!function_exists('falcon_product_filter_options')) {
+    /**
+     * Data the filter sidebar needs: the categories on offer with their counts, and the price
+     * range of the products being browsed.
+     *
+     * Counts come from the unfiltered set so a category never vanishes the moment it is
+     * deselected — a filter panel that erases its own options is unusable.
+     *
+     * @param callable $baseQuery returns a fresh, unfiltered query for this archive
+     */
+    function falcon_product_filter_options(callable $baseQuery): array {
+        try {
+            $ids = $baseQuery()->pluck('posts.id');
+
+            $categories = \Illuminate\Support\Facades\DB::table('product_categories')
+                ->join('product_category_post', 'product_category_post.product_category_id', '=', 'product_categories.id')
+                ->whereIn('product_category_post.post_id', $ids)
+                ->groupBy('product_categories.id', 'product_categories.name', 'product_categories.slug')
+                ->orderBy('product_categories.name')
+                ->get([
+                    'product_categories.name',
+                    'product_categories.slug',
+                    \Illuminate\Support\Facades\DB::raw('COUNT(DISTINCT product_category_post.post_id) as total'),
+                ]);
+
+            // The band has to cover variation prices too, or the placeholders would understate
+            // the real range on any shop that sells variable products.
+            $bounds = \Illuminate\Support\Facades\DB::table('shop_products')
+                ->leftJoin('shop_product_variations as v', function ($j) {
+                    $j->on('v.product_id', '=', 'shop_products.id')
+                        ->where(fn ($w) => $w->where('shop_products.type', '=', 'variable')
+                            ->orWhere('shop_products.product_type', '=', 'variable'));
+                })
+                ->whereIn('shop_products.post_id', $ids)
+                ->selectRaw(
+                    'MIN(COALESCE(NULLIF(v.sale_price, 0), v.price, NULLIF(shop_products.sale_price, 0), shop_products.price)) as min_price,'
+                    . ' MAX(COALESCE(NULLIF(v.sale_price, 0), v.price, NULLIF(shop_products.sale_price, 0), shop_products.price)) as max_price'
+                )
+                ->first();
+
+            // Whatever attributes this set of products happens to declare, grouped for the
+            // sidebar. Nothing here is hard-coded, so a brand new attribute shows up by itself.
+            $attributes = [];
+            if (\Illuminate\Support\Facades\Schema::hasTable('shop_product_attribute_values')) {
+                $rows = \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')
+                    ->whereIn('post_id', $ids)
+                    ->groupBy('name', 'name_slug', 'value', 'value_slug')
+                    ->orderBy('name')
+                    ->orderBy('value')
+                    ->get([
+                        'name', 'name_slug', 'value', 'value_slug',
+                        \Illuminate\Support\Facades\DB::raw('COUNT(DISTINCT post_id) as total'),
+                    ]);
+
+                foreach ($rows as $row) {
+                    if (!isset($attributes[$row->name_slug])) {
+                        $attributes[$row->name_slug] = [
+                            'name'   => $row->name,
+                            'slug'   => $row->name_slug,
+                            'values' => [],
+                        ];
+                    }
+                    $attributes[$row->name_slug]['values'][] = [
+                        'label' => $row->value,
+                        'slug'  => $row->value_slug,
+                        'total' => (int) $row->total,
+                    ];
+                }
+            }
+
+            return [
+                'categories' => $categories,
+                'attributes' => array_values($attributes),
+                'min_price'  => $bounds && $bounds->min_price !== null ? (float) $bounds->min_price : 0.0,
+                'max_price'  => $bounds && $bounds->max_price !== null ? (float) $bounds->max_price : 0.0,
+            ];
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Product filter options failed: ' . $e->getMessage());
+            return ['categories' => collect(), 'attributes' => [], 'min_price' => 0.0, 'max_price' => 0.0];
+        }
+    }
+}
+
+if (!function_exists('falcon_order_discount_lines')) {
+    /**
+     * Break an order's discount down into named lines the customer can recognise.
+     *
+     * Orders record a single `discount_total`, which on its own leaves the shopper staring at a
+     * gap between the subtotal and the total. Coupon codes live on the order row and promotions
+     * in its meta, so both can be named here.
+     *
+     * Whatever cannot be attributed is emitted as a final "Discount" line, so the figures always
+     * reconcile — including for orders placed before promotions existed.
+     *
+     * @return array<int, array{label:string, note:?string, amount:float}>
+     */
+    function falcon_order_discount_lines($order): array {
+        $total = round((float) ($order->discount_total ?? 0), 2);
+        if ($total <= 0) {
+            return [];
+        }
+
+        $lines     = [];
+        $accounted = 0.0;
+
+        $meta = $order->meta ?? [];
+        if (is_string($meta)) {
+            $meta = json_decode($meta, true) ?: [];
+        }
+
+        foreach ((array) ($meta['promotions'] ?? []) as $promo) {
+            $amount = round((float) ($promo['discount'] ?? 0), 2);
+            if ($amount <= 0) {
+                continue;
+            }
+            $lines[] = [
+                'label'  => (string) ($promo['name'] ?? 'Promotion'),
+                'note'   => $promo['summary'] ?? null,
+                'amount' => $amount,
+            ];
+            $accounted += $amount;
+        }
+
+        $remainder = round($total - $accounted, 2);
+        if ($remainder <= 0.009) {
+            return $lines;
+        }
+
+        // Coupons share a single stored figure, so several codes are shown on one line rather
+        // than guessing how the money was split between them.
+        $codes = array_values(array_filter(array_map('trim', explode(',', (string) ($order->coupon_code ?? '')))));
+
+        $lines[] = [
+            'label'  => $codes ? 'Coupon' . (count($codes) > 1 ? 's' : '') . ': ' . implode(', ', $codes) : 'Discount',
+            'note'   => null,
+            'amount' => $remainder,
+        ];
+
+        return $lines;
+    }
+}
+
+if (!function_exists('falcon_promotion_matches_item')) {
+    /**
+     * Does a cart line fall inside a promotion's product / category list?
+     *
+     * An empty list means "anything", which is what makes a shop-wide rule expressible.
+     * Category membership is matched through origin ids so translated duplicates of the same
+     * product resolve to the same identity, exactly as the coupon restrictions do.
+     */
+    function falcon_promotion_matches_item(array $item, string $scope, array $ids): bool {
+        if (empty($ids)) {
+            return true;
+        }
+
+        $postId = (int) ($item['id'] ?? 0);
+        if ($postId <= 0) {
+            return false;
+        }
+
+        if ($scope === 'category') {
+            static $catCache = [];
+            if (!array_key_exists($postId, $catCache)) {
+                $catCache[$postId] = \Illuminate\Support\Facades\DB::table('product_category_post')
+                    ->join('product_categories', 'product_category_post.product_category_id', '=', 'product_categories.id')
+                    ->where('product_category_post.post_id', $postId)
+                    ->selectRaw('COALESCE(product_categories.origin_id, product_categories.id) as identity')
+                    ->pluck('identity')->map(fn ($v) => (int) $v)->all();
+            }
+            return !empty(array_intersect($catCache[$postId], array_map('intval', $ids)));
+        }
+
+        static $idCache = [];
+        if (!array_key_exists($postId, $idCache)) {
+            $idCache[$postId] = (int) (\Illuminate\Support\Facades\DB::table('posts')
+                ->where('id', $postId)
+                ->selectRaw('COALESCE(origin_id, id) as identity')
+                ->value('identity') ?: $postId);
+        }
+
+        return in_array($idCache[$postId], array_map('intval', $ids), true);
+    }
+}
+
+if (!function_exists('falcon_promotion_applications')) {
+    /**
+     * How many times a cart satisfies a promotion's condition.
+     *
+     * Shared by the discount calculation and the "you qualify" prompt so the two can never
+     * disagree about whether an offer is earned.
+     *
+     * @param array $units   cart key => ['item'=>…, 'price'=>float, 'qty'=>int]
+     * @param array $claimed cart key => units an earlier promotion already gave away
+     */
+    function falcon_promotion_applications($promo, array $units, float $subtotal, array $claimed = []): int {
+        $triggerQty = max(0.0, (float) $promo->trigger_qty);
+        $rewardQty  = max(1, (int) $promo->reward_qty);
+
+        if ($promo->trigger_type === 'cart_total') {
+            $applications = ($triggerQty > 0 && $subtotal >= $triggerQty) ? 1 : 0;
+        } elseif ($triggerQty <= 0) {
+            $applications = 0;
+        } else {
+            // Units an earlier promotion already gave away cannot also count towards qualifying
+            // for this one — otherwise two "buy 1 get 1" rules on the same two items would make
+            // both free, and the shop would be paid nothing.
+            $matchedQty = 0;
+            foreach ($units as $key => $u) {
+                if (falcon_promotion_matches_item($u['item'], $promo->trigger_type, (array) ($promo->trigger_ids ?? []))) {
+                    $matchedQty += max(0, $u['qty'] - ($claimed[$key] ?? 0));
+                }
+            }
+
+            if ($promo->reward_scope === 'same') {
+                // "Buy 2 get 1 free" needs three units per round — two paid, one free —
+                // otherwise a basket of 2 would hand back both of them.
+                $perRound     = (int) ceil($triggerQty) + $rewardQty;
+                $applications = intdiv($matchedQty, max(1, $perRound));
+            } else {
+                $applications = (int) floor($matchedQty / $triggerQty);
+            }
+        }
+
+        if ($promo->max_applications !== null && $promo->max_applications > 0) {
+            $applications = min($applications, (int) $promo->max_applications);
+        }
+
+        return max(0, $applications);
+    }
+}
+
+if (!function_exists('falcon_promotion_reward_target')) {
+    /**
+     * Which pool of items a promotion rewards: [scope, ids].
+     *
+     * 'same' means the reward comes from whatever triggered the rule. A cart_total trigger has
+     * no product list of its own to inherit, so it falls back to "anything".
+     *
+     * @return array{0: string, 1: array}
+     */
+    function falcon_promotion_reward_target($promo): array {
+        if ($promo->reward_scope !== 'same') {
+            return [$promo->reward_scope, (array) ($promo->reward_ids ?? [])];
+        }
+
+        if ($promo->trigger_type === 'cart_total') {
+            return ['product', []];
+        }
+
+        return [$promo->trigger_type, (array) ($promo->trigger_ids ?? [])];
+    }
+}
+
+if (!function_exists('falcon_pending_promotion_offers')) {
+    /**
+     * Offers the customer has already earned but is not receiving, because the reward item is
+     * not in their basket.
+     *
+     * "Buy 3 phones, get a case free" only discounts a case that is actually in the cart — the
+     * shopper has no way of knowing that on their own, so the cart shows a prompt with the
+     * qualifying products and a one-click add.
+     *
+     * @return array<int, array{name:string, summary:string, missing:int, products:array}>
+     */
+    function falcon_pending_promotion_offers(?array $cart = null): array {
+        $cart = $cart ?? session()->get('falcon_cart', []);
+        if (empty($cart)) {
+            return [];
+        }
+
+        $subtotal = 0.0;
+        $units    = [];
+        foreach ($cart as $key => $item) {
+            $price = (float) ($item['sale_price'] ?? $item['price']);
+            $qty   = (int) ($item['quantity'] ?? 0);
+            $subtotal += $price * $qty;
+            if ($qty > 0) {
+                $units[$key] = ['item' => $item, 'price' => $price, 'qty' => $qty];
+            }
+        }
+
+        $offers = [];
+
+        foreach (falcon_active_promotions() as $promo) {
+            // 'same'-scope rules reward the very items that triggered them, so there is never
+            // anything for the customer to add.
+            if ($promo->reward_scope === 'same') {
+                continue;
+            }
+
+            $applications = falcon_promotion_applications($promo, $units, $subtotal);
+            if ($applications < 1) {
+                continue;
+            }
+
+            [$scope, $ids] = falcon_promotion_reward_target($promo);
+
+            $inCart = 0;
+            foreach ($units as $u) {
+                if (falcon_promotion_matches_item($u['item'], $scope, $ids)) {
+                    $inCart += $u['qty'];
+                }
+            }
+
+            $wanted  = $applications * max(1, (int) $promo->reward_qty);
+            $missing = $wanted - $inCart;
+            if ($missing < 1) {
+                continue;   // already receiving it
+            }
+
+            $offers[] = [
+                'name'     => (string) $promo->name,
+                'summary'  => str_replace('{missing}', (string) $missing, $promo->customer_message),
+                // Tells the view whether the shop supplied its own wording, so the default
+                // "add N more item(s)" tail is only appended to the generated text.
+                'custom'   => trim((string) ($promo->cart_message ?? '')) !== '',
+                'missing'  => $missing,
+                'products' => falcon_promotion_reward_products($scope, $ids),
+            ];
+        }
+
+        return $offers;
+    }
+}
+
+if (!function_exists('falcon_promotion_reward_products')) {
+    /**
+     * Buyable products that would satisfy a reward pool, for the cart prompt.
+     * Capped because a category-wide reward could otherwise list the whole catalogue.
+     */
+    function falcon_promotion_reward_products(string $scope, array $ids, int $limit = 4): array {
+        try {
+            $query = \Illuminate\Support\Facades\DB::table('posts')
+                ->join('shop_products', 'shop_products.post_id', '=', 'posts.id')
+                ->where('posts.type', 'product')
+                ->where('posts.status', 'published')
+                ->whereNull('posts.deleted_at');
+
+            if (!empty($ids)) {
+                if ($scope === 'category') {
+                    $query->join('product_category_post', 'product_category_post.post_id', '=', 'posts.id')
+                        ->whereIn('product_category_post.product_category_id', array_map('intval', $ids));
+                } else {
+                    $query->whereIn('posts.id', array_map('intval', $ids));
+                }
+            }
+
+            return $query->distinct()
+                ->orderBy('shop_products.price')
+                ->limit($limit)
+                ->get(['posts.id', 'posts.title', 'posts.slug', 'shop_products.price', 'shop_products.sale_price'])
+                ->map(static fn ($r) => [
+                    'id'    => (int) $r->id,
+                    'title' => $r->title,
+                    'slug'  => $r->slug,
+                    'price' => (float) ($r->sale_price ?: $r->price),
+                ])->all();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Promotion reward product lookup failed: ' . $e->getMessage());
+            return [];
+        }
+    }
+}
+
+if (!function_exists('falcon_active_promotions')) {
+    /** Promotions that are live right now, cheapest-priority first. */
+    function falcon_active_promotions() {
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('shop_promotions')) {
+                return collect();
+            }
+            return \FalconCms\Core\Models\Promotion::usable()->get();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Promotion lookup failed: ' . $e->getMessage());
+            return collect();
+        }
+    }
+}
+
+if (!function_exists('falcon_evaluate_promotions')) {
+    /**
+     * Work out which promotions the cart currently earns, and what each is worth.
+     *
+     * Prices are read from the cart lines and every figure is recalculated here on each call —
+     * nothing is cached in the session, so a customer cannot hold on to a reward after the
+     * qualifying item leaves their basket.
+     *
+     * Each unit of stock can only be rewarded once: `$claimed` tracks how many units of every
+     * line an earlier (higher-priority) rule already discounted, so two overlapping promotions
+     * cannot both give away the same phone.
+     *
+     * @return array<int, array{id:int, name:string, summary:string, discount:float, applications:int}>
+     */
+    function falcon_evaluate_promotions(?array $cart = null): array {
+        $cart = $cart ?? session()->get('falcon_cart', []);
+        if (empty($cart)) {
+            return [];
+        }
+
+        $subtotal = 0.0;
+        $units    = [];   // flattened: one entry per unit, so "cheapest first" is a plain sort
+        foreach ($cart as $key => $item) {
+            $price = (float) ($item['sale_price'] ?? $item['price']);
+            $qty   = (int) ($item['quantity'] ?? 0);
+            $subtotal += $price * $qty;
+            if ($qty > 0) {
+                $units[$key] = ['item' => $item, 'price' => $price, 'qty' => $qty];
+            }
+        }
+
+        $claimed = [];   // cart key => units already given away by an earlier promotion
+        $results = [];
+
+        foreach (falcon_active_promotions() as $promo) {
+            $rewardQty    = max(1, (int) $promo->reward_qty);
+            $applications = falcon_promotion_applications($promo, $units, $subtotal, $claimed);
+            if ($applications < 1) {
+                continue;
+            }
+
+            [$scope, $ids] = falcon_promotion_reward_target($promo);
+
+            $pool = [];
+            foreach ($units as $key => $u) {
+                if (!falcon_promotion_matches_item($u['item'], $scope, $ids)) {
+                    continue;
+                }
+                $available = $u['qty'] - ($claimed[$key] ?? 0);
+                for ($i = 0; $i < $available; $i++) {
+                    $pool[] = ['key' => $key, 'price' => $u['price']];
+                }
+            }
+            if (empty($pool)) {
+                continue;
+            }
+
+            // Cheapest first — the customary reading of "get one free" and the safest for the shop.
+            usort($pool, static fn ($a, $b) => $a['price'] <=> $b['price']);
+
+            $wanted   = $applications * $rewardQty;
+            $taken    = array_slice($pool, 0, $wanted);
+            if (empty($taken)) {
+                continue;
+            }
+
+            $discount = 0.0;
+            foreach ($taken as $unit) {
+                $discount += match ($promo->reward_type) {
+                    'percent_off' => $unit['price'] * (min(100, max(0, $promo->reward_value)) / 100),
+                    'fixed_off'   => min($unit['price'], max(0, $promo->reward_value)),
+                    default       => $unit['price'],   // free_item
+                };
+                $claimed[$unit['key']] = ($claimed[$unit['key']] ?? 0) + 1;
+            }
+
+            if ($discount <= 0) {
+                continue;
+            }
+
+            $results[] = [
+                'id'           => (int) $promo->id,
+                'name'         => (string) $promo->name,
+                // The shop's own wording when it wrote some, otherwise the generated summary.
+                // {missing} has no meaning once the reward is already applied, so it is dropped.
+                'summary'      => trim(str_replace('{missing}', '', $promo->customer_message)),
+                'discount'     => round($discount, 2),
+                'applications' => $applications,
+                'units'        => count($taken),
+            ];
+        }
+
+        return $results;
+    }
+}
+
+if (!function_exists('falcon_cart_promotion_total')) {
+    /** Total money the active promotions take off this cart. */
+    function falcon_cart_promotion_total(?array $cart = null): float {
+        $total = 0.0;
+        foreach (falcon_evaluate_promotions($cart) as $applied) {
+            $total += $applied['discount'];
+        }
+
+        return round($total, 2);
+    }
+}
+
+if (!function_exists('falcon_all_coupons')) {
+    /**
+     * Every active coupon, in the array shape the cart and checkout already speak.
+     *
+     * Coupons live in the shop_coupons table (the code column is uniquely indexed, and the
+     * redemption counter increments atomically). Falls back to the legacy settings blob if the
+     * table is missing, so an install that has not run migrations yet still sells.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    function falcon_all_coupons(): array {
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('shop_coupons')) {
+                return \FalconCms\Core\Models\Coupon::where('is_active', true)
+                    ->orderBy('code')
+                    ->get()
+                    ->map(static fn ($c) => $c->toCartArray())
+                    ->all();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Coupon lookup failed: ' . $e->getMessage());
+        }
+
+        $legacy = json_decode((string) get_cms_option('shop_coupons', '[]'), true);
+
+        return is_array($legacy) ? $legacy : [];
+    }
+}
+
+if (!function_exists('falcon_find_coupon')) {
+    /**
+     * One coupon by code, case-insensitively, in the cart's array shape. Null when unknown.
+     */
+    function falcon_find_coupon(?string $code): ?array {
+        $code = strtoupper(trim((string) $code));
+        if ($code === '') {
+            return null;
+        }
+
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('shop_coupons')) {
+                return \FalconCms\Core\Models\Coupon::findByCode($code)?->toCartArray();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Coupon lookup failed: ' . $e->getMessage());
+        }
+
+        foreach (falcon_all_coupons() as $coupon) {
+            if (strtoupper((string) ($coupon['code'] ?? '')) === $code) {
+                return $coupon;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('falcon_default_customer_country')) {
+    /**
+     * The country to assume for a customer who has not given an address yet —
+     * Shop → General → Default customer location.
+     *
+     *  'none'       assume nothing (shipping falls back to the flat rate)
+     *  'base'       the shop's own country
+     *  'geolocate'  the visitor's country, from their IP
+     *
+     * Returns a value from the shop's own country list (so it lines up with the checkout
+     * dropdowns and with shipping zones), or null when there is nothing sensible to assume.
+     */
+    function falcon_default_customer_country(): ?string {
+        $mode = (string) get_shop_option('shop_default_customer_location', 'none');
+
+        if ($mode === 'base') {
+            $base = (string) get_shop_option('shop_country_state', '');
+            return $base !== '' ? $base : null;
+        }
+
+        if ($mode !== 'geolocate' || !function_exists('falcon_geoip')) {
+            return null;
+        }
+
+        $iso2 = falcon_geoip(request()->ip())['country_code'] ?? null;
+        if (!$iso2) {
+            return null;
+        }
+
+        // Map the ISO code onto the shop's *sellable* country list. Matching through
+        // countryToIso2() rather than by string keeps suffixed names like
+        // "United States (US)" working, and a country the shop does not sell to
+        // simply finds no match — better than pre-filling a checkout that would be rejected.
+        foreach (\FalconCms\Core\Services\EcommerceData::getCountriesWithStates(true) as $value => $label) {
+            $candidate = is_string($value) ? $value : $label;
+            if (\FalconCms\Core\Services\EcommerceData::countryToIso2($candidate) === strtoupper($iso2)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('falcon_customer_shipping_country')) {
+    /**
+     * The country totals should be calculated against right now: whatever the customer has
+     * chosen, otherwise the store's default-location assumption.
+     *
+     * The resolved default is cached in the session because 'geolocate' costs an outbound
+     * lookup; an explicit choice always overwrites the same session key, so a customer's own
+     * selection can never be undone by this.
+     */
+    function falcon_customer_shipping_country(): ?string {
+        $chosen = session()->get('falcon_shipping_country');
+        if (is_string($chosen) && $chosen !== '') {
+            return $chosen;
+        }
+
+        if (session()->has('falcon_default_country_resolved')) {
+            return session()->get('falcon_default_country_resolved') ?: null;
+        }
+
+        $default = falcon_default_customer_country();
+        session()->put('falcon_default_country_resolved', $default ?? '');
+
+        return $default;
+    }
+}
+
+if (!function_exists('falcon_shipping_destination')) {
+    /**
+     * Which address an order is fulfilled to — Shop → Shipping → Default Address Type.
+     *
+     *  'shipping'      the separate shipping address is the target; its fields are shown up front
+     *  'billing'       billing is the target, with a separate shipping address as an opt-in
+     *  'force_billing' orders always ship to billing; shipping fields are not offered at all
+     *
+     * Anything unrecognised (an option edited by hand, say) falls back to 'shipping', which is
+     * the most permissive and therefore never blocks a checkout.
+     */
+    function falcon_shipping_destination(): string {
+        $value = (string) get_shop_option('shop_shipping_destination', 'shipping');
+
+        return in_array($value, ['shipping', 'billing', 'force_billing'], true) ? $value : 'shipping';
+    }
+}
+
+if (!function_exists('falcon_allows_separate_shipping_address')) {
+    /**
+     * May this store accept a shipping address different from billing?
+     *
+     * Checked on the server for every order, not just used to render the form: under
+     * 'force_billing' the goods must go to the address the payment was authorised against,
+     * so a hand-crafted POST carrying shipping_* fields has to be ignored rather than trusted.
+     */
+    function falcon_allows_separate_shipping_address(): bool {
+        return falcon_shipping_destination() !== 'force_billing';
+    }
+}
+
+if (!function_exists('falcon_cart_has_free_shipping_coupon')) {
+    /**
+     * Is a "Free Shipping" coupon currently applied?
+     *
+     * The Discount Type dropdown has always offered this option, but nothing acted on it —
+     * such a coupon took no money off and left shipping fully charged. Shipping costs are
+     * resolved server-side, so this is checked where the cost is calculated, not in the view.
+     */
+    function falcon_cart_has_free_shipping_coupon(): bool {
+        foreach (session()->get('falcon_coupons', []) as $coupon) {
+            if (($coupon['type'] ?? '') === 'free_shipping') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('falcon_shipping_methods')) {
+    /**
+     * The shipping methods a customer can actually pick for this cart and country.
+     *
+     * Always keyed by method id, always at least 'delivery'. 'pickup' only appears when Local
+     * Pickup is switched on in Shop → Shipping, which is what makes that setting mean something.
+     *
+     * @return array<string, array{id: string, label: string, cost: float}>
+     */
+    function falcon_shipping_methods($country = null): array {
+        $country = $country ?? falcon_customer_shipping_country();
+        $delivery = falcon_delivery_shipping_details($country);
+
+        $methods = [
+            'delivery' => [
+                'id'    => 'delivery',
+                'label' => $delivery['label'],
+                'cost'  => (float) $delivery['cost'],
+            ],
+        ];
+
+        if (get_shop_option('shop_local_pickup_enable') === '1') {
+            $methods['pickup'] = [
+                'id'    => 'pickup',
+                'label' => 'Local pickup',
+                'cost'  => 0.0,
+            ];
+        }
+
+        // A Free Shipping coupon zeroes every method rather than discounting the cart, so the
+        // saving lands on the shipping line where the customer expects to see it.
+        if (falcon_cart_has_free_shipping_coupon()) {
+            foreach ($methods as $id => $method) {
+                $methods[$id]['cost'] = 0.0;
+            }
+        }
+
+        // "Auto-hide paid shipping options when free delivery is applicable" — once something
+        // is free, charging for the alternative is just a way to lose the sale. Only ever
+        // removes paid options, so the list can never end up empty.
+        if (get_shop_option('shop_calc_hide_paid_when_free') === '1') {
+            $free = array_filter($methods, static fn (array $m): bool => $m['cost'] <= 0);
+            if (!empty($free)) {
+                $methods = $free;
+            }
+        }
+
+        return $methods;
+    }
+}
+
+if (!function_exists('falcon_selected_shipping_method')) {
+    /**
+     * Resolve the customer's chosen shipping method against what is genuinely on offer.
+     *
+     * The session only ever holds a method *id*; the cost is recalculated here on every call.
+     * That is deliberate — a stored or posted price could be tampered with, a re-derived one
+     * cannot. An id that is no longer available (pickup switched off mid-session, say) falls
+     * back to the first method rather than erroring.
+     *
+     * @return array{id: string, label: string, cost: float}
+     */
+    function falcon_selected_shipping_method($country = null): array {
+        $country  = $country ?? falcon_customer_shipping_country();
+        $methods  = falcon_shipping_methods($country);
+        $selected = session()->get('falcon_shipping_method');
+
+        if (is_string($selected) && isset($methods[$selected])) {
+            return $methods[$selected];
+        }
+
+        return reset($methods);
+    }
+}
+
 if (!function_exists('get_falcon_cart_shipping_details')) {
+    /**
+     * Cost + label for the shipping the customer will actually be charged.
+     * Delegates to the selected method, so Local Pickup zeroes shipping everywhere at once —
+     * cart totals, checkout totals, and the order row written at checkout.
+     */
     function get_falcon_cart_shipping_details($country = null) {
+        $country = $country ?? falcon_customer_shipping_country();
+
+        // "Only display shipping fees after a valid address is provided" — with no destination
+        // yet there is nothing honest to quote, so nothing is charged either and the cart total
+        // matches what the customer is shown. Checkout always has a country (billing_country is
+        // required), so a real order is never priced from this branch.
+        if (!falcon_shipping_is_calculable($country)) {
+            return [
+                'cost'    => 0.0,
+                'label'   => 'Calculated at checkout',
+                'method'  => 'delivery',
+                'pending' => true,
+            ];
+        }
+
+        $method = falcon_selected_shipping_method($country);
+
+        return ['cost' => $method['cost'], 'label' => $method['label'], 'method' => $method['id'], 'pending' => false];
+    }
+}
+
+if (!function_exists('falcon_shipping_is_calculable')) {
+    /** False only while "hide fees until an address is provided" is on and no country is known. */
+    function falcon_shipping_is_calculable($country = null): bool {
+        if (get_shop_option('shop_calc_hide_until_address') !== '1') {
+            return true;
+        }
+
+        $country = $country ?? falcon_customer_shipping_country();
+
+        return is_string($country) && $country !== '';
+    }
+}
+
+if (!function_exists('falcon_refresh_cart_prices')) {
+    /**
+     * Re-read every cart line's price from the catalogue.
+     *
+     * The cart stores the price that was current when the item went in, and nothing ever looked
+     * at it again — so a sale that ended, or a price the shop owner corrected, never reached a
+     * cart that already existed. Coupons were already re-checked on every cart load; prices are
+     * now held to the same rule.
+     *
+     * Deliberately conservative in two places:
+     *   - a product that has vanished from the catalogue is left untouched rather than silently
+     *     repriced or removed, so a lookup failure can never zero out someone's basket;
+     *   - a sale price of zero or less is stored as null, because the subtotal treats a present
+     *     sale price as authoritative and a literal 0 would hand the item over for free.
+     *
+     * @return int how many lines actually changed
+     */
+    function falcon_refresh_cart_prices(): int {
+        $cart = session()->get('falcon_cart', []);
+        if (empty($cart) || !is_array($cart)) {
+            return 0;
+        }
+
+        $productIds = [];
+        $variationIds = [];
+        foreach ($cart as $item) {
+            if (!empty($item['id'])) {
+                $productIds[] = (int) $item['id'];
+            }
+            if (!empty($item['variation_id'])) {
+                $variationIds[] = (int) $item['variation_id'];
+            }
+        }
+
+        try {
+            $products = empty($productIds) ? collect() : \Illuminate\Support\Facades\DB::table('shop_products')
+                ->whereIn('post_id', array_unique($productIds))
+                ->get(['post_id', 'price', 'sale_price', 'sale_ends_at'])
+                ->keyBy('post_id');
+
+            $variations = empty($variationIds) ? collect() : \Illuminate\Support\Facades\DB::table('shop_product_variations')
+                ->whereIn('id', array_unique($variationIds))
+                ->get(['id', 'price', 'sale_price'])
+                ->keyBy('id');
+        } catch (\Throwable $e) {
+            // A pricing lookup that fails must not empty or corrupt the basket.
+            \Illuminate\Support\Facades\Log::error('Cart price refresh failed: ' . $e->getMessage());
+            return 0;
+        }
+
+        $changed = 0;
+        foreach ($cart as $key => $item) {
+            $source = null;
+            if (!empty($item['variation_id'])) {
+                $source = $variations[(int) $item['variation_id']] ?? null;
+            }
+            $parent = $products[(int) ($item['id'] ?? 0)] ?? null;
+            $source = $source ?? $parent;
+
+            if (!$source) {
+                continue;   // no longer in the catalogue — leave the line exactly as it was
+            }
+
+            $price = round((float) $source->price, 2);
+            $sale  = $source->sale_price !== null ? round((float) $source->sale_price, 2) : null;
+
+            // The scheduled falcon:expire-sale-prices command clears these, but it may not have
+            // run yet — an expired sale must not survive in a cart either way.
+            $endsAt = $parent->sale_ends_at ?? null;
+            if ($sale !== null && $endsAt && strtotime((string) $endsAt) < time()) {
+                $sale = null;
+            }
+            if ($sale !== null && $sale <= 0) {
+                $sale = null;
+            }
+
+            $oldPrice = round((float) ($item['price'] ?? 0), 2);
+            $oldSale  = isset($item['sale_price']) && $item['sale_price'] !== null && $item['sale_price'] !== ''
+                ? round((float) $item['sale_price'], 2)
+                : null;
+
+            if ($oldPrice !== $price || $oldSale !== $sale) {
+                $cart[$key]['price'] = $price;
+                $cart[$key]['sale_price'] = $sale;
+                $changed++;
+            }
+        }
+
+        if ($changed > 0) {
+            session()->put('falcon_cart', $cart);
+        }
+
+        return $changed;
+    }
+}
+
+if (!function_exists('falcon_cart_weight')) {
+    /**
+     * Total shipping weight of the cart, in the shop's configured weight unit.
+     *
+     * A variation uses its own weight when one was entered and otherwise inherits the parent
+     * product's. Items with no weight at all count as zero rather than blocking the order — a
+     * shop that has not filled its weights in yet must still be able to sell.
+     *
+     * Both lookups are single queries, so the cost does not grow with the size of the cart.
+     */
+    function falcon_cart_weight(?array $cart = null): float {
+        $cart = $cart ?? session()->get('falcon_cart', []);
+        if (empty($cart)) {
+            return 0.0;
+        }
+
+        $productIds = [];
+        $variationIds = [];
+        foreach ($cart as $item) {
+            if (!empty($item['id'])) {
+                $productIds[] = (int) $item['id'];
+            }
+            if (!empty($item['variation_id'])) {
+                $variationIds[] = (int) $item['variation_id'];
+            }
+        }
+
+        try {
+            $productWeights = empty($productIds) ? collect() : \Illuminate\Support\Facades\DB::table('shop_products')
+                ->whereIn('post_id', array_unique($productIds))
+                ->pluck('weight', 'post_id');
+
+            $variationWeights = empty($variationIds) ? collect() : \Illuminate\Support\Facades\DB::table('shop_product_variations')
+                ->whereIn('id', array_unique($variationIds))
+                ->pluck('weight', 'id');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Cart weight lookup failed: ' . $e->getMessage());
+            return 0.0;
+        }
+
+        $total = 0.0;
+        foreach ($cart as $item) {
+            $quantity = max(0, (int) ($item['quantity'] ?? 0));
+            if ($quantity === 0) {
+                continue;
+            }
+
+            $weight = null;
+            if (!empty($item['variation_id'])) {
+                $weight = $variationWeights[(int) $item['variation_id']] ?? null;
+            }
+            if ($weight === null || $weight === '' || (float) $weight <= 0) {
+                $weight = $productWeights[(int) ($item['id'] ?? 0)] ?? null;
+            }
+
+            $total += max(0.0, (float) $weight) * $quantity;
+        }
+
+        return round($total, 4);
+    }
+}
+
+if (!function_exists('falcon_delivery_shipping_details')) {
+    /** Zone / flat-rate delivery cost — the calculation that existed before pickup was a choice. */
+    function falcon_delivery_shipping_details($country = null) {
         $subtotal = get_falcon_cart_subtotal();
         $cart = session()->get('falcon_cart', []);
         $itemCount = 0;
@@ -3650,14 +5107,30 @@ if (!function_exists('get_falcon_cart_shipping_details')) {
             $baseCost = (float) ($matchedZone['cost'] ?? 0);
             $type = $matchedZone['type'] ?? 'order';
 
-            if ($type === 'item' && !empty($matchedZone['rules'])) {
+            // Banded rates. 'item' bands on how many things are in the cart, 'weight' on how
+            // heavy they are — the same rule rows, just measured differently.
+            if (in_array($type, ['item', 'weight'], true) && !empty($matchedZone['rules'])) {
+                $measure = $type === 'weight' ? falcon_cart_weight() : $itemCount;
+
                 $ruleCost = 0;
                 $matchedRule = false;
                 foreach ($matchedZone['rules'] as $rule) {
-                    $min = (int) ($rule['min'] ?? 0);
-                    $max = ($rule['max'] === '' || $rule['max'] === null) ? PHP_INT_MAX : (int) $rule['max'];
-                    
-                    if ($itemCount >= $min && $itemCount <= $max) {
+                    // An incomplete or mistyped row must not become free shipping: skip it and
+                    // let the zone's base cost apply. A deliberate 0 is numeric, so it survives.
+                    if (!is_array($rule)
+                        || !isset($rule['cost']) || !is_numeric($rule['cost'])
+                        || (isset($rule['min']) && $rule['min'] !== '' && !is_numeric($rule['min']))
+                        || (isset($rule['max']) && $rule['max'] !== '' && $rule['max'] !== null && !is_numeric($rule['max']))) {
+                        continue;
+                    }
+                    // Weights are fractional (0.5 kg), item counts are not. Casting a weight
+                    // band to int would quietly turn "up to 0.5" into "up to 0".
+                    $min = (float) ($rule['min'] ?? 0);
+                    $max = (($rule['max'] ?? '') === '' || ($rule['max'] ?? null) === null)
+                        ? INF
+                        : (float) $rule['max'];
+
+                    if ($measure >= $min && $measure <= $max) {
                         $ruleCost = (float) ($rule['cost'] ?? 0);
                         $matchedRule = true;
                         break;
@@ -3680,12 +5153,283 @@ if (!function_exists('get_falcon_cart_shipping_details')) {
     }
 }
 
+if (!function_exists('falcon_tax_enabled')) {
+    /** Shop → Tax → Enable Tax. Everything else in the tax engine is a no-op while this is off. */
+    function falcon_tax_enabled(): bool {
+        return get_shop_option('shop_calc_taxes') === '1';
+    }
+}
+
+if (!function_exists('falcon_prices_include_tax')) {
+    /** True when catalogue prices already contain tax, so tax is extracted rather than added. */
+    function falcon_prices_include_tax(): bool {
+        return get_shop_option('shop_tax_price_entry') === 'inclusive';
+    }
+}
+
+if (!function_exists('falcon_display_prices_including_tax')) {
+    /** Shop → Tax → Display prices in shop. Presentation only; never changes what is charged. */
+    function falcon_display_prices_including_tax(): bool {
+        return falcon_tax_enabled() && get_shop_option('shop_tax_display_shop', 'exclusive') === 'inclusive';
+    }
+}
+
+if (!function_exists('falcon_tax_country')) {
+    /**
+     * The address tax is worked out against — Shop → Tax → Calculate Tax Based On.
+     *
+     * 'billing' falls back to the shipping country before checkout, because the billing address
+     * simply isn't known while the customer is still on the cart page.
+     */
+    function falcon_tax_country(): ?string {
+        switch ((string) get_shop_option('shop_tax_calculation_basis', 'shipping')) {
+            case 'base':
+                $base = (string) get_shop_option('shop_country_state', '');
+                return $base !== '' ? $base : null;
+
+            case 'billing':
+                $billing = session()->get('falcon_billing_country');
+                if (is_string($billing) && $billing !== '') {
+                    return $billing;
+                }
+                // fall through
+            default:
+                return falcon_customer_shipping_country();
+        }
+    }
+}
+
+if (!function_exists('falcon_tax_rate_for')) {
+    /**
+     * The tax rate that applies to a country, or null if none does.
+     *
+     * Matching runs most-specific first: an exact row ("Bangladesh - Dhaka"), then the country
+     * without its region suffix, then the "*" catch-all. That way a store can set one national
+     * rate and override single regions without listing every region.
+     *
+     * @return array{rate: float, name: string, shipping: bool}|null
+     */
+    function falcon_tax_rate_for(?string $country): ?array {
+        if (!falcon_tax_enabled()) {
+            return null;
+        }
+
+        $rates = get_shop_option('shop_tax_rates', []);
+        if (!is_array($rates) || empty($rates)) {
+            return null;
+        }
+
+        $normalise = static fn (string $v): string => strtolower(trim(str_replace(['—', '–'], '-', $v)));
+
+        $country = $country !== null ? $normalise($country) : '';
+        // "Bangladesh - Dhaka" → also try plain "Bangladesh".
+        $countryOnly = $country !== '' ? trim(explode(' - ', $country)[0]) : '';
+
+        $exact = $parent = $wildcard = null;
+
+        foreach ($rates as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $rowCountry = $normalise((string) ($row['country'] ?? ''));
+
+            if ($rowCountry === '*') {
+                $wildcard = $wildcard ?? $row;
+            } elseif ($country !== '' && $rowCountry === $country) {
+                $exact = $exact ?? $row;
+            } elseif ($countryOnly !== '' && $rowCountry === $countryOnly) {
+                $parent = $parent ?? $row;
+            }
+        }
+
+        $match = $exact ?? $parent ?? $wildcard;
+        if (!$match) {
+            return null;
+        }
+
+        return [
+            'rate'     => (float) ($match['rate'] ?? 0),
+            'name'     => trim((string) ($match['name'] ?? '')) ?: 'Tax',
+            'shipping' => (string) ($match['shipping'] ?? '0') === '1',
+        ];
+    }
+}
+
+if (!function_exists('falcon_product_tax_status')) {
+    /**
+     * A product's tax status ('taxable' | 'shipping' | 'none'), defaulting to taxable.
+     * Results are memoised per request — the cart asks for the same handful of ids repeatedly.
+     */
+    function falcon_product_tax_status($postId): string {
+        static $cache = [];
+
+        $postId = (int) $postId;
+        if ($postId <= 0) {
+            return 'taxable';
+        }
+        if (array_key_exists($postId, $cache)) {
+            return $cache[$postId];
+        }
+
+        $status = 'taxable';
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('shop_products', 'tax_status')) {
+                $found = \Illuminate\Support\Facades\DB::table('shop_products')
+                    ->where('post_id', $postId)
+                    ->value('tax_status');
+                if (in_array($found, \FalconCms\Core\Models\ProductData::TAX_STATUSES, true)) {
+                    $status = $found;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Leave the default; a lookup failure must never block a checkout.
+        }
+
+        return $cache[$postId] = $status;
+    }
+}
+
+if (!function_exists('falcon_cart_taxable_subtotal')) {
+    /**
+     * The part of the cart subtotal that is actually subject to tax.
+     * Only 'taxable' products count — 'shipping' items are taxed via the shipping line
+     * (if the rate covers shipping) and 'none' items are exempt outright.
+     */
+    function falcon_cart_taxable_subtotal(): float {
+        $total = 0.0;
+
+        foreach (session()->get('falcon_cart', []) as $item) {
+            if (falcon_product_tax_status($item['id'] ?? 0) !== 'taxable') {
+                continue;
+            }
+            $price = $item['sale_price'] ?? $item['price'];
+            $total += (float) $price * (int) ($item['quantity'] ?? 0);
+        }
+
+        return $total;
+    }
+}
+
+if (!function_exists('falcon_cart_discount_total')) {
+    /**
+     * Total coupon discount for the cart. Shared by the total and the tax base so a discount
+     * can never be counted differently in the two places.
+     */
+    function falcon_cart_discount_total(): float {
+        $coupons = session()->get('falcon_coupons', []);
+        if (empty($coupons)) {
+            return 0.0;
+        }
+
+        $cart            = session()->get('falcon_cart', []);
+        $subtotal        = get_falcon_cart_subtotal();
+        $currentSubtotal = $subtotal;
+        $isSequential    = (int) get_shop_option('shop_coupon_stacking_policy', '1') === 1;
+        $discountTotal   = 0.0;
+
+        foreach ($coupons as $coupon) {
+            $discount = get_falcon_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
+            $discountTotal   += $discount;
+            $currentSubtotal -= $discount;
+        }
+
+        return $discountTotal;
+    }
+}
+
 if (!function_exists('get_falcon_cart_tax')) {
+    /**
+     * Tax due on the current cart.
+     *
+     * Exclusive pricing: tax sits on top of the taxable base.
+     * Inclusive pricing: the base already contains it, so the tax is the portion extracted out
+     * of that figure — adding it again would charge the customer twice.
+     *
+     * Coupons shrink the taxable base in proportion to how much of the cart is taxable, so a
+     * discount never removes more (or less) tax than the goods it actually applies to.
+     */
     function get_falcon_cart_tax() {
-        if (get_cms_option('shop_enable_tax', 0) != 1) return 0;
-        $subtotal = get_falcon_cart_subtotal();
-        $taxRate = (float) get_cms_option('shop_tax_rate', 0);
-        return $subtotal * ($taxRate / 100);
+        if (!falcon_tax_enabled()) {
+            return 0.0;
+        }
+
+        $rate = falcon_tax_rate_for(falcon_tax_country());
+        if (!$rate || $rate['rate'] <= 0) {
+            return 0.0;
+        }
+
+        $taxableBase = falcon_cart_taxable_subtotal();
+        $subtotal    = get_falcon_cart_subtotal();
+        // Promotions reduce what is actually paid, so they reduce the taxable base alongside coupons.
+        $discount    = falcon_cart_discount_total() + falcon_cart_promotion_total();
+
+        if ($subtotal > 0 && $discount > 0 && $taxableBase > 0) {
+            $taxableBase = max(0.0, $taxableBase - ($discount * ($taxableBase / $subtotal)));
+        }
+
+        if ($rate['shipping']) {
+            $taxableBase += (float) get_falcon_cart_shipping(falcon_customer_shipping_country());
+        }
+
+        if ($taxableBase <= 0) {
+            return 0.0;
+        }
+
+        $fraction = $rate['rate'] / 100;
+
+        return falcon_prices_include_tax()
+            ? $taxableBase - ($taxableBase / (1 + $fraction))
+            : $taxableBase * $fraction;
+    }
+}
+
+if (!function_exists('falcon_cart_tax_label')) {
+    /** The name to show next to the tax line ("VAT", "GST", …). */
+    function falcon_cart_tax_label(): string {
+        return falcon_tax_rate_for(falcon_tax_country())['name'] ?? 'Tax';
+    }
+}
+
+if (!function_exists('falcon_display_price')) {
+    /**
+     * Adjust a catalogue price for how the shop displays tax.
+     *
+     * Only ever converts between the two presentations of the same price; the amount actually
+     * charged is settled by get_falcon_cart_tax() at checkout, never here.
+     */
+    function falcon_display_price($price, $postId = null): float {
+        $price = (float) $price;
+
+        if (!falcon_tax_enabled() || $price <= 0) {
+            return $price;
+        }
+
+        if ($postId !== null && falcon_product_tax_status($postId) !== 'taxable') {
+            return $price;
+        }
+
+        // Deliberately the shop's own country, not the visitor's.
+        //
+        // Catalogue pages are shared and cacheable — PageCacheMiddleware keys purely on the URL —
+        // so a rate taken from one visitor's session would be baked into the page everyone else
+        // is then served. A fixed base rate keeps every shopper looking at the same figure. What
+        // is actually charged is still worked out from the customer's real address at checkout,
+        // where the tax line spells the difference out.
+        $baseCountry = (string) get_shop_option('shop_country_state', '');
+        $rate = falcon_tax_rate_for($baseCountry !== '' ? $baseCountry : null);
+        if (!$rate || $rate['rate'] <= 0) {
+            return $price;
+        }
+
+        $fraction   = $rate['rate'] / 100;
+        $entryIncl  = falcon_prices_include_tax();
+        $showIncl   = falcon_display_prices_including_tax();
+
+        if ($entryIncl === $showIncl) {
+            return $price; // Stored and displayed the same way — nothing to convert.
+        }
+
+        return $showIncl ? $price * (1 + $fraction) : $price / (1 + $fraction);
     }
 }
 
@@ -3693,34 +5437,288 @@ if (!function_exists('get_falcon_cart_total')) {
     function get_falcon_cart_total() {
         $cart = session()->get('falcon_cart', []);
         $subtotal = get_falcon_cart_subtotal();
-        $shipping = get_falcon_cart_shipping(session()->get('falcon_shipping_country'));
+        // Resolver rather than the raw session key, so the store's default-location setting
+        // feeds the total the same way it feeds the line the customer is shown.
+        $shipping = get_falcon_cart_shipping(falcon_customer_shipping_country());
         $tax = get_falcon_cart_tax();
         
-        $coupons = session()->get('falcon_coupons', []);
-        $totalDiscount = 0;
-        $currentCart = $cart; // For sequential calculation if needed
-        $isSequential = (int)get_shop_option('shop_coupon_stacking_policy', '1') == 1;
-        $subtotal = get_falcon_cart_subtotal();
-        $currentSubtotal = $subtotal;
+        // Coupons the customer typed in, plus whatever the automatic promotions earned them.
+        $totalDiscount = falcon_cart_discount_total() + falcon_cart_promotion_total($cart);
 
-        foreach ($coupons as $coupon) {
-            $discount = get_falcon_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
-            $totalDiscount += $discount;
-            $currentSubtotal -= $discount;
+        // Inclusive pricing means the tax is already inside the item prices — adding $tax here
+        // would charge it a second time. It is still reported separately for the tax line.
+        $total = $subtotal + $shipping - $totalDiscount;
+        if (!falcon_prices_include_tax()) {
+            $total += $tax;
         }
-        
-        return max(0, $subtotal + $shipping + $tax - $totalDiscount);
+
+        return max(0, $total);
+    }
+}
+
+if (!function_exists('falcon_product_schema')) {
+    /**
+     * schema.org Product markup for a single product page.
+     *
+     * This is what puts the price, the availability and the star rating into a Google result
+     * instead of a bare blue link. Everything comes from the same helpers the page itself uses,
+     * so the structured data cannot advertise a price the shop will not honour — Google treats
+     * that as a violation, not a rounding error.
+     *
+     * @return array<string, mixed>|null  null when the post is not a sellable product
+     */
+    function falcon_product_schema($post): ?array {
+        $shopData = $post->shopData ?? null;
+        if (!$shopData || ($post->type ?? null) !== 'product') {
+            return null;
+        }
+
+        $currency = get_shop_option('shop_currency', 'USD');
+        $url = get_falcon_permalink($post);
+
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type'    => 'Product',
+            'name'     => (string) $post->title,
+            'url'      => $url,
+        ];
+
+        $description = trim(strip_tags((string) ($shopData->short_description ?: $post->excerpt ?: $post->content)));
+        if ($description !== '') {
+            $schema['description'] = \Illuminate\Support\Str::limit($description, 300, '');
+        }
+
+        if (!empty($post->featured_image)) {
+            $schema['image'] = str_starts_with($post->featured_image, 'http')
+                ? $post->featured_image
+                : asset('storage/' . $post->featured_image);
+        }
+
+        if (!empty($shopData->sku)) {
+            $schema['sku'] = (string) $shopData->sku;
+        }
+
+        // A "Brand" attribute is the only place a brand is recorded, so it is the only honest source.
+        foreach (falcon_product_attribute_definitions($shopData) as $attribute) {
+            if (strcasecmp($attribute['name'], 'brand') === 0 && !empty($attribute['values'])) {
+                $schema['brand'] = ['@type' => 'Brand', 'name' => (string) $attribute['values'][0]];
+                break;
+            }
+        }
+
+        $availability = $post->is_in_stock
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock';
+
+        if ($shopData->isVariable()) {
+            // One offer per price point would be noise; an aggregate is what Google expects for
+            // a product sold in several variants.
+            $prices = [];
+            foreach ($shopData->variations as $variation) {
+                $sale = $variation->sale_price !== null ? (float) $variation->sale_price : 0.0;
+                $effective = $sale > 0 ? $sale : (float) $variation->price;
+                if ($effective > 0) {
+                    $prices[] = round((float) falcon_display_price($effective, $post->id), 2);
+                }
+            }
+
+            if (!empty($prices)) {
+                $schema['offers'] = [
+                    '@type'         => 'AggregateOffer',
+                    'priceCurrency' => $currency,
+                    'lowPrice'      => number_format(min($prices), 2, '.', ''),
+                    'highPrice'     => number_format(max($prices), 2, '.', ''),
+                    'offerCount'    => count($prices),
+                    'availability'  => $availability,
+                    'url'           => $url,
+                ];
+            }
+        } else {
+            $sale = $shopData->active_sale_price;
+            $price = round((float) falcon_display_price($sale !== null ? $sale : (float) $shopData->price, $post->id), 2);
+
+            if ($price > 0) {
+                $offer = [
+                    '@type'         => 'Offer',
+                    'priceCurrency' => $currency,
+                    'price'         => number_format($price, 2, '.', ''),
+                    'availability'  => $availability,
+                    'url'           => $url,
+                ];
+
+                // Only meaningful while a sale is actually running.
+                if ($sale !== null && !empty($shopData->sale_ends_at)) {
+                    $offer['priceValidUntil'] = $shopData->sale_ends_at->format('Y-m-d');
+                }
+
+                $schema['offers'] = $offer;
+            }
+        }
+
+        try {
+            $reviewCount = $post->reviews()->count();
+            if ($reviewCount > 0) {
+                $average = (float) $post->reviews()->avg('rating');
+                if ($average > 0) {
+                    $schema['aggregateRating'] = [
+                        '@type'       => 'AggregateRating',
+                        'ratingValue' => round($average, 1),
+                        'reviewCount' => $reviewCount,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ratings are a bonus; never let them cost the page its markup.
+        }
+
+        return apply_falcon_filters('falcon_product_schema', $schema, $post);
+    }
+}
+
+if (!function_exists('falcon_linked_products')) {
+    /**
+     * Products the shop owner hand-picked for this one.
+     *
+     * @param string $kind 'upsell' (shown on the product page) or 'cross_sell' (shown in the cart)
+     * @return \Illuminate\Support\Collection<int, \FalconCms\Core\Models\Post>
+     */
+    function falcon_linked_products($product, string $kind = 'upsell', int $limit = 4) {
+        $shopData = is_object($product) ? ($product->shopData ?? null) : null;
+        if (!$shopData) {
+            return collect();
+        }
+
+        $ids = $kind === 'cross_sell' ? $shopData->cross_sell_ids : $shopData->upsell_ids;
+        $ids = array_values(array_filter(array_map('intval', (array) $ids), fn ($id) => $id > 0));
+
+        if (empty($ids)) {
+            return collect();
+        }
+
+        try {
+            $found = \FalconCms\Core\Models\Post::whereIn('posts.id', array_slice($ids, 0, max(1, $limit) * 3))
+                ->where('posts.type', 'product')
+                ->where('posts.status', 'published')
+                ->with(['shopData.variations', 'productCategories'])
+                ->get();
+
+            // Keep the order the shop owner chose rather than whatever the database returns.
+            return $found->sortBy(fn ($p) => array_search($p->id, $ids, true))->take($limit)->values();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Linked product lookup failed: ' . $e->getMessage());
+            return collect();
+        }
+    }
+}
+
+if (!function_exists('falcon_related_products')) {
+    /**
+     * Products related to this one: same category first, topped up with recent products.
+     *
+     * The templates used to run their own query for this and simply took the four newest products
+     * in the shop — so "Related products" under a phone could be a pair of socks. Sharing one
+     * helper also means the two single-product templates cannot drift apart again.
+     *
+     * @return \Illuminate\Support\Collection<int, \FalconCms\Core\Models\Post>
+     */
+    function falcon_related_products($product, int $limit = 4) {
+        $limit = max(1, $limit);
+
+        try {
+            $categoryIds = $product->productCategories?->pluck('id')->all() ?? [];
+
+            $base = fn () => \FalconCms\Core\Models\Post::where('posts.type', 'product')
+                ->where('posts.status', 'published')
+                ->where('posts.id', '!=', $product->id)
+                ->with(['shopData.variations', 'productCategories']);
+
+            $related = collect();
+            if (!empty($categoryIds)) {
+                $related = $base()
+                    ->whereHas('productCategories', fn ($q) => $q->whereIn('product_categories.id', $categoryIds))
+                    ->inRandomOrder()
+                    ->limit($limit)
+                    ->get();
+            }
+
+            // A product that is alone in its category would otherwise show an empty row.
+            if ($related->count() < $limit) {
+                $filler = $base()
+                    ->whereNotIn('posts.id', $related->pluck('id')->all())
+                    ->latest('posts.id')
+                    ->limit($limit - $related->count())
+                    ->get();
+
+                $related = $related->concat($filler);
+            }
+
+            return $related->take($limit)->values();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Related product lookup failed: ' . $e->getMessage());
+            return collect();
+        }
+    }
+}
+
+if (!function_exists('falcon_cart_cross_sells')) {
+    /**
+     * Cross-sells for everything currently in the cart, minus what is already in it.
+     *
+     * @return \Illuminate\Support\Collection<int, \FalconCms\Core\Models\Post>
+     */
+    function falcon_cart_cross_sells(int $limit = 4) {
+        $cart = session()->get('falcon_cart', []);
+        if (empty($cart) || !is_array($cart)) {
+            return collect();
+        }
+
+        $inCart = [];
+        $ids = [];
+        foreach ($cart as $item) {
+            $productId = (int) ($item['id'] ?? 0);
+            if ($productId <= 0) {
+                continue;
+            }
+            $inCart[] = $productId;
+
+            $shopData = \FalconCms\Core\Models\ProductData::where('post_id', $productId)->first(['cross_sell_ids']);
+            foreach ((array) ($shopData->cross_sell_ids ?? []) as $id) {
+                $id = (int) $id;
+                if ($id > 0 && !in_array($id, $ids, true)) {
+                    $ids[] = $id;
+                }
+            }
+        }
+
+        // Suggesting something the shopper has already added is noise.
+        $ids = array_values(array_diff($ids, $inCart));
+        if (empty($ids)) {
+            return collect();
+        }
+
+        try {
+            return \FalconCms\Core\Models\Post::whereIn('posts.id', $ids)
+                ->where('posts.type', 'product')
+                ->where('posts.status', 'published')
+                ->with(['shopData.variations', 'productCategories'])
+                ->limit($limit)
+                ->get();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Cross-sell lookup failed: ' . $e->getMessage());
+            return collect();
+        }
     }
 }
 
 if (!function_exists('falcon_is_variable_product')) {
     /**
-     * Whether a product is a variable product (flag may live in shopData->type or ->product_type).
+     * Whether a product is a variable product. ProductData::isVariable() holds the rule —
+     * the table has two columns for this and only one of them is written by the admin.
      */
     function falcon_is_variable_product($product): bool {
         $sd = $product->shopData ?? null;
-        if (!$sd) return false;
-        return ($sd->type ?? null) === 'variable' || ($sd->product_type ?? null) === 'variable';
+
+        return $sd ? $sd->isVariable() : false;
     }
 }
 
@@ -3801,6 +5799,48 @@ if (!function_exists('falcon_standard_checkout_field_names')) {
     }
 }
 
+if (!function_exists('falcon_customer_addresses')) {
+    /**
+     * The signed-in customer's saved addresses, newest default first.
+     *
+     * Returns an empty collection for guests and whenever the table is not there yet, so callers
+     * never have to guard for either.
+     */
+    function falcon_customer_addresses() {
+        if (!auth()->check() || !\Illuminate\Support\Facades\Schema::hasTable('shop_customer_addresses')) {
+            return collect();
+        }
+
+        try {
+            return \FalconCms\Core\Models\CustomerAddress::where('user_id', auth()->id())
+                ->orderByDesc('is_default_billing')
+                ->orderByDesc('is_default_shipping')
+                ->orderBy('id')
+                ->get();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Customer address lookup failed: ' . $e->getMessage());
+            return collect();
+        }
+    }
+}
+
+if (!function_exists('falcon_default_customer_address')) {
+    /**
+     * The address to pre-fill a checkout section with: the one flagged default for that section,
+     * otherwise the first saved one, otherwise null.
+     */
+    function falcon_default_customer_address(string $section = 'billing') {
+        $addresses = falcon_customer_addresses();
+        if ($addresses->isEmpty()) {
+            return null;
+        }
+
+        $column = $section === 'shipping' ? 'is_default_shipping' : 'is_default_billing';
+
+        return $addresses->firstWhere($column, true) ?: $addresses->first();
+    }
+}
+
 if (!function_exists('falcon_get_checkout_fields')) {
     /**
      * Returns the sorted field array for 'billing' or 'shipping'.
@@ -3831,7 +5871,7 @@ if (!function_exists('falcon_get_checkout_fields')) {
                 'billing' => [
                     ['name' => 'billing_first_name', 'type' => 'text',    'label' => 'First name',       'required' => true,  'width' => 'half', 'priority' => 10,  'default' => $user->first_name ?? ''],
                     ['name' => 'billing_last_name',  'type' => 'text',    'label' => 'Last name',         'required' => true,  'width' => 'half', 'priority' => 20,  'default' => $user->last_name  ?? ''],
-                    ['name' => 'billing_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => session('falcon_shipping_country', '')],
+                    ['name' => 'billing_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => falcon_customer_shipping_country() ?? ''],
                     ['name' => 'billing_address_1',  'type' => 'text',    'label' => 'Street address',    'required' => true,  'width' => 'full', 'priority' => 40,  'placeholder' => 'House number and street name'],
                     ['name' => 'billing_address_2',  'type' => 'text',    'label' => null,                'required' => false, 'width' => 'full', 'priority' => 50,  'placeholder' => 'Apartment, suite, unit, etc. (optional)'],
                     ['name' => 'billing_city',       'type' => 'text',    'label' => 'Town / City',       'required' => true,  'width' => 'half', 'priority' => 60],
@@ -3843,7 +5883,7 @@ if (!function_exists('falcon_get_checkout_fields')) {
                 'shipping' => [
                     ['name' => 'shipping_first_name', 'type' => 'text',    'label' => 'First name',       'required' => true,  'width' => 'half', 'priority' => 10],
                     ['name' => 'shipping_last_name',  'type' => 'text',    'label' => 'Last name',         'required' => true,  'width' => 'half', 'priority' => 20],
-                    ['name' => 'shipping_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => session('falcon_shipping_country', '')],
+                    ['name' => 'shipping_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => falcon_customer_shipping_country() ?? ''],
                     ['name' => 'shipping_address_1',  'type' => 'text',    'label' => 'Street address',    'required' => true,  'width' => 'full', 'priority' => 40,  'placeholder' => 'House number and street name'],
                     ['name' => 'shipping_address_2',  'type' => 'text',    'label' => null,                'required' => false, 'width' => 'full', 'priority' => 50,  'placeholder' => 'Apartment, suite, unit, etc. (optional)'],
                     ['name' => 'shipping_city',       'type' => 'text',    'label' => 'Town / City',       'required' => true,  'width' => 'half', 'priority' => 60],
@@ -3854,6 +5894,28 @@ if (!function_exists('falcon_get_checkout_fields')) {
         }
 
         $fields = $defaults[$section] ?? [];
+
+        // Fill in from the customer's saved address before the theme filter runs, so a site that
+        // adds its own fields still sees the values. Done here rather than in the template so it
+        // works with JavaScript switched off, and so `old()` input still wins on a failed submit.
+        $saved = falcon_default_customer_address($section);
+        if ($saved) {
+            foreach ($fields as $i => $field) {
+                $key = $field['name'] ?? '';
+                if (!str_starts_with($key, $section . '_')) {
+                    continue;
+                }
+                $column = substr($key, strlen($section) + 1);
+                $value = in_array($column, \FalconCms\Core\Models\CustomerAddress::FIELDS, true)
+                    ? trim((string) ($saved->{$column} ?? ''))
+                    : '';
+
+                if ($value !== '') {
+                    $fields[$i]['default'] = $value;
+                }
+            }
+        }
+
         $fields = apply_falcon_filters("lazy_{$section}_fields", $fields);
         usort($fields, fn($a, $b) => ($a['priority'] ?? 10) <=> ($b['priority'] ?? 10));
 
@@ -4012,11 +6074,27 @@ if (!function_exists('get_falcon_coupon_discount_amount')) {
         $products = (array) ($coupon['products'] ?? []);
         $categories = (array) ($coupon['categories'] ?? []);
         
+        // Free Shipping takes nothing off the cart — its value lands on the shipping line,
+        // which falcon_shipping_methods() zeroes out while such a coupon is applied.
+        if ($couponType === 'free_shipping') {
+            return 0.0;
+        }
+
         // If NO restrictions, apply to the whole provided subtotal
         if (empty($products) && empty($categories)) {
             $base = $calcBaseSubtotal ?? get_falcon_cart_subtotal();
             if ($couponType === 'percent') {
                 return $base * ($amount / 100);
+            }
+            // fixed_product is a per-item amount. Without this it fell through to the
+            // fixed_cart branch below and discounted the amount once for the whole cart,
+            // so an unrestricted "৳50 off each item" coupon only ever took off ৳50.
+            if ($couponType === 'fixed_product') {
+                $units = 0;
+                foreach ($cart as $item) {
+                    $units += (int) ($item['quantity'] ?? 1);
+                }
+                return min($amount * $units, $base);
             }
             return min($amount, $base);
         }

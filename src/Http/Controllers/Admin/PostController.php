@@ -328,6 +328,10 @@ class PostController extends Controller
             $anyInStock = $shopData->variations()->where('stock_status', 'instock')->exists();
             $shopData->update(['stock_status' => $anyInStock ? 'instock' : 'outofstock']);
 
+            // This endpoint rewrites attributes_data and the variations, so the archive filter
+            // index has to be rebuilt here too — not only from store()/update().
+            falcon_sync_product_attribute_index($shopData->fresh());
+
             clear_page_cache();
 
             return response()->json(['success' => true, 'message' => 'Variations saved successfully.']);
@@ -648,6 +652,7 @@ class PostController extends Controller
         if ($type === 'product') {
             $rules['attributes_data'] = 'nullable|array';
             $rules['product_type'] = 'required|string|in:simple,variable';
+            $rules['tax_status'] = 'nullable|string|in:taxable,shipping,none';
             $rules['price'] = 'required_if:product_type,simple|nullable|numeric|min:0';
             $rules['sale_price'] = 'nullable|numeric|min:0|lt:price';
             $rules['sale_ends_at'] = 'nullable|date';
@@ -656,6 +661,11 @@ class PostController extends Controller
             $rules['sku'] = 'nullable|string|max:100';
             $rules['stock_quantity'] = 'nullable|integer|min:0';
             $rules['stock_status'] = 'nullable|string|in:instock,outofstock,onbackorder';
+            $rules['backorders'] = 'nullable|string|in:no,notify,yes';
+            $rules['weight'] = 'nullable|numeric|min:0|max:999999';
+            $rules['length'] = 'nullable|numeric|min:0|max:999999';
+            $rules['width']  = 'nullable|numeric|min:0|max:999999';
+            $rules['height'] = 'nullable|numeric|min:0|max:999999';
             $rules['manage_stock'] = 'nullable|boolean';
             $rules['short_description'] = 'nullable|string';
             $rules['variations'] = 'nullable|array';
@@ -674,12 +684,32 @@ class PostController extends Controller
             unset($postData['seo']);
         }
 
-        $productFieldKeys = ['price', 'sale_price', 'sale_ends_at', 'is_downloadable', 'download_expiry_days', 'sku', 'stock_quantity', 'stock_status', 'manage_stock', 'short_description', 'attributes_data'];
+        $productFieldKeys = ['price', 'sale_price', 'sale_ends_at', 'is_downloadable', 'download_expiry_days', 'sku', 'stock_quantity', 'stock_status', 'manage_stock', 'short_description', 'attributes_data', 'tax_status', 'backorders', 'weight', 'length', 'width', 'height'];
         
-        // Map product_type to type in database
+        // shop_products carries two columns for this. Only `type` was ever written, so
+        // `product_type` drifted out of step and the same product could read as variable on one
+        // screen and simple on another. Both are written now; the reconcile migration fixed the
+        // rows that already drifted.
         if (isset($postData['product_type'])) {
             $productData['type'] = $postData['product_type'];
+            $productData['product_type'] = $postData['product_type'];
             unset($postData['product_type']);
+        }
+
+        // Upsells and cross-sells. Gated on the hidden marker, not on the id arrays themselves:
+        // clearing every pick posts no ids at all, and that has to mean "none" rather than
+        // "leave what was there". Ids are cast and filtered so a hand-edited form cannot store
+        // rubbish that the storefront would then have to defend against on every page load.
+        if ($request->has('linked_products_submitted')) {
+            foreach (['upsell_ids', 'cross_sell_ids'] as $linkField) {
+                $ids = array_values(array_unique(array_filter(
+                    array_map('intval', (array) $request->input($linkField, [])),
+                    fn ($id) => $id > 0 && $id !== (int) ($post->id ?? 0)
+                )));
+
+                // A cap keeps one product from linking to the entire catalogue.
+                $productData[$linkField] = array_slice($ids, 0, 20);
+            }
         }
 
         foreach ($productFieldKeys as $key) {
@@ -693,6 +723,25 @@ class PostController extends Controller
 
         // Explicitly remove variations from post data as it's handled separately
         unset($postData['variations']);
+
+        // tax_status is NOT NULL with a 'taxable' default; the field validates as nullable, so an
+        // explicit null (or anything off the allowlist) is coerced rather than written through.
+        if (array_key_exists('tax_status', $productData)
+            && !in_array($productData['tax_status'], \FalconCms\Core\Models\ProductData::TAX_STATUSES, true)) {
+            $productData['tax_status'] = 'taxable';
+        }
+
+        // backorders is NOT NULL with a 'no' default, so an empty or unknown value is coerced
+        // rather than written through. Measurements stay nullable — blank means "not recorded".
+        if (array_key_exists('backorders', $productData)
+            && !in_array($productData['backorders'], \FalconCms\Core\Models\ProductData::BACKORDER_MODES, true)) {
+            $productData['backorders'] = 'no';
+        }
+        foreach (['weight', 'length', 'width', 'height'] as $measure) {
+            if (array_key_exists($measure, $productData) && $productData[$measure] === '') {
+                $productData[$measure] = null;
+            }
+        }
 
         $lang = $postData['lang_code'] ?? null;
         if (!$lang || $lang === 'all') {
@@ -758,6 +807,10 @@ class PostController extends Controller
                     ]);
                 }
             }
+
+            // Rebuild what the archive filters read. Runs after the variations exist, because a
+            // variable product is indexed by the values its variations actually offer.
+            falcon_sync_product_attribute_index($shopData->fresh());
         }
 
         // Sync Built-in Categories
@@ -1124,6 +1177,7 @@ class PostController extends Controller
         if ($type === 'product') {
             $rules['attributes_data'] = 'nullable|array';
             $rules['product_type'] = 'required|string|in:simple,variable';
+            $rules['tax_status'] = 'nullable|string|in:taxable,shipping,none';
             $rules['price'] = 'required_if:product_type,simple|nullable|numeric|min:0';
             $rules['sale_price'] = 'nullable|numeric|min:0|lt:price';
             $rules['sale_ends_at'] = 'nullable|date';
@@ -1132,6 +1186,11 @@ class PostController extends Controller
             $rules['sku'] = 'nullable|string|max:100';
             $rules['stock_quantity'] = 'nullable|integer|min:0';
             $rules['stock_status'] = 'nullable|string|in:instock,outofstock,onbackorder';
+            $rules['backorders'] = 'nullable|string|in:no,notify,yes';
+            $rules['weight'] = 'nullable|numeric|min:0|max:999999';
+            $rules['length'] = 'nullable|numeric|min:0|max:999999';
+            $rules['width']  = 'nullable|numeric|min:0|max:999999';
+            $rules['height'] = 'nullable|numeric|min:0|max:999999';
             $rules['manage_stock'] = 'nullable|boolean';
             $rules['short_description'] = 'nullable|string';
             $rules['variations'] = 'nullable|array';
@@ -1150,12 +1209,32 @@ class PostController extends Controller
             unset($postData['seo']);
         }
 
-        $productFieldKeys = ['price', 'sale_price', 'sale_ends_at', 'is_downloadable', 'download_expiry_days', 'sku', 'stock_quantity', 'stock_status', 'manage_stock', 'short_description', 'attributes_data'];
+        $productFieldKeys = ['price', 'sale_price', 'sale_ends_at', 'is_downloadable', 'download_expiry_days', 'sku', 'stock_quantity', 'stock_status', 'manage_stock', 'short_description', 'attributes_data', 'tax_status', 'backorders', 'weight', 'length', 'width', 'height'];
 
-        // Map product_type to type in database
+        // shop_products carries two columns for this. Only `type` was ever written, so
+        // `product_type` drifted out of step and the same product could read as variable on one
+        // screen and simple on another. Both are written now; the reconcile migration fixed the
+        // rows that already drifted.
         if (isset($postData['product_type'])) {
             $productData['type'] = $postData['product_type'];
+            $productData['product_type'] = $postData['product_type'];
             unset($postData['product_type']);
+        }
+
+        // Upsells and cross-sells. Gated on the hidden marker, not on the id arrays themselves:
+        // clearing every pick posts no ids at all, and that has to mean "none" rather than
+        // "leave what was there". Ids are cast and filtered so a hand-edited form cannot store
+        // rubbish that the storefront would then have to defend against on every page load.
+        if ($request->has('linked_products_submitted')) {
+            foreach (['upsell_ids', 'cross_sell_ids'] as $linkField) {
+                $ids = array_values(array_unique(array_filter(
+                    array_map('intval', (array) $request->input($linkField, [])),
+                    fn ($id) => $id > 0 && $id !== (int) ($post->id ?? 0)
+                )));
+
+                // A cap keeps one product from linking to the entire catalogue.
+                $productData[$linkField] = array_slice($ids, 0, 20);
+            }
         }
 
         foreach ($productFieldKeys as $key) {
@@ -1169,6 +1248,25 @@ class PostController extends Controller
 
         // Explicitly remove variations from post data as it's handled separately
         unset($postData['variations']);
+
+        // tax_status is NOT NULL with a 'taxable' default; the field validates as nullable, so an
+        // explicit null (or anything off the allowlist) is coerced rather than written through.
+        if (array_key_exists('tax_status', $productData)
+            && !in_array($productData['tax_status'], \FalconCms\Core\Models\ProductData::TAX_STATUSES, true)) {
+            $productData['tax_status'] = 'taxable';
+        }
+
+        // backorders is NOT NULL with a 'no' default, so an empty or unknown value is coerced
+        // rather than written through. Measurements stay nullable — blank means "not recorded".
+        if (array_key_exists('backorders', $productData)
+            && !in_array($productData['backorders'], \FalconCms\Core\Models\ProductData::BACKORDER_MODES, true)) {
+            $productData['backorders'] = 'no';
+        }
+        foreach (['weight', 'length', 'width', 'height'] as $measure) {
+            if (array_key_exists($measure, $productData) && $productData[$measure] === '') {
+                $productData[$measure] = null;
+            }
+        }
 
         $slugSource = !empty($postData['slug']) ? $postData['slug'] : (!empty($postData['title']) ? $postData['title'] : 'no-title');
         $postData['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type, $postData['lang_code'] ?? $post->lang_code);
@@ -1305,6 +1403,10 @@ class PostController extends Controller
                 // If not variable, ensure no variations exist
                 $shopData->variations()->delete();
             }
+
+            // Rebuild what the archive filters read. Runs after the variations are settled, so a
+            // product switched back to simple is re-indexed from its declared values.
+            falcon_sync_product_attribute_index($shopData->fresh());
         }
 
         // Multilingual Copy Logic (on Update)

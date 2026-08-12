@@ -84,8 +84,10 @@
     }
     .text-block-container-{{ $appliedId }} .text-block-content > p:first-child { margin-top: 0 !important; }
     .text-block-container-{{ $appliedId }} .text-block-content > p:last-child { margin-bottom: 0 !important; }
-    .text-block-container-{{ $appliedId }} ul { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; }
-    .text-block-container-{{ $appliedId }} ol { list-style-type: decimal !important; margin-left: 20px !important; margin-bottom: 15px !important; }
+    {{-- padding-left is pinned to 0 because the shared rich-text stylesheet indents lists with
+         padding; this element has always indented with margin-left, so both would stack. --}}
+    .text-block-container-{{ $appliedId }} ul { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 0 !important; }
+    .text-block-container-{{ $appliedId }} ol { list-style-type: decimal !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 0 !important; }
     .text-block-container-{{ $appliedId }} li { margin-bottom: 5px !important; }
     @if($respCss) {!! $respCss !!} @endif
 </style>
@@ -93,7 +95,7 @@
 <div class="element-text-block-wrapper text-block-container-{{ $appliedId }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
      id="{{ $appliedId }}"
      style="{{ implode('; ', $wrapperStyles) }}">
-    <div class="text-block-content" style="{{ implode('; ', $contentStyles) }}">
+    <div class="text-block-content falcon-rich-text" style="{{ implode('; ', $contentStyles) }}">
         {!! falcon_sanitize_html($s['content'] ?? '') !!}
     </div>
 </div>

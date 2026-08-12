@@ -293,8 +293,15 @@ class MakeTheme extends Command
         @section('title', $post->title)
 
         @section('content')
+            @php
+                // Builder layouts bring their own markup; only classic rich-editor HTML wants the
+                // falcon-rich-text container (it restores list bullets, table borders and so on
+                // after Tailwind's Preflight).
+                $isBuilder = $post->editor_type === 'builder'
+                    || (is_string($post->content) && (str_starts_with($post->content, '[') || str_starts_with($post->content, '{')));
+            @endphp
             {{-- get_lazy_content renders Falcon Builder content, or plain content for classic pages. --}}
-            <article class="prose prose-slate max-w-none">
+            <article class="max-w-none @if(!$isBuilder) falcon-rich-text @endif">
                 {!! get_lazy_content($post->content) !!}
             </article>
         @endsection
@@ -309,9 +316,15 @@ class MakeTheme extends Command
         @section('title', $post->title)
 
         @section('content')
-            <article class="prose prose-slate max-w-none">
-                <h1>{{ $post->title }}</h1>
-                {!! get_lazy_content($post->content) !!}
+            @php
+                $isBuilder = $post->editor_type === 'builder'
+                    || (is_string($post->content) && (str_starts_with($post->content, '[') || str_starts_with($post->content, '{')));
+            @endphp
+            <article class="max-w-none">
+                <h1 class="text-3xl font-bold mb-6">{{ $post->title }}</h1>
+                <div class="@if(!$isBuilder) falcon-rich-text @endif">
+                    {!! get_lazy_content($post->content) !!}
+                </div>
             </article>
         @endsection
         BLADE;

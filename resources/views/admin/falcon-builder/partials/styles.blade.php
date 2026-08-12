@@ -1022,3 +1022,7 @@
     @keyframes lztick-canvas-left  { from { transform: translateX(0); }    to { transform: translateX(-50%); } }
     @keyframes lztick-canvas-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
 </style>
+
+{{-- The canvas loads Tailwind too, so rich-text elements need the same Preflight repairs the
+     front-end gets — otherwise a bulleted list previews flat here and renders bulleted live. --}}
+@include('falcon-cms::components.frontend.rich-text-styles')

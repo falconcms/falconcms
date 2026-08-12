@@ -3,11 +3,14 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
+use FalconCms\Core\Http\Controllers\Concerns\SyncsOrderInventory;
 use FalconCms\Core\Models\Order;
 use Illuminate\Http\Request;
 
 class ShopController extends Controller
 {
+    use SyncsOrderInventory;
+
     public function overview(Request $request)
     {
         // Resolve the date range — preset or custom from/to.
@@ -315,50 +318,13 @@ class ShopController extends Controller
         return redirect()->back()->with('success', $msg);
     }
 
+    /**
+     * Kept as-is for call sites in this controller; the logic itself now lives in
+     * SyncsOrderInventory so the Stripe webhook restocks exactly the same way.
+     */
     private function handleInventoryStatusChange(Order $order, $oldStatus, $newStatus)
     {
-        // Statuses that represent active stock holding
-        $activeStatuses = ['pending', 'processing', 'completed', 'on-hold', 'partially-refunded'];
-        // Statuses where stock is returned to inventory
-        $inactiveStatuses = ['cancelled', 'refunded', 'failed'];
-
-        $wasActive = in_array($oldStatus, $activeStatuses);
-        $isInactive = in_array($newStatus, $inactiveStatuses);
-
-        $wasInactive = in_array($oldStatus, $inactiveStatuses);
-        $isActive = in_array($newStatus, $activeStatuses);
-
-        $order->loadMissing(['items.product.shopData', 'items.variation']);
-
-        if ($wasActive && $isInactive) {
-            // Restock (Restore Inventory)
-            foreach ($order->items as $item) {
-                if ($item->variation) {
-                    if ($item->variation->manage_stock) {
-                        $item->variation->increment('stock_quantity', $item->quantity);
-                    }
-                } elseif ($item->product && $item->product->shopData) {
-                    $shopData = $item->product->shopData;
-                    if ($shopData->manage_stock) {
-                        $shopData->increment('stock_quantity', $item->quantity);
-                    }
-                }
-            }
-        } elseif ($wasInactive && $isActive) {
-            // Deduct Stock
-            foreach ($order->items as $item) {
-                if ($item->variation) {
-                    if ($item->variation->manage_stock) {
-                        $item->variation->decrement('stock_quantity', $item->quantity);
-                    }
-                } elseif ($item->product && $item->product->shopData) {
-                    $shopData = $item->product->shopData;
-                    if ($shopData->manage_stock) {
-                        $shopData->decrement('stock_quantity', $item->quantity);
-                    }
-                }
-            }
-        }
+        $this->syncOrderInventory($order, $oldStatus, $newStatus);
     }
 
     public function settings()
@@ -402,6 +368,85 @@ class ShopController extends Controller
         return view('falcon-cms::admin.shop.settings', compact('countries', 'allowedCountries', 'currencies', 'pages', 'products', 'categories'));
     }
 
+    /**
+     * Replace the coupon list with what the settings screen posted.
+     *
+     * Every field is coerced to its own type rather than stored as posted, so a hand-edited
+     * form cannot smuggle in an unknown discount type (which the cart would silently price as
+     * a percentage) or a negative amount that would *add* money to an order. Rows are matched
+     * by code so an existing coupon keeps its id and — importantly — its redemption count;
+     * codes no longer on the form are deleted.
+     */
+    protected function saveCoupons(array $rows): void
+    {
+        $seen = [];
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $code = strtoupper(trim((string) ($row['code'] ?? '')));
+            if ($code === '' || isset($seen[$code])) {
+                continue; // Blank rows and duplicate codes are dropped, not merged.
+            }
+
+            $amount = max(0, (float) ($row['amount'] ?? 0));
+            $type   = in_array($row['type'] ?? '', \FalconCms\Core\Models\Coupon::TYPES, true)
+                ? $row['type']
+                : 'fixed_cart';
+
+            // A percentage over 100 would make the discount exceed the cart.
+            if ($type === 'percent') {
+                $amount = min($amount, 100);
+            }
+            // Free shipping carries no money value; the form even hides the amount field for it.
+            if ($type === 'free_shipping') {
+                $amount = 0;
+            }
+
+            $expiry = trim((string) ($row['expiry'] ?? ''));
+            $expiry = $expiry !== '' ? \Illuminate\Support\Carbon::parse($expiry)->startOfDay() : null;
+
+            $nullableNumber = static function ($value): ?float {
+                $value = is_scalar($value) ? trim((string) $value) : '';
+                return $value === '' ? null : max(0, (float) $value);
+            };
+            $nullableInt = static function ($value): ?int {
+                $value = is_scalar($value) ? trim((string) $value) : '';
+                return $value === '' ? null : max(0, (int) $value);
+            };
+            $idList = static function ($value): array {
+                return array_values(array_filter(array_map(
+                    static fn ($v) => (int) $v,
+                    is_array($value) ? $value : []
+                )));
+            };
+
+            \FalconCms\Core\Models\Coupon::updateOrCreate(
+                ['code' => $code],
+                [
+                    'type'              => $type,
+                    'amount'            => $amount,
+                    'min_spend'         => $nullableNumber($row['min_spend'] ?? null),
+                    'products'          => $idList($row['products'] ?? []),
+                    'categories'        => $idList($row['categories'] ?? []),
+                    'usage_limit'       => $nullableInt($row['usage_limit'] ?? null),
+                    'total_usage_limit' => $nullableInt($row['total_usage_limit'] ?? null),
+                    'expiry_date'       => $expiry,
+                    'is_active'         => true,
+                ]
+            );
+
+            $seen[$code] = true;
+        }
+
+        \FalconCms\Core\Models\Coupon::when(
+            !empty($seen),
+            static fn ($q) => $q->whereNotIn('code', array_keys($seen))
+        )->delete();
+    }
+
     public function saveSettings(Request $request)
     {
         // 1. Explicitly handle toggles (so they save 0 when unchecked)
@@ -425,8 +470,16 @@ class ShopController extends Controller
                 ->delete();
         }
 
-        // 2. Save everything else
-        $skip = array_merge(['_token', 'active_tab'], array_keys($toggles));
+        // 2. Coupons live in shop_coupons, not in cms_settings — persist them separately and
+        //    keep the keys out of the generic option loop below so no blob is written back.
+        //    Gated on the hidden marker, not on `coupons` itself: deleting the last coupon
+        //    posts no coupon inputs at all, and that has to mean "none left", not "no change".
+        if ($request->has('coupons_submitted')) {
+            $this->saveCoupons((array) $request->input('coupons', []));
+        }
+
+        // 3. Save everything else
+        $skip = array_merge(['_token', 'active_tab', 'coupons', 'coupons_submitted'], array_keys($toggles));
         foreach ($request->except($skip) as $key => $value) {
             $optKey = 'shop_' . $key;
             if (falcon_is_protected_option($optKey) || falcon_is_protected_option($key)) {

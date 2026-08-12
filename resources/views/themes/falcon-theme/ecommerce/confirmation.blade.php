@@ -116,14 +116,21 @@
                                         {{ falcon_price_format($order->tax_total, $order) }}</td>
                                 </tr>
                             @endif
-                            @if ($order->coupon_code)
+                            {{-- Named lines rather than one bare figure: a promotion carries no coupon
+                                 code, so the old `@if ($order->coupon_code)` guard hid the discount
+                                 entirely and the subtotal simply did not add up to the total. --}}
+                            @foreach (falcon_order_discount_lines($order) as $line)
                                 <tr>
-                                    <td class="py-3 font-bold text-emerald-700 text-sm">Coupons
-                                        ({{ $order->coupon_code }}):</td>
-                                    <td class="py-3 text-right font-bold text-emerald-700">
-                                        {{ falcon_price_format($order->discount_total, $order) }}</td>
+                                    <td class="py-3 font-bold text-emerald-700 text-sm">
+                                        {{ $line['label'] }}
+                                        @if ($line['note'])
+                                            <span class="block font-normal text-[11px] text-emerald-700/70">{{ $line['note'] }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 text-right font-bold text-emerald-700 align-top">
+                                        -{{ falcon_price_format($line['amount'], $order) }}</td>
                                 </tr>
-                            @endif
+                            @endforeach
                             <tr class="text-heading text-lg border-t border-gray-100">
                                 <td class="pt-4 font-black">Total:</td>
                                 <td class="pt-4 text-right font-black text-primary">

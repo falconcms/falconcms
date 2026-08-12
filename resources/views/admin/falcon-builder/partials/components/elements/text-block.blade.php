@@ -17,7 +17,7 @@
          },
          getCanvasVisibilityStyle(el.settings)
      ]">
-    <div class="text-block-content"
+    <div class="text-block-content falcon-rich-text"
        v-safe-html="dynSrcPreview(el.settings) || el.settings.content || 'your content is here...'"
        @mouseenter="el.isHovered = true"
        @mouseleave="el.isHovered = false"
@@ -35,8 +35,8 @@
             text-transform: @{{ el.settings.textTransform || 'none' }} !important;
             margin: 0 !important;
         }
-        .text-block-container-@{{ el.id }} ul { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; }
-        .text-block-container-@{{ el.id }} ol { list-style-type: decimal !important; margin-left: 20px !important; margin-bottom: 15px !important; }
+        .text-block-container-@{{ el.id }} ul { list-style-type: disc !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 0 !important; }
+        .text-block-container-@{{ el.id }} ol { list-style-type: decimal !important; margin-left: 20px !important; margin-bottom: 15px !important; padding-left: 0 !important; }
         .text-block-container-@{{ el.id }} li { margin-bottom: 5px !important; }
     </component>
 </div>

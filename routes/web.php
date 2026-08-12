@@ -439,6 +439,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         Route::post('products/{productDataId}/downloads', [\FalconCms\Core\Http\Controllers\Admin\ProductDownloadController::class, 'store'])->name('products.downloads.store');
         Route::delete('products/downloads/{download}', [\FalconCms\Core\Http\Controllers\Admin\ProductDownloadController::class, 'destroy'])->name('products.downloads.destroy');
 
+        // Promotions — automatic cart rules (buy X get Y), no coupon code involved.
+        Route::get('promotions', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'index'])->name('promotions.index');
+        Route::post('promotions/bulk', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'bulk'])->name('promotions.bulk');
+        Route::get('promotions/create', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'create'])->name('promotions.create');
+        Route::post('promotions', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'store'])->name('promotions.store');
+        Route::get('promotions/{id}/edit', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'edit'])->name('promotions.edit');
+        Route::put('promotions/{id}', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'update'])->name('promotions.update');
+        Route::delete('promotions/{id}', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'destroy'])->name('promotions.destroy');
+
         // Reviews
         Route::get('reviews', [\FalconCms\Core\Http\Controllers\Admin\ReviewController::class, 'index'])->name('reviews.index');
         Route::post('reviews/{review}/toggle-approve', [\FalconCms\Core\Http\Controllers\Admin\ReviewController::class, 'toggleApprove'])->name('reviews.toggle-approve');
@@ -533,6 +542,12 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::post('/account-profile-update', [ShopFrontendController::class, 'updateProfile'])->name('shop.account.profile.update');
     Route::post('/account-password-update', [ShopFrontendController::class, 'updatePassword'])->name('shop.account.password.update');
 
+    // Saved addresses. Every action re-checks ownership in the controller — the id in the URL is
+    // a claim, not a permission.
+    Route::post('/account-address', [ShopFrontendController::class, 'saveAddress'])->name('shop.account.address.save')->middleware('throttle:20,1');
+    Route::post('/account-address/{id}/delete', [ShopFrontendController::class, 'deleteAddress'])->name('shop.account.address.delete')->middleware('throttle:20,1');
+    Route::post('/account-address/{id}/default', [ShopFrontendController::class, 'setDefaultAddress'])->name('shop.account.address.default')->middleware('throttle:20,1');
+
     // Digital downloads (token-based, no auth required)
     Route::get('/download/{token}', [ShopFrontendController::class, 'downloadFile'])->name('shop.download')->middleware('throttle:30,1')
         ->withoutMiddleware([\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
@@ -547,12 +562,38 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::post('/wishlist/remove', [\FalconCms\Core\Http\Controllers\WishlistController::class, 'remove'])->name('shop.wishlist.remove');
 
     // Online payment gateway return / cancel — gateways (e.g. SSLCommerz) POST here without a CSRF token.
+    //
+    // BOTH CSRF classes are listed on purpose. Laravel 11+ registers
+    // PreventRequestForgery in the `web` group and keeps VerifyCsrfToken only as a legacy
+    // subclass; withoutMiddleware() matches on the registered name, so excluding just the old
+    // name silently did nothing and these callbacks were answering 419.
     Route::match(['get', 'post'], '/payment/return/{id}', [ShopFrontendController::class, 'paymentReturn'])
         ->name('shop.payment.return')
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class, \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
+        ->withoutMiddleware([
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict',
+        ]);
     Route::match(['get', 'post'], '/payment/cancel/{id}', [ShopFrontendController::class, 'paymentCancel'])
         ->name('shop.payment.cancel')
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class, \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
+        ->withoutMiddleware([
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict',
+        ]);
+
+    // Stripe webhook — the reliable half of payment confirmation (the browser return URL is
+    // best-effort; a customer who closes the tab never hits it). Stripe signs the request and
+    // the controller verifies that signature, which is the only authentication here.
+    // Stays outside the Pro gate so a store that lapses still reconciles payments already taken.
+    Route::post('/payment/stripe/webhook', [ShopFrontendController::class, 'stripeWebhook'])
+        ->name('shop.payment.stripe.webhook')
+        ->middleware('throttle:300,1')
+        ->withoutMiddleware([
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict',
+        ]);
     }); // end EnsurePro:ecommerce — Shop Frontend
 
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');

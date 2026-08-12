@@ -647,6 +647,10 @@
             width: '100%',
             plugins: ['lists', 'link', 'image', 'preview', 'code', 'fullscreen', 'media', 'table', 'wordcount'],
             toolbar: 'blocks | bold italic underline strikethrough | blockquote | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code fullscreen',
+            // Keep hand-written HTML exactly as typed — TinyMCE's default schema silently drops
+            // semantic/embed tags and unknown attributes. Output is run through
+            // falcon_sanitize_html() when rendered, so this widening adds no XSS surface.
+            valid_elements: '*[*]', extended_valid_elements: '*[*]', entity_encoding: 'raw',
             content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size:14px; padding: 20px; }',
             branding: false,
             image_title: true,

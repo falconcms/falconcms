@@ -20,7 +20,7 @@
                 <p class="text-[14px] mb-4 text-body">If you have a coupon code, please apply it below.</p>
                 <div class="flex gap-2">
                     <input type="text" id="coupon_code_input" placeholder="Coupon code" class="flex-grow border border-[#d3ced2] px-4 py-2.5 text-[14px] outline-none focus:border-primary">
-                    <button type="button" onclick="applyCoupon()" class="bg-primary text-white px-6 py-2.5 font-bold text-[14px] hover:bg-primary-hover transition-all uppercase">Apply</button>
+                    <button type="button" onclick="applyCoupon()" class="bg-primary text-white px-6 py-2.5 font-bold text-[14px] hover:opacity-90 transition-all uppercase">Apply</button>
                 </div>
                 <div id="coupon-message" class="mt-2 text-xs"></div>
             </div>
@@ -35,7 +35,15 @@
                 <div class="w-full md:w-1/2">
                     <h2 class="text-[20px] font-bold text-heading border-b border-[#eee] pb-4 mb-6 uppercase tracking-tight">Billing details</h2>
                     <?php do_falcon_action('falcon_before_billing_fields'); ?>
+                    @include('falcon-cms::frontend.checkout-address-picker', ['section' => 'billing'])
                     <?php falcon_render_checkout_fields(falcon_get_checkout_fields('billing')); ?>
+                    @auth
+                    <label class="flex items-center gap-2 cursor-pointer text-[13px] text-body mb-4">
+                        <input type="checkbox" name="save_address" value="1" checked
+                               class="w-4 h-4 border-[#ddd] rounded text-primary focus:ring-0">
+                        Save this address to my account for next time
+                    </label>
+                    @endauth
                     <?php do_falcon_action('falcon_after_billing_fields'); ?>
 
                     @guest
@@ -74,18 +82,37 @@
 
                 <!-- Right Column: Shipping Details -->
                 <div class="w-full md:w-1/2">
+                    @php
+                        // Shop → Shipping → Default Address Type. 'force_billing' removes the option
+                        // entirely; 'shipping' opens the fields by default; 'billing' keeps them
+                        // collapsed behind the checkbox. The server enforces the same rule on POST.
+                        $shipDestination   = falcon_shipping_destination();
+                        $allowSeparateShip = falcon_allows_separate_shipping_address();
+                        $shipOpenByDefault = old('ship_to_different_address') !== null
+                            ? (bool) old('ship_to_different_address')
+                            : $shipDestination === 'shipping';
+                    @endphp
+
+                    @if($allowSeparateShip)
                     <div class="mb-6">
                         <label class="flex items-center gap-2 cursor-pointer group">
-                            <input type="checkbox" id="ship-different" name="ship_to_different_address" value="1" {{ old('ship_to_different_address') ? 'checked' : '' }} onchange="document.getElementById('shipping-form').classList.toggle('hidden')" class="w-4 h-4 border-[#ddd] rounded-sm text-primary focus:ring-0">
+                            <input type="checkbox" id="ship-different" name="ship_to_different_address" value="1" {{ $shipOpenByDefault ? 'checked' : '' }} onchange="document.getElementById('shipping-form').classList.toggle('hidden')" class="w-4 h-4 border-[#ddd] rounded-sm text-primary focus:ring-0">
                             <span class="text-[20px] font-bold text-heading uppercase tracking-tight">Ship to a different address?</span>
                         </label>
                     </div>
 
-                    <div id="shipping-form" class="{{ old('ship_to_different_address') ? '' : 'hidden' }} mb-8 border-t border-[#eee] pt-6">
+                    <div id="shipping-form" class="{{ $shipOpenByDefault ? '' : 'hidden' }} mb-8 border-t border-[#eee] pt-6">
                         <?php do_falcon_action('falcon_before_shipping_fields'); ?>
+                        @include('falcon-cms::frontend.checkout-address-picker', ['section' => 'shipping'])
                         <?php falcon_render_checkout_fields(falcon_get_checkout_fields('shipping')); ?>
                         <?php do_falcon_action('falcon_after_shipping_fields'); ?>
                     </div>
+                    @else
+                    <div class="mb-8 border border-[#eee] rounded-sm p-4 bg-[#fafafa]">
+                        <h2 class="text-[16px] font-bold text-heading mb-1">Shipping address</h2>
+                        <p class="text-[13px] text-body">This order ships to your billing address.</p>
+                    </div>
+                    @endif
 
                     <div class="space-y-2 mt-6">
                         <h2 class="text-[16px] font-bold text-heading mb-4">Order notes (optional)</h2>
@@ -128,18 +155,52 @@
                                 <td class="text-right p-4 font-bold text-heading" id="checkout-subtotal">{{ falcon_price_format(get_falcon_cart_subtotal()) }}</td>
                             </tr>
 
+                            @php
+                                $shipCountry = falcon_customer_shipping_country();
+                                $shipMethods = falcon_shipping_methods($shipCountry);
+                                $shipDetails = get_falcon_cart_shipping_details($shipCountry);
+                            @endphp
                             <tr class="border-b border-[#eee]">
-                                <th class="text-left p-4 font-bold text-heading">Shipping</th>
-                                <td class="text-right p-4 text-body" id="checkout-shipping">
-                                    @php $shipDetails = get_falcon_cart_shipping_details(session('falcon_shipping_country')); @endphp
-                                    {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ $shipDetails['cost'] > 0 ? falcon_price_format($shipDetails['cost']) : 'Free' }}</span>
-                                </td>
+                                <th class="text-left p-4 font-bold text-heading align-top">Shipping</th>
+                                @if(!empty($shipDetails['pending']))
+                                    <td class="text-right p-4 text-body" id="checkout-shipping">
+                                        <span class="text-gray-500">Enter your address to see shipping options.</span>
+                                    </td>
+                                @elseif(count($shipMethods) > 1)
+                                    {{-- More than one method on offer (Local Pickup is enabled), so let the
+                                         customer choose. The value posted is only an id — the server prices it. --}}
+                                    <td class="text-right p-4 text-body">
+                                        <div class="space-y-2" id="checkout-shipping-methods">
+                                            @foreach($shipMethods as $method)
+                                                <label class="flex items-center justify-end gap-2 cursor-pointer">
+                                                    <span>{{ $method['label'] }}:
+                                                        <span class="font-bold text-heading">{{ $method['cost'] > 0 ? falcon_price_format($method['cost']) : 'Free' }}</span>
+                                                    </span>
+                                                    <input type="radio" name="shipping_method" value="{{ $method['id'] }}"
+                                                           {{ $shipDetails['method'] === $method['id'] ? 'checked' : '' }}
+                                                           class="w-4 h-4 text-primary focus:ring-0 border-[#ddd]">
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                        <span id="checkout-shipping" class="hidden"></span>
+                                    </td>
+                                @else
+                                    <td class="text-right p-4 text-body" id="checkout-shipping">
+                                        {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ $shipDetails['cost'] > 0 ? falcon_price_format($shipDetails['cost']) : 'Free' }}</span>
+                                    </td>
+                                @endif
                             </tr>
 
-                            @if(get_cms_option('shop_enable_tax') === '1')
-                            <tr class="border-b border-[#eee]">
-                                <th class="text-left p-4 font-bold text-heading">Estimated Tax</th>
-                                <td class="text-right p-4 font-bold text-heading" id="checkout-tax">{{ falcon_price_format(get_falcon_cart_tax()) }}</td>
+                            @php $checkoutTax = falcon_tax_enabled() ? get_falcon_cart_tax() : 0; @endphp
+                            @if(falcon_tax_enabled())
+                            {{-- Rendered even at zero so the country/address handler can reveal it
+                                 the moment a taxed destination is chosen. --}}
+                            <tr class="border-b border-[#eee]" id="checkout-tax-row" @if($checkoutTax <= 0) style="display:none" @endif>
+                                <th class="text-left p-4 font-bold text-heading">
+                                    <span id="checkout-tax-prefix" @unless(falcon_prices_include_tax()) style="display:none" @endunless>Includes </span><span id="checkout-tax-label">{{ falcon_cart_tax_label() }}</span>
+                                </th>
+                                {{-- See the cart template: inclusive tax is already inside the subtotal. --}}
+                                <td class="text-right p-4 {{ falcon_prices_include_tax() ? 'font-normal text-gray-500' : 'font-bold text-heading' }}" id="checkout-tax">{{ falcon_price_format($checkoutTax) }}</td>
                             </tr>
                             @endif
 
@@ -147,22 +208,44 @@
                                 $appliedCoupons = session()->get('falcon_coupons', []); 
                                 $subtotal = get_falcon_cart_subtotal(); 
                                 $currentSubtotal = $subtotal;
-                                $isMultipleAllowed = (int)get_shop_option('shop_multi_coupon_policy', '1') === 1;
+                                $isMultipleAllowed = (int)get_shop_option('shop_coupon_stacking_policy', '1') === 1;
                             @endphp
                             @foreach($appliedCoupons as $coupon)
-                                @php 
-                                    $amount = (float)($coupon['amount'] ?? ($coupon['discount'] ?? 0));
+                                @php
+                                    // See the cart template: shared helper so the row matches the total.
                                     $calcBase = $isMultipleAllowed ? $currentSubtotal : $subtotal;
-                                    $discount = ($coupon['type'] ?? 'percent') === 'percent' ? $calcBase * ($amount / 100) : $amount;
+                                    $discount = get_falcon_coupon_discount_amount($coupon, $cart, $calcBase);
                                     $currentSubtotal -= $discount;
                                 @endphp
+                                @if($discount > 0 || ($coupon['type'] ?? '') === 'free_shipping')
                                 <tr class="coupon-row bg-emerald-50/10 border-b border-[#eee]">
                                     <th class="text-left p-4 font-bold text-emerald-700 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
                                             Coupon: {{ $coupon['code'] }}
                                         </div>
                                     </th>
-                                    <td class="text-right p-4 font-bold text-emerald-700">-{{ falcon_price_format($discount) }}</td>
+                                    <td class="text-right p-4 font-bold text-emerald-700">
+                                        @if(($coupon['type'] ?? '') === 'free_shipping')
+                                            Free shipping
+                                        @else
+                                            -{{ falcon_price_format($discount) }}
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endif
+                            @endforeach
+
+                            {{-- See the cart template: automatic promotions, priced by the engine. --}}
+                            @foreach(falcon_evaluate_promotions($cart) as $promo)
+                                <tr class="promotion-row bg-amber-50/40 border-b border-[#eee]">
+                                    <th class="text-left p-4 font-bold text-amber-700">
+                                        <div class="flex items-center gap-2">
+                                            <span>&#127873;</span>
+                                            <span>{{ $promo['name'] }}</span>
+                                        </div>
+                                        <div class="text-[11px] font-normal text-amber-700/70 mt-0.5">{{ $promo['summary'] }}</div>
+                                    </th>
+                                    <td class="text-right p-4 font-bold text-amber-700">-{{ falcon_price_format($promo['discount']) }}</td>
                                 </tr>
                             @endforeach
 
@@ -211,7 +294,7 @@
                             </p>
 
                             <?php do_falcon_action('falcon_before_place_order_button', $cart); ?>
-                            <button type="submit" @if(empty($gateways)) disabled @endif class="bg-primary text-white px-10 py-4 rounded-sm font-bold text-[16px] hover:bg-primary-hover transition-all shadow-lg uppercase disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button type="submit" @if(empty($gateways)) disabled @endif class="bg-primary text-white px-10 py-4 rounded-sm font-bold text-[16px] hover:opacity-90 transition-all shadow-lg uppercase disabled:opacity-50 disabled:cursor-not-allowed">
                                 Place order
                             </button>
                             <?php do_falcon_action('falcon_after_place_order_button', $cart); ?>
@@ -225,7 +308,7 @@
         <div class="bg-white p-20 text-center border border-[#eee] rounded-sm">
             <h2 class="text-[24px] font-bold text-heading mb-4">Your cart is empty</h2>
             <p class="text-[#777] mb-8">Add products to your cart before checking out.</p>
-            <a href="{{ get_lazy_shop_url() }}" class="inline-block bg-primary text-white px-8 py-3 rounded-sm font-bold hover:bg-primary-hover transition-colors uppercase">Return to shop</a>
+            <a href="{{ get_lazy_shop_url() }}" class="inline-block bg-primary text-white px-8 py-3 rounded-sm font-bold hover:opacity-90 hover:text-white transition-colors uppercase">Return to shop</a>
         </div>
         @endif
     </div>
@@ -237,6 +320,49 @@
 <script src="https://js.stripe.com/v3/"></script>
 @endif
 <script>
+// Repaints the order-review table from a cart endpoint's payload. Shared by the coupon box and
+// the address/shipping handler so both always land on the same numbers, tax line included.
+function applyCheckoutTotals(data) {
+    const set = (id, html) => { const el = document.getElementById(id); if (el && html !== undefined) el.innerHTML = html; };
+
+    set('checkout-subtotal', data.subtotal);
+    set('checkout-shipping', data.shipping);
+    set('checkout-total',    data.total);
+    set('checkout-tax',       data.tax);
+    set('checkout-tax-label', data.tax_label);
+
+    const taxRow = document.getElementById('checkout-tax-row');
+    if (taxRow && data.tax_visible !== undefined) taxRow.style.display = data.tax_visible ? '' : 'none';
+    // See the cart: inclusive tax must not read as an additive line after a repaint either.
+    const taxPrefix = document.getElementById('checkout-tax-prefix');
+    const taxCell   = document.getElementById('checkout-tax');
+    if (taxPrefix && taxCell && data.tax_included !== undefined) {
+        taxPrefix.style.display = data.tax_included ? '' : 'none';
+        taxCell.className = 'text-right p-4 ' + (data.tax_included ? 'font-normal text-gray-500' : 'font-bold text-heading');
+    }
+
+    // Changing the address can change nothing about promotions, but a coupon apply reuses this
+    // painter — keeping the rows here means one place decides what the totals table shows.
+    const rowsBody = document.getElementById('order-review-body');
+    if (rowsBody && (data.discount_html !== undefined || data.promotion_html !== undefined)) {
+        rowsBody.querySelectorAll('.coupon-row, .promotion-row').forEach(r => r.remove());
+        const markup = (data.discount_html || '') + (data.promotion_html || '');
+        if (markup) rowsBody.lastElementChild.insertAdjacentHTML('beforebegin', markup);
+        rowsBody.querySelectorAll('.coupon-row > td, .promotion-row > td').forEach(td => td.classList.add('text-right'));
+    }
+
+    const box = document.getElementById('checkout-shipping-methods');
+    if (box && Array.isArray(data.methods)) {
+        box.style.display = data.shipping_pending ? 'none' : '';
+        data.methods.forEach(function (method) {
+            const input = box.querySelector('input[value="' + CSS.escape(method.id) + '"]');
+            const price = input && input.closest('label') ? input.closest('label').querySelector('span span') : null;
+            if (price) price.textContent = method.cost;
+            if (input) input.checked = (method.id === data.method);
+        });
+    }
+}
+
 function applyCoupon() {
     const code = document.getElementById('coupon_code_input').value;
     const msgDiv = document.getElementById('coupon-message');
@@ -274,20 +400,15 @@ function applyCoupon() {
             msgDiv.innerHTML = data.message;
             msgDiv.className = 'mt-2 text-xs text-emerald-600';
             
-            // Update Totals
-            document.getElementById('checkout-subtotal').innerText = data.subtotal;
-            document.getElementById('checkout-shipping').innerText = data.shipping;
-            if(document.getElementById('checkout-tax')) document.getElementById('checkout-tax').innerText = data.tax;
-            document.getElementById('checkout-total').innerText = data.total;
+            applyCheckoutTotals(data);
             
             // Add or update coupon row
             const tbody = document.getElementById('order-review-body');
             const totalRow = tbody.lastElementChild;
             
-            const existingRows = tbody.querySelectorAll('.coupon-row');
-            existingRows.forEach(row => row.remove());
-            
-            totalRow.insertAdjacentHTML('beforebegin', data.discount_html);
+            tbody.querySelectorAll('.coupon-row, .promotion-row').forEach(row => row.remove());
+
+            totalRow.insertAdjacentHTML('beforebegin', (data.discount_html || '') + (data.promotion_html || ''));
             // Right-align the injected coupon amount to match this page's order table.
             tbody.querySelectorAll('.coupon-row > td').forEach(td => td.classList.add('text-right'));
             if (typeof lucide !== 'undefined') {
@@ -313,6 +434,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const shippingCountry = document.querySelector('select[name="shipping_country"]');
     const shipToDifferent = document.getElementById('ship-different');
 
+    const shippingMethodBox = document.getElementById('checkout-shipping-methods');
+
+    function selectedShippingMethod() {
+        const checked = document.querySelector('input[name="shipping_method"]:checked');
+        return checked ? checked.value : null;
+    }
+
     function refreshCheckoutShipping() {
         const country = (shipToDifferent && shipToDifferent.checked) ? (shippingCountry ? shippingCountry.value : '') : (billingCountry ? billingCountry.value : '');
         if(!country) return;
@@ -327,14 +455,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: JSON.stringify({ country: country })
+            body: JSON.stringify({ country: country, shipping_method: selectedShippingMethod() })
         })
         .then(response => response.json())
         .then(data => {
-            if(data.success) {
-                if(shippingText) shippingText.innerHTML = data.shipping;
-                if(totalText) totalText.innerHTML = data.total;
-            }
+            if(!data.success) return;
+
+            // The address drives the tax rate as well as the shipping cost, so the whole
+            // order-review table is repainted — the tax line used to wait for a page reload.
+            applyCheckoutTotals(data);
         })
         .catch(error => console.error('Checkout Shipping Error:', error));
     }
@@ -342,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if(billingCountry) billingCountry.addEventListener('change', refreshCheckoutShipping);
     if(shippingCountry) shippingCountry.addEventListener('change', refreshCheckoutShipping);
     if(shipToDifferent) shipToDifferent.addEventListener('change', refreshCheckoutShipping);
+    if(shippingMethodBox) shippingMethodBox.addEventListener('change', refreshCheckoutShipping);
 
     // Initial check on load
     refreshCheckoutShipping();

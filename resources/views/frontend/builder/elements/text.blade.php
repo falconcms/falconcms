@@ -12,7 +12,7 @@
     }
 @endphp
 <div class="element-text mb-4 {{ $visibilityClasses }}">
-    <div class="prose prose-slate max-w-none" style="
+    <div class="prose prose-slate max-w-none falcon-rich-text" style="
         text-align: {{ $s['textAlign'] ?? 'left' }};
         @if(!empty($s['fontSize'])) font-size: {{ getUnitVal($s['fontSize'], $s['fontSizeUnit'] ?? 'px') }}; @endif
     ">

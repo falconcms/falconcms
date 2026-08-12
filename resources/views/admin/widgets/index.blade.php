@@ -381,6 +381,9 @@
                     height: 280,
                     plugins: ['lists', 'link', 'code'],
                     toolbar: 'blocks | bold italic underline | bullist numlist | link | code',
+                    // Keep hand-written HTML exactly as typed; the text widget renders through
+                    // falcon_sanitize_html(), so this widening adds no XSS surface.
+                    valid_elements: '*[*]', extended_valid_elements: '*[*]', entity_encoding: 'raw',
                     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:14px; padding:12px; }',
                     branding: false,
                 });

@@ -348,17 +348,22 @@
                     </td>
                 </tr>
                 
-                @if($order->discount_total > 0)
+                {{-- One row per coupon / promotion, so the email explains the saving instead of
+                     leaving an unexplained gap between the subtotal and the total. --}}
+                @foreach(falcon_order_discount_lines($order) as $line)
                 <tr>
-                    <td style="color: #059669;">Discount @if($order->coupon_code) ({{ $order->coupon_code }}) @endif</td>
+                    <td style="color: #059669;">
+                        {{ $line['label'] }}
+                        @if($line['note'])<br><span style="font-size:11px;opacity:.75">{{ $line['note'] }}</span>@endif
+                    </td>
                     <td class="text-right" style="color: #059669;">
                         @php
-                            $discountVal = number_format($order->discount_total, $order->decimals ?? 2, $order->decimal_separator ?? '.', $order->thousand_separator ?? ',');
+                            $discountVal = number_format($line['amount'], $order->decimals ?? 2, $order->decimal_separator ?? '.', $order->thousand_separator ?? ',');
                         @endphp
                         -{{ ($order->currency_position === 'right') ? $discountVal . $symbol : $symbol . $discountVal }}
                     </td>
                 </tr>
-                @endif
+                @endforeach
 
                 <tr>
                     <td>Shipping</td>

@@ -98,7 +98,14 @@ class FalconCmsServiceProvider extends ServiceProvider
         // screen has its own client-side tab UI]. '' prefix = cms_settings as-is;
         // 'shop_' = the Shop screen namespaces every posted key. A non-null tab
         // var (Shop's 'tab') groups injected fields into their tab's panel.
+        // Rich-editor HTML (lists, tables, blockquotes…) needs its browser defaults back after
+        // Tailwind's Preflight. Hooked on falcon_head rather than baked into a template so every
+        // theme — parent, child, generated or hand-written — gets it just by calling the hook.
         if (function_exists('add_falcon_action')) {
+            add_falcon_action('falcon_head', function () {
+                echo view('falcon-cms::components.frontend.rich-text-styles')->render();
+            }, 1);
+
             $settingsScreens = [
                 'general'      => ['falcon_settings_form_bottom', '', null],
                 'seo'          => ['falcon_seo_settings_form_bottom', '', null],
@@ -128,6 +135,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             \FalconCms\Core\Console\Commands\UpdateFalconCms::class,
             \FalconCms\Core\Console\Commands\PublishScheduledPosts::class,
             \FalconCms\Core\Console\Commands\ExpireSalePrices::class,
+            \FalconCms\Core\Console\Commands\ReindexProductAttributes::class,
             \FalconCms\Core\Console\Commands\PruneAnalytics::class,
             \FalconCms\Core\Console\Commands\PluginList::class,
             \FalconCms\Core\Console\Commands\PluginActivate::class,

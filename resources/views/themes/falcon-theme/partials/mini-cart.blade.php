@@ -33,8 +33,8 @@
                 <span id="mini-cart-subtotal" class="text-[18px] font-black text-heading">{{ falcon_price_format(0) }}</span>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <a href="{{ route('shop.cart') }}" class="text-center bg-white text-primary border border-primary px-4 py-2.5 rounded-[3px] text-[13px] font-semibold uppercase tracking-wider hover:bg-gray-50 transition-colors">View Cart</a>
-                <a href="{{ route('shop.checkout') }}" class="text-center bg-primary text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold uppercase tracking-wider hover:bg-primary-hover transition-colors">Checkout</a>
+                <a href="{{ route('shop.cart') }}" class="text-center bg-white text-primary border border-primary px-4 py-2.5 rounded-[3px] text-[13px] font-semibold uppercase tracking-wider hover:bg-gray-50 hover:text-primary transition-colors">View Cart</a>
+                <a href="{{ route('shop.checkout') }}" class="text-center bg-primary text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold uppercase tracking-wider hover:opacity-90 hover:text-white transition-colors">Checkout</a>
             </div>
         </div>
     </aside>

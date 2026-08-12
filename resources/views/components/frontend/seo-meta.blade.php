@@ -98,7 +98,20 @@
         $schema['image'] = $currentImage;
     }
 
-    if (isset($post) && $type === 'article') {
+    // A product page describes a Product, not a WebSite — that is what puts the price, the
+    // availability and the star rating into a search result.
+    $isProductSchema = false;
+    if (isset($post) && function_exists('falcon_product_schema')) {
+        $productSchema = falcon_product_schema($post);
+        if ($productSchema) {
+            $schema = $productSchema;
+            $isProductSchema = true;
+        }
+    }
+
+    // Products fall into the 'article' bucket above, so without this guard the blog fields
+    // (author, datePublished) were being appended to the Product — properties it does not have.
+    if (isset($post) && $type === 'article' && !$isProductSchema) {
         $schema['datePublished'] = $post->published_at ? $post->published_at->toIso8601String() : $post->created_at->toIso8601String();
         $schema['dateModified'] = $post->updated_at->toIso8601String();
         $schema['author'] = [

@@ -4,5 +4,5 @@
              textAlign: el.settings.textAlign,
              fontSize: getUnitVal(el.settings.fontSize, el.settings.fontSizeUnit)
          }"
-         class="prose prose-slate max-w-none"></div>
+         class="prose prose-slate max-w-none falcon-rich-text"></div>
 </div>

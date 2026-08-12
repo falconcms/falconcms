@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -115,6 +116,15 @@ class Post extends Model
         return $this->belongsToMany(ProductCategory::class, 'product_category_post', 'post_id', 'product_category_id');
     }
 
+    /**
+     * The flattened attribute index this product is filterable by. Derived data — see
+     * falcon_sync_product_attribute_index().
+     */
+    public function attributeValues(): HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class, 'post_id');
+    }
+
     public function productTags(): BelongsToMany
     {
         return $this->belongsToMany(ProductTag::class, 'product_tag_post', 'post_id', 'product_tag_id');
@@ -175,7 +185,9 @@ class Post extends Model
 
     public function getSalePriceAttribute()
     {
-        return $this->shopData?->sale_price;
+        // The live one: templates reading $post->sale_price must never show a sale that has
+        // already ended. The admin reads $post->shopData->sale_price, which stays untouched.
+        return $this->shopData?->active_sale_price;
     }
 
     public function getSkuAttribute()
@@ -190,20 +202,13 @@ class Post extends Model
 
     public function getIsInStockAttribute()
     {
+        // No shop row at all: nothing is being tracked, so nothing can be out of stock.
         if (!$this->shopData) {
             return true;
         }
-        if ($this->shopData->stock_status === 'outofstock') {
-            return false;
-        }
-        // Stock-quantity gating only applies when stock management is on globally
-        // (Shop settings → Products) and for this product; the out-of-stock floor
-        // is the configurable threshold (defaults to 0 = previous behavior).
-        $globalManageStock = function_exists('get_shop_option') ? get_shop_option('shop_manage_stock', '1') === '1' : true;
-        $outThreshold = function_exists('get_shop_option') ? (int) get_shop_option('shop_out_of_stock_threshold', '0') : 0;
-        if ($globalManageStock && $this->shopData->manage_stock && (int) $this->shopData->stock_quantity <= $outThreshold) {
-            return false;
-        }
-        return true;
+
+        // The rule lives on ProductData so the badge, the archive filter and the add-to-cart
+        // check cannot drift apart.
+        return $this->shopData->isInStock();
     }
 }

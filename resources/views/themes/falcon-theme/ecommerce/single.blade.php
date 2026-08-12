@@ -75,10 +75,10 @@
                 ?>
                 <div class="text-2xl font-medium text-heading mb-6 border-b border-gray-100 pb-6">
                     @if($post->sale_price)
-                        <span class="line-through text-gray-400 text-lg mr-2">{{ falcon_price_format($post->price) }}</span>
-                        <span class="text-primary">{{ falcon_price_format($post->sale_price) }}</span>
+                        <span class="line-through text-gray-400 text-lg mr-2">{{ falcon_price_format(falcon_display_price($post->price, $post->id)) }}</span>
+                        <span class="text-primary">{{ falcon_price_format(falcon_display_price($post->sale_price, $post->id)) }}</span>
                     @else
-                        <span class="text-primary">{{ falcon_price_format($post->price ?? 0) }}</span>
+                        <span class="text-primary">{{ falcon_price_format(falcon_display_price($post->price ?? 0, $post->id)) }}</span>
                     @endif
                 </div>
                 <?php
@@ -101,7 +101,7 @@
                 <?php do_falcon_action('falcon_simple_before_short_description', $post); ?>
                 @if($shortDescription)
                 <?php
-                    $shortDescHtml = '<div class="prose text-body mb-8">' . $shortDescription . '</div>';
+                    $shortDescHtml = '<div class="prose falcon-rich-text text-body mb-8">' . falcon_sanitize_html((string) $shortDescription) . '</div>';
                     $shortDescHtml = apply_falcon_filters('falcon_simple_short_description', $shortDescHtml, $post);
                     echo $shortDescHtml;
                 ?>
@@ -179,7 +179,7 @@
                 echo $descTitleHtml;
             ?>
             <?php
-                $descHtml = '<div class="prose max-w-none text-body">' . $post->content . '</div>';
+                $descHtml = '<div class="prose max-w-none falcon-rich-text text-body">' . falcon_sanitize_html((string) $post->content) . '</div>';
                 $descHtml = apply_falcon_filters('falcon_product_description', $descHtml, $post);
                 echo $descHtml;
             ?>

@@ -229,7 +229,9 @@ class MenuSeeder extends Seeder
             'params' => null,
             'icon'  => 'storefront',
             'group' => 'Main',
-            'order' => 60,
+            // Immediately after Products (55). Custom post types are numbered from 60 up
+            // (see AcptCptController), so nothing can settle between the two.
+            'order' => 56,
         ]);
         $ecommerceMenu->children()->createMany([
             ['title' => 'Overview',         'route' => 'admin.shop.overview',      'order' => 0],

@@ -188,9 +188,11 @@
                 <div class="px-6 py-4 flex flex-wrap items-center justify-between gap-3 text-sm">
                     <span class="text-body">{{ $order->items->count() }} item{{ $order->items->count() === 1 ? '' : 's' }}</span>
                     <div class="text-right">
-                        @if($order->discount_total > 0)
-                            <div class="text-gray-400 text-[12px]">Discount: -{{ falcon_price_format($order->discount_total, $order) }}</div>
-                        @endif
+                        {{-- Compact summary, but still named — "Discount" alone leaves the customer
+                             wondering where the money went. --}}
+                        @foreach(falcon_order_discount_lines($order) as $line)
+                            <div class="text-gray-400 text-[12px]">{{ $line['label'] }}: -{{ falcon_price_format($line['amount'], $order) }}</div>
+                        @endforeach
                         @if($order->shipping_total > 0)
                             <div class="text-gray-400 text-[12px]">Shipping: {{ falcon_price_format($order->shipping_total, $order) }}</div>
                         @endif

@@ -102,12 +102,15 @@
                                     <td class="px-3 py-2 text-right font-semibold">{{ falcon_price_format($order->tax_total, $order) }}</td>
                                 </tr>
                             @endif
-                            @if($order->coupon_code)
+                            @foreach(falcon_order_discount_lines($order) as $line)
                                 <tr>
-                                    <td class="px-3 py-2 text-right text-emerald-700 font-bold">Coupons ({{ $order->coupon_code }}):</td>
-                                    <td class="px-3 py-2 text-right font-bold text-emerald-700">-{{ falcon_price_format($order->discount_total, $order) }}</td>
+                                    <td class="px-3 py-2 text-right text-emerald-700 font-bold">
+                                        {{ $line['label'] }}
+                                        @if($line['note'])<span class="block font-normal text-[11px] text-emerald-700/70">{{ $line['note'] }}</span>@endif
+                                    </td>
+                                    <td class="px-3 py-2 text-right font-bold text-emerald-700 align-top">-{{ falcon_price_format($line['amount'], $order) }}</td>
                                 </tr>
-                            @endif
+                            @endforeach
                             <tr class="bg-[#f6f7f7]">
                                 <td class="px-3 py-3 text-right font-bold text-[15px]">Total:</td>
                                 <td class="px-3 py-3 text-right font-bold text-[18px] text-[#2271b1]">{{ falcon_price_format($order->total, $order) }}</td>

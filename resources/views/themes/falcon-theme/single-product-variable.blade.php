@@ -21,6 +21,21 @@
     // Filter attributes to only show those that have at least one active variation value
     $attributes = collect($post->shopData->attributes_data ?? [])
         ->filter(fn($a) => ($a['variation'] ?? false) && isset($allVariationAttrs[$a['name']]));
+
+    // What Alpine prices the selected variation from. The tax conversion has to happen here,
+    // not in the template, because the price is painted by JavaScript after the page loads —
+    // leaving it raw would show a tax-free price the moment a shopper picks a variation, while
+    // every other card on the site shows the converted one.
+    $variationsForJs = $variations->map(function ($v) use ($post) {
+        $row = is_array($v) ? $v : $v->toArray();
+
+        $row['price'] = falcon_display_price((float) ($row['price'] ?? 0), $post->id);
+        if (!empty($row['sale_price'])) {
+            $row['sale_price'] = falcon_display_price((float) $row['sale_price'], $post->id);
+        }
+
+        return $row;
+    })->values();
 @endphp
 
 <?php do_falcon_action('falcon_before_single_product', $post); ?>
@@ -119,7 +134,7 @@
                         </div>
                     </template>
                     <template x-if="!selectedVariation">
-                        <span class="text-gray-900 font-bold">{{ $post->shopData->price_range ?? falcon_price_format($post->shopData->price ?? 0) }}</span>
+                        <span class="text-gray-900 font-bold">{{ $post->shopData->price_range ?? falcon_price_format(falcon_display_price($post->shopData->price ?? 0, $post->id)) }}</span>
                     </template>
                 </div>
                 <?php do_falcon_action('falcon_variable_after_product_price', $post); ?>
@@ -301,35 +316,12 @@
                 @endif
             </div>
             
-            <div x-show="activeTab === 'description'" class="prose max-w-none text-gray-600 text-[15px] leading-relaxed">
-                {!! apply_falcon_filters('falcon_variable_product_description', apply_falcon_filters('falcon_product_description', $post->content, $post), $post) !!}
+            <div x-show="activeTab === 'description'" class="prose max-w-none falcon-rich-text text-gray-600 text-[15px] leading-relaxed">
+                {!! apply_falcon_filters('falcon_variable_product_description', apply_falcon_filters('falcon_product_description', falcon_sanitize_html((string) $post->content), $post), $post) !!}
             </div>
 
             <div x-show="activeTab === 'info'" x-cloak>
-                <table class="w-full border-collapse">
-                    <tbody>
-                        @if($post->shopData && $post->shopData->weight)
-                        <tr class="border-b border-gray-100">
-                            <th class="text-left py-3 w-1/4 text-gray-800 font-bold uppercase text-[12px]">Weight</th>
-                            <td class="py-3 text-gray-600">{{ $post->shopData->weight }} {{ get_shop_option('shop_weight_unit', 'kg') }}</td>
-                        </tr>
-                        @endif
-                        @if($post->shopData && $post->shopData->dimensions)
-                        <tr class="border-b border-gray-100">
-                            <th class="text-left py-3 w-1/4 text-gray-800 font-bold uppercase text-[12px]">Dimensions</th>
-                            <td class="py-3 text-gray-600">{{ $post->shopData->dimensions }} {{ get_shop_option('shop_dimensions_unit', 'cm') }}</td>
-                        </tr>
-                        @endif
-                        <tr class="border-b border-gray-100">
-                            <th class="text-left py-3 w-1/4 text-gray-800 font-bold uppercase text-[12px]">Category</th>
-                            <td class="py-3 text-gray-600">
-                                @foreach($post->productCategories as $cat)
-                                    {{ $cat->name }}{{ $loop->last ? '' : ', ' }}
-                                @endforeach
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                @include('falcon-cms::frontend.product-additional-information', ['post' => $post])
             </div>
 
             @if($reviewsOn)
@@ -462,27 +454,17 @@
             @endif
         </div>
 
-        <!-- Related Products Section -->
-        @php
-            $related = \FalconCms\Core\Models\Post::where('posts.type', 'product')
-                ->where('posts.status', 'published')
-                ->where('posts.id', '!=', $post->id)
-                ->with('shopData')
-                ->latest('posts.id')
-                ->limit(4)
-                ->get();
-        @endphp
-        @if($related->count() > 0)
-        <div class="mt-24">
-            <h2 class="text-[32px] font-bold text-heading mb-10">Related products</h2>
+        {{-- Upsells first: a better version of what the shopper is already looking at is a
+             stronger suggestion than something merely from the same category. --}}
+        @include('falcon-cms::frontend.product-row', [
+            'products' => falcon_linked_products($post, 'upsell'),
+            'heading'  => 'You may also like',
+        ])
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
-                @foreach($related as $item)
-                    @include('falcon-cms::themes.falcon-theme.partials.product-card', ['product' => $item])
-                @endforeach
-            </div>
-        </div>
-        @endif
+        @include('falcon-cms::frontend.product-row', [
+            'products' => falcon_related_products($post),
+            'heading'  => 'Related products',
+        ])
 
     </div>
 </div>
@@ -505,7 +487,7 @@
             activeTab: 'description',
             selections: {},
             qty: 1,
-            variations: @json($variations->values()),
+            variations: @json($variationsForJs),
             selectedVariation: null,
             currentImage: '{{ $featuredImage }}',
             defaultImage: '{{ $featuredImage }}',

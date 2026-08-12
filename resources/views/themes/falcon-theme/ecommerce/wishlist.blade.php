@@ -32,7 +32,7 @@
                             ? (str_starts_with($product->featured_image, 'http') ? $product->featured_image : asset('storage/'.$product->featured_image))
                             : null;
                         $sd = $product->shopData;
-                        $hasSale = $sd && $sd->sale_price;
+                        $hasSale = $sd && $sd->active_sale_price;
                     @endphp
                     <div class="bg-white rounded-sm border border-gray-100 overflow-hidden group flex flex-col">
                         <div class="relative">
@@ -56,7 +56,7 @@
                             <div class="text-sm font-bold mb-4">
                                 @if($hasSale)
                                     <span class="line-through text-slate-400 font-normal mr-1.5">{{ falcon_price_format($sd->price) }}</span>
-                                    <span class="text-primary">{{ falcon_price_format($sd->sale_price) }}</span>
+                                    <span class="text-primary">{{ falcon_price_format($sd->active_sale_price) }}</span>
                                 @else
                                     <span class="text-heading">{{ falcon_price_format($sd->price ?? 0) }}</span>
                                 @endif

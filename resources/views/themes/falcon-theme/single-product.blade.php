@@ -54,7 +54,7 @@
                     @if(!$post->is_in_stock)
                         <span class="absolute top-4 right-4 bg-red-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-sm uppercase tracking-wider shadow-lg z-10">Out of Stock</span>
                     @endif
-                    @if($post->shopData && $post->shopData->sale_price)
+                    @if($post->shopData && $post->shopData->active_sale_price)
                         <span class="absolute top-4 left-4 bg-sky-100 text-sky-700 text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow uppercase tracking-wide z-10">Sale!</span>
                     @endif
                 </div>
@@ -84,15 +84,66 @@
                 <?php do_falcon_action('falcon_simple_before_product_price', $post); ?>
                 <?php
                     ob_start();
-                    if ($post->shopData && $post->shopData->sale_price):
+                    if ($post->shopData && $post->shopData->active_sale_price):
                 ?>
                 <div class="text-[24px] font-medium text-heading mb-6 flex items-center gap-3">
-                    <span class="line-through text-gray-300 font-normal">{{ falcon_price_format($post->shopData->price) }}</span>
-                    <span class="text-heading font-bold">{{ falcon_price_format($post->shopData->sale_price) }}</span>
+                    <span class="line-through text-gray-300 font-normal">{{ falcon_price_format(falcon_display_price($post->shopData->price, $post->id)) }}</span>
+                    <span class="text-heading font-bold">{{ falcon_price_format(falcon_display_price($post->shopData->active_sale_price, $post->id)) }}</span>
                 </div>
+
+                @if($post->shopData->sale_ends_at && $post->shopData->sale_ends_at->isFuture())
+                    {{-- Sale end date is stored in UTC; the ISO string lets the browser count down in
+                         the shopper's own clock. A scheduled task clears the sale price once it passes,
+                         so this only ever runs down to zero and then the block stops rendering. --}}
+                    <div class="mb-6 -mt-2" id="falcon-sale-countdown" data-ends="{{ $post->shopData->sale_ends_at->toIso8601String() }}">
+                        <p class="text-[12px] font-bold uppercase tracking-wider text-rose-600 mb-2">Offer ends in</p>
+                        <div class="flex items-center gap-2">
+                            @foreach(['days' => 'Days', 'hours' => 'Hrs', 'minutes' => 'Min', 'seconds' => 'Sec'] as $unit => $label)
+                                <div class="bg-rose-50 border border-rose-100 rounded px-3 py-2 text-center min-w-[58px]">
+                                    <div class="text-[20px] font-bold text-rose-600 leading-none" data-countdown="{{ $unit }}">--</div>
+                                    <div class="text-[10px] uppercase tracking-wide text-rose-400 mt-1">{{ $label }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    <script>
+                        (function () {
+                            var box = document.getElementById('falcon-sale-countdown');
+                            if (!box) return;
+                            var ends = new Date(box.dataset.ends).getTime();
+                            var cell = function (u) { return box.querySelector('[data-countdown="' + u + '"]'); };
+
+                            function tick() {
+                                var left = ends - Date.now();
+                                if (left <= 0) {
+                                    // The sale has just lapsed while the page was open — reload so the
+                                    // page shows the real price rather than a stale discount.
+                                    clearInterval(timer);
+                                    box.remove();
+                                    location.reload();
+                                    return;
+                                }
+                                var s = Math.floor(left / 1000);
+                                var parts = {
+                                    days:    Math.floor(s / 86400),
+                                    hours:   Math.floor((s % 86400) / 3600),
+                                    minutes: Math.floor((s % 3600) / 60),
+                                    seconds: s % 60
+                                };
+                                Object.keys(parts).forEach(function (u) {
+                                    var el = cell(u);
+                                    if (el) el.textContent = String(parts[u]).padStart(2, '0');
+                                });
+                            }
+
+                            tick();
+                            var timer = setInterval(tick, 1000);
+                        }());
+                    </script>
+                @endif
                 <?php else: ?>
                 <div class="text-[24px] font-medium text-heading mb-6 flex items-center gap-3">
-                    <span class="text-heading font-bold">{{ falcon_price_format($post->shopData->price ?? 0) }}</span>
+                    <span class="text-heading font-bold">{{ falcon_price_format(falcon_display_price($post->shopData->price ?? 0, $post->id)) }}</span>
                 </div>
                 <?php endif;
                     $priceHtml = ob_get_clean();
@@ -106,7 +157,18 @@
                     $stkLow    = (int) get_shop_option('shop_low_stock_threshold', '2');
                     $stkOut    = (int) get_shop_option('shop_out_of_stock_threshold', '0');
                 @endphp
-                @if($stkGlobal && $post->shopData && $post->shopData->manage_stock && $stkFmt !== 'never')
+                {{-- Sold ahead of stock: the product is buyable, but say so plainly rather than
+                     letting the shopper assume it ships today. --}}
+                @if($post->shopData && $post->shopData->showsBackorderNotice())
+                    <div class="mb-6 -mt-4">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            Available on backorder
+                        </span>
+                    </div>
+                @endif
+
+                @if($stkGlobal && $post->shopData && $post->shopData->manage_stock && $stkFmt !== 'never' && !$post->shopData->isOnBackorder())
                     @php $stkQty = (int) $post->shopData->stock_quantity; @endphp
                     <div class="mb-6 -mt-4">
                     @if($stkQty <= $stkOut)
@@ -207,35 +269,12 @@
                 @endif
             </div>
             
-            <div id="tab-content-description" class="tab-pane prose max-w-none text-gray-600 text-[15px] leading-relaxed">
-                {!! apply_falcon_filters('falcon_product_description', $post->content, $post) !!}
+            <div id="tab-content-description" class="tab-pane prose max-w-none falcon-rich-text text-gray-600 text-[15px] leading-relaxed">
+                {!! apply_falcon_filters('falcon_product_description', falcon_sanitize_html((string) $post->content), $post) !!}
             </div>
 
             <div id="tab-content-info" class="tab-pane hidden">
-                <table class="w-full border-collapse">
-                    <tbody>
-                        @if($post->shopData && $post->shopData->weight)
-                        <tr class="border-b border-gray-100">
-                            <th class="text-left py-3 w-1/4 text-gray-800 font-bold uppercase text-[12px]">Weight</th>
-                            <td class="py-3 text-gray-600">{{ $post->shopData->weight }} {{ get_shop_option('shop_weight_unit', 'kg') }}</td>
-                        </tr>
-                        @endif
-                        @if($post->shopData && $post->shopData->dimensions)
-                        <tr class="border-b border-gray-100">
-                            <th class="text-left py-3 w-1/4 text-gray-800 font-bold uppercase text-[12px]">Dimensions</th>
-                            <td class="py-3 text-gray-600">{{ $post->shopData->dimensions }} {{ get_shop_option('shop_dimensions_unit', 'cm') }}</td>
-                        </tr>
-                        @endif
-                        <tr class="border-b border-gray-100">
-                            <th class="text-left py-3 w-1/4 text-gray-800 font-bold uppercase text-[12px]">Category</th>
-                            <td class="py-3 text-gray-600">
-                                @foreach($post->productCategories as $cat)
-                                    {{ $cat->name }}{{ $loop->last ? '' : ', ' }}
-                                @endforeach
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                @include('falcon-cms::frontend.product-additional-information', ['post' => $post])
             </div>
 
             @if($reviewsOn)
@@ -557,27 +596,17 @@
             });
         </script>
 
-        <!-- Related Products Section -->
-        @php
-            $related = \FalconCms\Core\Models\Post::where('posts.type', 'product')
-                ->where('posts.status', 'published')
-                ->where('posts.id', '!=', $post->id)
-                ->with('shopData')
-                ->latest('posts.id')
-                ->limit(4)
-                ->get();
-        @endphp
-        @if($related->count() > 0)
-        <div class="mt-24">
-            <h2 class="text-[32px] font-bold text-heading mb-10">Related products</h2>
+        {{-- Upsells first: a better version of what the shopper is already looking at is a
+             stronger suggestion than something merely from the same category. --}}
+        @include('falcon-cms::frontend.product-row', [
+            'products' => falcon_linked_products($post, 'upsell'),
+            'heading'  => 'You may also like',
+        ])
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
-                @foreach($related as $item)
-                    @include('falcon-cms::themes.falcon-theme.partials.product-card', ['product' => $item])
-                @endforeach
-            </div>
-        </div>
-        @endif
+        @include('falcon-cms::frontend.product-row', [
+            'products' => falcon_related_products($post),
+            'heading'  => 'Related products',
+        ])
 
     </div>
 </div>

@@ -152,13 +152,13 @@
                         @endif
 
                         <div class="falcon-content-wrapper">
-                            @php 
-                                $rawContent = do_lazy_shortcode($post->content);
+                            @php
+                                $rawContent = do_lazy_shortcode(falcon_sanitize_html((string) $post->content));
                                 $filteredContent = apply_falcon_filters('falcon_the_content', $rawContent, $post);
                             @endphp
 
                             {!! do_falcon_action('falcon_before_content', $post) !!}
-                            <div class="entry-content">
+                            <div class="entry-content falcon-rich-text">
                                 {!! $filteredContent !!}
                             </div>
                             {!! do_falcon_action('falcon_after_content', $post) !!}

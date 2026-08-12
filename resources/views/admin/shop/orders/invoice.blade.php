@@ -326,12 +326,13 @@
                     <td>{{ falcon_price_format($order->tax_total, $order) }}</td>
                 </tr>
                 @endif
-                @if($order->discount_total > 0)
+                {{-- Itemised so an invoice states which coupon or promotion produced the discount. --}}
+                @foreach(falcon_order_discount_lines($order) as $line)
                 <tr style="color: #059669;">
-                    <td>Discount</td>
-                    <td>-{{ falcon_price_format($order->discount_total, $order) }}</td>
+                    <td>{{ $line['label'] }}@if($line['note'])<br><span style="font-size:11px;opacity:.75">{{ $line['note'] }}</span>@endif</td>
+                    <td>-{{ falcon_price_format($line['amount'], $order) }}</td>
                 </tr>
-                @endif
+                @endforeach
                 <tr class="total-row">
                     <td>Total</td>
                     <td>{{ falcon_price_format($order->total, $order) }}</td>

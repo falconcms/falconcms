@@ -17,8 +17,8 @@
         <section class="py-20 bg-white">
             <div class="container-custom">
                 <div class="prose prose-lg prose-slate max-w-none">
-                    <div class="falcon-content-wrapper">
-                        {!! do_lazy_shortcode($post->content) !!}
+                    <div class="falcon-content-wrapper falcon-rich-text">
+                        {!! do_lazy_shortcode(falcon_sanitize_html((string) $post->content)) !!}
                     </div>
                 </div>
             </div>

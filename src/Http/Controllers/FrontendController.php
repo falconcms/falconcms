@@ -185,30 +185,15 @@ class FrontendController extends Controller
             $archivePostType = 'product';
         }
 
+        $filterOptions = null;
+
         if (isset($postsQuery)) {
-            if (request()->has('orderby') && $archivePostType === 'product') {
-                $orderby = request('orderby', 'latest');
-                switch ($orderby) {
-                    case 'price':
-                        $postsQuery->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
-                            ->orderByRaw('COALESCE(shop_products.sale_price, shop_products.price) ASC')
-                            ->select('posts.*');
-                        break;
-                    case 'price-desc':
-                        $postsQuery->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
-                            ->orderByRaw('COALESCE(shop_products.sale_price, shop_products.price) DESC')
-                            ->select('posts.*');
-                        break;
-                    case 'rating':
-                        $postsQuery->withCount(['reviews as average_rating' => fn ($q) => $q->select(\Illuminate\Support\Facades\DB::raw('avg(rating)'))])
-                            ->orderBy('average_rating', 'desc');
-                        break;
-                    case 'popularity':
-                        $postsQuery->withCount('reviews')->orderBy('reviews_count', 'desc');
-                        break;
-                    default:
-                        $postsQuery->latest();
-                }
+            if ($archivePostType === 'product') {
+                // Same helpers the shop page uses, so a category archive filters and sorts
+                // identically instead of carrying its own copy of the logic.
+                $filterOptions = falcon_product_filter_options(fn () => (clone $postsQuery));
+                falcon_apply_product_filters($postsQuery);
+                falcon_apply_product_sorting($postsQuery);
             } else {
                 $postsQuery->latest();
             }
@@ -222,6 +207,7 @@ class FrontendController extends Controller
             'title'           => $title,
             'type'            => ucfirst($archivePostType),
             'archivePostType' => $archivePostType,
+            'filterOptions'   => $filterOptions,
         ]);
     }
 
@@ -327,32 +313,19 @@ class FrontendController extends Controller
                     ->where('posts.lang_code', app()->getLocale())
                     ->where('posts.status', 'published');
 
-                // Dynamic Sorting Logic
-                $orderby = request('orderby', 'latest');
-                switch ($orderby) {
-                    case 'price':
-                        $postsQuery->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
-                            ->orderByRaw('COALESCE(shop_products.sale_price, shop_products.price) ASC')
-                            ->select('posts.*');
-                        break;
-                    case 'price-desc':
-                        $postsQuery->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
-                            ->orderByRaw('COALESCE(shop_products.sale_price, shop_products.price) DESC')
-                            ->select('posts.*');
-                        break;
-                    case 'rating':
-                        $postsQuery->withCount(['reviews as average_rating' => function($query) {
-                            $query->select(\Illuminate\Support\Facades\DB::raw('avg(rating)'));
-                        }])->orderBy('average_rating', 'desc');
-                        break;
-                    case 'popularity':
-                        $postsQuery->withCount('reviews')->orderBy('reviews_count', 'desc');
-                        break;
-                    case 'latest':
-                    default:
-                        $postsQuery->latest();
-                        break;
+                // Products get the archive filter panel; every other CPT just gets sorting.
+                $filterOptions = null;
+                if ($postType->slug === 'product') {
+                    // Options come from the unfiltered set so a choice never disappears once used.
+                    $filterOptions = falcon_product_filter_options(fn () => Post::where('posts.type', $postType->slug)
+                        ->where('posts.lang_code', app()->getLocale())
+                        ->where('posts.status', 'published'));
+
+                    $postsQuery->with(['taxonomyTerms', 'productCategories', 'shopData.variations']);
+                    falcon_apply_product_filters($postsQuery);
                 }
+
+                falcon_apply_product_sorting($postsQuery);
 
                 $posts = $postsQuery->paginate(12)->withQueryString();
                     $title = $postType->name;
@@ -366,7 +339,7 @@ class FrontendController extends Controller
                     }
 
                     falcon_layout_context(['kind' => 'archive', 'archive_type' => 'post_type', 'post_type' => $postType->slug]);
-                    return view($resolvedArchiveView, compact('posts', 'title', 'type'));
+                    return view($resolvedArchiveView, compact('posts', 'title', 'type', 'filterOptions'));
                 }
             }
 
@@ -486,39 +459,22 @@ class FrontendController extends Controller
                 ->where('posts.status', 'published')
                 // Eager-load what the product card needs so the category shows and
                 // there's no N+1 (and it works under strict lazy-loading in prod).
-                ->with(['taxonomyTerms', 'productCategories', 'shopData']);
+                ->with(['taxonomyTerms', 'productCategories', 'shopData.variations']);
 
-            $orderby = request('orderby', 'latest');
-            switch ($orderby) {
-                case 'price':
-                    $postsQuery->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
-                        ->orderByRaw('COALESCE(shop_products.sale_price, shop_products.price) ASC')
-                        ->select('posts.*');
-                    break;
-                case 'price-desc':
-                    $postsQuery->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
-                        ->orderByRaw('COALESCE(shop_products.sale_price, shop_products.price) DESC')
-                        ->select('posts.*');
-                    break;
-                case 'rating':
-                    $postsQuery->withCount(['reviews as average_rating' => function($query) {
-                        $query->select(\Illuminate\Support\Facades\DB::raw('avg(rating)'));
-                    }])->orderBy('average_rating', 'desc');
-                    break;
-                case 'popularity':
-                    $postsQuery->withCount('reviews')->orderBy('reviews_count', 'desc');
-                    break;
-                case 'latest':
-                default:
-                    $postsQuery->latest();
-                    break;
-            }
+            // Sidebar options come from the *unfiltered* set, so deselecting a filter is always
+            // possible — a panel that removes its own options as you use it is a dead end.
+            $filterOptions = falcon_product_filter_options(fn () => Post::where('posts.type', 'product')
+                ->where('posts.lang_code', app()->getLocale())
+                ->where('posts.status', 'published'));
+
+            falcon_apply_product_filters($postsQuery);
+            falcon_apply_product_sorting($postsQuery);
 
             $posts = $postsQuery->paginate(12)->withQueryString();
             $title = $post->title;
             $type = 'Shop';
             falcon_layout_context(['kind' => 'archive', 'post_type' => 'product']);
-            return view($this->resolveThemeView('archive-product', 'archive'), compact('posts', 'title', 'type', 'post'));
+            return view($this->resolveThemeView('archive-product', 'archive'), compact('posts', 'title', 'type', 'post', 'filterOptions'));
         }
 
         if ($post->id == $cartPageId) {

@@ -3,15 +3,19 @@
 namespace FalconCms\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use FalconCms\Core\Http\Controllers\Concerns\SyncsOrderInventory;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\Product;
 use FalconCms\Core\Models\Order;
 use FalconCms\Core\Models\OrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 class ShopFrontendController extends Controller
 {
+    use SyncsOrderInventory;
+
     protected function resolveThemeView($view)
     {
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
@@ -27,6 +31,10 @@ class ShopFrontendController extends Controller
     public function cart()
     {
         $this->validateCartItems();
+        // Prices first: the coupon rules below (minimum spend, and the totals themselves)
+        // have to be judged against what the catalogue charges today, not what it charged
+        // when the item went into the basket.
+        falcon_refresh_cart_prices();
         $this->revalidateCoupon();
         $cart = Session::get('falcon_cart', []);
         return view($this->resolveThemeView('cart'), compact('cart'));
@@ -38,6 +46,7 @@ class ShopFrontendController extends Controller
      */
     public function miniCart(Request $request)
     {
+        falcon_refresh_cart_prices();
         // Internal AJAX fragment endpoint — send a direct browser visit to the cart page
         // instead of exposing the raw JSON payload.
         if (!$request->ajax()) {
@@ -73,7 +82,11 @@ class ShopFrontendController extends Controller
 
         // Inventory Check
         $stockSource = ($variation && $variation->manage_stock) ? $variation : $shopData;
-        if ($stockSource && $stockSource->manage_stock) {
+        // Backorders are configured on the product, so a variation-tracked item follows its
+        // parent's policy — there is no per-variation backorder setting to consult.
+        $allowsBackorder = $shopData && method_exists($shopData, 'allowsBackorders') && $shopData->allowsBackorders();
+
+        if ($stockSource && $stockSource->manage_stock && !$allowsBackorder) {
             $cart = Session::get('falcon_cart', []);
             $cartKey = $variationId ? "{$productId}_{$variationId}" : $productId;
             $currentInCart = isset($cart[$cartKey]) ? $cart[$cartKey]['quantity'] : 0;
@@ -169,6 +182,10 @@ class ShopFrontendController extends Controller
 
         Session::put('falcon_cart', $cart);
         $this->validateCartItems();
+        // Prices first: the coupon rules below (minimum spend, and the totals themselves)
+        // have to be judged against what the catalogue charges today, not what it charged
+        // when the item went into the basket.
+        falcon_refresh_cart_prices();
         $this->revalidateCoupon();
 
         if ($request->ajax()) {
@@ -178,17 +195,10 @@ class ShopFrontendController extends Controller
                 $item_subtotals[$key] = falcon_price_format($price * $item['quantity']);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Cart updated!',
-                'cart_count' => get_falcon_cart_count(),
+            return response()->json($this->cartTotalsPayload([
+                'message'        => 'Cart updated!',
                 'item_subtotals' => $item_subtotals,
-                'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
-                'shipping' => falcon_price_format(get_falcon_cart_shipping()),
-                'tax' => falcon_price_format(get_falcon_cart_tax()),
-                'total' => falcon_price_format(get_falcon_cart_total()),
-                'discount_html' => $this->getDiscountHtml()
-            ]);
+            ]));
         }
 
         return redirect()->back()->with('success', 'Cart updated!');
@@ -196,6 +206,10 @@ class ShopFrontendController extends Controller
 
     public function applyCoupon(Request $request)
     {
+        // Prices first: the coupon rules below (minimum spend, and the totals themselves)
+        // have to be judged against what the catalogue charges today, not what it charged
+        // when the item went into the basket.
+        falcon_refresh_cart_prices();
         $this->revalidateCoupon(); // Prune first based on current settings
         
         // Check if coupons are enabled in settings
@@ -209,26 +223,14 @@ class ShopFrontendController extends Controller
                 return $this->couponResponse(false, 'Please enter a coupon code.', $request);
             }
 
-            $coupons = json_decode(get_cms_option('shop_coupons', '[]'), true) ?: [];
-            
-            if (empty($coupons)) {
-                return $this->couponResponse(false, 'No coupons available.', $request);
-            }
-
-            $coupon = null;
-            foreach ($coupons as $c) {
-                if (strtoupper($c['code'] ?? '') === $code) {
-                    $coupon = $c;
-                    break;
-                }
-            }
+            $coupon = falcon_find_coupon($code);
 
             if (!$coupon) {
                 return $this->couponResponse(false, 'Invalid coupon code.', $request);
             }
 
             // Check if multiple coupons are allowed
-            $isMultipleAllowed = (int)get_cms_option('shop_coupon_stacking_policy', '1') === 1;
+            $isMultipleAllowed = (int)get_shop_option('shop_coupon_stacking_policy', '1') === 1;
             $appliedCoupons = Session::get('falcon_coupons', []);
             
             if (!$isMultipleAllowed && count($appliedCoupons) > 0) {
@@ -286,7 +288,9 @@ class ShopFrontendController extends Controller
             // 4. Product/Category Restrictions
             $cart = Session::get('falcon_cart', []);
             $discount = get_falcon_coupon_discount_amount($coupon, $cart);
-            if ($discount <= 0) {
+            // A Free Shipping coupon legitimately takes nothing off the cart — its value lands on
+            // the shipping line — so it must not be rejected for having a zero discount.
+            if ($discount <= 0 && ($coupon['type'] ?? '') !== 'free_shipping') {
                 return $this->couponResponse(false, 'This coupon is not valid for the products in your cart.', $request);
             }
 
@@ -319,15 +323,12 @@ class ShopFrontendController extends Controller
     private function couponResponse($success, $message, $request)
     {
         if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
+            return response()->json($this->cartTotalsPayload([
                 'success' => $success,
                 'message' => $message,
-                'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
-                'shipping' => falcon_price_format(get_falcon_cart_shipping()),
-                'tax' => falcon_price_format(get_falcon_cart_tax()),
-                'total' => falcon_price_format(get_falcon_cart_total()),
-                'discount_html' => $success ? $this->getDiscountHtml() : ''
-            ], $success ? 200 : 422);
+                // A rejected coupon leaves the applied list untouched, so the rows stay as they are.
+                'discount_html' => $success ? $this->getDiscountHtml() : '',
+            ]), $success ? 200 : 422);
         }
 
         return redirect()->back()->with($success ? 'success' : 'error', $message);
@@ -365,6 +366,136 @@ class ShopFrontendController extends Controller
         return $html;
     }
 
+    /**
+     * Take the stock this cart needs, atomically, before the order exists.
+     *
+     * Each claim is a single conditional UPDATE — `SET qty = qty - n WHERE id = ? AND qty >= n`.
+     * Two customers racing for the last unit cannot both succeed: whichever UPDATE lands second
+     * matches no rows and is turned away. Reading the quantity and then writing it back, which is
+     * what the old post-order decrement did, let both of them through.
+     *
+     * A product that accepts backorders drops the `qty >= n` guard, so its stock is allowed to go
+     * negative — that is exactly what backordering means.
+     *
+     * @return array{0: bool, 1: string, 2: array} [ok, error message, claims to release on failure]
+     */
+    private function claimCartStock(array $cart): array
+    {
+        $claimed = [];
+
+        foreach ($cart as $item) {
+            $qty = (int) ($item['quantity'] ?? 0);
+            if ($qty < 1) {
+                continue;
+            }
+
+            $product  = Product::with('shopData')->find($item['id'] ?? 0);
+            $shopData = $product?->shopData;
+
+            // Which row actually tracks stock for this line.
+            $table = $id = null;
+            if (!empty($item['variation_id'])) {
+                $variation = \FalconCms\Core\Models\ProductVariation::find($item['variation_id']);
+                if ($variation && $variation->manage_stock) {
+                    [$table, $id] = ['shop_product_variations', $variation->id];
+                }
+            } elseif ($shopData && $shopData->manage_stock) {
+                [$table, $id] = ['shop_products', $shopData->id];
+            }
+
+            if (!$table) {
+                continue;   // stock is not managed for this line — nothing to reserve
+            }
+
+            $allowsBackorder = $shopData && method_exists($shopData, 'allowsBackorders') && $shopData->allowsBackorders();
+
+            $query = \Illuminate\Support\Facades\DB::table($table)->where('id', $id);
+            if (!$allowsBackorder) {
+                $query->where('stock_quantity', '>=', $qty);
+            }
+
+            // $qty is an int, so the raw expression carries no user input.
+            $affected = $query->update([
+                'stock_quantity' => \Illuminate\Support\Facades\DB::raw('stock_quantity - ' . $qty),
+                'updated_at'     => now(),
+            ]);
+
+            if ($affected !== 1) {
+                $this->releaseClaimedStock($claimed);
+                $name = $item['name'] ?? 'An item';
+
+                return [false, 'Sorry, "' . $name . '" is no longer available in the quantity you asked for. Someone else may have just bought it — please adjust your cart and try again.', []];
+            }
+
+            $claimed[] = [
+                'table' => $table,
+                'id'    => $id,
+                'qty'   => $qty,
+                'title' => $product->title ?? ($item['name'] ?? 'Product'),
+            ];
+        }
+
+        return [true, '', $claimed];
+    }
+
+    /** Hand back stock claimed earlier in a checkout that could not be completed. */
+    private function releaseClaimedStock(array $claims): void
+    {
+        foreach ($claims as $claim) {
+            \Illuminate\Support\Facades\DB::table($claim['table'])
+                ->where('id', $claim['id'])
+                ->update([
+                    'stock_quantity' => \Illuminate\Support\Facades\DB::raw('stock_quantity + ' . (int) $claim['qty']),
+                    'updated_at'     => now(),
+                ]);
+        }
+    }
+
+    /**
+     * The "you qualify — add this to claim it" prompts.
+     *
+     * Rendered from the same partial the cart page includes on load, so the AJAX version and the
+     * server-rendered one can never drift apart.
+     */
+    private function getPromotionOfferHtml(): string
+    {
+        try {
+            return view('falcon-cms::frontend.promotion-offers', [
+                'offers' => falcon_pending_promotion_offers(),
+            ])->render();
+        } catch (\Throwable $e) {
+            Log::error('Promotion offer render failed: ' . $e->getMessage());
+            return '';
+        }
+    }
+
+    /**
+     * Rows for the automatic promotions this cart currently earns.
+     *
+     * Rendered server-side like the coupon rows so the storefront never has to know the rules —
+     * it only paints what the engine says the customer is entitled to right now.
+     */
+    private function getPromotionHtml(): string
+    {
+        $html = '';
+
+        foreach (falcon_evaluate_promotions() as $promo) {
+            $html .= '
+                    <tr class="promotion-row bg-amber-50/40 border-b border-gray-100">
+                        <th class="p-4 bg-gray-50 text-left font-bold text-amber-700 w-1/3">
+                            <div class="flex items-center gap-2">
+                                <span>&#127873;</span>
+                                <span>' . e($promo['name']) . '</span>
+                            </div>
+                            <div class="text-[11px] font-normal text-amber-700/70 mt-0.5">' . e($promo['summary']) . '</div>
+                        </th>
+                        <td class="p-4 font-bold text-amber-700">-' . falcon_price_format($promo['discount']) . '</td>
+                    </tr>';
+        }
+
+        return $html;
+    }
+
     public function removeCoupon(Request $request)
     {
         $code = $request->get('code');
@@ -397,20 +528,17 @@ class ShopFrontendController extends Controller
         if (isset($cart[$key])) {
             unset($cart[$key]);
             Session::put('falcon_cart', $cart);
-            $this->revalidateCoupon();
+            // Prices first: the coupon rules below (minimum spend, and the totals themselves)
+        // have to be judged against what the catalogue charges today, not what it charged
+        // when the item went into the basket.
+        falcon_refresh_cart_prices();
+        $this->revalidateCoupon();
         }
 
         if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
+            return response()->json($this->cartTotalsPayload([
                 'message' => 'Item removed from cart!',
-                'cart_count' => get_falcon_cart_count(),
-                'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
-                'shipping' => falcon_price_format(get_falcon_cart_shipping()),
-                'tax' => falcon_price_format(get_falcon_cart_tax()),
-                'total' => falcon_price_format(get_falcon_cart_total()),
-                'discount_html' => $this->getDiscountHtml()
-            ]);
+            ]));
         }
 
         return redirect()->back()->with('success', 'Item removed from cart!');
@@ -427,17 +555,12 @@ class ShopFrontendController extends Controller
             return;
         }
 
-        $availableCoupons = json_decode(get_cms_option('shop_coupons', '[]'), true) ?: [];
         $newCoupons = [];
 
         foreach ($coupons as $applied) {
-            $couponData = null;
-            foreach ($availableCoupons as $c) {
-                if (strtoupper($c['code'] ?? '') === strtoupper($applied['code'])) {
-                    $couponData = $c;
-                    break;
-                }
-            }
+            // Re-read from the source of truth each time: a coupon deleted, deactivated or
+            // edited after it was applied must stop discounting the cart immediately.
+            $couponData = falcon_find_coupon($applied['code'] ?? null);
 
             if (!$couponData) continue;
 
@@ -455,7 +578,9 @@ class ShopFrontendController extends Controller
             // Check Product/Category Restrictions
             $cart = Session::get('falcon_cart', []);
             $discount = get_falcon_coupon_discount_amount($couponData, $cart);
-            if ($discount <= 0) continue;
+            // Free Shipping coupons discount nothing off the cart by design — dropping them here
+            // would silently un-apply them on the next page load.
+            if ($discount <= 0 && ($couponData['type'] ?? '') !== 'free_shipping') continue;
 
             $newCoupons[] = [
                 'code' => $couponData['code'],
@@ -478,7 +603,7 @@ class ShopFrontendController extends Controller
         Session::forget('falcon_coupon');
 
         // Prune if multiple not allowed anymore
-        $isMultipleAllowed = (int)get_cms_option('shop_coupon_stacking_policy', '1') === 1;
+        $isMultipleAllowed = (int)get_shop_option('shop_coupon_stacking_policy', '1') === 1;
 
         if (!$isMultipleAllowed) {
             $currentCoupons = Session::get('falcon_coupons', []);
@@ -493,6 +618,10 @@ class ShopFrontendController extends Controller
     public function checkout()
     {
         $this->validateCartItems();
+        // Prices first: the coupon rules below (minimum spend, and the totals themselves)
+        // have to be judged against what the catalogue charges today, not what it charged
+        // when the item went into the basket.
+        falcon_refresh_cart_prices();
         $this->revalidateCoupon();
         $cart = Session::get('falcon_cart', []);
         if (empty($cart)) {
@@ -503,6 +632,10 @@ class ShopFrontendController extends Controller
 
     public function placeOrder(Request $request)
     {
+        // The final word on price. Even if the cart page was rendered from a stale
+        // session, the order is written from what the catalogue charges right now.
+        falcon_refresh_cart_prices();
+
         $rules = [
             'billing_first_name' => 'required',
             'billing_last_name' => 'required',
@@ -516,7 +649,12 @@ class ShopFrontendController extends Controller
             'payment_method' => 'required',
         ];
 
-        if ($request->has('ship_to_different_address')) {
+        // Under "Mandatory shipping to the billing address" the shipping fields are not offered,
+        // and a request that carries them anyway is ignored outright — goods must go to the
+        // address the payment was authorised against, whatever the form says.
+        $shipToDifferent = falcon_allows_separate_shipping_address() && $request->has('ship_to_different_address');
+
+        if ($shipToDifferent) {
             $rules['shipping_first_name'] = 'required';
             $rules['shipping_last_name'] = 'required';
             $rules['shipping_address_1'] = 'required';
@@ -626,8 +764,22 @@ class ShopFrontendController extends Controller
             return redirect()->back()->with('error', $msg);
         }
 
-        $shippingCountry = $request->has('ship_to_different_address') ? $request->shipping_country : $request->billing_country;
+        $shippingCountry = $shipToDifferent ? $request->shipping_country : $request->billing_country;
         Session::put('falcon_shipping_country', $shippingCountry);
+
+        // Re-validate the shipping choice at the moment of purchase: the session may have been
+        // set when a different method was on offer, and the form field is customer-supplied.
+        // An unavailable id is dropped, which makes the resolver fall back to delivery.
+        $postedMethod = $request->input('shipping_method');
+        if (is_string($postedMethod) && array_key_exists($postedMethod, falcon_shipping_methods($shippingCountry))) {
+            Session::put('falcon_shipping_method', $postedMethod);
+        } elseif (!array_key_exists((string) Session::get('falcon_shipping_method'), falcon_shipping_methods($shippingCountry))) {
+            Session::forget('falcon_shipping_method');
+        }
+
+        // Stored before the totals are worked out: with "Calculate tax based on → billing
+        // address" the tax engine needs the billing country, which only exists on this request.
+        Session::put('falcon_billing_country', $request->billing_country);
 
         $subtotal = get_falcon_cart_subtotal();
         $shipping = get_falcon_cart_shipping($shippingCountry);
@@ -640,12 +792,24 @@ class ShopFrontendController extends Controller
         if ($single && empty($coupons)) $coupons[] = $single;
 
         $couponCodes = [];
-        $discountTotal = 0;
         foreach ($coupons as $coupon) {
             $couponCodes[] = $coupon['code'];
-            $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
-            $discountTotal += ($coupon['type'] ?? 'percent') === 'percent' ? $subtotal * ($amount / 100) : $amount;
         }
+
+        // The same helper the cart total uses. The previous inline sum here ignored both the
+        // stacking policy and each coupon's product/category restrictions, so the discount_total
+        // written to the order could disagree with the total the customer was charged.
+        //
+        // Promotions are re-evaluated here, at the moment of purchase, rather than trusted from
+        // anything the browser sent — a rule may have expired, hit its usage cap or stopped
+        // matching since the cart page was rendered.
+        $appliedPromotions = falcon_evaluate_promotions();
+        $promotionTotal    = 0.0;
+        foreach ($appliedPromotions as $applied) {
+            $promotionTotal += $applied['discount'];
+        }
+
+        $discountTotal = falcon_cart_discount_total() + $promotionTotal;
 
         $orderData = [
             'user_id' => auth()->id(),
@@ -679,7 +843,7 @@ class ShopFrontendController extends Controller
             'decimals' => (int) get_shop_option('shop_num_decimals', 2),
         ];
 
-        if ($request->has('ship_to_different_address')) {
+        if ($shipToDifferent) {
             $orderData['shipping_first_name'] = $request->shipping_first_name;
             $orderData['shipping_last_name'] = $request->shipping_last_name;
             $orderData['shipping_address_line_1'] = $request->shipping_address_1;
@@ -705,29 +869,60 @@ class ShopFrontendController extends Controller
             $orderData['meta'] = ['checkout_fields' => $customCheckout];
         }
 
+        // Record which promotions this order earned and what each was worth, so the invoice and
+        // the admin order screen can explain the discount long after the rule itself changes.
+        if (!empty($appliedPromotions)) {
+            $orderData['meta'] = array_merge($orderData['meta'] ?? [], [
+                'promotions' => array_map(static fn (array $p) => [
+                    'id'       => $p['id'],
+                    'name'     => $p['name'],
+                    'summary'  => $p['summary'],
+                    'discount' => $p['discount'],
+                ], $appliedPromotions),
+            ]);
+        }
+
+        // Reserve stock *before* the order exists: if the last unit has gone, the customer gets a
+        // clear message instead of a confirmed order the shop cannot fulfil.
+        [$stockOk, $stockError, $claimedStock] = $this->claimCartStock($cart);
+        if (!$stockOk) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $stockError], 409);
+            }
+            return redirect()->back()->with('error', $stockError);
+        }
+
         $order = Order::create($orderData);
+
+        // Remember the address for next time. After the order, deliberately: a failure here must
+        // never cost the customer their purchase.
+        if (auth()->check() && $request->boolean('save_address')) {
+            try {
+                $this->rememberCustomerAddress($request);
+            } catch (\Throwable $e) {
+                Log::warning('Could not save the customer address for order #' . $order->order_number . ': ' . $e->getMessage());
+            }
+        }
+
+        // Claim a use of each promotion. redeem() is a conditional UPDATE, so a usage cap holds
+        // even when two checkouts complete at the same instant.
+        foreach ($appliedPromotions as $applied) {
+            $promo = \FalconCms\Core\Models\Promotion::find($applied['id']);
+            if ($promo && !$promo->redeem()) {
+                Log::warning("Promotion #{$applied['id']} hit its usage limit while placing order #{$order->order_number}.");
+            }
+        }
 
         // Store order ID in session so the confirmation page can verify ownership for guests
         $request->session()->put('last_order_id', $order->id);
 
-        // Increment used_count for each applied coupon (total usage tracking)
-        if (!empty($couponCodes)) {
-            $allCoupons = json_decode(get_cms_option('shop_coupons', '[]'), true) ?: [];
-            $upperCodes = array_map('strtoupper', $couponCodes);
-            $changed = false;
-            foreach ($allCoupons as &$c) {
-                if (in_array(strtoupper($c['code'] ?? ''), $upperCodes)) {
-                    $c['used_count'] = ((int)($c['used_count'] ?? 0)) + 1;
-                    $changed = true;
-                }
-            }
-            unset($c);
-            if ($changed) {
-                \Illuminate\Support\Facades\DB::table('cms_settings')->updateOrInsert(
-                    ['key' => 'shop_coupons'],
-                    ['value' => json_encode($allCoupons), 'updated_at' => now()]
-                );
-                forget_cms_options_cache();
+        // Redeem each applied coupon. Coupon::redeem() is a single conditional UPDATE, so the
+        // global usage cap holds even when two checkouts complete at the same instant — the
+        // previous read-modify-write on the settings blob could hand out the last use twice.
+        foreach ($couponCodes as $couponCode) {
+            $couponModel = \FalconCms\Core\Models\Coupon::findByCode($couponCode);
+            if ($couponModel && !$couponModel->redeem()) {
+                Log::warning("Coupon {$couponCode} hit its usage limit while placing order #{$order->order_number}.");
             }
         }
 
@@ -748,19 +943,32 @@ class ShopFrontendController extends Controller
                 'meta'         => !empty($itemMeta) ? $itemMeta : null,
             ]);
 
-            // Decrement Stock
-            if (!empty($item['variation_id'])) {
-                $variation = \FalconCms\Core\Models\ProductVariation::find($item['variation_id']);
-                if ($variation && $variation->manage_stock) {
-                    $variation->decrement('stock_quantity', $item['quantity']);
-                }
-            } else {
-                $product = Product::with('shopData')->find($item['id']);
-                if ($product && $product->shopData && $product->shopData->manage_stock) {
-                    $product->shopData->decrement('stock_quantity', $item['quantity']);
-                    $this->maybeNotifyStock($product->title ?? 'Product', (int) $product->shopData->fresh()->stock_quantity);
-                }
+            // Stock was already taken by claimCartStock(), atomically, before the order existed.
+        }
+
+        // Low/no-stock alerts, now that the quantities have settled.
+        foreach ($claimedStock as $claim) {
+            $remaining = \Illuminate\Support\Facades\DB::table($claim['table'])->where('id', $claim['id'])->value('stock_quantity');
+            $this->maybeNotifyStock($claim['title'], (int) $remaining);
+        }
+
+        // Nothing to collect — a fully-discounted cart, a free product, or a 100% coupon.
+        // Card processors reject a zero-value charge, so sending this to a gateway would strand
+        // the customer on a payment page and leave the order stuck on "pending" forever.
+        if ((float) $order->total <= 0) {
+            $this->markOrderPaid($order, null, 'processing');
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success'  => true,
+                    'message'  => 'Order placed successfully!',
+                    'redirect' => route('shop.confirmation', $order->id),
+                    'order_id' => $order->id,
+                ]);
             }
+
+            return redirect()->route('shop.confirmation', $order->id)
+                ->with('success', 'Order placed successfully! Nothing was due, so no payment was needed.');
         }
 
         // Online gateways: send the customer to the gateway to pay before finalizing.
@@ -846,6 +1054,8 @@ class ShopFrontendController extends Controller
         Session::forget('falcon_cart');
         Session::forget('falcon_coupon');
         Session::forget('falcon_coupons');
+        // The next order starts from the shop's defaults rather than inheriting this one's choice.
+        Session::forget('falcon_shipping_method');
     }
 
     private function generateDownloadTokens(\FalconCms\Core\Models\Order $order): void
@@ -1061,13 +1271,279 @@ class ShopFrontendController extends Controller
         }
 
         if ($paid) {
-            $order->update(['status' => 'processing', 'paid_at' => now()]);
-            $this->finalizeOrder($order);
+            // markOrderPaid() claims the order atomically — the Stripe webhook fires for the same
+            // payment at almost the same moment, and finalizing twice would double-send the
+            // customer's order email and mint a second set of download tokens.
+            $this->markOrderPaid($order);
             return redirect()->route('shop.confirmation', $order->id)->with('success', 'Payment successful! Your order is confirmed.');
         }
 
         return redirect()->route('shop.confirmation', $order->id)
             ->with('error', 'We could not confirm your payment yet. If you were charged, please contact us.');
+    }
+
+    /**
+     * Flip an unpaid order to paid and run the post-payment side effects, exactly once.
+     *
+     * The conditional UPDATE is the lock: whichever of the browser return and the Stripe
+     * webhook reaches it first matches `paid_at IS NULL` and gets 1 affected row; the loser
+     * gets 0 and skips finalisation. Doing this with a read-then-write would let both pass.
+     *
+     * @return bool true only for the caller that actually claimed the order.
+     */
+    private function markOrderPaid(Order $order, ?string $transactionId = null, string $status = 'processing'): bool
+    {
+        $updates = ['status' => $status, 'paid_at' => now(), 'updated_at' => now()];
+        if ($transactionId) {
+            $updates['transaction_id'] = $transactionId;
+        }
+
+        if (Order::whereKey($order->getKey())->whereNull('paid_at')->update($updates) !== 1) {
+            return false;
+        }
+
+        $order->refresh();
+        $this->finalizeOrder($order);
+
+        return true;
+    }
+
+    /**
+     * Stripe webhook receiver.
+     *
+     * Without this, a payment is only ever confirmed by the customer's browser coming back to
+     * the return URL — so closing the tab straight after paying leaves a charged customer with
+     * an order stuck on "pending". Stripe retries webhook deliveries, so this is the reliable
+     * side of the confirmation. It also picks up refunds issued from the Stripe dashboard.
+     *
+     * The endpoint is unauthenticated by necessity; the signature check below is what
+     * establishes that a request really came from Stripe.
+     */
+    public function stripeWebhook(Request $request)
+    {
+        $secret = get_shop_option('shop_payment_stripe_webhook_secret');
+
+        // No signing secret configured → refuse to process anything. Answering 404 (rather than
+        // 200) surfaces the misconfiguration in the Stripe dashboard instead of hiding it.
+        if (empty($secret)) {
+            abort(404);
+        }
+
+        $payload = $request->getContent();
+
+        if (!$this->stripeSignatureIsValid($payload, (string) $request->header('Stripe-Signature'), (string) $secret)) {
+            Log::warning('Stripe webhook rejected: signature verification failed.');
+            return response('Invalid signature', 400);
+        }
+
+        $event = json_decode($payload, true);
+        if (!is_array($event) || empty($event['type']) || !isset($event['data']['object'])) {
+            return response('Malformed payload', 400);
+        }
+
+        $object = (array) $event['data']['object'];
+
+        try {
+            switch ($event['type']) {
+                case 'payment_intent.succeeded':
+                    $this->stripeHandlePaid($object);
+                    break;
+                case 'payment_intent.payment_failed':
+                case 'payment_intent.canceled':
+                    $this->stripeHandleFailed($object);
+                    break;
+                case 'charge.refunded':
+                    $this->stripeHandleRefunded($object);
+                    break;
+                // Anything else is acknowledged and ignored — Stripe sends far more event
+                // types than a shop needs, and 2xx stops it retrying them forever.
+            }
+        } catch (\Throwable $e) {
+            Log::error('Stripe webhook handler failed (' . $event['type'] . '): ' . $e->getMessage());
+            // 500 asks Stripe to retry with backoff rather than dropping the event.
+            return response('Handler error', 500);
+        }
+
+        return response('OK', 200);
+    }
+
+    /**
+     * Verify Stripe's `Stripe-Signature` header against the raw request body.
+     *
+     * Follows Stripe's scheme: signed payload is "<timestamp>.<raw body>", HMAC-SHA256 with the
+     * endpoint signing secret, compared in constant time. The timestamp tolerance is what stops
+     * a captured-and-replayed webhook from being accepted later.
+     */
+    private function stripeSignatureIsValid(string $payload, string $header, string $secret, int $toleranceSeconds = 300): bool
+    {
+        if ($header === '' || $secret === '') {
+            return false;
+        }
+
+        $timestamp  = null;
+        $signatures = [];
+
+        foreach (explode(',', $header) as $part) {
+            $pair = explode('=', trim($part), 2);
+            if (count($pair) !== 2) {
+                continue;
+            }
+            if ($pair[0] === 't') {
+                $timestamp = $pair[1];
+            } elseif ($pair[0] === 'v1') {
+                $signatures[] = $pair[1];
+            }
+        }
+
+        if ($timestamp === null || !ctype_digit($timestamp) || empty($signatures)) {
+            return false;
+        }
+
+        // Replay protection — reject anything outside the tolerance window in either direction.
+        if (abs(time() - (int) $timestamp) > $toleranceSeconds) {
+            return false;
+        }
+
+        $expected = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+
+        foreach ($signatures as $signature) {
+            if (hash_equals($expected, $signature)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Resolve the order a Stripe object belongs to.
+     *
+     * Prefers the metadata order id we set when creating the PaymentIntent, and falls back to
+     * matching the stored transaction reference.
+     */
+    private function stripeResolveOrder(array $object): ?Order
+    {
+        $orderId = $object['metadata']['order_id'] ?? null;
+        if (is_scalar($orderId) && ctype_digit((string) $orderId)) {
+            $order = Order::find((int) $orderId);
+            if ($order) {
+                return $order;
+            }
+        }
+
+        // charge.* objects carry the intent under `payment_intent`; payment_intent.* are the intent.
+        $reference = $object['payment_intent'] ?? ($object['id'] ?? null);
+
+        return is_string($reference) && $reference !== ''
+            ? Order::where('transaction_id', $reference)->first()
+            : null;
+    }
+
+    private function stripeHandlePaid(array $intent): void
+    {
+        $order = $this->stripeResolveOrder($intent);
+        if (!$order || $order->paid_at) {
+            return;
+        }
+
+        // Defence in depth: only settle the order if the money Stripe actually received covers
+        // it, in the shop's own currency. Guards against an intent being pointed at the wrong
+        // order by a mismatched or stale metadata value.
+        $received = (int) ($intent['amount_received'] ?? $intent['amount'] ?? 0);
+        $currency = strtolower((string) ($intent['currency'] ?? ''));
+        $expected = $this->stripeAmount($order);
+
+        if ($currency !== strtolower(get_shop_option('shop_currency', 'usd')) || $received < $expected) {
+            Log::warning("Stripe webhook: intent for order #{$order->order_number} did not match "
+                . "(received {$received} {$currency}, expected {$expected}).");
+            return;
+        }
+
+        if ($this->markOrderPaid($order, (string) ($intent['id'] ?? '') ?: null)) {
+            Log::info("Stripe webhook: order #{$order->order_number} confirmed as paid.");
+        }
+    }
+
+    private function stripeHandleFailed(array $intent): void
+    {
+        $order = $this->stripeResolveOrder($intent);
+        // Never touch an order that is already paid — a later failed intent (e.g. a retried card)
+        // must not undo a successful payment.
+        if (!$order || $order->paid_at || $order->status !== 'pending') {
+            return;
+        }
+
+        $oldStatus = $order->status;
+        $order->update(['status' => 'failed']);
+        $this->syncOrderInventory($order, $oldStatus, 'failed');
+    }
+
+    /**
+     * Mirror a refund made in the Stripe dashboard back into the order.
+     *
+     * `amount_refunded` is cumulative, so comparing against what we already recorded makes this
+     * idempotent: repeat deliveries of the same event change nothing, and a refund issued from
+     * our own admin screen (which records the amount first) is not double-counted.
+     */
+    private function stripeHandleRefunded(array $charge): void
+    {
+        $order = $this->stripeResolveOrder($charge);
+        if (!$order) {
+            return;
+        }
+
+        $currency = strtolower((string) ($charge['currency'] ?? ''));
+        if ($currency !== strtolower(get_shop_option('shop_currency', 'usd'))) {
+            return;
+        }
+
+        $refunded = $this->stripeToMajorUnits((int) ($charge['amount_refunded'] ?? 0));
+        $recorded = (float) ($order->refunded_amount ?? 0);
+
+        // Only move forward, and never past the order total.
+        $refunded = min($refunded, (float) $order->total);
+        if ($refunded <= $recorded + 0.001) {
+            return;
+        }
+
+        $log   = $order->refund_log ?? [];
+        $log[] = [
+            'amount'  => round($refunded - $recorded, 2),
+            'at'      => now()->utc()->toIso8601String(),
+            'by'      => 'Stripe (webhook)',
+            'gateway' => 'stripe',
+            'ref'     => (string) ($charge['id'] ?? ''),
+        ];
+
+        $oldStatus = $order->status;
+        $fully     = $refunded >= (float) $order->total - 0.001;
+        $newStatus = $fully ? 'refunded' : 'partially-refunded';
+
+        $order->update([
+            'refunded_amount' => round($refunded, 2),
+            'refund_log'      => $log,
+            'status'          => $newStatus,
+        ]);
+
+        // Only a full refund returns stock to inventory, matching the admin refund screen.
+        $this->syncOrderInventory($order, $oldStatus, $newStatus);
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(
+                new \FalconCms\Core\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', round($refunded - $recorded, 2))
+            );
+        } catch (\Exception $e) {
+            Log::error("Order #{$order->order_number} refund email failed: " . $e->getMessage());
+        }
+    }
+
+    /** Inverse of stripeAmount(): smallest currency unit back to the shop's major unit. */
+    private function stripeToMajorUnits(int $amount): float
+    {
+        $currency    = strtolower(get_shop_option('shop_currency', 'usd'));
+        $zeroDecimal = ['bif','clp','djf','gnf','jpy','kmf','krw','mga','pyg','rwf','ugx','vnd','vuv','xaf','xof','xpf'];
+
+        return in_array($currency, $zeroDecimal, true) ? (float) $amount : $amount / 100;
     }
 
     /**
@@ -1167,6 +1643,164 @@ class ShopFrontendController extends Controller
         $user->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
 
         return redirect()->back()->with('password_success', 'Password updated successfully.');
+    }
+
+    /**
+     * Create or update one of the signed-in customer's saved addresses.
+     *
+     * Every lookup is scoped to auth()->id(): the id in the request is a claim, not a permission,
+     * so an address belonging to someone else simply is not found.
+     */
+    public function saveAddress(\Illuminate\Http\Request $request)
+    {
+        if (!auth()->check()) return redirect()->back();
+
+        $validated = $request->validate([
+            'address_id' => 'nullable|integer',
+            'label'      => 'nullable|string|max:60',
+            'first_name' => 'required|string|max:100',
+            'last_name'  => 'nullable|string|max:100',
+            'country'    => 'nullable|string|max:100',
+            'address_1'  => 'required|string|max:191',
+            'address_2'  => 'nullable|string|max:191',
+            'city'       => 'nullable|string|max:100',
+            'state'      => 'nullable|string|max:100',
+            'postcode'   => 'nullable|string|max:30',
+            'phone'      => 'nullable|string|max:40',
+            'email'      => 'nullable|email|max:191',
+        ]);
+
+        $userId = auth()->id();
+        $data = collect($validated)->except('address_id')->all();
+        $data['user_id'] = $userId;
+
+        if (!empty($validated['address_id'])) {
+            $address = \FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)
+                ->find($validated['address_id']);
+
+            if (!$address) {
+                return redirect()->back()->withErrors(['address' => 'That address could not be found.']);
+            }
+            $address->update($data);
+            $message = 'Address updated.';
+        } else {
+            // A cap keeps one account from filling the table; nobody legitimately needs 50.
+            if (\FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->count() >= 20) {
+                return redirect()->back()->withErrors(['address' => 'You can save up to 20 addresses. Delete one to add another.']);
+            }
+
+            $address = \FalconCms\Core\Models\CustomerAddress::create($data);
+            $message = 'Address saved.';
+
+            // The first address a customer saves is the one they mean.
+            if (\FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->count() === 1) {
+                $address->update(['is_default_billing' => true, 'is_default_shipping' => true]);
+            }
+        }
+
+        return redirect()->back()->with('address_success', $message);
+    }
+
+    /**
+     * Store the billing address just used at checkout, unless the customer already has it.
+     *
+     * Matching is on the parts that identify a place, normalised for case and spacing — otherwise
+     * every order would add a near-duplicate and the address book would become useless.
+     */
+    protected function rememberCustomerAddress(\Illuminate\Http\Request $request): void
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('shop_customer_addresses')) {
+            return;
+        }
+
+        $data = [
+            'first_name' => trim((string) $request->input('billing_first_name', '')),
+            'last_name'  => trim((string) $request->input('billing_last_name', '')),
+            'country'    => trim((string) $request->input('billing_country', '')),
+            'address_1'  => trim((string) $request->input('billing_address_1', '')),
+            'address_2'  => trim((string) $request->input('billing_address_2', '')),
+            'city'       => trim((string) $request->input('billing_city', '')),
+            'state'      => trim((string) $request->input('billing_state', '')),
+            'postcode'   => trim((string) $request->input('billing_postcode', '')),
+            'phone'      => trim((string) $request->input('billing_phone', '')),
+            'email'      => trim((string) $request->input('billing_email', '')),
+        ];
+
+        if ($data['first_name'] === '' || $data['address_1'] === '') {
+            return;
+        }
+
+        $userId = auth()->id();
+        $fingerprint = static fn (array $a): string => mb_strtolower(preg_replace('/\s+/u', ' ', trim(implode('|', [
+            $a['first_name'] ?? '', $a['last_name'] ?? '', $a['address_1'] ?? '', $a['address_2'] ?? '',
+            $a['city'] ?? '', $a['state'] ?? '', $a['postcode'] ?? '', $a['country'] ?? '',
+        ]))));
+
+        $mine = $fingerprint($data);
+        $existing = \FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->get();
+        foreach ($existing as $address) {
+            if ($fingerprint($address->toArray()) === $mine) {
+                return;
+            }
+        }
+
+        // Same cap as the account page, so checkout cannot be used to get around it.
+        if ($existing->count() >= 20) {
+            return;
+        }
+
+        $data['user_id'] = $userId;
+        $data['is_default_billing']  = $existing->isEmpty();
+        $data['is_default_shipping'] = $existing->isEmpty();
+
+        \FalconCms\Core\Models\CustomerAddress::create($data);
+    }
+
+    public function deleteAddress(\Illuminate\Http\Request $request, $id)
+    {
+        if (!auth()->check()) return redirect()->back();
+
+        $address = \FalconCms\Core\Models\CustomerAddress::where('user_id', auth()->id())->find($id);
+        if (!$address) {
+            return redirect()->back()->withErrors(['address' => 'That address could not be found.']);
+        }
+
+        $wasBilling  = $address->is_default_billing;
+        $wasShipping = $address->is_default_shipping;
+        $address->delete();
+
+        // Never leave the customer with no default while they still have addresses.
+        $next = \FalconCms\Core\Models\CustomerAddress::where('user_id', auth()->id())->oldest('id')->first();
+        if ($next) {
+            $next->update(array_filter([
+                'is_default_billing'  => $wasBilling ?: null,
+                'is_default_shipping' => $wasShipping ?: null,
+            ]));
+        }
+
+        return redirect()->back()->with('address_success', 'Address deleted.');
+    }
+
+    public function setDefaultAddress(\Illuminate\Http\Request $request, $id)
+    {
+        if (!auth()->check()) return redirect()->back();
+
+        $type = $request->input('type') === 'shipping' ? 'shipping' : 'billing';
+        $column = 'is_default_' . $type;
+
+        $userId = auth()->id();
+        $address = \FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->find($id);
+        if (!$address) {
+            return redirect()->back()->withErrors(['address' => 'That address could not be found.']);
+        }
+
+        // Exactly one default per type, so clear the rest in the same breath.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $column, $address) {
+            \FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->update([$column => false]);
+            $address->update([$column => true]);
+        });
+
+        return redirect()->back()->with('address_success', 'Default address updated.');
     }
 
     public function checkMagicEmail(\Illuminate\Http\Request $request)
@@ -1482,18 +2116,85 @@ class ShopFrontendController extends Controller
         }
     }
 
+    /**
+     * Every figure the cart/checkout totals table can show, already formatted.
+     *
+     * One builder for all four cart endpoints (quantity change, item removal, coupon, shipping
+     * update) so no endpoint can quietly leave a row behind — the tax line used to be missing
+     * from the shipping response alone, which is why it only refreshed on a full page load.
+     *
+     * @param array<string, mixed> $extra Endpoint-specific keys merged on top.
+     */
+    private function cartTotalsPayload(array $extra = []): array
+    {
+        $country  = falcon_customer_shipping_country();
+        $shipping = get_falcon_cart_shipping_details($country);
+        $tax      = falcon_tax_enabled() ? (float) get_falcon_cart_tax() : 0.0;
+
+        // Shipping renders as its own label + amount ("Flat rate: ৳25.00"), or just the label
+        // when it is free or not yet known.
+        $shippingHtml = !empty($shipping['pending'])
+            ? '<span class="text-gray-500">Enter your address to see shipping options.</span>'
+            : ($shipping['cost'] > 0
+                ? e($shipping['label']) . ': <span class="font-bold text-heading">' . falcon_price_format($shipping['cost']) . '</span>'
+                : '<span class="font-bold text-heading">' . e($shipping['label']) . '</span>');
+
+        return array_merge([
+            'success'         => true,
+            'cart_count'      => get_falcon_cart_count(),
+            'subtotal'        => falcon_price_format(get_falcon_cart_subtotal()),
+            'shipping'        => $shippingHtml,
+            'shipping_method' => $shipping['method'] ?? 'delivery',
+            'shipping_pending'=> (bool) ($shipping['pending'] ?? false),
+            'tax'             => falcon_price_format($tax),
+            'tax_label'       => falcon_cart_tax_label(),
+            'tax_included'    => falcon_prices_include_tax(),
+            // The row is hidden rather than removed, so the storefront only has to toggle it.
+            'tax_visible'     => falcon_tax_enabled() && $tax > 0,
+            'total'           => falcon_price_format(get_falcon_cart_total()),
+            'discount_html'   => $this->getDiscountHtml(),
+            'promotion_html'  => $this->getPromotionHtml(),
+            // Qualifying for an offer can start or stop from a quantity change alone, so the
+            // prompt travels with every cart update instead of waiting for a page reload.
+            'offer_html'      => $this->getPromotionOfferHtml(),
+        ], $extra);
+    }
+
     public function updateShipping(\Illuminate\Http\Request $request)
     {
+        // Only overwrite the stored country when one was actually supplied — a method-only
+        // update (the pickup/delivery radio) must not blank out the customer's chosen country
+        // and silently drop them back to the flat rate.
         $country = $request->input('country');
-        \Illuminate\Support\Facades\Session::put('falcon_shipping_country', $country);
-        $shippingDetails = get_falcon_cart_shipping_details($country);
-        $shippingCost = $shippingDetails['cost'];
-        $total = get_falcon_cart_total();
-        
-        return response()->json([
-            'success' => true,
-            'shipping' => $shippingCost > 0 ? $shippingDetails['label'] . ': ' . falcon_price_format($shippingCost) : $shippingDetails['label'],
-            'total' => falcon_price_format($total)
-        ]);
+        if (is_string($country) && $country !== '') {
+            Session::put('falcon_shipping_country', $country);
+        } else {
+            $country = Session::get('falcon_shipping_country');
+        }
+
+        // Only the method *id* is accepted, and only if it is genuinely on offer for this cart.
+        // Costs are never taken from the request — falcon_selected_shipping_method() recalculates
+        // them server-side, so a forged "shipping is free" payload changes nothing.
+        $requestedMethod = $request->input('shipping_method');
+        if (is_string($requestedMethod) && array_key_exists($requestedMethod, falcon_shipping_methods($country))) {
+            Session::put('falcon_shipping_method', $requestedMethod);
+        }
+
+        // Costs travel back already formatted so the storefront never has to price anything itself.
+        $methods = [];
+        foreach (falcon_shipping_methods($country) as $id => $method) {
+            $methods[] = [
+                'id'    => $id,
+                'label' => $method['label'],
+                'cost'  => $method['cost'] > 0 ? falcon_price_format($method['cost']) : 'Free',
+            ];
+        }
+
+        // Full totals payload: changing country moves the tax rate as well as the shipping cost,
+        // so subtotal, tax, discounts and total all have to travel back with it.
+        return response()->json($this->cartTotalsPayload([
+            'method'  => get_falcon_cart_shipping_details($country)['method'],
+            'methods' => $methods,
+        ]));
     }
 }
