@@ -237,7 +237,9 @@ class MenuSeeder extends Seeder
             ['title' => 'Overview',         'route' => 'admin.shop.overview',      'order' => 0],
             ['title' => 'Orders',          'route' => 'admin.shop.orders.index', 'order' => 1],
             ['title' => 'Product Reviews',  'route' => 'admin.shop.reviews.index', 'order' => 2],
+            ['title' => 'Reports',          'route' => 'admin.shop.reports.index', 'order' => 3],
             ['title' => 'Settings',         'route' => 'admin.shop.settings',      'order' => 4],
+            ['title' => 'Promotions',       'route' => 'admin.shop.promotions.index', 'order' => 5],
         ]);
 
         // Dynamic CPTs
