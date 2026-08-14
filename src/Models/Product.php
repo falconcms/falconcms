@@ -2,7 +2,6 @@
 
 namespace FalconCms\Core\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 
 class Product extends Post
@@ -20,52 +19,17 @@ class Product extends Post
         });
     }
 
-    public function shopData()
-    {
-        return $this->hasOne(ProductData::class, 'post_id');
-    }
-
-    // Helpers for quick access
-    public function getPriceAttribute()
-    {
-        return $this->shopData?->price ?? 0;
-    }
-
-    public function getSalePriceAttribute()
-    {
-        $shopData = $this->shopData;
-        if (!$shopData || $shopData->sale_price === null) {
-            return null;
-        }
-        if ($shopData->sale_ends_at && Carbon::parse($shopData->sale_ends_at)->isPast()) {
-            return null;
-        }
-
-        return $shopData->sale_price;
-    }
-
-    public function getSkuAttribute()
-    {
-        return $this->shopData?->sku;
-    }
-
-    public function getStockStatusAttribute()
-    {
-        return $this->shopData?->stock_status ?? 'instock';
-    }
-
-    public function getIsInStockAttribute()
-    {
-        if (!$this->shopData) {
-            return true;
-        }
-        if ($this->shopData->stock_status === 'outofstock') {
-            return false;
-        }
-        if ($this->shopData->manage_stock && (int) $this->shopData->stock_quantity <= 0) {
-            return false;
-        }
-
-        return true;
-    }
+    // shopData() and the price / sale_price / sku / stock_status / is_in_stock accessors
+    // are deliberately NOT redeclared here.
+    //
+    // They used to be, as copies of Post's — and the copies went stale. Post's
+    // is_in_stock learned about variations, backorders, the shop-wide "manage stock"
+    // switch and the out-of-stock threshold; this class's copy never did, so the same
+    // product answered differently depending on which model happened to load it. The
+    // sale_price copy likewise predates sale_ends_at being applied through
+    // ProductData::active_sale_price.
+    //
+    // Product exists only to scope posts to type=product. Everything about what a
+    // product costs and whether it can be bought belongs to ProductData, reached
+    // through the accessors on Post.
 }

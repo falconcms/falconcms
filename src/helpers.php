@@ -4537,11 +4537,19 @@ if (!function_exists('falcon_apply_product_filters')) {
         if ($filters['min_price'] !== null || $filters['max_price'] !== null) {
             $priceBounds = static function ($q) use ($filters) {
                 $expr = 'COALESCE(NULLIF(sale_price, 0), price)';
+
+                // The bound value is CAST because PDO sends floats as strings, and the left
+                // side here is an expression, which carries no column affinity to coerce them
+                // back. MySQL compares them as numbers anyway; SQLite sorts every integer
+                // before every string, so `500 >= '200'` came out false and the price filter
+                // returned an empty page on every SQLite site.
+                $bound = 'CAST(? AS DECIMAL(10,2))';
+
                 if ($filters['min_price'] !== null) {
-                    $q->whereRaw($expr.' >= ?', [$filters['min_price']]);
+                    $q->whereRaw($expr.' >= '.$bound, [$filters['min_price']]);
                 }
                 if ($filters['max_price'] !== null) {
-                    $q->whereRaw($expr.' <= ?', [$filters['max_price']]);
+                    $q->whereRaw($expr.' <= '.$bound, [$filters['max_price']]);
                 }
             };
 
