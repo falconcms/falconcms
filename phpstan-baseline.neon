@@ -3109,6 +3109,12 @@ parameters:
 			path: tests/Feature/Shop/CartPriceRefreshTest.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CouponTest.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$first_name\.$#'
 			identifier: property.notFound
 			count: 2
@@ -3145,6 +3151,12 @@ parameters:
 			path: tests/Feature/Shop/LinkedProductsTest.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/OrderTotalTest.php
+
+		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\ProductData\:\:\$sale_price\.$#'
 			identifier: property.notFound
 			count: 1
@@ -3173,3 +3185,9 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: tests/Feature/Shop/StockStatusTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/TaxTest.php
