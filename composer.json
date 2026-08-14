@@ -26,6 +26,13 @@
             "src/helpers.php"
         ]
     },
+    "autoload-dev": {
+        "psr-4": {
+            "FalconCms\\Core\\Tests\\": "tests/",
+            "App\\": "tests/Application/",
+            "Database\\Factories\\": "database/factories/"
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [
@@ -36,12 +43,14 @@
     "scripts": {
         "lint": "pint --test",
         "format": "pint",
-        "analyse": "phpstan analyse --memory-limit=1G"
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "test": "phpunit"
     },
     "scripts-descriptions": {
         "lint": "Check code style without changing anything (what CI runs).",
         "format": "Apply Laravel Pint's code style to the whole package.",
-        "analyse": "Run PHPStan/Larastan static analysis at level 3."
+        "analyse": "Run PHPStan/Larastan static analysis at level 3.",
+        "test": "Run the package test suite against an in-memory SQLite database."
     },
     "authors": [
         {

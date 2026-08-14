@@ -123,36 +123,43 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 
 ## 🧪 Testing
 
-Automated tests live in the host app under `tests/Feature/Cms/` and run on an isolated
-in-memory SQLite database (configured in `phpunit.xml`) — they never touch real data.
+The suite lives in this repository under `tests/` and runs on
+[Testbench](https://packages.tools/testbench), which boots a throwaway Laravel application
+around the package. Every migration is applied to an in-memory SQLite database, so the
+tests exercise the real service provider, the real schema and the real helper API without
+needing a host site — and without any possibility of touching real data.
 
 Requirements: the `pdo_sqlite` PHP extension must be enabled (`extension=pdo_sqlite` in `php.ini`).
 
 ```bash
-# run every test
-php artisan test
+composer install     # first time only
+composer test        # run everything
 
-# run only the CMS tests
-php artisan test tests/Feature/Cms
-
-# run a single file
-php artisan test tests/Feature/Cms/ScheduleStatusTest.php
-
-# filter by test name
-php artisan test --filter=future_publish_date_becomes_scheduled
+# a single class, or a single test
+./vendor/bin/phpunit --filter StockStatusTest
+./vendor/bin/phpunit --filter test_an_expired_sale_disappears_from_every_surface_at_once
 ```
 
-Current coverage (the regression-prone areas):
+Current coverage — deliberately concentrated on the money and the parsing of untrusted input:
 
 | File | Guards |
 |------|--------|
-| `BuilderShortcodeConverterTest` | JSON ↔ shortcode round-trip stays lossless & readable (no base64) |
-| `ScheduleStatusTest` | "schedule only on a future time" status logic |
-| `PublishTimezoneTest` | publish date is interpreted in the CMS timezone and stored as UTC |
-| `SchedulePublishFlowTest` | due posts auto-publish; scheduled posts stay hidden until live |
+| `Shop/StockStatusTest` | the badge, the archive filter and the shelf never disagree — variations, backorders, thresholds |
+| `Shop/PricingTest` | expired sales vanish from every surface but survive for the admin form; variable products show a range, not ৳0.00 |
+| `Shop/CartPriceRefreshTest` | a cart left open is reconciled against the database before checkout totals anything |
+| `Shop/ShippingWeightTest` | weight bands, fractional weights, and a malformed rule falling back to the base cost instead of shipping free |
+| `Shop/ArchiveFilterTest` | filters do what was asked, and a hand-edited query string cannot crash or steer them |
+| `Shop/ProductAttributeIndexTest` | the derived attribute index matches what can actually be bought; slug collisions stay distinct |
+| `Shop/CustomerAddressTest` | defaults, checkout pre-fill, and one customer never reaching another's address |
+| `Shop/LinkedProductsTest` | upsells/cross-sells survive their targets being unpublished or deleted; schema.org output |
+| `Cms/BuilderShortcodeConverterTest` | JSON ↔ shortcode round-trip stays lossless & readable (no base64) |
+| `Cms/ScheduleStatusTest` | "schedule only on a future time" status logic |
+| `Cms/PublishTimezoneTest` | publish date is interpreted in the CMS timezone and stored as UTC |
+| `Cms/SchedulePublishFlowTest` | due posts auto-publish; scheduled posts stay hidden until live |
+| `Cms/WordPressImporterTest` | WXR parsing, and re-importing the same file creating nothing twice |
+| `MigrationsTest` | the install path — every table and column the shop logic reads |
 
 Green ✓ = safe; red ⨯ = something regressed (the diff shows expected vs actual).
-Run the suite after changing the converter, scheduling, or save/publish code.
 
 ---
 

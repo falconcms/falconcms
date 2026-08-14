@@ -9,6 +9,7 @@ parameters:
         - src
         - database
         - routes
+        - tests
 
     # helpers.php is one long file of procedural template helpers (the WordPress-style API
     # themes call). It is not analysed — but it IS scanned, so every falcon_*() call site
