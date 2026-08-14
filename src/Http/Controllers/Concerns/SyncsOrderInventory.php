@@ -25,10 +25,10 @@ trait SyncsOrderInventory
             return;
         }
 
-        $wasActive   = in_array($oldStatus, $this->stockActiveStatuses, true);
-        $isInactive  = in_array($newStatus, $this->stockInactiveStatuses, true);
+        $wasActive = in_array($oldStatus, $this->stockActiveStatuses, true);
+        $isInactive = in_array($newStatus, $this->stockInactiveStatuses, true);
         $wasInactive = in_array($oldStatus, $this->stockInactiveStatuses, true);
-        $isActive    = in_array($newStatus, $this->stockActiveStatuses, true);
+        $isActive = in_array($newStatus, $this->stockActiveStatuses, true);
 
         if (!(($wasActive && $isInactive) || ($wasInactive && $isActive))) {
             return;

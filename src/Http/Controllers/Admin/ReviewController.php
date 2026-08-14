@@ -2,9 +2,9 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
 use FalconCms\Core\Models\Review;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class ReviewController extends Controller
 {
@@ -20,15 +20,15 @@ class ReviewController extends Controller
         }
 
         if ($request->filled('s')) {
-            $query->where(function($q) use ($request) {
-                $q->where('comment', 'like', '%' . $request->s . '%')
-                  ->orWhere('name', 'like', '%' . $request->s . '%')
-                  ->orWhere('email', 'like', '%' . $request->s . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('comment', 'like', '%'.$request->s.'%')
+                    ->orWhere('name', 'like', '%'.$request->s.'%')
+                    ->orWhere('email', 'like', '%'.$request->s.'%');
             });
         }
 
         $reviews = $query->paginate(10)->withQueryString();
-        
+
         $allCount = Review::count();
         $pendingCount = Review::where('is_approved', false)->count();
         $approvedCount = Review::where('is_approved', true)->count();
@@ -41,7 +41,7 @@ class ReviewController extends Controller
         $review->is_approved = !$review->is_approved;
         $review->save();
         $status = $review->is_approved ? 'Approved' : 'Unapproved';
-        falcon_log_activity('updated', "{$status} review from: " . ($review->name ?? $review->user->name), $review);
+        falcon_log_activity('updated', "{$status} review from: ".($review->name ?? $review->user->name), $review);
 
         return back()->with('success', $review->is_approved ? 'Review approved.' : 'Review moved to pending.');
     }
@@ -51,6 +51,7 @@ class ReviewController extends Controller
         $author = $review->name ?? ($review->user->name ?? 'Unknown');
         $review->delete();
         falcon_log_activity('deleted', "Deleted review from: {$author}", $review);
+
         return back()->with('success', 'Review deleted successfully.');
     }
 

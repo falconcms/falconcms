@@ -2,7 +2,9 @@
 
 namespace FalconCms\Core\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Revision extends Model
 {
@@ -26,21 +28,23 @@ class Revision extends Model
 
     public function user()
     {
-        return $this->belongsTo(config('auth.providers.users.model', \App\Models\User::class), 'user_id');
+        return $this->belongsTo(config('auth.providers.users.model', User::class), 'user_id');
     }
 
     /**
      * Capture a snapshot of a model's current content.
      *
-     * @param  Model   $model  The Post/Page being saved.
-     * @param  string  $type   'revision' (manual save) or 'autosave'.
-     * @param  array   $extra  Optional extra fields to store in `data`.
+     * @param  Model  $model  The Post/Page being saved.
+     * @param  string  $type  'revision' (manual save) or 'autosave'.
+     * @param  array  $extra  Optional extra fields to store in `data`.
      */
     public static function snapshot(Model $model, string $type = 'revision', array $extra = []): ?self
     {
         // Defensive: never let revision-taking break a save.
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('cms_revisions')) return null;
+            if (!Schema::hasTable('cms_revisions')) {
+                return null;
+            }
 
             $userId = function_exists('auth') && auth()->check() ? auth()->id() : null;
 
@@ -52,14 +56,15 @@ class Revision extends Model
                     ->first();
                 $rev = $rev ?: new static([
                     'revisionable_type' => $model->getMorphClass(),
-                    'revisionable_id'   => $model->getKey(),
-                    'type'              => 'autosave',
+                    'revisionable_id' => $model->getKey(),
+                    'type' => 'autosave',
                 ]);
                 $rev->user_id = $userId;
-                $rev->title   = $model->title ?? null;
+                $rev->title = $model->title ?? null;
                 $rev->content = $model->content ?? null;
-                $rev->data    = $extra ?: null;
+                $rev->data = $extra ?: null;
                 $rev->save();
+
                 return $rev;
             }
 
@@ -74,12 +79,12 @@ class Revision extends Model
 
             $rev = static::create([
                 'revisionable_type' => $model->getMorphClass(),
-                'revisionable_id'   => $model->getKey(),
-                'user_id'           => $userId,
-                'type'              => 'revision',
-                'title'             => $model->title ?? null,
-                'content'           => $model->content ?? null,
-                'data'              => $extra ?: null,
+                'revisionable_id' => $model->getKey(),
+                'user_id' => $userId,
+                'type' => 'revision',
+                'title' => $model->title ?? null,
+                'content' => $model->content ?? null,
+                'data' => $extra ?: null,
             ]);
 
             // Prune older manual revisions beyond KEEP.
@@ -89,7 +94,9 @@ class Revision extends Model
                 ->orderByDesc('id')
                 ->skip(static::KEEP)->take(100)
                 ->pluck('id');
-            if ($ids->isNotEmpty()) static::whereIn('id', $ids)->delete();
+            if ($ids->isNotEmpty()) {
+                static::whereIn('id', $ids)->delete();
+            }
 
             return $rev;
         } catch (\Throwable $e) {
@@ -106,6 +113,7 @@ class Revision extends Model
                 ->where('revisionable_id', $model->getKey())
                 ->where('type', 'autosave')
                 ->delete();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
     }
 }

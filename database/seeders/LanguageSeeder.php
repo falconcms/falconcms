@@ -2,8 +2,8 @@
 
 namespace FalconCms\Core\Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use FalconCms\Core\Models\Language;
+use Illuminate\Database\Seeder;
 
 class LanguageSeeder extends Seeder
 {

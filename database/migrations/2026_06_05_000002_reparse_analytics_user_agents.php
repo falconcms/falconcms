@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use FalconCms\Core\Models\Analytics;
 use FalconCms\Core\Support\UserAgentParser;
+use Illuminate\Database\Migrations\Migration;
 
 /**
  * Re-derives os / browser / device_type for every existing analytics row from its stored
@@ -16,19 +16,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!class_exists(Analytics::class)) return;
+        if (!class_exists(Analytics::class)) {
+            return;
+        }
 
         try {
             // Load id + user_agent up front (avoids "commands out of sync" while updating).
             $rows = Analytics::query()->select('id', 'user_agent')->get();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return; // analytics table not present yet
         }
 
         foreach ($rows as $row) {
             Analytics::query()->where('id', $row->id)->update([
-                'os'          => UserAgentParser::os($row->user_agent),
-                'browser'     => UserAgentParser::browser($row->user_agent),
+                'os' => UserAgentParser::os($row->user_agent),
+                'browser' => UserAgentParser::browser($row->user_agent),
                 'device_type' => UserAgentParser::device($row->user_agent),
             ]);
         }

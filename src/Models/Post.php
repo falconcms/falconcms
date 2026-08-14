@@ -2,19 +2,20 @@
 
 namespace FalconCms\Core\Models;
 
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
-
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class Post extends Model
 {
     use HasFactory, SoftDeletes;
-    
+
     protected $fillable = [
         'user_id', 'title', 'slug', 'content', 'excerpt', 'type', 'status',
         'featured_image', 'gallery', 'seo_meta', 'published_at', 'editor_type',
@@ -40,22 +41,32 @@ class Post extends Model
         $title = !empty($meta['title']) ? $meta['title'] : ($this->title ?? '');
         if (!empty($title)) {
             $len = strlen($title);
-            if ($len >= 50 && $len <= 60) $score += 30;
-            elseif ($len > 0) $score += 15;
+            if ($len >= 50 && $len <= 60) {
+                $score += 30;
+            } elseif ($len > 0) {
+                $score += 15;
+            }
         }
 
         // Description: 40%
         if (!empty($meta['description'])) {
             $len = strlen($meta['description']);
-            if ($len >= 150 && $len <= 160) $score += 40;
-            elseif ($len > 0) $score += 20;
+            if ($len >= 150 && $len <= 160) {
+                $score += 40;
+            } elseif ($len > 0) {
+                $score += 20;
+            }
         }
 
         // Keywords: 10%
-        if (!empty($meta['keywords'])) $score += 10;
+        if (!empty($meta['keywords'])) {
+            $score += 10;
+        }
 
         // OG Image: 20%
-        if (!empty($meta['og_image'])) $score += 20;
+        if (!empty($meta['og_image'])) {
+            $score += 20;
+        }
 
         return $score;
     }
@@ -63,9 +74,9 @@ class Post extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', 'published')
-                     ->whereHas('user', function($q) {
-                         $q->where('is_blocked', false);
-                     });
+            ->whereHas('user', function ($q) {
+                $q->where('is_blocked', false);
+            });
     }
 
     /**
@@ -80,7 +91,7 @@ class Post extends Model
             return $status;
         }
         try {
-            return \Illuminate\Support\Carbon::parse($publishedAt)->isFuture() ? 'scheduled' : 'published';
+            return Carbon::parse($publishedAt)->isFuture() ? 'scheduled' : 'published';
         } catch (\Throwable $e) {
             return $status;
         }
@@ -132,10 +143,10 @@ class Post extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class);
+        return $this->belongsTo(User::class);
     }
 
-    public function comments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function comments(): HasMany
     {
         return $this->hasMany(Comment::class)->whereNull('parent_id')->where('is_approved', true);
     }
@@ -146,9 +157,10 @@ class Post extends Model
     public function translations()
     {
         $originId = $this->origin_id ?: $this->id;
+
         return $this->hasMany(Post::class, 'origin_id', 'id') // Clones of this original
-               ->orWhere('id', $originId) // The original itself
-               ->orWhere('origin_id', $originId); // Other clones of same original
+            ->orWhere('id', $originId) // The original itself
+            ->orWhere('origin_id', $originId); // Other clones of same original
     }
 
     /**
@@ -156,13 +168,16 @@ class Post extends Model
      */
     public function getTranslation($locale)
     {
-        if ($this->lang_code === $locale) return $this;
-        
+        if ($this->lang_code === $locale) {
+            return $this;
+        }
+
         $origin_id = $this->origin_id ?: $this->id;
+
         return Post::where('lang_code', $locale)
-                    ->where(function($q) use ($origin_id) {
-                        $q->where('id', $origin_id)->orWhere('origin_id', $origin_id);
-                    })->first();
+            ->where(function ($q) use ($origin_id) {
+                $q->where('id', $origin_id)->orWhere('origin_id', $origin_id);
+            })->first();
     }
 
     /**
@@ -173,7 +188,7 @@ class Post extends Model
         return $this->hasOne(ProductData::class, 'post_id');
     }
 
-    public function reviews(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reviews(): HasMany
     {
         return $this->hasMany(Review::class, 'post_id')->whereNull('parent_id')->where('is_approved', true);
     }

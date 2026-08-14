@@ -8,15 +8,18 @@ use Illuminate\Support\Facades\DB;
 class PruneAnalytics extends Command
 {
     protected $signature = 'falcon:prune-analytics {--days= : Override retention days (min 7)}';
+
     protected $description = 'Delete raw analytics visits older than the retention window to keep the table lean.';
 
     public function handle(): int
     {
         $days = (int) ($this->option('days') ?: get_cms_option('analytics_retention_days', 365));
-        if ($days < 7) $days = 7; // safety floor — never prune very recent data
+        if ($days < 7) {
+            $days = 7;
+        } // safety floor — never prune very recent data
 
         $cutoff = now()->subDays($days);
-        $total  = 0;
+        $total = 0;
 
         // Chunked delete so a huge backlog never locks the table in one statement.
         do {

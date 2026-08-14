@@ -2,14 +2,19 @@
 
 namespace FalconCms\Core\Console\Commands;
 
+use App\Models\User;
 use FalconCms\Core\Console\Concerns\ReconcilesMigrations;
+use FalconCms\Core\Models\Post;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class UpdateFalconCms extends Command
 {
     use ReconcilesMigrations;
 
     protected $signature = 'falcon:update';
+
     protected $description = 'Update Falcon CMS: run migrations, sync system data, and refresh assets/themes.';
 
     public function handle()
@@ -26,21 +31,21 @@ class UpdateFalconCms extends Command
         $this->info('Step 2: Syncing system data...');
         $this->call('db:seed', [
             '--class' => 'FalconCms\\Core\\Database\\Seeders\\SystemSyncSeeder',
-            '--force' => true
+            '--force' => true,
         ]);
 
         // 3. Publish Assets (Force)
         $this->info('Step 3: Refreshing dashboard assets...');
         $this->call('vendor:publish', [
             '--tag' => 'falcon-cms-assets',
-            '--force' => true
+            '--force' => true,
         ]);
 
         // 4. Publish Themes (Force) — parent theme only
         $this->info('Step 4: Refreshing themes...');
         $this->call('vendor:publish', [
             '--tag' => 'falcon-themes',
-            '--force' => true
+            '--force' => true,
         ]);
 
         // 4a. Remove ALL published package view overrides so the vendor views are
@@ -51,7 +56,7 @@ class UpdateFalconCms extends Command
         // directory guarantees no override can linger.
         $publishedViewsPath = resource_path('views/vendor/falcon-cms');
         if (is_dir($publishedViewsPath)) {
-            \Illuminate\Support\Facades\File::deleteDirectory($publishedViewsPath);
+            File::deleteDirectory($publishedViewsPath);
             $this->info('Step 4a: Removed stale published view overrides (vendor/falcon-cms).');
         }
 
@@ -81,10 +86,11 @@ class UpdateFalconCms extends Command
         $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
     }
+
     protected function syncFooterDefaults()
     {
-        $newAbout     = 'A clean, fast, and professional CMS. Built for readability and seamless content delivery.';
-        $newCopyright = '© ' . date('Y') . ' All rights reserved by Falcon CMS';
+        $newAbout = 'A clean, fast, and professional CMS. Built for readability and seamless content delivery.';
+        $newCopyright = '© '.date('Y').' All rights reserved by Falcon CMS';
 
         \DB::table('cms_settings')
             ->where('key', 'footer_about')
@@ -116,7 +122,7 @@ class UpdateFalconCms extends Command
             ['title' => 'Account', 'slug' => 'account'],
         ];
 
-        $adminId = \App\Models\User::first()->id ?? 1;
+        $adminId = User::first()->id ?? 1;
 
         foreach ($pages as $page) {
             try {
@@ -124,7 +130,7 @@ class UpdateFalconCms extends Command
                 // language global scope, so an existing shop page is found instead of
                 // re-inserted — otherwise firstOrCreate hits the unique constraint and
                 // the whole update reports "completed with errors".
-                \FalconCms\Core\Models\Post::withoutGlobalScopes()->firstOrCreate(
+                Post::withoutGlobalScopes()->firstOrCreate(
                     ['slug' => $page['slug'], 'type' => 'page', 'lang_code' => 'en'],
                     [
                         'title' => $page['title'],
@@ -135,7 +141,7 @@ class UpdateFalconCms extends Command
                 );
             } catch (\Throwable $e) {
                 // Page already exists (or a benign race) — never fail the update for this.
-                \Illuminate\Support\Facades\Log::warning('createEcommercePages [' . $page['slug'] . ']: ' . $e->getMessage());
+                Log::warning('createEcommercePages ['.$page['slug'].']: '.$e->getMessage());
             }
         }
     }

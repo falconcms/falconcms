@@ -22,12 +22,12 @@
  *   });
  *
  * Menus are registered in code and rendered at runtime — nothing is written to the
- * database. See {@see \FalconCms\Core\Support\AdminMenu}.
+ * database. See {@see AdminMenu}.
  */
 
 use FalconCms\Core\Support\AdminMenu;
 
-if (! function_exists('falcon_add_menu_page')) {
+if (!function_exists('falcon_add_menu_page')) {
     /** Register a top-level admin sidebar menu. */
     function falcon_add_menu_page(array $args): void
     {
@@ -35,7 +35,7 @@ if (! function_exists('falcon_add_menu_page')) {
     }
 }
 
-if (! function_exists('falcon_add_submenu_page')) {
+if (!function_exists('falcon_add_submenu_page')) {
     /** Register a submenu item under a parent menu's slug. */
     function falcon_add_submenu_page(string $parentSlug, array $args): void
     {
@@ -43,7 +43,7 @@ if (! function_exists('falcon_add_submenu_page')) {
     }
 }
 
-if (! function_exists('falcon_add_options_page')) {
+if (!function_exists('falcon_add_options_page')) {
     /**
      * Register a self-rendering settings page (menu + form + save), WordPress
      * Settings-API style. Example:

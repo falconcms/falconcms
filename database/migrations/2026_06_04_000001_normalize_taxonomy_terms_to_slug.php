@@ -17,8 +17,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('taxonomy_terms')) return;
-        if (Schema::hasColumn('taxonomy_terms', 'taxonomy_slug')) return; // already normalized
+        if (!Schema::hasTable('taxonomy_terms')) {
+            return;
+        }
+        if (Schema::hasColumn('taxonomy_terms', 'taxonomy_slug')) {
+            return;
+        } // already normalized
 
         // 1) Add the columns the application queries.
         Schema::table('taxonomy_terms', function (Blueprint $table) {
@@ -30,8 +34,10 @@ return new class extends Migration
         if (Schema::hasColumn('taxonomy_terms', 'taxonomy_id') && Schema::hasTable('custom_taxonomies')) {
             foreach (DB::table('custom_taxonomies')->get(['id', 'slug', 'post_types']) as $tax) {
                 $cpt = null;
-                $pt  = json_decode($tax->post_types ?? '', true);
-                if (is_array($pt) && !empty($pt)) $cpt = reset($pt);
+                $pt = json_decode($tax->post_types ?? '', true);
+                if (is_array($pt) && !empty($pt)) {
+                    $cpt = reset($pt);
+                }
                 DB::table('taxonomy_terms')
                     ->where('taxonomy_id', $tax->id)
                     ->update(['taxonomy_slug' => $tax->slug, 'cpt_slug' => $cpt]);
@@ -43,21 +49,32 @@ return new class extends Migration
             Schema::table('taxonomy_terms', function (Blueprint $table) {
                 $table->index('taxonomy_slug', 'taxonomy_terms_taxonomy_slug_index');
             });
-        } catch (\Throwable $e) {}
+        } catch (Throwable $e) {
+        }
 
         // 4) Retire the legacy taxonomy_id (drop unique index, FK + its index, then the
         //    column) so inserts that only set taxonomy_slug succeed and the schema matches.
         if (Schema::hasColumn('taxonomy_terms', 'taxonomy_id')) {
             Schema::table('taxonomy_terms', function (Blueprint $table) {
-                try { $table->dropUnique('terms_slug_tax_lang_unique'); } catch (\Throwable $e) {}
-                try { $table->dropForeign('taxonomy_terms_taxonomy_id_foreign'); } catch (\Throwable $e) {}
-                try { $table->dropIndex('taxonomy_terms_taxonomy_id_foreign'); } catch (\Throwable $e) {}
+                try {
+                    $table->dropUnique('terms_slug_tax_lang_unique');
+                } catch (Throwable $e) {
+                }
+                try {
+                    $table->dropForeign('taxonomy_terms_taxonomy_id_foreign');
+                } catch (Throwable $e) {
+                }
+                try {
+                    $table->dropIndex('taxonomy_terms_taxonomy_id_foreign');
+                } catch (Throwable $e) {
+                }
             });
             try {
                 Schema::table('taxonomy_terms', function (Blueprint $table) {
                     $table->dropColumn('taxonomy_id');
                 });
-            } catch (\Throwable $e) {}
+            } catch (Throwable $e) {
+            }
         }
 
         // 5) Restore the uniqueness guarantee on the new column set.
@@ -65,7 +82,8 @@ return new class extends Migration
             Schema::table('taxonomy_terms', function (Blueprint $table) {
                 $table->unique(['slug', 'taxonomy_slug', 'lang_code'], 'terms_slug_taxslug_lang_unique');
             });
-        } catch (\Throwable $e) {}
+        } catch (Throwable $e) {
+        }
     }
 
     public function down(): void

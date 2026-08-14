@@ -31,7 +31,9 @@ return new class extends Migration
                     foreach ($users as $u) {
                         $rows[] = ['user_id' => $u->id, 'role_id' => $u->role_id];
                     }
-                    if ($rows) DB::table('role_user')->insertOrIgnore($rows);
+                    if ($rows) {
+                        DB::table('role_user')->insertOrIgnore($rows);
+                    }
                 });
         }
     }

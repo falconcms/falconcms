@@ -2,14 +2,15 @@
 
 namespace FalconCms\Core\Console\Commands;
 
-use Illuminate\Console\Command;
 use FalconCms\Core\Models\Order;
+use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class CancelHeldOrders extends Command
 {
     protected $signature = 'falcon:cancel-held-orders';
+
     protected $description = 'Cancel pending orders that exceeded the hold_stock time limit (Shop → Settings → Products).';
 
     public function handle(): void
@@ -38,7 +39,7 @@ class CancelHeldOrders extends Command
                 $this->restoreStock($order);
                 falcon_log_activity('order_auto_cancelled', "Auto-cancelled held order #{$order->order_number} after {$minutes} minutes.");
             } catch (\Throwable $e) {
-                Log::error("falcon:cancel-held-orders failed for order #{$order->order_number}: " . $e->getMessage());
+                Log::error("falcon:cancel-held-orders failed for order #{$order->order_number}: ".$e->getMessage());
             }
         }
 

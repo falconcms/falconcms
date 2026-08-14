@@ -5,14 +5,17 @@ namespace FalconCms\Core\Core;
 class HookManager
 {
     protected static $instance = null;
+
     protected $actions = [];
+
     protected $filters = [];
 
     public static function getInstance()
     {
         if (self::$instance === null) {
-            self::$instance = new self();
+            self::$instance = new self;
         }
+
         return self::$instance;
     }
 
@@ -24,7 +27,9 @@ class HookManager
 
     public function doAction($tag, ...$args)
     {
-        if (!isset($this->actions[$tag])) return;
+        if (!isset($this->actions[$tag])) {
+            return;
+        }
 
         ksort($this->actions[$tag]);
 
@@ -43,7 +48,9 @@ class HookManager
 
     public function applyFilters($tag, $value, ...$args)
     {
-        if (!isset($this->filters[$tag])) return $value;
+        if (!isset($this->filters[$tag])) {
+            return $value;
+        }
 
         ksort($this->filters[$tag]);
 
@@ -62,10 +69,12 @@ class HookManager
             foreach ($this->actions[$tag][$priority] as $index => $registered_callback) {
                 if ($registered_callback === $callback) {
                     unset($this->actions[$tag][$priority][$index]);
+
                     return true;
                 }
             }
         }
+
         return false;
     }
 
@@ -75,10 +84,12 @@ class HookManager
             foreach ($this->filters[$tag][$priority] as $index => $registered_callback) {
                 if ($registered_callback === $callback) {
                     unset($this->filters[$tag][$priority][$index]);
+
                     return true;
                 }
             }
         }
+
         return false;
     }
 

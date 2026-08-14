@@ -17,23 +17,23 @@ class PostResource extends JsonResource
             'slug' => $translation && $translation->slug ? $translation->slug : $this->slug,
             'content' => $translation ? $translation->content : ($this->editor_type === 'builder' ? get_lazy_content($this->content) : $this->content),
             'excerpt' => $translation && $translation->excerpt ? $translation->excerpt : get_falcon_excerpt($this, 160),
-            'featured_image' => $this->featured_image ? url('storage/' . $this->featured_image) : null,
+            'featured_image' => $this->featured_image ? url('storage/'.$this->featured_image) : null,
             'status' => $this->status,
             'type' => $this->type,
             'author' => [
                 'name' => $this->user->name ?? 'Admin',
-                'id' => $this->user_id
+                'id' => $this->user_id,
             ],
-            'categories' => $this->categories->map(function($cat) {
+            'categories' => $this->categories->map(function ($cat) {
                 return [
                     'name' => $cat->name,
-                    'slug' => $cat->slug
+                    'slug' => $cat->slug,
                 ];
             }),
-            'tags' => $this->tags->map(function($tag) {
+            'tags' => $this->tags->map(function ($tag) {
                 return [
                     'name' => $tag->name,
-                    'slug' => $tag->slug
+                    'slug' => $tag->slug,
                 ];
             }),
             'published_at' => $this->created_at->format('Y-m-d H:i:s'),

@@ -2,10 +2,10 @@
 
 namespace FalconCms\Core\Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use FalconCms\Core\Models\Menu;
+use FalconCms\Core\Models\Permission;
 use FalconCms\Core\Models\PostType;
-use FalconCms\Core\Models\CustomTaxonomy;
+use Illuminate\Database\Seeder;
 
 class MenuSeeder extends Seeder
 {
@@ -17,7 +17,7 @@ class MenuSeeder extends Seeder
         $dashMenu = Menu::create([
             'title' => 'Dashboard',
             'route' => 'admin.dashboard.index',
-            'icon'  => 'dashboard',
+            'icon' => 'dashboard',
             'group' => 'Main',
             'order' => 10,
         ]);
@@ -30,7 +30,7 @@ class MenuSeeder extends Seeder
         $postMenu = Menu::create([
             'title' => 'Posts',
             'route' => 'admin.posts.index',
-            'icon'  => 'push_pin',
+            'icon' => 'push_pin',
             'group' => 'Main',
             'order' => 20,
         ]);
@@ -45,7 +45,7 @@ class MenuSeeder extends Seeder
         $mediaMenu = Menu::create([
             'title' => 'Media',
             'route' => 'admin.media.index',
-            'icon'  => 'perm_media',
+            'icon' => 'perm_media',
             'group' => 'Main',
             'order' => 30,
         ]);
@@ -58,7 +58,7 @@ class MenuSeeder extends Seeder
         $pageMenu = Menu::create([
             'title' => 'Pages',
             'route' => 'admin.pages.index',
-            'icon'  => 'description',
+            'icon' => 'description',
             'group' => 'Main',
             'order' => 25,
         ]);
@@ -71,7 +71,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title' => 'Comments',
             'route' => 'admin.comments.index',
-            'icon'  => 'chat_bubble',
+            'icon' => 'chat_bubble',
             'group' => 'Main',
             'order' => 50,
         ]);
@@ -80,7 +80,7 @@ class MenuSeeder extends Seeder
         $formsMenu = Menu::create([
             'title' => 'Forms',
             'route' => 'admin.forms.index',
-            'icon'  => 'dynamic_form',
+            'icon' => 'dynamic_form',
             'group' => 'Main',
             'order' => 35,
         ]);
@@ -94,7 +94,7 @@ class MenuSeeder extends Seeder
         $appearanceMenu = Menu::create([
             'title' => 'Appearance',
             'route' => 'admin.themes.index',
-            'icon'  => 'palette',
+            'icon' => 'palette',
             'group' => 'Main',
             'order' => 40,
         ]);
@@ -108,7 +108,7 @@ class MenuSeeder extends Seeder
         $falconBuilderMenu = Menu::create([
             'title' => 'Falcon Builder',
             'route' => 'admin.falcon-builder.sections',
-            'icon'  => 'view_quilt',
+            'icon' => 'view_quilt',
             'group' => 'Main',
             'order' => 42,
         ]);
@@ -121,11 +121,11 @@ class MenuSeeder extends Seeder
 
         // 7c. Plugins
         $pluginMenu = Menu::create([
-            'title'      => 'Plugins',
-            'route'      => 'admin.plugins.index',
-            'icon'       => 'extension',
-            'group'      => 'Main',
-            'order'      => 43,
+            'title' => 'Plugins',
+            'route' => 'admin.plugins.index',
+            'icon' => 'extension',
+            'group' => 'Main',
+            'order' => 43,
             'permission' => 'manage_plugins',
         ]);
         $pluginMenu->children()->createMany([
@@ -137,7 +137,7 @@ class MenuSeeder extends Seeder
         $acptMenu = Menu::create([
             'title' => 'ACPT',
             'route' => 'admin.acpt.cpt.index',
-            'icon'  => 'settings_input_component',
+            'icon' => 'settings_input_component',
             'group' => 'Advanced',
             'order' => 70,
         ]);
@@ -151,7 +151,7 @@ class MenuSeeder extends Seeder
         $userMenu = Menu::create([
             'title' => 'Users',
             'route' => 'admin.users.index',
-            'icon'  => 'group',
+            'icon' => 'group',
             'group' => 'System',
             'order' => 80,
         ]);
@@ -167,7 +167,7 @@ class MenuSeeder extends Seeder
         $toolsMenu = Menu::create([
             'title' => 'Tools',
             'route' => 'admin.backup.index',
-            'icon'  => 'construction',
+            'icon' => 'construction',
             'group' => 'System',
             'order' => 85,
         ]);
@@ -183,7 +183,7 @@ class MenuSeeder extends Seeder
         Menu::create([
             'title' => 'Analytics',
             'route' => 'admin.analytics',
-            'icon'  => 'insights',
+            'icon' => 'insights',
             'group' => 'System',
             'order' => 87,
         ]);
@@ -192,7 +192,7 @@ class MenuSeeder extends Seeder
         $settingsMenu = Menu::create([
             'title' => 'Settings',
             'route' => 'admin.settings.index',
-            'icon'  => 'settings',
+            'icon' => 'settings',
             'group' => 'System',
             'order' => 90,
         ]);
@@ -211,7 +211,7 @@ class MenuSeeder extends Seeder
             'title' => 'Products',
             'route' => 'admin.posts.index',
             'params' => json_encode(['type' => 'product']),
-            'icon'  => 'inventory_2',
+            'icon' => 'inventory_2',
             'group' => 'Main',
             'order' => 55,
         ]);
@@ -227,7 +227,7 @@ class MenuSeeder extends Seeder
             'title' => 'Shop',
             'route' => 'admin.shop.orders.index',
             'params' => null,
-            'icon'  => 'storefront',
+            'icon' => 'storefront',
             'group' => 'Main',
             // Immediately after Products (55). Custom post types are numbered from 60 up
             // (see AcptCptController), so nothing can settle between the two.
@@ -245,22 +245,22 @@ class MenuSeeder extends Seeder
         // Dynamic CPTs
         $customCPTs = PostType::where('is_builtin', false)->where('is_active', true)->get();
         foreach ($customCPTs as $cpt) {
-            $permSlug = 'manage_' . str_replace('-', '_', $cpt->slug);
-            \FalconCms\Core\Models\Permission::firstOrCreate(
+            $permSlug = 'manage_'.str_replace('-', '_', $cpt->slug);
+            Permission::firstOrCreate(
                 ['slug' => $permSlug],
-                ['name' => 'Manage ' . $cpt->name, 'description' => 'Access ' . $cpt->name . ' section in sidebar']
+                ['name' => 'Manage '.$cpt->name, 'description' => 'Access '.$cpt->name.' section in sidebar']
             );
             $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
             $cptParent = Menu::create([
-                'title'      => $cpt->name,
-                'route'      => '/admin/posts?type=' . $cpt->slug,
-                'icon'       => $cpt->icon ?: $defaultIcon,
-                'group'      => 'Main',
-                'order'      => 50 + $cpt->id,
+                'title' => $cpt->name,
+                'route' => '/admin/posts?type='.$cpt->slug,
+                'icon' => $cpt->icon ?: $defaultIcon,
+                'group' => 'Main',
+                'order' => 50 + $cpt->id,
                 'permission' => $permSlug,
             ]);
-            Menu::create(['parent_id' => $cptParent->id, 'title' => "All {$cpt->name}", 'route' => '/admin/posts?type=' . $cpt->slug, 'order' => 1]);
-            Menu::create(['parent_id' => $cptParent->id, 'title' => 'Add New', 'route' => '/admin/posts/create?type=' . $cpt->slug, 'order' => 2]);
+            Menu::create(['parent_id' => $cptParent->id, 'title' => "All {$cpt->name}", 'route' => '/admin/posts?type='.$cpt->slug, 'order' => 1]);
+            Menu::create(['parent_id' => $cptParent->id, 'title' => 'Add New', 'route' => '/admin/posts/create?type='.$cpt->slug, 'order' => 2]);
         }
     }
 }

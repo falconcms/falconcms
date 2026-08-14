@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Gives Product its own first-class Category & Tag taxonomies (mirroring Post's
@@ -79,7 +79,10 @@ return new class extends Migration
             if ($hasSlugCol) {
                 return DB::table('taxonomy_terms')->whereIn('taxonomy_slug', $slugs)->orderBy('id')->get();
             }
-            if (empty($taxIds)) return collect();
+            if (empty($taxIds)) {
+                return collect();
+            }
+
             return DB::table('taxonomy_terms')->whereIn('taxonomy_id', $taxIds)->orderBy('id')->get();
         };
 
@@ -87,74 +90,84 @@ return new class extends Migration
 
         // Categories (hierarchical) — two passes: insert, then remap parents.
         $catMap = []; // old taxonomy_term id => new product_category id
-        {
-            $terms = $fetchTerms($catSlugs, $catTaxIds);
-            foreach ($terms as $t) {
-                $exists = DB::table('product_categories')
-                    ->where('slug', $t->slug)->where('lang_code', $t->lang_code ?? 'en')->first();
-                if ($exists) { $catMap[$t->id] = $exists->id; continue; }
-                $newId = DB::table('product_categories')->insertGetId([
-                    'parent_id'   => null,
-                    'name'        => $t->name,
-                    'slug'        => $t->slug,
-                    'lang_code'   => $t->lang_code ?? 'en',
-                    'origin_id'   => $t->origin_id ?? null,
-                    'description' => $t->description ?? null,
-                    'created_at'  => $now,
-                    'updated_at'  => $now,
+
+        $terms = $fetchTerms($catSlugs, $catTaxIds);
+        foreach ($terms as $t) {
+            $exists = DB::table('product_categories')
+                ->where('slug', $t->slug)->where('lang_code', $t->lang_code ?? 'en')->first();
+            if ($exists) {
+                $catMap[$t->id] = $exists->id;
+
+                continue;
+            }
+            $newId = DB::table('product_categories')->insertGetId([
+                'parent_id' => null,
+                'name' => $t->name,
+                'slug' => $t->slug,
+                'lang_code' => $t->lang_code ?? 'en',
+                'origin_id' => $t->origin_id ?? null,
+                'description' => $t->description ?? null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $catMap[$t->id] = $newId;
+        }
+        // remap parents
+        foreach ($terms as $t) {
+            if (!empty($t->parent_id) && isset($catMap[$t->id], $catMap[$t->parent_id])) {
+                DB::table('product_categories')->where('id', $catMap[$t->id])
+                    ->update(['parent_id' => $catMap[$t->parent_id]]);
+            }
+        }
+        // pivot links
+        if (Schema::hasTable('post_taxonomy_term')) {
+            $links = DB::table('post_taxonomy_term')
+                ->whereIn('taxonomy_term_id', array_keys($catMap))->get();
+            foreach ($links as $l) {
+                if (!isset($catMap[$l->taxonomy_term_id])) {
+                    continue;
+                }
+                DB::table('product_category_post')->insertOrIgnore([
+                    'product_category_id' => $catMap[$l->taxonomy_term_id],
+                    'post_id' => $l->post_id,
                 ]);
-                $catMap[$t->id] = $newId;
-            }
-            // remap parents
-            foreach ($terms as $t) {
-                if (!empty($t->parent_id) && isset($catMap[$t->id], $catMap[$t->parent_id])) {
-                    DB::table('product_categories')->where('id', $catMap[$t->id])
-                        ->update(['parent_id' => $catMap[$t->parent_id]]);
-                }
-            }
-            // pivot links
-            if (Schema::hasTable('post_taxonomy_term')) {
-                $links = DB::table('post_taxonomy_term')
-                    ->whereIn('taxonomy_term_id', array_keys($catMap))->get();
-                foreach ($links as $l) {
-                    if (!isset($catMap[$l->taxonomy_term_id])) continue;
-                    DB::table('product_category_post')->insertOrIgnore([
-                        'product_category_id' => $catMap[$l->taxonomy_term_id],
-                        'post_id'             => $l->post_id,
-                    ]);
-                }
             }
         }
 
         // Tags (flat)
         $tagMap = [];
-        {
-            $terms = $fetchTerms($tagSlugs, $tagTaxIds);
-            foreach ($terms as $t) {
-                $exists = DB::table('product_tags')
-                    ->where('slug', $t->slug)->where('lang_code', $t->lang_code ?? 'en')->first();
-                if ($exists) { $tagMap[$t->id] = $exists->id; continue; }
-                $newId = DB::table('product_tags')->insertGetId([
-                    'name'        => $t->name,
-                    'slug'        => $t->slug,
-                    'lang_code'   => $t->lang_code ?? 'en',
-                    'origin_id'   => $t->origin_id ?? null,
-                    'description' => $t->description ?? null,
-                    'created_at'  => $now,
-                    'updated_at'  => $now,
-                ]);
-                $tagMap[$t->id] = $newId;
+
+        $terms = $fetchTerms($tagSlugs, $tagTaxIds);
+        foreach ($terms as $t) {
+            $exists = DB::table('product_tags')
+                ->where('slug', $t->slug)->where('lang_code', $t->lang_code ?? 'en')->first();
+            if ($exists) {
+                $tagMap[$t->id] = $exists->id;
+
+                continue;
             }
-            if (Schema::hasTable('post_taxonomy_term')) {
-                $links = DB::table('post_taxonomy_term')
-                    ->whereIn('taxonomy_term_id', array_keys($tagMap))->get();
-                foreach ($links as $l) {
-                    if (!isset($tagMap[$l->taxonomy_term_id])) continue;
-                    DB::table('product_tag_post')->insertOrIgnore([
-                        'product_tag_id' => $tagMap[$l->taxonomy_term_id],
-                        'post_id'        => $l->post_id,
-                    ]);
+            $newId = DB::table('product_tags')->insertGetId([
+                'name' => $t->name,
+                'slug' => $t->slug,
+                'lang_code' => $t->lang_code ?? 'en',
+                'origin_id' => $t->origin_id ?? null,
+                'description' => $t->description ?? null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $tagMap[$t->id] = $newId;
+        }
+        if (Schema::hasTable('post_taxonomy_term')) {
+            $links = DB::table('post_taxonomy_term')
+                ->whereIn('taxonomy_term_id', array_keys($tagMap))->get();
+            foreach ($links as $l) {
+                if (!isset($tagMap[$l->taxonomy_term_id])) {
+                    continue;
                 }
+                DB::table('product_tag_post')->insertOrIgnore([
+                    'product_tag_id' => $tagMap[$l->taxonomy_term_id],
+                    'post_id' => $l->post_id,
+                ]);
             }
         }
 

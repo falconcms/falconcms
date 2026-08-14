@@ -1,30 +1,71 @@
 <?php
- 
-use Illuminate\Support\Facades\Route;
-use FalconCms\Core\Http\Controllers\Admin\PostController;
-use FalconCms\Core\Http\Controllers\Admin\PostTypeController;
-use FalconCms\Core\Http\Controllers\Admin\MediaController;
-use FalconCms\Core\Http\Controllers\Admin\DashboardController;
-use FalconCms\Core\Http\Controllers\Admin\CustomFieldController;
-use FalconCms\Core\Http\Controllers\Admin\UserController;
-use FalconCms\Core\Http\Controllers\Admin\LoginController;
-use FalconCms\Core\Http\Controllers\Admin\RegisterController;
-use FalconCms\Core\Http\Controllers\Admin\RoleController;
+
 use FalconCms\Core\Http\Controllers\Admin\AcptCptController;
 use FalconCms\Core\Http\Controllers\Admin\AcptTaxonomyController;
 use FalconCms\Core\Http\Controllers\Admin\AcptTermController;
-use FalconCms\Core\Http\Controllers\Admin\WidgetController;
+use FalconCms\Core\Http\Controllers\Admin\BackupController;
+use FalconCms\Core\Http\Controllers\Admin\BlacklistController;
+use FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController;
+use FalconCms\Core\Http\Controllers\Admin\CategoryController;
+use FalconCms\Core\Http\Controllers\Admin\CommentController;
+use FalconCms\Core\Http\Controllers\Admin\CustomFieldController;
+use FalconCms\Core\Http\Controllers\Admin\CustomizerController;
+use FalconCms\Core\Http\Controllers\Admin\CustomOptionsController;
+use FalconCms\Core\Http\Controllers\Admin\DashboardController;
+use FalconCms\Core\Http\Controllers\Admin\ExportController;
+use FalconCms\Core\Http\Controllers\Admin\FalconBuilderController;
+use FalconCms\Core\Http\Controllers\Admin\FormController;
+use FalconCms\Core\Http\Controllers\Admin\ImportController;
 use FalconCms\Core\Http\Controllers\Admin\LanguageController;
-use FalconCms\Core\Http\Controllers\Admin\ThemeController;
+use FalconCms\Core\Http\Controllers\Admin\LicenseController;
+use FalconCms\Core\Http\Controllers\Admin\LoginController;
+use FalconCms\Core\Http\Controllers\Admin\MediaController;
+use FalconCms\Core\Http\Controllers\Admin\MenuManagementController;
+use FalconCms\Core\Http\Controllers\Admin\OptionsPageController;
+use FalconCms\Core\Http\Controllers\Admin\PageController;
+use FalconCms\Core\Http\Controllers\Admin\PluginController;
+use FalconCms\Core\Http\Controllers\Admin\PostController;
+use FalconCms\Core\Http\Controllers\Admin\PostTypeController;
+use FalconCms\Core\Http\Controllers\Admin\ProductCategoryController;
+use FalconCms\Core\Http\Controllers\Admin\ProductDownloadController;
+use FalconCms\Core\Http\Controllers\Admin\ProductTagController;
+use FalconCms\Core\Http\Controllers\Admin\PromotionController;
+use FalconCms\Core\Http\Controllers\Admin\RedirectController;
+use FalconCms\Core\Http\Controllers\Admin\RegisterController;
+use FalconCms\Core\Http\Controllers\Admin\ReviewController;
+use FalconCms\Core\Http\Controllers\Admin\RoleController;
+use FalconCms\Core\Http\Controllers\Admin\SettingsTabController;
 use FalconCms\Core\Http\Controllers\Admin\ShopController;
-use FalconCms\Core\Http\Controllers\ShopFrontendController;
+use FalconCms\Core\Http\Controllers\Admin\ShopReportController;
+use FalconCms\Core\Http\Controllers\Admin\TagController;
+use FalconCms\Core\Http\Controllers\Admin\TaxonomyTermController;
+use FalconCms\Core\Http\Controllers\Admin\ThemeController;
+use FalconCms\Core\Http\Controllers\Admin\UserController;
+use FalconCms\Core\Http\Controllers\Admin\WidgetController;
+use FalconCms\Core\Http\Controllers\Admin\WordPressImportController;
 use FalconCms\Core\Http\Controllers\FrontendController;
+use FalconCms\Core\Http\Controllers\ShopFrontendController;
+use FalconCms\Core\Http\Controllers\SitemapController;
+use FalconCms\Core\Http\Controllers\WishlistController;
+use FalconCms\Core\Http\Middleware\AdminMiddleware;
+use FalconCms\Core\Http\Middleware\EnsurePro;
+use FalconCms\Core\Http\Middleware\EnsureProEditable;
+use FalconCms\Core\Http\Middleware\MaintenanceModeMiddleware;
+use FalconCms\Core\Http\Middleware\PageCacheMiddleware;
+use FalconCms\Core\Http\Middleware\SecurityHeadersMiddleware;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\Language;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 // 1. Dynamic Login & Registration URLs (Highest Priority - Outside any group)
 $login_slug = get_cms_option('login_url', 'super-lazy-admin');
 $register_slug = get_cms_option('register_url', 'super-lazy-register');
 
-Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddleware::class])->group(function() use ($login_slug, $register_slug) {
+Route::middleware(['web', SecurityHeadersMiddleware::class])->group(function () use ($login_slug, $register_slug) {
     Route::get($login_slug, [LoginController::class, 'showLoginForm'])->name('admin.login');
     Route::post($login_slug, [LoginController::class, 'login'])->middleware('throttle:10,1');
 
@@ -50,12 +91,16 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     Route::post('magic-email-check', [ShopFrontendController::class, 'checkMagicEmail'])->name('shop.magic.email.check')->middleware('throttle:30,1');
 
     // Redirect standard admin/login and admin/register to custom slugs
-    Route::get('admin/login', function() use ($login_slug) { return redirect($login_slug); });
-    Route::get('admin/register', function() use ($register_slug) { return redirect($register_slug); });
+    Route::get('admin/login', function () use ($login_slug) {
+        return redirect($login_slug);
+    });
+    Route::get('admin/register', function () use ($register_slug) {
+        return redirect($register_slug);
+    });
 });
 
 // 2. Authenticated Admin Routes
-Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddleware::class, \FalconCms\Core\Http\Middleware\AdminMiddleware::class])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddleware::class, AdminMiddleware::class])->group(function () {
     // Media and posts
     Route::post('media/bulk-delete', [MediaController::class, 'bulkDestroy'])->name('media.bulk-delete');
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
@@ -64,11 +109,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('media', [MediaController::class, 'store'])->name('media.store');
     Route::put('media/{media}', [MediaController::class, 'update'])->name('media.update');
     Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
- 
+
     Route::get('edit-post', [PostController::class, 'edit'])->name('edit-post');
     Route::post('posts/bulk', [PostController::class, 'bulk'])->name('posts.bulk');
-    Route::post('categories/bulk', [\FalconCms\Core\Http\Controllers\Admin\CategoryController::class, 'bulk'])->name('categories.bulk');
-    Route::post('tags/bulk', [\FalconCms\Core\Http\Controllers\Admin\TagController::class, 'bulk'])->name('tags.bulk');
+    Route::post('categories/bulk', [CategoryController::class, 'bulk'])->name('categories.bulk');
+    Route::post('tags/bulk', [TagController::class, 'bulk'])->name('tags.bulk');
     Route::post('posts/{post}/restore', [PostController::class, 'restore'])->name('posts.restore')->withTrashed();
     Route::delete('posts/{post}/force-delete', [PostController::class, 'forceDelete'])->name('posts.force-delete')->withTrashed();
     Route::post('posts/{id}/clone', [PostController::class, 'clonePost'])->name('posts.clone');
@@ -81,30 +126,30 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::resource('posts', PostController::class);
     // Library — Pro (builder_pro), "browse but locked": the page and every read route stay open
     // so users can look around; EnsureProEditable (method-aware) gates only the write methods.
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':builder_pro')->group(function () {
-    Route::get('falcon-builder-library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'page'])->name('falcon-builder.library');
-    Route::post('falcon-builder-library/post-cards', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCard'])->name('falcon-builder.post-cards.save');
-    Route::delete('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deletePostCard'])->name('falcon-builder.post-cards.delete');
-    Route::patch('falcon-builder-library/post-cards/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updatePostCard'])->name('falcon-builder.post-cards.update');
-    Route::get('falcon-builder-library/post-cards/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'editPostCardBuilder'])->name('falcon-builder.post-cards.builder');
-    Route::post('falcon-builder-library/post-cards/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'savePostCardLayout'])->name('falcon-builder.post-cards.save-layout');
-    Route::get('falcon-builder-library/post-cards/{id}/export', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'exportPostCard'])->name('falcon-builder.post-cards.export');
-    Route::post('falcon-builder-library/post-cards-import', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'importPostCard'])->name('falcon-builder.post-cards.import');
-    Route::get('falcon-builder-library/mega-menus/{id}/export', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'exportMegaMenu'])->name('falcon-builder.mega-menus.export');
-    Route::post('falcon-builder-library/mega-menus-import', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'importMegaMenu'])->name('falcon-builder.mega-menus.import');
-    Route::post('falcon-builder-library/mega-menus', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenu'])->name('falcon-builder.mega-menus.save');
-    Route::delete('falcon-builder-library/mega-menus/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteMegaMenu'])->name('falcon-builder.mega-menus.delete');
-    Route::patch('falcon-builder-library/mega-menus/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateMegaMenu'])->name('falcon-builder.mega-menus.update');
-    Route::get('falcon-builder-library/mega-menus/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'editMegaMenuBuilder'])->name('falcon-builder.mega-menus.builder');
-    Route::post('falcon-builder-library/mega-menus/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenuLayout'])->name('falcon-builder.mega-menus.save-layout');
-    Route::post('falcon-builder-library/mega-menus/{id}/settings', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveMegaMenuSettings'])->name('falcon-builder.mega-menus.save-settings');
-    Route::get('falcon-builder/library', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'index'])->name('falcon-builder.library.index');
-    Route::post('falcon-builder/library/save', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'save'])->name('falcon-builder.library.save');
-    Route::delete('falcon-builder/library/{type}/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'delete'])->name('falcon-builder.library.delete');
-    Route::get('falcon-builder/global-sections', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'listGlobalSections'])->name('falcon-builder.global-sections.list');
-    Route::post('falcon-builder/global-sections', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'saveGlobalSection'])->name('falcon-builder.global-sections.save');
-    Route::patch('falcon-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'updateGlobalSection'])->name('falcon-builder.global-sections.update');
-    Route::delete('falcon-builder/global-sections/{id}', [\FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController::class, 'deleteGlobalSection'])->name('falcon-builder.global-sections.delete');
+    Route::middleware(EnsureProEditable::class.':builder_pro')->group(function () {
+        Route::get('falcon-builder-library', [BuilderLibraryController::class, 'page'])->name('falcon-builder.library');
+        Route::post('falcon-builder-library/post-cards', [BuilderLibraryController::class, 'savePostCard'])->name('falcon-builder.post-cards.save');
+        Route::delete('falcon-builder-library/post-cards/{id}', [BuilderLibraryController::class, 'deletePostCard'])->name('falcon-builder.post-cards.delete');
+        Route::patch('falcon-builder-library/post-cards/{id}', [BuilderLibraryController::class, 'updatePostCard'])->name('falcon-builder.post-cards.update');
+        Route::get('falcon-builder-library/post-cards/{id}/builder', [BuilderLibraryController::class, 'editPostCardBuilder'])->name('falcon-builder.post-cards.builder');
+        Route::post('falcon-builder-library/post-cards/{id}/builder', [BuilderLibraryController::class, 'savePostCardLayout'])->name('falcon-builder.post-cards.save-layout');
+        Route::get('falcon-builder-library/post-cards/{id}/export', [BuilderLibraryController::class, 'exportPostCard'])->name('falcon-builder.post-cards.export');
+        Route::post('falcon-builder-library/post-cards-import', [BuilderLibraryController::class, 'importPostCard'])->name('falcon-builder.post-cards.import');
+        Route::get('falcon-builder-library/mega-menus/{id}/export', [BuilderLibraryController::class, 'exportMegaMenu'])->name('falcon-builder.mega-menus.export');
+        Route::post('falcon-builder-library/mega-menus-import', [BuilderLibraryController::class, 'importMegaMenu'])->name('falcon-builder.mega-menus.import');
+        Route::post('falcon-builder-library/mega-menus', [BuilderLibraryController::class, 'saveMegaMenu'])->name('falcon-builder.mega-menus.save');
+        Route::delete('falcon-builder-library/mega-menus/{id}', [BuilderLibraryController::class, 'deleteMegaMenu'])->name('falcon-builder.mega-menus.delete');
+        Route::patch('falcon-builder-library/mega-menus/{id}', [BuilderLibraryController::class, 'updateMegaMenu'])->name('falcon-builder.mega-menus.update');
+        Route::get('falcon-builder-library/mega-menus/{id}/builder', [BuilderLibraryController::class, 'editMegaMenuBuilder'])->name('falcon-builder.mega-menus.builder');
+        Route::post('falcon-builder-library/mega-menus/{id}/builder', [BuilderLibraryController::class, 'saveMegaMenuLayout'])->name('falcon-builder.mega-menus.save-layout');
+        Route::post('falcon-builder-library/mega-menus/{id}/settings', [BuilderLibraryController::class, 'saveMegaMenuSettings'])->name('falcon-builder.mega-menus.save-settings');
+        Route::get('falcon-builder/library', [BuilderLibraryController::class, 'index'])->name('falcon-builder.library.index');
+        Route::post('falcon-builder/library/save', [BuilderLibraryController::class, 'save'])->name('falcon-builder.library.save');
+        Route::delete('falcon-builder/library/{type}/{id}', [BuilderLibraryController::class, 'delete'])->name('falcon-builder.library.delete');
+        Route::get('falcon-builder/global-sections', [BuilderLibraryController::class, 'listGlobalSections'])->name('falcon-builder.global-sections.list');
+        Route::post('falcon-builder/global-sections', [BuilderLibraryController::class, 'saveGlobalSection'])->name('falcon-builder.global-sections.save');
+        Route::patch('falcon-builder/global-sections/{id}', [BuilderLibraryController::class, 'updateGlobalSection'])->name('falcon-builder.global-sections.update');
+        Route::delete('falcon-builder/global-sections/{id}', [BuilderLibraryController::class, 'deleteGlobalSection'])->name('falcon-builder.global-sections.delete');
     }); // end EnsureProEditable:builder_pro — Library writes
     // Icon lists are fetched per set when a picker tab is first opened, so the builder page
     // itself stays small no matter how many icon libraries are registered.
@@ -113,15 +158,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
             ->header('Cache-Control', 'private, max-age=86400');
     })->name('falcon-builder.icons');
 
-    Route::post('falcon-builder/card-preview', function(\Illuminate\Http\Request $r) {
+    Route::post('falcon-builder/card-preview', function (Request $r) {
         $s = $r->input('settings', []);
         try {
             $html = view('falcon-cms::frontend.builder.elements.card', [
                 'el' => ['settings' => $s],
                 'previewDevice' => $r->input('device'),
             ])->render();
+
             return response()->json(['success' => true, 'html' => $html]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['success' => false, 'html' => '']);
         }
     })->name('falcon-builder.card-preview');
@@ -135,86 +181,86 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('falcon-builder/{id}/revisions/{revision}', [PostController::class, 'deleteRevisionBuilder'])->name('falcon-builder.revisions.delete');
     Route::post('posts/{id}/variations/ajax', [PostController::class, 'ajaxSaveVariations'])->name('posts.variations.ajax-save');
     Route::get('falcon-builder/{id}/preview', [PostController::class, 'previewBuilder'])->name('falcon-builder.preview');
- 
-    Route::post('pages/bulk', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'bulk'])->name('pages.bulk');
-    Route::post('pages/{page}/restore', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'restore'])->name('pages.restore')->withTrashed();
-    Route::delete('pages/{page}/force-delete', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'forceDelete'])->name('pages.force-delete')->withTrashed();
+
+    Route::post('pages/bulk', [PageController::class, 'bulk'])->name('pages.bulk');
+    Route::post('pages/{page}/restore', [PageController::class, 'restore'])->name('pages.restore')->withTrashed();
+    Route::delete('pages/{page}/force-delete', [PageController::class, 'forceDelete'])->name('pages.force-delete')->withTrashed();
     // Page revisions + autosave (must precede the resource route)
-    Route::post('pages/{id}/autosave', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'autosaveClassic'])->name('pages.autosave');
-    Route::get('pages/{id}/revisions', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'revisionsPage'])->name('pages.revisions');
-    Route::post('pages/{id}/revisions/{revision}/restore', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'restoreRevisionClassic'])->name('pages.revisions.restore');
-    Route::delete('pages/{id}/revisions/{revision}', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'deleteRevision'])->name('pages.revisions.delete');
-    Route::delete('pages/{id}/revisions', [\FalconCms\Core\Http\Controllers\Admin\PageController::class, 'clearRevisions'])->name('pages.revisions.clear');
-    Route::resource('pages', \FalconCms\Core\Http\Controllers\Admin\PageController::class);
+    Route::post('pages/{id}/autosave', [PageController::class, 'autosaveClassic'])->name('pages.autosave');
+    Route::get('pages/{id}/revisions', [PageController::class, 'revisionsPage'])->name('pages.revisions');
+    Route::post('pages/{id}/revisions/{revision}/restore', [PageController::class, 'restoreRevisionClassic'])->name('pages.revisions.restore');
+    Route::delete('pages/{id}/revisions/{revision}', [PageController::class, 'deleteRevision'])->name('pages.revisions.delete');
+    Route::delete('pages/{id}/revisions', [PageController::class, 'clearRevisions'])->name('pages.revisions.clear');
+    Route::resource('pages', PageController::class);
 
     // Categories
-    Route::get('categories', [\FalconCms\Core\Http\Controllers\Admin\CategoryController::class, 'index'])->name('categories.index');
-    Route::post('categories', [\FalconCms\Core\Http\Controllers\Admin\CategoryController::class, 'store'])->name('categories.store');
-    Route::get('categories/edit/{category}', [\FalconCms\Core\Http\Controllers\Admin\CategoryController::class, 'edit'])->name('categories.edit');
-    Route::put('categories/{category}', [\FalconCms\Core\Http\Controllers\Admin\CategoryController::class, 'update'])->name('categories.update');
-    Route::delete('categories/{category}', [\FalconCms\Core\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::get('categories/edit/{category}', [CategoryController::class, 'edit'])->name('categories.edit');
+    Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
     // Tags
-    Route::get('tags', [\FalconCms\Core\Http\Controllers\Admin\TagController::class, 'index'])->name('tags.index');
-    Route::post('tags', [\FalconCms\Core\Http\Controllers\Admin\TagController::class, 'store'])->name('tags.store');
-    Route::get('tags/edit/{tag}', [\FalconCms\Core\Http\Controllers\Admin\TagController::class, 'edit'])->name('tags.edit');
-    Route::put('tags/{tag}', [\FalconCms\Core\Http\Controllers\Admin\TagController::class, 'update'])->name('tags.update');
-    Route::delete('tags/{tag}', [\FalconCms\Core\Http\Controllers\Admin\TagController::class, 'destroy'])->name('tags.destroy');
+    Route::get('tags', [TagController::class, 'index'])->name('tags.index');
+    Route::post('tags', [TagController::class, 'store'])->name('tags.store');
+    Route::get('tags/edit/{tag}', [TagController::class, 'edit'])->name('tags.edit');
+    Route::put('tags/{tag}', [TagController::class, 'update'])->name('tags.update');
+    Route::delete('tags/{tag}', [TagController::class, 'destroy'])->name('tags.destroy');
 
     Route::resource('post-types', PostTypeController::class)->only(['index', 'store', 'destroy']);
-    
-    Route::post('categories/ajax', function(\Illuminate\Http\Request $request) {
+
+    Route::post('categories/ajax', function (Request $request) {
         $validated = $request->validate([
             'name' => 'required|string',
             'parent_id' => 'nullable|exists:categories,id',
-            'lang_code' => 'nullable|string'
+            'lang_code' => 'nullable|string',
         ]);
-        
+
         $lang = $validated['lang_code'] ?? app()->getLocale();
-        $category = \FalconCms\Core\Models\Category::create([
+        $category = Category::create([
             'name' => $validated['name'],
             'parent_id' => !empty($validated['parent_id']) ? $validated['parent_id'] : null,
             'lang_code' => $lang,
-            'slug' => \FalconCms\Core\Models\Category::generateUniqueSlug($validated['name'], 0, $lang)
+            'slug' => Category::generateUniqueSlug($validated['name'], 0, $lang),
         ]);
-        
+
         return response()->json($category);
     })->name('categories.ajax');
 
     // Product Categories & Tags — Pro (e-commerce), "browse but locked": the pages are viewable;
     // EnsureProEditable (method-aware) gates only the write methods.
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':ecommerce')->group(function () {
-    // Product Categories (dedicated, first-class — mirrors Categories)
-    Route::get('product-categories', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'index'])->name('product-categories.index');
-    Route::post('product-categories', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'store'])->name('product-categories.store');
-    Route::post('product-categories/bulk', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'bulk'])->name('product-categories.bulk');
-    Route::post('product-categories/ajax', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'ajax'])->name('product-categories.ajax');
-    Route::get('product-categories/edit/{product_category}', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'edit'])->name('product-categories.edit');
-    Route::put('product-categories/{product_category}', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'update'])->name('product-categories.update');
-    Route::delete('product-categories/{product_category}', [\FalconCms\Core\Http\Controllers\Admin\ProductCategoryController::class, 'destroy'])->name('product-categories.destroy');
+    Route::middleware(EnsureProEditable::class.':ecommerce')->group(function () {
+        // Product Categories (dedicated, first-class — mirrors Categories)
+        Route::get('product-categories', [ProductCategoryController::class, 'index'])->name('product-categories.index');
+        Route::post('product-categories', [ProductCategoryController::class, 'store'])->name('product-categories.store');
+        Route::post('product-categories/bulk', [ProductCategoryController::class, 'bulk'])->name('product-categories.bulk');
+        Route::post('product-categories/ajax', [ProductCategoryController::class, 'ajax'])->name('product-categories.ajax');
+        Route::get('product-categories/edit/{product_category}', [ProductCategoryController::class, 'edit'])->name('product-categories.edit');
+        Route::put('product-categories/{product_category}', [ProductCategoryController::class, 'update'])->name('product-categories.update');
+        Route::delete('product-categories/{product_category}', [ProductCategoryController::class, 'destroy'])->name('product-categories.destroy');
 
-    // Product Tags (dedicated, first-class — mirrors Tags)
-    Route::get('product-tags', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'index'])->name('product-tags.index');
-    Route::post('product-tags', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'store'])->name('product-tags.store');
-    Route::post('product-tags/bulk', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'bulk'])->name('product-tags.bulk');
-    Route::post('product-tags/ajax', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'ajax'])->name('product-tags.ajax');
-    Route::get('product-tags/edit/{product_tag}', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'edit'])->name('product-tags.edit');
-    Route::put('product-tags/{product_tag}', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'update'])->name('product-tags.update');
-    Route::delete('product-tags/{product_tag}', [\FalconCms\Core\Http\Controllers\Admin\ProductTagController::class, 'destroy'])->name('product-tags.destroy');
+        // Product Tags (dedicated, first-class — mirrors Tags)
+        Route::get('product-tags', [ProductTagController::class, 'index'])->name('product-tags.index');
+        Route::post('product-tags', [ProductTagController::class, 'store'])->name('product-tags.store');
+        Route::post('product-tags/bulk', [ProductTagController::class, 'bulk'])->name('product-tags.bulk');
+        Route::post('product-tags/ajax', [ProductTagController::class, 'ajax'])->name('product-tags.ajax');
+        Route::get('product-tags/edit/{product_tag}', [ProductTagController::class, 'edit'])->name('product-tags.edit');
+        Route::put('product-tags/{product_tag}', [ProductTagController::class, 'update'])->name('product-tags.update');
+        Route::delete('product-tags/{product_tag}', [ProductTagController::class, 'destroy'])->name('product-tags.destroy');
     }); // end EnsurePro:ecommerce — Product Categories & Tags
 
     // Navigation Menus
-    Route::post('menus/{id}/duplicate', [\FalconCms\Core\Http\Controllers\Admin\MenuManagementController::class, 'duplicate'])->name('menus.duplicate');
-    Route::resource('menus', \FalconCms\Core\Http\Controllers\Admin\MenuManagementController::class);
-    
+    Route::post('menus/{id}/duplicate', [MenuManagementController::class, 'duplicate'])->name('menus.duplicate');
+    Route::resource('menus', MenuManagementController::class);
+
     // Dynamic Taxonomy Terms
-    Route::get('taxonomies/{slug}/terms', [\FalconCms\Core\Http\Controllers\Admin\TaxonomyTermController::class, 'index'])->name('old.terms.index');
-    Route::post('taxonomies/{slug}/terms', [\FalconCms\Core\Http\Controllers\Admin\TaxonomyTermController::class, 'store'])->name('old.terms.store');
-    Route::delete('taxonomies/{slug}/terms/{id}', [\FalconCms\Core\Http\Controllers\Admin\TaxonomyTermController::class, 'destroy'])->name('old.terms.destroy');
-    Route::post('taxonomies/{slug}/terms/bulk', [\FalconCms\Core\Http\Controllers\Admin\TaxonomyTermController::class, 'bulk'])->name('old.terms.bulk');
- 
+    Route::get('taxonomies/{slug}/terms', [TaxonomyTermController::class, 'index'])->name('old.terms.index');
+    Route::post('taxonomies/{slug}/terms', [TaxonomyTermController::class, 'store'])->name('old.terms.store');
+    Route::delete('taxonomies/{slug}/terms/{id}', [TaxonomyTermController::class, 'destroy'])->name('old.terms.destroy');
+    Route::post('taxonomies/{slug}/terms/bulk', [TaxonomyTermController::class, 'bulk'])->name('old.terms.bulk');
+
     // Advanced Custom Post Types (ACPT) - Latest Version
-    Route::prefix('acpt')->name('acpt.')->group(function() {
+    Route::prefix('acpt')->name('acpt.')->group(function () {
         Route::post('cpt/bulk', [AcptCptController::class, 'bulk'])->name('cpt.bulk');
         Route::post('cpt/{id}/toggle-status', [AcptCptController::class, 'toggleStatus'])->name('cpt.toggle-status');
         Route::post('cpt/{id}/duplicate', [AcptCptController::class, 'duplicate'])->name('cpt.duplicate');
@@ -235,15 +281,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         Route::delete('tax-terms/{taxonomySlug}/{id}', [AcptTermController::class, 'destroy'])->name('terms.destroy');
         // Custom Fields (Field Groups) — Pro (custom_fields), "browse but locked": the pages
         // are viewable; EnsureProEditable (method-aware) gates only the write methods.
-        Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':custom_fields')->group(function () {
-        Route::delete('fields/delete-field/{field}', [CustomFieldController::class, 'deleteField'])->name('fields.delete-field');
-        Route::post('fields/store-field', [CustomFieldController::class, 'storeField'])->name('fields.store-field');
-        Route::get('fields/{field}/export', [CustomFieldController::class, 'exportGroup'])->name('fields.export');
-        Route::post('fields-import', [CustomFieldController::class, 'importGroup'])->name('fields.import');
-        Route::resource('fields', CustomFieldController::class);
+        Route::middleware(EnsureProEditable::class.':custom_fields')->group(function () {
+            Route::delete('fields/delete-field/{field}', [CustomFieldController::class, 'deleteField'])->name('fields.delete-field');
+            Route::post('fields/store-field', [CustomFieldController::class, 'storeField'])->name('fields.store-field');
+            Route::get('fields/{field}/export', [CustomFieldController::class, 'exportGroup'])->name('fields.export');
+            Route::post('fields-import', [CustomFieldController::class, 'importGroup'])->name('fields.import');
+            Route::resource('fields', CustomFieldController::class);
         });
     });
- 
+
     // Dashboard index
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // Analytics — Pro (preview model). Always reachable so users can look around; the
@@ -251,43 +297,43 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('analytics/realtime', [DashboardController::class, 'analyticsRealtime'])->name('analytics.realtime');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
- 
+
     // Users
-    Route::get('profile', function() {
+    Route::get('profile', function () {
         return redirect()->route('admin.users.edit', auth()->id());
     })->name('profile');
     Route::post('users/bulk', [UserController::class, 'bulk'])->name('users.bulk');
     Route::resource('users', UserController::class);
     Route::post('users/{user}/toggle-block', [UserController::class, 'toggleBlock'])->name('users.toggle-block');
-    Route::get('blacklist', [\FalconCms\Core\Http\Controllers\Admin\BlacklistController::class, 'index'])->name('blacklist.index');
-    Route::delete('blacklist/{id}', [\FalconCms\Core\Http\Controllers\Admin\BlacklistController::class, 'destroy'])->name('blacklist.destroy');
-    Route::post('blacklist/bulk', [\FalconCms\Core\Http\Controllers\Admin\BlacklistController::class, 'bulk'])->name('blacklist.bulk');
-    
+    Route::get('blacklist', [BlacklistController::class, 'index'])->name('blacklist.index');
+    Route::delete('blacklist/{id}', [BlacklistController::class, 'destroy'])->name('blacklist.destroy');
+    Route::post('blacklist/bulk', [BlacklistController::class, 'bulk'])->name('blacklist.bulk');
+
     // Dynamic Options Pages
-    Route::get('options/{slug}', [\FalconCms\Core\Http\Controllers\Admin\CustomOptionsController::class, 'index'])->name('options.index');
-    Route::post('options/{slug}', [\FalconCms\Core\Http\Controllers\Admin\CustomOptionsController::class, 'update'])->name('options.update');
+    Route::get('options/{slug}', [CustomOptionsController::class, 'index'])->name('options.index');
+    Route::post('options/{slug}', [CustomOptionsController::class, 'update'])->name('options.update');
 
     Route::resource('roles', RoleController::class);
-    
+
     // Languages — Pro (multi-language), "browse but locked": the pages are viewable;
     // EnsureProEditable (method-aware) gates only the write methods.
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':multilang')->group(function () {
-    Route::post('languages/settings', [LanguageController::class, 'updateSettings'])->name('languages.settings.update');
-    Route::post('languages/{id}/default', [\FalconCms\Core\Http\Controllers\Admin\LanguageController::class, 'setDefault'])->name('languages.set-default');
-    Route::resource('languages', \FalconCms\Core\Http\Controllers\Admin\LanguageController::class)->names('languages');
+    Route::middleware(EnsureProEditable::class.':multilang')->group(function () {
+        Route::post('languages/settings', [LanguageController::class, 'updateSettings'])->name('languages.settings.update');
+        Route::post('languages/{id}/default', [LanguageController::class, 'setDefault'])->name('languages.set-default');
+        Route::resource('languages', LanguageController::class)->names('languages');
     });
- 
+
     // Pro License — paste / activate / deactivate the license key
-    Route::get('license', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'index'])->name('license.index');
-    Route::post('license/activate', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'activate'])->name('license.activate');
-    Route::post('license/deactivate', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'deactivate'])->name('license.deactivate');
-    Route::post('license/token', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'saveToken'])->name('license.token');
-    Route::post('license/recheck', [\FalconCms\Core\Http\Controllers\Admin\LicenseController::class, 'recheck'])->name('license.recheck');
+    Route::get('license', [LicenseController::class, 'index'])->name('license.index');
+    Route::post('license/activate', [LicenseController::class, 'activate'])->name('license.activate');
+    Route::post('license/deactivate', [LicenseController::class, 'deactivate'])->name('license.deactivate');
+    Route::post('license/token', [LicenseController::class, 'saveToken'])->name('license.token');
+    Route::post('license/recheck', [LicenseController::class, 'recheck'])->name('license.recheck');
 
     // Developer-registered options pages (falcon_add_options_page) — one generic
     // controller renders/saves any page looked up by slug.
-    Route::get('options/{slug}', [\FalconCms\Core\Http\Controllers\Admin\OptionsPageController::class, 'show'])->name('options.show');
-    Route::post('options/{slug}', [\FalconCms\Core\Http\Controllers\Admin\OptionsPageController::class, 'save'])->name('options.save');
+    Route::get('options/{slug}', [OptionsPageController::class, 'show'])->name('options.show');
+    Route::post('options/{slug}', [OptionsPageController::class, 'save'])->name('options.save');
 
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
@@ -307,47 +353,47 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     // Custom top-level settings tabs (falcon_add_settings_tab). Registered LAST so
     // every native settings/* route matches first; this only catches unknown slugs,
     // which the controller resolves against the registry (404 if not a real tab).
-    Route::get('settings/{tab}', [\FalconCms\Core\Http\Controllers\Admin\SettingsTabController::class, 'show'])->name('settings.custom-tab.show');
-    Route::post('settings/{tab}', [\FalconCms\Core\Http\Controllers\Admin\SettingsTabController::class, 'save'])->name('settings.custom-tab.save');
+    Route::get('settings/{tab}', [SettingsTabController::class, 'show'])->name('settings.custom-tab.show');
+    Route::post('settings/{tab}', [SettingsTabController::class, 'save'])->name('settings.custom-tab.save');
 
     // Backups
-    Route::get('tools/backup', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
-    Route::post('tools/backup', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'create'])->name('backup.create');
-    Route::post('tools/backup/media', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'createMedia'])->name('backup.media');
-    Route::post('tools/backup/upload', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'upload'])->name('backup.upload');
-    Route::post('tools/backup/restore/{filename}', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backup.restore');
-    Route::get('tools/backup/download/{filename}', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'download'])->name('backup.download');
-    Route::delete('tools/backup/{filename}', [\FalconCms\Core\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backup.destroy');
+    Route::get('tools/backup', [BackupController::class, 'index'])->name('backup.index');
+    Route::post('tools/backup', [BackupController::class, 'create'])->name('backup.create');
+    Route::post('tools/backup/media', [BackupController::class, 'createMedia'])->name('backup.media');
+    Route::post('tools/backup/upload', [BackupController::class, 'upload'])->name('backup.upload');
+    Route::post('tools/backup/restore/{filename}', [BackupController::class, 'restore'])->name('backup.restore');
+    Route::get('tools/backup/download/{filename}', [BackupController::class, 'download'])->name('backup.download');
+    Route::delete('tools/backup/{filename}', [BackupController::class, 'destroy'])->name('backup.destroy');
 
     // Export (dynamic, feature-driven WXR export)
-    Route::get('tools/export', [\FalconCms\Core\Http\Controllers\Admin\ExportController::class, 'index'])->name('export.index');
-    Route::post('tools/export/download', [\FalconCms\Core\Http\Controllers\Admin\ExportController::class, 'download'])->name('export.download');
+    Route::get('tools/export', [ExportController::class, 'index'])->name('export.index');
+    Route::post('tools/export/download', [ExportController::class, 'download'])->name('export.download');
 
     // Import (counterpart to Export — imports the WXR export file)
-    Route::get('tools/import', [\FalconCms\Core\Http\Controllers\Admin\ImportController::class, 'index'])->name('import.index');
-    Route::post('tools/import', [\FalconCms\Core\Http\Controllers\Admin\ImportController::class, 'import'])->name('import.run');
+    Route::get('tools/import', [ImportController::class, 'index'])->name('import.index');
+    Route::post('tools/import', [ImportController::class, 'import'])->name('import.run');
 
     // WordPress Importer
-    Route::get('tools/wp-import', [\FalconCms\Core\Http\Controllers\Admin\WordPressImportController::class, 'index'])->name('wp-import.index');
-    Route::post('tools/wp-import', [\FalconCms\Core\Http\Controllers\Admin\WordPressImportController::class, 'import'])->name('wp-import.import');
-    Route::post('tools/wp-import/media', [\FalconCms\Core\Http\Controllers\Admin\WordPressImportController::class, 'importMedia'])->name('wp-import.media');
+    Route::get('tools/wp-import', [WordPressImportController::class, 'index'])->name('wp-import.index');
+    Route::post('tools/wp-import', [WordPressImportController::class, 'import'])->name('wp-import.import');
+    Route::post('tools/wp-import/media', [WordPressImportController::class, 'importMedia'])->name('wp-import.media');
 
     // Redirection Manager
-    Route::get('seo/redirects', [\FalconCms\Core\Http\Controllers\Admin\RedirectController::class, 'index'])->name('redirects.index');
-    Route::post('seo/redirects', [\FalconCms\Core\Http\Controllers\Admin\RedirectController::class, 'store'])->name('redirects.store');
-    Route::delete('seo/redirects/{redirect}', [\FalconCms\Core\Http\Controllers\Admin\RedirectController::class, 'destroy'])->name('redirects.destroy');
-    Route::post('seo/redirects/bulk', [\FalconCms\Core\Http\Controllers\Admin\RedirectController::class, 'bulk'])->name('redirects.bulk');
+    Route::get('seo/redirects', [RedirectController::class, 'index'])->name('redirects.index');
+    Route::post('seo/redirects', [RedirectController::class, 'store'])->name('redirects.store');
+    Route::delete('seo/redirects/{redirect}', [RedirectController::class, 'destroy'])->name('redirects.destroy');
+    Route::post('seo/redirects/bulk', [RedirectController::class, 'bulk'])->name('redirects.bulk');
     Route::get('seo/related-posts', [DashboardController::class, 'getRelatedPosts'])->name('seo.related-posts');
 
     Route::get('update', [DashboardController::class, 'updateCheck'])->name('update');
     Route::post('update/run', [DashboardController::class, 'runUpdate'])->name('update.run');
     Route::post('update/pro', [DashboardController::class, 'runProUpdate'])->name('update.pro');
- 
+
     // Comments Management
-    Route::get('comments', [\FalconCms\Core\Http\Controllers\Admin\CommentController::class, 'index'])->name('comments.index');
-    Route::post('comments/{comment}/toggle-approve', [\FalconCms\Core\Http\Controllers\Admin\CommentController::class, 'toggleApprove'])->name('comments.toggle-approve');
-    Route::delete('comments/{comment}', [\FalconCms\Core\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('comments.destroy');
-    Route::post('comments/bulk', [\FalconCms\Core\Http\Controllers\Admin\CommentController::class, 'bulk'])->name('comments.bulk');
+    Route::get('comments', [CommentController::class, 'index'])->name('comments.index');
+    Route::post('comments/{comment}/toggle-approve', [CommentController::class, 'toggleApprove'])->name('comments.toggle-approve');
+    Route::delete('comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+    Route::post('comments/bulk', [CommentController::class, 'bulk'])->name('comments.bulk');
 
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::post('login/check', [LoginController::class, 'checkCredentials'])->name('login.check');
@@ -363,12 +409,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::post('/widgets/order', [WidgetController::class, 'updateOrder'])->name('widgets.update-order');
 
     // Customizer (Appearance > Customizer)
-    Route::get('/customizer', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'index'])->name('customizer.index');
-    Route::post('/customizer', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'save'])->name('customizer.save');
-    Route::post('/customizer/reset', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'resetSection'])->name('customizer.reset');
-    Route::get('/customizer/export', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'export'])->name('customizer.export');
-    Route::post('/customizer/import', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'import'])->name('customizer.import');
-    Route::post('/customizer/action/{action}', [\FalconCms\Core\Http\Controllers\Admin\CustomizerController::class, 'runAction'])->name('customizer.action');
+    Route::get('/customizer', [CustomizerController::class, 'index'])->name('customizer.index');
+    Route::post('/customizer', [CustomizerController::class, 'save'])->name('customizer.save');
+    Route::post('/customizer/reset', [CustomizerController::class, 'resetSection'])->name('customizer.reset');
+    Route::get('/customizer/export', [CustomizerController::class, 'export'])->name('customizer.export');
+    Route::post('/customizer/import', [CustomizerController::class, 'import'])->name('customizer.import');
+    Route::post('/customizer/action/{action}', [CustomizerController::class, 'runAction'])->name('customizer.action');
 
     // Themes
     Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');
@@ -377,50 +423,50 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
     Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
 
     // Plugins
-    Route::get('/plugins', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'index'])->name('plugins.index');
-    Route::get('/plugins/add', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'create'])->name('plugins.create');
-    Route::post('/plugins/upload', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'upload'])->name('plugins.upload');
-    Route::post('/plugins/bulk', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'bulk'])->name('plugins.bulk');
-    Route::post('/plugins/install-url', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'installUrl'])->name('plugins.install-url');
-    Route::post('/plugins/{slug}/activate', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'activate'])->name('plugins.activate');
-    Route::post('/plugins/{slug}/deactivate', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'deactivate'])->name('plugins.deactivate');
-    Route::post('/plugins/{slug}/update', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'update'])->name('plugins.update');
-    Route::delete('/plugins/{slug}', [\FalconCms\Core\Http\Controllers\Admin\PluginController::class, 'destroy'])->name('plugins.destroy');
+    Route::get('/plugins', [PluginController::class, 'index'])->name('plugins.index');
+    Route::get('/plugins/add', [PluginController::class, 'create'])->name('plugins.create');
+    Route::post('/plugins/upload', [PluginController::class, 'upload'])->name('plugins.upload');
+    Route::post('/plugins/bulk', [PluginController::class, 'bulk'])->name('plugins.bulk');
+    Route::post('/plugins/install-url', [PluginController::class, 'installUrl'])->name('plugins.install-url');
+    Route::post('/plugins/{slug}/activate', [PluginController::class, 'activate'])->name('plugins.activate');
+    Route::post('/plugins/{slug}/deactivate', [PluginController::class, 'deactivate'])->name('plugins.deactivate');
+    Route::post('/plugins/{slug}/update', [PluginController::class, 'update'])->name('plugins.update');
+    Route::delete('/plugins/{slug}', [PluginController::class, 'destroy'])->name('plugins.destroy');
 
     // Layout Builder — Pro (builder_pro), "browse but locked" model. The page and its read-only
     // AJAX stay reachable so users can look around; every WRITE action is gated by EnsurePro,
     // which returns a "Pro feature" payload the page surfaces as a toast. The core page builder
     // (editing a post/page) is unaffected and stays free.
-    Route::get('/falcon-builder-sections', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'index'])->name('falcon-builder.sections');
-    Route::get('/falcon-builder-sections/condition-items', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'conditionItems'])->name('falcon-builder.condition-items');
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':builder_pro')->group(function () {
-        Route::post('/falcon-builder-sections/slot-toggle', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'toggleSlot'])->name('falcon-builder.slot.toggle');
-        Route::post('/falcon-builder-sections/section', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'createSection'])->name('falcon-builder.section.create');
-        Route::post('/falcon-builder-sections/assign', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'assignSection'])->name('falcon-builder.section.assign');
-        Route::post('/falcon-builder-sections/clear', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'clearSection'])->name('falcon-builder.section.clear');
-        Route::post('/falcon-builder-sections/section/delete', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'deleteSection'])->name('falcon-builder.section.delete');
-        Route::post('/falcon-builder-sections/layout', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'createLayout'])->name('falcon-builder.layout.create');
-        Route::post('/falcon-builder-sections/layout/rename', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'renameLayout'])->name('falcon-builder.layout.rename');
-        Route::post('/falcon-builder-sections/layout/delete', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'deleteLayout'])->name('falcon-builder.layout.delete');
-        Route::post('/falcon-builder-sections/layout/conditions', [\FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::class, 'saveConditions'])->name('falcon-builder.layout.conditions');
+    Route::get('/falcon-builder-sections', [FalconBuilderController::class, 'index'])->name('falcon-builder.sections');
+    Route::get('/falcon-builder-sections/condition-items', [FalconBuilderController::class, 'conditionItems'])->name('falcon-builder.condition-items');
+    Route::middleware(EnsureProEditable::class.':builder_pro')->group(function () {
+        Route::post('/falcon-builder-sections/slot-toggle', [FalconBuilderController::class, 'toggleSlot'])->name('falcon-builder.slot.toggle');
+        Route::post('/falcon-builder-sections/section', [FalconBuilderController::class, 'createSection'])->name('falcon-builder.section.create');
+        Route::post('/falcon-builder-sections/assign', [FalconBuilderController::class, 'assignSection'])->name('falcon-builder.section.assign');
+        Route::post('/falcon-builder-sections/clear', [FalconBuilderController::class, 'clearSection'])->name('falcon-builder.section.clear');
+        Route::post('/falcon-builder-sections/section/delete', [FalconBuilderController::class, 'deleteSection'])->name('falcon-builder.section.delete');
+        Route::post('/falcon-builder-sections/layout', [FalconBuilderController::class, 'createLayout'])->name('falcon-builder.layout.create');
+        Route::post('/falcon-builder-sections/layout/rename', [FalconBuilderController::class, 'renameLayout'])->name('falcon-builder.layout.rename');
+        Route::post('/falcon-builder-sections/layout/delete', [FalconBuilderController::class, 'deleteLayout'])->name('falcon-builder.layout.delete');
+        Route::post('/falcon-builder-sections/layout/conditions', [FalconBuilderController::class, 'saveConditions'])->name('falcon-builder.layout.conditions');
     }); // end EnsurePro:builder_pro — Layout Builder writes
 
     // Form Builder
-    Route::get('forms', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'index'])->name('forms.index');
-    Route::get('forms/create', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'create'])->name('forms.create');
-    Route::post('forms', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'store'])->name('forms.store');
-    Route::get('forms/{id}/builder', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'builder'])->name('forms.builder');
-    Route::post('forms/{id}/save', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'saveBuilder'])->name('forms.save');
-    Route::get('forms/{id}/export', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'export'])->name('forms.export');
-    Route::post('forms/import', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'import'])->name('forms.import');
-    Route::get('forms/{id}/submissions', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'submissions'])->name('forms.submissions');
-    Route::get('forms/all-submissions', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'allSubmissions'])->name('forms.all-submissions');
-    Route::delete('forms/submissions/{submission}', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');
-    Route::delete('forms/{form}', [\FalconCms\Core\Http\Controllers\Admin\FormController::class, 'destroy'])->name('forms.destroy');
+    Route::get('forms', [FormController::class, 'index'])->name('forms.index');
+    Route::get('forms/create', [FormController::class, 'create'])->name('forms.create');
+    Route::post('forms', [FormController::class, 'store'])->name('forms.store');
+    Route::get('forms/{id}/builder', [FormController::class, 'builder'])->name('forms.builder');
+    Route::post('forms/{id}/save', [FormController::class, 'saveBuilder'])->name('forms.save');
+    Route::get('forms/{id}/export', [FormController::class, 'export'])->name('forms.export');
+    Route::post('forms/import', [FormController::class, 'import'])->name('forms.import');
+    Route::get('forms/{id}/submissions', [FormController::class, 'submissions'])->name('forms.submissions');
+    Route::get('forms/all-submissions', [FormController::class, 'allSubmissions'])->name('forms.all-submissions');
+    Route::delete('forms/submissions/{submission}', [FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');
+    Route::delete('forms/{form}', [FormController::class, 'destroy'])->name('forms.destroy');
 
     // Shop Management — Pro (e-commerce), "browse but locked": the shop back-office is viewable
     // so owners can look around; EnsureProEditable (method-aware) gates only the write actions.
-    Route::prefix('shop')->name('shop.')->middleware(\FalconCms\Core\Http\Middleware\EnsureProEditable::class . ':ecommerce')->group(function() {
+    Route::prefix('shop')->name('shop.')->middleware(EnsureProEditable::class.':ecommerce')->group(function () {
         Route::get('overview', [ShopController::class, 'overview'])->name('overview');
         Route::get('orders', [ShopController::class, 'orders'])->name('orders.index');
         Route::post('orders/bulk', [ShopController::class, 'ordersBulk'])->name('orders.bulk');
@@ -432,57 +478,57 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \FalconCms\Core\Http\
         Route::post('settings', [ShopController::class, 'saveSettings'])->name('settings.save');
 
         // Sales Reports
-        Route::get('reports', [\FalconCms\Core\Http\Controllers\Admin\ShopReportController::class, 'index'])->name('reports.index');
-        Route::get('reports/export', [\FalconCms\Core\Http\Controllers\Admin\ShopReportController::class, 'export'])->name('reports.export');
+        Route::get('reports', [ShopReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export', [ShopReportController::class, 'export'])->name('reports.export');
 
         // Product download files (admin)
-        Route::post('products/{productDataId}/downloads', [\FalconCms\Core\Http\Controllers\Admin\ProductDownloadController::class, 'store'])->name('products.downloads.store');
-        Route::delete('products/downloads/{download}', [\FalconCms\Core\Http\Controllers\Admin\ProductDownloadController::class, 'destroy'])->name('products.downloads.destroy');
+        Route::post('products/{productDataId}/downloads', [ProductDownloadController::class, 'store'])->name('products.downloads.store');
+        Route::delete('products/downloads/{download}', [ProductDownloadController::class, 'destroy'])->name('products.downloads.destroy');
 
         // Promotions — automatic cart rules (buy X get Y), no coupon code involved.
-        Route::get('promotions', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'index'])->name('promotions.index');
-        Route::post('promotions/bulk', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'bulk'])->name('promotions.bulk');
-        Route::get('promotions/create', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'create'])->name('promotions.create');
-        Route::post('promotions', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'store'])->name('promotions.store');
-        Route::get('promotions/{id}/edit', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'edit'])->name('promotions.edit');
-        Route::put('promotions/{id}', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'update'])->name('promotions.update');
-        Route::delete('promotions/{id}', [\FalconCms\Core\Http\Controllers\Admin\PromotionController::class, 'destroy'])->name('promotions.destroy');
+        Route::get('promotions', [PromotionController::class, 'index'])->name('promotions.index');
+        Route::post('promotions/bulk', [PromotionController::class, 'bulk'])->name('promotions.bulk');
+        Route::get('promotions/create', [PromotionController::class, 'create'])->name('promotions.create');
+        Route::post('promotions', [PromotionController::class, 'store'])->name('promotions.store');
+        Route::get('promotions/{id}/edit', [PromotionController::class, 'edit'])->name('promotions.edit');
+        Route::put('promotions/{id}', [PromotionController::class, 'update'])->name('promotions.update');
+        Route::delete('promotions/{id}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
 
         // Reviews
-        Route::get('reviews', [\FalconCms\Core\Http\Controllers\Admin\ReviewController::class, 'index'])->name('reviews.index');
-        Route::post('reviews/{review}/toggle-approve', [\FalconCms\Core\Http\Controllers\Admin\ReviewController::class, 'toggleApprove'])->name('reviews.toggle-approve');
-        Route::delete('reviews/{review}', [\FalconCms\Core\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('reviews.destroy');
-        Route::post('reviews/bulk', [\FalconCms\Core\Http\Controllers\Admin\ReviewController::class, 'bulk'])->name('reviews.bulk');
+        Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+        Route::post('reviews/{review}/toggle-approve', [ReviewController::class, 'toggleApprove'])->name('reviews.toggle-approve');
+        Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+        Route::post('reviews/bulk', [ReviewController::class, 'bulk'])->name('reviews.bulk');
     });
 
 });
- 
+
 // 3. Frontend Routes (Catch-all for posts/pages) - Outside Admin Group
-Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddleware::class, \FalconCms\Core\Http\Middleware\MaintenanceModeMiddleware::class, \FalconCms\Core\Http\Middleware\PageCacheMiddleware::class])->group(function() {
+Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddleware::class, PageCacheMiddleware::class])->group(function () {
     Route::get('/', [FrontendController::class, 'index'])->name('frontend.index');
     Route::get('lang/{locale}', [FrontendController::class, 'setLocale'])->name('frontend.set-locale');
-    
+
     // Localization Logic
     $isMultiLang = get_cms_option('multi_language_enabled', 0);
     $supportedLocales = [];
-    
+
     try {
-        if (\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) {
-            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
+        if (Schema::hasTable('cms_languages')) {
+            $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
             // If we have more than 1 language, we consider it multi-lang for routing purposes
             if (count($supportedLocales) > 1) {
                 $isMultiLang = 1;
             }
         }
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         $supportedLocales = [];
     }
-    
+
     $localePattern = implode('|', $supportedLocales);
     if ($isMultiLang && !empty($localePattern)) {
         Route::get('/{locale}', [FrontendController::class, 'index'])
             ->where('locale', $localePattern);
-            
+
         Route::get('/{locale}/category/{slug}', [FrontendController::class, 'archive'])
             ->where('locale', $localePattern)->where('slug', '.*')->name('frontend.category.locale');
 
@@ -512,91 +558,91 @@ Route::middleware(['web', \FalconCms\Core\Http\Middleware\SecurityHeadersMiddlew
     // route('shop.*') directly, so removing them would 500 the whole site). 'strict' mode
     // ignores grandfathering: the storefront (cart/checkout/account/add-to-cart) locks the
     // moment the freemium grace window ends — browsing products stays open elsewhere.
-    Route::middleware(\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict')->group(function() {
-    Route::prefix('cart')->name('shop.')->group(function() {
-        Route::get('/',         [ShopFrontendController::class, 'cart'])->name('cart');
-        Route::get('/fragment', [ShopFrontendController::class, 'miniCart'])->name('cart.fragment');
-        Route::post('/add',             [ShopFrontendController::class, 'addToCart'])->name('cart.add')->middleware('throttle:30,1');
-        Route::post('/update',          [ShopFrontendController::class, 'updateCart'])->name('cart.update')->middleware('throttle:30,1');
-        Route::post('/remove/{key}',    [ShopFrontendController::class, 'removeFromCart'])->name('cart.remove')->middleware('throttle:30,1');
-        Route::post('/apply-coupon',    [ShopFrontendController::class, 'applyCoupon'])->name('cart.coupon')->middleware('throttle:10,1');
-        Route::get('/remove-coupon',    [ShopFrontendController::class, 'removeCoupon'])->name('cart.coupon.remove');
-        Route::post('/update-shipping', [ShopFrontendController::class, 'updateShipping'])->name('cart.shipping.update')->middleware('throttle:20,1');
-        Route::post('/review',          [ShopFrontendController::class, 'storeReview'])->name('review.store')->middleware('throttle:5,1');
-    });
-    Route::get('/checkout', [ShopFrontendController::class, 'checkout'])->name('shop.checkout');
-    Route::post('/checkout', [ShopFrontendController::class, 'placeOrder'])->name('shop.place-order');
-    // Post-purchase customer access stays open even after grace ends — a paid
-    // customer must always reach their order confirmation, tracking and digital
-    // downloads (each verifies ownership in the controller).
-    Route::get('/order-confirmation/{id}', [ShopFrontendController::class, 'confirmation'])->name('shop.confirmation')
-        ->withoutMiddleware([\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
+    Route::middleware(EnsurePro::class.':ecommerce,strict')->group(function () {
+        Route::prefix('cart')->name('shop.')->group(function () {
+            Route::get('/', [ShopFrontendController::class, 'cart'])->name('cart');
+            Route::get('/fragment', [ShopFrontendController::class, 'miniCart'])->name('cart.fragment');
+            Route::post('/add', [ShopFrontendController::class, 'addToCart'])->name('cart.add')->middleware('throttle:30,1');
+            Route::post('/update', [ShopFrontendController::class, 'updateCart'])->name('cart.update')->middleware('throttle:30,1');
+            Route::post('/remove/{key}', [ShopFrontendController::class, 'removeFromCart'])->name('cart.remove')->middleware('throttle:30,1');
+            Route::post('/apply-coupon', [ShopFrontendController::class, 'applyCoupon'])->name('cart.coupon')->middleware('throttle:10,1');
+            Route::get('/remove-coupon', [ShopFrontendController::class, 'removeCoupon'])->name('cart.coupon.remove');
+            Route::post('/update-shipping', [ShopFrontendController::class, 'updateShipping'])->name('cart.shipping.update')->middleware('throttle:20,1');
+            Route::post('/review', [ShopFrontendController::class, 'storeReview'])->name('review.store')->middleware('throttle:5,1');
+        });
+        Route::get('/checkout', [ShopFrontendController::class, 'checkout'])->name('shop.checkout');
+        Route::post('/checkout', [ShopFrontendController::class, 'placeOrder'])->name('shop.place-order');
+        // Post-purchase customer access stays open even after grace ends — a paid
+        // customer must always reach their order confirmation, tracking and digital
+        // downloads (each verifies ownership in the controller).
+        Route::get('/order-confirmation/{id}', [ShopFrontendController::class, 'confirmation'])->name('shop.confirmation')
+            ->withoutMiddleware([EnsurePro::class.':ecommerce,strict']);
 
-    // Order tracking
-    Route::match(['get', 'post'], '/track-order', [ShopFrontendController::class, 'trackOrder'])->name('shop.track')
-        ->withoutMiddleware([\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
+        // Order tracking
+        Route::match(['get', 'post'], '/track-order', [ShopFrontendController::class, 'trackOrder'])->name('shop.track')
+            ->withoutMiddleware([EnsurePro::class.':ecommerce,strict']);
 
-    // Account page login / logout / profile / password
-    Route::post('/account-login', [ShopFrontendController::class, 'accountLogin'])->name('shop.account.login');
-    Route::post('/account-logout', [ShopFrontendController::class, 'accountLogout'])->name('shop.account.logout');
-    Route::post('/account-profile-update', [ShopFrontendController::class, 'updateProfile'])->name('shop.account.profile.update');
-    Route::post('/account-password-update', [ShopFrontendController::class, 'updatePassword'])->name('shop.account.password.update');
+        // Account page login / logout / profile / password
+        Route::post('/account-login', [ShopFrontendController::class, 'accountLogin'])->name('shop.account.login');
+        Route::post('/account-logout', [ShopFrontendController::class, 'accountLogout'])->name('shop.account.logout');
+        Route::post('/account-profile-update', [ShopFrontendController::class, 'updateProfile'])->name('shop.account.profile.update');
+        Route::post('/account-password-update', [ShopFrontendController::class, 'updatePassword'])->name('shop.account.password.update');
 
-    // Saved addresses. Every action re-checks ownership in the controller — the id in the URL is
-    // a claim, not a permission.
-    Route::post('/account-address', [ShopFrontendController::class, 'saveAddress'])->name('shop.account.address.save')->middleware('throttle:20,1');
-    Route::post('/account-address/{id}/delete', [ShopFrontendController::class, 'deleteAddress'])->name('shop.account.address.delete')->middleware('throttle:20,1');
-    Route::post('/account-address/{id}/default', [ShopFrontendController::class, 'setDefaultAddress'])->name('shop.account.address.default')->middleware('throttle:20,1');
+        // Saved addresses. Every action re-checks ownership in the controller — the id in the URL is
+        // a claim, not a permission.
+        Route::post('/account-address', [ShopFrontendController::class, 'saveAddress'])->name('shop.account.address.save')->middleware('throttle:20,1');
+        Route::post('/account-address/{id}/delete', [ShopFrontendController::class, 'deleteAddress'])->name('shop.account.address.delete')->middleware('throttle:20,1');
+        Route::post('/account-address/{id}/default', [ShopFrontendController::class, 'setDefaultAddress'])->name('shop.account.address.default')->middleware('throttle:20,1');
 
-    // Digital downloads (token-based, no auth required)
-    Route::get('/download/{token}', [ShopFrontendController::class, 'downloadFile'])->name('shop.download')->middleware('throttle:30,1')
-        ->withoutMiddleware([\FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict']);
+        // Digital downloads (token-based, no auth required)
+        Route::get('/download/{token}', [ShopFrontendController::class, 'downloadFile'])->name('shop.download')->middleware('throttle:30,1')
+            ->withoutMiddleware([EnsurePro::class.':ecommerce,strict']);
 
-    // Magic login (passwordless)
-    Route::post('/magic-login', [ShopFrontendController::class, 'requestMagicLink'])->name('shop.magic.request')->middleware('throttle:5,1');
-    Route::get('/magic-login/{token}', [ShopFrontendController::class, 'verifyMagicLink'])->name('shop.magic.verify');
+        // Magic login (passwordless)
+        Route::post('/magic-login', [ShopFrontendController::class, 'requestMagicLink'])->name('shop.magic.request')->middleware('throttle:5,1');
+        Route::get('/magic-login/{token}', [ShopFrontendController::class, 'verifyMagicLink'])->name('shop.magic.verify');
 
-    // Wishlist
-    Route::get('/wishlist', [\FalconCms\Core\Http\Controllers\WishlistController::class, 'index'])->name('shop.wishlist');
-    Route::post('/wishlist/toggle', [\FalconCms\Core\Http\Controllers\WishlistController::class, 'toggle'])->name('shop.wishlist.toggle');
-    Route::post('/wishlist/remove', [\FalconCms\Core\Http\Controllers\WishlistController::class, 'remove'])->name('shop.wishlist.remove');
+        // Wishlist
+        Route::get('/wishlist', [WishlistController::class, 'index'])->name('shop.wishlist');
+        Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('shop.wishlist.toggle');
+        Route::post('/wishlist/remove', [WishlistController::class, 'remove'])->name('shop.wishlist.remove');
 
-    // Online payment gateway return / cancel — gateways (e.g. SSLCommerz) POST here without a CSRF token.
-    //
-    // BOTH CSRF classes are listed on purpose. Laravel 11+ registers
-    // PreventRequestForgery in the `web` group and keeps VerifyCsrfToken only as a legacy
-    // subclass; withoutMiddleware() matches on the registered name, so excluding just the old
-    // name silently did nothing and these callbacks were answering 419.
-    Route::match(['get', 'post'], '/payment/return/{id}', [ShopFrontendController::class, 'paymentReturn'])
-        ->name('shop.payment.return')
-        ->withoutMiddleware([
-            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
-            \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict',
-        ]);
-    Route::match(['get', 'post'], '/payment/cancel/{id}', [ShopFrontendController::class, 'paymentCancel'])
-        ->name('shop.payment.cancel')
-        ->withoutMiddleware([
-            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
-            \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict',
-        ]);
+        // Online payment gateway return / cancel — gateways (e.g. SSLCommerz) POST here without a CSRF token.
+        //
+        // BOTH CSRF classes are listed on purpose. Laravel 11+ registers
+        // PreventRequestForgery in the `web` group and keeps VerifyCsrfToken only as a legacy
+        // subclass; withoutMiddleware() matches on the registered name, so excluding just the old
+        // name silently did nothing and these callbacks were answering 419.
+        Route::match(['get', 'post'], '/payment/return/{id}', [ShopFrontendController::class, 'paymentReturn'])
+            ->name('shop.payment.return')
+            ->withoutMiddleware([
+                PreventRequestForgery::class,
+                VerifyCsrfToken::class,
+                EnsurePro::class.':ecommerce,strict',
+            ]);
+        Route::match(['get', 'post'], '/payment/cancel/{id}', [ShopFrontendController::class, 'paymentCancel'])
+            ->name('shop.payment.cancel')
+            ->withoutMiddleware([
+                PreventRequestForgery::class,
+                VerifyCsrfToken::class,
+                EnsurePro::class.':ecommerce,strict',
+            ]);
 
-    // Stripe webhook — the reliable half of payment confirmation (the browser return URL is
-    // best-effort; a customer who closes the tab never hits it). Stripe signs the request and
-    // the controller verifies that signature, which is the only authentication here.
-    // Stays outside the Pro gate so a store that lapses still reconciles payments already taken.
-    Route::post('/payment/stripe/webhook', [ShopFrontendController::class, 'stripeWebhook'])
-        ->name('shop.payment.stripe.webhook')
-        ->middleware('throttle:300,1')
-        ->withoutMiddleware([
-            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
-            \FalconCms\Core\Http\Middleware\EnsurePro::class . ':ecommerce,strict',
-        ]);
+        // Stripe webhook — the reliable half of payment confirmation (the browser return URL is
+        // best-effort; a customer who closes the tab never hits it). Stripe signs the request and
+        // the controller verifies that signature, which is the only authentication here.
+        // Stays outside the Pro gate so a store that lapses still reconciles payments already taken.
+        Route::post('/payment/stripe/webhook', [ShopFrontendController::class, 'stripeWebhook'])
+            ->name('shop.payment.stripe.webhook')
+            ->middleware('throttle:300,1')
+            ->withoutMiddleware([
+                PreventRequestForgery::class,
+                VerifyCsrfToken::class,
+                EnsurePro::class.':ecommerce,strict',
+            ]);
     }); // end EnsurePro:ecommerce — Shop Frontend
 
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
-    Route::get('/sitemap.xml', [\FalconCms\Core\Http\Controllers\SitemapController::class, 'index'])->name('frontend.sitemap');
+    Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('frontend.sitemap');
     Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'single'])->name('frontend.show')->where('slug', '.*');
 });

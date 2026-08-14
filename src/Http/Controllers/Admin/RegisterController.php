@@ -2,14 +2,16 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use FalconCms\Core\Mail\EmailVerificationMail;
+use FalconCms\Core\Models\Role;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
-use FalconCms\Core\Mail\EmailVerificationMail;
 
 class RegisterController extends Controller
 {
@@ -38,6 +40,7 @@ class RegisterController extends Controller
     public function checkEmail(Request $request)
     {
         $exists = User::where('email', $request->email)->exists();
+
         return response()->json(['exists' => $exists]);
     }
 
@@ -56,8 +59,8 @@ class RegisterController extends Controller
         // Assign the role configured in Settings → "New User Default Role",
         // falling back to subscriber if it is unset or no longer exists.
         $defaultRoleSlug = get_cms_option('default_role', 'subscriber');
-        $defaultRole = \FalconCms\Core\Models\Role::where('slug', $defaultRoleSlug)->first()
-            ?: \FalconCms\Core\Models\Role::where('slug', 'subscriber')->first();
+        $defaultRole = Role::where('slug', $defaultRoleSlug)->first()
+            ?: Role::where('slug', 'subscriber')->first();
 
         // Site setting (Settings → Membership): require email verification before login?
         $requireVerification = get_cms_option('require_email_verification', '1') === '1';
@@ -76,8 +79,9 @@ class RegisterController extends Controller
             $user->forceFill(['email_verified_at' => now()])->save();
             Auth::login($user);
             $request->session()->regenerate();
+
             return redirect()->route('admin.dashboard.index')
-                ->with('success', 'Welcome, ' . $user->name . '! Your account is ready.');
+                ->with('success', 'Welcome, '.$user->name.'! Your account is ready.');
         }
 
         // Verification required → do NOT log in; send a time-limited verification link.
@@ -86,7 +90,7 @@ class RegisterController extends Controller
 
         if ($sent) {
             return redirect()->route('admin.verify.notice')
-                ->with('success', 'Account created! We sent a verification link to ' . $user->email . '. Please confirm your email to sign in.');
+                ->with('success', 'Account created! We sent a verification link to '.$user->email.'. Please confirm your email to sign in.');
         }
 
         // The account exists, but the mail server rejected/failed the message — say so
@@ -102,6 +106,7 @@ class RegisterController extends Controller
             return redirect()->route('admin.dashboard.index');
         }
         $email = $request->session()->get('pending_verification_email', '');
+
         return view('falcon-cms::admin.auth.verify-notice', compact('email'));
     }
 
@@ -146,19 +151,21 @@ class RegisterController extends Controller
         $request->session()->put('pending_verification_email', $request->email);
 
         return redirect()->route('admin.verify.notice')
-            ->with('success', 'If that email needs verifying, a new link is on its way. It expires in ' . $this->verifyTtl . ' minutes.');
+            ->with('success', 'If that email needs verifying, a new link is on its way. It expires in '.$this->verifyTtl.' minutes.');
     }
 
     /** Build a unique, sanitized username from the email local part (e.g. john@a.com → john, john1…). */
     protected function uniqueUsername(string $email): string
     {
         $base = strtolower(preg_replace('/[^a-z0-9_]/i', '', strstr($email, '@', true) ?: ''));
-        if ($base === '') $base = 'user';
+        if ($base === '') {
+            $base = 'user';
+        }
 
         $username = $base;
         $i = 1;
         while (User::where('username', $username)->exists()) {
-            $username = $base . $i;
+            $username = $base.$i;
             $i++;
         }
 
@@ -180,9 +187,11 @@ class RegisterController extends Controller
 
         try {
             Mail::to($user->email)->send(new EmailVerificationMail($verifyUrl, $user->name ?? '', $this->verifyTtl));
+
             return true;
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Email verification send failed for ' . $user->email . ': ' . $e->getMessage());
+            Log::error('Email verification send failed for '.$user->email.': '.$e->getMessage());
+
             return false;
         }
     }

@@ -24,9 +24,10 @@ class ImportController extends Controller
 
     private function iniToBytes(string $val): int
     {
-        $val  = trim($val);
+        $val = trim($val);
         $last = strtolower($val[strlen($val) - 1] ?? '');
-        $num  = (int) $val;
+        $num = (int) $val;
+
         return match ($last) {
             'g' => $num * 1024 * 1024 * 1024,
             'm' => $num * 1024 * 1024,
@@ -38,15 +39,21 @@ class ImportController extends Controller
     private function maxUploadBytes(): int
     {
         $upload = $this->iniToBytes(ini_get('upload_max_filesize') ?: '8M');
-        $post   = $this->iniToBytes(ini_get('post_max_size')       ?: '8M');
+        $post = $this->iniToBytes(ini_get('post_max_size') ?: '8M');
+
         return min($upload, $post);
     }
 
     private function formatBytes(int $bytes): string
     {
-        if ($bytes >= 1024 * 1024 * 1024) return round($bytes / 1024 / 1024 / 1024, 1) . ' GB';
-        if ($bytes >= 1024 * 1024)        return round($bytes / 1024 / 1024, 0) . ' MB';
-        return round($bytes / 1024, 0) . ' KB';
+        if ($bytes >= 1024 * 1024 * 1024) {
+            return round($bytes / 1024 / 1024 / 1024, 1).' GB';
+        }
+        if ($bytes >= 1024 * 1024) {
+            return round($bytes / 1024 / 1024, 0).' MB';
+        }
+
+        return round($bytes / 1024, 0).' KB';
     }
 
     public function index()
@@ -67,7 +74,7 @@ class ImportController extends Controller
 
         $request->validate([
             'import_file' => [
-                'required', 'file', 'max:' . $maxKb,
+                'required', 'file', 'max:'.$maxKb,
                 function ($attribute, $value, $fail) {
                     $ext = strtolower($value->getClientOriginalExtension());
                     if (!in_array($ext, ['xml', 'wxr'])) {
@@ -77,7 +84,7 @@ class ImportController extends Controller
             ],
         ], [
             'import_file.required' => 'Please choose an export (.xml) file.',
-            'import_file.max'      => 'The file exceeds the server upload limit of ' . $this->formatBytes($this->maxUploadBytes()) . '.',
+            'import_file.max' => 'The file exceeds the server upload limit of '.$this->formatBytes($this->maxUploadBytes()).'.',
         ]);
 
         $xml = file_get_contents($request->file('import_file')->getRealPath());
@@ -88,14 +95,14 @@ class ImportController extends Controller
 
         @set_time_limit(0);
 
-        $summary = (new WordPressImporter())->importFromXml($xml, [
-            'user_id'      => auth()->id(),
-            'lang'         => app()->getLocale(),
+        $summary = (new WordPressImporter)->importFromXml($xml, [
+            'user_id' => auth()->id(),
+            'lang' => app()->getLocale(),
             'import_pages' => $request->boolean('import_pages', true),
         ]);
 
         if (function_exists('falcon_log_activity')) {
-            falcon_log_activity('imported', 'Imported content from export file (posts: ' . ($summary['posts'] ?? 0) . ', pages: ' . ($summary['pages'] ?? 0) . ')');
+            falcon_log_activity('imported', 'Imported content from export file (posts: '.($summary['posts'] ?? 0).', pages: '.($summary['pages'] ?? 0).')');
         }
         if (function_exists('clear_page_cache')) {
             clear_page_cache();

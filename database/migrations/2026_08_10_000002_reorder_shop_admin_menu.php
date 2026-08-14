@@ -21,7 +21,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (! Schema::hasTable('menus')) {
+        if (!Schema::hasTable('menus')) {
             return;
         }
 
@@ -31,7 +31,7 @@ return new class extends Migration
             ->where('group', 'Main')
             ->update(['order' => 56]);
 
-        if (! Schema::hasTable('post_types')) {
+        if (!Schema::hasTable('post_types')) {
             return;
         }
 
@@ -40,14 +40,14 @@ return new class extends Migration
         foreach (DB::table('post_types')->get(['id', 'slug']) as $postType) {
             DB::table('menus')
                 ->whereNull('parent_id')
-                ->where('route', '/admin/posts?type=' . $postType->slug)
+                ->where('route', '/admin/posts?type='.$postType->slug)
                 ->update(['order' => 60 + $postType->id]);
         }
     }
 
     public function down(): void
     {
-        if (! Schema::hasTable('menus')) {
+        if (!Schema::hasTable('menus')) {
             return;
         }
 
@@ -57,14 +57,14 @@ return new class extends Migration
             ->where('group', 'Main')
             ->update(['order' => 60]);
 
-        if (! Schema::hasTable('post_types')) {
+        if (!Schema::hasTable('post_types')) {
             return;
         }
 
         foreach (DB::table('post_types')->get(['id', 'slug']) as $postType) {
             DB::table('menus')
                 ->whereNull('parent_id')
-                ->where('route', '/admin/posts?type=' . $postType->slug)
+                ->where('route', '/admin/posts?type='.$postType->slug)
                 ->update(['order' => 50 + $postType->id]);
         }
     }

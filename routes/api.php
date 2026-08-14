@@ -1,16 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use FalconCms\Core\Http\Controllers\Api\V1\CmsApiController;
+use Illuminate\Support\Facades\Route;
 
-Route::prefix('api/v1')->middleware(['api', 'throttle:60,1'])->group(function() {
-    
+Route::prefix('api/v1')->middleware(['api', 'throttle:60,1'])->group(function () {
+
     // Posts API
     Route::get('/posts', [CmsApiController::class, 'posts']);
     Route::get('/posts/{slug}', [CmsApiController::class, 'singlePost']);
 
     // Pages API
-    Route::get('/pages', function() {
+    Route::get('/pages', function () {
         return (new CmsApiController)->posts(request()->merge(['type' => 'page']));
     });
 

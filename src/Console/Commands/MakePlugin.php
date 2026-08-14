@@ -22,34 +22,36 @@ class MakePlugin extends Command
         $slug = Str::slug($name);
         if ($slug === '') {
             $this->error('Invalid plugin name.');
+
             return self::FAILURE;
         }
 
-        $dir = base_path('plugins/' . $slug);
+        $dir = base_path('plugins/'.$slug);
         if (File::isDirectory($dir)) {
             $this->error("Plugin '{$slug}' already exists at {$dir}.");
+
             return self::FAILURE;
         }
 
         // StudlyCase namespace from the slug (e.g. "seo-booster" → "SeoBooster").
         $namespace = Str::studly($slug);
 
-        File::ensureDirectoryExists($dir . '/src');
+        File::ensureDirectoryExists($dir.'/src');
 
-        File::put($dir . '/plugin.json', json_encode([
-            'name'         => $name,
-            'slug'         => $slug,
-            'version'      => '1.0.0',
-            'description'  => '',
-            'author'       => '',
+        File::put($dir.'/plugin.json', json_encode([
+            'name' => $name,
+            'slug' => $slug,
+            'version' => '1.0.0',
+            'description' => '',
+            'author' => '',
             'requires_php' => '>=8.0',
             'requires_cms' => '>=1.0',
-            'namespace'    => $namespace . '\\',
-            'lifecycle'    => $namespace . '\\Lifecycle',
+            'namespace' => $namespace.'\\',
+            'lifecycle' => $namespace.'\\Lifecycle',
             'dependencies' => [],
-        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
 
-        File::put($dir . '/plugin.php', <<<PHP
+        File::put($dir.'/plugin.php', <<<PHP
         <?php
 
         /**
@@ -67,7 +69,7 @@ class MakePlugin extends Command
 
         PHP);
 
-        File::put($dir . '/src/Lifecycle.php', <<<PHP
+        File::put($dir.'/src/Lifecycle.php', <<<PHP
         <?php
 
         namespace {$namespace};

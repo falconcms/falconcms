@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 class MakeDashboardPage extends Command
 {
     protected $signature = 'make:falcon-page {name}';
+
     protected $description = 'Scaffold a new dashboard page';
 
     public function handle()
@@ -23,7 +24,7 @@ class MakeDashboardPage extends Command
 
         $path = app_path("Http/Controllers/Admin/{$controllerName}.php");
         File::ensureDirectoryExists(dirname($path));
-        
+
         $stub = "<?php\n\nnamespace App\Http\Controllers\Admin;\n\nuse Illuminate\Routing\Controller;\n\nclass {$controllerName} extends Controller\n{\n    public function index()\n    {\n        return view('admin.{$slug}.index');\n    }\n}\n";
         File::put($path, $stub);
 
@@ -43,6 +44,6 @@ class MakeDashboardPage extends Command
             'order' => 50,
         ]);
 
-        $this->info("Scaffolded successfully!");
+        $this->info('Scaffolded successfully!');
     }
 }

@@ -2,9 +2,9 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
 use FalconCms\Core\Models\Comment;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class CommentController extends Controller
 {
@@ -23,15 +23,15 @@ class CommentController extends Controller
         }
 
         if ($request->filled('s')) {
-            $query->where(function($q) use ($request) {
-                $q->where('comment', 'like', '%' . $request->s . '%')
-                  ->orWhere('name', 'like', '%' . $request->s . '%')
-                  ->orWhere('email', 'like', '%' . $request->s . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('comment', 'like', '%'.$request->s.'%')
+                    ->orWhere('name', 'like', '%'.$request->s.'%')
+                    ->orWhere('email', 'like', '%'.$request->s.'%');
             });
         }
 
         $comments = $query->paginate(10)->withQueryString();
-        
+
         $allCount = Comment::count();
         $pendingCount = Comment::where('is_approved', false)->count();
         $approvedCount = Comment::where('is_approved', true)->count();
@@ -44,7 +44,7 @@ class CommentController extends Controller
         $comment->is_approved = !$comment->is_approved;
         $comment->save();
         $status = $comment->is_approved ? 'Approved' : 'Unapproved';
-        falcon_log_activity('updated', "{$status} comment from: " . ($comment->name ?? $comment->user->name), $comment);
+        falcon_log_activity('updated', "{$status} comment from: ".($comment->name ?? $comment->user->name), $comment);
 
         return back()->with('success', $comment->is_approved ? 'Comment approved.' : 'Comment moved to pending.');
     }
@@ -54,6 +54,7 @@ class CommentController extends Controller
         $author = $comment->name ?? ($comment->user->name ?? 'Unknown');
         $comment->delete();
         falcon_log_activity('deleted', "Deleted comment from: {$author}", $comment);
+
         return back()->with('success', 'Comment deleted successfully.');
     }
 

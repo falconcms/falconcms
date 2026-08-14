@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique()->nullable();
-            $table->string('location')->nullable(); 
+            $table->string('location')->nullable();
             $table->string('lang_code', 5)->default('en')->index();
             $table->boolean('is_header')->default(false);
             $table->boolean('is_footer')->default(false);

@@ -2,22 +2,23 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
 use FalconCms\Core\Models\CustomTaxonomy;
-use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\Menu;
+use FalconCms\Core\Models\PostType;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Str;
 
 class AcptTaxonomyController extends Controller
 {
     public function index(Request $request)
     {
         $query = CustomTaxonomy::query();
-        
+
         if ($request->filled('s')) {
-            $query->where(function($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->s . '%')
-                  ->orWhere('slug', 'like', '%' . $request->s . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%'.$request->s.'%')
+                    ->orWhere('slug', 'like', '%'.$request->s.'%');
             });
         }
 
@@ -33,7 +34,7 @@ class AcptTaxonomyController extends Controller
         }
 
         $taxonomies = $query->latest()->paginate(10)->withQueryString();
-        
+
         $allCount = CustomTaxonomy::withoutTrashed()->count();
         $activeCount = CustomTaxonomy::withoutTrashed()->where('is_active', 1)->count();
         $inactiveCount = CustomTaxonomy::withoutTrashed()->where('is_active', 0)->count();
@@ -45,28 +46,29 @@ class AcptTaxonomyController extends Controller
     public function create()
     {
         $postTypes = PostType::where('is_builtin', false)->get();
+
         return view('falcon-cms::admin.acpt.taxonomies.create', compact('postTypes'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'plural_label'   => 'required|string|max:255',
+            'plural_label' => 'required|string|max:255',
             'singular_label' => 'required|string|max:255',
-            'taxonomy_key'   => 'required|string|max:32|unique:custom_taxonomies,slug',
-            'post_types'     => 'nullable|array',
-            'hierarchical'   => 'required|in:0,1',
-            'description'    => 'nullable|string',
+            'taxonomy_key' => 'required|string|max:32|unique:custom_taxonomies,slug',
+            'post_types' => 'nullable|array',
+            'hierarchical' => 'required|in:0,1',
+            'description' => 'nullable|string',
         ]);
 
         $taxonomy = CustomTaxonomy::create([
-            'name'          => $request->plural_label,
+            'name' => $request->plural_label,
             'singular_name' => $request->singular_label,
-            'slug'          => $request->taxonomy_key,
-            'post_types'    => $request->post_types ?? [],
-            'hierarchical'  => (bool) $request->hierarchical,
-            'description'   => $request->description,
-            'is_active'     => true,
+            'slug' => $request->taxonomy_key,
+            'post_types' => $request->post_types ?? [],
+            'hierarchical' => (bool) $request->hierarchical,
+            'description' => $request->description,
+            'is_active' => true,
         ]);
 
         $this->syncTaxonomyMenus($taxonomy);
@@ -77,14 +79,15 @@ class AcptTaxonomyController extends Controller
     public function exportTaxonomy($id)
     {
         $t = CustomTaxonomy::findOrFail($id);
+
         return falcon_export_response('falcon_taxonomy', [
-            'name'          => $t->name,
+            'name' => $t->name,
             'singular_name' => $t->singular_name,
-            'slug'          => $t->slug,
-            'description'   => $t->description,
-            'post_types'    => $t->post_types,
-            'hierarchical'  => (bool) $t->hierarchical,
-        ], ($t->slug ?: 'taxonomy') . '-taxonomy');
+            'slug' => $t->slug,
+            'description' => $t->description,
+            'post_types' => $t->post_types,
+            'hierarchical' => (bool) $t->hierarchical,
+        ], ($t->slug ?: 'taxonomy').'-taxonomy');
     }
 
     public function importTaxonomy(Request $request)
@@ -95,14 +98,14 @@ class AcptTaxonomyController extends Controller
             return back()->with('error', 'That is not a valid Taxonomy export file.');
         }
 
-        $slug = \Illuminate\Support\Str::slug($d['slug'] ?? 'taxonomy') ?: 'taxonomy';
+        $slug = Str::slug($d['slug'] ?? 'taxonomy') ?: 'taxonomy';
         $attrs = [
-            'name'          => $d['name'] ?? 'Imported Taxonomy',
+            'name' => $d['name'] ?? 'Imported Taxonomy',
             'singular_name' => $d['singular_name'] ?? ($d['name'] ?? 'Term'),
-            'description'   => $d['description'] ?? null,
-            'post_types'    => is_array($d['post_types'] ?? null) ? $d['post_types'] : [],
-            'hierarchical'  => (bool) ($d['hierarchical'] ?? false),
-            'is_active'     => true,
+            'description' => $d['description'] ?? null,
+            'post_types' => is_array($d['post_types'] ?? null) ? $d['post_types'] : [],
+            'hierarchical' => (bool) ($d['hierarchical'] ?? false),
+            'is_active' => true,
         ];
 
         // Idempotent: update an existing taxonomy with the same slug instead of
@@ -110,7 +113,9 @@ class AcptTaxonomyController extends Controller
         // deleting the original left a same-named copy that looked like it "came back".
         $existing = CustomTaxonomy::withTrashed()->where('slug', $slug)->first();
         if ($existing) {
-            if ($existing->trashed()) $existing->restore();
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
             $existing->update($attrs);
             $taxonomy = $existing;
             $verb = 'updated';
@@ -128,6 +133,7 @@ class AcptTaxonomyController extends Controller
     {
         $taxonomy = CustomTaxonomy::findOrFail($id);
         $postTypes = PostType::where('is_builtin', false)->get();
+
         return view('falcon-cms::admin.acpt.taxonomies.edit', compact('taxonomy', 'postTypes'));
     }
 
@@ -136,23 +142,23 @@ class AcptTaxonomyController extends Controller
         $taxonomy = CustomTaxonomy::findOrFail($id);
 
         $request->validate([
-            'plural_label'   => 'required|string|max:255',
+            'plural_label' => 'required|string|max:255',
             'singular_label' => 'required|string|max:255',
-            'taxonomy_key'   => 'required|string|max:32|unique:custom_taxonomies,slug,' . $taxonomy->id,
-            'post_types'     => 'nullable|array',
-            'hierarchical'   => 'required|in:0,1',
-            'description'    => 'nullable|string',
+            'taxonomy_key' => 'required|string|max:32|unique:custom_taxonomies,slug,'.$taxonomy->id,
+            'post_types' => 'nullable|array',
+            'hierarchical' => 'required|in:0,1',
+            'description' => 'nullable|string',
         ]);
 
         $this->removeTaxonomyMenus($taxonomy);
 
         $taxonomy->update([
-            'name'          => $request->plural_label,
+            'name' => $request->plural_label,
             'singular_name' => $request->singular_label,
-            'slug'          => $request->taxonomy_key,
-            'post_types'    => $request->post_types ?? [],
-            'hierarchical'  => (bool) $request->hierarchical,
-            'description'   => $request->description,
+            'slug' => $request->taxonomy_key,
+            'post_types' => $request->post_types ?? [],
+            'hierarchical' => (bool) $request->hierarchical,
+            'description' => $request->description,
         ]);
 
         $this->syncTaxonomyMenus($taxonomy->fresh());
@@ -165,6 +171,7 @@ class AcptTaxonomyController extends Controller
         $taxonomy = CustomTaxonomy::findOrFail($id);
         $this->removeTaxonomyMenus($taxonomy);
         $taxonomy->delete();
+
         return redirect()->route('admin.acpt.taxonomies.index')->with('success', 'Taxonomy deleted.');
     }
 
@@ -186,6 +193,7 @@ class AcptTaxonomyController extends Controller
                 $this->removeTaxonomyMenus($taxonomy);
                 $taxonomy->delete();
             }
+
             return redirect()->back()->with('success', 'Selected Taxonomies moved to trash.');
         }
 
@@ -197,6 +205,7 @@ class AcptTaxonomyController extends Controller
                     $this->syncTaxonomyMenus($taxonomy);
                 }
             }
+
             return redirect()->back()->with('success', 'Selected Taxonomies restored.');
         }
 
@@ -206,6 +215,7 @@ class AcptTaxonomyController extends Controller
                 $this->removeTaxonomyMenus($taxonomy);
                 $taxonomy->forceDelete();
             }
+
             return redirect()->back()->with('success', 'Selected Taxonomies permanently deleted.');
         }
 
@@ -216,6 +226,7 @@ class AcptTaxonomyController extends Controller
                 $taxonomy->save();
                 $this->removeTaxonomyMenus($taxonomy);
             }
+
             return redirect()->back()->with('success', 'Selected Taxonomies deactivated.');
         }
 
@@ -226,6 +237,7 @@ class AcptTaxonomyController extends Controller
                 $taxonomy->save();
                 $this->syncTaxonomyMenus($taxonomy);
             }
+
             return redirect()->back()->with('success', 'Selected Taxonomies activated.');
         }
 
@@ -238,19 +250,23 @@ class AcptTaxonomyController extends Controller
 
         foreach ($assignedSlugs as $cptSlug) {
             $postType = PostType::where('slug', $cptSlug)->first();
-            if (!$postType) continue;
+            if (!$postType) {
+                continue;
+            }
 
-            $cptMenu = Menu::where(function($q) use ($postType, $cptSlug) {
-                    $q->where('title', $postType->name)
-                      ->orWhere('route', 'like', '%/admin/posts?type=' . $cptSlug . '%')
-                      ->orWhere('route', 'like', '%posts?type=' . $cptSlug . '%');
-                })
+            $cptMenu = Menu::where(function ($q) use ($postType, $cptSlug) {
+                $q->where('title', $postType->name)
+                    ->orWhere('route', 'like', '%/admin/posts?type='.$cptSlug.'%')
+                    ->orWhere('route', 'like', '%posts?type='.$cptSlug.'%');
+            })
                 ->whereNull('parent_id')
                 ->first();
 
-            if (!$cptMenu) continue;
+            if (!$cptMenu) {
+                continue;
+            }
 
-            $correctRoute = '/admin/acpt/tax-terms/' . $taxonomy->slug . '?cpt=' . $cptSlug;
+            $correctRoute = '/admin/acpt/tax-terms/'.$taxonomy->slug.'?cpt='.$cptSlug;
 
             $existing = Menu::where('parent_id', $cptMenu->id)
                 ->where('title', $taxonomy->name)
@@ -260,9 +276,9 @@ class AcptTaxonomyController extends Controller
                 $maxOrder = Menu::where('parent_id', $cptMenu->id)->max('order') ?? 2;
                 Menu::create([
                     'parent_id' => $cptMenu->id,
-                    'title'     => $taxonomy->name,
-                    'route'     => $correctRoute,
-                    'order'     => $maxOrder + 1,
+                    'title' => $taxonomy->name,
+                    'route' => $correctRoute,
+                    'order' => $maxOrder + 1,
                 ]);
             } else {
                 if ($existing->route !== $correctRoute) {
@@ -276,10 +292,10 @@ class AcptTaxonomyController extends Controller
     {
         Menu::where('title', $taxonomy->name)
             ->whereNotNull('parent_id')
-            ->where(function($q) use ($taxonomy) {
-                $q->where('route', 'like', '%/acpt/taxonomies/' . $taxonomy->slug . '%')
-                  ->orWhere('route', 'like', '%/acpt/tax-terms/' . $taxonomy->slug . '%')
-                  ->orWhere('route', 'like', '%/acpt/taxonomies/' . $taxonomy->slug . '%');
+            ->where(function ($q) use ($taxonomy) {
+                $q->where('route', 'like', '%/acpt/taxonomies/'.$taxonomy->slug.'%')
+                    ->orWhere('route', 'like', '%/acpt/tax-terms/'.$taxonomy->slug.'%')
+                    ->orWhere('route', 'like', '%/acpt/taxonomies/'.$taxonomy->slug.'%');
             })
             ->delete();
     }

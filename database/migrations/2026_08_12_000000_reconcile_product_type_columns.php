@@ -22,9 +22,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (! Schema::hasTable('shop_products')
-            || ! Schema::hasColumn('shop_products', 'type')
-            || ! Schema::hasColumn('shop_products', 'product_type')) {
+        if (!Schema::hasTable('shop_products')
+            || !Schema::hasColumn('shop_products', 'type')
+            || !Schema::hasColumn('shop_products', 'product_type')) {
             return;
         }
 

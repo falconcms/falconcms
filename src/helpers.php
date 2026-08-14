@@ -1,9 +1,42 @@
 <?php
 
+use Carbon\Carbon;
+use Composer\InstalledVersions;
+use FalconCms\Core\Core\HookManager;
+use FalconCms\Core\Models\ActivityLog;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\Coupon;
+use FalconCms\Core\Models\CustomerAddress;
+use FalconCms\Core\Models\CustomTaxonomy;
+use FalconCms\Core\Models\Form;
+use FalconCms\Core\Models\Language;
+use FalconCms\Core\Models\NavigationMenu;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\PostMeta;
+use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Models\ProductCategory;
+use FalconCms\Core\Models\ProductData;
+use FalconCms\Core\Models\Promotion;
+use FalconCms\Core\Models\TaxonomyTerm;
+use FalconCms\Core\Models\Widget;
+use FalconCms\Core\Models\Wishlist;
+use FalconCms\Core\Pro\LicenseGateway;
+use FalconCms\Core\Services\BuilderShortcodeConverter;
+use FalconCms\Core\Services\EcommerceData;
+use Illuminate\Http\Client\Response;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 if (!defined('FALCON_CMS_VERSION')) {
-    $__versionFile = __DIR__ . '/../version.json';
+    $__versionFile = __DIR__.'/../version.json';
     $__versionData = file_exists($__versionFile) ? json_decode(file_get_contents($__versionFile), true) : [];
     define('FALCON_CMS_VERSION', $__versionData['version'] ?? '1.2.0');
     unset($__versionFile, $__versionData);
@@ -13,20 +46,20 @@ if (!function_exists('falcon_elem_resp_css')) {
     /**
      * Generate responsive @media CSS for a builder element.
      *
-     * @param array  $s        Element settings (the raw array from $el['settings'])
-     * @param int    $bpSm     "Small" breakpoint (mobile max-width)
-     * @param int    $bpMed    "Medium" breakpoint (tablet max-width)
-     * @param array  $props    Property definitions, each:
-     *   [ 'prop' => 'fontSize', 'sel' => '.my-class',
-     *     'unitProp' => 'fontSizeUnit',  // optional – key for the unit setting
-     *     'css'      => 'font-size',     // optional – defaults to camelCase→kebab
-     *   ]
+     * @param  array  $s  Element settings (the raw array from $el['settings'])
+     * @param  int  $bpSm  "Small" breakpoint (mobile max-width)
+     * @param  int  $bpMed  "Medium" breakpoint (tablet max-width)
+     * @param  array  $props  Property definitions, each:
+     *                        [ 'prop' => 'fontSize', 'sel' => '.my-class',
+     *                        'unitProp' => 'fontSizeUnit',  // optional – key for the unit setting
+     *                        'css'      => 'font-size',     // optional – defaults to camelCase→kebab
+     *                        ]
      * @return string Raw CSS (no <style> tags).  Empty string when nothing changed.
      */
     function falcon_elem_resp_css(array $s, int $bpSm, int $bpMed, array $props): string
     {
         $bpSm1 = $bpSm + 1;
-        $css   = '';
+        $css = '';
 
         foreach ([
             ['tablet', "@media(min-width:{$bpSm1}px) and (max-width:{$bpMed}px)"],
@@ -35,33 +68,35 @@ if (!function_exists('falcon_elem_resp_css')) {
             $bySel = [];
 
             foreach ($props as $p) {
-                $prop     = $p['prop'];
-                $sel      = $p['sel'];
+                $prop = $p['prop'];
+                $sel = $p['sel'];
                 $unitProp = $p['unitProp'] ?? null;
-                $cssProp  = $p['css']      ?? strtolower(preg_replace('/([A-Z])/', '-$1', $prop));
+                $cssProp = $p['css'] ?? strtolower(preg_replace('/([A-Z])/', '-$1', $prop));
 
                 // Resolve responsive value (mobile cascades through tablet)
                 $val = null;
                 if ($dev === 'mobile') {
-                    if (isset($s[$prop . '_mobile']) && (string)$s[$prop . '_mobile'] !== '') {
-                        $val = (string)$s[$prop . '_mobile'];
-                    } elseif (isset($s[$prop . '_tablet']) && (string)$s[$prop . '_tablet'] !== '') {
-                        $val = (string)$s[$prop . '_tablet'];
+                    if (isset($s[$prop.'_mobile']) && (string) $s[$prop.'_mobile'] !== '') {
+                        $val = (string) $s[$prop.'_mobile'];
+                    } elseif (isset($s[$prop.'_tablet']) && (string) $s[$prop.'_tablet'] !== '') {
+                        $val = (string) $s[$prop.'_tablet'];
                     }
                 } else {
-                    if (isset($s[$prop . '_tablet']) && (string)$s[$prop . '_tablet'] !== '') {
-                        $val = (string)$s[$prop . '_tablet'];
+                    if (isset($s[$prop.'_tablet']) && (string) $s[$prop.'_tablet'] !== '') {
+                        $val = (string) $s[$prop.'_tablet'];
                     }
                 }
-                if ($val === null) continue;
+                if ($val === null) {
+                    continue;
+                }
 
                 // Append unit when value is numeric and a unit property is declared
                 if ($unitProp !== null && !preg_match('/[a-zA-Z%]/', $val)) {
                     $unit = $dev === 'mobile'
-                        ? ($s[$unitProp . '_mobile'] ?? $s[$unitProp . '_tablet'] ?? $s[$unitProp] ?? 'px')
-                        : ($s[$unitProp . '_tablet'] ?? $s[$unitProp] ?? 'px');
+                        ? ($s[$unitProp.'_mobile'] ?? $s[$unitProp.'_tablet'] ?? $s[$unitProp] ?? 'px')
+                        : ($s[$unitProp.'_tablet'] ?? $s[$unitProp] ?? 'px');
                     // Units must be safe CSS unit tokens only
-                    $unit = preg_replace('/[^a-zA-Z%]/', '', (string)($unit ?: 'px')) ?: 'px';
+                    $unit = preg_replace('/[^a-zA-Z%]/', '', (string) ($unit ?: 'px')) ?: 'px';
                     $val .= $unit;
                 }
 
@@ -73,7 +108,7 @@ if (!function_exists('falcon_elem_resp_css')) {
             // Build @media block
             $block = '';
             foreach ($bySel as $sel => $rules) {
-                $block .= "{$sel}{" . implode(';', $rules) . "}";
+                $block .= "{$sel}{".implode(';', $rules).'}';
             }
             if ($block !== '') {
                 $css .= "{$mq}{{$block}}";
@@ -89,12 +124,16 @@ if (!function_exists('falcon_max_upload_bytes')) {
      * The real maximum upload size (in bytes) the server allows — the smaller of
      * PHP's `upload_max_filesize` and `post_max_size`. Returns 0 when unlimited.
      */
-    function falcon_max_upload_bytes(): int {
+    function falcon_max_upload_bytes(): int
+    {
         $toBytes = function ($val): int {
             $val = trim((string) $val);
-            if ($val === '') return 0;
+            if ($val === '') {
+                return 0;
+            }
             $last = strtolower($val[strlen($val) - 1]);
-            $num  = (int) $val;
+            $num = (int) $val;
+
             return match ($last) {
                 'g' => $num * 1024 * 1024 * 1024,
                 'm' => $num * 1024 * 1024,
@@ -113,29 +152,39 @@ if (!function_exists('falcon_max_upload_bytes')) {
 
 if (!function_exists('falcon_max_upload_human')) {
     /** Human-readable version of falcon_max_upload_bytes() (e.g. "40 MB", "1 GB"). */
-    function falcon_max_upload_human(): string {
+    function falcon_max_upload_human(): string
+    {
         $bytes = falcon_max_upload_bytes();
-        if ($bytes <= 0)                    return 'unlimited';
-        if ($bytes >= 1024 * 1024 * 1024)   return rtrim(rtrim(number_format($bytes / 1024 / 1024 / 1024, 1), '0'), '.') . ' GB';
-        if ($bytes >= 1024 * 1024)          return round($bytes / 1024 / 1024) . ' MB';
-        return round($bytes / 1024) . ' KB';
+        if ($bytes <= 0) {
+            return 'unlimited';
+        }
+        if ($bytes >= 1024 * 1024 * 1024) {
+            return rtrim(rtrim(number_format($bytes / 1024 / 1024 / 1024, 1), '0'), '.').' GB';
+        }
+        if ($bytes >= 1024 * 1024) {
+            return round($bytes / 1024 / 1024).' MB';
+        }
+
+        return round($bytes / 1024).' KB';
     }
 }
 
 if (!function_exists('falcon_export_response')) {
     /** Stream a typed payload as a pretty .json download (used by all import/export tools). */
-    function falcon_export_response(string $type, array $data, string $filename) {
+    function falcon_export_response(string $type, array $data, string $filename)
+    {
         $payload = [
-            '_type'       => $type,
-            'version'     => 1,
+            '_type' => $type,
+            'version' => 1,
             'exported_at' => now()->toIso8601String(),
-            'data'        => $data,
+            'data' => $data,
         ];
         $name = preg_replace('/[^A-Za-z0-9_\-]/', '-', $filename) ?: 'export';
+
         return response()->json(
             $payload,
             200,
-            ['Content-Disposition' => 'attachment; filename="' . $name . '.json"'],
+            ['Content-Disposition' => 'attachment; filename="'.$name.'.json"'],
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
         );
     }
@@ -143,15 +192,21 @@ if (!function_exists('falcon_export_response')) {
 
 if (!function_exists('falcon_read_import')) {
     /** Validate + decode an uploaded .json export of the given type. Returns the `data`, or null. */
-    function falcon_read_import(\Illuminate\Http\Request $request, string $field, string $expectedType): ?array {
-        if (!$request->hasFile($field)) return null;
+    function falcon_read_import(Request $request, string $field, string $expectedType): ?array
+    {
+        if (!$request->hasFile($field)) {
+            return null;
+        }
         $file = $request->file($field);
-        if (strtolower($file->getClientOriginalExtension()) !== 'json') return null;
+        if (strtolower($file->getClientOriginalExtension()) !== 'json') {
+            return null;
+        }
 
         $decoded = json_decode((string) file_get_contents($file->getRealPath()), true);
         if (!is_array($decoded) || ($decoded['_type'] ?? null) !== $expectedType || !array_key_exists('data', $decoded)) {
             return null;
         }
+
         return is_array($decoded['data']) ? $decoded['data'] : null;
     }
 }
@@ -162,8 +217,11 @@ if (!function_exists('falcon_sanitize_html')) {
      * Removes <script> blocks, on* event handlers, and javascript: URLs.
      * Safe structural HTML (<a>, <img>, <iframe>, etc.) is preserved.
      */
-    function falcon_sanitize_html(string $html): string {
-        if ($html === '') return '';
+    function falcon_sanitize_html(string $html): string
+    {
+        if ($html === '') {
+            return '';
+        }
 
         // Remove <script> blocks entirely (opening tag + content + closing tag)
         $html = preg_replace('/<script\b[^>]*>[\s\S]*?<\/script>/i', '', $html);
@@ -192,13 +250,15 @@ if (!function_exists('lazy_sanitize_builder_json')) {
      * passed through unchanged. Call this on the decoded `layout` array before
      * json_encode-ing it to the database.
      */
-    function lazy_sanitize_builder_json(mixed $node): mixed {
+    function lazy_sanitize_builder_json(mixed $node): mixed
+    {
         if (is_array($node)) {
             return array_map('lazy_sanitize_builder_json', $node);
         }
         if (is_string($node)) {
             return falcon_sanitize_html($node);
         }
+
         return $node;
     }
 }
@@ -225,13 +285,14 @@ if (!function_exists('falcon_cms_installed_version')) {
             : null;
 
         $fromComposer = null;
-        if (class_exists(\Composer\InstalledVersions::class)) {
+        if (class_exists(InstalledVersions::class)) {
             try {
-                $clean = ltrim((string) \Composer\InstalledVersions::getPrettyVersion('falconcms/falconcms'), 'v');
+                $clean = ltrim((string) InstalledVersions::getPrettyVersion('falconcms/falconcms'), 'v');
                 if (preg_match('/^\d+\.\d+\.\d+$/', $clean)) {
                     $fromComposer = $clean;
                 }
-            } catch (\Throwable $e) {}
+            } catch (Throwable $e) {
+            }
         }
 
         if ($fromJson && $fromComposer) {
@@ -251,11 +312,11 @@ if (!function_exists('lazy_check_update')) {
         }
 
         $current = falcon_cms_installed_version();
-        $result  = ['current' => $current, 'latest' => null, 'has_update' => false, 'url' => null, 'checked_at' => now()->toDateTimeString()];
+        $result = ['current' => $current, 'latest' => null, 'has_update' => false, 'url' => null, 'checked_at' => now()->toDateTimeString()];
 
         try {
-            $res = \Illuminate\Support\Facades\Http::timeout(5)
-                ->withHeaders(['Accept' => 'application/json', 'User-Agent' => 'FalconCMS/' . $current])
+            $res = Http::timeout(5)
+                ->withHeaders(['Accept' => 'application/json', 'User-Agent' => 'FalconCMS/'.$current])
                 ->get('https://repo.packagist.org/p2/falconcms/falconcms.json');
 
             if ($res->successful()) {
@@ -264,46 +325,49 @@ if (!function_exists('lazy_check_update')) {
                     $ver = ltrim($v['version'] ?? '', 'v');
                     if (preg_match('/^\d+\.\d+\.\d+$/', $ver)) {
                         $result['latest'] = $ver;
-                        $result['url']    = 'https://packagist.org/packages/falconcms/falconcms';
+                        $result['url'] = 'https://packagist.org/packages/falconcms/falconcms';
                         break;
                     }
                 }
             }
-        } catch (\Exception $e) {}
+        } catch (Exception $e) {
+        }
 
         if (!$result['latest']) {
             try {
                 // Try GitHub Releases first, fall back to Tags (tags exist even without formal releases)
-                $gh = \Illuminate\Support\Facades\Http::timeout(5)
-                    ->withHeaders(['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'LazyCMS/' . $current])
+                $gh = Http::timeout(5)
+                    ->withHeaders(['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'LazyCMS/'.$current])
                     ->get('https://api.github.com/repos/falconcms/falconcms/releases/latest');
                 if ($gh->successful() && $gh->json('tag_name')) {
                     $tag = ltrim($gh->json('tag_name'), 'v');
                     if ($tag) {
                         $result['latest'] = $tag;
-                        $result['url']    = $gh->json('html_url');
+                        $result['url'] = $gh->json('html_url');
                     }
                 }
-            } catch (\Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
 
         if (!$result['latest']) {
             try {
                 // Fall back to tags list when no formal GitHub Release exists
-                $gh = \Illuminate\Support\Facades\Http::timeout(5)
-                    ->withHeaders(['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'LazyCMS/' . $current])
+                $gh = Http::timeout(5)
+                    ->withHeaders(['Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'LazyCMS/'.$current])
                     ->get('https://api.github.com/repos/falconcms/falconcms/tags');
                 if ($gh->successful()) {
                     foreach ($gh->json() ?? [] as $t) {
                         $tag = ltrim($t['name'] ?? '', 'v');
                         if (preg_match('/^\d+\.\d+\.\d+$/', $tag)) {
                             $result['latest'] = $tag;
-                            $result['url']    = 'https://github.com/falconcms/falconcms/releases/tag/v' . $tag;
+                            $result['url'] = 'https://github.com/falconcms/falconcms/releases/tag/v'.$tag;
                             break;
                         }
                     }
                 }
-            } catch (\Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
 
         if ($result['latest']) {
@@ -311,6 +375,7 @@ if (!function_exists('lazy_check_update')) {
         }
 
         cache()->put($cacheKey, $result, now()->addHours(6));
+
         return $result;
     }
 }
@@ -335,11 +400,11 @@ if (!function_exists('falcon_icon_sets')) {
         // (bx-, bxs-, bxl-), the others one. `base` is the extra class the set needs alongside.
         return [
             'bootstrap' => ['label' => 'Bootstrap', 'class' => 'bi-',      'base' => 'bi', 'asset' => 'css/bootstrap-icons.min.css'],
-            'remix'     => ['label' => 'Remix',     'class' => 'ri-',      'base' => '',   'asset' => 'css/remixicon.min.css'],
-            'boxicons'  => ['label' => 'Boxicons',  'class' => 'bx[sl]?-', 'base' => 'bx', 'asset' => 'css/boxicons.min.css'],
+            'remix' => ['label' => 'Remix',     'class' => 'ri-',      'base' => '',   'asset' => 'css/remixicon.min.css'],
+            'boxicons' => ['label' => 'Boxicons',  'class' => 'bx[sl]?-', 'base' => 'bx', 'asset' => 'css/boxicons.min.css'],
             // Lucide's own font claims every `icon-*` class with !important, which would hijack
             // unrelated theme classes — the bundled copy is renamespaced to `lui-` for that reason.
-            'lucide'    => ['label' => 'Lucide',    'class' => 'lui-',      'base' => '',   'asset' => 'css/lucide.min.css'],
+            'lucide' => ['label' => 'Lucide',    'class' => 'lui-',      'base' => '',   'asset' => 'css/lucide.min.css'],
         ];
     }
 }
@@ -361,29 +426,32 @@ if (!function_exists('falcon_icon_set_names')) {
             return [];
         }
 
-        $file = __DIR__ . '/../public/' . ltrim(str_replace('css/', 'assets/css/', $def['asset']), '/');
+        $file = __DIR__.'/../public/'.ltrim(str_replace('css/', 'assets/css/', $def['asset']), '/');
         if (!is_file($file)) {
             return [];
         }
 
-        $key = 'falcon_icons_' . $set . '_' . (int) @filemtime($file);
+        $key = 'falcon_icons_'.$set.'_'.(int) @filemtime($file);
         $get = function () use ($file, $def) {
             $css = (string) @file_get_contents($file);
-            if ($css === '') return [];
+            if ($css === '') {
+                return [];
+            }
             // Icon rules look like `.bi-house::before{content:"\f425"}`; the prefix keeps us off
             // the set's utility classes (sizing, spin, rotation…).
-            preg_match_all('/\.(' . $def['class'] . '[a-z0-9-]+)\s*:{1,2}before\s*\{/i', $css, $m);
+            preg_match_all('/\.('.$def['class'].'[a-z0-9-]+)\s*:{1,2}before\s*\{/i', $css, $m);
             $names = array_values(array_unique($m[1]));
             sort($names);
             // Sets differ: Bootstrap and Boxicons need their base class alongside the icon class,
             // Remix carries everything on the one class.
-            $base = $def['base'] !== '' ? $def['base'] . ' ' : '';
-            return array_map(fn ($n) => $base . $n, $names);
+            $base = $def['base'] !== '' ? $def['base'].' ' : '';
+
+            return array_map(fn ($n) => $base.$n, $names);
         };
 
         try {
-            return \Illuminate\Support\Facades\Cache::remember($key, 86400, $get);
-        } catch (\Throwable $e) {
+            return Cache::remember($key, 86400, $get);
+        } catch (Throwable $e) {
             return $get();
         }
     }
@@ -407,8 +475,8 @@ if (!function_exists('falcon_icon_set_links')) {
             // class, so an unrelated word in the markup can't pull a whole font in.
             // The lookbehind keeps the match on a whole class token: without it an unrelated
             // word like "big-box" would pull a whole icon font onto the page.
-            if (preg_match('/class="[^"]*(?<![a-z0-9-])' . $def['class'] . '[a-z0-9-]+/i', $html)) {
-                $links[] = asset('vendor/falcon-cms/' . $def['asset']);
+            if (preg_match('/class="[^"]*(?<![a-z0-9-])'.$def['class'].'[a-z0-9-]+/i', $html)) {
+                $links[] = asset('vendor/falcon-cms/'.$def['asset']);
             }
         }
 
@@ -438,9 +506,9 @@ if (!function_exists('falcon_fontawesome_aliases')) {
             return $map;
         }
 
-        $map  = [];
-        $file = __DIR__ . '/../public/assets/css/font-awesome.all.min.css';
-        $css  = is_file($file) ? (string) @file_get_contents($file) : '';
+        $map = [];
+        $file = __DIR__.'/../public/assets/css/font-awesome.all.min.css';
+        $css = is_file($file) ? (string) @file_get_contents($file) : '';
         if ($css === '') {
             return $map;
         }
@@ -451,12 +519,18 @@ if (!function_exists('falcon_fontawesome_aliases')) {
                 $names = [];
                 foreach (explode(',', $group) as $sel) {
                     $n = preg_replace('/^fa-/', '', ltrim(trim($sel), '.'));
-                    if ($n !== '') $names[] = $n;
+                    if ($n !== '') {
+                        $names[] = $n;
+                    }
                 }
-                if (count($names) < 2) continue;
+                if (count($names) < 2) {
+                    continue;
+                }
                 foreach ($names as $n) {
                     $others = array_values(array_diff($names, [$n]));
-                    if ($others) $map[$n] = implode(' ', $others);
+                    if ($others) {
+                        $map[$n] = implode(' ', $others);
+                    }
                 }
             }
         }
@@ -479,7 +553,7 @@ if (!function_exists('falcon_google_fonts')) {
         if ($flat !== null) {
             return $flat;
         }
-        $file = __DIR__ . '/../resources/google-fonts.json';
+        $file = __DIR__.'/../resources/google-fonts.json';
         $grouped = is_file($file) ? json_decode((string) file_get_contents($file), true) : [];
         $flat = [];
         if (is_array($grouped)) {
@@ -487,7 +561,7 @@ if (!function_exists('falcon_google_fonts')) {
                 foreach ((array) $list as $f) {
                     if (!empty($f['family'])) {
                         $flat[] = [
-                            'family'   => $f['family'],
+                            'family' => $f['family'],
                             'category' => $category,
                             'variants' => $f['variants'] ?? ['400'],
                         ];
@@ -495,6 +569,7 @@ if (!function_exists('falcon_google_fonts')) {
                 }
             }
         }
+
         return $flat;
     }
 }
@@ -504,11 +579,13 @@ if (!function_exists('falcon_pro_installed_version')) {
     function falcon_pro_installed_version(): ?string
     {
         try {
-            if (class_exists(\Composer\InstalledVersions::class)
-                && \Composer\InstalledVersions::isInstalled('falconcms/pro')) {
-                return ltrim((string) \Composer\InstalledVersions::getPrettyVersion('falconcms/pro'), 'v');
+            if (class_exists(InstalledVersions::class)
+                && InstalledVersions::isInstalled('falconcms/pro')) {
+                return ltrim((string) InstalledVersions::getPrettyVersion('falconcms/pro'), 'v');
             }
-        } catch (\Throwable $e) {}
+        } catch (Throwable $e) {
+        }
+
         return null;
     }
 }
@@ -530,31 +607,32 @@ if (!function_exists('falcon_pro_check_update')) {
 
         $installed = falcon_pro_installed_version();
         $result = [
-            'installed'     => $installed,
+            'installed' => $installed,
             'installed_pro' => $installed !== null,
-            'latest'        => null,
-            'has_update'    => false,
-            'url'           => null,
-            'min_cms'       => null,
-            'checked_at'    => now()->toDateTimeString(),
+            'latest' => null,
+            'has_update' => false,
+            'url' => null,
+            'min_cms' => null,
+            'checked_at' => now()->toDateTimeString(),
         ];
 
         $manifestUrl = (string) config('falcon-options.pro_version_url', 'https://falconcms.com/pro-version.json');
 
         try {
-            $res = \Illuminate\Support\Facades\Http::timeout(5)
+            $res = Http::timeout(5)
                 ->withHeaders(['Accept' => 'application/json', 'User-Agent' => 'FalconCMS-Pro-Check'])
                 ->get($manifestUrl);
             if ($res->successful()) {
                 $data = $res->json();
                 $latest = ltrim((string) ($data['version'] ?? ''), 'v');
                 if (preg_match('/^\d+\.\d+\.\d+$/', $latest)) {
-                    $result['latest']  = $latest;
-                    $result['url']     = $data['url'] ?? null;
+                    $result['latest'] = $latest;
+                    $result['url'] = $data['url'] ?? null;
                     $result['min_cms'] = $data['min_cms'] ?? null;
                 }
             }
-        } catch (\Exception $e) {}
+        } catch (Exception $e) {
+        }
 
         // Only meaningful when Pro is actually installed AND a newer version exists.
         if ($result['installed_pro'] && $result['latest'] && $installed) {
@@ -562,6 +640,7 @@ if (!function_exists('falcon_pro_check_update')) {
         }
 
         cache()->put($cacheKey, $result, now()->addHours(6));
+
         return $result;
     }
 }
@@ -570,6 +649,7 @@ if (!function_exists('_falcon_cms_options_store')) {
     function &_falcon_cms_options_store(): array
     {
         static $store = ['loaded' => false, 'data' => []];
+
         return $store;
     }
 }
@@ -584,7 +664,7 @@ if (!function_exists('get_cms_option')) {
             // so most requests skip the DB entirely; per-request static store avoids
             // repeat cache hits. Invalidated by forget_cms_options_cache() on every write.
             if (!$store['loaded']) {
-                $store['data'] = \Illuminate\Support\Facades\Cache::remember(
+                $store['data'] = Cache::remember(
                     'falcon:cms_options',
                     now()->addHour(),
                     function () {
@@ -592,13 +672,14 @@ if (!function_exists('get_cms_option')) {
                         foreach (DB::table('cms_settings')->get(['key', 'value']) as $row) {
                             $data[$row->key] = $row->value;
                         }
+
                         return $data;
                     }
                 );
                 $store['loaded'] = true;
             }
 
-            $localeKey = $key . '_' . app()->getLocale();
+            $localeKey = $key.'_'.app()->getLocale();
 
             if (array_key_exists($localeKey, $store['data'])) {
                 return $store['data'][$localeKey] ?? $default;
@@ -606,8 +687,9 @@ if (!function_exists('get_cms_option')) {
             if (array_key_exists($key, $store['data'])) {
                 return $store['data'][$key] ?? $default;
             }
+
             return $default;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $default;
         }
     }
@@ -617,15 +699,16 @@ if (!function_exists('update_cms_option')) {
     function update_cms_option($key, $value)
     {
         try {
-            \Illuminate\Support\Facades\DB::table('cms_settings')->updateOrInsert(
+            DB::table('cms_settings')->updateOrInsert(
                 ['key' => $key],
                 ['value' => $value, 'updated_at' => now()]
             );
             // Drop the cross-request cache and the per-request store so the new
             // value is picked up immediately (here and on the next request).
             forget_cms_options_cache();
+
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -639,8 +722,8 @@ if (!function_exists('forget_cms_options_cache')) {
     function forget_cms_options_cache(): void
     {
         try {
-            \Illuminate\Support\Facades\Cache::forget('falcon:cms_options');
-        } catch (\Throwable $e) {
+            Cache::forget('falcon:cms_options');
+        } catch (Throwable $e) {
         }
         $store = &_falcon_cms_options_store();
         $store['loaded'] = false;
@@ -660,17 +743,18 @@ if (!function_exists('cms_timezone')) {
             if ($tz && in_array($tz, timezone_identifiers_list(), true)) {
                 return $tz;
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
         }
+
         return config('app.timezone') ?: 'UTC';
     }
 }
 
 if (!function_exists('cms_now')) {
     /** Current time in the CMS timezone. Use for display and for building day-boundary queries. */
-    function cms_now(): \Illuminate\Support\Carbon
+    function cms_now(): Illuminate\Support\Carbon
     {
-        return \Illuminate\Support\Carbon::now(cms_timezone());
+        return Illuminate\Support\Carbon::now(cms_timezone());
     }
 }
 
@@ -681,8 +765,11 @@ if (!function_exists('cms_date')) {
      */
     function cms_date($dt, string $format = 'M j, Y H:i'): string
     {
-        if (!$dt) return '—';
-        $c = $dt instanceof \Carbon\Carbon ? $dt : \Illuminate\Support\Carbon::parse($dt);
+        if (!$dt) {
+            return '—';
+        }
+        $c = $dt instanceof Carbon ? $dt : Illuminate\Support\Carbon::parse($dt);
+
         return $c->timezone(cms_timezone())->format($format);
     }
 }
@@ -691,23 +778,25 @@ if (!function_exists('lazy_timezone_list')) {
     /**
      * All PHP timezones grouped by region, each labelled with its CURRENT UTC offset
      * (e.g. "(UTC+06:00) Asia/Dhaka"). Offsets are computed live, so DST/changes stay correct.
-     * @return array<string, array<string,string>>  region => [identifier => label]
+     *
+     * @return array<string, array<string,string>> region => [identifier => label]
      */
     function lazy_timezone_list(): array
     {
         $groups = [];
         foreach (timezone_identifiers_list() as $tz) {
             try {
-                $offset = (new \DateTime('now', new \DateTimeZone($tz)))->getOffset();
-            } catch (\Throwable $e) {
+                $offset = (new DateTime('now', new DateTimeZone($tz)))->getOffset();
+            } catch (Throwable $e) {
                 continue;
             }
-            $sign  = $offset < 0 ? '-' : '+';
-            $abs   = abs($offset);
+            $sign = $offset < 0 ? '-' : '+';
+            $abs = abs($offset);
             $label = sprintf('(UTC%s%02d:%02d) %s', $sign, intdiv($abs, 3600), intdiv($abs % 3600, 60), $tz);
             $region = strpos($tz, '/') !== false ? explode('/', $tz)[0] : 'Other';
             $groups[$region][$tz] = $label;
         }
+
         return $groups;
     }
 }
@@ -723,15 +812,16 @@ if (!function_exists('falcon_normalize_publish')) {
     {
         if (!empty($data['published_at'])) {
             try {
-                $data['published_at'] = \Illuminate\Support\Carbon::parse($data['published_at'], cms_timezone())
+                $data['published_at'] = Illuminate\Support\Carbon::parse($data['published_at'], cms_timezone())
                     ->utc()->format('Y-m-d H:i:s');
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
             }
         }
-        $data['status'] = \FalconCms\Core\Models\Post::resolveStatusForSchedule(
+        $data['status'] = Post::resolveStatusForSchedule(
             $data['status'] ?? null,
             $data['published_at'] ?? null
         );
+
         return $data;
     }
 }
@@ -746,8 +836,9 @@ if (!function_exists('get_custom_field')) {
                 ->where('post_custom_field_values.post_id', $postId)
                 ->where('custom_fields.name', $fieldName)
                 ->value('post_custom_field_values.value');
+
             return $value !== null ? $value : $default;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return $default;
         }
     }
@@ -765,7 +856,9 @@ if (!function_exists('get_acpt_field')) {
     {
         try {
             $postId = is_object($post) ? ($post->id ?? null) : $post;
-            if (!$postId || $slug === '') return $default;
+            if (!$postId || $slug === '') {
+                return $default;
+            }
 
             $value = DB::table('post_custom_field_values')
                 ->join('custom_fields', 'post_custom_field_values.field_id', '=', 'custom_fields.id')
@@ -774,7 +867,7 @@ if (!function_exists('get_acpt_field')) {
                 ->value('post_custom_field_values.value');
 
             return $value !== null ? $value : $default;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $default;
         }
     }
@@ -793,8 +886,10 @@ if (!function_exists('get_post_custom_fields')) {
     function get_post_custom_fields($post): array
     {
         try {
-            $post = is_object($post) ? $post : \FalconCms\Core\Models\Post::find($post);
-            if (!$post) return [];
+            $post = is_object($post) ? $post : Post::find($post);
+            if (!$post) {
+                return [];
+            }
             $type = $post->type;
 
             $groupIds = DB::table('custom_field_groups')
@@ -802,10 +897,13 @@ if (!function_exists('get_post_custom_fields')) {
                 ->filter(function ($g) use ($type) {
                     $rules = json_decode($g->rules ?? '', true);
                     $pt = is_array($rules) ? ($rules['post_type'] ?? null) : null;
+
                     return is_array($pt) ? in_array($type, $pt, true) : $pt === $type;
                 })->pluck('id');
 
-            if ($groupIds->isEmpty()) return [];
+            if ($groupIds->isEmpty()) {
+                return [];
+            }
 
             $fields = DB::table('custom_fields')->whereIn('field_group_id', $groupIds)->orderBy('order')->get();
             $values = DB::table('post_custom_field_values')->where('post_id', $post->id)->pluck('value', 'field_id');
@@ -815,12 +913,15 @@ if (!function_exists('get_post_custom_fields')) {
                 $raw = $values[$f->id] ?? null;
                 if (is_string($raw) && strlen($raw) && in_array($raw[0], ['[', '{'], true)) {
                     $decoded = json_decode($raw, true);
-                    if (json_last_error() === JSON_ERROR_NONE) $raw = $decoded;
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $raw = $decoded;
+                    }
                 }
                 $out[$f->name] = $raw;
             }
+
             return $out;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [];
         }
     }
@@ -829,15 +930,17 @@ if (!function_exists('get_post_custom_fields')) {
 if (!function_exists('get_lazy_content')) {
     function get_lazy_content($content)
     {
-        if (empty($content)) return '';
+        if (empty($content)) {
+            return '';
+        }
         // Check if it's builder shortcode format
-        if (is_string($content) && \FalconCms\Core\Services\BuilderShortcodeConverter::isBuilderShortcode($content)) {
-            $content = \FalconCms\Core\Services\BuilderShortcodeConverter::shortcodesToJson($content);
+        if (is_string($content) && BuilderShortcodeConverter::isBuilderShortcode($content)) {
+            $content = BuilderShortcodeConverter::shortcodesToJson($content);
         }
 
         try {
             $layout = is_string($content) ? json_decode($content, true) : $content;
-            
+
             if (!is_array($layout)) {
                 // Classic / non-builder HTML: strip <script>, on* handlers and
                 // javascript: URLs before output (builder layouts are already
@@ -864,9 +967,11 @@ if (!function_exists('get_lazy_content')) {
             }
 
             $rendered = view('falcon-cms::frontend.builder.render', $data)->render();
+
             return do_lazy_shortcode($rendered);
-        } catch (\Exception $e) {
-            \Log::error('Falcon Builder Error: ' . $e->getMessage());
+        } catch (Exception $e) {
+            Log::error('Falcon Builder Error: '.$e->getMessage());
+
             return do_lazy_shortcode(falcon_sanitize_html((string) $content));
         }
     }
@@ -875,11 +980,18 @@ if (!function_exists('get_lazy_content')) {
 if (!function_exists('_lazy_hex_to_rgba')) {
     function _lazy_hex_to_rgba(string $hex, float $opacity = 1): string
     {
-        if (empty($hex) || $hex === 'transparent') return 'transparent';
-        if (strpos($hex, 'rgba') !== false) return $hex;
+        if (empty($hex) || $hex === 'transparent') {
+            return 'transparent';
+        }
+        if (strpos($hex, 'rgba') !== false) {
+            return $hex;
+        }
         $hex = ltrim($hex, '#');
-        if (strlen($hex) === 3) $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
-        [$r, $g, $b] = [hexdec(substr($hex,0,2)), hexdec(substr($hex,2,2)), hexdec(substr($hex,4,2))];
+        if (strlen($hex) === 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+        [$r, $g, $b] = [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
+
         return $opacity >= 1 ? "rgb({$r},{$g},{$b})" : "rgba({$r},{$g},{$b},{$opacity})";
     }
 }
@@ -888,12 +1000,13 @@ if (!function_exists('_lazy_parse_builder_layout')) {
     function _lazy_parse_builder_layout(string $raw): ?array
     {
         try {
-            if (\FalconCms\Core\Services\BuilderShortcodeConverter::isBuilderShortcode($raw)) {
-                $raw = \FalconCms\Core\Services\BuilderShortcodeConverter::shortcodesToJson($raw);
+            if (BuilderShortcodeConverter::isBuilderShortcode($raw)) {
+                $raw = BuilderShortcodeConverter::shortcodesToJson($raw);
             }
             $layout = json_decode($raw, true);
+
             return is_array($layout) ? $layout : null;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }
@@ -914,6 +1027,7 @@ if (!function_exists('_lazy_render_layout')) {
         }
 
         $rendered = view('falcon-cms::frontend.builder.render', $data)->render();
+
         return do_lazy_shortcode($rendered);
     }
 }
@@ -930,6 +1044,7 @@ if (!function_exists('falcon_html_to_text')) {
         $html = preg_replace('#<(script|style|noscript)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
         $text = strip_tags($html);
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         return trim(preg_replace('/\s+/', ' ', $text) ?? $text);
     }
 }
@@ -938,27 +1053,31 @@ if (!function_exists('_lazy_layout_post_context')) {
     /** Post-context variables consumed by the Post elements (mirrors the card renderer). */
     function _lazy_layout_post_context($post): array
     {
-        if (!$post) return [];
+        if (!$post) {
+            return [];
+        }
 
         $img = $post->featured_image ?? null;
-        if ($img && !str_starts_with((string) $img, 'http')) $img = asset('storage/' . $img);
+        if ($img && !str_starts_with((string) $img, 'http')) {
+            $img = asset('storage/'.$img);
+        }
 
         // Full, rendered content for the Content element (builder JSON → HTML, or classic).
         $fullContent = function_exists('get_lazy_content') ? get_lazy_content($post->content ?? '') : (string) ($post->content ?? '');
         $plain = trim(strip_tags($fullContent));
-        $excerpt = $post->excerpt ?? (mb_strlen($plain) > 160 ? mb_substr($plain, 0, 160) . '…' : $plain);
+        $excerpt = $post->excerpt ?? (mb_strlen($plain) > 160 ? mb_substr($plain, 0, 160).'…' : $plain);
 
         return [
-            'post'              => $post,
-            'postTitle'         => $post->title ?? '',
-            'postContent'       => $fullContent,
-            'postExcerpt'       => $excerpt,
-            'postPublishedAt'   => $post->published_at ?? null,
-            'postCreatedAt'     => $post->created_at ?? null,
-            'postAuthor'        => optional($post->user)->name ?? '',
+            'post' => $post,
+            'postTitle' => $post->title ?? '',
+            'postContent' => $fullContent,
+            'postExcerpt' => $excerpt,
+            'postPublishedAt' => $post->published_at ?? null,
+            'postCreatedAt' => $post->created_at ?? null,
+            'postAuthor' => optional($post->user)->name ?? '',
             'postFeaturedImage' => $img,
-            'postPermalink'     => function_exists('get_falcon_permalink') ? get_falcon_permalink($post) : '#',
-            'postCategories'    => $post->categories ?? collect(),
+            'postPermalink' => function_exists('get_falcon_permalink') ? get_falcon_permalink($post) : '#',
+            'postCategories' => $post->categories ?? collect(),
         ];
     }
 }
@@ -972,23 +1091,23 @@ if (!function_exists('_lazy_build_sticky_wrapper')) {
      */
     function _lazy_build_sticky_wrapper(string $content, array $settings, string $wrapperClass, string $tag): string
     {
-        $offset    = (int)($settings['stickyOffset']  ?? 0);
-        $zIndex    = (int)($settings['stickyZIndex']  ?? 100);
-        $desktop   = ($settings['stickyDesktop'] ?? true) !== false;
-        $tablet    = ($settings['stickyTablet']  ?? true) !== false;
-        $mobile    = ($settings['stickyMobile']  ?? true) !== false;
-        $bgColor   = $settings['stickyBgColor']        ?? '';
-        $bgOpacity = (float)($settings['stickyBgColorOpacity'] ?? 1);
+        $offset = (int) ($settings['stickyOffset'] ?? 0);
+        $zIndex = (int) ($settings['stickyZIndex'] ?? 100);
+        $desktop = ($settings['stickyDesktop'] ?? true) !== false;
+        $tablet = ($settings['stickyTablet'] ?? true) !== false;
+        $mobile = ($settings['stickyMobile'] ?? true) !== false;
+        $bgColor = $settings['stickyBgColor'] ?? '';
+        $bgOpacity = (float) ($settings['stickyBgColorOpacity'] ?? 1);
 
-        $bpSm  = (int) get_cms_option('theme_small_screen_breakpoint',  '800');
+        $bpSm = (int) get_cms_option('theme_small_screen_breakpoint', '800');
         $bpMed = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');
         $bpSm1 = $bpSm + 1;
 
-        $sOn  = "position:sticky;top:{$offset}px;z-index:{$zIndex};";
-        $sOff = "position:static;top:auto;z-index:auto;";
+        $sOn = "position:sticky;top:{$offset}px;z-index:{$zIndex};";
+        $sOff = 'position:static;top:auto;z-index:auto;';
 
-        $baseStyle    = ($tag === 'header') ? 'width:100%;' : '';
-        $wrapperStyle = $baseStyle . ($desktop ? $sOn : '');
+        $baseStyle = ($tag === 'header') ? 'width:100%;' : '';
+        $wrapperStyle = $baseStyle.($desktop ? $sOn : '');
 
         $mediaCss = '';
         if ($tablet !== $desktop) {
@@ -1012,9 +1131,9 @@ if (!function_exists('_lazy_build_sticky_wrapper')) {
 
         // lazy-sticky-col → IntersectionObserver detects stuck state
         return "<{$tag} class=\"{$wrapperClass} lazy-sticky-col\" style=\"{$wrapperStyle}\">"
-             . "<style>{$css}</style>"
-             . $content
-             . "</{$tag}>";
+             ."<style>{$css}</style>"
+             .$content
+             ."</{$tag}>";
     }
 }
 
@@ -1032,24 +1151,25 @@ if (!function_exists('_lazy_builder_render_wrapper')) {
 
         if (!is_array($layout) || empty($layout)) {
             $content = get_lazy_content($raw);
-            $style   = $tag === 'header' ? ' style="width:100%;"' : '';
+            $style = $tag === 'header' ? ' style="width:100%;"' : '';
+
             return "<{$tag} class=\"{$wrapperClass}\"{$style}>{$content}</{$tag}>";
         }
 
         // Find the index of the first sticky container (check container + column settings)
-        $stickyIndex    = null;
+        $stickyIndex = null;
         $stickySettings = null;
         foreach ($layout as $i => $container) {
             $cs = $container['settings'] ?? [];
             if (!empty($cs['sticky'])) {
-                $stickyIndex    = $i;
+                $stickyIndex = $i;
                 $stickySettings = $cs;
                 break;
             }
             foreach ($container['columns'] ?? [] as $col) {
                 $cls = $col['settings'] ?? [];
                 if (!empty($cls['sticky'])) {
-                    $stickyIndex    = $i;
+                    $stickyIndex = $i;
                     $stickySettings = $cls;
                     break 2;
                 }
@@ -1059,17 +1179,18 @@ if (!function_exists('_lazy_builder_render_wrapper')) {
         if ($stickySettings === null) {
             // Nothing sticky — simple wrapper
             $style = $tag === 'header' ? ' style="width:100%;"' : '';
+
             return "<{$tag} class=\"{$wrapperClass}\"{$style}>"
-                 . _lazy_render_layout($layout)
-                 . "</{$tag}>";
+                 ._lazy_render_layout($layout)
+                 ."</{$tag}>";
         }
 
         // Render containers BEFORE the first sticky one in a plain above-wrapper
         $html = '';
         if ($stickyIndex > 0) {
-            $html .= '<div class="' . $wrapperClass . '-above" style="width:100%;">'
-                   . _lazy_render_layout(array_slice($layout, 0, $stickyIndex))
-                   . '</div>';
+            $html .= '<div class="'.$wrapperClass.'-above" style="width:100%;">'
+                   ._lazy_render_layout(array_slice($layout, 0, $stickyIndex))
+                   .'</div>';
         }
 
         // Render sticky containers inside the sticky wrapper
@@ -1095,6 +1216,7 @@ if (!function_exists('falcon_layout_context')) {
         if ($set !== null) {
             $ctx = $set;
         }
+
         return $ctx;
     }
 }
@@ -1105,6 +1227,7 @@ if (!function_exists('falcon_get_custom_layouts')) {
     {
         $raw = get_cms_option('falcon_layouts', null);
         $layouts = is_string($raw) ? json_decode($raw, true) : $raw;
+
         return is_array($layouts) ? array_values(array_filter($layouts, 'is_array')) : [];
     }
 }
@@ -1114,12 +1237,24 @@ if (!function_exists('falcon_condition_target_matches')) {
     function falcon_condition_target_matches(string $target, array $ctx): bool
     {
         $kind = $ctx['kind'] ?? null;
-        if ($target === 'entire_site')   return true;
-        if ($target === 'home')          return $kind === 'home';
-        if ($target === 'search')        return $kind === 'search';
-        if ($target === '404')           return $kind === '404';
-        if ($target === 'all_archives')  return $kind === 'archive';
-        if ($target === 'author_archive')return $kind === 'archive' && ($ctx['archive_type'] ?? null) === 'author';
+        if ($target === 'entire_site') {
+            return true;
+        }
+        if ($target === 'home') {
+            return $kind === 'home';
+        }
+        if ($target === 'search') {
+            return $kind === 'search';
+        }
+        if ($target === '404') {
+            return $kind === '404';
+        }
+        if ($target === 'all_archives') {
+            return $kind === 'archive';
+        }
+        if ($target === 'author_archive') {
+            return $kind === 'archive' && ($ctx['archive_type'] ?? null) === 'author';
+        }
         if (str_starts_with($target, 'all:')) {
             // All singular items of a post type (the front page counts if it is one).
             return in_array($kind, ['single', 'home'], true) && ($ctx['post_type'] ?? null) === substr($target, 4);
@@ -1138,6 +1273,7 @@ if (!function_exists('falcon_condition_target_matches')) {
         }
         if (str_starts_with($target, 'term:')) {
             [$tax, $id] = array_pad(explode(':', substr($target, 5), 2), 2, null);
+
             return $kind === 'archive'
                 && ($ctx['taxonomy'] ?? null) === $tax
                 && (int) ($ctx['term_id'] ?? 0) === (int) $id;
@@ -1150,6 +1286,7 @@ if (!function_exists('falcon_condition_target_matches')) {
         if (str_starts_with($target, 'post:')) {
             return (int) ($ctx['post_id'] ?? 0) === (int) substr($target, 5);
         }
+
         return false;
     }
 }
@@ -1166,6 +1303,7 @@ if (!function_exists('falcon_normalize_conditions')) {
                 $out[] = ['mode' => ($c['mode'] ?? 'include') === 'exclude' ? 'exclude' : 'include', 'target' => (string) $c['target']];
             }
         }
+
         return $out;
     }
 }
@@ -1183,12 +1321,17 @@ if (!function_exists('falcon_layout_matches')) {
         foreach (falcon_normalize_conditions($conditions) as $c) {
             $matches = falcon_condition_target_matches($c['target'], $ctx);
             if ($c['mode'] === 'exclude') {
-                if ($matches) return false;             // an exclusion always wins
+                if ($matches) {
+                    return false;
+                }             // an exclusion always wins
             } else {
                 $anyInclude = true;
-                if ($matches) $includeMatched = true;
+                if ($matches) {
+                    $includeMatched = true;
+                }
             }
         }
+
         return $anyInclude && $includeMatched;
     }
 }
@@ -1218,12 +1361,18 @@ if (!function_exists('falcon_layout_assigned_section')) {
             if (is_array($v) && !empty($v['id'])) {
                 return ['id' => (int) $v['id'], 'active' => !array_key_exists('active', $v) || (bool) $v['active']];
             }
-            if (is_numeric($v) && (int) $v > 0) return ['id' => (int) $v, 'active' => true];
+            if (is_numeric($v) && (int) $v > 0) {
+                return ['id' => (int) $v, 'active' => true];
+            }
+
             return null;
         };
         $resolve = function ($entry) use ($type) {
-            if (!$entry || !$entry['active']) return null;
-            return \FalconCms\Core\Models\Post::where('id', $entry['id'])->where('type', $type)->first();
+            if (!$entry || !$entry['active']) {
+                return null;
+            }
+
+            return Post::where('id', $entry['id'])->where('type', $type)->first();
         };
 
         // Resolution cascade — a slot renders the FIRST active assignment found:
@@ -1249,12 +1398,16 @@ if (!function_exists('falcon_layout_assigned_section')) {
             $conditions = is_array($layout['conditions'] ?? null) ? $layout['conditions'] : [];
             $entry = $entryOf($layout['assignments'][$slot] ?? null);
             if ($entry && falcon_layout_matches($conditions, $ctx)) {
-                if ($section = $resolve($entry)) return $section;
+                if ($section = $resolve($entry)) {
+                    return $section;
+                }
             }
         }
 
         // 3) No active custom assignment → fall back to the Global Layout's header/footer/etc.
-        if ($section = $globalSection()) return $section;
+        if ($section = $globalSection()) {
+            return $section;
+        }
 
         // 4) Global also off/unselected → theme default.
         return null;
@@ -1283,7 +1436,10 @@ if (!function_exists('falcon_layout_slot_off')) {
             if (is_array($v) && !empty($v['id'])) {
                 return ['id' => (int) $v['id'], 'active' => !array_key_exists('active', $v) || (bool) $v['active']];
             }
-            if (is_numeric($v) && (int) $v > 0) return ['id' => (int) $v, 'active' => true];
+            if (is_numeric($v) && (int) $v > 0) {
+                return ['id' => (int) $v, 'active' => true];
+            }
+
             return null;
         };
 
@@ -1294,18 +1450,26 @@ if (!function_exists('falcon_layout_slot_off')) {
             $global = is_array($global) ? $global : [];
             if (array_key_exists($slot, $global)) {
                 $e = $entryOf($global[$slot]);
-                if ($e !== null) return !$e['active']; // selected → off iff inactive
+                if ($e !== null) {
+                    return !$e['active'];
+                } // selected → off iff inactive
             }
+
             return false; // no section selected → not "off" (→ theme default)
         }
 
         // Custom layouts whose conditions match: first matching layout that HAS this slot selected wins.
         foreach (falcon_get_custom_layouts() as $layout) {
             $conditions = is_array($layout['conditions'] ?? null) ? $layout['conditions'] : [];
-            if (!falcon_layout_matches($conditions, $ctx)) continue;
+            if (!falcon_layout_matches($conditions, $ctx)) {
+                continue;
+            }
             $e = $entryOf($layout['assignments'][$slot] ?? null);
-            if ($e !== null) return !$e['active']; // selected → off iff inactive
+            if ($e !== null) {
+                return !$e['active'];
+            } // selected → off iff inactive
         }
+
         return false; // not selected in any matching layout → theme default
     }
 }
@@ -1320,19 +1484,25 @@ if (!function_exists('falcon_layout_is_active')) {
     function falcon_layout_is_active(): bool
     {
         static $active = null;
-        if ($active !== null) return $active;
+        if ($active !== null) {
+            return $active;
+        }
 
         $global = get_cms_option('falcon_layout_global', null);
         $global = is_string($global) ? json_decode($global, true) : $global;
         if (is_array($global)) {
             foreach ($global as $v) {
-                if ((is_array($v) && !empty($v['id'])) || (is_numeric($v) && (int) $v > 0)) return $active = true;
+                if ((is_array($v) && !empty($v['id'])) || (is_numeric($v) && (int) $v > 0)) {
+                    return $active = true;
+                }
             }
         }
 
         $custom = get_cms_option('falcon_layouts', null);
         $custom = is_string($custom) ? json_decode($custom, true) : $custom;
-        if (is_array($custom) && !empty($custom)) return $active = true;
+        if (is_array($custom) && !empty($custom)) {
+            return $active = true;
+        }
 
         return $active = false;
     }
@@ -1345,6 +1515,7 @@ if (!function_exists('get_falcon_header')) {
         if ($header) {
             return _lazy_builder_render_wrapper($header->content ?? '', 'header', 'falcon-builder-header');
         }
+
         return null;
     }
 }
@@ -1356,6 +1527,7 @@ if (!function_exists('get_falcon_footer')) {
         if ($footer) {
             return _lazy_builder_render_wrapper($footer->content ?? '', 'footer', 'falcon-builder-footer');
         }
+
         return null;
     }
 }
@@ -1367,6 +1539,7 @@ if (!function_exists('get_falcon_page_title_bar')) {
         if ($ptb) {
             return _lazy_builder_render_wrapper($ptb->content ?? '', 'div', 'falcon-builder-ptb');
         }
+
         return null;
     }
 }
@@ -1378,6 +1551,7 @@ if (!function_exists('get_falcon_content')) {
         if ($content) {
             return _lazy_builder_render_wrapper($content->content ?? '', 'div', 'falcon-builder-content');
         }
+
         return null;
     }
 }
@@ -1392,17 +1566,28 @@ if (!function_exists('falcon_theme_view')) {
     {
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         foreach (["themes.{$activeTheme}.{$view}", "falcon-cms::themes.{$activeTheme}.{$view}", "falcon-cms::themes.falcon-theme.{$view}"] as $candidate) {
-            if (view()->exists($candidate)) return $candidate;
+            if (view()->exists($candidate)) {
+                return $candidate;
+            }
         }
-        if ($fallback && $fallback !== $view) return falcon_theme_view($fallback);
+        if ($fallback && $fallback !== $view) {
+            return falcon_theme_view($fallback);
+        }
+
         return "falcon-cms::themes.falcon-theme.{$view}";
     }
 }
 
 if (!function_exists('getUnitVal')) {
-    function getUnitVal($val, $unit = 'px') {
-        if ($val === null || $val === '') return null;
-        if (is_numeric($val)) return $val . $unit;
+    function getUnitVal($val, $unit = 'px')
+    {
+        if ($val === null || $val === '') {
+            return null;
+        }
+        if (is_numeric($val)) {
+            return $val.$unit;
+        }
+
         return $val;
     }
 }
@@ -1413,56 +1598,67 @@ if (!function_exists('falcon_visit_page')) {
      * Strips the scheme + host (works for raw-IP visits too) and shows just the path;
      * for the homepage (root) it shows the site domain instead of a bare "/".
      */
-    function falcon_visit_page($url) {
+    function falcon_visit_page($url)
+    {
         $path = preg_replace('#^https?://[^/]+#i', '', (string) $url);
         if ($path === '' || $path === '/') {
             $host = parse_url((string) config('app.url'), PHP_URL_HOST);
             if (empty($host) && function_exists('request')) {
-                try { $host = request()->getHost(); } catch (\Throwable $e) { $host = ''; }
+                try {
+                    $host = request()->getHost();
+                } catch (Throwable $e) {
+                    $host = '';
+                }
             }
+
             return $host ?: '/';
         }
+
         return $path;
     }
 }
 
 if (!function_exists('the_lazy_content')) {
-    function the_lazy_content($content) { echo get_lazy_content($content); }
+    function the_lazy_content($content)
+    {
+        echo get_lazy_content($content);
+    }
 }
 
 if (!function_exists('get_falcon_posts')) {
-    function get_falcon_posts($args = []) {
+    function get_falcon_posts($args = [])
+    {
         $defaults = [
-            'post_type'        => 'post',
-            'limit'            => 10,
-            'offset'           => 0,
-            'order'            => 'desc',
-            'orderby'          => 'created_at',
-            'status'           => 'published',
-            'category'         => null,
+            'post_type' => 'post',
+            'limit' => 10,
+            'offset' => 0,
+            'order' => 'desc',
+            'orderby' => 'created_at',
+            'status' => 'published',
+            'category' => null,
             'category_exclude' => null,
-            'tag'              => null,
-            'tag_exclude'      => null,
-            'has_categories'   => false,
-            'has_tags'         => false,
-            'author'           => null,
-            'search'           => null,
-            'post_id'          => null,
-            'meta_key'         => null,
-            'meta_value'       => null,
-            'taxonomy_slug'    => null,
+            'tag' => null,
+            'tag_exclude' => null,
+            'has_categories' => false,
+            'has_tags' => false,
+            'author' => null,
+            'search' => null,
+            'post_id' => null,
+            'meta_key' => null,
+            'meta_value' => null,
+            'taxonomy_slug' => null,
             'taxonomy_include' => null,
             'taxonomy_exclude' => null,
-            'paginate'         => false,
-            'page_name'        => 'page',
-            'lang'             => null,
+            'paginate' => false,
+            'page_name' => 'page',
+            'lang' => null,
         ];
         $args = array_merge($defaults, $args);
 
         if ($args['post_type'] === 'any') {
-            $query = \FalconCms\Core\Models\Post::query();
+            $query = Post::query();
         } else {
-            $query = \FalconCms\Core\Models\Post::where('type', $args['post_type']);
+            $query = Post::where('type', $args['post_type']);
         }
 
         $lang = $args['lang'] ?: app()->getLocale();
@@ -1477,7 +1673,7 @@ if (!function_exists('get_falcon_posts')) {
         }
         if ($args['category']) {
             $catSlugs = is_array($args['category']) ? $args['category'] : array_filter(explode(',', $args['category']));
-            $query->whereHas('categories', function($q) use ($catSlugs) {
+            $query->whereHas('categories', function ($q) use ($catSlugs) {
                 $q->whereIn('slug', $catSlugs);
             });
         } elseif ($args['has_categories']) {
@@ -1490,14 +1686,14 @@ if (!function_exists('get_falcon_posts')) {
         if ($args['category_exclude']) {
             $catExSlugs = is_array($args['category_exclude']) ? $args['category_exclude'] : array_filter(explode(',', $args['category_exclude']));
             if (!empty($catExSlugs)) {
-                $query->whereDoesntHave('categories', function($q) use ($catExSlugs) {
+                $query->whereDoesntHave('categories', function ($q) use ($catExSlugs) {
                     $q->whereIn('slug', $catExSlugs);
                 });
             }
         }
         if ($args['tag']) {
             $tagSlugs = is_array($args['tag']) ? $args['tag'] : array_filter(explode(',', $args['tag']));
-            $query->whereHas('tags', function($q) use ($tagSlugs) {
+            $query->whereHas('tags', function ($q) use ($tagSlugs) {
                 $q->whereIn('slug', $tagSlugs);
             });
         } elseif ($args['has_tags']) {
@@ -1510,7 +1706,7 @@ if (!function_exists('get_falcon_posts')) {
         if ($args['tag_exclude']) {
             $tagExSlugs = is_array($args['tag_exclude']) ? $args['tag_exclude'] : array_filter(explode(',', $args['tag_exclude']));
             if (!empty($tagExSlugs)) {
-                $query->whereDoesntHave('tags', function($q) use ($tagExSlugs) {
+                $query->whereDoesntHave('tags', function ($q) use ($tagExSlugs) {
                     $q->whereIn('slug', $tagExSlugs);
                 });
             }
@@ -1519,7 +1715,7 @@ if (!function_exists('get_falcon_posts')) {
             $query->where('user_id', $args['author']);
         }
         if ($args['search']) {
-            $query->where('title', 'like', '%' . $args['search'] . '%');
+            $query->where('title', 'like', '%'.$args['search'].'%');
         }
         if (!empty($args['post_id'])) {
             $ids = is_array($args['post_id']) ? $args['post_id'] : explode(',', $args['post_id']);
@@ -1529,17 +1725,17 @@ if (!function_exists('get_falcon_posts')) {
             $taxSlug = $args['taxonomy_slug'];
             if (!empty($args['taxonomy_include'])) {
                 $include = is_array($args['taxonomy_include']) ? $args['taxonomy_include'] : explode(',', $args['taxonomy_include']);
-                $query->whereHas('taxonomyTerms', function($q) use ($taxSlug, $include) {
+                $query->whereHas('taxonomyTerms', function ($q) use ($taxSlug, $include) {
                     $q->where('taxonomy_slug', $taxSlug)->whereIn('slug', array_filter($include));
                 });
             } else {
-                $query->whereHas('taxonomyTerms', function($q) use ($taxSlug) {
+                $query->whereHas('taxonomyTerms', function ($q) use ($taxSlug) {
                     $q->where('taxonomy_slug', $taxSlug);
                 });
             }
             if (!empty($args['taxonomy_exclude'])) {
                 $exclude = is_array($args['taxonomy_exclude']) ? $args['taxonomy_exclude'] : explode(',', $args['taxonomy_exclude']);
-                $query->whereDoesntHave('taxonomyTerms', function($q) use ($taxSlug, $exclude) {
+                $query->whereDoesntHave('taxonomyTerms', function ($q) use ($taxSlug, $exclude) {
                     $q->where('taxonomy_slug', $taxSlug)->whereIn('slug', array_filter($exclude));
                 });
             }
@@ -1548,7 +1744,7 @@ if (!function_exists('get_falcon_posts')) {
         if ($args['orderby'] === 'rand') {
             $query->inRandomOrder();
         } else {
-            $safeOrderby = in_array($args['orderby'], ['created_at','updated_at','title','views','menu_order','id'])
+            $safeOrderby = in_array($args['orderby'], ['created_at', 'updated_at', 'title', 'views', 'menu_order', 'id'])
                 ? $args['orderby'] : 'created_at';
             $query->orderBy($safeOrderby, $args['order']);
         }
@@ -1556,13 +1752,18 @@ if (!function_exists('get_falcon_posts')) {
         if ($args['paginate']) {
             return $query->paginate($args['limit'], ['*'], $args['page_name'] ?? 'page');
         }
-        return $query->limit($args['limit'])->offset((int)$args['offset'])->get();
+
+        return $query->limit($args['limit'])->offset((int) $args['offset'])->get();
     }
 }
 
 if (!function_exists('the_lazy_pagination')) {
-    function the_lazy_pagination($items, $view = null) {
-        if (!($items instanceof \Illuminate\Pagination\LengthAwarePaginator)) return '';
+    function the_lazy_pagination($items, $view = null)
+    {
+        if (!($items instanceof LengthAwarePaginator)) {
+            return '';
+        }
+
         return $items->links($view);
     }
 }
@@ -1583,52 +1784,64 @@ if (!function_exists('get_falcon_excerpt')) {
             || (is_string($content) && (str_starts_with(ltrim($content), '[') || str_starts_with(ltrim($content), '{')));
 
         if (!$isBuilder) {
-            return \Illuminate\Support\Str::limit(strip_tags($content), $limit);
+            return Str::limit(strip_tags($content), $limit);
         }
 
         try {
             $layout = is_string($content) ? json_decode($content, true) : $content;
-            if (!is_array($layout)) return '';
+            if (!is_array($layout)) {
+                return '';
+            }
 
             $textTypes = ['title', 'heading', 'text', 'text_block', 'special_text'];
             $text = '';
 
-            $extractFromElements = function (array $elements) use (&$text, &$limit, $textTypes, &$extractFromElements) {
+            $extractFromElements = function (array $elements) use (&$text, &$limit, &$extractFromElements) {
                 foreach ($elements as $el) {
                     $type = $el['type'] ?? '';
-                    $s    = $el['settings'] ?? [];
+                    $s = $el['settings'] ?? [];
                     if (in_array($type, ['title', 'heading'])) {
-                        $text .= trim($s['title'] ?? '') . ' ';
+                        $text .= trim($s['title'] ?? '').' ';
                     } elseif (in_array($type, ['text', 'text_block', 'special_text'])) {
-                        $text .= trim(strip_tags($s['content'] ?? '')) . ' ';
+                        $text .= trim(strip_tags($s['content'] ?? '')).' ';
                     } elseif ($type === 'nested-row' && !empty($el['columns'])) {
                         foreach ($el['columns'] as $ncol) {
                             $extractFromElements($ncol['elements'] ?? []);
-                            if (strlen($text) > $limit) return;
+                            if (strlen($text) > $limit) {
+                                return;
+                            }
                         }
                     }
-                    if (strlen($text) > $limit) return;
+                    if (strlen($text) > $limit) {
+                        return;
+                    }
                 }
             };
 
             foreach ($layout as $container) {
                 foreach ($container['columns'] ?? [] as $column) {
                     $extractFromElements($column['elements'] ?? []);
-                    if (strlen($text) > $limit) break 2;
+                    if (strlen($text) > $limit) {
+                        break 2;
+                    }
                 }
             }
 
-            return \Illuminate\Support\Str::limit(trim($text) ?: '', $limit);
-        } catch (\Exception $e) {
+            return Str::limit(trim($text) ?: '', $limit);
+        } catch (Exception $e) {
             return '';
         }
     }
 }
 
 if (!function_exists('get_lazy_post')) {
-    function get_lazy_post($slugOrId) {
-        if (is_numeric($slugOrId)) return \FalconCms\Core\Models\Post::find($slugOrId);
-        return \FalconCms\Core\Models\Post::where('slug', $slugOrId)->where('lang_code', app()->getLocale())->first();
+    function get_lazy_post($slugOrId)
+    {
+        if (is_numeric($slugOrId)) {
+            return Post::find($slugOrId);
+        }
+
+        return Post::where('slug', $slugOrId)->where('lang_code', app()->getLocale())->first();
     }
 }
 
@@ -1637,7 +1850,8 @@ if (!function_exists('get_lazy_category_taxonomy')) {
      * Returns ['type' => 'native'|'product'|'acpt', 'taxonomy_slug' => string|null]
      * for the category taxonomy of a given post type.
      */
-    function get_lazy_category_taxonomy($postType) {
+    function get_lazy_category_taxonomy($postType)
+    {
         if (!$postType || $postType === 'post') {
             return ['type' => 'native', 'taxonomy_slug' => null];
         }
@@ -1645,38 +1859,44 @@ if (!function_exists('get_lazy_category_taxonomy')) {
             return ['type' => 'product', 'taxonomy_slug' => null];
         }
         // ACPT: find an active hierarchical (category) taxonomy for this CPT
-        $row = \Illuminate\Support\Facades\DB::table('custom_taxonomies')
+        $row = DB::table('custom_taxonomies')
             ->where('hierarchical', true)
             ->where('is_active', true)
             ->whereNull('deleted_at')
             ->get()
-            ->first(fn($t) => in_array($postType, json_decode($t->post_types ?? '[]', true)));
-        if (!$row) return ['type' => 'none', 'taxonomy_slug' => null];
+            ->first(fn ($t) => in_array($postType, json_decode($t->post_types ?? '[]', true)));
+        if (!$row) {
+            return ['type' => 'none', 'taxonomy_slug' => null];
+        }
+
         return ['type' => 'acpt', 'taxonomy_slug' => $row->slug];
     }
 }
 
 if (!function_exists('get_lazy_categories')) {
-    function get_lazy_categories($taxonomy = 'category', $postType = null) {
+    function get_lazy_categories($taxonomy = 'category', $postType = null)
+    {
         if ($taxonomy === 'category') {
             $info = get_lazy_category_taxonomy($postType);
             if ($info['type'] === 'native') {
-                return \FalconCms\Core\Models\Category::withCount(['posts' => fn($r) => $r->where('status', 'published')])
+                return Category::withCount(['posts' => fn ($r) => $r->where('status', 'published')])
                     ->orderBy('name')->get();
             }
             if ($info['type'] === 'product') {
-                return \FalconCms\Core\Models\ProductCategory::withCount(['posts as posts_count' => fn($r) => $r->where('status', 'published')])
+                return ProductCategory::withCount(['posts as posts_count' => fn ($r) => $r->where('status', 'published')])
                     ->orderBy('name')->get();
             }
             if ($info['type'] === 'acpt') {
-                return \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $info['taxonomy_slug'])
-                    ->withCount(['posts as posts_count' => fn($q) => $q->where('status', 'published')])
+                return TaxonomyTerm::where('taxonomy_slug', $info['taxonomy_slug'])
+                    ->withCount(['posts as posts_count' => fn ($q) => $q->where('status', 'published')])
                     ->orderBy('name')->get();
             }
+
             return collect();
         }
-        return \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $taxonomy)
-            ->withCount(['posts' => fn($q) => $q->where('status', 'published')])->get();
+
+        return TaxonomyTerm::where('taxonomy_slug', $taxonomy)
+            ->withCount(['posts' => fn ($q) => $q->where('status', 'published')])->get();
     }
 }
 
@@ -1689,11 +1909,11 @@ if (!function_exists('falcon_nav_menu_version')) {
     function falcon_nav_menu_version(): string
     {
         try {
-            return (string) \Illuminate\Support\Facades\Cache::rememberForever(
+            return (string) Cache::rememberForever(
                 'falcon:nav_menu_ver',
                 fn () => uniqid('', true)
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return '0';
         }
     }
@@ -1704,14 +1924,15 @@ if (!function_exists('forget_nav_menu_cache')) {
     function forget_nav_menu_cache(): void
     {
         try {
-            \Illuminate\Support\Facades\Cache::forever('falcon:nav_menu_ver', uniqid('', true));
-        } catch (\Throwable $e) {
+            Cache::forever('falcon:nav_menu_ver', uniqid('', true));
+        } catch (Throwable $e) {
         }
     }
 }
 
 if (!function_exists('get_lazy_menu')) {
-    function get_lazy_menu($slugOrLocation) {
+    function get_lazy_menu($slugOrLocation)
+    {
         // Nav menus resolve on every frontend page (header + footer) and each fans
         // out into many queries (per-item post/term lookups + permalinks). Cache the
         // resolved tree per location+locale; the version token lets any menu/CPT/
@@ -1720,13 +1941,13 @@ if (!function_exists('get_lazy_menu')) {
         // through every cache store reliably), then hydrate to stdClass on the way
         // out so the theme keeps its object property access unchanged.
         try {
-            $key = 'falcon:nav_menu:' . falcon_nav_menu_version() . ':' . $slugOrLocation . ':' . app()->getLocale();
-            $tree = \Illuminate\Support\Facades\Cache::remember(
+            $key = 'falcon:nav_menu:'.falcon_nav_menu_version().':'.$slugOrLocation.':'.app()->getLocale();
+            $tree = Cache::remember(
                 $key,
                 now()->addMinutes(10),
                 fn () => _falcon_menu_items_to_array(_falcon_resolve_lazy_menu($slugOrLocation))
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $tree = _falcon_menu_items_to_array(_falcon_resolve_lazy_menu($slugOrLocation));
         }
 
@@ -1740,17 +1961,17 @@ if (!function_exists('_falcon_menu_items_to_array')) {
     {
         return collect($items)->map(function ($item) {
             $data = method_exists($item, 'getAttributes') ? $item->getAttributes() : (array) $item;
-            $url  = $item->url ?? ($data['url'] ?? '#');
+            $url = $item->url ?? ($data['url'] ?? '#');
 
             // Internal links (page/post/cpt/category) are cached as ROOT-RELATIVE paths
             // so the browser resolves them against whatever domain it's on — the cached
             // value must never freeze the host that happened to populate it. Only
             // user-entered 'custom' items keep their URL verbatim (may be external).
             if (($data['type'] ?? '') !== 'custom' && preg_match('#^https?://#i', $url)) {
-                $p   = parse_url($url);
+                $p = parse_url($url);
                 $url = ($p['path'] ?? '/')
-                    . (isset($p['query']) ? '?' . $p['query'] : '')
-                    . (isset($p['fragment']) ? '#' . $p['fragment'] : '');
+                    .(isset($p['query']) ? '?'.$p['query'] : '')
+                    .(isset($p['fragment']) ? '#'.$p['fragment'] : '');
             }
 
             $data['url'] = $url;
@@ -1758,6 +1979,7 @@ if (!function_exists('_falcon_menu_items_to_array')) {
             $data['children'] = ($children && count($children))
                 ? _falcon_menu_items_to_array($children)
                 : [];
+
             return $data;
         })->values()->all();
     }
@@ -1772,14 +1994,16 @@ if (!function_exists('_falcon_menu_array_to_objects')) {
             $children = $data['children'] ?? [];
             $obj = (object) $data;
             $obj->children = _falcon_menu_array_to_objects($children);
+
             return $obj;
         })->values();
     }
 }
 
 if (!function_exists('_falcon_resolve_lazy_menu')) {
-    function _falcon_resolve_lazy_menu($slugOrLocation) {
-        $query = \FalconCms\Core\Models\NavigationMenu::query();
+    function _falcon_resolve_lazy_menu($slugOrLocation)
+    {
+        $query = NavigationMenu::query();
 
         if ($slugOrLocation === 'header') {
             $query->where('is_header', true);
@@ -1790,23 +2014,27 @@ if (!function_exists('_falcon_resolve_lazy_menu')) {
         }
 
         $currentLocale = app()->getLocale();
-        
+
         // Try to find menu with exact slug-locale if it's a slug
         if (!in_array($slugOrLocation, ['header', 'footer'])) {
-            $langSlug = $slugOrLocation . '-' . $currentLocale;
+            $langSlug = $slugOrLocation.'-'.$currentLocale;
             $menu = (clone $query)->where('slug', $langSlug)->first();
-            if ($menu) return this_process_items($menu);
+            if ($menu) {
+                return this_process_items($menu);
+            }
         }
 
         // Try to find by location AND lang_code
         $menu = (clone $query)->where('lang_code', $currentLocale)->first();
-        
+
         if (!$menu) {
             // Fallback to location only without lang_code
             $menu = (clone $query)->whereNull('lang_code')->first();
         }
 
-        if (!$menu) return collect();
+        if (!$menu) {
+            return collect();
+        }
 
         return this_process_items($menu);
     }
@@ -1814,10 +2042,11 @@ if (!function_exists('_falcon_resolve_lazy_menu')) {
 
 // Internal helper for menu processing (moved logic out of the main function for reuse)
 if (!function_exists('this_process_items')) {
-    function this_process_items($menu) {
+    function this_process_items($menu)
+    {
         // Fetch active CPTs and Taxonomies to filter items
-        $activePostTypes = \FalconCms\Core\Models\PostType::where('is_active', true)->pluck('slug')->toArray();
-        $activeTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
+        $activePostTypes = PostType::where('is_active', true)->pluck('slug')->toArray();
+        $activeTaxonomies = CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
 
         // Built-in types are always active
         $activePostTypes[] = 'post';
@@ -1825,28 +2054,32 @@ if (!function_exists('this_process_items')) {
         $activePostTypes[] = 'category'; // Default category
         $activePostTypes[] = 'custom';   // Custom links
 
-        $items = $menu->items->filter(function($item) use ($activePostTypes, $activeTaxonomies) {
+        $items = $menu->items->filter(function ($item) use ($activePostTypes, $activeTaxonomies) {
             // If it's a post/page/cpt item
             if (!in_array($item->type, ['category', 'custom'])) {
                 return in_array($item->type, $activePostTypes);
             }
             // If it's a category/taxonomy item
             if ($item->type === 'category' && $item->object_id) {
-                $term = \FalconCms\Core\Models\TaxonomyTerm::find($item->object_id);
-                if ($term) return in_array($term->taxonomy_slug, $activeTaxonomies);
-                $standardCat = \FalconCms\Core\Models\Category::find($item->object_id);
+                $term = TaxonomyTerm::find($item->object_id);
+                if ($term) {
+                    return in_array($term->taxonomy_slug, $activeTaxonomies);
+                }
+                $standardCat = Category::find($item->object_id);
+
                 return (bool) $standardCat;
             }
+
             return true;
         });
 
-        $cleanItems = function($items) use (&$cleanItems) {
-            return $items->map(function($item) use ($cleanItems) {
+        $cleanItems = function ($items) use (&$cleanItems) {
+            return $items->map(function ($item) use ($cleanItems) {
                 $currentLocale = app()->getLocale();
-                
+
                 // If it's a post/page/cpt item, find translation
                 if (!in_array($item->type, ['category', 'custom']) && $item->object_id) {
-                    $post = \FalconCms\Core\Models\Post::find($item->object_id);
+                    $post = Post::find($item->object_id);
                     if ($post) {
                         // Find translation in current locale
                         if ($post->lang_code !== $currentLocale) {
@@ -1873,11 +2106,17 @@ if (!function_exists('this_process_items')) {
 }
 
 if (!function_exists('is_lazy_homepage')) {
-    function is_lazy_homepage($post) {
-        if (!$post) return false;
+    function is_lazy_homepage($post)
+    {
+        if (!$post) {
+            return false;
+        }
         $homeId = (int) get_cms_option('home_page_id');
-        if (!$homeId) return false;
-        return ($post->id == $homeId || ($post->origin_id && $post->origin_id == $homeId));
+        if (!$homeId) {
+            return false;
+        }
+
+        return $post->id == $homeId || ($post->origin_id && $post->origin_id == $homeId);
     }
 }
 
@@ -1895,24 +2134,28 @@ if (!function_exists('falcon_default_language')) {
         }
         $code = 'en';
         try {
-            $dbDefault = \Illuminate\Support\Facades\DB::table('cms_languages')->where('is_default', true)->value('code');
+            $dbDefault = DB::table('cms_languages')->where('is_default', true)->value('code');
             if ($dbDefault) {
                 $code = $dbDefault;
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
         }
+
         return $code;
     }
 }
 
 if (!function_exists('get_falcon_permalink')) {
-    function get_falcon_permalink($post) {
-        if (!$post) return '#';
-        
+    function get_falcon_permalink($post)
+    {
+        if (!$post) {
+            return '#';
+        }
+
         $type = is_array($post) ? ($post['type'] ?? 'product') : ($post->type ?? 'post');
         $slug = is_array($post) ? ($post['slug'] ?? '') : ($post->slug ?? '');
         $postLang = is_array($post) ? ($post['lang_code'] ?? 'en') : ($post->lang_code ?? 'en');
-        
+
         // Homepage logic
         if (!is_array($post) && is_lazy_homepage($post)) {
             $homePageId = get_cms_option('home_page_id');
@@ -1924,27 +2167,33 @@ if (!function_exists('get_falcon_permalink')) {
         $defaultLang = falcon_default_language();
 
         // Language prefix logic: If it's not the default language, we MUST add the prefix
-        $langPrefix = ($postLang === $defaultLang) ? '' : '/' . $postLang;
+        $langPrefix = ($postLang === $defaultLang) ? '' : '/'.$postLang;
 
         // Homepage check again for safety
         if (!is_array($post) && is_lazy_homepage($post)) {
-            if ($postLang === $defaultLang) return url('/');
+            if ($postLang === $defaultLang) {
+                return url('/');
+            }
+
             return url($postLang);
         }
 
         if ($type === 'page') {
-            return url($langPrefix . '/' . $slug);
+            return url($langPrefix.'/'.$slug);
         }
-        return url($langPrefix . '/' . $type . '/' . $slug);
+
+        return url($langPrefix.'/'.$type.'/'.$slug);
     }
 }
 
 if (!function_exists('clear_page_cache')) {
-    function clear_page_cache() {
+    function clear_page_cache()
+    {
         try {
-            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            Artisan::call('cache:clear');
+
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -1959,12 +2208,13 @@ if (!function_exists('falcon_gateway_http')) {
      * Returns null on any connection/timeout failure (logged) — callers must
      * treat a null response as "not verified / failed", never as success.
      */
-    function falcon_gateway_http(callable $fn): ?\Illuminate\Http\Client\Response
+    function falcon_gateway_http(callable $fn): ?Response
     {
         try {
-            return $fn(\Illuminate\Support\Facades\Http::timeout(15)->connectTimeout(5));
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Payment gateway connection error: ' . $e->getMessage());
+            return $fn(Http::timeout(15)->connectTimeout(5));
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Payment gateway connection error: '.$e->getMessage());
+
             return null;
         }
     }
@@ -1986,27 +2236,31 @@ if (!function_exists('falcon_geoip')) {
             || preg_match('/^172\.(1[6-9]|2\d|3[01])\./', $ip)) {
             return $empty;
         }
-        return \Illuminate\Support\Facades\Cache::remember('falcon_geoip_' . md5($ip), now()->addDays(30), function () use ($ip, $empty) {
+
+        return Cache::remember('falcon_geoip_'.md5($ip), now()->addDays(30), function () use ($ip, $empty) {
             try {
-                $resp = \Illuminate\Support\Facades\Http::timeout(3)
+                $resp = Http::timeout(3)
                     ->get("http://ip-api.com/json/{$ip}", ['fields' => 'status,country,countryCode,city,regionName,isp']);
                 if ($resp->ok() && $resp->json('status') === 'success') {
                     return [
-                        'country'      => $resp->json('country'),
+                        'country' => $resp->json('country'),
                         'country_code' => $resp->json('countryCode'),
-                        'city'         => $resp->json('city'),
-                        'region'       => $resp->json('regionName'),
-                        'isp'          => $resp->json('isp'),
+                        'city' => $resp->json('city'),
+                        'region' => $resp->json('regionName'),
+                        'isp' => $resp->json('isp'),
                     ];
                 }
-            } catch (\Throwable $e) {}
+            } catch (Throwable $e) {
+            }
+
             return $empty;
         });
     }
 }
 
 if (!function_exists('falcon_log_activity')) {
-    function falcon_log_activity($action, $description, $model = null, $properties = []) {
+    function falcon_log_activity($action, $description, $model = null, $properties = [])
+    {
         try {
             $ip = request()->ip();
             $country = null;
@@ -2023,10 +2277,11 @@ if (!function_exists('falcon_log_activity')) {
                             $countryCode = $data['countryCode'];
                         }
                     }
-                } catch (\Exception $e) {}
+                } catch (Exception $e) {
+                }
             }
 
-            return \FalconCms\Core\Models\ActivityLog::create([
+            return ActivityLog::create([
                 'user_id' => auth()->id(),
                 'action' => $action,
                 'model_type' => $model ? get_class($model) : null,
@@ -2036,21 +2291,22 @@ if (!function_exists('falcon_log_activity')) {
                 'ip_address' => $ip,
                 'country' => $country,
                 'country_code' => $countryCode,
-                'user_agent' => request()->userAgent()
+                'user_agent' => request()->userAgent(),
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }
 }
 
 if (!function_exists('render_lazy_widgets')) {
-    function render_lazy_widgets($area) {
+    function render_lazy_widgets($area)
+    {
         $currentLocale = app()->getLocale();
-        $query = \FalconCms\Core\Models\Widget::forArea($area);
-        
+        $query = Widget::forArea($area);
+
         // 1. Filter by lang_code
-        $widgets = $query->where(function($q) use ($currentLocale) {
+        $widgets = $query->where(function ($q) use ($currentLocale) {
             $q->where('lang_code', $currentLocale)->orWhereNull('lang_code');
         })->get();
 
@@ -2062,9 +2318,9 @@ if (!function_exists('render_lazy_widgets')) {
             // 2. Package theme widget (namespaced):       falcon-cms::themes.{theme}.widgets.{type}
             // 3. Package default widget (namespaced):     falcon-cms::frontend.widgets.{type}
             $publishedThemeWidget = "themes.{$activeTheme}.widgets.{$widget->type}";
-            $packageThemeWidget   = "falcon-cms::themes.{$activeTheme}.widgets.{$widget->type}";
-            $falconThemeWidget      = "falcon-cms::themes.falcon-theme.widgets.{$widget->type}";
-            $defaultWidget        = "falcon-cms::frontend.widgets.{$widget->type}";
+            $packageThemeWidget = "falcon-cms::themes.{$activeTheme}.widgets.{$widget->type}";
+            $falconThemeWidget = "falcon-cms::themes.falcon-theme.widgets.{$widget->type}";
+            $defaultWidget = "falcon-cms::frontend.widgets.{$widget->type}";
 
             if (view()->exists($publishedThemeWidget)) {
                 $output .= view($publishedThemeWidget, ['widget' => $widget])->render();
@@ -2082,12 +2338,15 @@ if (!function_exists('render_lazy_widgets')) {
                     $content = do_lazy_shortcode($content);
 
                     $output .= '<div class="widget mb-12">';
-                    if ($widget->title) $output .= '<h4 class="widget-title">' . e($widget->title) . '</h4>';
+                    if ($widget->title) {
+                        $output .= '<h4 class="widget-title">'.e($widget->title).'</h4>';
+                    }
                     $output .= $content;
                     $output .= '</div>';
                 }
             }
         }
+
         return $output;
     }
 }
@@ -2095,38 +2354,44 @@ if (!function_exists('render_lazy_widgets')) {
 // --- Hook System Helpers ---
 
 if (!function_exists('add_falcon_action')) {
-    function add_falcon_action($tag, $callback, $priority = 10) {
-        \FalconCms\Core\Core\HookManager::getInstance()->addAction($tag, $callback, $priority);
+    function add_falcon_action($tag, $callback, $priority = 10)
+    {
+        HookManager::getInstance()->addAction($tag, $callback, $priority);
     }
 }
 
 if (!function_exists('do_falcon_action')) {
-    function do_falcon_action($tag, ...$args) {
-        \FalconCms\Core\Core\HookManager::getInstance()->doAction($tag, ...$args);
+    function do_falcon_action($tag, ...$args)
+    {
+        HookManager::getInstance()->doAction($tag, ...$args);
     }
 }
 
 if (!function_exists('add_falcon_filter')) {
-    function add_falcon_filter($tag, $callback, $priority = 10) {
-        \FalconCms\Core\Core\HookManager::getInstance()->addFilter($tag, $callback, $priority);
+    function add_falcon_filter($tag, $callback, $priority = 10)
+    {
+        HookManager::getInstance()->addFilter($tag, $callback, $priority);
     }
 }
 
 if (!function_exists('apply_falcon_filters')) {
-    function apply_falcon_filters($tag, $value, ...$args) {
-        return \FalconCms\Core\Core\HookManager::getInstance()->applyFilters($tag, $value, ...$args);
+    function apply_falcon_filters($tag, $value, ...$args)
+    {
+        return HookManager::getInstance()->applyFilters($tag, $value, ...$args);
     }
 }
 
 if (!function_exists('has_falcon_action')) {
-    function has_falcon_action($tag) {
-        return \FalconCms\Core\Core\HookManager::getInstance()->hasAction($tag);
+    function has_falcon_action($tag)
+    {
+        return HookManager::getInstance()->hasAction($tag);
     }
 }
 
 if (!function_exists('has_falcon_filter')) {
-    function has_falcon_filter($tag) {
-        return \FalconCms\Core\Core\HookManager::getInstance()->hasFilter($tag);
+    function has_falcon_filter($tag)
+    {
+        return HookManager::getInstance()->hasFilter($tag);
     }
 }
 
@@ -2188,64 +2453,64 @@ if (!function_exists('falcon_safe_url')) {
 if (!function_exists('lazy_render_product_field')) {
     function lazy_render_product_field(array $field): string
     {
-        $type        = $field['type']          ?? 'text';
-        $name        = $field['name']          ?? '';
-        $label       = $field['label']         ?? '';
-        $placeholder = $field['placeholder']   ?? '';
-        $required    = !empty($field['required']);
-        $value       = $field['value']         ?? '';
-        $class       = $field['class']         ?? '';
-        $rows        = (int)($field['rows']    ?? 3);
-        $min         = $field['min']           ?? null;
-        $max         = $field['max']           ?? null;
-        $options     = $field['options']       ?? [];
-        $hint        = $field['hint']          ?? '';
+        $type = $field['type'] ?? 'text';
+        $name = $field['name'] ?? '';
+        $label = $field['label'] ?? '';
+        $placeholder = $field['placeholder'] ?? '';
+        $required = !empty($field['required']);
+        $value = $field['value'] ?? '';
+        $class = $field['class'] ?? '';
+        $rows = (int) ($field['rows'] ?? 3);
+        $min = $field['min'] ?? null;
+        $max = $field['max'] ?? null;
+        $options = $field['options'] ?? [];
+        $hint = $field['hint'] ?? '';
 
         // wrapper: HTML tag ('div', 'li', 'p', 'span', false = no wrapper)
-        $wrapperTag   = $field['wrapper']       ?? 'div';
+        $wrapperTag = $field['wrapper'] ?? 'div';
         $wrapperClass = $field['wrapper_class'] ?? 'mb-4';
         // extra attributes on the wrapper element (e.g. 'data-foo="bar"')
         $wrapperAttrs = $field['wrapper_attrs'] ?? '';
 
-        $baseInput = 'w-full border border-gray-300 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-gray-500 ' . $class;
-        $req       = $required ? ' required' : '';
-        $reqStar   = $required ? '<span class="text-red-500 ml-0.5">*</span>' : '';
+        $baseInput = 'w-full border border-gray-300 rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-gray-500 '.$class;
+        $req = $required ? ' required' : '';
+        $reqStar = $required ? '<span class="text-red-500 ml-0.5">*</span>' : '';
 
         $inner = '';
 
         switch ($type) {
             case 'textarea':
                 if ($label) {
-                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">'.e($label).$reqStar.'</label>';
                 }
-                $inner .= '<textarea name="' . e($name) . '" rows="' . $rows . '" placeholder="' . e($placeholder) . '" class="' . e($baseInput) . '"' . $req . '>' . e($value) . '</textarea>';
+                $inner .= '<textarea name="'.e($name).'" rows="'.$rows.'" placeholder="'.e($placeholder).'" class="'.e($baseInput).'"'.$req.'>'.e($value).'</textarea>';
                 break;
 
             case 'select':
                 if ($label) {
-                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">'.e($label).$reqStar.'</label>';
                 }
-                $inner .= '<select name="' . e($name) . '" class="' . e($baseInput) . '"' . $req . '>';
+                $inner .= '<select name="'.e($name).'" class="'.e($baseInput).'"'.$req.'>';
                 if ($placeholder) {
-                    $inner .= '<option value="">' . e($placeholder) . '</option>';
+                    $inner .= '<option value="">'.e($placeholder).'</option>';
                 }
                 foreach ($options as $optVal => $optLabel) {
                     $selected = ($value == $optVal) ? ' selected' : '';
-                    $inner .= '<option value="' . e($optVal) . '"' . $selected . '>' . e($optLabel) . '</option>';
+                    $inner .= '<option value="'.e($optVal).'"'.$selected.'>'.e($optLabel).'</option>';
                 }
                 $inner .= '</select>';
                 break;
 
             case 'radio':
                 if ($label) {
-                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">'.e($label).$reqStar.'</label>';
                 }
                 $inner .= '<div class="flex flex-wrap gap-3 mt-1">';
                 foreach ($options as $optVal => $optLabel) {
                     $checked = ($value == $optVal) ? ' checked' : '';
                     $inner .= '<label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">';
-                    $inner .= '<input type="radio" name="' . e($name) . '" value="' . e($optVal) . '"' . $checked . $req . ' class="accent-primary">';
-                    $inner .= e($optLabel) . '</label>';
+                    $inner .= '<input type="radio" name="'.e($name).'" value="'.e($optVal).'"'.$checked.$req.' class="accent-primary">';
+                    $inner .= e($optLabel).'</label>';
                 }
                 $inner .= '</div>';
                 break;
@@ -2253,21 +2518,21 @@ if (!function_exists('lazy_render_product_field')) {
             case 'checkbox':
                 $checked = !empty($field['checked']) ? ' checked' : '';
                 $inner .= '<label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">';
-                $inner .= '<input type="checkbox" name="' . e($name) . '" value="' . e($value ?: '1') . '"' . $checked . ' class="accent-primary">';
-                $inner .= e($label) . $reqStar . '</label>';
+                $inner .= '<input type="checkbox" name="'.e($name).'" value="'.e($value ?: '1').'"'.$checked.' class="accent-primary">';
+                $inner .= e($label).$reqStar.'</label>';
                 break;
 
             case 'number':
                 if ($label) {
-                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">'.e($label).$reqStar.'</label>';
                 }
-                $minAttr = $min !== null ? ' min="' . e($min) . '"' : '';
-                $maxAttr = $max !== null ? ' max="' . e($max) . '"' : '';
-                $inner .= '<input type="number" name="' . e($name) . '" value="' . e($value) . '" placeholder="' . e($placeholder) . '" class="' . e($baseInput) . '"' . $minAttr . $maxAttr . $req . '>';
+                $minAttr = $min !== null ? ' min="'.e($min).'"' : '';
+                $maxAttr = $max !== null ? ' max="'.e($max).'"' : '';
+                $inner .= '<input type="number" name="'.e($name).'" value="'.e($value).'" placeholder="'.e($placeholder).'" class="'.e($baseInput).'"'.$minAttr.$maxAttr.$req.'>';
                 break;
 
             case 'hidden':
-                return '<input type="hidden" name="' . e($name) . '" value="' . e($value) . '">';
+                return '<input type="hidden" name="'.e($name).'" value="'.e($value).'">';
 
             case 'raw':
                 // 'content' key — raw HTML, trusted developer input
@@ -2276,16 +2541,16 @@ if (!function_exists('lazy_render_product_field')) {
 
             default: // text, email, tel, url, date, etc.
                 if ($label) {
-                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">' . e($label) . $reqStar . '</label>';
+                    $inner .= '<label class="block text-sm font-medium text-gray-700 mb-1">'.e($label).$reqStar.'</label>';
                 }
-                $minAttr = $min !== null ? ' minlength="' . e($min) . '"' : '';
-                $maxAttr = $max !== null ? ' maxlength="' . e($max) . '"' : '';
-                $inner .= '<input type="' . e($type) . '" name="' . e($name) . '" value="' . e($value) . '" placeholder="' . e($placeholder) . '" class="' . e($baseInput) . '"' . $minAttr . $maxAttr . $req . '>';
+                $minAttr = $min !== null ? ' minlength="'.e($min).'"' : '';
+                $maxAttr = $max !== null ? ' maxlength="'.e($max).'"' : '';
+                $inner .= '<input type="'.e($type).'" name="'.e($name).'" value="'.e($value).'" placeholder="'.e($placeholder).'" class="'.e($baseInput).'"'.$minAttr.$maxAttr.$req.'>';
                 break;
         }
 
         if ($hint) {
-            $inner .= '<p class="text-xs text-gray-400 mt-1">' . e($hint) . '</p>';
+            $inner .= '<p class="text-xs text-gray-400 mt-1">'.e($hint).'</p>';
         }
 
         // No wrapper
@@ -2294,9 +2559,10 @@ if (!function_exists('lazy_render_product_field')) {
         }
 
         $tag = preg_replace('/[^a-z0-9]/', '', strtolower($wrapperTag));
-        return '<' . $tag . ($wrapperClass ? ' class="' . e($wrapperClass) . '"' : '') . ($wrapperAttrs ? ' ' . $wrapperAttrs : '') . '>'
-            . $inner
-            . '</' . $tag . '>';
+
+        return '<'.$tag.($wrapperClass ? ' class="'.e($wrapperClass).'"' : '').($wrapperAttrs ? ' '.$wrapperAttrs : '').'>'
+            .$inner
+            .'</'.$tag.'>';
     }
 }
 
@@ -2314,10 +2580,9 @@ if (!function_exists('falcon_render_item_custom_fields')) {
      * Render custom fields for a cart session item (array) or an OrderItem model.
      * Context labels can be overridden via the falcon_custom_field_labels filter.
      *
-     * @param  array|object  $item      Cart array item OR OrderItem model
-     * @param  string        $context   'cart' | 'checkout' | 'confirmation' | 'admin'
-     * @param  string        $wrapClass CSS class on the wrapper div
-     * @return string
+     * @param  array|object  $item  Cart array item OR OrderItem model
+     * @param  string  $context  'cart' | 'checkout' | 'confirmation' | 'admin'
+     * @param  string  $wrapClass  CSS class on the wrapper div
      */
     function falcon_render_item_custom_fields($item, string $context = 'cart', string $wrapClass = 'mt-1.5 space-y-0.5'): string
     {
@@ -2331,19 +2596,23 @@ if (!function_exists('falcon_render_item_custom_fields')) {
 
         $customFields = apply_falcon_filters('lazy_item_custom_fields_display', $customFields, $item, $context);
 
-        if (empty($customFields)) return '';
+        if (empty($customFields)) {
+            return '';
+        }
 
         // Allow label overrides via filter
         $labels = apply_falcon_filters('falcon_custom_field_labels', [], $context);
 
-        $html = '<div class="' . e($wrapClass) . '">';
+        $html = '<div class="'.e($wrapClass).'">';
         foreach ($customFields as $key => $value) {
-            if ((string)$value === '') continue;
+            if ((string) $value === '') {
+                continue;
+            }
             $label = $labels[$key] ?? ucwords(str_replace('_', ' ', $key));
             $html .= '<div class="text-[11px] text-gray-500 leading-snug">'
-                   . '<span class="font-semibold text-gray-700">' . e($label) . ':</span> '
-                   . e($value)
-                   . '</div>';
+                   .'<span class="font-semibold text-gray-700">'.e($label).':</span> '
+                   .e($value)
+                   .'</div>';
         }
         $html .= '</div>';
 
@@ -2365,39 +2634,55 @@ if (!function_exists('falcon_normalize_custom_fields')) {
     function falcon_normalize_custom_fields(array $custEl): array
     {
         $typeMap = [
-            'textfield'        => 'text',
+            'textfield' => 'text',
             'colorpickeralpha' => 'color',
-            'colorpicker'      => 'color',
-            'textarea_html'    => 'wysiwyg',
+            'colorpicker' => 'color',
+            'textarea_html' => 'wysiwyg',
         ];
 
         // suffix → apply_as + base stripping (shared with the array param_name sugar)
         $suffixAs = ['_hover_color' => 'hover_color', '_hover_bg' => 'hover_bg', '_color' => 'color', '_bg' => 'bg', '_typo' => '', '_pad' => 'padding', '_margin' => 'margin'];
         $stripBase = function ($k) use ($suffixAs) {
             foreach ($suffixAs as $suf => $as) {
-                if (str_ends_with($k, $suf)) return [substr($k, 0, -strlen($suf)), $as];
+                if (str_ends_with($k, $suf)) {
+                    return [substr($k, 0, -strlen($suf)), $as];
+                }
             }
+
             return [$k, ''];
         };
 
-        $slug = fn($t) => trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($t)), '_');
-        $contentTypes = ['text','textfield','textarea','wysiwyg','image','media','icon','button','repeater'];
+        $slug = fn ($t) => trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($t)), '_');
+        $contentTypes = ['text', 'textfield', 'textarea', 'wysiwyg', 'image', 'media', 'icon', 'button', 'repeater'];
 
         // Pre-scan content-field keys so array param_name sugar can avoid colliding with them
         $contentKeys = [];
         foreach (($custEl['params'] ?? []) as $p) {
-            if (!in_array($p['type'] ?? 'text', $contentTypes, true)) continue;
+            if (!in_array($p['type'] ?? 'text', $contentTypes, true)) {
+                continue;
+            }
             $pn = $p['param_name'] ?? null;
             $ck = is_array($pn) ? ($pn[0] ?? null) : $pn;
-            if (!$ck && !empty($p['heading'])) $ck = $slug($p['heading']);
-            if ($ck) $contentKeys[] = $ck;
+            if (!$ck && !empty($p['heading'])) {
+                $ck = $slug($p['heading']);
+            }
+            if ($ck) {
+                $contentKeys[] = $ck;
+            }
         }
 
         $autoKey = function ($p) use ($slug) {
             $pn = $p['param_name'] ?? null;
-            if (is_array($pn) && !empty($pn)) return $pn[0];
-            if (!empty($pn)) return $pn;
-            if (!empty($p['heading'])) return $slug($p['heading']);
+            if (is_array($pn) && !empty($pn)) {
+                return $pn[0];
+            }
+            if (!empty($pn)) {
+                return $pn;
+            }
+            if (!empty($p['heading'])) {
+                return $slug($p['heading']);
+            }
+
             return null;
         };
 
@@ -2406,7 +2691,9 @@ if (!function_exists('falcon_normalize_custom_fields')) {
 
         foreach (($custEl['params'] ?? []) as $p) {
             $key = $autoKey($p);
-            if (!$key) continue;
+            if (!$key) {
+                continue;
+            }
             $rawType = $p['type'] ?? 'text';
 
             // Array param_name → sugar for relating one field to many targets
@@ -2417,14 +2704,22 @@ if (!function_exists('falcon_normalize_custom_fields')) {
                 [$b0, $as0] = $stripBase($entries[0]);
                 if ($b0 !== $entries[0]) {
                     // Suffixed entries (e.g. title_color) → first is the storage key, strip suffix for targets
-                    if ($applyAs === null) $applyAs = $as0;
-                    if ($applyTo === null) $applyTo = array_map(fn($k) => $stripBase($k)[0], $entries);
+                    if ($applyAs === null) {
+                        $applyAs = $as0;
+                    }
+                    if ($applyTo === null) {
+                        $applyTo = array_map(fn ($k) => $stripBase($k)[0], $entries);
+                    }
                 } else {
                     // Bare target names (e.g. ['title','subtitle']) → synthesise a non-colliding storage key
-                    $base = !empty($p['heading']) ? $slug($p['heading']) : ('cf_' . substr(md5(implode(',', $entries)), 0, 6));
-                    while (in_array($base, $contentKeys, true)) $base .= '_x';
+                    $base = !empty($p['heading']) ? $slug($p['heading']) : ('cf_'.substr(md5(implode(',', $entries)), 0, 6));
+                    while (in_array($base, $contentKeys, true)) {
+                        $base .= '_x';
+                    }
                     $key = $base;
-                    if ($applyTo === null) $applyTo = $entries;
+                    if ($applyTo === null) {
+                        $applyTo = $entries;
+                    }
                     if ($applyAs === null) {
                         $nt = $typeMap[$rawType] ?? $rawType;
                         $applyAs = $nt === 'dimensions' ? 'padding' : ($nt === 'color' ? 'color' : '');
@@ -2433,26 +2728,26 @@ if (!function_exists('falcon_normalize_custom_fields')) {
             }
 
             $fields[$key] = [
-                'type'        => $typeMap[$rawType] ?? $rawType,
-                'raw_type'    => $rawType,
-                'label'       => $p['heading'] ?? $key,
-                'default'     => $p['value'] ?? '',
-                'tab'         => $p['tab'] ?? 'general',
+                'type' => $typeMap[$rawType] ?? $rawType,
+                'raw_type' => $rawType,
+                'label' => $p['heading'] ?? $key,
+                'default' => $p['value'] ?? '',
+                'tab' => $p['tab'] ?? 'general',
                 'placeholder' => $p['placeholder'] ?? '',
                 'description' => $p['description'] ?? '',
-                'options'     => $p['options'] ?? [],
-                'rows'        => $p['rows'] ?? null,
-                'min'         => $p['min'] ?? null,
-                'max'         => $p['max'] ?? null,
-                'step'        => $p['step'] ?? null,
-                'unit'        => $p['unit'] ?? '',
-                'condition'   => $p['condition'] ?? null,
-                'dynamic'     => $p['dynamic'] ?? false,
-                'apply_to'    => $applyTo,
-                'apply_as'    => $applyAs,
+                'options' => $p['options'] ?? [],
+                'rows' => $p['rows'] ?? null,
+                'min' => $p['min'] ?? null,
+                'max' => $p['max'] ?? null,
+                'step' => $p['step'] ?? null,
+                'unit' => $p['unit'] ?? '',
+                'condition' => $p['condition'] ?? null,
+                'dynamic' => $p['dynamic'] ?? false,
+                'apply_to' => $applyTo,
+                'apply_as' => $applyAs,
                 // repeater sub-fields (either key works)
-                'fields'      => $p['fields'] ?? [],
-                'params'      => $p['params'] ?? [],
+                'fields' => $p['fields'] ?? [],
+                'params' => $p['params'] ?? [],
             ];
         }
 
@@ -2472,24 +2767,24 @@ if (!function_exists('falcon_dynamic_config')) {
         if ($ctx === 'link') {
             return [
                 'link_tax_post_type' => $s['dynamic_link_tax_post_type'] ?? '',
-                'link_tax_slug'      => $s['dynamic_link_tax_slug']      ?? '',
-                'link_tax_which'     => $s['dynamic_link_tax_which']     ?? 'first',
-                'fallback'           => $s['dynamic_link_tax_fallback']  ?? '',
+                'link_tax_slug' => $s['dynamic_link_tax_slug'] ?? '',
+                'link_tax_which' => $s['dynamic_link_tax_which'] ?? 'first',
+                'fallback' => $s['dynamic_link_tax_fallback'] ?? '',
             ];
         }
 
         return [
-            'date_type'      => $s['dynamic_date_type']   ?? 'published',
-            'date_format'    => $s['dynamic_date_format'] ?? '',
-            'before'         => $s['dynamic_before']      ?? '',
-            'after'          => $s['dynamic_after']       ?? '',
-            'fallback'       => $s['dynamic_fallback']    ?? '',
+            'date_type' => $s['dynamic_date_type'] ?? 'published',
+            'date_format' => $s['dynamic_date_format'] ?? '',
+            'before' => $s['dynamic_before'] ?? '',
+            'after' => $s['dynamic_after'] ?? '',
+            'fallback' => $s['dynamic_fallback'] ?? '',
             'excerpt_length' => (int) ($s['dynamic_excerpt_length'] ?? 150),
-            'acpt_slug'      => $s['dynamic_acpt_slug']   ?? '',
-            'tax_post_type'  => $s['dynamic_tax_post_type'] ?? '',
-            'tax_slug'       => $s['dynamic_tax_slug']      ?? '',
-            'tax_separator'  => $s['dynamic_tax_separator'] ?? '',
-            'tax_limit'      => (int) ($s['dynamic_tax_limit'] ?? 0),
+            'acpt_slug' => $s['dynamic_acpt_slug'] ?? '',
+            'tax_post_type' => $s['dynamic_tax_post_type'] ?? '',
+            'tax_slug' => $s['dynamic_tax_slug'] ?? '',
+            'tax_separator' => $s['dynamic_tax_separator'] ?? '',
+            'tax_limit' => (int) ($s['dynamic_tax_limit'] ?? 0),
         ];
     }
 }
@@ -2503,31 +2798,38 @@ if (!function_exists('falcon_post_terms')) {
      * the builder may have saved (singular/plural, dash/underscore) — the same leniency the
      * Post Meta element applies, kept here so every consumer resolves terms identically.
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     function falcon_post_terms($post, string $taxonomySlug)
     {
-        if (!$post || $taxonomySlug === '') return collect();
+        if (!$post || $taxonomySlug === '') {
+            return collect();
+        }
 
         $relations = [
-            'category'           => 'categories',  'categories'         => 'categories',
-            'tag'                => 'tags',        'tags'               => 'tags',
-            'product-category'   => 'productCategories', 'product_category'   => 'productCategories',
+            'category' => 'categories',  'categories' => 'categories',
+            'tag' => 'tags',        'tags' => 'tags',
+            'product-category' => 'productCategories', 'product_category' => 'productCategories',
             'product-categories' => 'productCategories', 'product_categories' => 'productCategories',
-            'product-tag'        => 'productTags', 'product_tag'        => 'productTags',
-            'product-tags'       => 'productTags', 'product_tags'       => 'productTags',
+            'product-tag' => 'productTags', 'product_tag' => 'productTags',
+            'product-tags' => 'productTags', 'product_tags' => 'productTags',
         ];
 
         $candidates = array_unique(array_filter([
             $relations[$taxonomySlug] ?? null,
-            \Illuminate\Support\Str::camel(str_replace(['-', '.'], '_', $taxonomySlug)),
+            Str::camel(str_replace(['-', '.'], '_', $taxonomySlug)),
         ]));
         foreach ($candidates as $rel) {
-            if (!method_exists($post, $rel)) continue;
+            if (!method_exists($post, $rel)) {
+                continue;
+            }
             try {
                 $r = $post->{$rel};
-                if ($r instanceof \Illuminate\Support\Collection) return $r;
-            } catch (\Throwable $e) {}
+                if ($r instanceof Collection) {
+                    return $r;
+                }
+            } catch (Throwable $e) {
+            }
         }
 
         if (method_exists($post, 'taxonomyTerms')) {
@@ -2537,8 +2839,10 @@ if (!function_exists('falcon_post_terms')) {
                     str_replace('-', '_', $taxonomySlug),
                     str_replace('_', '-', $taxonomySlug),
                 ]);
+
                 return $post->taxonomyTerms()->whereIn('taxonomy_slug', $variants)->get();
-            } catch (\Throwable $e) {}
+            } catch (Throwable $e) {
+            }
         }
 
         return collect();
@@ -2554,20 +2858,22 @@ if (!function_exists('falcon_term_archive_url')) {
     function falcon_term_archive_url($term, string $taxonomySlug, string $postType = 'post'): string
     {
         $slug = is_object($term) ? ($term->slug ?? '') : (string) $term;
-        if ($slug === '') return '';
+        if ($slug === '') {
+            return '';
+        }
 
         $prefixes = [
-            'category'           => 'category',        'categories'         => 'category',
-            'tag'                => 'tag',             'tags'               => 'tag',
-            'product-category'   => 'product-category','product_category'   => 'product-category',
-            'product-categories' => 'product-category','product_categories' => 'product-category',
-            'product-tag'        => 'product-tag',     'product_tag'        => 'product-tag',
-            'product-tags'       => 'product-tag',     'product_tags'       => 'product-tag',
+            'category' => 'category',        'categories' => 'category',
+            'tag' => 'tag',             'tags' => 'tag',
+            'product-category' => 'product-category', 'product_category' => 'product-category',
+            'product-categories' => 'product-category', 'product_categories' => 'product-category',
+            'product-tag' => 'product-tag',     'product_tag' => 'product-tag',
+            'product-tags' => 'product-tag',     'product_tags' => 'product-tag',
         ];
         $prefix = $prefixes[$taxonomySlug]
             ?? ($postType === 'product' ? 'product-category' : 'category');
 
-        return url('/' . $prefix . '/' . $slug);
+        return url('/'.$prefix.'/'.$slug);
     }
 }
 
@@ -2580,11 +2886,15 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
     function falcon_resolve_dynamic_value(string $source, $post = null, array $config = [])
     {
         if ($post === null) {
-            try { $shared = view()->getShared(); $post = $shared['post'] ?? null; } catch (\Throwable $e) {}
+            try {
+                $shared = view()->getShared();
+                $post = $shared['post'] ?? null;
+            } catch (Throwable $e) {
+            }
         }
 
-        $before   = $config['before']   ?? '';
-        $after    = $config['after']    ?? '';
+        $before = $config['before'] ?? '';
+        $after = $config['after'] ?? '';
         $fallback = $config['fallback'] ?? '';
 
         $val = '';
@@ -2606,74 +2916,104 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
                 $val = ($post && function_exists('get_falcon_permalink')) ? get_falcon_permalink($post) : ($post->slug ?? '');
                 break;
             case 'post_excerpt':
-                if (!$post) break;
+                if (!$post) {
+                    break;
+                }
                 $ex = $post->excerpt ?? '';
-                if (!$ex && function_exists('get_falcon_excerpt')) $ex = get_falcon_excerpt($post);
-                $length = max(1, (int)($config['excerpt_length'] ?? 150));
+                if (!$ex && function_exists('get_falcon_excerpt')) {
+                    $ex = get_falcon_excerpt($post);
+                }
+                $length = max(1, (int) ($config['excerpt_length'] ?? 150));
                 if (!$ex) {
                     $raw = strip_tags($post->content ?? '');
                     $rawTrimmed = ltrim($raw);
                     if ($rawTrimmed && $rawTrimmed[0] !== '[' && $rawTrimmed[0] !== '{') {
-                        $ex = \Illuminate\Support\Str::limit($rawTrimmed, $length);
+                        $ex = Str::limit($rawTrimmed, $length);
                     }
                 } else {
-                    $ex = \Illuminate\Support\Str::limit(strip_tags($ex), $length);
+                    $ex = Str::limit(strip_tags($ex), $length);
                 }
                 $val = $ex ? strip_tags($ex) : '';
                 break;
             case 'post_date':
-                $dateType   = $config['date_type']   ?? 'published';
-                $dateFormat = $config['date_format']  ?? 'M j, Y';
-                if (!$dateFormat) $dateFormat = 'M j, Y';
+                $dateType = $config['date_type'] ?? 'published';
+                $dateFormat = $config['date_format'] ?? 'M j, Y';
+                if (!$dateFormat) {
+                    $dateFormat = 'M j, Y';
+                }
                 $d = $dateType === 'modified'
                     ? ($post->updated_at ?? null)
                     : ($post->published_at ?? $post->created_at ?? null);
-                $val = ($post && $d) ? \Carbon\Carbon::parse($d)->format($dateFormat) : '';
+                $val = ($post && $d) ? Carbon::parse($d)->format($dateFormat) : '';
                 break;
             case 'post_reading_time':
-                if (!$post) break;
+                if (!$post) {
+                    break;
+                }
                 $words = str_word_count(strip_tags($post->content ?? ''));
-                $val = max(1, (int)ceil($words / 200)) . ' min read';
+                $val = max(1, (int) ceil($words / 200)).' min read';
                 break;
             case 'post_id':
-                $val = $post ? (string)($post->id ?? '') : '';
+                $val = $post ? (string) ($post->id ?? '') : '';
                 break;
             case 'post_type':
                 $val = $post->type ?? '';
                 break;
-            case 'post_taxonomy': {
+            case 'post_taxonomy':
                 // Both halves must match: the post has to BE the chosen post type, and the terms
                 // come from the chosen taxonomy. A mismatch yields '' so the fallback shows,
                 // which is what makes one template safe to reuse across post types.
-                if (!$post) break;
+                if (!$post) {
+                    break;
+                }
                 $wantType = (string) ($config['tax_post_type'] ?? '');
-                $taxSlug  = (string) ($config['tax_slug'] ?? '');
-                if ($taxSlug === '') break;
-                if ($wantType !== '' && ($post->type ?? '') !== $wantType) break;
+                $taxSlug = (string) ($config['tax_slug'] ?? '');
+                if ($taxSlug === '') {
+                    break;
+                }
+                if ($wantType !== '' && ($post->type ?? '') !== $wantType) {
+                    break;
+                }
                 $terms = falcon_post_terms($post, $taxSlug);
-                if ($terms->isEmpty()) break;
+                if ($terms->isEmpty()) {
+                    break;
+                }
                 $limit = (int) ($config['tax_limit'] ?? 0);
-                if ($limit > 0) $terms = $terms->take($limit);
+                if ($limit > 0) {
+                    $terms = $terms->take($limit);
+                }
                 $sep = $config['tax_separator'] ?? '';
-                if ($sep === '') $sep = ', ';
+                if ($sep === '') {
+                    $sep = ', ';
+                }
                 $val = $terms->map(fn ($t) => (string) ($t->name ?? ''))->filter()->implode($sep);
                 break;
-            }
-            case 'taxonomy_url': {
-                if (!$post) break;
+
+            case 'taxonomy_url':
+                if (!$post) {
+                    break;
+                }
                 $wantType = (string) ($config['link_tax_post_type'] ?? '');
-                $taxSlug  = (string) ($config['link_tax_slug'] ?? '');
-                if ($taxSlug === '') break;
-                if ($wantType !== '' && ($post->type ?? '') !== $wantType) break;
+                $taxSlug = (string) ($config['link_tax_slug'] ?? '');
+                if ($taxSlug === '') {
+                    break;
+                }
+                if ($wantType !== '' && ($post->type ?? '') !== $wantType) {
+                    break;
+                }
                 $terms = falcon_post_terms($post, $taxSlug);
-                if ($terms->isEmpty()) break;
+                if ($terms->isEmpty()) {
+                    break;
+                }
                 $term = ($config['link_tax_which'] ?? 'first') === 'last' ? $terms->last() : $terms->first();
-                $val  = falcon_term_archive_url($term, $taxSlug, (string) ($post->type ?? 'post'));
+                $val = falcon_term_archive_url($term, $taxSlug, (string) ($post->type ?? 'post'));
                 break;
-            }
+
             case 'post_comment_count':
-                if (!$post) break;
-                $val = (string)(isset($post->comments_count) ? $post->comments_count : (method_exists($post, 'comments') ? $post->comments()->count() : 0));
+                if (!$post) {
+                    break;
+                }
+                $val = (string) (isset($post->comments_count) ? $post->comments_count : (method_exists($post, 'comments') ? $post->comments()->count() : 0));
                 break;
             case 'post_author':
             case 'author_name':
@@ -2688,16 +3028,18 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
             case 'author_avatar':
                 $av = $post->user->avatar ?? ($post->user->profile_photo_url ?? '');
                 if ($av && !str_starts_with($av, 'http') && !str_starts_with($av, '/storage')) {
-                    $av = '/storage/' . ltrim($av, '/');
+                    $av = '/storage/'.ltrim($av, '/');
                 }
                 $val = $av;
                 break;
             case 'featured_image':
             case 'feature_image':
-                if (!$post) break;
+                if (!$post) {
+                    break;
+                }
                 $img = $post->featured_image ?? $post->thumbnail ?? '';
                 if ($img && !str_starts_with($img, 'http') && !str_starts_with($img, '/storage')) {
-                    $img = '/storage/' . ltrim($img, '/');
+                    $img = '/storage/'.ltrim($img, '/');
                 }
                 $val = $img;
                 break;
@@ -2705,13 +3047,15 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
             case 'site_logo':
                 $logo = get_cms_option('theme_site_logo', '');
                 if ($logo && !str_starts_with($logo, 'http') && !str_starts_with($logo, '/storage')) {
-                    $logo = '/storage/' . ltrim($logo, '/');
+                    $logo = '/storage/'.ltrim($logo, '/');
                 }
                 $val = $logo;
                 break;
             case 'current_date':
                 $dateFormat = $config['date_format'] ?? 'M j, Y';
-                if (!$dateFormat) $dateFormat = 'M j, Y';
+                if (!$dateFormat) {
+                    $dateFormat = 'M j, Y';
+                }
                 $val = now()->format($dateFormat);
                 break;
             case 'current_year':
@@ -2723,46 +3067,54 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
             case 'acpt_custom':
                 $slug = $config['acpt_slug'] ?? '';
                 if ($slug) {
-                    $val = falcon_resolve_dynamic_value('acpt_' . $slug, $post);
+                    $val = falcon_resolve_dynamic_value('acpt_'.$slug, $post);
                 }
                 break;
-            case 'product_price': {
+            case 'product_price':
                 $sd = $post ? ($post->shopData ?? null) : null;
-                if (!$sd) break;
+                if (!$sd) {
+                    break;
+                }
                 $sale = $sd->sale_price;
-                $saleActive = ($sale !== null && $sale !== '' && (empty($sd->sale_ends_at) || \Carbon\Carbon::parse($sd->sale_ends_at)->isFuture()));
+                $saleActive = ($sale !== null && $sale !== '' && (empty($sd->sale_ends_at) || Carbon::parse($sd->sale_ends_at)->isFuture()));
                 $price = $saleActive ? (float) $sale : (float) ($sd->price ?? 0);
                 $val = function_exists('falcon_price_format') ? falcon_price_format($price) : number_format($price, 2);
                 break;
-            }
-            case 'product_regular_price': {
+
+            case 'product_regular_price':
                 $sd = $post ? ($post->shopData ?? null) : null;
-                if (!$sd) break;
+                if (!$sd) {
+                    break;
+                }
                 $price = (float) ($sd->price ?? 0);
                 $val = function_exists('falcon_price_format') ? falcon_price_format($price) : number_format($price, 2);
                 break;
-            }
-            case 'product_sale_price': {
+
+            case 'product_sale_price':
                 $sd = $post ? ($post->shopData ?? null) : null;
-                if (!$sd) break;
+                if (!$sd) {
+                    break;
+                }
                 $sale = $sd->sale_price;
-                $saleActive = ($sale !== null && $sale !== '' && (empty($sd->sale_ends_at) || \Carbon\Carbon::parse($sd->sale_ends_at)->isFuture()));
+                $saleActive = ($sale !== null && $sale !== '' && (empty($sd->sale_ends_at) || Carbon::parse($sd->sale_ends_at)->isFuture()));
                 if ($saleActive) {
                     $val = function_exists('falcon_price_format') ? falcon_price_format((float) $sale) : number_format((float) $sale, 2);
                 }
                 break;
-            }
+
             case 'product_sku':
                 $val = ($post && $post->shopData) ? (string) ($post->shopData->sku ?? '') : '';
                 break;
-            case 'product_stock_status': {
+            case 'product_stock_status':
                 $sd = $post ? ($post->shopData ?? null) : null;
-                if (!$sd) break;
+                if (!$sd) {
+                    break;
+                }
                 $isOut = ($sd->stock_status ?? 'instock') === 'outofstock'
                       || (($sd->manage_stock ?? false) && (int) ($sd->stock_quantity ?? 0) <= 0);
                 $val = $isOut ? 'Out of stock' : 'In stock';
                 break;
-            }
+
             case 'product_stock_quantity':
                 $val = ($post && $post->shopData && $post->shopData->stock_quantity !== null)
                     ? (string) (int) $post->shopData->stock_quantity : '';
@@ -2781,7 +3133,8 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
         if ($val === '' || $val === null) {
             return $fallback;
         }
-        return $before . $val . $after;
+
+        return $before.$val.$after;
     }
 }
 
@@ -2799,13 +3152,18 @@ if (!function_exists('lazy_apply_custom_dynamic')) {
                 $settings[$base] = falcon_resolve_dynamic_value($v, $post, $config);
             }
         }
+
         return $settings;
     }
 }
 
 if (!function_exists('lazy_resolve_tokens')) {
-    function lazy_resolve_tokens(string $value, $post = null): string {
-        if (strpos($value, '{lazy:') === false) return $value;
+    function lazy_resolve_tokens(string $value, $post = null): string
+    {
+        if (strpos($value, '{lazy:') === false) {
+            return $value;
+        }
+
         return preg_replace_callback('/\{lazy:([^}]+)\}/', function ($m) use ($post) {
             return lazy_resolve_token($m[1], $post);
         }, $value);
@@ -2813,38 +3171,54 @@ if (!function_exists('lazy_resolve_tokens')) {
 }
 
 if (!function_exists('lazy_resolve_token')) {
-    function lazy_resolve_token(string $token, $post = null): string {
+    function lazy_resolve_token(string $token, $post = null): string
+    {
         if ($post === null) {
-            try { $post = view()->getShared()['post'] ?? null; } catch (\Throwable $e) {}
+            try {
+                $post = view()->getShared()['post'] ?? null;
+            } catch (Throwable $e) {
+            }
         }
         switch ($token) {
             case 'post_title':
                 return $post->title ?? '';
             case 'post_excerpt':
-                if (!$post) return '';
+                if (!$post) {
+                    return '';
+                }
                 $ex = $post->excerpt ?? '';
-                if (!$ex && function_exists('get_falcon_excerpt')) $ex = get_falcon_excerpt($post);
+                if (!$ex && function_exists('get_falcon_excerpt')) {
+                    $ex = get_falcon_excerpt($post);
+                }
                 if (!$ex) {
                     $raw = strip_tags($post->content ?? '');
                     $rawTrimmed = ltrim($raw);
                     if ($rawTrimmed && $rawTrimmed[0] !== '[' && $rawTrimmed[0] !== '{') {
-                        $ex = \Illuminate\Support\Str::limit($rawTrimmed, 150);
+                        $ex = Str::limit($rawTrimmed, 150);
                     }
                 }
+
                 return $ex ? strip_tags($ex) : '';
             case 'post_id':
-                return (string)($post->id ?? '');
+                return (string) ($post->id ?? '');
             case 'post_date':
                 $d = $post->created_at ?? ($post->published_at ?? null);
-                return $d ? \Carbon\Carbon::parse($d)->format('M j, Y') : '';
+
+                return $d ? Carbon::parse($d)->format('M j, Y') : '';
             case 'post_type':
                 return $post->type ?? '';
             case 'post_permalink':
-                if (!$post) return '';
+                if (!$post) {
+                    return '';
+                }
+
                 return function_exists('get_falcon_permalink') ? get_falcon_permalink($post) : ($post->slug ?? '#');
             case 'post_reading_time':
-                if (!$post) return '';
-                return max(1, (int) ceil(str_word_count(strip_tags($post->content ?? '')) / 200)) . ' min read';
+                if (!$post) {
+                    return '';
+                }
+
+                return max(1, (int) ceil(str_word_count(strip_tags($post->content ?? '')) / 200)).' min read';
             case 'site_title':
                 return function_exists('get_cms_option') ? (string) get_cms_option('site_title', config('app.name', '')) : config('app.name', '');
             case 'site_tagline':
@@ -2861,18 +3235,23 @@ if (!function_exists('lazy_resolve_token')) {
                 if (str_starts_with($token, 'acpt_') && $post) {
                     $slug = substr($token, 5);
                     try {
-                        $meta = \FalconCms\Core\Models\PostMeta::where('post_id', $post->id)
+                        $meta = PostMeta::where('post_id', $post->id)
                             ->where('meta_key', $slug)->first();
-                        if ($meta) return (string) $meta->meta_value;
-                    } catch (\Throwable $e) {}
+                        if ($meta) {
+                            return (string) $meta->meta_value;
+                        }
+                    } catch (Throwable $e) {
+                    }
                 }
+
                 return '';
         }
     }
 }
 
 if (!function_exists('falcon_resolve_tokens_in_settings')) {
-    function falcon_resolve_tokens_in_settings(array $settings, $post = null): array {
+    function falcon_resolve_tokens_in_settings(array $settings, $post = null): array
+    {
         foreach ($settings as $k => &$v) {
             if (is_string($v) && strpos($v, '{lazy:') !== false) {
                 $v = lazy_resolve_tokens($v, $post);
@@ -2880,6 +3259,7 @@ if (!function_exists('falcon_resolve_tokens_in_settings')) {
                 $v = falcon_resolve_tokens_in_settings($v, $post);
             }
         }
+
         return $settings;
     }
 }
@@ -2895,131 +3275,221 @@ if (!function_exists('lazy_custom_element_render')) {
      */
     function lazy_custom_element_render(array $el, array $customDef): array
     {
-        $s    = $el['settings'] ?? [];
+        $s = $el['settings'] ?? [];
         $elId = $el['id'] ?? uniqid('ce');
         $fields = falcon_normalize_custom_fields($customDef); // keyed, ordered
-        $contentTypes = ['text','textarea','wysiwyg','image','media','icon','button','repeater','date','number','slider','select','radio','checkbox','url','link'];
+        $contentTypes = ['text', 'textarea', 'wysiwyg', 'image', 'media', 'icon', 'button', 'repeater', 'date', 'number', 'slider', 'select', 'radio', 'checkbox', 'url', 'link'];
         // A field renders as content unless it's a design modifier (align select/radio, or an apply_to relation).
         $isContent = function (string $k, array $f) use ($contentTypes): bool {
-            if (!in_array($f['type'], $contentTypes, true)) return false;
-            if (in_array($f['type'], ['select','radio'], true) && str_ends_with($k, '_align')) return false;
-            if (!empty($f['apply_to'])) return false;
+            if (!in_array($f['type'], $contentTypes, true)) {
+                return false;
+            }
+            if (in_array($f['type'], ['select', 'radio'], true) && str_ends_with($k, '_align')) {
+                return false;
+            }
+            if (!empty($f['apply_to'])) {
+                return false;
+            }
+
             return true;
         };
 
         $contentKeys = [];
         foreach ($fields as $k => $f) {
-            if ($isContent($k, $f)) $contentKeys[] = $k;
+            if ($isContent($k, $f)) {
+                $contentKeys[] = $k;
+            }
         }
 
-        $unit = fn($v) => (is_numeric($v) ? $v . 'px' : $v);
+        $unit = fn ($v) => (is_numeric($v) ? $v.'px' : $v);
 
         // typography CSS decls from a prefix
         $typoFor = function (string $tp) use ($s, $unit): array {
             $css = [];
-            if (!empty($s[$tp . '_family']) && $s[$tp . '_family'] !== 'inherit') $css[] = 'font-family:' . $s[$tp . '_family'];
-            if (!empty($s[$tp . '_size']))   $css[] = 'font-size:' . $unit($s[$tp . '_size']);
-            if (!empty($s[$tp . '_weight'])) $css[] = 'font-weight:' . $s[$tp . '_weight'];
-            if (!empty($s[$tp . '_line_height'])) $css[] = 'line-height:' . $s[$tp . '_line_height'];
-            if (isset($s[$tp . '_letter_spacing']) && $s[$tp . '_letter_spacing'] !== '') $css[] = 'letter-spacing:' . $unit($s[$tp . '_letter_spacing']);
-            if (!empty($s[$tp . '_transform']) && $s[$tp . '_transform'] !== 'none') $css[] = 'text-transform:' . $s[$tp . '_transform'];
+            if (!empty($s[$tp.'_family']) && $s[$tp.'_family'] !== 'inherit') {
+                $css[] = 'font-family:'.$s[$tp.'_family'];
+            }
+            if (!empty($s[$tp.'_size'])) {
+                $css[] = 'font-size:'.$unit($s[$tp.'_size']);
+            }
+            if (!empty($s[$tp.'_weight'])) {
+                $css[] = 'font-weight:'.$s[$tp.'_weight'];
+            }
+            if (!empty($s[$tp.'_line_height'])) {
+                $css[] = 'line-height:'.$s[$tp.'_line_height'];
+            }
+            if (isset($s[$tp.'_letter_spacing']) && $s[$tp.'_letter_spacing'] !== '') {
+                $css[] = 'letter-spacing:'.$unit($s[$tp.'_letter_spacing']);
+            }
+            if (!empty($s[$tp.'_transform']) && $s[$tp.'_transform'] !== 'none') {
+                $css[] = 'text-transform:'.$s[$tp.'_transform'];
+            }
+
             return $css;
         };
 
         // T/R/B/L shorthand from a prefix, or null
         $edgesFor = function (string $prefix) use ($s): ?string {
-            $edges = []; $has = false;
-            foreach (['top','right','bottom','left'] as $side) {
-                $v = $s[$prefix . '_' . $side] ?? '';
-                if ($v === '' || $v === null) { $edges[] = '0'; }
-                else { $edges[] = $v . ($s[$prefix . '_' . $side . '_unit'] ?? 'px'); $has = true; }
+            $edges = [];
+            $has = false;
+            foreach (['top', 'right', 'bottom', 'left'] as $side) {
+                $v = $s[$prefix.'_'.$side] ?? '';
+                if ($v === '' || $v === null) {
+                    $edges[] = '0';
+                } else {
+                    $edges[] = $v.($s[$prefix.'_'.$side.'_unit'] ?? 'px');
+                    $has = true;
+                }
             }
+
             return $has ? implode(' ', $edges) : null;
         };
 
         // Assemble inline CSS for a base from its prefix-related modifiers
         $styleFor = function (string $base) use ($s, $typoFor, $edgesFor): string {
             $css = [];
-            if (!empty($s[$base . '_color'])) $css[] = 'color:' . $s[$base . '_color'];
-            if (!empty($s[$base . '_bg']))    $css[] = 'background-color:' . $s[$base . '_bg'];
-            if (!empty($s[$base . '_align'])) $css[] = 'text-align:' . $s[$base . '_align'];
-            $css = array_merge($css, $typoFor($base . '_typo'));
-            if ($p = $edgesFor($base . '_pad'))    $css[] = 'padding:' . $p;
-            if ($m = $edgesFor($base . '_margin')) $css[] = 'margin:' . $m;
+            if (!empty($s[$base.'_color'])) {
+                $css[] = 'color:'.$s[$base.'_color'];
+            }
+            if (!empty($s[$base.'_bg'])) {
+                $css[] = 'background-color:'.$s[$base.'_bg'];
+            }
+            if (!empty($s[$base.'_align'])) {
+                $css[] = 'text-align:'.$s[$base.'_align'];
+            }
+            $css = array_merge($css, $typoFor($base.'_typo'));
+            if ($p = $edgesFor($base.'_pad')) {
+                $css[] = 'padding:'.$p;
+            }
+            if ($m = $edgesFor($base.'_margin')) {
+                $css[] = 'margin:'.$m;
+            }
+
             return implode(';', $css);
         };
 
         $hoverDecls = function (string $base) use ($s): array {
             $d = [];
-            if (!empty($s[$base . '_hover_color'])) $d[] = 'color:' . $s[$base . '_hover_color'] . ' !important';
-            if (!empty($s[$base . '_hover_bg']))    $d[] = 'background-color:' . $s[$base . '_hover_bg'] . ' !important';
+            if (!empty($s[$base.'_hover_color'])) {
+                $d[] = 'color:'.$s[$base.'_hover_color'].' !important';
+            }
+            if (!empty($s[$base.'_hover_bg'])) {
+                $d[] = 'background-color:'.$s[$base.'_hover_bg'].' !important';
+            }
+
             return $d;
         };
 
         // Contribution of an apply_to design field to a target → ['style' => string, 'hover' => array]
         $contribFor = function (array $f) use ($s, $typoFor, $edgesFor): array {
-            $type = $f['type']; $key = $f['key'];
+            $type = $f['type'];
+            $key = $f['key'];
             $as = $f['apply_as'] ?: ($type === 'dimensions' ? 'padding' : ($type === 'color' ? 'color' : ''));
-            $style = []; $hover = [];
+            $style = [];
+            $hover = [];
             if ($type === 'color') {
-                $v = $s[$key] ?? ''; if ($v === '' || $v === null) return ['style' => '', 'hover' => []];
-                if ($as === 'bg')              $style[] = 'background-color:' . $v;
-                elseif ($as === 'hover_color') $hover[] = 'color:' . $v . ' !important';
-                elseif ($as === 'hover_bg')    $hover[] = 'background-color:' . $v . ' !important';
-                else                           $style[] = 'color:' . $v;
+                $v = $s[$key] ?? '';
+                if ($v === '' || $v === null) {
+                    return ['style' => '', 'hover' => []];
+                }
+                if ($as === 'bg') {
+                    $style[] = 'background-color:'.$v;
+                } elseif ($as === 'hover_color') {
+                    $hover[] = 'color:'.$v.' !important';
+                } elseif ($as === 'hover_bg') {
+                    $hover[] = 'background-color:'.$v.' !important';
+                } else {
+                    $style[] = 'color:'.$v;
+                }
             } elseif ($type === 'typography') {
                 $style = $typoFor($key);
             } elseif ($type === 'dimensions') {
                 $e = $edgesFor($key);
-                if ($e) $style[] = ($as === 'margin' ? 'margin:' : 'padding:') . $e;
+                if ($e) {
+                    $style[] = ($as === 'margin' ? 'margin:' : 'padding:').$e;
+                }
             }
+
             return ['style' => implode(';', $style), 'hover' => $hover];
         };
 
         $modBase = function (string $key, string $type): ?string {
             if ($type === 'color') {
-                if (str_ends_with($key, '_hover_color')) return substr($key, 0, -12);
-                if (str_ends_with($key, '_hover_bg'))    return substr($key, 0, -9);
-                if (str_ends_with($key, '_color'))        return substr($key, 0, -6);
-                if (str_ends_with($key, '_bg'))           return substr($key, 0, -3);
+                if (str_ends_with($key, '_hover_color')) {
+                    return substr($key, 0, -12);
+                }
+                if (str_ends_with($key, '_hover_bg')) {
+                    return substr($key, 0, -9);
+                }
+                if (str_ends_with($key, '_color')) {
+                    return substr($key, 0, -6);
+                }
+                if (str_ends_with($key, '_bg')) {
+                    return substr($key, 0, -3);
+                }
             }
-            if ($type === 'typography' && str_ends_with($key, '_typo')) return substr($key, 0, -5);
+            if ($type === 'typography' && str_ends_with($key, '_typo')) {
+                return substr($key, 0, -5);
+            }
             if ($type === 'dimensions') {
-                if (str_ends_with($key, '_pad'))    return substr($key, 0, -4);
-                if (str_ends_with($key, '_margin')) return substr($key, 0, -7);
+                if (str_ends_with($key, '_pad')) {
+                    return substr($key, 0, -4);
+                }
+                if (str_ends_with($key, '_margin')) {
+                    return substr($key, 0, -7);
+                }
             }
-            if (in_array($type, ['select','radio'], true) && str_ends_with($key, '_align')) return substr($key, 0, -6);
+            if (in_array($type, ['select', 'radio'], true) && str_ends_with($key, '_align')) {
+                return substr($key, 0, -6);
+            }
+
             return null;
         };
 
-        $hoverCss = ''; $hcSeq = 0;
+        $hoverCss = '';
+        $hcSeq = 0;
         $mkHoverClass = function (array $decls) use (&$hoverCss, &$hcSeq, $elId): string {
-            if (empty($decls)) return '';
-            $cls = 'lzceh-' . $elId . '-' . ($hcSeq++);
-            $hoverCss .= '.' . $cls . ':hover{' . implode(';', $decls) . '}';
+            if (empty($decls)) {
+                return '';
+            }
+            $cls = 'lzceh-'.$elId.'-'.($hcSeq++);
+            $hoverCss .= '.'.$cls.':hover{'.implode(';', $decls).'}';
+
             return $cls;
         };
 
         // Explicit multi-target relations: design fields with `apply_to` style one or more content fields.
         $explicit = []; // base => ['style' => [..], 'hover' => [..]]
         foreach ($fields as $k => $f) {
-            if (empty($f['apply_to'])) continue;
+            if (empty($f['apply_to'])) {
+                continue;
+            }
             $targets = is_array($f['apply_to']) ? $f['apply_to'] : [$f['apply_to']];
             $c = $contribFor($f + ['key' => $k]);
             foreach ($targets as $t) {
-                if (!isset($explicit[$t])) $explicit[$t] = ['style' => [], 'hover' => []];
-                if ($c['style'] !== '') $explicit[$t]['style'][] = $c['style'];
-                if (!empty($c['hover']))  $explicit[$t]['hover'] = array_merge($explicit[$t]['hover'], $c['hover']);
+                if (!isset($explicit[$t])) {
+                    $explicit[$t] = ['style' => [], 'hover' => []];
+                }
+                if ($c['style'] !== '') {
+                    $explicit[$t]['style'][] = $c['style'];
+                }
+                if (!empty($c['hover'])) {
+                    $explicit[$t]['hover'] = array_merge($explicit[$t]['hover'], $c['hover']);
+                }
             }
         }
 
         $items = [];
         foreach ($fields as $k => $f) {
-            if (!$isContent($k, $f)) continue;
+            if (!$isContent($k, $f)) {
+                continue;
+            }
             $style = $styleFor($k);
             $hoverD = $hoverDecls($k);
             if (isset($explicit[$k])) {
-                if (!empty($explicit[$k]['style'])) $style = trim($style . ';' . implode(';', $explicit[$k]['style']), ';');
+                if (!empty($explicit[$k]['style'])) {
+                    $style = trim($style.';'.implode(';', $explicit[$k]['style']), ';');
+                }
                 $hoverD = array_merge($hoverD, $explicit[$k]['hover']);
             }
             $hoverClass = $mkHoverClass($hoverD);
@@ -3031,10 +3501,10 @@ if (!function_exists('lazy_custom_element_render')) {
                     $subFields[] = ['key' => $sk, 'type' => $sp['type'] ?? 'text'];
                 }
                 $items[] = ['kind' => 'repeater', 'key' => $k, 'style' => $style, 'hoverClass' => $hoverClass,
-                            'rows' => (is_array($s[$k] ?? null) ? $s[$k] : []), 'subFields' => $subFields];
+                    'rows' => (is_array($s[$k] ?? null) ? $s[$k] : []), 'subFields' => $subFields];
             } elseif ($f['type'] === 'button') {
                 $items[] = ['kind' => 'button', 'key' => $k, 'value' => $s[$k] ?? '', 'style' => $style, 'hoverClass' => $hoverClass,
-                            'url' => $s[$k . '_url'] ?? '', 'target' => $s[$k . '_target'] ?? '_self'];
+                    'url' => $s[$k.'_url'] ?? '', 'target' => $s[$k.'_target'] ?? '_self'];
             } else {
                 $val = ($f['type'] === 'checkbox') ? (is_array($s[$k] ?? null) ? implode(', ', $s[$k]) : '') : ($s[$k] ?? null);
                 $items[] = ['kind' => $f['type'], 'key' => $k, 'value' => $val, 'style' => $style, 'hoverClass' => $hoverClass];
@@ -3042,15 +3512,22 @@ if (!function_exists('lazy_custom_element_render')) {
         }
 
         // Orphan prefix modifiers (no matching content field, no apply_to) → wrapper
-        $wrapperStyle = ''; $wrapperHoverClass = '';
+        $wrapperStyle = '';
+        $wrapperHoverClass = '';
         foreach ($fields as $k => $f) {
-            if (!empty($f['apply_to'])) continue;
+            if (!empty($f['apply_to'])) {
+                continue;
+            }
             $base = $modBase($k, $f['type']);
             if ($base && !in_array($base, $contentKeys, true)) {
                 $ws = $styleFor($base);
-                if ($ws) $wrapperStyle .= ($wrapperStyle ? ';' : '') . $ws;
+                if ($ws) {
+                    $wrapperStyle .= ($wrapperStyle ? ';' : '').$ws;
+                }
                 $hc = $mkHoverClass($hoverDecls($base));
-                if ($hc) $wrapperHoverClass = $hc;
+                if ($hc) {
+                    $wrapperHoverClass = $hc;
+                }
             }
         }
 
@@ -3067,12 +3544,13 @@ if (!function_exists('lazy_revision_diff')) {
     {
         $prep = function ($s) {
             $s = (string) $s;
-            if (\FalconCms\Core\Services\BuilderShortcodeConverter::isBuilderJson($s)) {
-                $s = \FalconCms\Core\Services\BuilderShortcodeConverter::jsonToShortcodes($s);
+            if (BuilderShortcodeConverter::isBuilderJson($s)) {
+                $s = BuilderShortcodeConverter::jsonToShortcodes($s);
             }
             $s = preg_replace('/>\s*</', ">\n<", $s);        // break HTML onto separate lines
             $lines = preg_split('/\r\n|\r|\n/', $s);
-            return array_values(array_filter($lines, fn($l) => trim($l) !== '' || $l === ''));
+
+            return array_values(array_filter($lines, fn ($l) => trim($l) !== '' || $l === ''));
         };
 
         $a = $prep($old);
@@ -3096,51 +3574,82 @@ if (!function_exists('lazy_revision_diff')) {
         }
 
         $rows = [];
-        $i = 0; $j = 0;
+        $i = 0;
+        $j = 0;
         while ($i < $n && $j < $m) {
-            if ($a[$i] === $b[$j])              { $rows[] = [' ', $a[$i]]; $i++; $j++; }
-            elseif ($dp[$i + 1][$j] >= $dp[$i][$j + 1]) { $rows[] = ['-', $a[$i]]; $i++; }
-            else                                { $rows[] = ['+', $b[$j]]; $j++; }
+            if ($a[$i] === $b[$j]) {
+                $rows[] = [' ', $a[$i]];
+                $i++;
+                $j++;
+            } elseif ($dp[$i + 1][$j] >= $dp[$i][$j + 1]) {
+                $rows[] = ['-', $a[$i]];
+                $i++;
+            } else {
+                $rows[] = ['+', $b[$j]];
+                $j++;
+            }
         }
-        while ($i < $n) { $rows[] = ['-', $a[$i]]; $i++; }
-        while ($j < $m) { $rows[] = ['+', $b[$j]]; $j++; }
+        while ($i < $n) {
+            $rows[] = ['-', $a[$i]];
+            $i++;
+        }
+        while ($j < $m) {
+            $rows[] = ['+', $b[$j]];
+            $j++;
+        }
 
         $changed = false;
         $html = '';
         foreach ($rows as [$op, $line]) {
             $esc = e($line);
-            if ($op === '+')      { $html .= '<div class="diff-line diff-add"><span class="diff-sign">+</span>' . $esc . '</div>'; $changed = true; }
-            elseif ($op === '-')  { $html .= '<div class="diff-line diff-del"><span class="diff-sign">-</span>' . $esc . '</div>'; $changed = true; }
-            else                  { $html .= '<div class="diff-line diff-eq"><span class="diff-sign"> </span>' . $esc . '</div>'; }
+            if ($op === '+') {
+                $html .= '<div class="diff-line diff-add"><span class="diff-sign">+</span>'.$esc.'</div>';
+                $changed = true;
+            } elseif ($op === '-') {
+                $html .= '<div class="diff-line diff-del"><span class="diff-sign">-</span>'.$esc.'</div>';
+                $changed = true;
+            } else {
+                $html .= '<div class="diff-line diff-eq"><span class="diff-sign"> </span>'.$esc.'</div>';
+            }
         }
 
-        if (!$changed) return '<div class="diff-note">No differences between these two versions.</div>';
+        if (!$changed) {
+            return '<div class="diff-note">No differences between these two versions.</div>';
+        }
+
         return $html;
     }
 }
 
 if (!function_exists('remove_falcon_action')) {
-    function remove_falcon_action($tag, $callback, $priority = 10) {
-        return \FalconCms\Core\Core\HookManager::getInstance()->removeAction($tag, $callback, $priority);
+    function remove_falcon_action($tag, $callback, $priority = 10)
+    {
+        return HookManager::getInstance()->removeAction($tag, $callback, $priority);
     }
 }
 
 if (!function_exists('remove_falcon_filter')) {
-    function remove_falcon_filter($tag, $callback, $priority = 10) {
-        return \FalconCms\Core\Core\HookManager::getInstance()->removeFilter($tag, $callback, $priority);
+    function remove_falcon_filter($tag, $callback, $priority = 10)
+    {
+        return HookManager::getInstance()->removeFilter($tag, $callback, $priority);
     }
 }
 
 if (!function_exists('lazy_lang_switcher')) {
-    function lazy_lang_switcher($showFlags = true) {
+    function lazy_lang_switcher($showFlags = true)
+    {
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
-            $languages = \FalconCms\Core\Models\Language::where('status', true)->get();
-            if ($languages->count() <= 1) return '';
-            
+            if (!Schema::hasTable('cms_languages')) {
+                return '';
+            }
+            $languages = Language::where('status', true)->get();
+            if ($languages->count() <= 1) {
+                return '';
+            }
+
             $currentLocale = app()->getLocale();
             $output = '<div class="lazy-lang-switcher flex items-center space-x-3">';
-            
+
             // Check if we are on a single post/page to find equivalents
             $currentPost = null;
             if (request()->route('typeOrSlug')) {
@@ -3152,8 +3661,8 @@ if (!function_exists('lazy_lang_switcher')) {
 
             foreach ($languages as $lang) {
                 $isActive = ($currentLocale == $lang->code);
-                $url = url($lang->code); 
-                
+                $url = url($lang->code);
+
                 if ($currentPost) {
                     $equivalent = $currentPost->getTranslation($lang->code);
                     if ($equivalent) {
@@ -3161,77 +3670,90 @@ if (!function_exists('lazy_lang_switcher')) {
                     }
                 }
 
-                $output .= '<a href="' . $url . '" class="flex items-center text-[13px] ' . ($isActive ? 'font-bold text-blue-600' : 'text-gray-600 hover:text-black') . '">';
-                if ($showFlags) $output .= '<span class="mr-1">' . $lang->flag . '</span> ';
+                $output .= '<a href="'.$url.'" class="flex items-center text-[13px] '.($isActive ? 'font-bold text-blue-600' : 'text-gray-600 hover:text-black').'">';
+                if ($showFlags) {
+                    $output .= '<span class="mr-1">'.$lang->flag.'</span> ';
+                }
                 $output .= strtoupper($lang->code);
                 $output .= '</a>';
             }
             $output .= '</div>';
+
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return '';
         }
     }
 }
 
 if (!function_exists('falcon_lang_dropdown')) {
-    function falcon_lang_dropdown() {
+    function falcon_lang_dropdown()
+    {
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
-            $activeLangs = \FalconCms\Core\Models\Language::where('status', true)->get();
-            if ($activeLangs->count() <= 1) return '';
-            
+            if (!Schema::hasTable('cms_languages')) {
+                return '';
+            }
+            $activeLangs = Language::where('status', true)->get();
+            if ($activeLangs->count() <= 1) {
+                return '';
+            }
+
             $currentLang = $activeLangs->where('code', app()->getLocale())->first() ?? $activeLangs->first();
-            
+
             // Find current post to check for translations
             $currentPost = view()->getShared()['current_post'] ?? null;
 
             // Filter languages to only those that have a translation for the current post
             if ($currentPost) {
-                $activeLangs = $activeLangs->filter(function($lang) use ($currentPost) {
-                    if ($currentPost->lang_code == $lang->code) return true;
+                $activeLangs = $activeLangs->filter(function ($lang) use ($currentPost) {
+                    if ($currentPost->lang_code == $lang->code) {
+                        return true;
+                    }
+
                     return (bool) $currentPost->getTranslation($lang->code);
                 });
             }
 
-            if ($activeLangs->count() <= 1) return '';
+            if ($activeLangs->count() <= 1) {
+                return '';
+            }
 
             $displayMode = get_cms_option('lang_switcher_display', 'both');
-            
+
             $output = '<div class="relative group inline-block language-switcher-dropdown">';
             $output .= '<button class="flex items-center gap-1.5 text-slate-700 hover:text-primary transition-colors text-[13px] font-bold cursor-pointer" onclick="this.nextElementSibling.classList.toggle(\'hidden\')">';
-            
+
             $currentLangCode = strtolower($currentLang->code);
             $countryMap = [
                 'en' => 'us', 'bn' => 'bd', 'zh' => 'cn', 'ar' => 'sa', 'uk' => 'gb',
                 'ja' => 'jp', 'ko' => 'kr', 'pt' => 'br', 'hi' => 'in', 'ru' => 'ru',
                 'tr' => 'tr', 'it' => 'it', 'es' => 'es', 'fr' => 'fr', 'de' => 'de',
                 'gb' => 'gb', 'cn' => 'cn', 'sa' => 'sa', 'kr' => 'kr', 'jp' => 'jp',
-                'br' => 'br', 'in' => 'in'
+                'br' => 'br', 'in' => 'in',
             ];
             $currentFlagCode = $countryMap[$currentLangCode] ?? $currentLangCode;
 
             if (in_array($displayMode, ['both', 'flag_only'])) {
                 $output .= '<span class="flex items-center justify-center w-5 h-4 overflow-hidden rounded-sm border border-slate-100 shadow-sm">';
-                $output .= '<img src="' . url('/assets/flags/' . $currentFlagCode . '.png') . '" class="w-full h-full object-cover" alt="' . $currentLang->name . '">';
+                $output .= '<img src="'.url('/assets/flags/'.$currentFlagCode.'.png').'" class="w-full h-full object-cover" alt="'.$currentLang->name.'">';
                 $output .= '</span>';
             }
-            
+
             if (in_array($displayMode, ['both', 'text_only'])) {
-                $output .= '<span class="uppercase">' . $currentLang->name . '</span>';
+                $output .= '<span class="uppercase">'.$currentLang->name.'</span>';
             } elseif ($displayMode === 'code_only') {
-                $output .= '<span class="uppercase">' . $currentLang->code . '</span>';
+                $output .= '<span class="uppercase">'.$currentLang->code.'</span>';
             }
-            
+
             $output .= '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
             $output .= '</button>';
             $output .= '<div class="absolute top-full right-0 mt-2 w-32 bg-white border border-slate-100 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 rounded-md overflow-hidden">';
             $output .= '<ul class="py-1 m-0 list-none">';
-            
-            foreach($activeLangs as $lang) {
+
+            foreach ($activeLangs as $lang) {
                 $isActive = (app()->getLocale() == $lang->code);
                 $url = route('frontend.set-locale', $lang->code);
-                
+
                 if ($currentPost) {
                     $equivalent = $currentPost->getTranslation($lang->code);
                     if ($equivalent) {
@@ -3242,72 +3764,83 @@ if (!function_exists('falcon_lang_dropdown')) {
                 }
 
                 $output .= '<li>';
-                $output .= '<a href="' . $url . '" class="flex items-center justify-between gap-2 px-4 py-2 text-[13px] font-medium text-slate-600 hover:text-primary hover:bg-slate-50 transition-all ' . ($isActive ? 'bg-slate-50 text-primary font-bold' : '') . '">';
+                $output .= '<a href="'.$url.'" class="flex items-center justify-between gap-2 px-4 py-2 text-[13px] font-medium text-slate-600 hover:text-primary hover:bg-slate-50 transition-all '.($isActive ? 'bg-slate-50 text-primary font-bold' : '').'">';
                 $output .= '<div class="flex items-center gap-2">';
-                
+
                 $langCode = strtolower($lang->code);
                 $countryMap = [
                     'en' => 'us', 'bn' => 'bd', 'zh' => 'cn', 'ar' => 'sa', 'uk' => 'gb',
                     'ja' => 'jp', 'ko' => 'kr', 'pt' => 'br', 'hi' => 'in', 'ru' => 'ru',
                     'tr' => 'tr', 'it' => 'it', 'es' => 'es', 'fr' => 'fr', 'de' => 'de',
                     'gb' => 'gb', 'cn' => 'cn', 'sa' => 'sa', 'kr' => 'kr', 'jp' => 'jp',
-                    'br' => 'br', 'in' => 'in'
+                    'br' => 'br', 'in' => 'in',
                 ];
                 $flagCode = $countryMap[$langCode] ?? $langCode;
 
                 if (in_array($displayMode, ['both', 'flag_only'])) {
                     $output .= '<span class="flex items-center justify-center w-5 h-4 overflow-hidden rounded-sm border border-slate-100 shadow-sm">';
-                    $output .= '<img src="' . url('/assets/flags/' . $flagCode . '.png') . '" class="w-full h-full object-cover" alt="' . $lang->name . '">';
+                    $output .= '<img src="'.url('/assets/flags/'.$flagCode.'.png').'" class="w-full h-full object-cover" alt="'.$lang->name.'">';
                     $output .= '</span>';
                 }
-                
+
                 if (in_array($displayMode, ['both', 'text_only'])) {
-                    $output .= '<span>' . $lang->name . '</span>';
+                    $output .= '<span>'.$lang->name.'</span>';
                 } elseif ($displayMode === 'code_only') {
-                    $output .= '<span class="uppercase">' . $lang->code . '</span>';
+                    $output .= '<span class="uppercase">'.$lang->code.'</span>';
                 }
-                
+
                 $output .= '</div>';
                 if ($isActive) {
                     $output .= '<svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
                 }
                 $output .= '</a></li>';
             }
-            
+
             $output .= '</ul></div></div>';
+
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return '';
         }
     }
 }
 
 if (!function_exists('lazy_mobile_lang_switcher')) {
-    function lazy_mobile_lang_switcher() {
+    function lazy_mobile_lang_switcher()
+    {
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
-            $activeLangs = \FalconCms\Core\Models\Language::where('status', true)->get();
-            if ($activeLangs->count() <= 1) return '';
-            
+            if (!Schema::hasTable('cms_languages')) {
+                return '';
+            }
+            $activeLangs = Language::where('status', true)->get();
+            if ($activeLangs->count() <= 1) {
+                return '';
+            }
+
             // Find current post to check for translations
             $currentPost = view()->getShared()['current_post'] ?? null;
 
             // Filter languages to only those that have a translation for the current post
             if ($currentPost) {
-                $activeLangs = $activeLangs->filter(function($lang) use ($currentPost) {
-                    if ($currentPost->lang_code == $lang->code) return true;
+                $activeLangs = $activeLangs->filter(function ($lang) use ($currentPost) {
+                    if ($currentPost->lang_code == $lang->code) {
+                        return true;
+                    }
+
                     return (bool) $currentPost->getTranslation($lang->code);
                 });
             }
 
-            if ($activeLangs->count() <= 1) return '';
+            if ($activeLangs->count() <= 1) {
+                return '';
+            }
 
             $displayMode = get_cms_option('lang_switcher_display', 'both');
             $output = '<div class="grid grid-cols-2 gap-2">';
-            foreach($activeLangs as $lang) {
+            foreach ($activeLangs as $lang) {
                 $isActive = (app()->getLocale() == $lang->code);
                 $url = route('frontend.set-locale', $lang->code);
-                
+
                 if ($currentPost) {
                     $equivalent = $currentPost->getTranslation($lang->code);
                     if ($equivalent) {
@@ -3317,31 +3850,31 @@ if (!function_exists('lazy_mobile_lang_switcher')) {
                     }
                 }
 
-                $output .= '<a href="' . $url . '" class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border ' . ($isActive ? 'border-primary bg-primary/5 text-primary' : 'border-slate-100 text-slate-600') . ' transition-all">';
+                $output .= '<a href="'.$url.'" class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border '.($isActive ? 'border-primary bg-primary/5 text-primary' : 'border-slate-100 text-slate-600').' transition-all">';
                 $output .= '<div class="flex items-center gap-2">';
-                
+
                 $langCode = strtolower($lang->code);
                 $countryMap = [
                     'en' => 'us', 'bn' => 'bd', 'zh' => 'cn', 'ar' => 'sa', 'uk' => 'gb',
                     'ja' => 'jp', 'ko' => 'kr', 'pt' => 'br', 'hi' => 'in', 'ru' => 'ru',
                     'tr' => 'tr', 'it' => 'it', 'es' => 'es', 'fr' => 'fr', 'de' => 'de',
                     'gb' => 'gb', 'cn' => 'cn', 'sa' => 'sa', 'kr' => 'kr', 'jp' => 'jp',
-                    'br' => 'br', 'in' => 'in'
+                    'br' => 'br', 'in' => 'in',
                 ];
                 $flagCode = $countryMap[$langCode] ?? $langCode;
 
                 if (in_array($displayMode, ['both', 'flag_only'])) {
                     $output .= '<span class="w-6 h-4 overflow-hidden rounded-sm flex items-center justify-center shrink-0 border border-slate-100 shadow-sm">';
-                    $output .= '<img src="' . url('/assets/flags/' . $flagCode . '.png') . '" class="w-full h-full object-cover" alt="' . $lang->name . '">';
+                    $output .= '<img src="'.url('/assets/flags/'.$flagCode.'.png').'" class="w-full h-full object-cover" alt="'.$lang->name.'">';
                     $output .= '</span>';
                 }
-                
+
                 if (in_array($displayMode, ['both', 'text_only'])) {
-                    $output .= '<span class="text-[13px] font-semibold">' . $lang->name . '</span>';
+                    $output .= '<span class="text-[13px] font-semibold">'.$lang->name.'</span>';
                 } elseif ($displayMode === 'code_only') {
-                    $output .= '<span class="text-[13px] font-semibold uppercase">' . $lang->code . '</span>';
+                    $output .= '<span class="text-[13px] font-semibold uppercase">'.$lang->code.'</span>';
                 }
-                
+
                 $output .= '</div>';
                 if ($isActive) {
                     $output .= '<svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
@@ -3349,39 +3882,52 @@ if (!function_exists('lazy_mobile_lang_switcher')) {
                 $output .= '</a>';
             }
             $output .= '</div>';
+
             return $output;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return '';
         }
     }
 }
 
 if (!function_exists('the_falcon_lang_dropdown')) {
-    function the_falcon_lang_dropdown() { echo falcon_lang_dropdown(); }
+    function the_falcon_lang_dropdown()
+    {
+        echo falcon_lang_dropdown();
+    }
 }
 
 if (!function_exists('lazy_search_form')) {
-    function lazy_search_form($placeholder = 'Search...') {
+    function lazy_search_form($placeholder = 'Search...')
+    {
         $url = route('frontend.search');
-        $output = '<form action="' . $url . '" method="GET" class="relative lazy-search-form">';
-        $output .= '<input type="text" name="s" placeholder="' . e($placeholder) . '" class="w-full bg-slate-50 border border-slate-200 rounded-full px-5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">';
+        $output = '<form action="'.$url.'" method="GET" class="relative lazy-search-form">';
+        $output .= '<input type="text" name="s" placeholder="'.e($placeholder).'" class="w-full bg-slate-50 border border-slate-200 rounded-full px-5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">';
         $output .= '<button type="submit" class="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-primary text-white rounded-full text-xs font-bold hover:bg-primary/90 transition-colors uppercase">Search</button>';
         $output .= '</form>';
+
         return $output;
     }
 }
 
 if (!function_exists('the_lazy_search_form')) {
-    function the_lazy_search_form($placeholder = 'Search...') { echo lazy_search_form($placeholder); }
+    function the_lazy_search_form($placeholder = 'Search...')
+    {
+        echo lazy_search_form($placeholder);
+    }
 }
 
 if (!function_exists('render_lazy_form')) {
-    function render_lazy_form($slug) {
+    function render_lazy_form($slug)
+    {
         try {
-            $form = \FalconCms\Core\Models\Form::where('slug', $slug)->where('status', true)->first();
-            if (!$form || empty($form->fields)) return '';
+            $form = Form::where('slug', $slug)->where('status', true)->first();
+            if (!$form || empty($form->fields)) {
+                return '';
+            }
+
             return view('falcon-cms::frontend.form-renderer', ['form' => $form])->render();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return '';
         }
     }
@@ -3393,57 +3939,70 @@ if (!function_exists('add_falcon_shortcode')) {
      * `[tag attr="value"]` shortcodes that render on the frontend. The callback
      * receives an associative array of the parsed attributes and returns HTML.
      */
-    function add_falcon_shortcode($tag, callable $callback) {
+    function add_falcon_shortcode($tag, callable $callback)
+    {
         $GLOBALS['__falcon_shortcodes'][$tag] = $callback;
     }
 }
 
 if (!function_exists('falcon_parse_shortcode_atts')) {
     /** Parse a shortcode attribute string into an assoc array. Handles &quot; too. */
-    function falcon_parse_shortcode_atts($text) {
+    function falcon_parse_shortcode_atts($text)
+    {
         $atts = [];
-        if (!is_string($text) || trim($text) === '') return $atts;
+        if (!is_string($text) || trim($text) === '') {
+            return $atts;
+        }
         // key="value" | key='value' | key=value | key=&quot;value&quot;
         if (preg_match_all('/(\w+)\s*=\s*(?:&quot;|["\'])?([^"\'\]\s&]+)(?:&quot;|["\'])?/', $text, $m, PREG_SET_ORDER)) {
             foreach ($m as $pair) {
                 $atts[$pair[1]] = $pair[2];
             }
         }
+
         return $atts;
     }
 }
 
 if (!function_exists('falcon_do_shortcodes')) {
     /** Process all registered shortcodes in a content string. */
-    function falcon_do_shortcodes($content) {
+    function falcon_do_shortcodes($content)
+    {
         if (empty($GLOBALS['__falcon_shortcodes']) || !is_string($content) || $content === '') {
             return $content;
         }
         foreach ($GLOBALS['__falcon_shortcodes'] as $tag => $callback) {
-            $pattern = '/\[' . preg_quote($tag, '/') . '(\b[^\]]*)?\]/';
+            $pattern = '/\['.preg_quote($tag, '/').'(\b[^\]]*)?\]/';
             $content = preg_replace_callback($pattern, function ($m) use ($callback) {
                 $atts = falcon_parse_shortcode_atts($m[1] ?? '');
+
                 return (string) call_user_func($callback, $atts);
             }, $content);
         }
+
         return $content;
     }
 }
 
 if (!function_exists('do_lazy_shortcode')) {
-    function do_lazy_shortcode($content) {
-        if (empty($content)) return $content;
+    function do_lazy_shortcode($content)
+    {
+        if (empty($content)) {
+            return $content;
+        }
 
         // Match [falcon_form slug="..."] — also accept &quot; (entity-encoded quotes from WYSIWYG editors)
         // Do NOT html_entity_decode the entire string: that would undo Blade's {{ }} escaping and open XSS.
         $content = preg_replace_callback(
             '/\[falcon_form\s+slug=(?:&quot;|["\'])([^"\'&\[\]]+)(?:&quot;|["\'])\s*\]/',
-            function ($matches) { return render_lazy_form($matches[1]); },
+            function ($matches) {
+                return render_lazy_form($matches[1]);
+            },
             $content
         );
 
         $shortcodes = [
-            '[falcon_search]'        => lazy_search_form(),
+            '[falcon_search]' => lazy_search_form(),
             '[falcon_lang_dropdown]' => falcon_lang_dropdown(),
         ];
         $content = str_replace(array_keys($shortcodes), array_values($shortcodes), $content);
@@ -3454,30 +4013,33 @@ if (!function_exists('do_lazy_shortcode')) {
 }
 
 if (!function_exists('falcon_translate')) {
-    function falcon_translate($text, $targetLang = 'en', $sourceLang = 'auto') {
-        if (empty($text)) return $text;
-        
+    function falcon_translate($text, $targetLang = 'en', $sourceLang = 'auto')
+    {
+        if (empty($text)) {
+            return $text;
+        }
+
         // Map common CMS codes to Google Translate codes
         $map = [
             'jp' => 'ja', 'gb' => 'en', 'in' => 'hi', 'cn' => 'zh-CN', 'kr' => 'ko',
             'ua' => 'uk', 'br' => 'pt', 'sa' => 'ar', 'bd' => 'bn', 'zh' => 'zh-CN',
-            'ja' => 'ja', 'ko' => 'ko', 'pt' => 'pt', 'hi' => 'hi'
+            'ja' => 'ja', 'ko' => 'ko', 'pt' => 'pt', 'hi' => 'hi',
         ];
-        
+
         $targetLang = $map[strtolower($targetLang)] ?? $targetLang;
         $sourceLang = $map[strtolower($sourceLang)] ?? $sourceLang;
 
         try {
-            $url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" . $sourceLang . "&tl=" . $targetLang . "&dt=t&q=" . urlencode($text);
-            
+            $url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl='.$sourceLang.'&tl='.$targetLang.'&dt=t&q='.urlencode($text);
+
             $options = [
-                "http" => [
-                    "header" => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\r\n"
-                ]
+                'http' => [
+                    'header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\r\n",
+                ],
             ];
             $context = stream_context_create($options);
             $response = @file_get_contents($url, false, $context);
-            
+
             if ($response) {
                 $data = json_decode($response, true);
                 $translated = '';
@@ -3485,49 +4047,65 @@ if (!function_exists('falcon_translate')) {
                     foreach ($data[0] as $line) {
                         $translated .= $line[0];
                     }
+
                     return $translated;
                 }
             }
-        } catch (\Exception $e) {}
-        return $text; 
+        } catch (Exception $e) {
+        }
+
+        return $text;
     }
 }
 
 if (!function_exists('get_lazy_shop_url')) {
-    function get_lazy_shop_url() {
+    function get_lazy_shop_url()
+    {
         $pageId = get_shop_option('shop_shop_page_id');
         if ($pageId) {
-            $page = \FalconCms\Core\Models\Post::find($pageId);
-            if ($page) return get_falcon_permalink($page);
+            $page = Post::find($pageId);
+            if ($page) {
+                return get_falcon_permalink($page);
+            }
         }
+
         return url('/product');
     }
 }
 
 if (!function_exists('get_falcon_cart_url')) {
-    function get_falcon_cart_url() {
+    function get_falcon_cart_url()
+    {
         $pageId = get_shop_option('shop_cart_page_id');
         if ($pageId) {
-            $page = \FalconCms\Core\Models\Post::find($pageId);
-            if ($page) return get_falcon_permalink($page);
+            $page = Post::find($pageId);
+            if ($page) {
+                return get_falcon_permalink($page);
+            }
         }
+
         return route('shop.cart');
     }
 }
 
 if (!function_exists('get_lazy_checkout_url')) {
-    function get_lazy_checkout_url() {
+    function get_lazy_checkout_url()
+    {
         $pageId = get_shop_option('shop_checkout_page_id');
         if ($pageId) {
-            $page = \FalconCms\Core\Models\Post::find($pageId);
-            if ($page) return get_falcon_permalink($page);
+            $page = Post::find($pageId);
+            if ($page) {
+                return get_falcon_permalink($page);
+            }
         }
+
         return route('shop.checkout');
     }
 }
 
 if (!function_exists('falcon_price_format')) {
-    function falcon_price_format($price, $order = null) {
+    function falcon_price_format($price, $order = null)
+    {
         if ($order && is_object($order) && isset($order->currency_symbol)) {
             $symbol = $order->currency_symbol;
             $position = $order->currency_position ?? 'left';
@@ -3536,50 +4114,54 @@ if (!function_exists('falcon_price_format')) {
             $decimalSep = $order->decimal_separator ?? '.';
         } else {
             $currencyCode = get_shop_option('shop_currency', 'USD');
-            $symbol = \FalconCms\Core\Services\EcommerceData::getCurrencySymbol($currencyCode);
-            
+            $symbol = EcommerceData::getCurrencySymbol($currencyCode);
+
             $position = get_shop_option('shop_currency_pos', 'left');
             $decimals = (int) get_shop_option('shop_num_decimals', 2);
             $thousandSep = get_shop_option('shop_thousand_sep', ',');
             $decimalSep = get_shop_option('shop_decimal_sep', '.');
         }
-        
-        $formatted = number_format((float)$price, $decimals, $decimalSep, $thousandSep);
-        
+
+        $formatted = number_format((float) $price, $decimals, $decimalSep, $thousandSep);
+
         switch ($position) {
             case 'left':
-                return $symbol . $formatted;
+                return $symbol.$formatted;
             case 'right':
-                return $formatted . $symbol;
+                return $formatted.$symbol;
             case 'left_space':
-                return $symbol . ' ' . $formatted;
+                return $symbol.' '.$formatted;
             case 'right_space':
-                return $formatted . ' ' . $symbol;
+                return $formatted.' '.$symbol;
             default:
-                return $symbol . $formatted;
+                return $symbol.$formatted;
         }
     }
 }
 
 if (!function_exists('get_falcon_cart_count')) {
-    function get_falcon_cart_count() {
+    function get_falcon_cart_count()
+    {
         $cart = session()->get('falcon_cart', []);
         $total = 0;
-        foreach($cart as $item) {
+        foreach ($cart as $item) {
             $total += $item['quantity'] ?? 0;
         }
+
         return $total;
     }
 }
 
 if (!function_exists('get_falcon_cart_subtotal')) {
-    function get_falcon_cart_subtotal() {
+    function get_falcon_cart_subtotal()
+    {
         $cart = session()->get('falcon_cart', []);
         $subtotal = 0;
-        foreach($cart as $item) {
+        foreach ($cart as $item) {
             $price = $item['sale_price'] ?? $item['price'];
             $subtotal += $price * $item['quantity'];
         }
+
         return $subtotal;
     }
 }
@@ -3587,11 +4169,14 @@ if (!function_exists('get_falcon_cart_subtotal')) {
 if (!function_exists('get_falcon_cart_shipping')) {
     /**
      * Calculate shipping cost based on subtotal, quantity, and location.
-     * @param string|null $country Customer country code
+     *
+     * @param  string|null  $country  Customer country code
      * @return float
      */
-    function get_falcon_cart_shipping($country = null) {
+    function get_falcon_cart_shipping($country = null)
+    {
         $details = get_falcon_cart_shipping_details($country);
+
         return $details['cost'];
     }
 }
@@ -3604,8 +4189,9 @@ if (!function_exists('falcon_attribute_slug')) {
      * string for scripts it has no map for — Chinese, emoji, punctuation-only values. Falling
      * back to the lower-cased original keeps those distinct; the slug only has to match itself.
      */
-    function falcon_attribute_slug(string $text): string {
-        $slug = \Illuminate\Support\Str::slug($text);
+    function falcon_attribute_slug(string $text): string
+    {
+        $slug = Str::slug($text);
 
         return $slug !== '' ? $slug : mb_strtolower(trim($text));
     }
@@ -3620,7 +4206,8 @@ if (!function_exists('falcon_product_attribute_definitions')) {
      *
      * @return array<int, array{name: string, values: array<int, string>, visible: bool, variation: bool, filterable: bool}>
      */
-    function falcon_product_attribute_definitions($shopData): array {
+    function falcon_product_attribute_definitions($shopData): array
+    {
         $raw = $shopData->attributes_data ?? null;
 
         if (is_string($raw)) {
@@ -3653,9 +4240,9 @@ if (!function_exists('falcon_product_attribute_definitions')) {
             }
 
             $out[] = [
-                'name'      => $name,
-                'values'    => array_values(array_unique($values)),
-                'visible'   => (string) ($entry['visible'] ?? '') === '1',
+                'name' => $name,
+                'values' => array_values(array_unique($values)),
+                'visible' => (string) ($entry['visible'] ?? '') === '1',
                 'variation' => (string) ($entry['variation'] ?? '') === '1',
                 // Attributes saved before this option existed carry no key, and a shop owner who
                 // adds an attribute expects to filter by it — so absent means yes.
@@ -3674,8 +4261,9 @@ if (!function_exists('falcon_sync_product_attribute_index')) {
      * Called on every product save. The index is derived data, so this replaces it wholesale
      * rather than patching it — a removed attribute or a renamed value cannot linger.
      */
-    function falcon_sync_product_attribute_index($shopData): void {
-        if (!$shopData || !\Illuminate\Support\Facades\Schema::hasTable('shop_product_attribute_values')) {
+    function falcon_sync_product_attribute_index($shopData): void
+    {
+        if (!$shopData || !Schema::hasTable('shop_product_attribute_values')) {
             return;
         }
 
@@ -3697,7 +4285,7 @@ if (!function_exists('falcon_sync_product_attribute_index')) {
                 $candidate = $slug;
                 $n = 1;
                 while (isset($taken[$candidate])) {
-                    $candidate = $slug . '-' . (++$n);
+                    $candidate = $slug.'-'.(++$n);
                 }
                 $taken[$candidate] = true;
 
@@ -3765,10 +4353,10 @@ if (!function_exists('falcon_sync_product_attribute_index')) {
                     }
 
                     $rows[] = [
-                        'post_id'    => $postId,
-                        'name'       => mb_substr($attribute['name'], 0, 60),
-                        'name_slug'  => mb_substr($nameSlug, 0, 60),
-                        'value'      => mb_substr($value, 0, 120),
+                        'post_id' => $postId,
+                        'name' => mb_substr($attribute['name'], 0, 60),
+                        'name_slug' => mb_substr($nameSlug, 0, 60),
+                        'value' => mb_substr($value, 0, 120),
                         'value_slug' => mb_substr($valueSlug, 0, 120),
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -3776,17 +4364,17 @@ if (!function_exists('falcon_sync_product_attribute_index')) {
                 }
             }
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($postId, $rows) {
-                \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')
+            DB::transaction(function () use ($postId, $rows) {
+                DB::table('shop_product_attribute_values')
                     ->where('post_id', $postId)->delete();
 
                 foreach (array_chunk($rows, 200) as $chunk) {
-                    \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')->insert($chunk);
+                    DB::table('shop_product_attribute_values')->insert($chunk);
                 }
             });
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // A broken index must never stop a shop owner from saving a product.
-            \Illuminate\Support\Facades\Log::error('Attribute index sync failed for post ' . $postId . ': ' . $e->getMessage());
+            Illuminate\Support\Facades\Log::error('Attribute index sync failed for post '.$postId.': '.$e->getMessage());
         }
     }
 }
@@ -3798,19 +4386,20 @@ if (!function_exists('falcon_reindex_all_product_attributes')) {
      *
      * @return int products processed
      */
-    function falcon_reindex_all_product_attributes(): int {
-        if (!\Illuminate\Support\Facades\Schema::hasTable('shop_product_attribute_values')
-            || !\Illuminate\Support\Facades\Schema::hasTable('shop_products')) {
+    function falcon_reindex_all_product_attributes(): int
+    {
+        if (!Schema::hasTable('shop_product_attribute_values')
+            || !Schema::hasTable('shop_products')) {
             return 0;
         }
 
         // Products whose post is gone (or whose foreign key was never created) leave orphans.
-        \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')
-            ->whereNotIn('post_id', \Illuminate\Support\Facades\DB::table('posts')->select('id'))
+        DB::table('shop_product_attribute_values')
+            ->whereNotIn('post_id', DB::table('posts')->select('id'))
             ->delete();
 
         $count = 0;
-        \FalconCms\Core\Models\ProductData::query()
+        ProductData::query()
             ->whereNotNull('attributes_data')
             ->chunkById(100, function ($chunk) use (&$count) {
                 foreach ($chunk as $shopData) {
@@ -3832,7 +4421,8 @@ if (!function_exists('falcon_product_filters_active')) {
      *
      * @return array{search: string, min_price: ?float, max_price: ?float, categories: array<int, string>, attributes: array<string, array<int, string>>, in_stock: bool, on_sale: bool}
      */
-    function falcon_product_filters_active(): array {
+    function falcon_product_filters_active(): array
+    {
         $request = request();
 
         $price = static function ($value): ?float {
@@ -3900,13 +4490,13 @@ if (!function_exists('falcon_product_filters_active')) {
         }
 
         return [
-            'search'     => $search,
-            'min_price'  => $min,
-            'max_price'  => $max,
+            'search' => $search,
+            'min_price' => $min,
+            'max_price' => $max,
             'categories' => $categories,
             'attributes' => $attributes,
-            'in_stock'   => $request->query('in_stock') === '1',
-            'on_sale'    => $request->query('on_sale') === '1',
+            'in_stock' => $request->query('in_stock') === '1',
+            'on_sale' => $request->query('on_sale') === '1',
         ];
     }
 }
@@ -3919,13 +4509,14 @@ if (!function_exists('falcon_apply_product_filters')) {
      * shop_products for price ordering, and a second join on the same table would break the
      * query. Subqueries compose with anything.
      */
-    function falcon_apply_product_filters($query, ?array $filters = null) {
+    function falcon_apply_product_filters($query, ?array $filters = null)
+    {
         $filters = $filters ?? falcon_product_filters_active();
 
         if (($filters['search'] ?? '') !== '') {
             // `%` and `_` are LIKE wildcards. Left unescaped, a search for "100%" would match
             // everything, and "_" would match any single character — neither is what was typed.
-            $term = '%' . addcslashes($filters['search'], '%_\\') . '%';
+            $term = '%'.addcslashes($filters['search'], '%_\\').'%';
 
             $query->where(function ($q) use ($term) {
                 $q->where('posts.title', 'like', $term)
@@ -3947,20 +4538,20 @@ if (!function_exists('falcon_apply_product_filters')) {
             $priceBounds = static function ($q) use ($filters) {
                 $expr = 'COALESCE(NULLIF(sale_price, 0), price)';
                 if ($filters['min_price'] !== null) {
-                    $q->whereRaw($expr . ' >= ?', [$filters['min_price']]);
+                    $q->whereRaw($expr.' >= ?', [$filters['min_price']]);
                 }
                 if ($filters['max_price'] !== null) {
-                    $q->whereRaw($expr . ' <= ?', [$filters['max_price']]);
+                    $q->whereRaw($expr.' <= ?', [$filters['max_price']]);
                 }
             };
 
             $query->where(function ($outer) use ($priceBounds) {
                 $outer->whereHas('shopData', function ($q) use ($priceBounds) {
-                        // Excluded so a stale parent price left over from when the product was
-                        // simple cannot match on a variable product's behalf.
-                        $q->notVariable();
-                        $priceBounds($q);
-                    })
+                    // Excluded so a stale parent price left over from when the product was
+                    // simple cannot match on a variable product's behalf.
+                    $q->notVariable();
+                    $priceBounds($q);
+                })
                     ->orWhereHas('shopData', function ($q) use ($priceBounds) {
                         // Gated on the parent type: switching a product back to simple leaves its
                         // old variation rows in place, and those must not match any more.
@@ -3995,9 +4586,9 @@ if (!function_exists('falcon_apply_product_filters')) {
 
             $query->where(function ($outer) use ($onSale, $liveSale) {
                 $outer->whereHas('shopData', function ($q) use ($liveSale) {
-                        $q->notVariable();
-                        $liveSale($q);
-                    })
+                    $q->notVariable();
+                    $liveSale($q);
+                })
                     ->orWhereHas('shopData', function ($q) use ($onSale) {
                         $q->variable()->whereHas('variations', $onSale);
                     });
@@ -4034,30 +4625,30 @@ if (!function_exists('falcon_apply_product_filters')) {
                                     $parentShelf($simple);
                                 })
                                 // A variable product is only as available as its variations.
-                                ->orWhere(function ($variable) use ($threshold, $globalManage, $parentShelf) {
-                                    $variable->variable()
-                                        ->where(function ($any) use ($threshold, $globalManage, $parentShelf) {
-                                            // Backorders are set on the parent, so once they are on,
-                                            // any variation still on the shelf can be sold.
-                                            $any->where(function ($bo) {
+                                    ->orWhere(function ($variable) use ($threshold, $globalManage, $parentShelf) {
+                                        $variable->variable()
+                                            ->where(function ($any) use ($threshold, $globalManage, $parentShelf) {
+                                                // Backorders are set on the parent, so once they are on,
+                                                // any variation still on the shelf can be sold.
+                                                $any->where(function ($bo) {
                                                     $bo->whereIn('backorders', ['notify', 'yes'])
                                                         ->whereHas('variations', fn ($v) => $v->where('stock_status', '!=', 'outofstock'));
                                                 })
-                                                // A variation holding its own stock.
-                                                ->orWhereHas('variations', function ($v) use ($threshold, $globalManage) {
-                                                    $v->where('stock_status', '!=', 'outofstock');
-                                                    if ($globalManage) {
-                                                        $v->where('manage_stock', 1)->where('stock_quantity', '>', $threshold);
-                                                    }
-                                                })
-                                                // A variation that inherits the parent's shelf.
-                                                ->orWhere(function ($inherit) use ($parentShelf) {
-                                                    $inherit->whereHas('variations', fn ($v) => $v->where('stock_status', '!=', 'outofstock')
-                                                        ->where('manage_stock', 0));
-                                                    $parentShelf($inherit);
-                                                });
-                                        });
-                                });
+                                                    // A variation holding its own stock.
+                                                    ->orWhereHas('variations', function ($v) use ($threshold, $globalManage) {
+                                                        $v->where('stock_status', '!=', 'outofstock');
+                                                        if ($globalManage) {
+                                                            $v->where('manage_stock', 1)->where('stock_quantity', '>', $threshold);
+                                                        }
+                                                    })
+                                                    // A variation that inherits the parent's shelf.
+                                                    ->orWhere(function ($inherit) use ($parentShelf) {
+                                                        $inherit->whereHas('variations', fn ($v) => $v->where('stock_status', '!=', 'outofstock')
+                                                            ->where('manage_stock', 0));
+                                                        $parentShelf($inherit);
+                                                    });
+                                            });
+                                    });
                             });
                     });
             });
@@ -4072,7 +4663,8 @@ if (!function_exists('falcon_apply_product_sorting')) {
      * Order a product query. Extracted so the shop page and the taxonomy archives cannot drift
      * apart — they each had their own copy of this switch.
      */
-    function falcon_apply_product_sorting($query, ?string $orderby = null) {
+    function falcon_apply_product_sorting($query, ?string $orderby = null)
+    {
         $orderby = $orderby ?? request('orderby', 'latest');
 
         switch ($orderby) {
@@ -4085,18 +4677,18 @@ if (!function_exists('falcon_apply_product_sorting')) {
                 // Without the subquery every variable product sorts as NULL and clumps at one end.
                 $agg = $orderby === 'price' ? 'MIN' : 'MAX';
                 $expr = 'COALESCE('
-                    . '(SELECT ' . $agg . '(COALESCE(NULLIF(v.sale_price, 0), v.price))'
-                    . ' FROM shop_product_variations v WHERE v.product_id = shop_products.id'
-                    . " AND (shop_products.type = 'variable' OR shop_products.product_type = 'variable')),"
-                    . ' COALESCE(NULLIF(shop_products.sale_price, 0), shop_products.price))';
+                    .'(SELECT '.$agg.'(COALESCE(NULLIF(v.sale_price, 0), v.price))'
+                    .' FROM shop_product_variations v WHERE v.product_id = shop_products.id'
+                    ." AND (shop_products.type = 'variable' OR shop_products.product_type = 'variable')),"
+                    .' COALESCE(NULLIF(shop_products.sale_price, 0), shop_products.price))';
 
                 $query->join('shop_products', 'posts.id', '=', 'shop_products.post_id')
-                    ->orderByRaw($expr . ' ' . $direction)
+                    ->orderByRaw($expr.' '.$direction)
                     ->select('posts.*');
                 break;
 
             case 'rating':
-                $query->withCount(['reviews as average_rating' => fn ($q) => $q->select(\Illuminate\Support\Facades\DB::raw('avg(rating)'))])
+                $query->withCount(['reviews as average_rating' => fn ($q) => $q->select(DB::raw('avg(rating)'))])
                     ->orderBy('average_rating', 'desc');
                 break;
 
@@ -4122,13 +4714,14 @@ if (!function_exists('falcon_product_filter_options')) {
      * Counts come from the unfiltered set so a category never vanishes the moment it is
      * deselected — a filter panel that erases its own options is unusable.
      *
-     * @param callable $baseQuery returns a fresh, unfiltered query for this archive
+     * @param  callable  $baseQuery  returns a fresh, unfiltered query for this archive
      */
-    function falcon_product_filter_options(callable $baseQuery): array {
+    function falcon_product_filter_options(callable $baseQuery): array
+    {
         try {
             $ids = $baseQuery()->pluck('posts.id');
 
-            $categories = \Illuminate\Support\Facades\DB::table('product_categories')
+            $categories = DB::table('product_categories')
                 ->join('product_category_post', 'product_category_post.product_category_id', '=', 'product_categories.id')
                 ->whereIn('product_category_post.post_id', $ids)
                 ->groupBy('product_categories.id', 'product_categories.name', 'product_categories.slug')
@@ -4136,12 +4729,12 @@ if (!function_exists('falcon_product_filter_options')) {
                 ->get([
                     'product_categories.name',
                     'product_categories.slug',
-                    \Illuminate\Support\Facades\DB::raw('COUNT(DISTINCT product_category_post.post_id) as total'),
+                    DB::raw('COUNT(DISTINCT product_category_post.post_id) as total'),
                 ]);
 
             // The band has to cover variation prices too, or the placeholders would understate
             // the real range on any shop that sells variable products.
-            $bounds = \Illuminate\Support\Facades\DB::table('shop_products')
+            $bounds = DB::table('shop_products')
                 ->leftJoin('shop_product_variations as v', function ($j) {
                     $j->on('v.product_id', '=', 'shop_products.id')
                         ->where(fn ($w) => $w->where('shop_products.type', '=', 'variable')
@@ -4150,35 +4743,35 @@ if (!function_exists('falcon_product_filter_options')) {
                 ->whereIn('shop_products.post_id', $ids)
                 ->selectRaw(
                     'MIN(COALESCE(NULLIF(v.sale_price, 0), v.price, NULLIF(shop_products.sale_price, 0), shop_products.price)) as min_price,'
-                    . ' MAX(COALESCE(NULLIF(v.sale_price, 0), v.price, NULLIF(shop_products.sale_price, 0), shop_products.price)) as max_price'
+                    .' MAX(COALESCE(NULLIF(v.sale_price, 0), v.price, NULLIF(shop_products.sale_price, 0), shop_products.price)) as max_price'
                 )
                 ->first();
 
             // Whatever attributes this set of products happens to declare, grouped for the
             // sidebar. Nothing here is hard-coded, so a brand new attribute shows up by itself.
             $attributes = [];
-            if (\Illuminate\Support\Facades\Schema::hasTable('shop_product_attribute_values')) {
-                $rows = \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')
+            if (Schema::hasTable('shop_product_attribute_values')) {
+                $rows = DB::table('shop_product_attribute_values')
                     ->whereIn('post_id', $ids)
                     ->groupBy('name', 'name_slug', 'value', 'value_slug')
                     ->orderBy('name')
                     ->orderBy('value')
                     ->get([
                         'name', 'name_slug', 'value', 'value_slug',
-                        \Illuminate\Support\Facades\DB::raw('COUNT(DISTINCT post_id) as total'),
+                        DB::raw('COUNT(DISTINCT post_id) as total'),
                     ]);
 
                 foreach ($rows as $row) {
                     if (!isset($attributes[$row->name_slug])) {
                         $attributes[$row->name_slug] = [
-                            'name'   => $row->name,
-                            'slug'   => $row->name_slug,
+                            'name' => $row->name,
+                            'slug' => $row->name_slug,
                             'values' => [],
                         ];
                     }
                     $attributes[$row->name_slug]['values'][] = [
                         'label' => $row->value,
-                        'slug'  => $row->value_slug,
+                        'slug' => $row->value_slug,
                         'total' => (int) $row->total,
                     ];
                 }
@@ -4187,11 +4780,12 @@ if (!function_exists('falcon_product_filter_options')) {
             return [
                 'categories' => $categories,
                 'attributes' => array_values($attributes),
-                'min_price'  => $bounds && $bounds->min_price !== null ? (float) $bounds->min_price : 0.0,
-                'max_price'  => $bounds && $bounds->max_price !== null ? (float) $bounds->max_price : 0.0,
+                'min_price' => $bounds && $bounds->min_price !== null ? (float) $bounds->min_price : 0.0,
+                'max_price' => $bounds && $bounds->max_price !== null ? (float) $bounds->max_price : 0.0,
             ];
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Product filter options failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Product filter options failed: '.$e->getMessage());
+
             return ['categories' => collect(), 'attributes' => [], 'min_price' => 0.0, 'max_price' => 0.0];
         }
     }
@@ -4210,13 +4804,14 @@ if (!function_exists('falcon_order_discount_lines')) {
      *
      * @return array<int, array{label:string, note:?string, amount:float}>
      */
-    function falcon_order_discount_lines($order): array {
+    function falcon_order_discount_lines($order): array
+    {
         $total = round((float) ($order->discount_total ?? 0), 2);
         if ($total <= 0) {
             return [];
         }
 
-        $lines     = [];
+        $lines = [];
         $accounted = 0.0;
 
         $meta = $order->meta ?? [];
@@ -4230,8 +4825,8 @@ if (!function_exists('falcon_order_discount_lines')) {
                 continue;
             }
             $lines[] = [
-                'label'  => (string) ($promo['name'] ?? 'Promotion'),
-                'note'   => $promo['summary'] ?? null,
+                'label' => (string) ($promo['name'] ?? 'Promotion'),
+                'note' => $promo['summary'] ?? null,
                 'amount' => $amount,
             ];
             $accounted += $amount;
@@ -4247,8 +4842,8 @@ if (!function_exists('falcon_order_discount_lines')) {
         $codes = array_values(array_filter(array_map('trim', explode(',', (string) ($order->coupon_code ?? '')))));
 
         $lines[] = [
-            'label'  => $codes ? 'Coupon' . (count($codes) > 1 ? 's' : '') . ': ' . implode(', ', $codes) : 'Discount',
-            'note'   => null,
+            'label' => $codes ? 'Coupon'.(count($codes) > 1 ? 's' : '').': '.implode(', ', $codes) : 'Discount',
+            'note' => null,
             'amount' => $remainder,
         ];
 
@@ -4264,7 +4859,8 @@ if (!function_exists('falcon_promotion_matches_item')) {
      * Category membership is matched through origin ids so translated duplicates of the same
      * product resolve to the same identity, exactly as the coupon restrictions do.
      */
-    function falcon_promotion_matches_item(array $item, string $scope, array $ids): bool {
+    function falcon_promotion_matches_item(array $item, string $scope, array $ids): bool
+    {
         if (empty($ids)) {
             return true;
         }
@@ -4277,18 +4873,19 @@ if (!function_exists('falcon_promotion_matches_item')) {
         if ($scope === 'category') {
             static $catCache = [];
             if (!array_key_exists($postId, $catCache)) {
-                $catCache[$postId] = \Illuminate\Support\Facades\DB::table('product_category_post')
+                $catCache[$postId] = DB::table('product_category_post')
                     ->join('product_categories', 'product_category_post.product_category_id', '=', 'product_categories.id')
                     ->where('product_category_post.post_id', $postId)
                     ->selectRaw('COALESCE(product_categories.origin_id, product_categories.id) as identity')
                     ->pluck('identity')->map(fn ($v) => (int) $v)->all();
             }
+
             return !empty(array_intersect($catCache[$postId], array_map('intval', $ids)));
         }
 
         static $idCache = [];
         if (!array_key_exists($postId, $idCache)) {
-            $idCache[$postId] = (int) (\Illuminate\Support\Facades\DB::table('posts')
+            $idCache[$postId] = (int) (DB::table('posts')
                 ->where('id', $postId)
                 ->selectRaw('COALESCE(origin_id, id) as identity')
                 ->value('identity') ?: $postId);
@@ -4305,12 +4902,13 @@ if (!function_exists('falcon_promotion_applications')) {
      * Shared by the discount calculation and the "you qualify" prompt so the two can never
      * disagree about whether an offer is earned.
      *
-     * @param array $units   cart key => ['item'=>…, 'price'=>float, 'qty'=>int]
-     * @param array $claimed cart key => units an earlier promotion already gave away
+     * @param  array  $units  cart key => ['item'=>…, 'price'=>float, 'qty'=>int]
+     * @param  array  $claimed  cart key => units an earlier promotion already gave away
      */
-    function falcon_promotion_applications($promo, array $units, float $subtotal, array $claimed = []): int {
+    function falcon_promotion_applications($promo, array $units, float $subtotal, array $claimed = []): int
+    {
         $triggerQty = max(0.0, (float) $promo->trigger_qty);
-        $rewardQty  = max(1, (int) $promo->reward_qty);
+        $rewardQty = max(1, (int) $promo->reward_qty);
 
         if ($promo->trigger_type === 'cart_total') {
             $applications = ($triggerQty > 0 && $subtotal >= $triggerQty) ? 1 : 0;
@@ -4330,7 +4928,7 @@ if (!function_exists('falcon_promotion_applications')) {
             if ($promo->reward_scope === 'same') {
                 // "Buy 2 get 1 free" needs three units per round — two paid, one free —
                 // otherwise a basket of 2 would hand back both of them.
-                $perRound     = (int) ceil($triggerQty) + $rewardQty;
+                $perRound = (int) ceil($triggerQty) + $rewardQty;
                 $applications = intdiv($matchedQty, max(1, $perRound));
             } else {
                 $applications = (int) floor($matchedQty / $triggerQty);
@@ -4354,7 +4952,8 @@ if (!function_exists('falcon_promotion_reward_target')) {
      *
      * @return array{0: string, 1: array}
      */
-    function falcon_promotion_reward_target($promo): array {
+    function falcon_promotion_reward_target($promo): array
+    {
         if ($promo->reward_scope !== 'same') {
             return [$promo->reward_scope, (array) ($promo->reward_ids ?? [])];
         }
@@ -4378,17 +4977,18 @@ if (!function_exists('falcon_pending_promotion_offers')) {
      *
      * @return array<int, array{name:string, summary:string, missing:int, products:array}>
      */
-    function falcon_pending_promotion_offers(?array $cart = null): array {
+    function falcon_pending_promotion_offers(?array $cart = null): array
+    {
         $cart = $cart ?? session()->get('falcon_cart', []);
         if (empty($cart)) {
             return [];
         }
 
         $subtotal = 0.0;
-        $units    = [];
+        $units = [];
         foreach ($cart as $key => $item) {
             $price = (float) ($item['sale_price'] ?? $item['price']);
-            $qty   = (int) ($item['quantity'] ?? 0);
+            $qty = (int) ($item['quantity'] ?? 0);
             $subtotal += $price * $qty;
             if ($qty > 0) {
                 $units[$key] = ['item' => $item, 'price' => $price, 'qty' => $qty];
@@ -4418,19 +5018,19 @@ if (!function_exists('falcon_pending_promotion_offers')) {
                 }
             }
 
-            $wanted  = $applications * max(1, (int) $promo->reward_qty);
+            $wanted = $applications * max(1, (int) $promo->reward_qty);
             $missing = $wanted - $inCart;
             if ($missing < 1) {
                 continue;   // already receiving it
             }
 
             $offers[] = [
-                'name'     => (string) $promo->name,
-                'summary'  => str_replace('{missing}', (string) $missing, $promo->customer_message),
+                'name' => (string) $promo->name,
+                'summary' => str_replace('{missing}', (string) $missing, $promo->customer_message),
                 // Tells the view whether the shop supplied its own wording, so the default
                 // "add N more item(s)" tail is only appended to the generated text.
-                'custom'   => trim((string) ($promo->cart_message ?? '')) !== '',
-                'missing'  => $missing,
+                'custom' => trim((string) ($promo->cart_message ?? '')) !== '',
+                'missing' => $missing,
                 'products' => falcon_promotion_reward_products($scope, $ids),
             ];
         }
@@ -4444,9 +5044,10 @@ if (!function_exists('falcon_promotion_reward_products')) {
      * Buyable products that would satisfy a reward pool, for the cart prompt.
      * Capped because a category-wide reward could otherwise list the whole catalogue.
      */
-    function falcon_promotion_reward_products(string $scope, array $ids, int $limit = 4): array {
+    function falcon_promotion_reward_products(string $scope, array $ids, int $limit = 4): array
+    {
         try {
-            $query = \Illuminate\Support\Facades\DB::table('posts')
+            $query = DB::table('posts')
                 ->join('shop_products', 'shop_products.post_id', '=', 'posts.id')
                 ->where('posts.type', 'product')
                 ->where('posts.status', 'published')
@@ -4466,13 +5067,14 @@ if (!function_exists('falcon_promotion_reward_products')) {
                 ->limit($limit)
                 ->get(['posts.id', 'posts.title', 'posts.slug', 'shop_products.price', 'shop_products.sale_price'])
                 ->map(static fn ($r) => [
-                    'id'    => (int) $r->id,
+                    'id' => (int) $r->id,
                     'title' => $r->title,
-                    'slug'  => $r->slug,
+                    'slug' => $r->slug,
                     'price' => (float) ($r->sale_price ?: $r->price),
                 ])->all();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Promotion reward product lookup failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Promotion reward product lookup failed: '.$e->getMessage());
+
             return [];
         }
     }
@@ -4480,14 +5082,17 @@ if (!function_exists('falcon_promotion_reward_products')) {
 
 if (!function_exists('falcon_active_promotions')) {
     /** Promotions that are live right now, cheapest-priority first. */
-    function falcon_active_promotions() {
+    function falcon_active_promotions()
+    {
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('shop_promotions')) {
+            if (!Schema::hasTable('shop_promotions')) {
                 return collect();
             }
-            return \FalconCms\Core\Models\Promotion::usable()->get();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Promotion lookup failed: ' . $e->getMessage());
+
+            return Promotion::usable()->get();
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Promotion lookup failed: '.$e->getMessage());
+
             return collect();
         }
     }
@@ -4507,17 +5112,18 @@ if (!function_exists('falcon_evaluate_promotions')) {
      *
      * @return array<int, array{id:int, name:string, summary:string, discount:float, applications:int}>
      */
-    function falcon_evaluate_promotions(?array $cart = null): array {
+    function falcon_evaluate_promotions(?array $cart = null): array
+    {
         $cart = $cart ?? session()->get('falcon_cart', []);
         if (empty($cart)) {
             return [];
         }
 
         $subtotal = 0.0;
-        $units    = [];   // flattened: one entry per unit, so "cheapest first" is a plain sort
+        $units = [];   // flattened: one entry per unit, so "cheapest first" is a plain sort
         foreach ($cart as $key => $item) {
             $price = (float) ($item['sale_price'] ?? $item['price']);
-            $qty   = (int) ($item['quantity'] ?? 0);
+            $qty = (int) ($item['quantity'] ?? 0);
             $subtotal += $price * $qty;
             if ($qty > 0) {
                 $units[$key] = ['item' => $item, 'price' => $price, 'qty' => $qty];
@@ -4528,7 +5134,7 @@ if (!function_exists('falcon_evaluate_promotions')) {
         $results = [];
 
         foreach (falcon_active_promotions() as $promo) {
-            $rewardQty    = max(1, (int) $promo->reward_qty);
+            $rewardQty = max(1, (int) $promo->reward_qty);
             $applications = falcon_promotion_applications($promo, $units, $subtotal, $claimed);
             if ($applications < 1) {
                 continue;
@@ -4553,8 +5159,8 @@ if (!function_exists('falcon_evaluate_promotions')) {
             // Cheapest first — the customary reading of "get one free" and the safest for the shop.
             usort($pool, static fn ($a, $b) => $a['price'] <=> $b['price']);
 
-            $wanted   = $applications * $rewardQty;
-            $taken    = array_slice($pool, 0, $wanted);
+            $wanted = $applications * $rewardQty;
+            $taken = array_slice($pool, 0, $wanted);
             if (empty($taken)) {
                 continue;
             }
@@ -4563,8 +5169,8 @@ if (!function_exists('falcon_evaluate_promotions')) {
             foreach ($taken as $unit) {
                 $discount += match ($promo->reward_type) {
                     'percent_off' => $unit['price'] * (min(100, max(0, $promo->reward_value)) / 100),
-                    'fixed_off'   => min($unit['price'], max(0, $promo->reward_value)),
-                    default       => $unit['price'],   // free_item
+                    'fixed_off' => min($unit['price'], max(0, $promo->reward_value)),
+                    default => $unit['price'],   // free_item
                 };
                 $claimed[$unit['key']] = ($claimed[$unit['key']] ?? 0) + 1;
             }
@@ -4574,14 +5180,14 @@ if (!function_exists('falcon_evaluate_promotions')) {
             }
 
             $results[] = [
-                'id'           => (int) $promo->id,
-                'name'         => (string) $promo->name,
+                'id' => (int) $promo->id,
+                'name' => (string) $promo->name,
                 // The shop's own wording when it wrote some, otherwise the generated summary.
                 // {missing} has no meaning once the reward is already applied, so it is dropped.
-                'summary'      => trim(str_replace('{missing}', '', $promo->customer_message)),
-                'discount'     => round($discount, 2),
+                'summary' => trim(str_replace('{missing}', '', $promo->customer_message)),
+                'discount' => round($discount, 2),
                 'applications' => $applications,
-                'units'        => count($taken),
+                'units' => count($taken),
             ];
         }
 
@@ -4591,7 +5197,8 @@ if (!function_exists('falcon_evaluate_promotions')) {
 
 if (!function_exists('falcon_cart_promotion_total')) {
     /** Total money the active promotions take off this cart. */
-    function falcon_cart_promotion_total(?array $cart = null): float {
+    function falcon_cart_promotion_total(?array $cart = null): float
+    {
         $total = 0.0;
         foreach (falcon_evaluate_promotions($cart) as $applied) {
             $total += $applied['discount'];
@@ -4611,17 +5218,18 @@ if (!function_exists('falcon_all_coupons')) {
      *
      * @return array<int, array<string, mixed>>
      */
-    function falcon_all_coupons(): array {
+    function falcon_all_coupons(): array
+    {
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('shop_coupons')) {
-                return \FalconCms\Core\Models\Coupon::where('is_active', true)
+            if (Schema::hasTable('shop_coupons')) {
+                return Coupon::where('is_active', true)
                     ->orderBy('code')
                     ->get()
                     ->map(static fn ($c) => $c->toCartArray())
                     ->all();
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Coupon lookup failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Coupon lookup failed: '.$e->getMessage());
         }
 
         $legacy = json_decode((string) get_cms_option('shop_coupons', '[]'), true);
@@ -4634,18 +5242,19 @@ if (!function_exists('falcon_find_coupon')) {
     /**
      * One coupon by code, case-insensitively, in the cart's array shape. Null when unknown.
      */
-    function falcon_find_coupon(?string $code): ?array {
+    function falcon_find_coupon(?string $code): ?array
+    {
         $code = strtoupper(trim((string) $code));
         if ($code === '') {
             return null;
         }
 
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('shop_coupons')) {
-                return \FalconCms\Core\Models\Coupon::findByCode($code)?->toCartArray();
+            if (Schema::hasTable('shop_coupons')) {
+                return Coupon::findByCode($code)?->toCartArray();
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Coupon lookup failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Coupon lookup failed: '.$e->getMessage());
         }
 
         foreach (falcon_all_coupons() as $coupon) {
@@ -4670,11 +5279,13 @@ if (!function_exists('falcon_default_customer_country')) {
      * Returns a value from the shop's own country list (so it lines up with the checkout
      * dropdowns and with shipping zones), or null when there is nothing sensible to assume.
      */
-    function falcon_default_customer_country(): ?string {
+    function falcon_default_customer_country(): ?string
+    {
         $mode = (string) get_shop_option('shop_default_customer_location', 'none');
 
         if ($mode === 'base') {
             $base = (string) get_shop_option('shop_country_state', '');
+
             return $base !== '' ? $base : null;
         }
 
@@ -4691,9 +5302,9 @@ if (!function_exists('falcon_default_customer_country')) {
         // countryToIso2() rather than by string keeps suffixed names like
         // "United States (US)" working, and a country the shop does not sell to
         // simply finds no match — better than pre-filling a checkout that would be rejected.
-        foreach (\FalconCms\Core\Services\EcommerceData::getCountriesWithStates(true) as $value => $label) {
+        foreach (EcommerceData::getCountriesWithStates(true) as $value => $label) {
             $candidate = is_string($value) ? $value : $label;
-            if (\FalconCms\Core\Services\EcommerceData::countryToIso2($candidate) === strtoupper($iso2)) {
+            if (EcommerceData::countryToIso2($candidate) === strtoupper($iso2)) {
                 return $candidate;
             }
         }
@@ -4711,7 +5322,8 @@ if (!function_exists('falcon_customer_shipping_country')) {
      * lookup; an explicit choice always overwrites the same session key, so a customer's own
      * selection can never be undone by this.
      */
-    function falcon_customer_shipping_country(): ?string {
+    function falcon_customer_shipping_country(): ?string
+    {
         $chosen = session()->get('falcon_shipping_country');
         if (is_string($chosen) && $chosen !== '') {
             return $chosen;
@@ -4739,7 +5351,8 @@ if (!function_exists('falcon_shipping_destination')) {
      * Anything unrecognised (an option edited by hand, say) falls back to 'shipping', which is
      * the most permissive and therefore never blocks a checkout.
      */
-    function falcon_shipping_destination(): string {
+    function falcon_shipping_destination(): string
+    {
         $value = (string) get_shop_option('shop_shipping_destination', 'shipping');
 
         return in_array($value, ['shipping', 'billing', 'force_billing'], true) ? $value : 'shipping';
@@ -4754,7 +5367,8 @@ if (!function_exists('falcon_allows_separate_shipping_address')) {
      * 'force_billing' the goods must go to the address the payment was authorised against,
      * so a hand-crafted POST carrying shipping_* fields has to be ignored rather than trusted.
      */
-    function falcon_allows_separate_shipping_address(): bool {
+    function falcon_allows_separate_shipping_address(): bool
+    {
         return falcon_shipping_destination() !== 'force_billing';
     }
 }
@@ -4767,7 +5381,8 @@ if (!function_exists('falcon_cart_has_free_shipping_coupon')) {
      * such a coupon took no money off and left shipping fully charged. Shipping costs are
      * resolved server-side, so this is checked where the cost is calculated, not in the view.
      */
-    function falcon_cart_has_free_shipping_coupon(): bool {
+    function falcon_cart_has_free_shipping_coupon(): bool
+    {
         foreach (session()->get('falcon_coupons', []) as $coupon) {
             if (($coupon['type'] ?? '') === 'free_shipping') {
                 return true;
@@ -4787,23 +5402,24 @@ if (!function_exists('falcon_shipping_methods')) {
      *
      * @return array<string, array{id: string, label: string, cost: float}>
      */
-    function falcon_shipping_methods($country = null): array {
+    function falcon_shipping_methods($country = null): array
+    {
         $country = $country ?? falcon_customer_shipping_country();
         $delivery = falcon_delivery_shipping_details($country);
 
         $methods = [
             'delivery' => [
-                'id'    => 'delivery',
+                'id' => 'delivery',
                 'label' => $delivery['label'],
-                'cost'  => (float) $delivery['cost'],
+                'cost' => (float) $delivery['cost'],
             ],
         ];
 
         if (get_shop_option('shop_local_pickup_enable') === '1') {
             $methods['pickup'] = [
-                'id'    => 'pickup',
+                'id' => 'pickup',
                 'label' => 'Local pickup',
-                'cost'  => 0.0,
+                'cost' => 0.0,
             ];
         }
 
@@ -4840,9 +5456,10 @@ if (!function_exists('falcon_selected_shipping_method')) {
      *
      * @return array{id: string, label: string, cost: float}
      */
-    function falcon_selected_shipping_method($country = null): array {
-        $country  = $country ?? falcon_customer_shipping_country();
-        $methods  = falcon_shipping_methods($country);
+    function falcon_selected_shipping_method($country = null): array
+    {
+        $country = $country ?? falcon_customer_shipping_country();
+        $methods = falcon_shipping_methods($country);
         $selected = session()->get('falcon_shipping_method');
 
         if (is_string($selected) && isset($methods[$selected])) {
@@ -4859,7 +5476,8 @@ if (!function_exists('get_falcon_cart_shipping_details')) {
      * Delegates to the selected method, so Local Pickup zeroes shipping everywhere at once —
      * cart totals, checkout totals, and the order row written at checkout.
      */
-    function get_falcon_cart_shipping_details($country = null) {
+    function get_falcon_cart_shipping_details($country = null)
+    {
         $country = $country ?? falcon_customer_shipping_country();
 
         // "Only display shipping fees after a valid address is provided" — with no destination
@@ -4868,9 +5486,9 @@ if (!function_exists('get_falcon_cart_shipping_details')) {
         // required), so a real order is never priced from this branch.
         if (!falcon_shipping_is_calculable($country)) {
             return [
-                'cost'    => 0.0,
-                'label'   => 'Calculated at checkout',
-                'method'  => 'delivery',
+                'cost' => 0.0,
+                'label' => 'Calculated at checkout',
+                'method' => 'delivery',
                 'pending' => true,
             ];
         }
@@ -4883,7 +5501,8 @@ if (!function_exists('get_falcon_cart_shipping_details')) {
 
 if (!function_exists('falcon_shipping_is_calculable')) {
     /** False only while "hide fees until an address is provided" is on and no country is known. */
-    function falcon_shipping_is_calculable($country = null): bool {
+    function falcon_shipping_is_calculable($country = null): bool
+    {
         if (get_shop_option('shop_calc_hide_until_address') !== '1') {
             return true;
         }
@@ -4911,7 +5530,8 @@ if (!function_exists('falcon_refresh_cart_prices')) {
      *
      * @return int how many lines actually changed
      */
-    function falcon_refresh_cart_prices(): int {
+    function falcon_refresh_cart_prices(): int
+    {
         $cart = session()->get('falcon_cart', []);
         if (empty($cart) || !is_array($cart)) {
             return 0;
@@ -4929,18 +5549,19 @@ if (!function_exists('falcon_refresh_cart_prices')) {
         }
 
         try {
-            $products = empty($productIds) ? collect() : \Illuminate\Support\Facades\DB::table('shop_products')
+            $products = empty($productIds) ? collect() : DB::table('shop_products')
                 ->whereIn('post_id', array_unique($productIds))
                 ->get(['post_id', 'price', 'sale_price', 'sale_ends_at'])
                 ->keyBy('post_id');
 
-            $variations = empty($variationIds) ? collect() : \Illuminate\Support\Facades\DB::table('shop_product_variations')
+            $variations = empty($variationIds) ? collect() : DB::table('shop_product_variations')
                 ->whereIn('id', array_unique($variationIds))
                 ->get(['id', 'price', 'sale_price'])
                 ->keyBy('id');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // A pricing lookup that fails must not empty or corrupt the basket.
-            \Illuminate\Support\Facades\Log::error('Cart price refresh failed: ' . $e->getMessage());
+            Illuminate\Support\Facades\Log::error('Cart price refresh failed: '.$e->getMessage());
+
             return 0;
         }
 
@@ -4958,7 +5579,7 @@ if (!function_exists('falcon_refresh_cart_prices')) {
             }
 
             $price = round((float) $source->price, 2);
-            $sale  = $source->sale_price !== null ? round((float) $source->sale_price, 2) : null;
+            $sale = $source->sale_price !== null ? round((float) $source->sale_price, 2) : null;
 
             // The scheduled falcon:expire-sale-prices command clears these, but it may not have
             // run yet — an expired sale must not survive in a cart either way.
@@ -4971,7 +5592,7 @@ if (!function_exists('falcon_refresh_cart_prices')) {
             }
 
             $oldPrice = round((float) ($item['price'] ?? 0), 2);
-            $oldSale  = isset($item['sale_price']) && $item['sale_price'] !== null && $item['sale_price'] !== ''
+            $oldSale = isset($item['sale_price']) && $item['sale_price'] !== null && $item['sale_price'] !== ''
                 ? round((float) $item['sale_price'], 2)
                 : null;
 
@@ -5000,7 +5621,8 @@ if (!function_exists('falcon_cart_weight')) {
      *
      * Both lookups are single queries, so the cost does not grow with the size of the cart.
      */
-    function falcon_cart_weight(?array $cart = null): float {
+    function falcon_cart_weight(?array $cart = null): float
+    {
         $cart = $cart ?? session()->get('falcon_cart', []);
         if (empty($cart)) {
             return 0.0;
@@ -5018,15 +5640,16 @@ if (!function_exists('falcon_cart_weight')) {
         }
 
         try {
-            $productWeights = empty($productIds) ? collect() : \Illuminate\Support\Facades\DB::table('shop_products')
+            $productWeights = empty($productIds) ? collect() : DB::table('shop_products')
                 ->whereIn('post_id', array_unique($productIds))
                 ->pluck('weight', 'post_id');
 
-            $variationWeights = empty($variationIds) ? collect() : \Illuminate\Support\Facades\DB::table('shop_product_variations')
+            $variationWeights = empty($variationIds) ? collect() : DB::table('shop_product_variations')
                 ->whereIn('id', array_unique($variationIds))
                 ->pluck('weight', 'id');
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Cart weight lookup failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Cart weight lookup failed: '.$e->getMessage());
+
             return 0.0;
         }
 
@@ -5054,7 +5677,8 @@ if (!function_exists('falcon_cart_weight')) {
 
 if (!function_exists('falcon_delivery_shipping_details')) {
     /** Zone / flat-rate delivery cost — the calculation that existed before pickup was a choice. */
-    function falcon_delivery_shipping_details($country = null) {
+    function falcon_delivery_shipping_details($country = null)
+    {
         $subtotal = get_falcon_cart_subtotal();
         $cart = session()->get('falcon_cart', []);
         $itemCount = 0;
@@ -5070,14 +5694,14 @@ if (!function_exists('falcon_delivery_shipping_details')) {
 
         // 2. Advanced Shipping Zones
         $zones = get_shop_option('shop_shipping_zones', []);
-        
+
         // Find matching zone if country is provided
         $matchedZone = null;
         if ($country) {
             $normalizedCountry = str_replace('—', '-', $country);
             foreach ($zones as $zone) {
-                $zoneCountries = (array)($zone['countries'] ?? []);
-                $normalizedZoneCountries = array_map(fn($c) => str_replace('—', '-', $c), $zoneCountries);
+                $zoneCountries = (array) ($zone['countries'] ?? []);
+                $normalizedZoneCountries = array_map(fn ($c) => str_replace('—', '-', $c), $zoneCountries);
 
                 if (in_array($normalizedCountry, $normalizedZoneCountries)) {
                     $matchedZone = $zone;
@@ -5097,11 +5721,11 @@ if (!function_exists('falcon_delivery_shipping_details')) {
 
         if ($matchedZone) {
             $zoneName = $matchedZone['name'] ?? 'Shipping';
-            
+
             // Check zone-specific free shipping
             $zoneFreeThreshold = (float) ($matchedZone['free_threshold'] ?? 0);
             if ($zoneFreeThreshold > 0 && $subtotal >= $zoneFreeThreshold) {
-                return ['cost' => 0, 'label' => 'Free shipping (' . $zoneName . ')'];
+                return ['cost' => 0, 'label' => 'Free shipping ('.$zoneName.')'];
             }
 
             $baseCost = (float) ($matchedZone['cost'] ?? 0);
@@ -5136,9 +5760,10 @@ if (!function_exists('falcon_delivery_shipping_details')) {
                         break;
                     }
                 }
+
                 return [
                     'cost' => $matchedRule ? $ruleCost : $baseCost,
-                    'label' => $zoneName
+                    'label' => $zoneName,
                 ];
             }
 
@@ -5148,28 +5773,31 @@ if (!function_exists('falcon_delivery_shipping_details')) {
         // 3. Fallback to Global Flat Rate
         return [
             'cost' => (float) get_shop_option('shop_flat_rate_cost', 0),
-            'label' => 'Flat rate'
+            'label' => 'Flat rate',
         ];
     }
 }
 
 if (!function_exists('falcon_tax_enabled')) {
     /** Shop → Tax → Enable Tax. Everything else in the tax engine is a no-op while this is off. */
-    function falcon_tax_enabled(): bool {
+    function falcon_tax_enabled(): bool
+    {
         return get_shop_option('shop_calc_taxes') === '1';
     }
 }
 
 if (!function_exists('falcon_prices_include_tax')) {
     /** True when catalogue prices already contain tax, so tax is extracted rather than added. */
-    function falcon_prices_include_tax(): bool {
+    function falcon_prices_include_tax(): bool
+    {
         return get_shop_option('shop_tax_price_entry') === 'inclusive';
     }
 }
 
 if (!function_exists('falcon_display_prices_including_tax')) {
     /** Shop → Tax → Display prices in shop. Presentation only; never changes what is charged. */
-    function falcon_display_prices_including_tax(): bool {
+    function falcon_display_prices_including_tax(): bool
+    {
         return falcon_tax_enabled() && get_shop_option('shop_tax_display_shop', 'exclusive') === 'inclusive';
     }
 }
@@ -5181,10 +5809,12 @@ if (!function_exists('falcon_tax_country')) {
      * 'billing' falls back to the shipping country before checkout, because the billing address
      * simply isn't known while the customer is still on the cart page.
      */
-    function falcon_tax_country(): ?string {
+    function falcon_tax_country(): ?string
+    {
         switch ((string) get_shop_option('shop_tax_calculation_basis', 'shipping')) {
             case 'base':
                 $base = (string) get_shop_option('shop_country_state', '');
+
                 return $base !== '' ? $base : null;
 
             case 'billing':
@@ -5209,7 +5839,8 @@ if (!function_exists('falcon_tax_rate_for')) {
      *
      * @return array{rate: float, name: string, shipping: bool}|null
      */
-    function falcon_tax_rate_for(?string $country): ?array {
+    function falcon_tax_rate_for(?string $country): ?array
+    {
         if (!falcon_tax_enabled()) {
             return null;
         }
@@ -5248,8 +5879,8 @@ if (!function_exists('falcon_tax_rate_for')) {
         }
 
         return [
-            'rate'     => (float) ($match['rate'] ?? 0),
-            'name'     => trim((string) ($match['name'] ?? '')) ?: 'Tax',
+            'rate' => (float) ($match['rate'] ?? 0),
+            'name' => trim((string) ($match['name'] ?? '')) ?: 'Tax',
             'shipping' => (string) ($match['shipping'] ?? '0') === '1',
         ];
     }
@@ -5260,7 +5891,8 @@ if (!function_exists('falcon_product_tax_status')) {
      * A product's tax status ('taxable' | 'shipping' | 'none'), defaulting to taxable.
      * Results are memoised per request — the cart asks for the same handful of ids repeatedly.
      */
-    function falcon_product_tax_status($postId): string {
+    function falcon_product_tax_status($postId): string
+    {
         static $cache = [];
 
         $postId = (int) $postId;
@@ -5273,15 +5905,15 @@ if (!function_exists('falcon_product_tax_status')) {
 
         $status = 'taxable';
         try {
-            if (\Illuminate\Support\Facades\Schema::hasColumn('shop_products', 'tax_status')) {
-                $found = \Illuminate\Support\Facades\DB::table('shop_products')
+            if (Schema::hasColumn('shop_products', 'tax_status')) {
+                $found = DB::table('shop_products')
                     ->where('post_id', $postId)
                     ->value('tax_status');
-                if (in_array($found, \FalconCms\Core\Models\ProductData::TAX_STATUSES, true)) {
+                if (in_array($found, ProductData::TAX_STATUSES, true)) {
                     $status = $found;
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Leave the default; a lookup failure must never block a checkout.
         }
 
@@ -5295,7 +5927,8 @@ if (!function_exists('falcon_cart_taxable_subtotal')) {
      * Only 'taxable' products count — 'shipping' items are taxed via the shipping line
      * (if the rate covers shipping) and 'none' items are exempt outright.
      */
-    function falcon_cart_taxable_subtotal(): float {
+    function falcon_cart_taxable_subtotal(): float
+    {
         $total = 0.0;
 
         foreach (session()->get('falcon_cart', []) as $item) {
@@ -5315,21 +5948,22 @@ if (!function_exists('falcon_cart_discount_total')) {
      * Total coupon discount for the cart. Shared by the total and the tax base so a discount
      * can never be counted differently in the two places.
      */
-    function falcon_cart_discount_total(): float {
+    function falcon_cart_discount_total(): float
+    {
         $coupons = session()->get('falcon_coupons', []);
         if (empty($coupons)) {
             return 0.0;
         }
 
-        $cart            = session()->get('falcon_cart', []);
-        $subtotal        = get_falcon_cart_subtotal();
+        $cart = session()->get('falcon_cart', []);
+        $subtotal = get_falcon_cart_subtotal();
         $currentSubtotal = $subtotal;
-        $isSequential    = (int) get_shop_option('shop_coupon_stacking_policy', '1') === 1;
-        $discountTotal   = 0.0;
+        $isSequential = (int) get_shop_option('shop_coupon_stacking_policy', '1') === 1;
+        $discountTotal = 0.0;
 
         foreach ($coupons as $coupon) {
             $discount = get_falcon_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
-            $discountTotal   += $discount;
+            $discountTotal += $discount;
             $currentSubtotal -= $discount;
         }
 
@@ -5348,7 +5982,8 @@ if (!function_exists('get_falcon_cart_tax')) {
      * Coupons shrink the taxable base in proportion to how much of the cart is taxable, so a
      * discount never removes more (or less) tax than the goods it actually applies to.
      */
-    function get_falcon_cart_tax() {
+    function get_falcon_cart_tax()
+    {
         if (!falcon_tax_enabled()) {
             return 0.0;
         }
@@ -5359,9 +5994,9 @@ if (!function_exists('get_falcon_cart_tax')) {
         }
 
         $taxableBase = falcon_cart_taxable_subtotal();
-        $subtotal    = get_falcon_cart_subtotal();
+        $subtotal = get_falcon_cart_subtotal();
         // Promotions reduce what is actually paid, so they reduce the taxable base alongside coupons.
-        $discount    = falcon_cart_discount_total() + falcon_cart_promotion_total();
+        $discount = falcon_cart_discount_total() + falcon_cart_promotion_total();
 
         if ($subtotal > 0 && $discount > 0 && $taxableBase > 0) {
             $taxableBase = max(0.0, $taxableBase - ($discount * ($taxableBase / $subtotal)));
@@ -5385,7 +6020,8 @@ if (!function_exists('get_falcon_cart_tax')) {
 
 if (!function_exists('falcon_cart_tax_label')) {
     /** The name to show next to the tax line ("VAT", "GST", …). */
-    function falcon_cart_tax_label(): string {
+    function falcon_cart_tax_label(): string
+    {
         return falcon_tax_rate_for(falcon_tax_country())['name'] ?? 'Tax';
     }
 }
@@ -5397,7 +6033,8 @@ if (!function_exists('falcon_display_price')) {
      * Only ever converts between the two presentations of the same price; the amount actually
      * charged is settled by get_falcon_cart_tax() at checkout, never here.
      */
-    function falcon_display_price($price, $postId = null): float {
+    function falcon_display_price($price, $postId = null): float
+    {
         $price = (float) $price;
 
         if (!falcon_tax_enabled() || $price <= 0) {
@@ -5421,9 +6058,9 @@ if (!function_exists('falcon_display_price')) {
             return $price;
         }
 
-        $fraction   = $rate['rate'] / 100;
-        $entryIncl  = falcon_prices_include_tax();
-        $showIncl   = falcon_display_prices_including_tax();
+        $fraction = $rate['rate'] / 100;
+        $entryIncl = falcon_prices_include_tax();
+        $showIncl = falcon_display_prices_including_tax();
 
         if ($entryIncl === $showIncl) {
             return $price; // Stored and displayed the same way — nothing to convert.
@@ -5434,14 +6071,15 @@ if (!function_exists('falcon_display_price')) {
 }
 
 if (!function_exists('get_falcon_cart_total')) {
-    function get_falcon_cart_total() {
+    function get_falcon_cart_total()
+    {
         $cart = session()->get('falcon_cart', []);
         $subtotal = get_falcon_cart_subtotal();
         // Resolver rather than the raw session key, so the store's default-location setting
         // feeds the total the same way it feeds the line the customer is shown.
         $shipping = get_falcon_cart_shipping(falcon_customer_shipping_country());
         $tax = get_falcon_cart_tax();
-        
+
         // Coupons the customer typed in, plus whatever the automatic promotions earned them.
         $totalDiscount = falcon_cart_discount_total() + falcon_cart_promotion_total($cart);
 
@@ -5465,9 +6103,10 @@ if (!function_exists('falcon_product_schema')) {
      * so the structured data cannot advertise a price the shop will not honour — Google treats
      * that as a violation, not a rounding error.
      *
-     * @return array<string, mixed>|null  null when the post is not a sellable product
+     * @return array<string, mixed>|null null when the post is not a sellable product
      */
-    function falcon_product_schema($post): ?array {
+    function falcon_product_schema($post): ?array
+    {
         $shopData = $post->shopData ?? null;
         if (!$shopData || ($post->type ?? null) !== 'product') {
             return null;
@@ -5478,20 +6117,20 @@ if (!function_exists('falcon_product_schema')) {
 
         $schema = [
             '@context' => 'https://schema.org',
-            '@type'    => 'Product',
-            'name'     => (string) $post->title,
-            'url'      => $url,
+            '@type' => 'Product',
+            'name' => (string) $post->title,
+            'url' => $url,
         ];
 
         $description = trim(strip_tags((string) ($shopData->short_description ?: $post->excerpt ?: $post->content)));
         if ($description !== '') {
-            $schema['description'] = \Illuminate\Support\Str::limit($description, 300, '');
+            $schema['description'] = Str::limit($description, 300, '');
         }
 
         if (!empty($post->featured_image)) {
             $schema['image'] = str_starts_with($post->featured_image, 'http')
                 ? $post->featured_image
-                : asset('storage/' . $post->featured_image);
+                : asset('storage/'.$post->featured_image);
         }
 
         if (!empty($shopData->sku)) {
@@ -5524,13 +6163,13 @@ if (!function_exists('falcon_product_schema')) {
 
             if (!empty($prices)) {
                 $schema['offers'] = [
-                    '@type'         => 'AggregateOffer',
+                    '@type' => 'AggregateOffer',
                     'priceCurrency' => $currency,
-                    'lowPrice'      => number_format(min($prices), 2, '.', ''),
-                    'highPrice'     => number_format(max($prices), 2, '.', ''),
-                    'offerCount'    => count($prices),
-                    'availability'  => $availability,
-                    'url'           => $url,
+                    'lowPrice' => number_format(min($prices), 2, '.', ''),
+                    'highPrice' => number_format(max($prices), 2, '.', ''),
+                    'offerCount' => count($prices),
+                    'availability' => $availability,
+                    'url' => $url,
                 ];
             }
         } else {
@@ -5539,11 +6178,11 @@ if (!function_exists('falcon_product_schema')) {
 
             if ($price > 0) {
                 $offer = [
-                    '@type'         => 'Offer',
+                    '@type' => 'Offer',
                     'priceCurrency' => $currency,
-                    'price'         => number_format($price, 2, '.', ''),
-                    'availability'  => $availability,
-                    'url'           => $url,
+                    'price' => number_format($price, 2, '.', ''),
+                    'availability' => $availability,
+                    'url' => $url,
                 ];
 
                 // Only meaningful while a sale is actually running.
@@ -5561,13 +6200,13 @@ if (!function_exists('falcon_product_schema')) {
                 $average = (float) $post->reviews()->avg('rating');
                 if ($average > 0) {
                     $schema['aggregateRating'] = [
-                        '@type'       => 'AggregateRating',
+                        '@type' => 'AggregateRating',
                         'ratingValue' => round($average, 1),
                         'reviewCount' => $reviewCount,
                     ];
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Ratings are a bonus; never let them cost the page its markup.
         }
 
@@ -5579,10 +6218,11 @@ if (!function_exists('falcon_linked_products')) {
     /**
      * Products the shop owner hand-picked for this one.
      *
-     * @param string $kind 'upsell' (shown on the product page) or 'cross_sell' (shown in the cart)
-     * @return \Illuminate\Support\Collection<int, \FalconCms\Core\Models\Post>
+     * @param  string  $kind  'upsell' (shown on the product page) or 'cross_sell' (shown in the cart)
+     * @return Collection<int, Post>
      */
-    function falcon_linked_products($product, string $kind = 'upsell', int $limit = 4) {
+    function falcon_linked_products($product, string $kind = 'upsell', int $limit = 4)
+    {
         $shopData = is_object($product) ? ($product->shopData ?? null) : null;
         if (!$shopData) {
             return collect();
@@ -5596,7 +6236,7 @@ if (!function_exists('falcon_linked_products')) {
         }
 
         try {
-            $found = \FalconCms\Core\Models\Post::whereIn('posts.id', array_slice($ids, 0, max(1, $limit) * 3))
+            $found = Post::whereIn('posts.id', array_slice($ids, 0, max(1, $limit) * 3))
                 ->where('posts.type', 'product')
                 ->where('posts.status', 'published')
                 ->with(['shopData.variations', 'productCategories'])
@@ -5604,8 +6244,9 @@ if (!function_exists('falcon_linked_products')) {
 
             // Keep the order the shop owner chose rather than whatever the database returns.
             return $found->sortBy(fn ($p) => array_search($p->id, $ids, true))->take($limit)->values();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Linked product lookup failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Linked product lookup failed: '.$e->getMessage());
+
             return collect();
         }
     }
@@ -5619,15 +6260,16 @@ if (!function_exists('falcon_related_products')) {
      * in the shop — so "Related products" under a phone could be a pair of socks. Sharing one
      * helper also means the two single-product templates cannot drift apart again.
      *
-     * @return \Illuminate\Support\Collection<int, \FalconCms\Core\Models\Post>
+     * @return Collection<int, Post>
      */
-    function falcon_related_products($product, int $limit = 4) {
+    function falcon_related_products($product, int $limit = 4)
+    {
         $limit = max(1, $limit);
 
         try {
             $categoryIds = $product->productCategories?->pluck('id')->all() ?? [];
 
-            $base = fn () => \FalconCms\Core\Models\Post::where('posts.type', 'product')
+            $base = fn () => Post::where('posts.type', 'product')
                 ->where('posts.status', 'published')
                 ->where('posts.id', '!=', $product->id)
                 ->with(['shopData.variations', 'productCategories']);
@@ -5653,8 +6295,9 @@ if (!function_exists('falcon_related_products')) {
             }
 
             return $related->take($limit)->values();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Related product lookup failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Related product lookup failed: '.$e->getMessage());
+
             return collect();
         }
     }
@@ -5664,9 +6307,10 @@ if (!function_exists('falcon_cart_cross_sells')) {
     /**
      * Cross-sells for everything currently in the cart, minus what is already in it.
      *
-     * @return \Illuminate\Support\Collection<int, \FalconCms\Core\Models\Post>
+     * @return Collection<int, Post>
      */
-    function falcon_cart_cross_sells(int $limit = 4) {
+    function falcon_cart_cross_sells(int $limit = 4)
+    {
         $cart = session()->get('falcon_cart', []);
         if (empty($cart) || !is_array($cart)) {
             return collect();
@@ -5681,7 +6325,7 @@ if (!function_exists('falcon_cart_cross_sells')) {
             }
             $inCart[] = $productId;
 
-            $shopData = \FalconCms\Core\Models\ProductData::where('post_id', $productId)->first(['cross_sell_ids']);
+            $shopData = ProductData::where('post_id', $productId)->first(['cross_sell_ids']);
             foreach ((array) ($shopData->cross_sell_ids ?? []) as $id) {
                 $id = (int) $id;
                 if ($id > 0 && !in_array($id, $ids, true)) {
@@ -5697,14 +6341,15 @@ if (!function_exists('falcon_cart_cross_sells')) {
         }
 
         try {
-            return \FalconCms\Core\Models\Post::whereIn('posts.id', $ids)
+            return Post::whereIn('posts.id', $ids)
                 ->where('posts.type', 'product')
                 ->where('posts.status', 'published')
                 ->with(['shopData.variations', 'productCategories'])
                 ->limit($limit)
                 ->get();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Cross-sell lookup failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Cross-sell lookup failed: '.$e->getMessage());
+
             return collect();
         }
     }
@@ -5715,7 +6360,8 @@ if (!function_exists('falcon_is_variable_product')) {
      * Whether a product is a variable product. ProductData::isVariable() holds the rule —
      * the table has two columns for this and only one of them is written by the admin.
      */
-    function falcon_is_variable_product($product): bool {
+    function falcon_is_variable_product($product): bool
+    {
         $sd = $product->shopData ?? null;
 
         return $sd ? $sd->isVariable() : false;
@@ -5727,30 +6373,31 @@ if (!function_exists('falcon_shipping_carriers')) {
      * Shipping carriers for order tracking, grouped (Local / International).
      * Each value is a tracking-URL template with a {tracking} placeholder ('' = use universal fallback).
      */
-    function lazy_shipping_carriers(): array {
+    function lazy_shipping_carriers(): array
+    {
         return [
             'Local (Bangladesh)' => [
-                'Pathao'            => 'https://merchant.pathao.com/tracking?consignment_id={tracking}',
-                'Steadfast'         => 'https://steadfast.com.bd/track/{tracking}',
-                'RedX'              => 'https://redx.com.bd/track-parcel/?trackingId={tracking}',
-                'Paperfly'          => '',
-                'eCourier'          => 'https://ecourier.com.bd/track?tracking_id={tracking}',
+                'Pathao' => 'https://merchant.pathao.com/tracking?consignment_id={tracking}',
+                'Steadfast' => 'https://steadfast.com.bd/track/{tracking}',
+                'RedX' => 'https://redx.com.bd/track-parcel/?trackingId={tracking}',
+                'Paperfly' => '',
+                'eCourier' => 'https://ecourier.com.bd/track?tracking_id={tracking}',
                 'Sundarban Courier' => '',
-                'SA Paribahan'      => '',
-                'Pickaboo'          => '',
-                'Delivery Tiger'    => '',
+                'SA Paribahan' => '',
+                'Pickaboo' => '',
+                'Delivery Tiger' => '',
             ],
             'International' => [
-                'DHL'        => 'https://www.dhl.com/track?tracking-id={tracking}',
-                'FedEx'      => 'https://www.fedex.com/fedextrack/?trknbr={tracking}',
-                'UPS'        => 'https://www.ups.com/track?tracknum={tracking}',
-                'USPS'       => 'https://tools.usps.com/go/TrackConfirmAction?tLabels={tracking}',
-                'Aramex'     => 'https://www.aramex.com/track/results?ShipmentNumber={tracking}',
-                'DPD'        => 'https://www.dpd.com/tracking/{tracking}',
-                'TNT'        => 'https://www.tnt.com/express/en_us/site/tracking.html?searchType=con&cons={tracking}',
+                'DHL' => 'https://www.dhl.com/track?tracking-id={tracking}',
+                'FedEx' => 'https://www.fedex.com/fedextrack/?trknbr={tracking}',
+                'UPS' => 'https://www.ups.com/track?tracknum={tracking}',
+                'USPS' => 'https://tools.usps.com/go/TrackConfirmAction?tLabels={tracking}',
+                'Aramex' => 'https://www.aramex.com/track/results?ShipmentNumber={tracking}',
+                'DPD' => 'https://www.dpd.com/tracking/{tracking}',
+                'TNT' => 'https://www.tnt.com/express/en_us/site/tracking.html?searchType=con&cons={tracking}',
                 'China Post' => 'https://www.17track.net/en/track?nums={tracking}',
                 'India Post' => 'https://www.17track.net/en/track?nums={tracking}',
-                'Other'      => 'https://www.17track.net/en/track?nums={tracking}',
+                'Other' => 'https://www.17track.net/en/track?nums={tracking}',
             ],
         ];
     }
@@ -5760,21 +6407,28 @@ if (!function_exists('falcon_wishlist_product_ids')) {
     /**
      * Product IDs in the current user's wishlist (cached per request). Empty for guests.
      */
-    function falcon_wishlist_product_ids(): array {
+    function falcon_wishlist_product_ids(): array
+    {
         static $cache = null;
-        if ($cache !== null) return $cache;
-        if (!auth()->check()) return $cache = [];
+        if ($cache !== null) {
+            return $cache;
+        }
+        if (!auth()->check()) {
+            return $cache = [];
+        }
         try {
-            $cache = \FalconCms\Core\Models\Wishlist::where('user_id', auth()->id())->pluck('product_id')->map(fn($v) => (int) $v)->all();
-        } catch (\Throwable $e) {
+            $cache = Wishlist::where('user_id', auth()->id())->pluck('product_id')->map(fn ($v) => (int) $v)->all();
+        } catch (Throwable $e) {
             $cache = [];
         }
+
         return $cache;
     }
 }
 
 if (!function_exists('lazy_in_wishlist')) {
-    function lazy_in_wishlist($productId): bool {
+    function lazy_in_wishlist($productId): bool
+    {
         return in_array((int) $productId, falcon_wishlist_product_ids(), true);
     }
 }
@@ -5806,19 +6460,21 @@ if (!function_exists('falcon_customer_addresses')) {
      * Returns an empty collection for guests and whenever the table is not there yet, so callers
      * never have to guard for either.
      */
-    function falcon_customer_addresses() {
-        if (!auth()->check() || !\Illuminate\Support\Facades\Schema::hasTable('shop_customer_addresses')) {
+    function falcon_customer_addresses()
+    {
+        if (!auth()->check() || !Schema::hasTable('shop_customer_addresses')) {
             return collect();
         }
 
         try {
-            return \FalconCms\Core\Models\CustomerAddress::where('user_id', auth()->id())
+            return CustomerAddress::where('user_id', auth()->id())
                 ->orderByDesc('is_default_billing')
                 ->orderByDesc('is_default_shipping')
                 ->orderBy('id')
                 ->get();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Customer address lookup failed: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Illuminate\Support\Facades\Log::error('Customer address lookup failed: '.$e->getMessage());
+
             return collect();
         }
     }
@@ -5829,7 +6485,8 @@ if (!function_exists('falcon_default_customer_address')) {
      * The address to pre-fill a checkout section with: the one flagged default for that section,
      * otherwise the first saved one, otherwise null.
      */
-    function falcon_default_customer_address(string $section = 'billing') {
+    function falcon_default_customer_address(string $section = 'billing')
+    {
         $addresses = falcon_customer_addresses();
         if ($addresses->isEmpty()) {
             return null;
@@ -5870,7 +6527,7 @@ if (!function_exists('falcon_get_checkout_fields')) {
             $defaults = [
                 'billing' => [
                     ['name' => 'billing_first_name', 'type' => 'text',    'label' => 'First name',       'required' => true,  'width' => 'half', 'priority' => 10,  'default' => $user->first_name ?? ''],
-                    ['name' => 'billing_last_name',  'type' => 'text',    'label' => 'Last name',         'required' => true,  'width' => 'half', 'priority' => 20,  'default' => $user->last_name  ?? ''],
+                    ['name' => 'billing_last_name',  'type' => 'text',    'label' => 'Last name',         'required' => true,  'width' => 'half', 'priority' => 20,  'default' => $user->last_name ?? ''],
                     ['name' => 'billing_country',    'type' => 'country', 'label' => 'Country / Region',  'required' => true,  'width' => 'full', 'priority' => 30,  'default' => falcon_customer_shipping_country() ?? ''],
                     ['name' => 'billing_address_1',  'type' => 'text',    'label' => 'Street address',    'required' => true,  'width' => 'full', 'priority' => 40,  'placeholder' => 'House number and street name'],
                     ['name' => 'billing_address_2',  'type' => 'text',    'label' => null,                'required' => false, 'width' => 'full', 'priority' => 50,  'placeholder' => 'Apartment, suite, unit, etc. (optional)'],
@@ -5902,11 +6559,11 @@ if (!function_exists('falcon_get_checkout_fields')) {
         if ($saved) {
             foreach ($fields as $i => $field) {
                 $key = $field['name'] ?? '';
-                if (!str_starts_with($key, $section . '_')) {
+                if (!str_starts_with($key, $section.'_')) {
                     continue;
                 }
                 $column = substr($key, strlen($section) + 1);
-                $value = in_array($column, \FalconCms\Core\Models\CustomerAddress::FIELDS, true)
+                $value = in_array($column, CustomerAddress::FIELDS, true)
                     ? trim((string) ($saved->{$column} ?? ''))
                     : '';
 
@@ -5917,7 +6574,7 @@ if (!function_exists('falcon_get_checkout_fields')) {
         }
 
         $fields = apply_falcon_filters("lazy_{$section}_fields", $fields);
-        usort($fields, fn($a, $b) => ($a['priority'] ?? 10) <=> ($b['priority'] ?? 10));
+        usort($fields, fn ($a, $b) => ($a['priority'] ?? 10) <=> ($b['priority'] ?? 10));
 
         return $fields;
     }
@@ -5930,60 +6587,61 @@ if (!function_exists('falcon_render_checkout_field')) {
      */
     function falcon_render_checkout_field(array $field): void
     {
-        $name    = $field['name']         ?? '';
-        $type    = $field['type']         ?? 'text';
-        $label   = $field['label']        ?? null;
-        $req     = !empty($field['required']);
-        $width   = $field['width']        ?? 'full';
-        $default = $field['default']      ?? '';
-        $ph      = $field['placeholder']  ?? '';
-        $opts    = $field['options']       ?? [];
-        $class   = $field['class']        ?? '';
+        $name = $field['name'] ?? '';
+        $type = $field['type'] ?? 'text';
+        $label = $field['label'] ?? null;
+        $req = !empty($field['required']);
+        $width = $field['width'] ?? 'full';
+        $default = $field['default'] ?? '';
+        $ph = $field['placeholder'] ?? '';
+        $opts = $field['options'] ?? [];
+        $class = $field['class'] ?? '';
 
         $value = old($name, $default);
-        $span  = $width === 'half' ? '' : 'md:col-span-2';
-        $inp   = 'w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none';
+        $span = $width === 'half' ? '' : 'md:col-span-2';
+        $inp = 'w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] focus:border-primary outline-none';
 
         if ($type === 'hidden') {
-            echo '<input type="hidden" name="' . e($name) . '" value="' . e($value) . '">';
+            echo '<input type="hidden" name="'.e($name).'" value="'.e($value).'">';
+
             return;
         }
 
-        echo '<div class="space-y-1.5 ' . $span . ($class ? ' ' . e($class) : '') . '">';
+        echo '<div class="space-y-1.5 '.$span.($class ? ' '.e($class) : '').'">';
 
         if ($label !== null && $label !== '') {
             echo '<label class="text-[14px] font-bold text-heading">'
-               . e($label)
-               . ($req ? ' <span class="text-red-600">*</span>' : '')
-               . '</label>';
+               .e($label)
+               .($req ? ' <span class="text-red-600">*</span>' : '')
+               .'</label>';
         }
 
         if ($type === 'country') {
-            $countries = \FalconCms\Core\Services\EcommerceData::getCountriesWithStates();
-            echo '<select name="' . e($name) . '" class="' . $inp . ' bg-white cursor-pointer">';
+            $countries = EcommerceData::getCountriesWithStates();
+            echo '<select name="'.e($name).'" class="'.$inp.' bg-white cursor-pointer">';
             foreach ($countries as $code => $cname) {
-                echo '<option value="' . e($code) . '"' . ($value == $code ? ' selected' : '') . '>' . e($cname) . '</option>';
+                echo '<option value="'.e($code).'"'.($value == $code ? ' selected' : '').'>'.e($cname).'</option>';
             }
             echo '</select>';
         } elseif ($type === 'select') {
-            echo '<select name="' . e($name) . '" class="' . $inp . ' bg-white">';
+            echo '<select name="'.e($name).'" class="'.$inp.' bg-white">';
             if ($ph) {
-                echo '<option value="">' . e($ph) . '</option>';
+                echo '<option value="">'.e($ph).'</option>';
             }
             foreach ($opts as $k => $v) {
-                echo '<option value="' . e($k) . '"' . ($value == $k ? ' selected' : '') . '>' . e($v) . '</option>';
+                echo '<option value="'.e($k).'"'.($value == $k ? ' selected' : '').'>'.e($v).'</option>';
             }
             echo '</select>';
         } elseif ($type === 'textarea') {
             $rows = (int) ($field['rows'] ?? 3);
-            echo '<textarea name="' . e($name) . '" rows="' . $rows . '" placeholder="' . e($ph) . '" class="' . $inp . ' resize-none">' . e($value) . '</textarea>';
+            echo '<textarea name="'.e($name).'" rows="'.$rows.'" placeholder="'.e($ph).'" class="'.$inp.' resize-none">'.e($value).'</textarea>';
         } elseif ($type === 'checkbox') {
             echo '<label class="flex items-center gap-2 cursor-pointer text-[14px] text-body">'
-               . '<input type="checkbox" name="' . e($name) . '" value="1" class="w-4 h-4 border-[#ddd] rounded text-primary focus:ring-0"' . ($value ? ' checked' : '') . '>'
-               . ($label !== null ? e($label) : '')
-               . '</label>';
+               .'<input type="checkbox" name="'.e($name).'" value="1" class="w-4 h-4 border-[#ddd] rounded text-primary focus:ring-0"'.($value ? ' checked' : '').'>'
+               .($label !== null ? e($label) : '')
+               .'</label>';
         } else {
-            echo '<input type="' . e($type) . '" name="' . e($name) . '" value="' . e($value) . '" placeholder="' . e($ph) . '" class="' . $inp . '">';
+            echo '<input type="'.e($type).'" name="'.e($name).'" value="'.e($value).'" placeholder="'.e($ph).'" class="'.$inp.'">';
         }
 
         echo '</div>';
@@ -5997,7 +6655,9 @@ if (!function_exists('falcon_render_checkout_fields')) {
      */
     function falcon_render_checkout_fields(array $fields): void
     {
-        if (empty($fields)) return;
+        if (empty($fields)) {
+            return;
+        }
         echo '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
         foreach ($fields as $field) {
             falcon_render_checkout_field($field);
@@ -6007,7 +6667,8 @@ if (!function_exists('falcon_render_checkout_fields')) {
 }
 
 if (!function_exists('falcon_wishlist_count')) {
-    function falcon_wishlist_count(): int {
+    function falcon_wishlist_count(): int
+    {
         return count(falcon_wishlist_product_ids());
     }
 }
@@ -6017,49 +6678,50 @@ if (!function_exists('falcon_enabled_payment_gateways')) {
      * Enabled storefront payment gateways (single source of truth for checkout + order processing).
      * Returns: [ id => ['id','title','desc','type' => offline|online] ]
      */
-    function falcon_enabled_payment_gateways(): array {
+    function falcon_enabled_payment_gateways(): array
+    {
         $gateways = [];
 
         if (get_shop_option('shop_payment_cod_enable') === '1') {
             $gateways['cod'] = [
-                'id'    => 'cod',
+                'id' => 'cod',
                 'title' => get_shop_option('shop_payment_cod_title', 'Cash on Delivery'),
-                'desc'  => get_shop_option('shop_payment_cod_desc', 'Pay with cash upon delivery.'),
-                'type'  => 'offline',
+                'desc' => get_shop_option('shop_payment_cod_desc', 'Pay with cash upon delivery.'),
+                'type' => 'offline',
             ];
         }
         if (get_shop_option('shop_payment_bank_enable') === '1') {
             $gateways['bank'] = [
-                'id'    => 'bank',
+                'id' => 'bank',
                 'title' => get_shop_option('shop_payment_bank_title', 'Direct Bank Transfer'),
-                'desc'  => get_shop_option('shop_payment_bank_details', 'Make your payment directly into our bank account.'),
-                'type'  => 'offline',
+                'desc' => get_shop_option('shop_payment_bank_details', 'Make your payment directly into our bank account.'),
+                'type' => 'offline',
             ];
         }
         if (get_shop_option('shop_payment_stripe_enable') === '1' && get_shop_option('shop_payment_stripe_secret')) {
             $gateways['stripe'] = [
-                'id'    => 'stripe',
+                'id' => 'stripe',
                 'title' => get_shop_option('shop_payment_stripe_title', 'Credit / Debit Card'),
-                'desc'  => get_shop_option('shop_payment_stripe_desc', 'Pay securely with your card via Stripe.'),
-                'type'  => 'online',
+                'desc' => get_shop_option('shop_payment_stripe_desc', 'Pay securely with your card via Stripe.'),
+                'type' => 'online',
             ];
         }
         if (get_shop_option('shop_payment_paypal_enable') === '1' && get_shop_option('shop_payment_paypal_email')) {
             $gateways['paypal'] = [
-                'id'    => 'paypal',
+                'id' => 'paypal',
                 'title' => get_shop_option('shop_payment_paypal_title', 'PayPal'),
-                'desc'  => get_shop_option('shop_payment_paypal_desc', 'Pay via PayPal; you can pay with your card if you don’t have an account.'),
-                'type'  => 'online',
+                'desc' => get_shop_option('shop_payment_paypal_desc', 'Pay via PayPal; you can pay with your card if you don’t have an account.'),
+                'type' => 'online',
             ];
         }
         if (get_shop_option('shop_payment_sslcommerz_enable') === '1'
             && get_shop_option('shop_payment_sslcommerz_store_id')
             && get_shop_option('shop_payment_sslcommerz_store_pass')) {
             $gateways['sslcommerz'] = [
-                'id'    => 'sslcommerz',
+                'id' => 'sslcommerz',
                 'title' => get_shop_option('shop_payment_sslcommerz_title', 'SSLCommerz'),
-                'desc'  => get_shop_option('shop_payment_sslcommerz_desc', 'Pay with cards, mobile banking (bKash, Nagad) and net banking via SSLCommerz.'),
-                'type'  => 'online',
+                'desc' => get_shop_option('shop_payment_sslcommerz_desc', 'Pay with cards, mobile banking (bKash, Nagad) and net banking via SSLCommerz.'),
+                'type' => 'online',
             ];
         }
 
@@ -6068,12 +6730,13 @@ if (!function_exists('falcon_enabled_payment_gateways')) {
 }
 
 if (!function_exists('get_falcon_coupon_discount_amount')) {
-    function get_falcon_coupon_discount_amount($coupon, $cart, $calcBaseSubtotal = null) {
+    function get_falcon_coupon_discount_amount($coupon, $cart, $calcBaseSubtotal = null)
+    {
         $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
         $couponType = $coupon['type'] ?? 'percent';
         $products = (array) ($coupon['products'] ?? []);
         $categories = (array) ($coupon['categories'] ?? []);
-        
+
         // Free Shipping takes nothing off the cart — its value lands on the shipping line,
         // which falcon_shipping_methods() zeroes out while such a coupon is applied.
         if ($couponType === 'free_shipping') {
@@ -6094,15 +6757,17 @@ if (!function_exists('get_falcon_coupon_discount_amount')) {
                 foreach ($cart as $item) {
                     $units += (int) ($item['quantity'] ?? 1);
                 }
+
                 return min($amount * $units, $base);
             }
+
             return min($amount, $base);
         }
 
         // Fetch origin IDs for restricted products and categories for robust matching
         $restrictedProductOriginIds = [];
         if (!empty($products)) {
-            $restrictedProductOriginIds = \Illuminate\Support\Facades\DB::table('posts')
+            $restrictedProductOriginIds = DB::table('posts')
                 ->whereIn('id', $products)
                 ->selectRaw('COALESCE(origin_id, id) as identity')
                 ->pluck('identity')
@@ -6111,7 +6776,7 @@ if (!function_exists('get_falcon_coupon_discount_amount')) {
 
         $restrictedCategoryOriginIds = [];
         if (!empty($categories)) {
-            $restrictedCategoryOriginIds = \Illuminate\Support\Facades\DB::table('taxonomy_terms')
+            $restrictedCategoryOriginIds = DB::table('taxonomy_terms')
                 ->whereIn('id', $categories)
                 ->selectRaw('COALESCE(origin_id, id) as identity')
                 ->pluck('identity')
@@ -6124,22 +6789,24 @@ if (!function_exists('get_falcon_coupon_discount_amount')) {
 
         foreach ($cart as $item) {
             $productId = $item['id'] ?? 0;
-            if (!$productId) continue;
+            if (!$productId) {
+                continue;
+            }
 
             // Check Product Eligibility
             $matchProduct = false;
             if (!empty($restrictedProductOriginIds)) {
-                $itemIdentity = \Illuminate\Support\Facades\DB::table('posts')
+                $itemIdentity = DB::table('posts')
                     ->where('id', $productId)
                     ->selectRaw('COALESCE(origin_id, id) as identity')
                     ->value('identity');
                 $matchProduct = in_array($itemIdentity, $restrictedProductOriginIds);
             }
-            
+
             // Check Category Eligibility
             $matchCategory = false;
             if (!empty($restrictedCategoryOriginIds)) {
-                $itemCategoryIdentities = \Illuminate\Support\Facades\DB::table('product_category_post')
+                $itemCategoryIdentities = DB::table('product_category_post')
                     ->join('product_categories', 'product_category_post.product_category_id', '=', 'product_categories.id')
                     ->where('product_category_post.post_id', $productId)
                     ->selectRaw('COALESCE(product_categories.origin_id, product_categories.id) as identity')
@@ -6158,7 +6825,7 @@ if (!function_exists('get_falcon_coupon_discount_amount')) {
             if ($isEligible) {
                 $qty = (int) ($item['quantity'] ?? 1);
                 $price = (float) ($item['sale_price'] ?? $item['price']);
-                
+
                 if ($couponType === 'percent') {
                     $eligibleSubtotal += $price * $qty;
                 } elseif ($couponType === 'fixed_product') {
@@ -6180,15 +6847,24 @@ if (!function_exists('get_falcon_coupon_discount_amount')) {
 }
 
 if (!function_exists('get_falcon_image_url')) {
-    function get_falcon_image_url($path, $default = 'https://via.placeholder.com/300?text=No+Image') {
-        if (empty($path)) return $default;
-        if (str_starts_with($path, 'http')) return $path;
-        
-        // Check common paths
-        if (file_exists(public_path($path))) return asset($path);
-        if (file_exists(public_path('storage/' . $path))) return asset('storage/' . $path);
+    function get_falcon_image_url($path, $default = 'https://via.placeholder.com/300?text=No+Image')
+    {
+        if (empty($path)) {
+            return $default;
+        }
+        if (str_starts_with($path, 'http')) {
+            return $path;
+        }
 
-        return asset('storage/' . $path); // Fallback to storage
+        // Check common paths
+        if (file_exists(public_path($path))) {
+            return asset($path);
+        }
+        if (file_exists(public_path('storage/'.$path))) {
+            return asset('storage/'.$path);
+        }
+
+        return asset('storage/'.$path); // Fallback to storage
     }
 
 }
@@ -6206,17 +6882,17 @@ if (!function_exists('lazy_render_special_menu_item')) {
      * Render a Lazy Special Menu widget (Cart / Search / Wishlist) inside a navigation menu.
      * Returns a full <li>…</li> string. Reuses existing helpers + the global mini-cart drawer.
      *
-     * @param object $item   navigation_menu_items row (stdClass)
-     * @param string $style  inline link style inherited from the menu element
+     * @param  object  $item  navigation_menu_items row (stdClass)
+     * @param  string  $style  inline link style inherited from the menu element
      */
     function lazy_render_special_menu_item($item, string $style = '', bool $isMobile = false, $elId = ''): string
     {
-        $type  = $item->type ?? '';
+        $type = $item->type ?? '';
         $label = $item->title ?? '';
 
         $icons = [
-            'special_cart'     => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>',
-            'special_search'   => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+            'special_cart' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>',
+            'special_search' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
             'special_wishlist' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
         ];
         $icon = $icons[$type] ?? '';
@@ -6224,56 +6900,59 @@ if (!function_exists('lazy_render_special_menu_item')) {
         // Count-badge appearance (NO display property here — Tailwind classes control show/hide,
         // matching the header badge so LazyCart's `hidden`-class toggle keeps working).
         $badgeStyle = 'min-width:18px;height:18px;padding:0 5px;margin-left:6px;font-size:11px;font-weight:700;line-height:1;color:#fff;background:#0091ea;border-radius:9999px;';
-        $badgeCls   = 'inline-flex items-center justify-center';
-        $iconWrap   = 'display:inline-flex;align-items:center;gap:2px;';
+        $badgeCls = 'inline-flex items-center justify-center';
+        $iconWrap = 'display:inline-flex;align-items:center;gap:2px;';
 
         if ($type === 'special_cart') {
-            $count   = function_exists('get_falcon_cart_count') ? (int) get_falcon_cart_count() : 0;
-            $cartUrl = \Illuminate\Support\Facades\Route::has('shop.cart') ? route('shop.cart') : url('/cart');
-            $badge   = '<span class="cart-count-badge ' . $badgeCls . ($count > 0 ? '' : ' hidden') . '" style="' . $badgeStyle . '">' . $count . '</span>';
+            $count = function_exists('get_falcon_cart_count') ? (int) get_falcon_cart_count() : 0;
+            $cartUrl = Route::has('shop.cart') ? route('shop.cart') : url('/cart');
+            $badge = '<span class="cart-count-badge '.$badgeCls.($count > 0 ? '' : ' hidden').'" style="'.$badgeStyle.'">'.$count.'</span>';
+
             return '<li class="falcon-menu-item lazy-special-item lazy-special-cart">'
-                 . '<a href="' . e($cartUrl) . '" class="falcon-menu-link lazy-special-link" style="' . $style . $iconWrap . '" '
-                 . 'onclick="if(window.LazyCart){LazyCart.open();return false;}" aria-label="' . e($label ?: 'Cart') . '">'
-                 . $icon . $badge
-                 . '</a></li>';
+                 .'<a href="'.e($cartUrl).'" class="falcon-menu-link lazy-special-link" style="'.$style.$iconWrap.'" '
+                 .'onclick="if(window.LazyCart){LazyCart.open();return false;}" aria-label="'.e($label ?: 'Cart').'">'
+                 .$icon.$badge
+                 .'</a></li>';
         }
 
         if ($type === 'special_wishlist') {
-            $count   = function_exists('falcon_wishlist_count') ? (int) falcon_wishlist_count() : 0;
-            $wishUrl = \Illuminate\Support\Facades\Route::has('shop.wishlist') ? route('shop.wishlist') : url('/wishlist');
-            $badge   = '<span class="wishlist-count-badge ' . $badgeCls . ($count > 0 ? '' : ' hidden') . '" style="' . $badgeStyle . '">' . $count . '</span>';
+            $count = function_exists('falcon_wishlist_count') ? (int) falcon_wishlist_count() : 0;
+            $wishUrl = Route::has('shop.wishlist') ? route('shop.wishlist') : url('/wishlist');
+            $badge = '<span class="wishlist-count-badge '.$badgeCls.($count > 0 ? '' : ' hidden').'" style="'.$badgeStyle.'">'.$count.'</span>';
+
             return '<li class="falcon-menu-item lazy-special-item lazy-special-wishlist">'
-                 . '<a href="' . e($wishUrl) . '" class="falcon-menu-link lazy-special-link" style="' . $style . $iconWrap . '" aria-label="' . e($label ?: 'Wishlist') . '">'
-                 . $icon . $badge
-                 . '</a></li>';
+                 .'<a href="'.e($wishUrl).'" class="falcon-menu-link lazy-special-link" style="'.$style.$iconWrap.'" aria-label="'.e($label ?: 'Wishlist').'">'
+                 .$icon.$badge
+                 .'</a></li>';
         }
 
         // special_search — icon toggles a simple search box that drops below the menu.
-        $searchUrl = \Illuminate\Support\Facades\Route::has('frontend.search') ? route('frontend.search') : url('/search');
+        $searchUrl = Route::has('frontend.search') ? route('frontend.search') : url('/search');
         $toggle = "var p=this.parentNode.querySelector('.lazy-search-panel');"
-                . "var open=p.style.display!=='block';p.style.display=open?'block':'none';"
-                . "if(open){var i=p.querySelector('input');if(i){i.focus();}}return false;";
+                ."var open=p.style.display!=='block';p.style.display=open?'block':'none';"
+                ."if(open){var i=p.querySelector('input');if(i){i.focus();}}return false;";
         $panelStyle = 'display:none;position:absolute;top:100%;right:0;margin-top:8px;z-index:9999;'
-                    . 'background:#fff;border:1px solid #e5e7eb;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:10px;min-width:240px;';
+                    .'background:#fff;border:1px solid #e5e7eb;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:10px;min-width:240px;';
+
         return '<li class="falcon-menu-item lazy-special-item lazy-special-search" style="position:relative;">'
-             . '<a href="#" class="falcon-menu-link lazy-special-link" style="' . $style . $iconWrap . '" '
-             . 'onclick="' . e($toggle) . '" aria-label="' . e($label ?: 'Search') . '">'
-             . $icon
-             . '</a>'
-             . '<div class="lazy-search-panel" style="' . $panelStyle . '">'
-             . '<form action="' . e($searchUrl) . '" method="GET" style="display:flex;align-items:center;gap:6px;">'
-             . '<input type="text" name="s" placeholder="Search…" autocomplete="off" '
-             . 'style="flex:1;height:36px;padding:0 10px;border:1px solid #e5e7eb;border-radius:4px;font-size:14px;outline:none;color:#111;">'
-             . '<button type="submit" style="height:36px;padding:0 12px;background:#0091ea;color:#fff;border:none;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;">Go</button>'
-             . '</form>'
-             . '</div></li>';
+             .'<a href="#" class="falcon-menu-link lazy-special-link" style="'.$style.$iconWrap.'" '
+             .'onclick="'.e($toggle).'" aria-label="'.e($label ?: 'Search').'">'
+             .$icon
+             .'</a>'
+             .'<div class="lazy-search-panel" style="'.$panelStyle.'">'
+             .'<form action="'.e($searchUrl).'" method="GET" style="display:flex;align-items:center;gap:6px;">'
+             .'<input type="text" name="s" placeholder="Search…" autocomplete="off" '
+             .'style="flex:1;height:36px;padding:0 10px;border:1px solid #e5e7eb;border-radius:4px;font-size:14px;outline:none;color:#111;">'
+             .'<button type="submit" style="height:36px;padding:0 12px;background:#0091ea;color:#fff;border:none;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;">Go</button>'
+             .'</form>'
+             .'</div></li>';
     }
 }
 
 /**
  * Register Special Text Element for Falcon Builder
  */
-add_falcon_filter('falcon_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function ($elements) {
     $elements['text_block'] = [
         'type' => 'text_block',
         'name' => 'Text Block',
@@ -6288,9 +6967,9 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
                 'type' => 'select',
                 'label' => 'Text Align',
                 'options' => ['left' => 'Left', 'center' => 'Center', 'right' => 'Right', 'justify' => 'Justify'],
-                'default' => 'center'
+                'default' => 'center',
             ],
-            
+
             // Design - Typography
             'fontFamily' => ['type' => 'text', 'label' => 'Font Family', 'default' => 'inherit'],
             'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => 20],
@@ -6302,13 +6981,13 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
                 'type' => 'select',
                 'label' => 'Text Transform',
                 'options' => ['none' => 'None', 'uppercase' => 'UPPERCASE', 'lowercase' => 'lowercase', 'capitalize' => 'Capitalize'],
-                'default' => 'none'
+                'default' => 'none',
             ],
-            
+
             // Design - Colors
             'color' => ['type' => 'color', 'label' => 'Text Color', 'default' => '#333333'],
             'hoverColor' => ['type' => 'color', 'label' => 'Hover Color', 'default' => ''],
-            
+
             // Design - Spacing
             'marginTop' => ['type' => 'number', 'label' => 'Margin Top', 'default' => 0],
             'marginBottom' => ['type' => 'number', 'label' => 'Margin Bottom', 'default' => 0],
@@ -6322,12 +7001,13 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             // Extras
             'visibility' => [
                 'type' => 'object',
-                'default' => ['mobile' => true, 'tablet' => true, 'desktop' => true]
+                'default' => ['mobile' => true, 'tablet' => true, 'desktop' => true],
             ],
             'cssClass' => ['type' => 'text', 'default' => ''],
             'cssId' => ['type' => 'text', 'default' => ''],
-        ]
+        ],
     ];
+
     return $elements;
 });
 
@@ -6344,20 +7024,30 @@ if (!function_exists('get_lazy_builder_fonts')) {
      * The walk is fully recursive over ALL nested arrays (not just columns/elements), so a
      * layout stored inside a setting — a post-card or mega-menu layout — is covered too.
      */
-    function get_lazy_builder_fonts($layout, &$fonts = []) {
-        if (!is_array($layout)) return array_values(array_unique($fonts));
+    function get_lazy_builder_fonts($layout, &$fonts = [])
+    {
+        if (!is_array($layout)) {
+            return array_values(array_unique($fonts));
+        }
 
         foreach ($layout as $key => $value) {
             if (is_array($value)) {
                 get_lazy_builder_fonts($value, $fonts);
+
                 continue;
             }
-            if (!is_string($key) || !is_string($value) || $value === '') continue;
+            if (!is_string($key) || !is_string($value) || $value === '') {
+                continue;
+            }
             if ($key !== 'fontFamily' && $key !== 'family'
-                && !str_ends_with($key, 'FontFamily') && !str_ends_with($key, '_family')) continue;
+                && !str_ends_with($key, 'FontFamily') && !str_ends_with($key, '_family')) {
+                continue;
+            }
 
             $family = trim(trim(explode(',', $value)[0]), " '\"");
-            if ($family === '' || strcasecmp($family, 'inherit') === 0) continue;
+            if ($family === '' || strcasecmp($family, 'inherit') === 0) {
+                continue;
+            }
             $fonts[] = $family;
         }
 
@@ -6384,35 +7074,43 @@ if (!function_exists('falcon_google_font_url')) {
         if ($known === null) {
             $known = [];
             foreach (falcon_google_fonts() as $f) {
-                if (!empty($f['family'])) $known[mb_strtolower($f['family'])] = $f['family'];
+                if (!empty($f['family'])) {
+                    $known[mb_strtolower($f['family'])] = $f['family'];
+                }
             }
         }
 
         $use = [];
         foreach ($families as $family) {
             $family = trim(trim((string) $family), " '\"");
-            if ($family === '') continue;
+            if ($family === '') {
+                continue;
+            }
             $canonical = $known[mb_strtolower($family)] ?? null;
             // Unknown to the bundled list: keep it only when the list itself is missing,
             // so a stripped install still behaves like before instead of losing all fonts.
             if ($canonical === null) {
-                if ($known) continue;
+                if ($known) {
+                    continue;
+                }
                 $canonical = $family;
             }
             $use[$canonical] = true;
         }
-        if (!$use) return '';
+        if (!$use) {
+            return '';
+        }
 
-        $parts = array_map(fn ($f) => 'family=' . str_replace(' ', '+', $f) . ':wght@' . $weights, array_keys($use));
+        $parts = array_map(fn ($f) => 'family='.str_replace(' ', '+', $f).':wght@'.$weights, array_keys($use));
 
-        return 'https://fonts.googleapis.com/css2?' . implode('&', $parts) . '&display=swap';
+        return 'https://fonts.googleapis.com/css2?'.implode('&', $parts).'&display=swap';
     }
 }
 
 /**
  * Register Button Element for Falcon Builder
  */
-add_falcon_filter('falcon_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function ($elements) {
     $elements['button'] = [
         'type' => 'button',
         'name' => 'Button',
@@ -6426,36 +7124,36 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
                 'type' => 'select',
                 'label' => 'Target',
                 'options' => ['_self' => 'Same Window', '_blank' => 'New Window'],
-                'default' => '_self'
+                'default' => '_self',
             ],
             'textAlign' => [
                 'type' => 'select',
                 'label' => 'Alignment',
                 'options' => ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'],
-                'default' => 'center'
+                'default' => 'center',
             ],
-            
+
             // Design - Typography
             'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => 16, 'tab' => 'design'],
             'fontWeight' => ['type' => 'text', 'label' => 'Font Weight', 'default' => '600', 'tab' => 'design'],
             'textTransform' => ['type' => 'select', 'label' => 'Text Transform', 'options' => ['none' => 'None', 'uppercase' => 'UPPERCASE', 'lowercase' => 'lowercase', 'capitalize' => 'Capitalize'], 'default' => 'none', 'tab' => 'design'],
-            
+
             // Design - Colors & Gradients
             'buttonStyle' => ['type' => 'text', 'default' => 'default', 'tab' => 'design'],
             'color' => ['type' => 'color', 'label' => 'Text Color', 'default' => '#ffffff', 'tab' => 'design'],
             'bgColor' => ['type' => 'color', 'label' => 'Background Color', 'default' => '#0091ea', 'tab' => 'design'],
             'hoverColor' => ['type' => 'color', 'label' => 'Text Hover Color', 'default' => '#ffffff', 'tab' => 'design'],
             'hoverBgColor' => ['type' => 'color', 'label' => 'BG Hover Color', 'default' => '#007cc0', 'tab' => 'design'],
-            
+
             'bgGradientStartColor' => ['type' => 'color', 'default' => '#0091ea', 'tab' => 'design'],
-            'bgGradientEndColor'   => ['type' => 'color', 'default' => '#007cc0', 'tab' => 'design'],
+            'bgGradientEndColor' => ['type' => 'color', 'default' => '#007cc0', 'tab' => 'design'],
             'bgGradientStartPosition' => ['type' => 'number', 'default' => 0, 'tab' => 'design'],
-            'bgGradientEndPosition'   => ['type' => 'number', 'default' => 100, 'tab' => 'design'],
-            'bgGradientType'          => ['type' => 'text', 'default' => 'linear', 'tab' => 'design'],
-            'bgGradientAngle'         => ['type' => 'number', 'default' => 180, 'tab' => 'design'],
+            'bgGradientEndPosition' => ['type' => 'number', 'default' => 100, 'tab' => 'design'],
+            'bgGradientType' => ['type' => 'text', 'default' => 'linear', 'tab' => 'design'],
+            'bgGradientAngle' => ['type' => 'number', 'default' => 180, 'tab' => 'design'],
             'bgGradientHoverStartColor' => ['type' => 'color', 'default' => '#007cc0', 'tab' => 'design'],
-            'bgGradientHoverEndColor'   => ['type' => 'color', 'default' => '#005fa3', 'tab' => 'design'],
-            
+            'bgGradientHoverEndColor' => ['type' => 'color', 'default' => '#005fa3', 'tab' => 'design'],
+
             // Design - Spacing & Border
             'paddingTop' => ['type' => 'number', 'label' => 'Padding Top', 'default' => 12, 'tab' => 'design'],
             'paddingBottom' => ['type' => 'number', 'label' => 'Padding Bottom', 'default' => 12, 'tab' => 'design'],
@@ -6467,7 +7165,7 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             'visibility' => [
                 'type' => 'object',
                 'default' => ['mobile' => true, 'tablet' => true, 'desktop' => true],
-                'tab' => 'design'
+                'tab' => 'design',
             ],
             'borderSizeTop' => ['type' => 'number', 'default' => 0, 'tab' => 'design'],
             'borderSizeRight' => ['type' => 'number', 'default' => 0, 'tab' => 'design'],
@@ -6480,23 +7178,25 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             'iconPosition' => ['type' => 'text', 'default' => 'left', 'tab' => 'design'],
             'cssClass' => ['type' => 'text', 'default' => '', 'tab' => 'design'],
             'cssId' => ['type' => 'text', 'default' => '', 'tab' => 'design'],
-        ]
+        ],
     ];
+
     return $elements;
 });
 
 /**
  * Register Menu Element for Falcon Builder
  */
-add_falcon_filter('falcon_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function ($elements) {
     // This filter is applied many times per render; the menu dropdown only feeds
     // the builder editor, so resolve the list once per request.
     static $menus = null;
     if ($menus === null) {
         $menus = [];
         try {
-            $menus = \Illuminate\Support\Facades\DB::table('navigation_menus')->pluck('name', 'id')->toArray();
-        } catch (\Exception $e) {}
+            $menus = DB::table('navigation_menus')->pluck('name', 'id')->toArray();
+        } catch (Exception $e) {
+        }
     }
 
     $elements['menu'] = [
@@ -6511,14 +7211,14 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
                 'label' => 'Select Menu',
                 'options' => $menus,
                 'default' => count($menus) > 0 ? array_key_first($menus) : '',
-                'tab' => 'design'
+                'tab' => 'design',
             ],
             'layout' => [
                 'type' => 'select',
                 'label' => 'Layout',
                 'options' => ['horizontal' => 'Horizontal', 'vertical' => 'Vertical'],
                 'default' => 'horizontal',
-                'tab' => 'design'
+                'tab' => 'design',
             ],
             'transitionTime' => [
                 'type' => 'range',
@@ -6527,22 +7227,22 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
                 'min' => 0,
                 'max' => 2,
                 'step' => 0.1,
-                'tab' => 'design'
+                'tab' => 'design',
             ],
             'submenuSpace' => [
                 'type' => 'number',
                 'label' => 'Space Between Main Menu and Submenu (px)',
                 'default' => 10,
-                'tab' => 'design'
+                'tab' => 'design',
             ],
             'showArrows' => [
                 'type' => 'select',
                 'label' => 'Menu Arrows',
                 'options' => ['yes' => 'Yes', 'no' => 'No'],
                 'default' => 'yes',
-                'tab' => 'design'
+                'tab' => 'design',
             ],
-            
+
             // Design - Typography
             'fontFamily' => ['type' => 'text', 'label' => 'Font Family', 'default' => 'inherit', 'tab' => 'design'],
             'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => 16, 'tab' => 'design'],
@@ -6559,25 +7259,25 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             'itemSpacing' => ['type' => 'number', 'label' => 'Item Spacing', 'default' => 0, 'tab' => 'design'],
             'itemBorderRadius' => ['type' => 'number', 'label' => 'Item Border Radius', 'default' => 0, 'tab' => 'design'],
             'itemTransition' => ['type' => 'number', 'label' => 'Item Transition', 'default' => 0.3, 'tab' => 'design'],
-            
+
             'itemBgColor' => ['type' => 'color', 'label' => 'Item Background Color', 'default' => 'transparent', 'tab' => 'design'],
             'itemBgColorHover' => ['type' => 'color', 'label' => 'Item Background Color Hover', 'default' => 'transparent', 'tab' => 'design'],
             'itemColor' => ['type' => 'color', 'label' => 'Item Text Color', 'default' => '#333333', 'tab' => 'design'],
             'itemColorHover' => ['type' => 'color', 'label' => 'Item Text Color Hover', 'default' => '#0091ea', 'tab' => 'design'],
-            
+
             'itemBorderSizeTop' => ['type' => 'number', 'label' => 'Item Border Size Top', 'default' => 0, 'tab' => 'design'],
             'itemBorderSizeRight' => ['type' => 'number', 'label' => 'Item Border Size Right', 'default' => 0, 'tab' => 'design'],
             'itemBorderSizeBottom' => ['type' => 'number', 'label' => 'Item Border Size Bottom', 'default' => 0, 'tab' => 'design'],
             'itemBorderSizeLeft' => ['type' => 'number', 'label' => 'Item Border Size Left', 'default' => 0, 'tab' => 'design'],
-            
+
             'itemBorderSizeTopHover' => ['type' => 'number', 'label' => 'Item Border Size Top Hover', 'default' => 0, 'tab' => 'design'],
             'itemBorderSizeRightHover' => ['type' => 'number', 'label' => 'Item Border Size Right Hover', 'default' => 0, 'tab' => 'design'],
             'itemBorderSizeBottomHover' => ['type' => 'number', 'label' => 'Item Border Size Bottom Hover', 'default' => 0, 'tab' => 'design'],
             'itemBorderSizeLeftHover' => ['type' => 'number', 'label' => 'Item Border Size Left Hover', 'default' => 0, 'tab' => 'design'],
-            
+
             'itemBorderColor' => ['type' => 'color', 'label' => 'Item Border Color', 'default' => '#eeeeee', 'tab' => 'design'],
             'itemBorderColorHover' => ['type' => 'color', 'label' => 'Item Border Color Hover', 'default' => '#0091ea', 'tab' => 'design'],
-            
+
             // Design - Sub Menu Styling
             'showArrows' => ['type' => 'text', 'label' => 'Show Arrows', 'default' => 'yes', 'tab' => 'submenu'],
             'submenuDirection' => ['type' => 'text', 'label' => 'Expand Direction', 'default' => 'right', 'tab' => 'submenu'],
@@ -6585,7 +7285,7 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             'submenuMinWidth' => ['type' => 'text', 'label' => 'Min Width', 'default' => '200px', 'tab' => 'submenu'],
             'submenuMaxWidth' => ['type' => 'text', 'label' => 'Max Width', 'default' => '220px', 'tab' => 'submenu'],
             'submenuSpace' => ['type' => 'number', 'label' => 'Submenu Space', 'default' => 10, 'tab' => 'submenu'],
-            
+
             // Submenu Typography
             'submenuFontFamily' => ['type' => 'text', 'label' => 'Submenu Font Family', 'default' => 'inherit', 'tab' => 'submenu'],
             'submenuFontSize' => ['type' => 'text', 'label' => 'Submenu Font Size', 'default' => '14px', 'tab' => 'submenu'],
@@ -6594,25 +7294,25 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             'submenuLetterSpacing' => ['type' => 'text', 'label' => 'Submenu Letter Spacing', 'default' => '', 'tab' => 'submenu'],
             'submenuTextTransform' => ['type' => 'text', 'label' => 'Submenu Text Transform', 'default' => 'none', 'tab' => 'submenu'],
             'submenuTextAlign' => ['type' => 'text', 'label' => 'Submenu Text Align', 'default' => 'left', 'tab' => 'submenu'],
-            
+
             // Submenu Item Styling
             'submenuPaddingTop' => ['type' => 'number', 'label' => 'Submenu Padding Top', 'default' => 10, 'tab' => 'submenu'],
             'submenuPaddingRight' => ['type' => 'number', 'label' => 'Submenu Padding Right', 'default' => 20, 'tab' => 'submenu'],
             'submenuPaddingBottom' => ['type' => 'number', 'label' => 'Submenu Padding Bottom', 'default' => 10, 'tab' => 'submenu'],
             'submenuPaddingLeft' => ['type' => 'number', 'label' => 'Submenu Padding Left', 'default' => 20, 'tab' => 'submenu'],
-            
+
             'submenuBorderRadiusTopLeft' => ['type' => 'number', 'label' => 'Submenu BR TL', 'default' => 4, 'tab' => 'submenu'],
             'submenuBorderRadiusTopRight' => ['type' => 'number', 'label' => 'Submenu BR TR', 'default' => 4, 'tab' => 'submenu'],
             'submenuBorderRadiusBottomRight' => ['type' => 'number', 'label' => 'Submenu BR BR', 'default' => 4, 'tab' => 'submenu'],
             'submenuBorderRadiusBottomLeft' => ['type' => 'number', 'label' => 'Submenu BR BL', 'default' => 4, 'tab' => 'submenu'],
-            
+
             'submenuBoxShadow' => ['type' => 'text', 'label' => 'Box Shadow', 'default' => 'no', 'tab' => 'submenu'],
             'submenuShadowColor' => ['type' => 'color', 'label' => 'Shadow Color', 'default' => 'rgba(0,0,0,0.12)', 'tab' => 'submenu'],
             'submenuShadowH' => ['type' => 'number', 'label' => 'Shadow H', 'default' => 0, 'tab' => 'submenu'],
             'submenuShadowV' => ['type' => 'number', 'label' => 'Shadow V', 'default' => 15, 'tab' => 'submenu'],
             'submenuShadowBlur' => ['type' => 'number', 'label' => 'Shadow Blur', 'default' => 35, 'tab' => 'submenu'],
             'submenuShadowSpread' => ['type' => 'number', 'label' => 'Shadow Spread', 'default' => 0, 'tab' => 'submenu'],
-            
+
             'submenuSeparatorColor' => ['type' => 'color', 'label' => 'Separator Color', 'default' => 'rgba(0,0,0,0.05)', 'tab' => 'submenu'],
             'submenuBgColor' => ['type' => 'color', 'label' => 'Submenu BG', 'default' => '#ffffff', 'tab' => 'submenu'],
             'submenuTextColor' => ['type' => 'color', 'label' => 'Submenu Text', 'default' => '#333333', 'tab' => 'submenu'],
@@ -6643,7 +7343,7 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             'mobileMenuItemPaddingRight' => ['type' => 'number', 'label' => 'Item Padding Right', 'default' => 20, 'tab' => 'mobile'],
             'mobileMenuTextAlign' => ['type' => 'text', 'label' => 'Mobile Menu Text Align', 'default' => 'left', 'tab' => 'mobile'],
             'mobileMenuIndentSubmenus' => ['type' => 'text', 'label' => 'Mobile Menu Indent Submenus', 'default' => 'on', 'tab' => 'mobile'],
-            
+
             'mobileMenuFontFamily' => ['type' => 'text', 'label' => 'Font Family', 'default' => 'inherit', 'tab' => 'mobile'],
             'mobileMenuFontSize' => ['type' => 'text', 'label' => 'Font Size', 'default' => '16px', 'tab' => 'mobile'],
             'mobileMenuFontWeight' => ['type' => 'text', 'label' => 'Font Weight', 'default' => '400', 'tab' => 'mobile'],
@@ -6660,24 +7360,25 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             // Margins (Simplified per user request)
             'marginTop' => ['type' => 'number', 'label' => 'Margin Top', 'default' => 0, 'tab' => 'design'],
             'marginBottom' => ['type' => 'number', 'label' => 'Margin Bottom', 'default' => 0, 'tab' => 'design'],
-            
+
             // Extras
             'visibility' => [
                 'type' => 'object',
                 'default' => ['mobile' => true, 'tablet' => true, 'desktop' => true],
-                'tab' => 'design'
+                'tab' => 'design',
             ],
             'cssClass' => ['type' => 'text', 'default' => '', 'tab' => 'design'],
             'cssId' => ['type' => 'text', 'default' => '', 'tab' => 'design'],
-        ]
+        ],
     ];
+
     return $elements;
 });
 
 /**
  * Register Image Element for Falcon Builder
  */
-add_falcon_filter('falcon_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function ($elements) {
     $elements['image'] = [
         'type' => 'image',
         'name' => 'Image',
@@ -6692,21 +7393,21 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
                 'type' => 'select',
                 'label' => 'Link Target',
                 'options' => ['_self' => 'Same Window', '_blank' => 'New Window'],
-                'default' => '_self'
+                'default' => '_self',
             ],
             'textAlign' => [
                 'type' => 'select',
                 'label' => 'Alignment',
                 'options' => ['left' => 'Left', 'center' => 'Center', 'right' => 'Right'],
-                'default' => 'center'
+                'default' => 'center',
             ],
-            
+
             // Design - Dimensions
             'width' => ['type' => 'number', 'label' => 'Width', 'default' => '', 'tab' => 'design'],
             'widthUnit' => ['type' => 'text', 'default' => 'px', 'tab' => 'design'],
             'maxWidth' => ['type' => 'number', 'label' => 'Max Width', 'default' => 100, 'tab' => 'design'],
             'maxWidthUnit' => ['type' => 'text', 'default' => '%', 'tab' => 'design'],
-            
+
             // Design - Spacing & Border
             'marginTop' => ['type' => 'number', 'label' => 'Margin Top', 'default' => 0, 'tab' => 'design'],
             'marginRight' => ['type' => 'number', 'label' => 'Margin Right', 'default' => 0, 'tab' => 'design'],
@@ -6725,51 +7426,53 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
             'visibility' => [
                 'type' => 'object',
                 'default' => ['mobile' => true, 'tablet' => true, 'desktop' => true],
-                'tab' => 'design'
+                'tab' => 'design',
             ],
             'cssClass' => ['type' => 'text', 'default' => '', 'tab' => 'design'],
             'cssId' => ['type' => 'text', 'default' => '', 'tab' => 'design'],
-        ]
+        ],
     ];
+
     return $elements;
 });
 
 // Supported social platforms: slug => [label, FontAwesome icon]. Used by the Social Icons
 // element to generate one URL field per platform (no icon picking) and to render the icons.
 if (!function_exists('falcon_social_platforms')) {
-    function falcon_social_platforms(): array {
+    function falcon_social_platforms(): array
+    {
         return [
-            'behance'    => ['label' => 'Behance',     'icon' => 'fa-brands fa-behance',      'color' => '#1769FF'],
-            'blogger'    => ['label' => 'Blogger',     'icon' => 'fa-brands fa-blogger-b',    'color' => '#FF5722'],
-            'bluesky'    => ['label' => 'Bluesky',     'icon' => 'fa-brands fa-bluesky',      'color' => '#0085FF'],
+            'behance' => ['label' => 'Behance',     'icon' => 'fa-brands fa-behance',      'color' => '#1769FF'],
+            'blogger' => ['label' => 'Blogger',     'icon' => 'fa-brands fa-blogger-b',    'color' => '#FF5722'],
+            'bluesky' => ['label' => 'Bluesky',     'icon' => 'fa-brands fa-bluesky',      'color' => '#0085FF'],
             'deviantart' => ['label' => 'Deviantart',  'icon' => 'fa-brands fa-deviantart',   'color' => '#05CC47'],
-            'digg'       => ['label' => 'Digg',        'icon' => 'fa-brands fa-digg',         'color' => '#1C1C1C'],
-            'discord'    => ['label' => 'Discord',     'icon' => 'fa-brands fa-discord',      'color' => '#5865F2'],
-            'dribbble'   => ['label' => 'Dribbble',    'icon' => 'fa-brands fa-dribbble',     'color' => '#EA4C89'],
-            'dropbox'    => ['label' => 'Dropbox',     'icon' => 'fa-brands fa-dropbox',      'color' => '#0061FF'],
-            'email'      => ['label' => 'Email',       'icon' => 'fa fa-envelope',            'color' => '#EA4335'],
-            'facebook'   => ['label' => 'Facebook',    'icon' => 'fa-brands fa-facebook-f',   'color' => '#1877F2'],
-            'flickr'     => ['label' => 'Flickr',      'icon' => 'fa-brands fa-flickr',       'color' => '#0063DC'],
-            'github'     => ['label' => 'GitHub',      'icon' => 'fa-brands fa-github',       'color' => '#181717'],
-            'instagram'  => ['label' => 'Instagram',   'icon' => 'fa-brands fa-instagram',    'color' => '#E4405F'],
-            'linkedin'   => ['label' => 'LinkedIn',    'icon' => 'fa-brands fa-linkedin-in',  'color' => '#0A66C2'],
-            'medium'     => ['label' => 'Medium',      'icon' => 'fa-brands fa-medium',       'color' => '#000000'],
-            'phone'      => ['label' => 'Phone',       'icon' => 'fa fa-phone',               'color' => '#34A853'],
-            'pinterest'  => ['label' => 'Pinterest',   'icon' => 'fa-brands fa-pinterest-p',  'color' => '#BD081C'],
-            'reddit'     => ['label' => 'Reddit',      'icon' => 'fa-brands fa-reddit-alien', 'color' => '#FF4500'],
-            'snapchat'   => ['label' => 'Snapchat',    'icon' => 'fa-brands fa-snapchat',     'color' => '#FFFC00'],
+            'digg' => ['label' => 'Digg',        'icon' => 'fa-brands fa-digg',         'color' => '#1C1C1C'],
+            'discord' => ['label' => 'Discord',     'icon' => 'fa-brands fa-discord',      'color' => '#5865F2'],
+            'dribbble' => ['label' => 'Dribbble',    'icon' => 'fa-brands fa-dribbble',     'color' => '#EA4C89'],
+            'dropbox' => ['label' => 'Dropbox',     'icon' => 'fa-brands fa-dropbox',      'color' => '#0061FF'],
+            'email' => ['label' => 'Email',       'icon' => 'fa fa-envelope',            'color' => '#EA4335'],
+            'facebook' => ['label' => 'Facebook',    'icon' => 'fa-brands fa-facebook-f',   'color' => '#1877F2'],
+            'flickr' => ['label' => 'Flickr',      'icon' => 'fa-brands fa-flickr',       'color' => '#0063DC'],
+            'github' => ['label' => 'GitHub',      'icon' => 'fa-brands fa-github',       'color' => '#181717'],
+            'instagram' => ['label' => 'Instagram',   'icon' => 'fa-brands fa-instagram',    'color' => '#E4405F'],
+            'linkedin' => ['label' => 'LinkedIn',    'icon' => 'fa-brands fa-linkedin-in',  'color' => '#0A66C2'],
+            'medium' => ['label' => 'Medium',      'icon' => 'fa-brands fa-medium',       'color' => '#000000'],
+            'phone' => ['label' => 'Phone',       'icon' => 'fa fa-phone',               'color' => '#34A853'],
+            'pinterest' => ['label' => 'Pinterest',   'icon' => 'fa-brands fa-pinterest-p',  'color' => '#BD081C'],
+            'reddit' => ['label' => 'Reddit',      'icon' => 'fa-brands fa-reddit-alien', 'color' => '#FF4500'],
+            'snapchat' => ['label' => 'Snapchat',    'icon' => 'fa-brands fa-snapchat',     'color' => '#FFFC00'],
             'soundcloud' => ['label' => 'SoundCloud',  'icon' => 'fa-brands fa-soundcloud',   'color' => '#FF5500'],
-            'spotify'    => ['label' => 'Spotify',     'icon' => 'fa-brands fa-spotify',      'color' => '#1DB954'],
-            'telegram'   => ['label' => 'Telegram',    'icon' => 'fa-brands fa-telegram',     'color' => '#26A5E4'],
-            'tiktok'     => ['label' => 'TikTok',      'icon' => 'fa-brands fa-tiktok',       'color' => '#000000'],
-            'tumblr'     => ['label' => 'Tumblr',      'icon' => 'fa-brands fa-tumblr',       'color' => '#36465D'],
-            'twitch'     => ['label' => 'Twitch',      'icon' => 'fa-brands fa-twitch',       'color' => '#9146FF'],
-            'vimeo'      => ['label' => 'Vimeo',       'icon' => 'fa-brands fa-vimeo-v',      'color' => '#1AB7EA'],
-            'website'    => ['label' => 'Website',     'icon' => 'fa fa-globe',               'color' => '#2271b1'],
-            'whatsapp'   => ['label' => 'WhatsApp',    'icon' => 'fa-brands fa-whatsapp',     'color' => '#25D366'],
-            'wordpress'  => ['label' => 'WordPress',   'icon' => 'fa-brands fa-wordpress',    'color' => '#21759B'],
-            'x_twitter'  => ['label' => 'X (Twitter)', 'icon' => 'fa-brands fa-x-twitter',    'color' => '#000000'],
-            'youtube'    => ['label' => 'YouTube',     'icon' => 'fa-brands fa-youtube',      'color' => '#FF0000'],
+            'spotify' => ['label' => 'Spotify',     'icon' => 'fa-brands fa-spotify',      'color' => '#1DB954'],
+            'telegram' => ['label' => 'Telegram',    'icon' => 'fa-brands fa-telegram',     'color' => '#26A5E4'],
+            'tiktok' => ['label' => 'TikTok',      'icon' => 'fa-brands fa-tiktok',       'color' => '#000000'],
+            'tumblr' => ['label' => 'Tumblr',      'icon' => 'fa-brands fa-tumblr',       'color' => '#36465D'],
+            'twitch' => ['label' => 'Twitch',      'icon' => 'fa-brands fa-twitch',       'color' => '#9146FF'],
+            'vimeo' => ['label' => 'Vimeo',       'icon' => 'fa-brands fa-vimeo-v',      'color' => '#1AB7EA'],
+            'website' => ['label' => 'Website',     'icon' => 'fa fa-globe',               'color' => '#2271b1'],
+            'whatsapp' => ['label' => 'WhatsApp',    'icon' => 'fa-brands fa-whatsapp',     'color' => '#25D366'],
+            'wordpress' => ['label' => 'WordPress',   'icon' => 'fa-brands fa-wordpress',    'color' => '#21759B'],
+            'x_twitter' => ['label' => 'X (Twitter)', 'icon' => 'fa-brands fa-x-twitter',    'color' => '#000000'],
+            'youtube' => ['label' => 'YouTube',     'icon' => 'fa-brands fa-youtube',      'color' => '#FF0000'],
         ];
     }
 }
@@ -6777,52 +7480,60 @@ if (!function_exists('falcon_social_platforms')) {
 // Returns a readable foreground (#111111 / #ffffff) for a given background hex — used so
 // brand-coloured boxes keep their icon legible (e.g. white icon on Snapchat yellow → dark).
 if (!function_exists('lazy_contrast_color')) {
-    function lazy_contrast_color($hex): string {
-        $hex = ltrim((string)$hex, '#');
-        if (strlen($hex) === 3) $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
-        if (strlen($hex) < 6) return '#ffffff';
-        $r = hexdec(substr($hex, 0, 2)); $g = hexdec(substr($hex, 2, 2)); $b = hexdec(substr($hex, 4, 2));
+    function lazy_contrast_color($hex): string
+    {
+        $hex = ltrim((string) $hex, '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+        if (strlen($hex) < 6) {
+            return '#ffffff';
+        }
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
         $lum = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+
         return $lum > 0.65 ? '#111111' : '#ffffff';
     }
 }
 
 // Social Icons — one URL field per platform (General tab). Fill a field and that platform's
 // icon shows on the front-end. No icon picking; the icon is fixed per platform.
-add_falcon_filter('falcon_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function ($elements) {
     $fields = [];
     foreach (falcon_social_platforms() as $key => $p) {
         // social_icon / social_color / social_label: tell the live canvas the fixed icon, brand colour and name.
-        $fields[$key] = ['type' => 'text', 'label' => $p['label'] . ' Link', 'tab' => 'general', 'default' => '',
-                         'social_icon' => $p['icon'], 'social_color' => $p['color'] ?? '#2271b1', 'social_label' => $p['label']];
+        $fields[$key] = ['type' => 'text', 'label' => $p['label'].' Link', 'tab' => 'general', 'default' => '',
+            'social_icon' => $p['icon'], 'social_color' => $p['color'] ?? '#2271b1', 'social_label' => $p['label']];
     }
     // Design + behaviour
-    $fields['target']         = ['type' => 'select', 'label' => 'Open Links In', 'tab' => 'design',
-                                 'options' => ['_blank' => 'New Window', '_self' => 'Same Window'], 'default' => '_blank'];
-    $fields['shape']          = ['type' => 'select', 'label' => 'Shape', 'tab' => 'design',
-                                 'options' => ['circle' => 'Circle', 'rounded' => 'Rounded', 'square' => 'Square'], 'default' => 'circle'];
+    $fields['target'] = ['type' => 'select', 'label' => 'Open Links In', 'tab' => 'design',
+        'options' => ['_blank' => 'New Window', '_self' => 'Same Window'], 'default' => '_blank'];
+    $fields['shape'] = ['type' => 'select', 'label' => 'Shape', 'tab' => 'design',
+        'options' => ['circle' => 'Circle', 'rounded' => 'Rounded', 'square' => 'Square'], 'default' => 'circle'];
     // Boxed Style: Default/Yes = icons sit in a coloured box; No = plain coloured icons (no box).
-    $fields['boxedStyle']     = ['type' => 'radio', 'label' => 'Boxed Style', 'tab' => 'design',
-                                 'options' => ['default' => 'Default', 'yes' => 'Yes', 'no' => 'No'], 'default' => 'default'];
+    $fields['boxedStyle'] = ['type' => 'radio', 'label' => 'Boxed Style', 'tab' => 'design',
+        'options' => ['default' => 'Default', 'yes' => 'Yes', 'no' => 'No'], 'default' => 'default'];
     // Color Type: Default = theme colours; Custom = pick your own; Brand = each platform's official colour.
-    $fields['colorType']      = ['type' => 'select', 'label' => 'Color Type', 'tab' => 'design',
-                                 'options' => ['default' => 'Default', 'custom' => 'Custom Colors', 'brand' => 'Brand Colors'], 'default' => 'default'];
-    $fields['boxSize']        = ['type' => 'number', 'label' => 'Box Size',  'default' => 38, 'min' => 0, 'tab' => 'design',
-                                 'condition' => ['field' => 'boxedStyle', 'value' => 'no', 'operator' => '!=']];
-    $fields['iconSize']       = ['type' => 'number', 'label' => 'Icon Size', 'default' => 18, 'min' => 0, 'tab' => 'design'];
-    $fields['gap']            = ['type' => 'number', 'label' => 'Gap',       'default' => 10, 'min' => 0, 'tab' => 'design'];
-    $fields['align']          = ['type' => 'select', 'label' => 'Alignment', 'tab' => 'design', 'responsive' => true,
-                                 'options' => ['flex-start' => 'Left', 'center' => 'Center', 'flex-end' => 'Right'], 'default' => 'center'];
+    $fields['colorType'] = ['type' => 'select', 'label' => 'Color Type', 'tab' => 'design',
+        'options' => ['default' => 'Default', 'custom' => 'Custom Colors', 'brand' => 'Brand Colors'], 'default' => 'default'];
+    $fields['boxSize'] = ['type' => 'number', 'label' => 'Box Size',  'default' => 38, 'min' => 0, 'tab' => 'design',
+        'condition' => ['field' => 'boxedStyle', 'value' => 'no', 'operator' => '!=']];
+    $fields['iconSize'] = ['type' => 'number', 'label' => 'Icon Size', 'default' => 18, 'min' => 0, 'tab' => 'design'];
+    $fields['gap'] = ['type' => 'number', 'label' => 'Gap',       'default' => 10, 'min' => 0, 'tab' => 'design'];
+    $fields['align'] = ['type' => 'select', 'label' => 'Alignment', 'tab' => 'design', 'responsive' => true,
+        'options' => ['flex-start' => 'Left', 'center' => 'Center', 'flex-end' => 'Right'], 'default' => 'center'];
     // Tooltip showing the platform name on hover. Default = Top; None = no tooltip.
     $fields['tooltipPosition'] = ['type' => 'select', 'label' => 'Tooltip Position', 'tab' => 'design',
-                                  'options' => ['default' => 'Default', 'top' => 'Top', 'bottom' => 'Bottom', 'left' => 'Left', 'right' => 'Right', 'none' => 'None'], 'default' => 'default'];
+        'options' => ['default' => 'Default', 'top' => 'Top', 'bottom' => 'Bottom', 'left' => 'Left', 'right' => 'Right', 'none' => 'None'], 'default' => 'default'];
     // Colour pickers only matter for "Custom Colors".
-    $fields['iconColor']      = ['type' => 'color', 'label' => 'Icon Color',       'default' => '#ffffff', 'tab' => 'design', 'condition' => ['field' => 'colorType', 'value' => 'custom']];
-    $fields['bgColor']        = ['type' => 'color', 'label' => 'Background',        'default' => '#2271b1', 'tab' => 'design', 'condition' => ['field' => 'colorType', 'value' => 'custom']];
+    $fields['iconColor'] = ['type' => 'color', 'label' => 'Icon Color',       'default' => '#ffffff', 'tab' => 'design', 'condition' => ['field' => 'colorType', 'value' => 'custom']];
+    $fields['bgColor'] = ['type' => 'color', 'label' => 'Background',        'default' => '#2271b1', 'tab' => 'design', 'condition' => ['field' => 'colorType', 'value' => 'custom']];
     $fields['iconHoverColor'] = ['type' => 'color', 'label' => 'Icon Hover Color', 'default' => '#ffffff', 'tab' => 'design', 'condition' => ['field' => 'colorType', 'value' => 'custom']];
-    $fields['bgHoverColor']   = ['type' => 'color', 'label' => 'Hover Background',  'default' => '#135e96', 'tab' => 'design', 'condition' => ['field' => 'colorType', 'value' => 'custom']];
-    $fields['margin']         = ['type' => 'dimensions', 'label' => 'Margin', 'unit' => 'px', 'tab' => 'design'];
-    $fields['visibility']     = ['type' => 'object', 'default' => ['mobile' => true, 'tablet' => true, 'desktop' => true], 'tab' => 'design'];
+    $fields['bgHoverColor'] = ['type' => 'color', 'label' => 'Hover Background',  'default' => '#135e96', 'tab' => 'design', 'condition' => ['field' => 'colorType', 'value' => 'custom']];
+    $fields['margin'] = ['type' => 'dimensions', 'label' => 'Margin', 'unit' => 'px', 'tab' => 'design'];
+    $fields['visibility'] = ['type' => 'object', 'default' => ['mobile' => true, 'tablet' => true, 'desktop' => true], 'tab' => 'design'];
 
     $elements['social_icons'] = [
         'type' => 'social_icons',
@@ -6831,6 +7542,7 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
         'template' => 'falcon-cms::frontend.builder.elements.social-icons',
         'fields' => $fields,
     ];
+
     return $elements;
 });
 
@@ -6839,7 +7551,7 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
  * A smart search bar: choose which post type to search, optional live (AJAX)
  * results dropdown, and an optional category dropdown inside the bar.
  */
-add_falcon_filter('falcon_builder_elements', function($elements) {
+add_falcon_filter('falcon_builder_elements', function ($elements) {
     // Dynamic post-type options (active types). Multi-select; none selected = all content.
     // Resolved once per request — this filter runs many times per render and the
     // options only feed the builder editor UI.
@@ -6847,10 +7559,10 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
     if ($ptOptions === null) {
         $ptOptions = [];
         try {
-            foreach (\FalconCms\Core\Models\PostType::where('is_active', true)->orderBy('name')->get() as $pt) {
+            foreach (PostType::where('is_active', true)->orderBy('name')->get() as $pt) {
                 $ptOptions[$pt->slug] = $pt->name;
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $ptOptions = ['post' => 'Posts', 'page' => 'Pages'];
         }
     }
@@ -6862,30 +7574,31 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
         'template' => 'falcon-cms::frontend.builder.elements.advanced-search',
         'fields' => [
             // ── General ──
-            'searchPostType'         => ['type' => 'multiselect', 'label' => 'Search In (none = all content)', 'tab' => 'general', 'options' => $ptOptions, 'default' => [], 'placeholder' => 'All content (select post types)'],
-            'placeholder'            => ['type' => 'text', 'label' => 'Placeholder Text', 'tab' => 'general', 'default' => 'Search...'],
-            'enableLiveSearch'       => ['type' => 'toggle', 'label' => 'Live Search (AJAX results)', 'tab' => 'general', 'default' => true],
+            'searchPostType' => ['type' => 'multiselect', 'label' => 'Search In (none = all content)', 'tab' => 'general', 'options' => $ptOptions, 'default' => [], 'placeholder' => 'All content (select post types)'],
+            'placeholder' => ['type' => 'text', 'label' => 'Placeholder Text', 'tab' => 'general', 'default' => 'Search...'],
+            'enableLiveSearch' => ['type' => 'toggle', 'label' => 'Live Search (AJAX results)', 'tab' => 'general', 'default' => true],
             'enableCategoryDropdown' => ['type' => 'toggle', 'label' => 'Show Category Dropdown', 'tab' => 'general', 'default' => false],
-            'showButton'             => ['type' => 'toggle', 'label' => 'Show Search Button', 'tab' => 'general', 'default' => true],
-            'buttonText'             => ['type' => 'text', 'label' => 'Button Text', 'tab' => 'general', 'default' => 'Search', 'condition' => ['field' => 'showButton', 'value' => true]],
+            'showButton' => ['type' => 'toggle', 'label' => 'Show Search Button', 'tab' => 'general', 'default' => true],
+            'buttonText' => ['type' => 'text', 'label' => 'Button Text', 'tab' => 'general', 'default' => 'Search', 'condition' => ['field' => 'showButton', 'value' => true]],
 
             // ── Design ──
-            'accentColor'      => ['type' => 'color', 'label' => 'Accent Color', 'tab' => 'design', 'default' => '#0091ea'],
-            'bgColor'          => ['type' => 'color', 'label' => 'Background', 'tab' => 'design', 'default' => '#ffffff'],
-            'textColor'         => ['type' => 'color', 'label' => 'Field Text Color', 'tab' => 'design', 'default' => '#1d2327'],
-            'placeholderColor'  => ['type' => 'color', 'label' => 'Placeholder Color', 'tab' => 'design', 'default' => '#9ca3af'],
+            'accentColor' => ['type' => 'color', 'label' => 'Accent Color', 'tab' => 'design', 'default' => '#0091ea'],
+            'bgColor' => ['type' => 'color', 'label' => 'Background', 'tab' => 'design', 'default' => '#ffffff'],
+            'textColor' => ['type' => 'color', 'label' => 'Field Text Color', 'tab' => 'design', 'default' => '#1d2327'],
+            'placeholderColor' => ['type' => 'color', 'label' => 'Placeholder Color', 'tab' => 'design', 'default' => '#9ca3af'],
             'dropdownTextColor' => ['type' => 'color', 'label' => 'Dropdown Text Color', 'tab' => 'design', 'default' => '#1d2327'],
-            'dropdownBgColor'   => ['type' => 'color', 'label' => 'Dropdown Background', 'tab' => 'design', 'default' => '#ffffff'],
-            'borderColor'       => ['type' => 'color', 'label' => 'Border Color', 'tab' => 'design', 'default' => '#e5e7eb'],
-            'height'       => ['type' => 'number', 'label' => 'Height (px)', 'tab' => 'design', 'default' => 46, 'min' => 28],
+            'dropdownBgColor' => ['type' => 'color', 'label' => 'Dropdown Background', 'tab' => 'design', 'default' => '#ffffff'],
+            'borderColor' => ['type' => 'color', 'label' => 'Border Color', 'tab' => 'design', 'default' => '#e5e7eb'],
+            'height' => ['type' => 'number', 'label' => 'Height (px)', 'tab' => 'design', 'default' => 46, 'min' => 28],
             'borderRadius' => ['type' => 'number', 'label' => 'Border Radius (px)', 'tab' => 'design', 'default' => 6, 'min' => 0],
-            'maxWidth'     => ['type' => 'number', 'label' => 'Max Width (px, 0 = full)', 'tab' => 'design', 'default' => 0, 'min' => 0],
-            'align'        => ['type' => 'select', 'label' => 'Alignment', 'tab' => 'design', 'options' => ['flex-start' => 'Left', 'center' => 'Center', 'flex-end' => 'Right'], 'default' => 'flex-start'],
+            'maxWidth' => ['type' => 'number', 'label' => 'Max Width (px, 0 = full)', 'tab' => 'design', 'default' => 0, 'min' => 0],
+            'align' => ['type' => 'select', 'label' => 'Alignment', 'tab' => 'design', 'options' => ['flex-start' => 'Left', 'center' => 'Center', 'flex-end' => 'Right'], 'default' => 'flex-start'],
 
             // ── Extras ──
             'visibility' => ['type' => 'object', 'default' => ['mobile' => true, 'tablet' => true, 'desktop' => true], 'tab' => 'design'],
         ],
     ];
+
     return $elements;
 });
 
@@ -6898,8 +7611,8 @@ if (!function_exists('falcon_licensed')) {
     function falcon_licensed(): bool
     {
         try {
-            return app(\FalconCms\Core\Pro\LicenseGateway::class)->licensed();
-        } catch (\Throwable $e) {
+            return app(LicenseGateway::class)->licensed();
+        } catch (Throwable $e) {
             return false;
         }
     }
@@ -6916,12 +7629,13 @@ if (!function_exists('falcon_pro_updates_allowed')) {
     function falcon_pro_updates_allowed(): bool
     {
         try {
-            $gw = app(\FalconCms\Core\Pro\LicenseGateway::class);
+            $gw = app(LicenseGateway::class);
             if (method_exists($gw, 'updatesAllowed')) {
                 return (bool) $gw->updatesAllowed();
             }
+
             return $gw->licensed();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
@@ -6935,9 +7649,10 @@ if (!function_exists('falcon_pro_expired')) {
     function falcon_pro_expired(): bool
     {
         try {
-            $gw = app(\FalconCms\Core\Pro\LicenseGateway::class);
+            $gw = app(LicenseGateway::class);
+
             return $gw->licensed() && method_exists($gw, 'expired') && (bool) $gw->expired();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
@@ -6962,10 +7677,11 @@ if (!function_exists('falcon_pro')) {
         }
 
         try {
-            if (app(\FalconCms\Core\Pro\LicenseGateway::class)->active($feature)) {
+            if (app(LicenseGateway::class)->active($feature)) {
                 return true;
             }
-        } catch (\Throwable $e) {}
+        } catch (Throwable $e) {
+        }
 
         // Grace window after an upgrade — nothing locks yet.
         if (falcon_freemium_grace_active()) {
@@ -6996,9 +7712,12 @@ if (!function_exists('falcon_freemium_grace_active')) {
             // Global fixed launch cutoff (same date for every site) — free until
             // this date, Pro features lock after it unless licensed.
             $until = config('falcon-options.freemium_grace_until', '2026-08-01');
-            if (!$until) return false;
-            return \Illuminate\Support\Carbon::now()->lt(\Illuminate\Support\Carbon::parse($until));
-        } catch (\Throwable $e) {
+            if (!$until) {
+                return false;
+            }
+
+            return Illuminate\Support\Carbon::now()->lt(Illuminate\Support\Carbon::parse($until));
+        } catch (Throwable $e) {
             return false;
         }
     }
@@ -7013,12 +7732,15 @@ if (!function_exists('falcon_feature_grandfathered')) {
     function falcon_feature_grandfathered(?string $feature = null): bool
     {
         try {
-            $raw  = get_cms_option('falcon_grandfathered_features', null);
+            $raw = get_cms_option('falcon_grandfathered_features', null);
             $list = is_array($raw) ? $raw : (is_string($raw) ? json_decode($raw, true) : []);
             $list = is_array($list) ? $list : [];
-            if ($feature === null) return !empty($list);
+            if ($feature === null) {
+                return !empty($list);
+            }
+
             return in_array($feature, $list, true);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return false;
         }
     }
@@ -7039,10 +7761,11 @@ if (!function_exists('falcon_pro_editable')) {
         }
 
         try {
-            if (app(\FalconCms\Core\Pro\LicenseGateway::class)->active($feature)) {
+            if (app(LicenseGateway::class)->active($feature)) {
                 return true;
             }
-        } catch (\Throwable $e) {}
+        } catch (Throwable $e) {
+        }
 
         return falcon_freemium_grace_active();
     }

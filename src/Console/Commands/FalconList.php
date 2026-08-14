@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 class FalconList extends Command
 {
     protected $signature = 'falcon';
+
     protected $description = 'List all available Falcon CMS commands';
 
     public function handle()

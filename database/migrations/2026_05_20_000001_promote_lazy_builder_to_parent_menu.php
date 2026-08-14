@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use FalconCms\Core\Models\Menu;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -20,9 +20,9 @@ return new class extends Migration
         if ($falconBuilder && $appearanceMenu) {
             $falconBuilder->update([
                 'parent_id' => $appearanceMenu->id,
-                'group'     => null,
-                'icon'      => null,
-                'order'     => 5,
+                'group' => null,
+                'icon' => null,
+                'order' => 5,
             ]);
         }
     }

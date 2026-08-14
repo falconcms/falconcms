@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -19,7 +19,7 @@ return new class extends Migration
                 'is_builtin' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
-                'supports' => json_encode(['title', 'editor', 'thumbnail', 'excerpt', 'comments'])
+                'supports' => json_encode(['title', 'editor', 'thumbnail', 'excerpt', 'comments']),
             ]);
         }
 
@@ -47,14 +47,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('order_number')->unique();
-            $table->string('status')->default('pending')->index(); 
+            $table->string('status')->default('pending')->index();
             $table->decimal('subtotal', 15, 2);
             $table->decimal('shipping_total', 15, 2)->default(0);
             $table->decimal('tax_total', 15, 2)->default(0);
             $table->decimal('discount_total', 15, 2)->default(0);
             $table->string('coupon_code')->nullable();
             $table->decimal('total', 15, 2)->index();
-            
+
             $table->string('customer_email');
             $table->string('customer_phone')->nullable();
             $table->string('first_name');

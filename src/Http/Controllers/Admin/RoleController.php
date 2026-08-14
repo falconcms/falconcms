@@ -2,11 +2,12 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use FalconCms\Core\Models\Role;
-use FalconCms\Core\Models\Permission;
 use FalconCms\Core\Models\Menu;
+use FalconCms\Core\Models\Permission;
+use FalconCms\Core\Models\Role;
+use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
 
 class RoleController extends Controller
@@ -17,12 +18,14 @@ class RoleController extends Controller
             ->orderByRaw("CASE WHEN slug = 'super-admin' THEN 0 WHEN slug = 'administrator' THEN 1 ELSE 2 END")
             ->orderBy('name')
             ->get();
+
         return view('falcon-cms::admin.roles.index', compact('roles'));
     }
 
     public function create()
     {
         $data = $this->getDynamicPermissions();
+
         return view('falcon-cms::admin.roles.create', $data);
     }
 
@@ -32,7 +35,7 @@ class RoleController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|unique:roles,slug',
             'description' => 'nullable|string',
-            'permissions' => 'nullable|array'
+            'permissions' => 'nullable|array',
         ]);
 
         $validated['slug'] = Str::slug($validated['slug']);
@@ -54,7 +57,7 @@ class RoleController extends Controller
         $data = $this->getDynamicPermissions();
         $data['role'] = $role;
         $data['rolePermissions'] = $role->permissions->pluck('slug')->toArray();
-        
+
         return view('falcon-cms::admin.roles.edit', $data);
     }
 
@@ -62,9 +65,9 @@ class RoleController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|unique:roles,slug,' . $role->id,
+            'slug' => 'required|string|unique:roles,slug,'.$role->id,
             'description' => 'nullable|string',
-            'permissions' => 'nullable|array'
+            'permissions' => 'nullable|array',
         ]);
 
         $validated['slug'] = Str::slug($validated['slug']);
@@ -110,18 +113,18 @@ class RoleController extends Controller
 
             foreach ($menus as $menu) {
                 $slug = $menu->permission ?: $this->generatePermissionSlug($menu);
-                
+
                 $item = [
                     'title' => $menu->title,
                     'slug' => $slug,
-                    'children' => []
+                    'children' => [],
                 ];
 
                 foreach ($menu->children as $child) {
                     $childSlug = $child->permission ?: $this->generatePermissionSlug($child, $menu);
                     $item['children'][] = [
                         'title' => $child->title,
-                        'slug' => $childSlug
+                        'slug' => $childSlug,
                     ];
                 }
 
@@ -136,14 +139,14 @@ class RoleController extends Controller
             foreach ($customPages as $slug => $page) {
                 $dynamicPermissions['Custom Options'][] = [
                     'title' => $page['title'] ?? $slug,
-                    'slug' => 'manage_options_' . $slug,
-                    'children' => []
+                    'slug' => 'manage_options_'.$slug,
+                    'children' => [],
                 ];
             }
         }
 
         return [
-            'dynamicPermissions' => $dynamicPermissions
+            'dynamicPermissions' => $dynamicPermissions,
         ];
     }
 
@@ -152,7 +155,7 @@ class RoleController extends Controller
         // Single source of truth: the same resolver the access middleware uses
         // (Sidebar::getPermission), so a checked menu item grants exactly the
         // permission its page requires. Keeps assignment and enforcement in sync.
-        return (new \FalconCms\Core\View\Components\Admin\Sidebar)->getPermission($menu);
+        return (new Sidebar)->getPermission($menu);
     }
 
     public function destroy(Role $role)
@@ -162,6 +165,7 @@ class RoleController extends Controller
         }
 
         $role->delete();
+
         return redirect()->route('admin.roles.index')->with('success', 'Role deleted successfully.');
     }
 }

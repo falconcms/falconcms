@@ -2,16 +2,16 @@
 
 namespace FalconCms\Core\Services;
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class SchemaManager
 {
     /**
      * Ensure required columns exist in a table.
      *
-     * @param string $table Table name
-     * @param array $columns Definition: ['column_name' => ['type' => 'string', 'nullable' => true, 'default' => null, 'after' => 'other_col']]
+     * @param  string  $table  Table name
+     * @param  array  $columns  Definition: ['column_name' => ['type' => 'string', 'nullable' => true, 'default' => null, 'after' => 'other_col']]
      * @return void
      */
     public static function ensureColumns(string $table, array $columns)
@@ -37,7 +37,7 @@ class SchemaManager
                     if (!empty($definition['after'])) {
                         $column->after($definition['after']);
                     }
-                    
+
                     if (!empty($definition['index'])) {
                         $column->index();
                     }
@@ -73,7 +73,7 @@ class SchemaManager
             ],
             'shop_reviews' => [
                 'parent_id' => ['type' => 'unsignedBigInteger', 'nullable' => true, 'index' => true],
-            ]
+            ],
         ];
     }
 }

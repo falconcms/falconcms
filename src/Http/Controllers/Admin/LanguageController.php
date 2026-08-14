@@ -2,9 +2,9 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
 use FalconCms\Core\Models\Language;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class LanguageController extends Controller
 {
@@ -38,7 +38,7 @@ class LanguageController extends Controller
 
         $languages = Language::all();
         $displayMode = get_cms_option('lang_switcher_display', 'both');
-        
+
         return view('falcon-cms::admin.languages.index', compact('languages', 'topCountries', 'displayMode'));
     }
 
@@ -49,7 +49,7 @@ class LanguageController extends Controller
         }
 
         $request->validate([
-            'lang_switcher_display' => 'required|string|in:both,text_only,flag_only,code_only'
+            'lang_switcher_display' => 'required|string|in:both,text_only,flag_only,code_only',
         ]);
 
         update_cms_option('lang_switcher_display', $request->lang_switcher_display);
@@ -71,12 +71,15 @@ class LanguageController extends Controller
                     $submittedCodes[] = $country['code'];
                 }
             }
+
             return redirect()->back()->with('success', 'Languages updated successfully!');
         }
 
         if ($request->has('country_data')) {
             $country = json_decode($request->input('country_data'), true);
-            if (!$country) return redirect()->back()->with('error', 'Invalid country data!');
+            if (!$country) {
+                return redirect()->back()->with('error', 'Invalid country data!');
+            }
 
             Language::updateOrCreate(
                 ['code' => $country['code']],
@@ -93,6 +96,7 @@ class LanguageController extends Controller
         ]);
 
         Language::create($request->all());
+
         return redirect()->back()->with('success', 'Language added successfully!');
     }
 
@@ -100,6 +104,7 @@ class LanguageController extends Controller
     {
         Language::where('is_default', true)->update(['is_default' => false]);
         Language::where('id', $id)->update(['is_default' => true]);
+
         return redirect()->back()->with('success', 'Default language updated!');
     }
 
@@ -110,6 +115,7 @@ class LanguageController extends Controller
             return redirect()->back()->with('error', 'Cannot delete default language!');
         }
         $lang->delete();
+
         return redirect()->back()->with('success', 'Language deleted!');
     }
 }

@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Coupon extends Model
 {
@@ -16,13 +17,13 @@ class Coupon extends Model
     ];
 
     protected $casts = [
-        'amount'      => 'float',
-        'min_spend'   => 'float',
-        'max_spend'   => 'float',
-        'products'    => 'array',
-        'categories'  => 'array',
+        'amount' => 'float',
+        'min_spend' => 'float',
+        'max_spend' => 'float',
+        'products' => 'array',
+        'categories' => 'array',
         'expiry_date' => 'datetime',
-        'is_active'   => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -45,17 +46,17 @@ class Coupon extends Model
     public function toCartArray(): array
     {
         return [
-            'code'              => $this->code,
-            'type'              => $this->type,
-            'amount'            => (float) $this->amount,
-            'min_spend'         => $this->min_spend !== null ? (float) $this->min_spend : '',
-            'max_spend'         => $this->max_spend !== null ? (float) $this->max_spend : '',
-            'expiry'            => $this->expiry_date?->format('Y-m-d') ?? '',
-            'usage_limit'       => $this->usage_limit ?? '',
+            'code' => $this->code,
+            'type' => $this->type,
+            'amount' => (float) $this->amount,
+            'min_spend' => $this->min_spend !== null ? (float) $this->min_spend : '',
+            'max_spend' => $this->max_spend !== null ? (float) $this->max_spend : '',
+            'expiry' => $this->expiry_date?->format('Y-m-d') ?? '',
+            'usage_limit' => $this->usage_limit ?? '',
             'total_usage_limit' => $this->total_usage_limit ?? '',
-            'used_count'        => (int) $this->usage_count,
-            'products'          => $this->products ?? [],
-            'categories'        => $this->categories ?? [],
+            'used_count' => (int) $this->usage_count,
+            'products' => $this->products ?? [],
+            'categories' => $this->categories ?? [],
         ];
     }
 
@@ -74,7 +75,7 @@ class Coupon extends Model
             $query->whereRaw('usage_count < total_usage_limit');
         }
 
-        return $query->update(['usage_count' => \Illuminate\Support\Facades\DB::raw('usage_count + 1'), 'updated_at' => now()]) === 1;
+        return $query->update(['usage_count' => DB::raw('usage_count + 1'), 'updated_at' => now()]) === 1;
     }
 
     /** Case-insensitive code lookup, active coupons only. */

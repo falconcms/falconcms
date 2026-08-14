@@ -20,7 +20,7 @@ class Plugin extends Model
     ];
 
     protected $casts = [
-        'is_active'    => 'boolean',
+        'is_active' => 'boolean',
         'activated_at' => 'datetime',
     ];
 }

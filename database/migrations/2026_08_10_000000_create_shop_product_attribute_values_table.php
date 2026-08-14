@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -44,7 +45,7 @@ return new class extends Migration
                 Schema::table('shop_product_attribute_values', function (Blueprint $table) {
                     $table->foreign('post_id')->references('id')->on('posts')->cascadeOnDelete();
                 });
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // SQLite and some hosted MySQL setups refuse this; the sync helper prunes instead.
             }
         }
@@ -53,8 +54,8 @@ return new class extends Migration
         if (function_exists('falcon_reindex_all_product_attributes')) {
             try {
                 falcon_reindex_all_product_attributes();
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('Attribute backfill skipped: ' . $e->getMessage());
+            } catch (Throwable $e) {
+                Log::warning('Attribute backfill skipped: '.$e->getMessage());
             }
         }
     }

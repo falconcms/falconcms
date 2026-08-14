@@ -1,5 +1,7 @@
 <?php
 
+use FalconCms\Core\Models\Menu;
+use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -27,25 +29,31 @@ return new class extends Migration
             return;
         }
 
-        $sidebar = new \FalconCms\Core\View\Components\Admin\Sidebar();
+        $sidebar = new Sidebar;
 
-        foreach (\FalconCms\Core\Models\Menu::all() as $menu) {
-            if ($menu->children()->count() > 0) continue; // leaf menus only
+        foreach (Menu::all() as $menu) {
+            if ($menu->children()->count() > 0) {
+                continue;
+            } // leaf menus only
 
             $new = $sidebar->getPermission($menu);
             $old = $this->legacySlug($menu);
 
             // Only reconcile renamed access_* child slugs (skip manage_* canonical slugs).
-            if (!$old || $old === $new || !Str::startsWith($old, 'access_')) continue;
+            if (!$old || $old === $new || !Str::startsWith($old, 'access_')) {
+                continue;
+            }
 
             $oldId = DB::table('permissions')->where('slug', $old)->value('id');
-            if (!$oldId) continue; // nobody ever held the old slug
+            if (!$oldId) {
+                continue;
+            } // nobody ever held the old slug
 
             $newId = DB::table('permissions')->where('slug', $new)->value('id');
             if (!$newId) {
                 $newId = DB::table('permissions')->insertGetId([
-                    'slug'       => $new,
-                    'name'       => Str::headline(str_replace('_', ' ', $new)),
+                    'slug' => $new,
+                    'name' => Str::headline(str_replace('_', ' ', $new)),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -71,14 +79,19 @@ return new class extends Migration
             'media' => 'manage_media', 'users' => 'manage_users', 'settings' => 'manage_settings',
             'roles' => 'manage_roles', 'analytics' => 'manage_analytics',
         ];
-        if (isset($canonical[$title])) return $canonical[$title];
+        if (isset($canonical[$title])) {
+            return $canonical[$title];
+        }
 
         $slug = Str::slug($menu->title ?? '', '_');
         if ($menu->parent_id && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
-            $parent = \FalconCms\Core\Models\Menu::find($menu->parent_id);
-            if ($parent) $slug .= '_' . Str::slug($parent->title, '_');
+            $parent = Menu::find($menu->parent_id);
+            if ($parent) {
+                $slug .= '_'.Str::slug($parent->title, '_');
+            }
         }
-        return 'access_' . $slug;
+
+        return 'access_'.$slug;
     }
 
     public function down(): void

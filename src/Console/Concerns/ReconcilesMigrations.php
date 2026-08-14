@@ -17,11 +17,11 @@ trait ReconcilesMigrations
 {
     protected function reconcileExistingMigrations(): void
     {
-        if (! Schema::hasTable('migrations')) {
+        if (!Schema::hasTable('migrations')) {
             return;
         }
 
-        $ran   = DB::table('migrations')->pluck('migration')->all();
+        $ran = DB::table('migrations')->pluck('migration')->all();
         $batch = (int) DB::table('migrations')->max('batch');
         $batch = $batch > 0 ? $batch : 1;
 
@@ -35,10 +35,10 @@ trait ReconcilesMigrations
 
         $reconciled = 0;
         foreach ($paths as $dir) {
-            if (! is_dir($dir)) {
+            if (!is_dir($dir)) {
                 continue;
             }
-            foreach (glob($dir . '/*.php') ?: [] as $file) {
+            foreach (glob($dir.'/*.php') ?: [] as $file) {
                 $name = basename($file, '.php');
                 if (in_array($name, $ran, true)) {
                     continue;
@@ -63,7 +63,7 @@ trait ReconcilesMigrations
     protected function tablesCreatedBy(string $file): array
     {
         $code = @file_get_contents($file);
-        if (! $code) {
+        if (!$code) {
             return [];
         }
         preg_match_all("/Schema::create\\(\\s*'([^']+)'/", $code, $m);

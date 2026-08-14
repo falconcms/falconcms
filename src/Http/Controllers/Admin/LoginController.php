@@ -2,14 +2,19 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use App\Models\User;
-
-use FalconCms\Core\Models\BlockedIp;
+use FalconCms\Core\Mail\MagicLoginMail;
 use FalconCms\Core\Mail\PasswordResetMail;
+use FalconCms\Core\Models\BlockedIp;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class LoginController extends Controller
 {
@@ -44,7 +49,7 @@ class LoginController extends Controller
 
         return response()->json([
             'valid' => $isValid,
-            'email_exists' => User::where('email', $request->email)->exists()
+            'email_exists' => User::where('email', $request->email)->exists(),
         ]);
     }
 
@@ -74,8 +79,9 @@ class LoginController extends Controller
                     $diffInSeconds = now()->diffInSeconds($user->blocked_until);
                     if ($diffInSeconds > 0) {
                         $minutes = ceil($diffInSeconds / 60);
+
                         return back()->withErrors([
-                            'email' => "Too many failed attempts. Your account is temporarily blocked. Please try again after {$minutes} minutes."
+                            'email' => "Too many failed attempts. Your account is temporarily blocked. Please try again after {$minutes} minutes.",
                         ])->onlyInput('email');
                     }
                 } else {
@@ -91,6 +97,7 @@ class LoginController extends Controller
             // Re-check block just in case session/auth mismatch
             if ($user->is_blocked || ($user->blocked_until && $user->blocked_until->isFuture())) {
                 Auth::logout();
+
                 return back()->withErrors(['email' => 'Your account is restricted.'])->onlyInput('email');
             }
 
@@ -99,21 +106,21 @@ class LoginController extends Controller
             if (get_cms_option('require_email_verification', '1') === '1' && is_null($user->email_verified_at)) {
                 Auth::logout();
                 $request->session()->put('pending_verification_email', $user->email);
+
                 return redirect()->route('admin.verify.notice')
                     ->with('error', 'Please verify your email address before signing in. You can resend the link below.');
             }
-
 
             // Reset attempts on successful login
             $user->update([
                 'login_attempts' => 0,
                 'blocked_until' => null,
-                'last_failed_login_ip' => null
+                'last_failed_login_ip' => null,
             ]);
 
             // Clear IP attempts if any
             BlockedIp::where('ip_address', $request->ip())->delete();
-            
+
             $request->session()->regenerate();
 
             // Device limit. The "limit devices" option inverts to a cap:
@@ -124,7 +131,7 @@ class LoginController extends Controller
             if ($limitEnabled) {
                 $maxDevices = max(1, (int) get_cms_option('max_devices', 3));
 
-                $userSessions = \Illuminate\Support\Facades\DB::table('sessions')
+                $userSessions = DB::table('sessions')
                     ->where('user_id', $user->id)
                     ->where('id', '!=', $request->session()->getId())
                     ->orderBy('last_activity', 'desc')
@@ -134,15 +141,16 @@ class LoginController extends Controller
                     if ($user->hasRole('super-admin')) {
                         // Kick the oldest (least recently active) session to make room
                         $sessionToKill = $userSessions->last();
-                        \Illuminate\Support\Facades\DB::table('sessions')
+                        DB::table('sessions')
                             ->where('id', $sessionToKill->id)
                             ->delete();
                     } else {
                         Auth::logout();
                         $request->session()->invalidate();
                         $request->session()->regenerateToken();
+
                         return back()->withErrors([
-                            'email' => "Login denied: Maximum device limit ($maxDevices) reached for this account."
+                            'email' => "Login denied: Maximum device limit ($maxDevices) reached for this account.",
                         ])->onlyInput('email');
                     }
                 }
@@ -155,12 +163,13 @@ class LoginController extends Controller
         if ($user) {
             $user->increment('login_attempts');
             $attemptsLeft = 5 - $user->login_attempts;
-            
+
             if ($user->login_attempts >= 5) {
                 $user->update([
                     'blocked_until' => now()->addMinutes(30),
-                    'last_failed_login_ip' => $request->ip()
+                    'last_failed_login_ip' => $request->ip(),
                 ]);
+
                 return back()->withErrors(['email' => 'Too many failed attempts. Your account and IP have been blocked for 30 minutes.'])->onlyInput('email');
             }
 
@@ -171,21 +180,22 @@ class LoginController extends Controller
             // Unregistered user attempt
             $ipRecord = BlockedIp::firstOrCreate(['ip_address' => $request->ip()]);
             $ipRecord->increment('attempts');
-            
+
             if ($ipRecord->attempts >= 5) {
                 $geo = falcon_geoip($request->ip());
                 $ipRecord->update([
-                    'reason'       => 'Too many attempts with non-existent emails',
-                    'country'      => $geo['country'],
+                    'reason' => 'Too many attempts with non-existent emails',
+                    'country' => $geo['country'],
                     'country_code' => $geo['country_code'] ? strtolower($geo['country_code']) : null,
-                    'city'         => $geo['city'],
-                    'region'       => $geo['region'],
-                    'isp'          => $geo['isp'],
+                    'city' => $geo['city'],
+                    'region' => $geo['region'],
+                    'isp' => $geo['isp'],
                 ]);
                 abort(403, 'Too many failed attempts. Your IP has been permanently blocked.');
             }
 
             $attemptsLeft = 5 - $ipRecord->attempts;
+
             return back()->withErrors([
                 'email' => "Invalid credentials. You have {$attemptsLeft} attempts left before your IP is blocked.",
             ])->onlyInput('email');
@@ -213,18 +223,18 @@ class LoginController extends Controller
 
         $genericMessage = 'If that email is registered, you will receive a reset link shortly. Please check your inbox (and spam folder).';
 
-        $user = \App\Models\User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
         if (!$user) {
             return back()->with('status', $genericMessage);
         }
 
         // Generate token and store (expires in 5 minutes — checked on reset)
-        $token = \Illuminate\Support\Str::random(60);
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+        $token = Str::random(60);
+        DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $request->email],
             [
-                'email'      => $request->email,
-                'token'      => \Illuminate\Support\Facades\Hash::make($token),
+                'email' => $request->email,
+                'token' => Hash::make($token),
                 'created_at' => now(),
             ]
         );
@@ -234,8 +244,8 @@ class LoginController extends Controller
         try {
             Mail::to($request->email)->send(new PasswordResetMail($resetUrl, $user->name ?? ''));
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Password reset mail failed: ' . $e->getMessage());
-            \Illuminate\Support\Facades\Log::info("Password reset link (mail failed) for {$request->email}: {$resetUrl}");
+            Log::error('Password reset mail failed: '.$e->getMessage());
+            Log::info("Password reset link (mail failed) for {$request->email}: {$resetUrl}");
         }
 
         return back()->with('status', $genericMessage);
@@ -263,31 +273,32 @@ class LoginController extends Controller
             'password' => 'required|min:8|confirmed',
         ]);
 
-        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+        $record = DB::table('password_reset_tokens')
             ->where('email', $request->email)
             ->first();
 
-        if (!$record || !\Illuminate\Support\Facades\Hash::check($request->token, $record->token)) {
+        if (!$record || !Hash::check($request->token, $record->token)) {
             return back()->withErrors(['email' => 'This password reset token is invalid.']);
         }
 
         // Token expires after 5 minutes
-        if (\Illuminate\Support\Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
-            \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        if (Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
             return back()->withErrors(['email' => 'This password reset link has expired. Please request a new one.']);
         }
 
-        $user = \App\Models\User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
         if (!$user) {
             return back()->withErrors(['email' => 'We could not find a user with that email address.']);
         }
 
         $user->update([
-            'password' => \Illuminate\Support\Facades\Hash::make($request->password)
+            'password' => Hash::make($request->password),
         ]);
 
         // Delete token
-        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return redirect()->route('admin.login')->with('success', 'Your password has been reset successfully!');
     }
@@ -301,20 +312,20 @@ class LoginController extends Controller
         $request->validate(['email' => ['required', 'email:rfc,dns']]);
 
         $email = strtolower(trim($request->email));
-        $user  = User::where('email', $email)->first();
+        $user = User::where('email', $email)->first();
 
         if ($user && !$user->is_blocked && optional($user->role)->slug !== 'customer') {
-            \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+            DB::table('magic_login_tokens')
                 ->where('email', $email)
                 ->whereNull('used_at')
                 ->delete();
 
-            $rawToken = \Illuminate\Support\Str::random(48);
-            $hash     = hash('sha256', $rawToken);
+            $rawToken = Str::random(48);
+            $hash = hash('sha256', $rawToken);
 
-            \Illuminate\Support\Facades\DB::table('magic_login_tokens')->insert([
-                'email'      => $email,
-                'token'      => $hash,
+            DB::table('magic_login_tokens')->insert([
+                'email' => $email,
+                'token' => $hash,
                 'expires_at' => now()->addMinutes(10),
                 'ip_address' => $request->ip(),
                 'created_at' => now(),
@@ -324,10 +335,10 @@ class LoginController extends Controller
             $magicUrl = route('admin.magic.verify', ['token' => $rawToken]);
 
             try {
-                Mail::to($email)->send(new \FalconCms\Core\Mail\MagicLoginMail($magicUrl, $user->name));
+                Mail::to($email)->send(new MagicLoginMail($magicUrl, $user->name));
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('Admin magic login mail failed: ' . $e->getMessage());
-                \Illuminate\Support\Facades\Log::info("Admin magic login link (mail failed) for {$email}: {$magicUrl}");
+                Log::error('Admin magic login mail failed: '.$e->getMessage());
+                Log::info("Admin magic login link (mail failed) for {$email}: {$magicUrl}");
             }
         }
 
@@ -342,7 +353,7 @@ class LoginController extends Controller
 
         $hash = hash('sha256', $token);
 
-        $row = \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+        $row = DB::table('magic_login_tokens')
             ->where('token', $hash)
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
@@ -360,7 +371,7 @@ class LoginController extends Controller
                 ->withErrors(['email' => 'Access denied for this account.']);
         }
 
-        \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+        DB::table('magic_login_tokens')
             ->where('token', $hash)
             ->update(['used_at' => now()]);
 
@@ -378,6 +389,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('admin.login');
     }
 }

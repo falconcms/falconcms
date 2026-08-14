@@ -2,7 +2,10 @@
 
 namespace FalconCms\Core\Traits;
 
+use FalconCms\Core\Models\ApiToken;
+use FalconCms\Core\Models\Role;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 trait HasCmsPermissions
 {
@@ -15,13 +18,13 @@ trait HasCmsPermissions
     /** Primary role (backward compatible — $user->role keeps working). */
     public function role()
     {
-        return $this->belongsTo(\FalconCms\Core\Models\Role::class);
+        return $this->belongsTo(Role::class);
     }
 
     /** All roles assigned to the user (primary role_id + the role_user pivot). */
     public function roles()
     {
-        return $this->belongsToMany(\FalconCms\Core\Models\Role::class, 'role_user');
+        return $this->belongsToMany(Role::class, 'role_user');
     }
 
     /**
@@ -30,10 +33,14 @@ trait HasCmsPermissions
      */
     public function cmsRoleIds(): array
     {
-        if ($this->cmsRoleIds !== null) return $this->cmsRoleIds;
+        if ($this->cmsRoleIds !== null) {
+            return $this->cmsRoleIds;
+        }
 
         $ids = [];
-        if ($this->role_id) $ids[] = (int) $this->role_id;
+        if ($this->role_id) {
+            $ids[] = (int) $this->role_id;
+        }
 
         try {
             foreach (DB::table('role_user')->where('user_id', $this->id)->pluck('role_id') as $rid) {
@@ -50,7 +57,9 @@ trait HasCmsPermissions
     public function hasRole(string $role): bool
     {
         $ids = $this->cmsRoleIds();
-        if (empty($ids)) return false;
+        if (empty($ids)) {
+            return false;
+        }
 
         return DB::table('roles')->whereIn('id', $ids)->where('slug', $role)->exists();
     }
@@ -59,14 +68,20 @@ trait HasCmsPermissions
     public function isAdmin(): bool
     {
         $ids = $this->cmsRoleIds();
-        if (empty($ids)) return false;
+        if (empty($ids)) {
+            return false;
+        }
 
         // Fast path: seeded admin roles (1 = administrator, 6 = super-admin).
-        if (array_intersect([1, 6], $ids)) return true;
+        if (array_intersect([1, 6], $ids)) {
+            return true;
+        }
 
         static $adminCheck = [];
         $key = implode(',', $ids);
-        if (isset($adminCheck[$key])) return $adminCheck[$key];
+        if (isset($adminCheck[$key])) {
+            return $adminCheck[$key];
+        }
 
         $isAdmin = DB::table('roles')
             ->whereIn('id', $ids)
@@ -83,7 +98,9 @@ trait HasCmsPermissions
      */
     public function hasPermission(string $permission): bool
     {
-        if ($this->isAdmin()) return true;
+        if ($this->isAdmin()) {
+            return true;
+        }
 
         if ($this->cmsPermissionSet === null) {
             $this->cmsPermissionSet = [];
@@ -110,7 +127,7 @@ trait HasCmsPermissions
     /** Personal API tokens belonging to this user. */
     public function apiTokens()
     {
-        return $this->hasMany(\FalconCms\Core\Models\ApiToken::class);
+        return $this->hasMany(ApiToken::class);
     }
 
     /**
@@ -119,11 +136,12 @@ trait HasCmsPermissions
      */
     public function createApiToken(string $name): string
     {
-        $plain = \Illuminate\Support\Str::random(48);
+        $plain = Str::random(48);
         $this->apiTokens()->create([
-            'name'  => $name ?: 'API Token',
+            'name' => $name ?: 'API Token',
             'token' => hash('sha256', $plain),
         ]);
+
         return $plain;
     }
 

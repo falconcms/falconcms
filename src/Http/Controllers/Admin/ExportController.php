@@ -5,7 +5,6 @@ namespace FalconCms\Core\Http\Controllers\Admin;
 use FalconCms\Core\Support\ExportManager;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Collection;
 
 class ExportController extends Controller
 {
@@ -47,17 +46,17 @@ class ExportController extends Controller
 
         @set_time_limit(0);
 
-        $xml      = ExportManager::generate($content);
+        $xml = ExportManager::generate($content);
         $filename = ExportManager::filename($content);
 
         if (function_exists('falcon_log_activity')) {
-            falcon_log_activity('exported', 'Exported site content (' . $content . ')');
+            falcon_log_activity('exported', 'Exported site content ('.$content.')');
         }
 
         return response($xml, 200, [
-            'Content-Type'        => 'application/xml; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            'Content-Length'      => (string) strlen($xml),
+            'Content-Type' => 'application/xml; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Content-Length' => (string) strlen($xml),
         ]);
     }
 }

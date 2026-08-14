@@ -25,8 +25,9 @@ class UninstallFalconDatabase extends Command
             : '  Shared Laravel tables (users, sessions, cache, jobs) are kept. Pass --all to drop them too.');
         $this->line('  The package code, published files and User model trait are left untouched.');
 
-        if (! $this->option('force') && ! $this->confirm('Drop the FalconCMS database tables now?', false)) {
+        if (!$this->option('force') && !$this->confirm('Drop the FalconCMS database tables now?', false)) {
             $this->info('Aborted. Nothing was changed.');
+
             return self::SUCCESS;
         }
 
@@ -39,7 +40,10 @@ class UninstallFalconDatabase extends Command
 
         // Clear caches that don't depend on the dropped tables.
         foreach (['view:clear', 'route:clear', 'config:clear'] as $cmd) {
-            try { $this->callSilently($cmd); } catch (\Throwable $e) {}
+            try {
+                $this->callSilently($cmd);
+            } catch (\Throwable $e) {
+            }
         }
 
         $this->newLine();

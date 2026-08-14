@@ -2,8 +2,8 @@
 
 namespace FalconCms\Core\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 
 class ActivityLog extends Model
 {
@@ -17,11 +17,11 @@ class ActivityLog extends Model
         'ip_address',
         'country',
         'country_code',
-        'user_agent'
+        'user_agent',
     ];
 
     protected $casts = [
-        'properties' => 'array'
+        'properties' => 'array',
     ];
 
     public function user()

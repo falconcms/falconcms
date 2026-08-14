@@ -48,7 +48,7 @@ return new class extends Migration
                 Schema::table('shop_customer_addresses', function (Blueprint $table) {
                     $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
                 });
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // SQLite and some hosted MySQL setups refuse this; deletion is handled in code too.
             }
         }

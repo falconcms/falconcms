@@ -2,8 +2,8 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -11,13 +11,13 @@ class CustomOptionsController extends Controller
 {
     public function index($slug)
     {
-        $config = config('falcon-options.pages.' . $slug);
+        $config = config('falcon-options.pages.'.$slug);
 
         if (!$config) {
             abort(404, 'Options page not found.');
         }
 
-        if (!auth()->user()->hasPermission('manage_settings') && !auth()->user()->hasPermission('manage_options_' . $slug)) {
+        if (!auth()->user()->hasPermission('manage_settings') && !auth()->user()->hasPermission('manage_options_'.$slug)) {
             abort(403);
         }
 
@@ -26,24 +26,24 @@ class CustomOptionsController extends Controller
         return view('falcon-cms::admin.options.generic', [
             'slug' => $slug,
             'config' => $config,
-            'settings' => $settings
+            'settings' => $settings,
         ]);
     }
 
     public function update(Request $request, $slug)
     {
-        $config = config('falcon-options.pages.' . $slug);
+        $config = config('falcon-options.pages.'.$slug);
 
         if (!$config) {
             abort(404);
         }
 
-        if (!auth()->user()->hasPermission('manage_settings') && !auth()->user()->hasPermission('manage_options_' . $slug)) {
+        if (!auth()->user()->hasPermission('manage_settings') && !auth()->user()->hasPermission('manage_options_'.$slug)) {
             abort(403);
         }
 
         $data = $request->except('_token');
-        
+
         // Handle Checkboxes and File Uploads
         foreach ($config['fields'] as $key => $field) {
             if ($field['type'] === 'checkbox') {
@@ -52,17 +52,17 @@ class CustomOptionsController extends Controller
                 $file = $request->file($key);
 
                 $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
-                $allowedExts  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
-                $ext  = strtolower($file->getClientOriginalExtension());
+                $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+                $ext = strtolower($file->getClientOriginalExtension());
                 $mime = $file->getMimeType();
 
                 if (!in_array($ext, $allowedExts) || !in_array($mime, $allowedMimes)) {
                     return redirect()->back()->withErrors([$key => 'Only image files (JPG, PNG, GIF, WebP, AVIF) are allowed.']);
                 }
 
-                $filename = Str::slug($key) . '-' . time() . '.' . $ext;
+                $filename = Str::slug($key).'-'.time().'.'.$ext;
                 $file->move(public_path('uploads/settings'), $filename);
-                $data[$key] = 'uploads/settings/' . $filename;
+                $data[$key] = 'uploads/settings/'.$filename;
             }
         }
 
@@ -79,6 +79,7 @@ class CustomOptionsController extends Controller
         }
 
         forget_cms_options_cache();
+
         return redirect()->back()->with('success', "{$config['title']} updated successfully!");
     }
 }

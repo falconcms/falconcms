@@ -2,11 +2,11 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
 use FalconCms\Core\Models\Form;
 use FalconCms\Core\Models\FormSubmission;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class FormController extends Controller
@@ -14,6 +14,7 @@ class FormController extends Controller
     public function index()
     {
         $forms = Form::withCount('submissions')->latest()->paginate(10);
+
         return view('falcon-cms::admin.forms.index', compact('forms'));
     }
 
@@ -41,6 +42,7 @@ class FormController extends Controller
     public function builder($id)
     {
         $form = Form::findOrFail($id);
+
         return view('falcon-cms::admin.forms.builder', compact('form'));
     }
 
@@ -48,7 +50,7 @@ class FormController extends Controller
     {
         $form = Form::findOrFail($id);
         $form->update([
-            'fields'   => $request->input('fields'),
+            'fields' => $request->input('fields'),
             'settings' => $request->input('settings'),
         ]);
 
@@ -61,24 +63,24 @@ class FormController extends Controller
         $form = Form::findOrFail($id);
 
         $payload = [
-            '_type'       => 'falcon_form',
-            'version'     => 1,
+            '_type' => 'falcon_form',
+            'version' => 1,
             'exported_at' => now()->toIso8601String(),
-            'form'        => [
+            'form' => [
                 // The whole form (labels, validation, success message, layout,
                 // colours, etc.) lives in fields + settings — that's everything.
-                'title'    => $form->title,
-                'fields'   => $form->fields   ?? [],
+                'title' => $form->title,
+                'fields' => $form->fields ?? [],
                 'settings' => $form->settings ?? [],
             ],
         ];
 
-        $filename = (Str::slug($form->title ?: 'form') ?: 'form') . '-form.json';
+        $filename = (Str::slug($form->title ?: 'form') ?: 'form').'-form.json';
 
         return response()->json(
             $payload,
             200,
-            ['Content-Disposition' => 'attachment; filename="' . $filename . '"'],
+            ['Content-Disposition' => 'attachment; filename="'.$filename.'"'],
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
         );
     }
@@ -103,15 +105,15 @@ class FormController extends Controller
             return back()->with('error', 'That file is not a valid FalconCMS form export.');
         }
 
-        $f     = $data['form'];
+        $f = $data['form'];
         $title = trim((string) ($f['title'] ?? '')) ?: 'Imported Form';
 
         $form = Form::create([
-            'title'    => $title,
-            'slug'     => $this->uniqueFormSlug($title),
-            'fields'   => is_array($f['fields']   ?? null) ? $f['fields']   : [],
+            'title' => $title,
+            'slug' => $this->uniqueFormSlug($title),
+            'fields' => is_array($f['fields'] ?? null) ? $f['fields'] : [],
             'settings' => is_array($f['settings'] ?? null) ? $f['settings'] : [],
-            'status'   => true,
+            'status' => true,
         ]);
 
         if (function_exists('falcon_log_activity')) {
@@ -129,9 +131,10 @@ class FormController extends Controller
         $slug = $base;
         $i = 1;
         while (Form::where('slug', $slug)->exists()) {
-            $slug = $base . '-' . $i;
+            $slug = $base.'-'.$i;
             $i++;
         }
+
         return $slug;
     }
 
@@ -140,6 +143,7 @@ class FormController extends Controller
         $form = Form::findOrFail($id);
         $form->submissions()->where('is_read', false)->update(['is_read' => true]);
         $submissions = $form->submissions()->latest()->paginate(20);
+
         return view('falcon-cms::admin.forms.submissions', compact('form', 'submissions'));
     }
 
@@ -147,6 +151,7 @@ class FormController extends Controller
     {
         $submissions = FormSubmission::with('form')->latest()->paginate(20);
         $form = null;
+
         return view('falcon-cms::admin.forms.submissions', compact('form', 'submissions'));
     }
 
@@ -162,12 +167,14 @@ class FormController extends Controller
             }
         }
         $submission->delete();
+
         return redirect()->route('admin.forms.submissions', $formId)->with('success', 'Submission deleted.');
     }
 
     public function destroy(Form $form)
     {
         $form->delete();
+
         return redirect()->route('admin.forms.index')->with('success', 'Form deleted successfully.');
     }
 }

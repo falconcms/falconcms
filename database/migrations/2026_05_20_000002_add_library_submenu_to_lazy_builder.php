@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use FalconCms\Core\Models\Menu;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {

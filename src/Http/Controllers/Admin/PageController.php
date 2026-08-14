@@ -2,13 +2,18 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
+use FalconCms\Core\Models\FieldGroup;
+use FalconCms\Core\Models\Media;
 use FalconCms\Core\Models\Page;
+use FalconCms\Core\Models\Redirect;
 use FalconCms\Core\Models\Revision;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PageController extends Controller
 {
@@ -25,9 +30,9 @@ class PageController extends Controller
         } else {
             $slug = Str::slug($title);
         }
-        
+
         if (empty($slug)) {
-            $slug = 'page-' . time();
+            $slug = 'page-'.time();
         }
 
         $originalSlug = $slug;
@@ -39,6 +44,7 @@ class PageController extends Controller
             $slug = "{$originalSlug}-{$count}";
             $count++;
         }
+
         return $slug;
     }
 
@@ -63,9 +69,9 @@ class PageController extends Controller
 
         // Search
         if ($request->filled('s')) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->s . '%')
-                  ->orWhere('content', 'like', '%' . $request->s . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('title', 'like', '%'.$request->s.'%')
+                    ->orWhere('content', 'like', '%'.$request->s.'%');
             });
         }
 
@@ -79,7 +85,7 @@ class PageController extends Controller
         $pages = $query->latest()->paginate(10)->withQueryString();
 
         $driver = \DB::connection()->getDriverName();
-        $yearCol  = $driver === 'sqlite' ? "strftime('%Y', created_at)" : 'YEAR(created_at)';
+        $yearCol = $driver === 'sqlite' ? "strftime('%Y', created_at)" : 'YEAR(created_at)';
         $monthCol = $driver === 'sqlite' ? "strftime('%m', created_at)" : 'MONTH(created_at)';
         $dates = Page::selectRaw("$yearCol as year, $monthCol as month")
             ->groupByRaw("$yearCol, $monthCol")
@@ -103,10 +109,10 @@ class PageController extends Controller
     public function create()
     {
         $allPages = Page::orderBy('title')->get();
-        
+
         // Fetch applicable custom field groups for pages
-        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
-            ->where(function($q) {
+        $fieldGroups = FieldGroup::where('is_active', true)
+            ->where(function ($q) {
                 $q->whereJsonContains('rules->post_type', 'page');
             })
             ->with('fields')
@@ -145,8 +151,8 @@ class PageController extends Controller
 
         if ($request->hasFile('featured_image')) {
             $file = $request->file('featured_image');
-            $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp','image/avif'];
-            $allowedExts  = ['jpg','jpeg','png','gif','webp','avif'];
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+            $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
             if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedExts) || !in_array($file->getMimeType(), $allowedMimes)) {
                 return redirect()->back()->withErrors(['featured_image' => 'Featured image must be a valid image file (JPG, PNG, GIF, WebP, AVIF).'])->withInput();
             }
@@ -171,31 +177,31 @@ class PageController extends Controller
                     'post_id' => $page->id,
                     'field_id' => $fieldId,
                     'value' => is_array($value) ? json_encode($value) : $value,
-                    'created_at' => now(), 'updated_at' => now()
+                    'created_at' => now(), 'updated_at' => now(),
                 ]);
             }
         }
 
         falcon_log_activity('created', "Created a new page: {$page->title}", $page);
-        
+
         // Multilingual Copy Logic
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
             foreach ($request->copy_to_languages as $langCode) {
                 $clone = $page->replicate();
                 $clone->lang_code = $langCode;
                 $clone->origin_id = $page->id;
-                
+
                 $clone->title = falcon_translate($page->title, $langCode);
                 $clone->slug = $this->generateUniqueSlug($clone->title, 0, $langCode);
-                
+
                 if ($page->editor_type === 'rich') {
                     $clone->content = falcon_translate($page->content, $langCode);
                 }
-                
+
                 if ($page->excerpt) {
                     $clone->excerpt = falcon_translate($page->excerpt, $langCode);
                 }
-                
+
                 $clone->save();
             }
         }
@@ -210,10 +216,10 @@ class PageController extends Controller
     public function edit(Page $page)
     {
         $allPages = Page::where('id', '!=', $page->id)->orderBy('title')->get();
-        
+
         // Fetch applicable custom field groups for pages
-        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
-            ->where(function($q) {
+        $fieldGroups = FieldGroup::where('is_active', true)
+            ->where(function ($q) {
                 $q->whereJsonContains('rules->post_type', 'page');
             })
             ->with('fields')
@@ -234,7 +240,7 @@ class PageController extends Controller
         $pendingAutosave = null;
         $revisionCount = 0;
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('cms_revisions')) {
+            if (Schema::hasTable('cms_revisions')) {
                 $base = Revision::where('revisionable_type', $page->getMorphClass())
                     ->where('revisionable_id', $page->getKey());
                 $revisionCount = (clone $base)->where('type', 'revision')->count();
@@ -243,7 +249,8 @@ class PageController extends Controller
                     $pendingAutosave = ['id' => $auto->id, 'time' => $auto->updated_at->format('M j, Y g:i A')];
                 }
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return view('falcon-cms::admin.pages.edit', compact('page', 'allPages', 'fieldGroups', 'fieldValues', 'pendingAutosave', 'revisionCount'));
     }
@@ -260,18 +267,22 @@ class PageController extends Controller
         $entries['current'] = ['key' => 'current', 'label' => 'Current Version (live)', 'title' => $page->title, 'content' => $page->content, 'meta' => 'Currently published', 'type' => 'current'];
         foreach ($revs as $r) {
             $entries[(string) $r->id] = [
-                'key'     => (string) $r->id,
-                'label'   => ($r->type === 'autosave' ? 'Autosave' : 'Revision') . ' — ' . $r->created_at->format('M j, Y g:i A'),
-                'title'   => $r->title,
+                'key' => (string) $r->id,
+                'label' => ($r->type === 'autosave' ? 'Autosave' : 'Revision').' — '.$r->created_at->format('M j, Y g:i A'),
+                'title' => $r->title,
                 'content' => $r->content,
-                'meta'    => ($r->user->name ?? 'System') . ' · ' . $r->created_at->diffForHumans(),
-                'type'    => $r->type,
+                'meta' => ($r->user->name ?? 'System').' · '.$r->created_at->diffForHumans(),
+                'type' => $r->type,
             ];
         }
-        $to   = (string) $request->get('to', 'current');
+        $to = (string) $request->get('to', 'current');
         $from = (string) $request->get('from', $revs->count() ? (string) $revs->first()->id : 'current');
-        if (!isset($entries[$to]))   $to = 'current';
-        if (!isset($entries[$from])) $from = $to;
+        if (!isset($entries[$to])) {
+            $to = 'current';
+        }
+        if (!isset($entries[$from])) {
+            $from = $to;
+        }
         $diff = lazy_revision_diff($entries[$from]['content'] ?? '', $entries[$to]['content'] ?? '');
 
         return view('falcon-cms::admin.pages.revisions', compact('page', 'entries', 'from', 'to', 'diff'));
@@ -282,9 +293,10 @@ class PageController extends Controller
     {
         $page = Page::findOrFail($id);
         $draft = clone $page;
-        $draft->title   = $request->input('title', $page->title);
+        $draft->title = $request->input('title', $page->title);
         $draft->content = $request->input('content', $page->content);
         $rev = Revision::snapshot($draft, 'autosave');
+
         return response()->json(['success' => (bool) $rev, 'time' => $rev ? $rev->updated_at->format('g:i:s A') : null]);
     }
 
@@ -292,12 +304,13 @@ class PageController extends Controller
     public function restoreRevisionClassic(Request $request, $id, $revisionId)
     {
         $page = Page::findOrFail($id);
-        $rev  = Revision::where('revisionable_type', $page->getMorphClass())
+        $rev = Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->findOrFail($revisionId);
         Revision::snapshot($page, 'revision');
         $page->update(['title' => $rev->title ?: $page->title, 'content' => $rev->content]);
         Revision::clearAutosave($page);
         clear_page_cache();
+
         return redirect()->route('admin.pages.edit', $page)->with('success', 'Revision restored.');
     }
 
@@ -307,6 +320,7 @@ class PageController extends Controller
         $page = Page::findOrFail($id);
         Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->where('id', $revisionId)->delete();
+
         return redirect()->route('admin.pages.revisions', $page->id)->with('success', 'Revision deleted.');
     }
 
@@ -316,6 +330,7 @@ class PageController extends Controller
         $page = Page::findOrFail($id);
         Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->delete();
+
         return redirect()->route('admin.pages.revisions', $page->id)->with('success', 'All revisions cleared.');
     }
 
@@ -333,7 +348,7 @@ class PageController extends Controller
             'featured_image' => 'nullable',
             'editor_type' => 'nullable|string|in:rich,builder',
             'lang_code' => 'nullable|string|max:10',
-            'seo' => 'nullable|array'
+            'seo' => 'nullable|array',
         ]);
 
         $validated['seo_meta'] = $request->input('seo');
@@ -347,18 +362,18 @@ class PageController extends Controller
 
         if ($request->hasFile('featured_image')) {
             $file = $request->file('featured_image');
-            $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp','image/avif'];
-            $allowedExts  = ['jpg','jpeg','png','gif','webp','avif'];
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+            $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
             if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedExts) || !in_array($file->getMimeType(), $allowedMimes)) {
                 return redirect()->back()->withErrors(['featured_image' => 'Featured image must be a valid image file (JPG, PNG, GIF, WebP, AVIF).'])->withInput();
             }
-            if ($page->featured_image && !\FalconCms\Core\Models\Media::where('path', $page->featured_image)->exists()) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($page->featured_image);
+            if ($page->featured_image && !Media::where('path', $page->featured_image)->exists()) {
+                Storage::disk('public')->delete($page->featured_image);
             }
             $validated['featured_image'] = $file->store('pages', 'public');
         } elseif ($request->input('remove_featured_image') === '1') {
-            if ($page->featured_image && !\FalconCms\Core\Models\Media::where('path', $page->featured_image)->exists()) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($page->featured_image);
+            if ($page->featured_image && !Media::where('path', $page->featured_image)->exists()) {
+                Storage::disk('public')->delete($page->featured_image);
             }
             $validated['featured_image'] = null;
         } elseif ($request->has('featured_image')) {
@@ -374,10 +389,10 @@ class PageController extends Controller
         // Protect builder content ONLY when staying in builder mode with non-builder (empty/HTML) content.
         // Explicit rich-mode edits are always saved so they appear on the front-end.
         $currentContent = $page->content;
-        $isCurrentBuilder = $page->editor_type === 'builder' || (is_string($currentContent) && (\Illuminate\Support\Str::startsWith($currentContent, '[') || \Illuminate\Support\Str::startsWith($currentContent, '{')));
+        $isCurrentBuilder = $page->editor_type === 'builder' || (is_string($currentContent) && (Str::startsWith($currentContent, '[') || Str::startsWith($currentContent, '{')));
         $targetEditorType = $validated['editor_type'] ?? $page->editor_type;
         $incoming = $validated['content'] ?? '';
-        $isIncomingBuilder = is_string($incoming) && (\Illuminate\Support\Str::startsWith($incoming, '[') || \Illuminate\Support\Str::startsWith($incoming, '{'));
+        $isIncomingBuilder = is_string($incoming) && (Str::startsWith($incoming, '[') || Str::startsWith($incoming, '{'));
         if ($isCurrentBuilder && $targetEditorType === 'builder' && !$isIncomingBuilder) {
             unset($validated['content']);
         }
@@ -393,11 +408,11 @@ class PageController extends Controller
 
         // Automatic Redirection Logic
         if ($oldSlug !== $page->slug) {
-            $oldUrl = '/' . ltrim($oldSlug, '/');
-            $newUrl = '/' . ltrim($page->slug, '/');
+            $oldUrl = '/'.ltrim($oldSlug, '/');
+            $newUrl = '/'.ltrim($page->slug, '/');
 
             if ($oldUrl !== $newUrl) {
-                \FalconCms\Core\Models\Redirect::updateOrCreate(
+                Redirect::updateOrCreate(
                     ['old_url' => $oldUrl],
                     ['new_url' => $newUrl, 'status_code' => 301]
                 );
@@ -411,7 +426,7 @@ class PageController extends Controller
                     ['post_id' => $page->id, 'field_id' => $fieldId],
                     [
                         'value' => is_array($value) ? json_encode($value) : $value,
-                        'updated_at' => now()
+                        'updated_at' => now(),
                     ]
                 );
             }
@@ -423,23 +438,25 @@ class PageController extends Controller
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
             foreach ($request->copy_to_languages as $langCode) {
                 $exists = Page::where('origin_id', $page->id)->where('lang_code', $langCode)->exists();
-                if ($exists) continue;
+                if ($exists) {
+                    continue;
+                }
 
                 $clone = $page->replicate();
                 $clone->lang_code = $langCode;
                 $clone->origin_id = $page->id;
-                
+
                 $clone->title = falcon_translate($page->title, $langCode);
                 $clone->slug = $this->generateUniqueSlug($clone->title, 0, $langCode);
-                
+
                 if ($page->editor_type === 'rich') {
                     $clone->content = falcon_translate($page->content, $langCode);
                 }
-                
+
                 if ($page->excerpt) {
                     $clone->excerpt = falcon_translate($page->excerpt, $langCode);
                 }
-                
+
                 $clone->save();
             }
         }
@@ -452,6 +469,7 @@ class PageController extends Controller
         $title = $page->title;
         $page->delete();
         falcon_log_activity('deleted', "Moved page to trash: {$title}", $page);
+
         return redirect()->route('admin.pages.index')->with('success', 'Page moved to trash.');
     }
 
@@ -459,6 +477,7 @@ class PageController extends Controller
     {
         $page = Page::onlyTrashed()->findOrFail($id);
         $page->restore();
+
         return back()->with('success', 'Page restored successfully.');
     }
 
@@ -466,6 +485,7 @@ class PageController extends Controller
     {
         $page = Page::onlyTrashed()->findOrFail($id);
         $page->forceDelete();
+
         return back()->with('success', 'Page deleted permanently.');
     }
 
@@ -484,14 +504,16 @@ class PageController extends Controller
                 $page->delete();
                 falcon_log_activity('deleted', "Moved page to trash: {$page->title}", $page);
             }
-            return back()->with('success', count($ids) . ' pages moved to trash.');
+
+            return back()->with('success', count($ids).' pages moved to trash.');
         } elseif ($action === 'restore') {
             $pages = Page::onlyTrashed()->whereIn('id', $ids)->get();
             foreach ($pages as $page) {
                 $page->restore();
                 falcon_log_activity('restored', "Restored page from trash: {$page->title}", $page);
             }
-            return back()->with('success', count($ids) . ' pages restored.');
+
+            return back()->with('success', count($ids).' pages restored.');
         } elseif ($action === 'delete') {
             $pages = Page::onlyTrashed()->whereIn('id', $ids)->get();
             foreach ($pages as $page) {
@@ -499,14 +521,16 @@ class PageController extends Controller
                 $page->forceDelete();
                 falcon_log_activity('deleted', "Deleted page permanently: {$title}", $page);
             }
-            return back()->with('success', count($ids) . ' pages deleted permanently.');
+
+            return back()->with('success', count($ids).' pages deleted permanently.');
         } elseif (in_array($action, ['draft', 'published'])) {
             $pages = Page::whereIn('id', $ids)->get();
             foreach ($pages as $page) {
                 $page->update(['status' => $action]);
                 falcon_log_activity('updated', "Updated page status to {$action}: {$page->title}", $page);
             }
-            return back()->with('success', count($ids) . ' pages marked as ' . ucfirst($action) . '.');
+
+            return back()->with('success', count($ids).' pages marked as '.ucfirst($action).'.');
         }
 
         return back();

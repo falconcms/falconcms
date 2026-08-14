@@ -2,40 +2,44 @@
 
 namespace FalconCms\Core\Mail;
 
+use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
 
 class MagicLoginMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels, QueueableViaConfig;
+    use Queueable, QueueableViaConfig, SerializesModels;
 
     public string $magicUrl;
+
     public string $userName;
+
     public string $siteName;
+
     public string $siteUrl;
 
     public function __construct(string $magicUrl, string $userName = '')
     {
-        $this->magicUrl  = $magicUrl;
-        $this->userName  = $userName ?: 'there';
-        $this->siteName  = get_cms_option('site_title') ?: config('app.name', 'Falcon CMS');
-        $this->siteUrl   = config('app.url', url('/'));
+        $this->magicUrl = $magicUrl;
+        $this->userName = $userName ?: 'there';
+        $this->siteName = get_cms_option('site_title') ?: config('app.name', 'Falcon CMS');
+        $this->siteUrl = config('app.url', url('/'));
         $this->configureQueue();
     }
 
     public function envelope(): Envelope
     {
-        $from     = get_cms_option('mail_from_address') ?: config('mail.from.address', 'noreply@' . request()->getHost());
+        $from = get_cms_option('mail_from_address') ?: config('mail.from.address', 'noreply@'.request()->getHost());
         $fromName = get_cms_option('mail_from_name') ?: $this->siteName;
 
         return new Envelope(
-            from: new \Illuminate\Mail\Mailables\Address($from, $fromName),
-            subject: 'Your magic sign-in link — ' . $this->siteName,
+            from: new Address($from, $fromName),
+            subject: 'Your magic sign-in link — '.$this->siteName,
         );
     }
 

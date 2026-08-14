@@ -17,7 +17,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('custom_taxonomies')) return;
+        if (!Schema::hasTable('custom_taxonomies')) {
+            return;
+        }
 
         if (!Schema::hasColumn('custom_taxonomies', 'deleted_at')) {
             Schema::table('custom_taxonomies', function (Blueprint $table) {

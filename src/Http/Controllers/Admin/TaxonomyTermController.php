@@ -2,11 +2,10 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use FalconCms\Core\Models\TaxonomyTerm;
 use FalconCms\Core\Models\CustomTaxonomy;
+use FalconCms\Core\Models\TaxonomyTerm;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class TaxonomyTermController extends Controller
 {
@@ -14,27 +13,29 @@ class TaxonomyTermController extends Controller
     {
         $lang = $request->query('lang', app()->getLocale());
         $taxonomy = CustomTaxonomy::where('slug', $taxonomySlug)->firstOrFail();
-        $cptSlug  = $request->query('cpt');
-        
+        $cptSlug = $request->query('cpt');
+
         $query = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
             ->where('cpt_slug', $cptSlug)
             ->where('lang_code', $lang);
 
         if ($request->filled('s')) {
-            $query->where('name', 'like', '%' . $request->s . '%');
+            $query->where('name', 'like', '%'.$request->s.'%');
         }
 
-        $terms   = $query->withCount('posts')->latest()->paginate(20);
+        $terms = $query->withCount('posts')->latest()->paginate(20);
         $allTerms = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
             ->where('cpt_slug', $cptSlug)
             ->latest()
             ->get();
-            
+
         $fullParents = collect();
         $visitedIds = [];
-        $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$fullParents, &$visitedIds) {
+        $buildTree = function ($parentId, $level) use (&$buildTree, $allTerms, &$fullParents, &$visitedIds) {
             foreach ($allTerms->where('parent_id', $parentId) as $term) {
-                if (in_array($term->id, $visitedIds)) continue;
+                if (in_array($term->id, $visitedIds)) {
+                    continue;
+                }
                 $visitedIds[] = $term->id;
                 $term->level = $level;
                 $fullParents->push($term);
@@ -49,15 +50,15 @@ class TaxonomyTermController extends Controller
     public function ajaxStore(Request $request)
     {
         $request->validate([
-            'name'          => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'taxonomy_slug' => 'required|string',
-            'cpt_slug'      => 'required|string',
-            'parent_id'     => 'nullable|exists:taxonomy_terms,id',
+            'cpt_slug' => 'required|string',
+            'parent_id' => 'nullable|exists:taxonomy_terms,id',
         ]);
 
         $taxonomySlug = $request->taxonomy_slug;
-        $cptSlug      = $request->cpt_slug;
-        $name         = trim($request->name);
+        $cptSlug = $request->cpt_slug;
+        $name = trim($request->name);
 
         // Check if exists
         $term = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
@@ -73,10 +74,10 @@ class TaxonomyTermController extends Controller
 
         $term = TaxonomyTerm::create([
             'taxonomy_slug' => $taxonomySlug,
-            'cpt_slug'      => $cptSlug,
-            'name'          => $name,
-            'slug'          => $slug,
-            'parent_id'     => $request->parent_id ?: null,
+            'cpt_slug' => $cptSlug,
+            'name' => $name,
+            'slug' => $slug,
+            'parent_id' => $request->parent_id ?: null,
         ]);
 
         return response()->json($term);
@@ -87,8 +88,8 @@ class TaxonomyTermController extends Controller
         $cptSlug = $request->input('cpt_slug');
 
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'slug'      => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255',
             'parent_id' => 'nullable|exists:taxonomy_terms,id',
         ]);
 
@@ -98,16 +99,16 @@ class TaxonomyTermController extends Controller
 
         TaxonomyTerm::create([
             'taxonomy_slug' => $taxonomySlug,
-            'cpt_slug'      => $cptSlug,
-            'name'          => $request->name,
-            'slug'          => $slug,
-            'description'   => $request->description,
-            'parent_id'     => $request->parent_id ?: null,
-            'lang_code'     => $lang,
-            'origin_id'     => $request->origin_id ?: null,
+            'cpt_slug' => $cptSlug,
+            'name' => $request->name,
+            'slug' => $slug,
+            'description' => $request->description,
+            'parent_id' => $request->parent_id ?: null,
+            'lang_code' => $lang,
+            'origin_id' => $request->origin_id ?: null,
         ]);
 
-        return redirect()->back()->with('success', '"' . $request->name . '" added successfully.');
+        return redirect()->back()->with('success', '"'.$request->name.'" added successfully.');
     }
 
     public function edit(Request $request, $taxonomySlug, $id)
@@ -120,12 +121,14 @@ class TaxonomyTermController extends Controller
             ->where('cpt_slug', $cptSlug)
             ->where('id', '!=', $id)
             ->get();
-            
+
         $fullParents = collect();
         $visitedIds = [];
-        $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$fullParents, &$visitedIds) {
+        $buildTree = function ($parentId, $level) use (&$buildTree, $allTerms, &$fullParents, &$visitedIds) {
             foreach ($allTerms->where('parent_id', $parentId) as $t) {
-                if (in_array($t->id, $visitedIds)) continue;
+                if (in_array($t->id, $visitedIds)) {
+                    continue;
+                }
                 $visitedIds[] = $t->id;
                 $t->level = $level;
                 $fullParents->push($t);
@@ -143,14 +146,15 @@ class TaxonomyTermController extends Controller
         $cptSlug = $request->input('cpt_slug');
 
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'slug'      => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255',
             'parent_id' => [
                 'nullable',
                 'exists:taxonomy_terms,id',
                 function ($attribute, $value, $fail) use ($term) {
                     if ($value == $term->id) {
                         $fail('A term cannot be its own parent.');
+
                         return;
                     }
                     if ($value) {
@@ -171,10 +175,10 @@ class TaxonomyTermController extends Controller
         $slug = TaxonomyTerm::generateUniqueSlug($baseName, $term->id, $cptSlug);
 
         $term->update([
-            'name'        => $request->name,
-            'slug'        => $slug,
+            'name' => $request->name,
+            'slug' => $slug,
             'description' => $request->description,
-            'parent_id'   => $request->parent_id ?: null,
+            'parent_id' => $request->parent_id ?: null,
         ]);
 
         return redirect()->route('admin.acpt.terms.index', [$taxonomySlug, 'cpt' => $cptSlug])->with('success', 'Term updated successfully.');
@@ -184,6 +188,7 @@ class TaxonomyTermController extends Controller
     {
         $term = TaxonomyTerm::findOrFail($id);
         $term->delete();
+
         return redirect()->back()->with('success', 'Term deleted.');
     }
 

@@ -41,7 +41,7 @@ class Tag extends Model
         while (static::where('slug', $slug)
             ->where('id', '!=', $id)
             ->exists()) {
-            $slug = $originalSlug . '-' . $count++;
+            $slug = $originalSlug.'-'.$count++;
         }
 
         return $slug;
@@ -50,20 +50,27 @@ class Tag extends Model
     public function translations()
     {
         $originId = $this->origin_id ?: $this->id;
+
         return $this->hasMany(Tag::class, 'origin_id', 'id')
-               ->orWhere('id', $originId)
-               ->orWhere('origin_id', $originId);
+            ->orWhere('id', $originId)
+            ->orWhere('origin_id', $originId);
     }
 
     public function getTranslation($locale)
     {
-        if ($this->lang_code === $locale) return $this;
+        if ($this->lang_code === $locale) {
+            return $this;
+        }
         $originId = $this->origin_id ?: $this->id;
+
         return Tag::where('lang_code', $locale)
-                    ->where(function($q) use ($originId) {
-                        $q->where('id', $originId)->orWhere('origin_id', $originId);
-                    })->first();
+            ->where(function ($q) use ($originId) {
+                $q->where('id', $originId)->orWhere('origin_id', $originId);
+            })->first();
     }
 
-    public function posts(): BelongsToMany { return $this->belongsToMany(Post::class); }
+    public function posts(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class);
+    }
 }

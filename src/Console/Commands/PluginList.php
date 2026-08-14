@@ -16,7 +16,8 @@ class PluginList extends Command
         $all = $plugins->all();
 
         if (empty($all)) {
-            $this->info('No plugins found in ' . $plugins->path() . '.');
+            $this->info('No plugins found in '.$plugins->path().'.');
+
             return self::SUCCESS;
         }
 
@@ -31,6 +32,7 @@ class PluginList extends Command
         }
 
         $this->table(['Slug', 'Name', 'Version', 'Status'], $rows);
+
         return self::SUCCESS;
     }
 }

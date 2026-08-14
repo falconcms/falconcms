@@ -2,40 +2,44 @@
 
 namespace FalconCms\Core\Mail;
 
+use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
 
 class PasswordResetMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels, QueueableViaConfig;
+    use Queueable, QueueableViaConfig, SerializesModels;
 
     public string $resetUrl;
+
     public string $userName;
+
     public string $siteName;
+
     public string $siteUrl;
 
     public function __construct(string $resetUrl, string $userName = '')
     {
-        $this->resetUrl  = $resetUrl;
-        $this->userName  = $userName ?: 'there';
-        $this->siteName  = get_cms_option('site_title') ?: config('app.name', 'Falcon CMS');
-        $this->siteUrl   = config('app.url', url('/'));
+        $this->resetUrl = $resetUrl;
+        $this->userName = $userName ?: 'there';
+        $this->siteName = get_cms_option('site_title') ?: config('app.name', 'Falcon CMS');
+        $this->siteUrl = config('app.url', url('/'));
         $this->configureQueue();
     }
 
     public function envelope(): Envelope
     {
-        $from    = get_cms_option('mail_from_address') ?: config('mail.from.address', 'noreply@' . request()->getHost());
+        $from = get_cms_option('mail_from_address') ?: config('mail.from.address', 'noreply@'.request()->getHost());
         $fromName = get_cms_option('mail_from_name') ?: $this->siteName;
 
         return new Envelope(
-            from: new \Illuminate\Mail\Mailables\Address($from, $fromName),
-            subject: 'Reset your password — ' . $this->siteName,
+            from: new Address($from, $fromName),
+            subject: 'Reset your password — '.$this->siteName,
         );
     }
 

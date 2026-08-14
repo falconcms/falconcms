@@ -2,9 +2,11 @@
 
 namespace FalconCms\Core\Database\Seeders;
 
+use App\Models\User;
+use FalconCms\Core\Models\Post;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use FalconCms\Core\Models\Post;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Seeds the default storefront pages (Shop, Cart, Checkout, Account), a sample blog post
@@ -15,7 +17,7 @@ class DefaultContentSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminId = optional(\App\Models\User::first())->id ?? 1;
+        $adminId = optional(User::first())->id ?? 1;
 
         // ── Auth theme defaults (always modern) ──────────────────────────────
         foreach (['login_theme' => 'modern', 'registration_theme' => 'modern'] as $key => $value) {
@@ -45,9 +47,9 @@ class DefaultContentSeeder extends Seeder
                 $page = Post::withoutGlobalScopes()->firstOrCreate(
                     ['slug' => $p['slug'], 'type' => 'page', 'lang_code' => 'en'],
                     [
-                        'title'       => $p['title'],
-                        'status'      => 'published',
-                        'user_id'     => $adminId,
+                        'title' => $p['title'],
+                        'status' => 'published',
+                        'user_id' => $adminId,
                         'editor_type' => 'rich',
                     ]
                 );
@@ -55,7 +57,7 @@ class DefaultContentSeeder extends Seeder
                     $page->restore();
                 }
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('DefaultContentSeeder [' . $p['slug'] . ']: ' . $e->getMessage());
+                Log::warning('DefaultContentSeeder ['.$p['slug'].']: '.$e->getMessage());
                 $page = Post::withoutGlobalScopes()
                     ->where(['slug' => $p['slug'], 'type' => 'page', 'lang_code' => 'en'])
                     ->first();
@@ -63,8 +65,8 @@ class DefaultContentSeeder extends Seeder
 
             if ($page && !DB::table('cms_settings')->where('key', $p['setting'])->exists()) {
                 DB::table('cms_settings')->insert([
-                    'key'        => $p['setting'],
-                    'value'      => $page->id,
+                    'key' => $p['setting'],
+                    'value' => $page->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -73,43 +75,43 @@ class DefaultContentSeeder extends Seeder
 
         // ── Sample blog post so the blog listing has content right after install ──
         try {
-        Post::withoutGlobalScopes()->firstOrCreate(
-            ['slug' => 'hello-world', 'type' => 'post', 'lang_code' => 'en'],
-            [
-                'title'       => 'Hello World — Welcome to Falcon CMS',
-                'status'      => 'published',
-                'lang_code'   => 'en',
-                'user_id'     => $adminId,
-                'editor_type' => 'rich',
-                'excerpt'     => 'Welcome to Falcon CMS! This is your first sample blog post — edit or delete it and start publishing your own stories.',
-                'content'     => "<p>Welcome to <strong>Falcon CMS</strong> 🎉</p>"
-                    . "<p>This is a sample blog post that was created automatically when you installed the CMS. "
-                    . "You can edit it, delete it, or use it as a reference for how your posts will look on the front-end.</p>"
-                    . "<h2>Getting started</h2>"
-                    . "<ul><li>Create new posts from <em>Dashboard → Posts</em>.</li>"
-                    . "<li>Customize colours, typography and the blog layout from <em>Appearance → Customize</em>.</li>"
-                    . "<li>Assign a page as your Blog page from <em>Settings → General</em>.</li></ul>"
-                    . "<p>Happy publishing!</p>",
-            ]
-        );
+            Post::withoutGlobalScopes()->firstOrCreate(
+                ['slug' => 'hello-world', 'type' => 'post', 'lang_code' => 'en'],
+                [
+                    'title' => 'Hello World — Welcome to Falcon CMS',
+                    'status' => 'published',
+                    'lang_code' => 'en',
+                    'user_id' => $adminId,
+                    'editor_type' => 'rich',
+                    'excerpt' => 'Welcome to Falcon CMS! This is your first sample blog post — edit or delete it and start publishing your own stories.',
+                    'content' => '<p>Welcome to <strong>Falcon CMS</strong> 🎉</p>'
+                        .'<p>This is a sample blog post that was created automatically when you installed the CMS. '
+                        .'You can edit it, delete it, or use it as a reference for how your posts will look on the front-end.</p>'
+                        .'<h2>Getting started</h2>'
+                        .'<ul><li>Create new posts from <em>Dashboard → Posts</em>.</li>'
+                        .'<li>Customize colours, typography and the blog layout from <em>Appearance → Customize</em>.</li>'
+                        .'<li>Assign a page as your Blog page from <em>Settings → General</em>.</li></ul>'
+                        .'<p>Happy publishing!</p>',
+                ]
+            );
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('DefaultContentSeeder [hello-world]: ' . $e->getMessage());
+            Log::warning('DefaultContentSeeder [hello-world]: '.$e->getMessage());
         }
 
         // ── A ready-to-use "Blog" page ───────────────────────────────────────
         try {
-        Post::withoutGlobalScopes()->firstOrCreate(
-            ['slug' => 'blog', 'type' => 'page', 'lang_code' => 'en'],
-            [
-                'title'       => 'Blog',
-                'status'      => 'published',
-                'lang_code'   => 'en',
-                'user_id'     => $adminId,
-                'editor_type' => 'rich',
-            ]
-        );
+            Post::withoutGlobalScopes()->firstOrCreate(
+                ['slug' => 'blog', 'type' => 'page', 'lang_code' => 'en'],
+                [
+                    'title' => 'Blog',
+                    'status' => 'published',
+                    'lang_code' => 'en',
+                    'user_id' => $adminId,
+                    'editor_type' => 'rich',
+                ]
+            );
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('DefaultContentSeeder [blog]: ' . $e->getMessage());
+            Log::warning('DefaultContentSeeder [blog]: '.$e->getMessage());
         }
     }
 }

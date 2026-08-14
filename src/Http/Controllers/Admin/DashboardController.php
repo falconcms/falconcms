@@ -2,15 +2,29 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use FalconCms\Core\Models\Post;
 use App\Models\User;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Str;
 use FalconCms\Core\Models\ActivityLog;
 use FalconCms\Core\Models\Analytics;
+use FalconCms\Core\Models\BlockedIp;
+use FalconCms\Core\Models\FormSubmission;
+use FalconCms\Core\Models\Menu;
+use FalconCms\Core\Models\Order;
+use FalconCms\Core\Models\OrderItem;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Models\Product;
+use FalconCms\Core\Models\Role;
+use FalconCms\Core\Pro\LicenseGateway;
+use FalconCms\Core\Services\EcommerceData;
+use FalconCms\Core\Support\SettingsExtension;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -40,127 +54,127 @@ class DashboardController extends Controller
 
         // 2. Conversion Rate Calculation
         $totalVisitors = Analytics::distinct('ip_address')->count(['ip_address']);
-        $totalSubmissions = \FalconCms\Core\Models\FormSubmission::count();
+        $totalSubmissions = FormSubmission::count();
         $conversionRate = ($totalVisitors > 0) ? round(($totalSubmissions / $totalVisitors) * 100, 1) : 0;
 
         // 3. Security Status Check
-        $recentBlockedIps = \FalconCms\Core\Models\BlockedIp::where('created_at', '>', now()->subDay())->count();
+        $recentBlockedIps = BlockedIp::where('created_at', '>', now()->subDay())->count();
         $securityStatus = ($recentBlockedIps > 0) ? 'Warning' : 'Healthy';
-        $securityMessage = ($recentBlockedIps > 0) 
+        $securityMessage = ($recentBlockedIps > 0)
             ? "Attention: $recentBlockedIps unauthorized attempts blocked in the last 24 hours."
-            : "System protection is active. No unauthorized attempts in the last 24 hours.";
+            : 'System protection is active. No unauthorized attempts in the last 24 hours.';
 
         $stats = [
             'total_posts' => [
                 'label' => 'Total Posts',
                 'count' => Post::where('type', 'post')->count(),
-                'change' => '+4.2%'
+                'change' => '+4.2%',
             ],
             'total_pages' => [
                 'label' => 'Total Pages',
                 'count' => Post::where('type', 'page')->count(),
-                'change' => '+1.5%'
+                'change' => '+1.5%',
             ],
             'total_users' => [
                 'label' => 'Total Users',
-                'count' => \App\Models\User::count(),
-                'change' => '+2.1%'
+                'count' => User::count(),
+                'change' => '+2.1%',
             ],
             'blocked_users' => [
                 'label' => 'Blocked Accounts',
-                'count' => \App\Models\User::where('is_blocked', true)->orWhere(function($q){
+                'count' => User::where('is_blocked', true)->orWhere(function ($q) {
                     $q->whereNotNull('blocked_until')->where('blocked_until', '>', now());
                 })->count(),
-                'change' => 'Security'
+                'change' => 'Security',
             ],
             'blacklisted_ips' => [
                 'label' => 'Blacklisted IPs',
-                'count' => \FalconCms\Core\Models\BlockedIp::count(),
-                'change' => 'Protection'
+                'count' => BlockedIp::count(),
+                'change' => 'Protection',
             ],
             'media_count' => [
                 'label' => 'Media Assets',
                 'count' => DB::table('media')->count(),
-                'change' => '+12.3%'
+                'change' => '+12.3%',
             ],
             'main_chart' => [
                 'labels' => $labels,
                 'data1' => $impressionsData,
-                'data2' => $visitorsData
+                'data2' => $visitorsData,
             ],
             'traffic_stats' => [
                 'labels' => $labels,
                 'impressions' => $impressionsData,
                 'visitors' => $visitorsData,
                 'conversion_rate' => [
-                    'value' => $conversionRate . '%',
-                    'change' => 'Real-time'
+                    'value' => $conversionRate.'%',
+                    'change' => 'Real-time',
                 ],
                 'security' => [
                     'status' => $securityStatus,
-                    'message' => $securityMessage
-                ]
-            ]
+                    'message' => $securityMessage,
+                ],
+            ],
         ];
 
         // Ecommerce stats — only when shop tables exist
-        $hasShop  = false;
-        $currency = \FalconCms\Core\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
+        $hasShop = false;
+        $currency = EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
         $ecoStats = [
-            'total_orders'    => 0,
-            'total_revenue'   => 0,
-            'pending_orders'  => 0,
-            'total_products'  => 0,
-            'orders_today'    => 0,
-            'orders_month'    => 0,
-            'status_counts'   => [],
+            'total_orders' => 0,
+            'total_revenue' => 0,
+            'pending_orders' => 0,
+            'total_products' => 0,
+            'orders_today' => 0,
+            'orders_month' => 0,
+            'status_counts' => [],
             'monthly_revenue' => array_fill(0, 7, 0),
-            'monthly_labels'  => [],
-            'top_products'    => collect(),
-            'low_stock'       => collect(),
+            'monthly_labels' => [],
+            'top_products' => collect(),
+            'low_stock' => collect(),
             'revenue_this_month' => 0,
-            'revenue_delta'   => null,
-            'orders_delta'    => null,
+            'revenue_delta' => null,
+            'orders_delta' => null,
             'low_stock_count' => 0,
-            'recent_orders'   => collect(),
+            'recent_orders' => collect(),
             'orders_by_country' => collect(),
         ];
         try {
             // Only expose ecommerce figures (revenue, orders, customer names) to users who can
             // access the shop. Without this gate every dashboard-accessing role would see them.
-            if (\Illuminate\Support\Facades\Schema::hasTable('shop_orders') && auth()->user()->hasPermission('access_shop') && falcon_pro_editable('ecommerce')) {
+            if (Schema::hasTable('shop_orders') && auth()->user()->hasPermission('access_shop') && falcon_pro_editable('ecommerce')) {
                 $hasShop = true;
                 // Statuses that represent earned revenue. Net = total minus any amount refunded.
                 $revenueStatuses = ['completed', 'processing', 'partially-refunded'];
-                $netRevenue = "COALESCE(SUM(total - COALESCE(refunded_amount, 0)), 0)";
+                $netRevenue = 'COALESCE(SUM(total - COALESCE(refunded_amount, 0)), 0)';
 
-                $ecoStats['total_orders']   = \FalconCms\Core\Models\Order::count();
-                $ecoStats['total_revenue']  = (float) \FalconCms\Core\Models\Order::whereIn('status', $revenueStatuses)
+                $ecoStats['total_orders'] = Order::count();
+                $ecoStats['total_revenue'] = (float) Order::whereIn('status', $revenueStatuses)
                     ->selectRaw("{$netRevenue} as net")->value('net');
-                $ecoStats['pending_orders'] = \FalconCms\Core\Models\Order::where('status', 'pending')->count();
+                $ecoStats['pending_orders'] = Order::where('status', 'pending')->count();
                 $ecoStats['total_products'] = Post::where('type', 'product')->count();
-                $ecoStats['orders_today']   = \FalconCms\Core\Models\Order::whereDate('created_at', today())->count();
-                $ecoStats['orders_month']   = \FalconCms\Core\Models\Order::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
-                $ecoStats['status_counts']  = \FalconCms\Core\Models\Order::selectRaw('status, count(*) as total')
+                $ecoStats['orders_today'] = Order::whereDate('created_at', today())->count();
+                $ecoStats['orders_month'] = Order::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
+                $ecoStats['status_counts'] = Order::selectRaw('status, count(*) as total')
                     ->groupBy('status')->pluck('total', 'status')->toArray();
                 // "Partially Refunded" is driven by actual refund data (any order with a partial refund),
                 // not just the status label — so it reflects partial refunds on completed/processing orders too.
-                $ecoStats['status_counts']['partially-refunded'] = (int) \FalconCms\Core\Models\Order::where('refunded_amount', '>', 0)
+                $ecoStats['status_counts']['partially-refunded'] = (int) Order::where('refunded_amount', '>', 0)
                     ->whereColumn('refunded_amount', '<', 'total')->count();
                 $rev = [];
                 $revLabels = [];
                 for ($i = 6; $i >= 0; $i--) {
-                    $d    = now()->subMonths($i);
+                    $d = now()->subMonths($i);
                     $revLabels[] = $d->format('M');
-                    $rev[] = (float) \FalconCms\Core\Models\Order::whereIn('status', $revenueStatuses)
+                    $rev[] = (float) Order::whereIn('status', $revenueStatuses)
                         ->whereBetween('created_at', [$d->copy()->startOfMonth(), $d->copy()->endOfMonth()])
                         ->selectRaw("{$netRevenue} as net")->value('net');
                 }
                 $ecoStats['monthly_revenue'] = $rev;
-                $ecoStats['monthly_labels']  = $revLabels;
+                $ecoStats['monthly_labels'] = $revLabels;
 
                 // Best sellers — units sold across paid orders (most useful, unique to this widget)
-                $ecoStats['top_products'] = \FalconCms\Core\Models\OrderItem::query()
+                $ecoStats['top_products'] = OrderItem::query()
                     ->join('shop_orders', 'shop_orders.id', '=', 'shop_order_items.order_id')
                     ->whereIn('shop_orders.status', $revenueStatuses)
                     ->whereNotNull('shop_order_items.product_id')
@@ -171,9 +185,9 @@ class DashboardController extends Controller
                     ->get();
 
                 // Products that need restocking — managed stock at or below a low threshold
-                $ecoStats['low_stock'] = \FalconCms\Core\Models\Product::whereHas('shopData', function ($q) {
-                        $q->where('manage_stock', 1)->where('stock_quantity', '<=', 5);
-                    })
+                $ecoStats['low_stock'] = Product::whereHas('shopData', function ($q) {
+                    $q->where('manage_stock', 1)->where('stock_quantity', '<=', 5);
+                })
                     ->with('shopData')
                     ->get()
                     ->sortBy(fn ($p) => (int) ($p->shopData->stock_quantity ?? 0))
@@ -181,51 +195,62 @@ class DashboardController extends Controller
                     ->values();
 
                 // Month-over-month deltas + context for the KPI cards
-                $lastMonthRef    = now()->subMonthNoOverflow();
-                $ordersLastMonth = \FalconCms\Core\Models\Order::whereMonth('created_at', $lastMonthRef->month)
+                $lastMonthRef = now()->subMonthNoOverflow();
+                $ordersLastMonth = Order::whereMonth('created_at', $lastMonthRef->month)
                     ->whereYear('created_at', $lastMonthRef->year)->count();
                 $thisRev = (float) ($rev[6] ?? 0);   // current month (last entry in the 7-month series)
                 $lastRev = (float) ($rev[5] ?? 0);   // previous month
                 $ecoStats['revenue_this_month'] = $thisRev;
                 $ecoStats['revenue_delta'] = $lastRev > 0 ? (int) round(($thisRev - $lastRev) / $lastRev * 100) : null;
-                $ecoStats['orders_delta']  = $ordersLastMonth > 0
+                $ecoStats['orders_delta'] = $ordersLastMonth > 0
                     ? (int) round(($ecoStats['orders_month'] - $ordersLastMonth) / $ordersLastMonth * 100) : null;
-                $ecoStats['low_stock_count'] = \FalconCms\Core\Models\Product::whereHas('shopData', function ($q) {
-                        $q->where('manage_stock', 1)->where('stock_quantity', '<=', 5);
-                    })->count();
+                $ecoStats['low_stock_count'] = Product::whereHas('shopData', function ($q) {
+                    $q->where('manage_stock', 1)->where('stock_quantity', '<=', 5);
+                })->count();
 
                 // Recent orders — fills the space under the revenue chart with actionable activity
-                $ecoStats['recent_orders'] = \FalconCms\Core\Models\Order::latest()->limit(6)->get();
+                $ecoStats['recent_orders'] = Order::latest()->limit(6)->get();
 
                 // Orders grouped by country (normalized to ISO-2) for the world map widget
-                $countryRows = \FalconCms\Core\Models\Order::query()
+                $countryRows = Order::query()
                     ->whereNotNull('country')->where('country', '!=', '')
                     ->selectRaw("country, COUNT(*) as orders, COALESCE(SUM(CASE WHEN status IN ('completed','processing','partially-refunded') THEN total - COALESCE(refunded_amount, 0) ELSE 0 END), 0) as revenue")
                     ->groupBy('country')->get();
                 $byCountry = [];
                 foreach ($countryRows as $row) {
-                    $code = \FalconCms\Core\Services\EcommerceData::countryToIso2($row->country);
-                    if (!$code) continue;
-                    if (!isset($byCountry[$code])) $byCountry[$code] = ['code' => $code, 'orders' => 0, 'revenue' => 0.0];
-                    $byCountry[$code]['orders']  += (int) $row->orders;
+                    $code = EcommerceData::countryToIso2($row->country);
+                    if (!$code) {
+                        continue;
+                    }
+                    if (!isset($byCountry[$code])) {
+                        $byCountry[$code] = ['code' => $code, 'orders' => 0, 'revenue' => 0.0];
+                    }
+                    $byCountry[$code]['orders'] += (int) $row->orders;
                     $byCountry[$code]['revenue'] += (float) $row->revenue;
                 }
                 $ecoStats['orders_by_country'] = collect($byCountry)
-                    ->map(fn ($c) => $c + ['name' => \FalconCms\Core\Services\EcommerceData::iso2ToName($c['code'])])
+                    ->map(fn ($c) => $c + ['name' => EcommerceData::iso2ToName($c['code'])])
                     ->sortByDesc('orders')->values();
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         // Ensure Dashboard > Updates submenu exists (self-heals on existing installs)
         $this->ensureUpdateMenu();
 
         // Refresh update cache silently (only when expired, max once per 6h)
         if (!cache()->has('falcon_cms_update_check')) {
-            try { lazy_check_update(); } catch (\Exception $e) {}
+            try {
+                lazy_check_update();
+            } catch (\Exception $e) {
+            }
         }
         // Same for the Pro package, so the sidebar can flag a Pro update.
         if (function_exists('falcon_pro_check_update') && !cache()->has('falcon_pro_update_check')) {
-            try { falcon_pro_check_update(); } catch (\Exception $e) {}
+            try {
+                falcon_pro_check_update();
+            } catch (\Exception $e) {
+            }
         }
 
         return view('falcon-cms::admin.dashboard', compact('stats', 'hasShop', 'ecoStats', 'currency'));
@@ -234,18 +259,21 @@ class DashboardController extends Controller
     protected function ensureUpdateMenu(): void
     {
         try {
-            $dash = \FalconCms\Core\Models\Menu::where('title', 'Dashboard')->whereNull('parent_id')->first();
-            if (!$dash) return;
+            $dash = Menu::where('title', 'Dashboard')->whereNull('parent_id')->first();
+            if (!$dash) {
+                return;
+            }
 
-            \FalconCms\Core\Models\Menu::firstOrCreate(
+            Menu::firstOrCreate(
                 ['title' => 'Overview', 'parent_id' => $dash->id],
                 ['route' => 'admin.dashboard.index', 'order' => 1]
             );
-            \FalconCms\Core\Models\Menu::firstOrCreate(
+            Menu::firstOrCreate(
                 ['title' => 'Updates', 'parent_id' => $dash->id],
                 ['route' => 'admin.update', 'order' => 2]
             );
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
     }
 
     public function updateCheck()
@@ -257,7 +285,8 @@ class DashboardController extends Controller
         // window. $proExpired distinguishes "licensed but out-of-updates" (renew for updates,
         // features still active) from "not licensed at all".
         $proCanUpdate = function_exists('falcon_pro_updates_allowed') ? falcon_pro_updates_allowed() : false;
-        $proExpired   = function_exists('falcon_pro_expired') ? falcon_pro_expired() : false;
+        $proExpired = function_exists('falcon_pro_expired') ? falcon_pro_expired() : false;
+
         return view('falcon-cms::admin.update', compact('update', 'proUpdate', 'proCanUpdate', 'proExpired'));
     }
 
@@ -265,7 +294,7 @@ class DashboardController extends Controller
     {
         set_time_limit(300);
 
-        $steps   = [];
+        $steps = [];
         $hasError = false;
 
         // Step 0: pre-flight writability check. In containerised installs the vendor
@@ -276,6 +305,7 @@ class DashboardController extends Controller
         // fix, instead of letting Composer break mid-extraction.
         if (($permError = $this->updateWritabilityError()) !== null) {
             $steps[] = ['label' => 'Pre-flight check', 'output' => $permError, 'ok' => false];
+
             return redirect()->route('admin.update')
                 ->with('update_steps', $steps)
                 ->with('update_had_error', true);
@@ -287,7 +317,7 @@ class DashboardController extends Controller
         // and would never reach 2.x (the update would silently do nothing).
         $composerBin = $this->findComposer();
         if ($composerBin) {
-            $check  = function_exists('lazy_check_update') ? lazy_check_update(true) : [];
+            $check = function_exists('lazy_check_update') ? lazy_check_update(true) : [];
             $latest = $check['latest'] ?? null;
 
             if ($latest && preg_match('/^\d+\.\d+\.\d+$/', $latest)) {
@@ -295,22 +325,24 @@ class DashboardController extends Controller
                 // solver settle on an older 2.0.x (e.g. v2.0.0, whose version.json was
                 // stale), so the dashboard kept reporting an out-of-date version right
                 // after "updating". An exact version also crosses a major bump.
-                $cmd   = $composerBin . ' require falconcms/falconcms:' . $latest . ' -W --no-interaction --prefer-dist --no-progress 2>&1';
-                $label = 'composer require falconcms/falconcms:' . $latest;
+                $cmd = $composerBin.' require falconcms/falconcms:'.$latest.' -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $label = 'composer require falconcms/falconcms:'.$latest;
             } else {
-                $cmd   = $composerBin . ' update falconcms/falconcms -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $cmd = $composerBin.' update falconcms/falconcms -W --no-interaction --prefer-dist --no-progress 2>&1';
                 $label = 'composer update';
             }
 
-            exec('cd ' . escapeshellarg(base_path()) . ' && ' . $cmd, $composerOut, $exitCode);
+            exec('cd '.escapeshellarg(base_path()).' && '.$cmd, $composerOut, $exitCode);
             $composerText = implode("\n", $composerOut);
             // If Composer choked on a permission/delete error, append the concrete fix
             // so the raw output isn't the last word the admin sees.
             if ($exitCode !== 0 && preg_match('/could not delete|permission denied|failed to (?:open|remove)/i', $composerText)) {
-                $composerText .= "\n\n" . $this->permissionFixHint();
+                $composerText .= "\n\n".$this->permissionFixHint();
             }
             $steps[] = ['label' => $label, 'output' => $composerText, 'ok' => $exitCode === 0];
-            if ($exitCode !== 0) $hasError = true;
+            if ($exitCode !== 0) {
+                $hasError = true;
+            }
         } else {
             $steps[] = ['label' => 'composer update', 'output' => 'composer not found in PATH. Run manually: composer require falconcms/falconcms:^2.0 -W', 'ok' => false];
             $hasError = true;
@@ -319,12 +351,14 @@ class DashboardController extends Controller
         // Step 2: falcon:update — run as a subprocess so the freshly downloaded code
         // is used. Artisan::call() would re-use the old in-memory ServiceProvider
         // loaded before composer update ran, causing "command does not exist".
-        $phpBin     = $this->findPhpCli();
-        $artisan    = base_path('artisan');
-        $falconCmd    = escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' falcon:update --no-ansi 2>&1';
+        $phpBin = $this->findPhpCli();
+        $artisan = base_path('artisan');
+        $falconCmd = escapeshellarg($phpBin).' '.escapeshellarg($artisan).' falcon:update --no-ansi 2>&1';
         exec($falconCmd, $falconOut, $falconExit);
         $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $falconOut)), 'ok' => $falconExit === 0];
-        if ($falconExit !== 0) $hasError = true;
+        if ($falconExit !== 0) {
+            $hasError = true;
+        }
 
         // Step 3: reset the php-fpm OPcache from THIS web request. The falcon:update
         // subprocess runs under CLI php, whose opcache_reset() only clears the CLI
@@ -359,25 +393,28 @@ class DashboardController extends Controller
         // releases needs a licence whose update window is still open. Distinguish "not
         // licensed" from "licensed but out of updates" (features stay active — renew for updates).
         $gw = null;
-        try { $gw = app(\FalconCms\Core\Pro\LicenseGateway::class); } catch (\Throwable $e) {}
-        $licensed  = $gw && $gw->licensed();
+        try {
+            $gw = app(LicenseGateway::class);
+        } catch (\Throwable $e) {
+        }
+        $licensed = $gw && $gw->licensed();
         $canUpdate = $gw && (method_exists($gw, 'updatesAllowed') ? $gw->updatesAllowed() : $gw->licensed());
 
-        if (! $licensed) {
+        if (!$licensed) {
             return redirect()->route('admin.update')
                 ->with('update_steps', [[
-                    'label'  => 'Licence check',
+                    'label' => 'Licence check',
                     'output' => 'A valid FalconCMS Pro licence is required to update Pro. Please activate your licence on the License page, then try again.',
-                    'ok'     => false,
+                    'ok' => false,
                 ]])
                 ->with('update_had_error', true);
         }
-        if (! $canUpdate) {
+        if (!$canUpdate) {
             return redirect()->route('admin.update')
                 ->with('update_steps', [[
-                    'label'  => 'Licence check',
+                    'label' => 'Licence check',
                     'output' => "Your Pro licence's update window has ended. Your Pro features stay fully active — but to download new releases, please renew your licence on the License page, then try again.",
-                    'ok'     => false,
+                    'ok' => false,
                 ]])
                 ->with('update_had_error', true);
         }
@@ -394,24 +431,26 @@ class DashboardController extends Controller
 
         $composerBin = $this->findComposer();
         if ($composerBin) {
-            $check  = function_exists('falcon_pro_check_update') ? falcon_pro_check_update(true) : [];
+            $check = function_exists('falcon_pro_check_update') ? falcon_pro_check_update(true) : [];
             $latest = $check['latest'] ?? null;
 
             if ($latest && preg_match('/^\d+\.\d+\.\d+$/', $latest)) {
-                $cmd   = $composerBin . ' require falconcms/pro:' . $latest . ' -W --no-interaction --prefer-dist --no-progress 2>&1';
-                $label = 'composer require falconcms/pro:' . $latest;
+                $cmd = $composerBin.' require falconcms/pro:'.$latest.' -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $label = 'composer require falconcms/pro:'.$latest;
             } else {
-                $cmd   = $composerBin . ' update falconcms/pro -W --no-interaction --prefer-dist --no-progress 2>&1';
+                $cmd = $composerBin.' update falconcms/pro -W --no-interaction --prefer-dist --no-progress 2>&1';
                 $label = 'composer update falconcms/pro';
             }
 
-            exec('cd ' . escapeshellarg(base_path()) . ' && ' . $cmd, $composerOut, $exitCode);
+            exec('cd '.escapeshellarg(base_path()).' && '.$cmd, $composerOut, $exitCode);
             $composerText = implode("\n", $composerOut);
             if ($exitCode !== 0 && preg_match('/could not delete|permission denied|failed to (?:open|remove)/i', $composerText)) {
-                $composerText .= "\n\n" . $this->permissionFixHint();
+                $composerText .= "\n\n".$this->permissionFixHint();
             }
             $steps[] = ['label' => $label, 'output' => $composerText, 'ok' => $exitCode === 0];
-            if ($exitCode !== 0) $hasError = true;
+            if ($exitCode !== 0) {
+                $hasError = true;
+            }
         } else {
             $steps[] = ['label' => 'composer', 'output' => 'composer not found in PATH. Run manually: composer require falconcms/pro -W', 'ok' => false];
             $hasError = true;
@@ -419,11 +458,13 @@ class DashboardController extends Controller
 
         // Reconcile: migrations for freshly-synced Pro plugins + clear caches so their
         // routes/views register (mirrors the core updater).
-        $phpBin  = $this->findPhpCli();
+        $phpBin = $this->findPhpCli();
         $artisan = base_path('artisan');
-        exec(escapeshellarg($phpBin) . ' ' . escapeshellarg($artisan) . ' falcon:update --no-ansi 2>&1', $falconOut, $falconExit);
+        exec(escapeshellarg($phpBin).' '.escapeshellarg($artisan).' falcon:update --no-ansi 2>&1', $falconOut, $falconExit);
         $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $falconOut)), 'ok' => $falconExit === 0];
-        if ($falconExit !== 0) $hasError = true;
+        if ($falconExit !== 0) {
+            $hasError = true;
+        }
 
         if (function_exists('opcache_reset')) {
             $reset = @opcache_reset();
@@ -456,25 +497,33 @@ class DashboardController extends Controller
         // Derive a sibling cli binary from the fpm path,
         // e.g. /usr/local/sbin/php-fpm -> /usr/local/sbin/php.
         if (PHP_BINARY) {
-            $candidates[] = dirname(PHP_BINARY) . '/php';
-            $candidates[] = dirname(dirname(PHP_BINARY)) . '/bin/php';
+            $candidates[] = dirname(PHP_BINARY).'/php';
+            $candidates[] = dirname(dirname(PHP_BINARY)).'/bin/php';
         }
         $candidates[] = '/usr/local/bin/php';
         $candidates[] = '/usr/bin/php';
 
         foreach ($candidates as $p) {
             // Skip anything that is itself an fpm binary.
-            if (str_contains(basename($p), 'fpm')) continue;
-            if (@is_executable($p)) return $p;
+            if (str_contains(basename($p), 'fpm')) {
+                continue;
+            }
+            if (@is_executable($p)) {
+                return $p;
+            }
         }
 
         // PATH lookups (may be empty inside php-fpm, hence checked last).
         $which = shell_exec('which php 2>/dev/null');
-        if ($which && trim($which)) return trim($which);
+        if ($which && trim($which)) {
+            return trim($which);
+        }
         $where = shell_exec('where php 2>nul');
         if ($where && trim($where)) {
             $lines = preg_split('/\r?\n/', trim($where));
-            if (!empty($lines[0])) return trim($lines[0]);
+            if (!empty($lines[0])) {
+                return trim($lines[0]);
+            }
         }
 
         return 'php';
@@ -490,14 +539,19 @@ class DashboardController extends Controller
         ];
         foreach ($candidates as $p) {
             if (file_exists($p)) {
-                return str_ends_with($p, '.phar') ? 'php ' . escapeshellarg($p) : escapeshellarg($p);
+                return str_ends_with($p, '.phar') ? 'php '.escapeshellarg($p) : escapeshellarg($p);
             }
         }
         // Try PATH
         $which = shell_exec('which composer 2>/dev/null');
-        if ($which && trim($which)) return 'composer';
+        if ($which && trim($which)) {
+            return 'composer';
+        }
         $where = shell_exec('where composer 2>nul');
-        if ($where && trim($where)) return 'composer';
+        if ($where && trim($where)) {
+            return 'composer';
+        }
+
         return null;
     }
 
@@ -524,11 +578,11 @@ class DashboardController extends Controller
         }
 
         return "Update stopped before making any changes.\n\n"
-            . "The web server process cannot modify the installed package files, so Composer "
-            . "would download the new version and then fail while replacing the old files — "
-            . "leaving a half-updated site.\n\n"
-            . "Not writable:\n  - " . implode("\n  - ", $unwritable) . "\n\n"
-            . $this->permissionFixHint();
+            .'The web server process cannot modify the installed package files, so Composer '
+            .'would download the new version and then fail while replacing the old files — '
+            ."leaving a half-updated site.\n\n"
+            ."Not writable:\n  - ".implode("\n  - ", $unwritable)."\n\n"
+            .$this->permissionFixHint();
     }
 
     /**
@@ -546,13 +600,13 @@ class DashboardController extends Controller
         }
 
         $vendor = base_path('vendor');
-        $json   = base_path('composer.json');
-        $lock   = base_path('composer.lock');
+        $json = base_path('composer.json');
+        $lock = base_path('composer.lock');
 
         return "How to fix (run once on the server, then retry this update):\n"
-            . "  chown -R {$me} {$vendor} {$json} {$lock}\n\n"
-            . "If the site runs in Docker, run it against the container (user often 'www-data'):\n"
-            . "  docker exec -u root <container> chown -R {$me} {$vendor} {$json} {$lock}";
+            ."  chown -R {$me} {$vendor} {$json} {$lock}\n\n"
+            ."If the site runs in Docker, run it against the container (user often 'www-data'):\n"
+            ."  docker exec -u root <container> chown -R {$me} {$vendor} {$json} {$lock}";
     }
 
     public function settings()
@@ -560,9 +614,9 @@ class DashboardController extends Controller
         if (!auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
-        
+
         $pages = Post::where('type', 'page')->where('status', 'published')->orderBy('title')->get();
-        $roles = \FalconCms\Core\Models\Role::orderBy('name')->get();
+        $roles = Role::orderBy('name')->get();
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
 
         return view('falcon-cms::admin.settings.index', compact('pages', 'settings', 'roles'));
@@ -574,20 +628,20 @@ class DashboardController extends Controller
             abort(403);
         }
         $data = $request->except('_token');
-        
+
         // Handle Checkboxes
-        $data['users_can_register']         = $request->has('users_can_register') ? '1' : '0';
+        $data['users_can_register'] = $request->has('users_can_register') ? '1' : '0';
         $data['require_email_verification'] = $request->has('require_email_verification') ? '1' : '0';
         // Multi-device Login & Magic Login are Pro features. Only accept changes to them
         // when the site can edit Pro features; otherwise preserve the stored values so a
         // locked (or crafted) request can never enable them.
         if (falcon_pro_editable('advanced_login')) {
-            $data['allow_multi_device']  = $request->has('allow_multi_device') ? '1' : '0';
+            $data['allow_multi_device'] = $request->has('allow_multi_device') ? '1' : '0';
             $data['magic_login_enabled'] = $request->has('magic_login_enabled') ? '1' : '0';
         } else {
             unset($data['allow_multi_device'], $data['magic_login_enabled'], $data['max_devices']);
         }
-        
+
         if ($request->has('enable_rest_api')) {
             $data['enable_rest_api'] = '1';
         } elseif ($request->is('*/settings/api')) {
@@ -595,8 +649,12 @@ class DashboardController extends Controller
         }
 
         // Sanitize Slugs
-        if (isset($data['login_url'])) $data['login_url'] = Str::slug($data['login_url']);
-        if (isset($data['register_url'])) $data['register_url'] = Str::slug($data['register_url']);
+        if (isset($data['login_url'])) {
+            $data['login_url'] = Str::slug($data['login_url']);
+        }
+        if (isset($data['register_url'])) {
+            $data['register_url'] = Str::slug($data['register_url']);
+        }
 
         foreach ($data as $key => $value) {
             // Never let internal/licensing keys be written through the generic
@@ -616,7 +674,7 @@ class DashboardController extends Controller
         }
 
         forget_cms_options_cache();
-        falcon_log_activity('settings_updated', "Updated CMS settings");
+        falcon_log_activity('settings_updated', 'Updated CMS settings');
 
         return redirect()->back()->with('success', 'Settings updated successfully!');
     }
@@ -626,8 +684,9 @@ class DashboardController extends Controller
         if (!auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
-        
+
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
+
         return view('falcon-cms::admin.settings.seo', compact('settings'));
     }
 
@@ -636,23 +695,24 @@ class DashboardController extends Controller
         if (!auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
-        
+
         $data = $request->except('_token');
-        
+
         // Handle Sitemap Checkboxes — all active post types + taxonomies
         $checkboxes = ['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow'];
 
         try {
-            $slugs = \FalconCms\Core\Models\PostType::where('is_active', true)->pluck('slug');
+            $slugs = PostType::where('is_active', true)->pluck('slug');
             foreach ($slugs as $slug) {
-                $checkboxes[] = 'sitemap_include_' . $slug;
+                $checkboxes[] = 'sitemap_include_'.$slug;
             }
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         foreach ($checkboxes as $box) {
             $data[$box] = $request->has($box) ? '1' : '0';
         }
-        
+
         foreach ($data as $key => $value) {
             if (falcon_is_protected_option($key)) {
                 continue;
@@ -668,6 +728,7 @@ class DashboardController extends Controller
         }
 
         forget_cms_options_cache();
+
         return redirect()->back()->with('success', 'SEO Settings updated successfully!');
     }
 
@@ -675,18 +736,21 @@ class DashboardController extends Controller
     {
         $search = $request->query('s');
         $excludeId = $request->query('exclude');
-        
-        if (!$search) return response()->json([]);
 
-        $posts = \FalconCms\Core\Models\Post::where('status', 'published')
+        if (!$search) {
+            return response()->json([]);
+        }
+
+        $posts = Post::where('status', 'published')
             ->where('id', '!=', $excludeId)
-            ->where('title', 'like', '%' . $search . '%')
+            ->where('title', 'like', '%'.$search.'%')
             ->limit(5)
             ->get(['id', 'title', 'slug', 'type']);
 
-        $posts->map(function($post) {
-            $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type . '/';
-            $post->url = url('/' . $prefix . $post->slug);
+        $posts->map(function ($post) {
+            $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type.'/';
+            $post->url = url('/'.$prefix.$post->slug);
+
             return $post;
         });
 
@@ -703,14 +767,14 @@ class DashboardController extends Controller
 
         if ($request->filled('s')) {
             $search = $request->s;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('description', 'like', "%{$search}%")
-                  ->orWhere('action', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhere('action', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -736,6 +800,7 @@ class DashboardController extends Controller
 
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
         $tokens = auth()->user()->apiTokens()->latest()->get();
+
         return view('falcon-cms::admin.settings.api', compact('settings', 'tokens'));
     }
 
@@ -769,6 +834,7 @@ class DashboardController extends Controller
         }
 
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
+
         return view('falcon-cms::admin.settings.integrations', compact('settings'));
     }
 
@@ -788,7 +854,7 @@ class DashboardController extends Controller
 
         // Persist any theme/plugin fields injected into this screen — this
         // controller only saves a fixed whitelist, so they need explicit saving.
-        app(\FalconCms\Core\Support\SettingsExtension::class)->persist('integrations', $request);
+        app(SettingsExtension::class)->persist('integrations', $request);
 
         forget_cms_options_cache();
         falcon_log_activity('settings_updated', 'Updated integrations settings');
@@ -800,29 +866,29 @@ class DashboardController extends Controller
     {
         return [
             'form_notification' => [
-                'label'   => 'Form Submission Notification',
+                'label' => 'Form Submission Notification',
                 'subject' => 'New Submission: {{form_name}}',
-                'intro'   => 'You have received a new submission. Review the details below to follow up promptly.',
-                'footer'  => 'This is an automated notification — no reply is needed.',
+                'intro' => 'You have received a new submission. Review the details below to follow up promptly.',
+                'footer' => 'This is an automated notification — no reply is needed.',
                 'variables' => ['{{form_name}}', '{{submitted_at}}', '{{ip_address}}', '{{site_name}}'],
             ],
             'order_placed_customer' => [
-                'label'   => 'Order Placed — Customer Email',
+                'label' => 'Order Placed — Customer Email',
                 'subject' => 'Order Confirmation - Order #{{order_number}}',
                 'message' => 'We have received your order <strong>#{{order_number}}</strong> and are currently getting it ready. You will receive another notification once your order status updates.',
                 'variables' => ['{{order_number}}', '{{customer_name}}', '{{site_name}}'],
             ],
             'order_placed_admin' => [
-                'label'   => 'Order Placed — Admin Notification',
+                'label' => 'Order Placed — Admin Notification',
                 'subject' => '[New Order] #{{order_number}} — {{customer_name}}',
                 'message' => 'A new order <strong>#{{order_number}}</strong> has been placed by <strong>{{customer_name}}</strong>.',
                 'variables' => ['{{order_number}}', '{{customer_name}}', '{{order_total}}', '{{site_name}}'],
             ],
             'order_status_updated' => [
-                'label'   => 'Order Status Updated',
+                'label' => 'Order Status Updated',
                 'subject' => 'Update on your order #{{order_number}} [{{new_status}}]',
-                'message_default'    => 'Your order <strong>#{{order_number}}</strong> status has been updated to <strong>{{new_status}}</strong>.',
-                'message_completed'  => 'Good news! Your order is completed and fulfilled. Thank you for shopping with us!',
+                'message_default' => 'Your order <strong>#{{order_number}}</strong> status has been updated to <strong>{{new_status}}</strong>.',
+                'message_completed' => 'Good news! Your order is completed and fulfilled. Thank you for shopping with us!',
                 'message_processing' => 'We are actively preparing your items. We\'ll let you know once it\'s on its way.',
                 'variables' => ['{{order_number}}', '{{customer_name}}', '{{new_status}}', '{{site_name}}'],
             ],
@@ -831,12 +897,14 @@ class DashboardController extends Controller
 
     public function emailTemplates()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) abort(403);
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
 
-        $defaults  = self::emailTemplateDefaults();
+        $defaults = self::emailTemplateDefaults();
         $templates = [];
         foreach ($defaults as $key => $default) {
-            $saved = json_decode(get_cms_option('email_template_' . $key, '{}'), true) ?: [];
+            $saved = json_decode(get_cms_option('email_template_'.$key, '{}'), true) ?: [];
             $templates[$key] = array_merge($default, $saved);
         }
 
@@ -845,7 +913,9 @@ class DashboardController extends Controller
 
     public function updateEmailTemplate(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) abort(403);
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
 
         $key = $request->input('template_key');
         $defaults = self::emailTemplateDefaults();
@@ -858,7 +928,7 @@ class DashboardController extends Controller
         $data = $request->except(['_token', 'template_key']);
 
         DB::table('cms_settings')->updateOrInsert(
-            ['key' => 'email_template_' . $key],
+            ['key' => 'email_template_'.$key],
             ['value' => json_encode($data), 'updated_at' => now()]
         );
 
@@ -871,38 +941,40 @@ class DashboardController extends Controller
 
     public function testEmailTemplate(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) abort(403);
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
 
-        $key      = $request->input('template_key');
-        $toEmail  = auth()->user()->email;
+        $key = $request->input('template_key');
+        $toEmail = auth()->user()->email;
         $defaults = self::emailTemplateDefaults();
 
         if (!array_key_exists($key, $defaults)) {
             return response()->json(['success' => false, 'message' => 'Invalid template.']);
         }
 
-        $saved    = json_decode(get_cms_option('email_template_' . $key, '{}'), true) ?: [];
-        $tpl      = array_merge($defaults[$key], $saved);
+        $saved = json_decode(get_cms_option('email_template_'.$key, '{}'), true) ?: [];
+        $tpl = array_merge($defaults[$key], $saved);
         $siteName = get_cms_option('site_name', config('app.name', 'Falcon CMS'));
 
         try {
             if ($key === 'form_notification') {
-                $subject     = str_replace(['{{form_name}}', '{{site_name}}'], ['Test Form', $siteName], $tpl['subject']);
-                $introText   = str_replace('{{site_name}}', $siteName, $tpl['intro']);
-                $footerText  = $tpl['footer'];
-                $form        = (object)['title' => 'Test Form', 'id' => 0, 'settings' => []];
-                $rows        = [
+                $subject = str_replace(['{{form_name}}', '{{site_name}}'], ['Test Form', $siteName], $tpl['subject']);
+                $introText = str_replace('{{site_name}}', $siteName, $tpl['intro']);
+                $footerText = $tpl['footer'];
+                $form = (object) ['title' => 'Test Form', 'id' => 0, 'settings' => []];
+                $rows = [
                     ['label' => 'Name', 'is_file' => false, 'is_empty' => false, 'display' => 'John Doe'],
                     ['label' => 'Email', 'is_file' => false, 'is_empty' => false, 'display' => $toEmail],
                     ['label' => 'Message', 'is_file' => false, 'is_empty' => false, 'display' => 'This is a test submission.'],
                 ];
                 $submittedAt = now()->format('d M Y, H:i');
-                $ip          = request()->ip();
+                $ip = request()->ip();
 
-                \Illuminate\Support\Facades\Mail::send(
+                Mail::send(
                     'falcon-cms::emails.form.notification',
                     compact('form', 'rows', 'submittedAt', 'ip', 'introText', 'footerText'),
-                    fn($msg) => $msg->to($toEmail)->subject($subject)
+                    fn ($msg) => $msg->to($toEmail)->subject($subject)
                 );
             } elseif (in_array($key, ['order_placed_customer', 'order_placed_admin', 'order_status_updated'])) {
                 $subject = str_replace(
@@ -910,9 +982,9 @@ class DashboardController extends Controller
                     ['12345', 'John Doe', 'Processing', $siteName],
                     $tpl['subject']
                 );
-                \Illuminate\Support\Facades\Mail::raw(
+                Mail::raw(
                     "This is a test email for the \"{$tpl['label']}\" template.\n\nSubject: {$subject}\n\nTemplate key: {$key}",
-                    fn($msg) => $msg->to($toEmail)->subject("[TEST] {$subject}")
+                    fn ($msg) => $msg->to($toEmail)->subject("[TEST] {$subject}")
                 );
             }
 
@@ -932,26 +1004,28 @@ class DashboardController extends Controller
 
         // ── Date range (dynamic) ──────────────────────────────────────────────
         $range = (int) request()->query('range', 30);
-        if (!in_array($range, [7, 30, 90, 365], true)) $range = 30;
+        if (!in_array($range, [7, 30, 90, 365], true)) {
+            $range = 30;
+        }
 
         // Locked preview: without Pro (analytics), show believable SAMPLE data behind an
         // upgrade overlay — never the site's real figures. Buying Pro makes it live.
-        if (! falcon_pro_editable('analytics')) {
+        if (!falcon_pro_editable('analytics')) {
             return view('falcon-cms::admin.analytics.index',
                 $this->sampleAnalyticsData($range) + ['analyticsLocked' => true]);
         }
 
-        $start     = now()->subDays($range - 1)->startOfDay();
+        $start = now()->subDays($range - 1)->startOfDay();
         $prevStart = (clone $start)->subDays($range);
-        $prevEnd   = (clone $start)->subSecond();
+        $prevEnd = (clone $start)->subSecond();
 
         // ── KPIs (with % change vs the previous equal period) ─────────────────
-        $totalVisits    = Analytics::where('created_at', '>=', $start)->count();
+        $totalVisits = Analytics::where('created_at', '>=', $start)->count();
         $uniqueVisitors = Analytics::where('created_at', '>=', $start)->distinct()->count('ip_address');
-        $prevVisits     = Analytics::whereBetween('created_at', [$prevStart, $prevEnd])->count();
-        $visitsChange   = $prevVisits > 0 ? round((($totalVisits - $prevVisits) / $prevVisits) * 100, 1) : ($totalVisits > 0 ? 100 : 0);
-        $today          = Analytics::whereDate('created_at', now()->toDateString())->count();
-        $thisMonth      = Analytics::where('created_at', '>=', now()->startOfMonth())->count();
+        $prevVisits = Analytics::whereBetween('created_at', [$prevStart, $prevEnd])->count();
+        $visitsChange = $prevVisits > 0 ? round((($totalVisits - $prevVisits) / $prevVisits) * 100, 1) : ($totalVisits > 0 ? 100 : 0);
+        $today = Analytics::whereDate('created_at', now()->toDateString())->count();
+        $thisMonth = Analytics::where('created_at', '>=', now()->startOfMonth())->count();
 
         // ── Daily series (visits + unique), zero-filled across the range ──────
         $daily = Analytics::where('created_at', '>=', $start)
@@ -962,7 +1036,7 @@ class DashboardController extends Controller
         for ($i = $range - 1; $i >= 0; $i--) {
             $day = now()->subDays($i);
             $key = $day->toDateString();
-            $labels[]       = $day->format('M j');
+            $labels[] = $day->format('M j');
             $visitsSeries[] = (int) ($daily[$key]->visits ?? 0);
             $uniqueSeries[] = (int) ($daily[$key]->uniques ?? 0);
         }
@@ -975,11 +1049,11 @@ class DashboardController extends Controller
                 ->where('created_at', '>=', $start)
                 ->whereNotIn($col, ['bot', 'Bot / Crawler'])
                 ->groupBy($col)->orderByDesc('count')->get()
-                ->map(fn($r) => ['label' => $r->{$col} ?: 'Unknown', 'count' => (int) $r->count])->values();
+                ->map(fn ($r) => ['label' => $r->{$col} ?: 'Unknown', 'count' => (int) $r->count])->values();
         };
         $browsers = $dist('browser');
-        $devices  = $dist('device_type');
-        $osDist   = $dist('os');
+        $devices = $dist('device_type');
+        $osDist = $dist('os');
 
         // ── Top pages & referrers (empty referrer = Direct) ──────────────────
         $topPages = Analytics::select('url', DB::raw('count(*) as count'))
@@ -995,14 +1069,14 @@ class DashboardController extends Controller
             ->where('created_at', '>=', $start)
             ->whereNotNull('country')->where('country', '!=', '')
             ->groupBy('country')->orderByDesc('count')->limit(8)->get()
-            ->map(fn($r) => ['label' => $r->country, 'count' => (int) $r->count])->values();
+            ->map(fn ($r) => ['label' => $r->country, 'count' => (int) $r->count])->values();
 
         // Visitors grouped by ISO-2 country code, for the world map widget
         $visitorsByCountry = Analytics::select('country_code', DB::raw('MAX(country) as country'), DB::raw('count(*) as visitors'))
             ->where('created_at', '>=', $start)
             ->whereNotNull('country_code')->where('country_code', '!=', '')
             ->groupBy('country_code')->orderByDesc('visitors')->get()
-            ->map(fn($r) => ['code' => strtoupper($r->country_code), 'name' => $r->country ?: strtoupper($r->country_code), 'visitors' => (int) $r->visitors])
+            ->map(fn ($r) => ['code' => strtoupper($r->country_code), 'name' => $r->country ?: strtoupper($r->country_code), 'visitors' => (int) $r->visitors])
             ->values();
 
         // ── Engagement: real-time, new vs returning, sessions, bounce ─────────
@@ -1022,30 +1096,55 @@ class DashboardController extends Controller
                 ->orderBy('ip_address')->orderBy('created_at')
                 ->get(['ip_address', 'created_at']);
             $gap = 1800; // 30 min
-            $sessions = 0; $bounces = 0; $curIp = null; $lastTs = null; $pageCount = 0;
+            $sessions = 0;
+            $bounces = 0;
+            $curIp = null;
+            $lastTs = null;
+            $pageCount = 0;
             $close = function () use (&$sessions, &$bounces, &$pageCount) {
-                if ($pageCount > 0) { $sessions++; if ($pageCount === 1) $bounces++; }
+                if ($pageCount > 0) {
+                    $sessions++;
+                    if ($pageCount === 1) {
+                        $bounces++;
+                    }
+                }
                 $pageCount = 0;
             };
             foreach ($rows as $r) {
                 $ts = strtotime((string) $r->created_at);
-                if ($r->ip_address !== $curIp) { $close(); $curIp = $r->ip_address; $lastTs = null; }
-                if ($lastTs !== null && ($ts - $lastTs) > $gap) { $close(); }
-                $pageCount++; $lastTs = $ts;
+                if ($r->ip_address !== $curIp) {
+                    $close();
+                    $curIp = $r->ip_address;
+                    $lastTs = null;
+                }
+                if ($lastTs !== null && ($ts - $lastTs) > $gap) {
+                    $close();
+                }
+                $pageCount++;
+                $lastTs = $ts;
             }
             $close();
-            $bounceRate      = $sessions > 0 ? round($bounces / $sessions * 100, 1) : 0;
+            $bounceRate = $sessions > 0 ? round($bounces / $sessions * 100, 1) : 0;
             $pagesPerSession = $sessions > 0 ? round($totalVisits / $sessions, 1) : 0;
         }
 
         // ── Channel grouping (Direct / Organic Search / Social / Referral) ────
         $siteHost = strtolower(request()->getHost());
         $channelOf = function (?string $ref) use ($siteHost) {
-            if (!$ref) return 'Direct';
+            if (!$ref) {
+                return 'Direct';
+            }
             $h = strtolower((string) parse_url($ref, PHP_URL_HOST));
-            if ($h === '' || $h === $siteHost) return 'Direct';
-            if (preg_match('/(^|\.)(google|bing|yahoo|duckduckgo|yandex|baidu|ecosia|ask)\./', $h)) return 'Organic Search';
-            if (preg_match('/(^|\.)(facebook|fb|instagram|twitter|t\.co|x\.com|linkedin|youtube|youtu\.be|pinterest|reddit|tiktok|whatsapp|telegram)/', $h)) return 'Social';
+            if ($h === '' || $h === $siteHost) {
+                return 'Direct';
+            }
+            if (preg_match('/(^|\.)(google|bing|yahoo|duckduckgo|yandex|baidu|ecosia|ask)\./', $h)) {
+                return 'Organic Search';
+            }
+            if (preg_match('/(^|\.)(facebook|fb|instagram|twitter|t\.co|x\.com|linkedin|youtube|youtu\.be|pinterest|reddit|tiktok|whatsapp|telegram)/', $h)) {
+                return 'Social';
+            }
+
             return 'Referral';
         };
         $channelCounts = [];
@@ -1054,13 +1153,17 @@ class DashboardController extends Controller
             $channelCounts[$ch] = ($channelCounts[$ch] ?? 0) + (int) $rr->count;
         }
         arsort($channelCounts);
-        $channels = collect($channelCounts)->map(fn($v, $k) => ['label' => $k, 'count' => $v])->values();
+        $channels = collect($channelCounts)->map(fn ($v, $k) => ['label' => $k, 'count' => $v])->values();
 
         // ── Named traffic sources (Google / Facebook / Instagram / … / Direct / other site) ──
         $sourceOf = function (?string $ref) use ($siteHost) {
-            if (!$ref) return ['Direct', null];
+            if (!$ref) {
+                return ['Direct', null];
+            }
             $h = strtolower((string) parse_url($ref, PHP_URL_HOST));
-            if ($h === '' || $h === $siteHost) return ['Direct', null];
+            if ($h === '' || $h === $siteHost) {
+                return ['Direct', null];
+            }
             $h = preg_replace('/^www\./', '', $h);
             $named = [
                 'google' => ['Google', 'google.com'], 'bing' => ['Bing', 'bing.com'],
@@ -1076,18 +1179,22 @@ class DashboardController extends Controller
                 'telegram' => ['Telegram', 'telegram.org'], 't.me' => ['Telegram', 'telegram.org'],
             ];
             foreach ($named as $needle => $pair) {
-                if (strpos($h, $needle) !== false) return $pair;
+                if (strpos($h, $needle) !== false) {
+                    return $pair;
+                }
             }
+
             return [$h, $h]; // any other site — show its domain
         };
         $sourceCounts = [];
         foreach (Analytics::select('referrer', DB::raw('count(*) as count'))->where('created_at', '>=', $start)->groupBy('referrer')->get() as $rr) {
             [$label, $domain] = $sourceOf($rr->referrer);
-            if (!isset($sourceCounts[$label])) $sourceCounts[$label] = ['label' => $label, 'count' => 0, 'domain' => $domain];
+            if (!isset($sourceCounts[$label])) {
+                $sourceCounts[$label] = ['label' => $label, 'count' => 0, 'domain' => $domain];
+            }
             $sourceCounts[$label]['count'] += (int) $rr->count;
         }
         $trafficSources = collect($sourceCounts)->sortByDesc('count')->take(12)->values();
-
 
         // ── Recent visits ─────────────────────────────────────────────────────
         $recent = Analytics::latest()->limit(12)->get();
@@ -1115,7 +1222,7 @@ class DashboardController extends Controller
             $visitsSeries[] = $v;
             $uniqueSeries[] = (int) round($v * 0.66);
         }
-        $totalVisits    = array_sum($visitsSeries);
+        $totalVisits = array_sum($visitsSeries);
         $uniqueVisitors = array_sum($uniqueSeries);
         $pct = fn ($n) => (int) round($uniqueVisitors * $n);
 
@@ -1134,7 +1241,7 @@ class DashboardController extends Controller
         ])->map(fn ($r) => (object) [
             'url' => $r[0], 'browser' => $r[1], 'device_type' => $r[2], 'os' => $r[3],
             'country_code' => $r[4], 'city' => $r[5], 'country' => $r[6],
-            'ip_address' => '203.0.113.' . mt_rand(2, 250), 'referrer' => null,
+            'ip_address' => '203.0.113.'.mt_rand(2, 250), 'referrer' => null,
             'created_at' => now()->subMinutes($r[7]),
         ]);
 
@@ -1145,8 +1252,8 @@ class DashboardController extends Controller
             'thisMonth' => (int) round($totalVisits * (30 / max(1, $range))),
             'labels' => $labels, 'visitsSeries' => $visitsSeries, 'uniqueSeries' => $uniqueSeries,
             'browsers' => $arr([['Chrome', $pct(0.62)], ['Safari', $pct(0.19)], ['Firefox', $pct(0.09)], ['Edge', $pct(0.07)], ['Opera', $pct(0.03)]]),
-            'devices'  => $arr([['Desktop', $pct(0.57)], ['Mobile', $pct(0.37)], ['Tablet', $pct(0.06)]]),
-            'osDist'   => $arr([['Windows', $pct(0.46)], ['Android', $pct(0.24)], ['iOS', $pct(0.17)], ['macOS', $pct(0.10)], ['Linux', $pct(0.03)]]),
+            'devices' => $arr([['Desktop', $pct(0.57)], ['Mobile', $pct(0.37)], ['Tablet', $pct(0.06)]]),
+            'osDist' => $arr([['Windows', $pct(0.46)], ['Android', $pct(0.24)], ['iOS', $pct(0.17)], ['macOS', $pct(0.10)], ['Linux', $pct(0.03)]]),
             'topPages' => $obj([['/', $pct(0.28)], ['/pricing', $pct(0.14)], ['/features', $pct(0.11)], ['/blog', $pct(0.09)], ['/about', $pct(0.07)], ['/contact', $pct(0.05)], ['/blog/getting-started', $pct(0.04)], ['/docs', $pct(0.03)]], 'url'),
             'topReferrers' => $obj([['Direct', $pct(0.42)], ['google.com', $pct(0.24)], ['facebook.com', $pct(0.12)], ['x.com', $pct(0.06)], ['linkedin.com', $pct(0.05)], ['github.com', $pct(0.03)]], 'ref'),
             'topCountries' => $arr([['United States', $pct(0.34)], ['United Kingdom', $pct(0.13)], ['India', $pct(0.11)], ['Germany', $pct(0.08)], ['Canada', $pct(0.07)], ['Australia', $pct(0.05)], ['France', $pct(0.04)], ['Brazil', $pct(0.03)]]),
@@ -1182,10 +1289,10 @@ class DashboardController extends Controller
         }
 
         // Locked preview → sample live figures, never the site's real real-time data.
-        if (! falcon_pro_editable('analytics')) {
+        if (!falcon_pro_editable('analytics')) {
             return response()->json([
-                'active'      => mt_rand(18, 42),
-                'minutes'     => collect(range(1, 30))->map(fn () => mt_rand(2, 22))->all(),
+                'active' => mt_rand(18, 42),
+                'minutes' => collect(range(1, 30))->map(fn () => mt_rand(2, 22))->all(),
                 'activePages' => [
                     ['path' => '/', 'count' => mt_rand(6, 16)],
                     ['path' => '/pricing', 'count' => mt_rand(3, 9)],
@@ -1200,9 +1307,9 @@ class DashboardController extends Controller
             ]);
         }
 
-        $since5  = now()->subMinutes(5);
+        $since5 = now()->subMinutes(5);
         $since30 = now()->subMinutes(30);
-        $host    = request()->getSchemeAndHttpHost();
+        $host = request()->getSchemeAndHttpHost();
 
         $active = Analytics::where('created_at', '>=', $since5)->distinct()->count('ip_address');
 
@@ -1221,23 +1328,22 @@ class DashboardController extends Controller
             ->map(fn ($r) => ['path' => falcon_visit_page($r->url), 'count' => (int) $r->count]);
 
         $recent = Analytics::latest()->limit(8)->get()->map(fn ($v) => [
-            'path'    => \Illuminate\Support\Str::limit(falcon_visit_page($v->url), 40),
+            'path' => Str::limit(falcon_visit_page($v->url), 40),
             'country' => $v->country,
-            'code'    => $v->country_code ? strtolower($v->country_code) : null,
-            'device'  => $v->device_type,
-            'ago'     => $v->created_at ? \Illuminate\Support\Carbon::parse($v->created_at)->diffForHumans(null, true) . ' ago' : '',
+            'code' => $v->country_code ? strtolower($v->country_code) : null,
+            'device' => $v->device_type,
+            'ago' => $v->created_at ? Carbon::parse($v->created_at)->diffForHumans(null, true).' ago' : '',
         ]);
 
         return response()->json([
-            'active'      => $active,
-            'minutes'     => $minutes,
+            'active' => $active,
+            'minutes' => $minutes,
             'activePages' => $activePages,
-            'recent'      => $recent,
-            'time'        => now()->format('g:i:s A'),
+            'recent' => $recent,
+            'time' => now()->format('g:i:s A'),
         ]);
     }
 
-    
     public function bulkDeleteLogs(Request $request)
     {
         if (!auth()->user()->hasPermission('manage_settings')) {
@@ -1249,7 +1355,8 @@ class DashboardController extends Controller
 
         if ($action === 'delete' && !empty($ids)) {
             ActivityLog::whereIn('id', $ids)->delete();
-            falcon_log_activity('logs_bulk_deleted', "Deleted " . count($ids) . " activity log entries");
+            falcon_log_activity('logs_bulk_deleted', 'Deleted '.count($ids).' activity log entries');
+
             return redirect()->back()->with('success', 'Selected logs deleted successfully!');
         }
 

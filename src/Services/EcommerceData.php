@@ -22,7 +22,7 @@ class EcommerceData
             'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
             'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu',
             'Uganda', 'Ukraine', 'United Arab Emirates (UAE)', 'United Kingdom (UK)', 'United States (US)', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam',
-            'Yemen', 'Zambia', 'Zimbabwe'
+            'Yemen', 'Zambia', 'Zimbabwe',
         ];
 
         if (!$filtered) {
@@ -39,7 +39,7 @@ class EcommerceData
                 $allowedCountries = (array) get_shop_option('shop_selling_specific_countries', []);
             } elseif ($sellingMode === 'all_except') {
                 $except = (array) get_shop_option('shop_selling_except_countries', []);
-                $allowedCountries = array_filter($allCountries, fn($c) => !in_array($c, $except));
+                $allowedCountries = array_filter($allCountries, fn ($c) => !in_array($c, $except));
             }
 
             // Apply Shipping Restrictions
@@ -83,6 +83,7 @@ class EcommerceData
         }
 
         ksort($list);
+
         return $list;
     }
 
@@ -98,13 +99,17 @@ class EcommerceData
      */
     public static function countryToIso2(?string $value): ?string
     {
-        if (!$value) return null;
+        if (!$value) {
+            return null;
+        }
 
         // Drop a region suffix written with a spaced dash ("Name — Region" / "Name - Region").
         $v = preg_split('/\s+[–—-]\s+/u', trim($value))[0] ?? '';
         // Drop a trailing parenthetical, e.g. "United States (US)".
         $v = trim(preg_replace('/\s*\(.*?\)\s*/u', '', $v));
-        if ($v === '') return null;
+        if ($v === '') {
+            return null;
+        }
 
         $codes = self::countryNameMap();
 
@@ -121,13 +126,18 @@ class EcommerceData
     {
         $code = strtoupper($code);
         if (class_exists('\Locale')) {
-            $name = \Locale::getDisplayRegion('-' . $code, 'en');
-            if ($name && strtoupper($name) !== $code) return $name;
+            $name = \Locale::getDisplayRegion('-'.$code, 'en');
+            if ($name && strtoupper($name) !== $code) {
+                return $name;
+            }
         }
         $rev = [];
         foreach (self::countryNameMap() as $name => $c) {
-            if (!isset($rev[$c])) $rev[$c] = ucwords($name);
+            if (!isset($rev[$c])) {
+                $rev[$c] = ucwords($name);
+            }
         }
+
         return $rev[$code] ?? $code;
     }
 
@@ -298,7 +308,7 @@ class EcommerceData
             'SZL' => 'Swazi Lilangeni (L) - SZL',
             'THB' => 'Thai Baht (฿) - THB',
             'TJS' => 'Tajikistani Somoni (SM) - TJS',
-               'TOP' => 'Tongan Paʻanga (T$) - TOP',
+            'TOP' => 'Tongan Paʻanga (T$) - TOP',
             'TRY' => 'Turkish Lira (₺) - TRY',
             'TTD' => 'Trinidad & Tobago Dollar ($) - TTD',
             'TWD' => 'New Taiwan Dollar ($) - TWD',
@@ -322,6 +332,7 @@ class EcommerceData
             'ZWL' => 'Zimbabwean Dollar ($) - ZWL',
         ];
         ksort($currencies);
+
         return $currencies;
     }
 
@@ -333,6 +344,7 @@ class EcommerceData
         if (preg_match_all('/\(([^)]+)\)/', $label, $matches)) {
             return end($matches[1]);
         }
+
         return '$';
     }
 }

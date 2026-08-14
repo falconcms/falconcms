@@ -2,9 +2,9 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
 use FalconCms\Core\Models\BlockedIp;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class BlacklistController extends Controller
 {
@@ -17,9 +17,9 @@ class BlacklistController extends Controller
         $query = BlockedIp::latest();
 
         if ($request->filled('s')) {
-            $query->where('ip_address', 'like', '%' . $request->s . '%')
-                  ->orWhere('country', 'like', '%' . $request->s . '%')
-                  ->orWhere('reason', 'like', '%' . $request->s . '%');
+            $query->where('ip_address', 'like', '%'.$request->s.'%')
+                ->orWhere('country', 'like', '%'.$request->s.'%')
+                ->orWhere('reason', 'like', '%'.$request->s.'%');
         }
 
         $blockedIps = $query->paginate(10)->withQueryString();
@@ -27,8 +27,8 @@ class BlacklistController extends Controller
         // Backfill geo for blocked IPs missing a country (older rows, or earlier failed lookups).
         // Runs after the response so the page is never slowed; ip-api is rate-limited, so cap per load.
         $needGeo = BlockedIp::where(function ($q) {
-                $q->whereNull('country')->orWhere('country', '')->orWhere('country', 'Unknown');
-            })->whereNotIn('ip_address', ['127.0.0.1', '::1'])
+            $q->whereNull('country')->orWhere('country', '')->orWhere('country', 'Unknown');
+        })->whereNotIn('ip_address', ['127.0.0.1', '::1'])
             ->limit(15)->get(['id', 'ip_address']);
         if ($needGeo->isNotEmpty()) {
             app()->terminating(function () use ($needGeo) {
@@ -37,14 +37,15 @@ class BlacklistController extends Controller
                         $geo = falcon_geoip($row->ip_address);
                         if (!empty($geo['country'])) {
                             BlockedIp::where('id', $row->id)->update([
-                                'country'      => $geo['country'],
+                                'country' => $geo['country'],
                                 'country_code' => $geo['country_code'] ? strtolower($geo['country_code']) : null,
-                                'city'         => $geo['city'],
-                                'region'       => $geo['region'],
-                                'isp'          => $geo['isp'],
+                                'city' => $geo['city'],
+                                'region' => $geo['region'],
+                                'isp' => $geo['isp'],
                             ]);
                         }
-                    } catch (\Throwable $e) {}
+                    } catch (\Throwable $e) {
+                    }
                 }
             });
         }
@@ -63,6 +64,7 @@ class BlacklistController extends Controller
 
         if ($action === 'delete' && !empty($ids)) {
             BlockedIp::whereIn('id', $ids)->delete();
+
             return redirect()->route('admin.blacklist.index')->with('success', 'Selected IPs unblocked successfully.');
         }
 

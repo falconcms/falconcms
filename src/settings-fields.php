@@ -33,12 +33,12 @@
 
 use FalconCms\Core\Support\SettingsExtension;
 
-if (! function_exists('falcon_add_settings_field')) {
+if (!function_exists('falcon_add_settings_field')) {
     /**
      * Register a field on a settings screen.
      *
-     * @param array $args id/name, label, type, description, options, default,
-     *                    placeholder, tab, screen ('general'|'seo'), order, …
+     * @param  array  $args  id/name, label, type, description, options, default,
+     *                       placeholder, tab, screen ('general'|'seo'), order, …
      */
     function falcon_add_settings_field(array $args): void
     {
@@ -46,11 +46,11 @@ if (! function_exists('falcon_add_settings_field')) {
     }
 }
 
-if (! function_exists('falcon_add_settings_tab')) {
+if (!function_exists('falcon_add_settings_tab')) {
     /**
      * Register a tab on a settings screen.
      *
-     * @param array $args id, label, icon, screen ('general'|'seo'), order
+     * @param  array  $args  id, label, icon, screen ('general'|'seo'), order
      */
     function falcon_add_settings_tab(array $args): void
     {

@@ -16,15 +16,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (! Schema::hasTable('shop_products')) {
+        if (!Schema::hasTable('shop_products')) {
             return;
         }
 
         Schema::table('shop_products', function (Blueprint $table) {
-            if (! Schema::hasColumn('shop_products', 'upsell_ids')) {
+            if (!Schema::hasColumn('shop_products', 'upsell_ids')) {
                 $table->json('upsell_ids')->nullable()->after('attributes_data');
             }
-            if (! Schema::hasColumn('shop_products', 'cross_sell_ids')) {
+            if (!Schema::hasColumn('shop_products', 'cross_sell_ids')) {
                 $table->json('cross_sell_ids')->nullable()->after('upsell_ids');
             }
         });
@@ -32,7 +32,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (! Schema::hasTable('shop_products')) {
+        if (!Schema::hasTable('shop_products')) {
             return;
         }
 

@@ -2,10 +2,10 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
 use App\Models\User;
 use FalconCms\Core\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -19,45 +19,46 @@ class UserController extends Controller
         $query = User::with('role');
 
         if ($request->filled('s')) {
-            $query->where(function($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->s . '%')
-                  ->orWhere('email', 'like', '%' . $request->s . '%')
-                  ->orWhere('username', 'like', '%' . $request->s . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%'.$request->s.'%')
+                    ->orWhere('email', 'like', '%'.$request->s.'%')
+                    ->orWhere('username', 'like', '%'.$request->s.'%');
             });
         }
 
         if ($request->filled('role')) {
-            $query->whereHas('role', function($q) use ($request) {
+            $query->whereHas('role', function ($q) use ($request) {
                 $q->where('slug', $request->role);
             });
         }
 
         if ($request->status === 'blocked') {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('is_blocked', true)
-                  ->orWhere(function($sq) {
-                      $sq->whereNotNull('blocked_until')
-                         ->where('blocked_until', '>', now());
-                  });
+                    ->orWhere(function ($sq) {
+                        $sq->whereNotNull('blocked_until')
+                            ->where('blocked_until', '>', now());
+                    });
             });
         }
 
         $users = $query->latest()->paginate(10)->withQueryString();
-        
+
         $allCount = User::count();
-        $roles = Role::all()->map(function($role) {
+        $roles = Role::all()->map(function ($role) {
             $role->count = User::where('role_id', $role->id)->count();
+
             return $role;
         });
 
         $blockedCount = User::where('is_blocked', true)
-            ->orWhere(function($q) {
+            ->orWhere(function ($q) {
                 $q->whereNotNull('blocked_until')
-                  ->where('blocked_until', '>', now());
+                    ->where('blocked_until', '>', now());
             })->count();
-        
+
         $allUsers = User::all(); // For reassignment dropdown
-        
+
         return view('falcon-cms::admin.users.index', compact(
             'users', 'allCount', 'roles', 'blockedCount', 'allUsers'
         ));
@@ -69,6 +70,7 @@ class UserController extends Controller
             abort(403);
         }
         $roles = Role::orderBy('name')->get();
+
         return view('falcon-cms::admin.users.create', compact('roles'));
     }
 
@@ -95,10 +97,10 @@ class UserController extends Controller
 
         $user = User::create([
             'username' => $validated['username'],
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
+            'name' => $validated['name'],
+            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role_id'  => $roles[0] ?? null,
+            'role_id' => $roles[0] ?? null,
         ]);
         $user->assignRoles($roles);
         falcon_log_activity('created', "Created a new user: {$user->name} ({$user->username})", $user);
@@ -119,8 +121,10 @@ class UserController extends Controller
         }
 
         $roles = Role::all();
+
         return view('falcon-cms::admin.users.edit', compact('user', 'roles'));
     }
+
     public function update(Request $request, User $user)
     {
         if (!auth()->user()->hasPermission('manage_users') && auth()->id() !== $user->id) {
@@ -130,9 +134,9 @@ class UserController extends Controller
         $canManageRoles = auth()->user()->isAdmin();
 
         $rules = [
-            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'username' => 'required|string|max:255|unique:users,username,'.$user->id,
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8|confirmed',
         ];
         if ($canManageRoles) {
@@ -157,14 +161,16 @@ class UserController extends Controller
         // which also prevents self-escalation via the profile page.
         if ($canManageRoles) {
             $roles = array_values(array_unique(array_map('intval', $request->input('roles', []))));
-            if (\FalconCms\Core\Models\Role::whereIn('id', $roles)->where('slug', 'super-admin')->exists()
+            if (Role::whereIn('id', $roles)->where('slug', 'super-admin')->exists()
                 && !auth()->user()->hasRole('super-admin')) {
                 return redirect()->back()->with('error', 'Only a Super Admin can assign the Super Admin role.')->withInput();
             }
         } else {
             $roles = $user->cmsRoleIds();
         }
-        if (empty($roles)) $roles = array_values(array_filter([$user->role_id]));
+        if (empty($roles)) {
+            $roles = array_values(array_filter([$user->role_id]));
+        }
 
         unset($validated['roles']);
         $user->update($validated);
@@ -207,10 +213,12 @@ class UserController extends Controller
             DB::commit();
 
             falcon_log_activity('deleted', "Deleted user: {$name}", $user);
+
             return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('admin.users.index')->with('error', 'An error occurred while deleting the user: ' . $e->getMessage());
+
+            return redirect()->route('admin.users.index')->with('error', 'An error occurred while deleting the user: '.$e->getMessage());
         }
     }
 
@@ -238,13 +246,15 @@ class UserController extends Controller
             $user->last_failed_login_ip = null;
             $user->save();
             falcon_log_activity('updated', "Unblocked user: {$user->name}", $user);
-            return redirect()->route('admin.users.index')->with('success', "User has been unblocked successfully.");
+
+            return redirect()->route('admin.users.index')->with('success', 'User has been unblocked successfully.');
         } else {
             // Block
             $user->is_blocked = true;
             $user->save();
             falcon_log_activity('updated', "Blocked user: {$user->name}", $user);
-            return redirect()->route('admin.users.index')->with('success', "User has been blocked successfully.");
+
+            return redirect()->route('admin.users.index')->with('success', 'User has been blocked successfully.');
         }
     }
 
@@ -271,6 +281,7 @@ class UserController extends Controller
                 $user->delete();
                 falcon_log_activity('deleted', "Deleted user: {$name}", $user);
             }
+
             return redirect()->back()->with('success', 'Selected users deleted successfully.');
         }
 
@@ -280,6 +291,7 @@ class UserController extends Controller
                 $user->update(['is_blocked' => true]);
                 falcon_log_activity('updated', "Blocked user: {$user->name}", $user);
             }
+
             return redirect()->back()->with('success', 'Selected users blocked successfully.');
         }
 
@@ -289,10 +301,11 @@ class UserController extends Controller
                 $user->update([
                     'is_blocked' => false,
                     'login_attempts' => 0,
-                    'blocked_until' => null
+                    'blocked_until' => null,
                 ]);
                 falcon_log_activity('updated', "Unblocked user: {$user->name}", $user);
             }
+
             return redirect()->back()->with('success', 'Selected users unblocked successfully.');
         }
 

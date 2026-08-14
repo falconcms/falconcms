@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProductData extends Model
 {
     protected $table = 'shop_products';
+
     protected $fillable = [
         'post_id', 'type', 'tax_status', 'attributes_data', 'price', 'sale_price', 'sale_ends_at',
         'is_downloadable', 'download_expiry_days',
@@ -33,7 +34,7 @@ class ProductData extends Model
      */
     public function getDimensionsAttribute(): ?string
     {
-        $trim  = static fn ($v) => rtrim(rtrim(number_format((float) $v, 3, '.', ''), '0'), '.');
+        $trim = static fn ($v) => rtrim(rtrim(number_format((float) $v, 3, '.', ''), '0'), '.');
         $parts = array_map($trim, array_filter(
             [$this->length, $this->width, $this->height],
             static fn ($v) => $v !== null && (float) $v > 0
@@ -140,7 +141,7 @@ class ProductData extends Model
         // One price across every variation reads better as a single figure than as "X – X".
         return $low === $high
             ? falcon_price_format($low)
-            : falcon_price_format($low) . ' – ' . falcon_price_format($high);
+            : falcon_price_format($low).' – '.falcon_price_format($high);
     }
 
     /**
@@ -199,6 +200,7 @@ class ProductData extends Model
                         return true;
                     }
                 }
+
                 return false;
             }
         }
@@ -249,9 +251,9 @@ class ProductData extends Model
 
     protected $casts = [
         'attributes_data' => 'array',
-        'upsell_ids'      => 'array',
-        'cross_sell_ids'  => 'array',
-        'sale_ends_at'    => 'datetime',
+        'upsell_ids' => 'array',
+        'cross_sell_ids' => 'array',
+        'sale_ends_at' => 'datetime',
         'is_downloadable' => 'boolean',
     ];
 

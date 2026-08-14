@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Console\Commands;
 
+use FalconCms\Core\FalconCmsServiceProvider;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -26,12 +27,14 @@ class MakeTheme extends Command
         $slug = Str::slug($name);
         if ($slug === '') {
             $this->error('Invalid theme name.');
+
             return self::FAILURE;
         }
 
-        $dir = resource_path('views/themes/' . $slug);
+        $dir = resource_path('views/themes/'.$slug);
         if (File::isDirectory($dir)) {
             $this->error("Theme '{$slug}' already exists at {$dir}.");
+
             return self::FAILURE;
         }
 
@@ -47,23 +50,23 @@ class MakeTheme extends Command
     /** A full, self-contained starter theme. */
     protected function scaffoldStandalone(string $dir, string $slug, string $name): int
     {
-        File::ensureDirectoryExists($dir . '/layouts');
+        File::ensureDirectoryExists($dir.'/layouts');
 
-        $this->putJson($dir . '/theme.json', [
-            'name'        => $name,
-            'version'     => '1.0.0',
+        $this->putJson($dir.'/theme.json', [
+            'name' => $name,
+            'version' => '1.0.0',
             'description' => 'A FalconCMS theme.',
-            'author'      => '',
-            'screenshot'  => 'screenshot.png',
+            'author' => '',
+            'screenshot' => 'screenshot.png',
         ]);
 
-        File::put($dir . '/functions.php', $this->functionsStub($name));
-        File::put($dir . '/options.php', $this->optionsStub());
-        File::put($dir . '/layouts/app.blade.php', $this->render($this->layoutStub(), $slug, $name));
-        File::put($dir . '/index.blade.php', $this->render($this->indexStub(), $slug, $name));
-        File::put($dir . '/page.blade.php', $this->render($this->pageStub(), $slug, $name));
-        File::put($dir . '/single.blade.php', $this->render($this->singleStub(), $slug, $name));
-        File::put($dir . '/404.blade.php', $this->render($this->notFoundStub(), $slug, $name));
+        File::put($dir.'/functions.php', $this->functionsStub($name));
+        File::put($dir.'/options.php', $this->optionsStub());
+        File::put($dir.'/layouts/app.blade.php', $this->render($this->layoutStub(), $slug, $name));
+        File::put($dir.'/index.blade.php', $this->render($this->indexStub(), $slug, $name));
+        File::put($dir.'/page.blade.php', $this->render($this->pageStub(), $slug, $name));
+        File::put($dir.'/single.blade.php', $this->render($this->singleStub(), $slug, $name));
+        File::put($dir.'/404.blade.php', $this->render($this->notFoundStub(), $slug, $name));
 
         if ($this->option('shop')) {
             $count = $this->copyShopTemplates($dir, $slug);
@@ -74,7 +77,7 @@ class MakeTheme extends Command
 
         $this->info("Theme scaffolded at: {$dir}");
         $this->line('Add a screenshot.png (1200×900) so it looks good on the Themes screen.');
-        if (! $this->option('shop')) {
+        if (!$this->option('shop')) {
             $this->line('Pass --shop to also scaffold the store templates.');
         }
         $this->line("Activate it under Appearance → Themes, or set active_theme to '{$slug}'.");
@@ -91,20 +94,20 @@ class MakeTheme extends Command
     protected function copyShopTemplates(string $dir, string $slug): int
     {
         $source = $this->baseThemePath();
-        if (! $source) {
+        if (!$source) {
             return 0;
         }
 
         // Top-level product templates + the whole ecommerce/ folder.
         $files = ['archive-product.blade.php', 'single-product.blade.php', 'single-product-variable.blade.php'];
-        foreach (File::glob($source . '/ecommerce/*.blade.php') as $eco) {
-            $files[] = 'ecommerce/' . basename($eco);
+        foreach (File::glob($source.'/ecommerce/*.blade.php') as $eco) {
+            $files[] = 'ecommerce/'.basename($eco);
         }
 
         $copied = 0;
         foreach ($files as $relative) {
-            $from = $source . '/' . $relative;
-            if (! File::isFile($from)) {
+            $from = $source.'/'.$relative;
+            if (!File::isFile($from)) {
                 continue;
             }
             $contents = str_replace(
@@ -112,8 +115,8 @@ class MakeTheme extends Command
                 "@extends('themes.{$slug}.layouts.app')",
                 File::get($from)
             );
-            File::ensureDirectoryExists(dirname($dir . '/' . $relative));
-            File::put($dir . '/' . $relative, $contents);
+            File::ensureDirectoryExists(dirname($dir.'/'.$relative));
+            File::put($dir.'/'.$relative, $contents);
             $copied++;
         }
 
@@ -127,8 +130,8 @@ class MakeTheme extends Command
         if (File::isDirectory($app)) {
             return $app;
         }
-        $providerDir = dirname((new \ReflectionClass(\FalconCms\Core\FalconCmsServiceProvider::class))->getFileName());
-        $package = $providerDir . '/../resources/views/themes/falcon-theme';
+        $providerDir = dirname((new \ReflectionClass(FalconCmsServiceProvider::class))->getFileName());
+        $package = $providerDir.'/../resources/views/themes/falcon-theme';
 
         return File::isDirectory($package) ? $package : null;
     }
@@ -136,16 +139,16 @@ class MakeTheme extends Command
     /** A child theme that inherits the parent's templates; override selectively. */
     protected function scaffoldChild(string $dir, string $slug, string $name, string $parent): int
     {
-        $this->putJson($dir . '/theme.json', [
-            'name'        => $name,
-            'version'     => '1.0.0',
+        $this->putJson($dir.'/theme.json', [
+            'name' => $name,
+            'version' => '1.0.0',
             'description' => "A child theme of {$parent}.",
-            'author'      => '',
-            'parent'      => $parent,
-            'screenshot'  => 'screenshot.png',
+            'author' => '',
+            'parent' => $parent,
+            'screenshot' => 'screenshot.png',
         ]);
 
-        File::put($dir . '/functions.php', $this->functionsStub($name));
+        File::put($dir.'/functions.php', $this->functionsStub($name));
 
         $this->info("Child theme scaffolded at: {$dir}");
         $this->line("It inherits every template from '{$parent}'. Drop a copy of any template");
@@ -161,7 +164,7 @@ class MakeTheme extends Command
 
     protected function putJson(string $path, array $data): void
     {
-        File::put($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+        File::put($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
     }
 
     /** Replace slug/name placeholders in a Blade stub. */

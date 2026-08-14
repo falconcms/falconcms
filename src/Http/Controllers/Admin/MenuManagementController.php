@@ -2,12 +2,16 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\CustomTaxonomy;
 use FalconCms\Core\Models\NavigationMenu;
 use FalconCms\Core\Models\NavigationMenuItem;
 use FalconCms\Core\Models\Post;
-use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Models\ProductCategory;
+use FalconCms\Core\Models\TaxonomyTerm;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Str;
 
 class MenuManagementController extends Controller
@@ -28,36 +32,36 @@ class MenuManagementController extends Controller
         $categories = Category::all();
 
         // Dynamic CPTs for Menu Builder (Only Active, excluding static 'post' and 'page')
-        $customPostTypes = \FalconCms\Core\Models\PostType::where('is_active', true)
+        $customPostTypes = PostType::where('is_active', true)
             ->whereNotIn('slug', ['post', 'page'])
             ->get();
-        
+
         $cptData = [];
         foreach ($customPostTypes as $type) {
             $cptData[] = [
-                'key' => 'cpt_' . $type->slug,
+                'key' => 'cpt_'.$type->slug,
                 'label' => $type->name,
                 'items' => Post::where('type', $type->slug)->where('status', 'published')->latest()->take(20)->get(),
-                'type' => $type->slug
+                'type' => $type->slug,
             ];
         }
 
         // Dynamic Custom Taxonomies for Menu Builder (Grouped by Active CPTs)
-        $customTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
+        $customTaxonomies = CustomTaxonomy::where('is_active', true)
             ->where('hierarchical', true)
             ->get();
         $taxonomyData = [];
-        
-        $allPostTypes = \FalconCms\Core\Models\PostType::where('is_active', true)->get();
-        
+
+        $allPostTypes = PostType::where('is_active', true)->get();
+
         foreach ($allPostTypes as $pt) {
             foreach ($customTaxonomies as $tax) {
                 if (is_array($tax->post_types) && in_array($pt->slug, $tax->post_types)) {
                     $taxonomyData[] = [
-                        'key' => 'tax_' . $pt->slug . '_' . $tax->slug,
+                        'key' => 'tax_'.$pt->slug.'_'.$tax->slug,
                         'label' => $tax->name,
-                        'items' => \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)->orderBy('name')->get(),
-                        'slug' => $tax->slug
+                        'items' => TaxonomyTerm::where('taxonomy_slug', $tax->slug)->orderBy('name')->get(),
+                        'slug' => $tax->slug,
                     ];
                 }
             }
@@ -67,25 +71,25 @@ class MenuManagementController extends Controller
         $menuItemsJson = '[]';
         if ($menu) {
             // Collect all object_ids grouped by type to detect orphans efficiently
-            $allItems = $menu->allItems->flatMap(function($item) {
-                return collect([$item])->concat($item->children->flatMap(fn($c) => collect([$c])->concat($c->children)));
+            $allItems = $menu->allItems->flatMap(function ($item) {
+                return collect([$item])->concat($item->children->flatMap(fn ($c) => collect([$c])->concat($c->children)));
             });
 
-            $postIds     = $allItems->whereNotIn('type', ['category', 'custom'])->pluck('object_id')->filter()->unique()->values()->all();
-            $categoryIds = $allItems->where('type','category')->pluck('object_id')->filter()->unique()->values()->all();
+            $postIds = $allItems->whereNotIn('type', ['category', 'custom'])->pluck('object_id')->filter()->unique()->values()->all();
+            $categoryIds = $allItems->where('type', 'category')->pluck('object_id')->filter()->unique()->values()->all();
 
-            $postsData = $postIds ? \FalconCms\Core\Models\Post::withTrashed()->whereIn('id', $postIds)->get(['id', 'status', 'deleted_at'])->keyBy('id') : collect();
-            
+            $postsData = $postIds ? Post::withTrashed()->whereIn('id', $postIds)->get(['id', 'status', 'deleted_at'])->keyBy('id') : collect();
+
             // Fetch all terms and their taxonomies for status check
-            $termsData = $categoryIds ? \FalconCms\Core\Models\TaxonomyTerm::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
-            $standardCatsData = $categoryIds ? \FalconCms\Core\Models\Category::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
-            $activeTaxSlugs = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
+            $termsData = $categoryIds ? TaxonomyTerm::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
+            $standardCatsData = $categoryIds ? Category::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
+            $activeTaxSlugs = CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
 
-            $buildItem = function($item, $depth) use ($postsData, $termsData, $standardCatsData, $activeTaxSlugs) {
-                $type      = $item->type ?? 'custom';
-                $objectId  = $item->object_id ? (string)$item->object_id : null;
-                $orphaned  = false;
-                $isDraft   = false;
+            $buildItem = function ($item, $depth) use ($postsData, $termsData, $standardCatsData, $activeTaxSlugs) {
+                $type = $item->type ?? 'custom';
+                $objectId = $item->object_id ? (string) $item->object_id : null;
+                $orphaned = false;
+                $isDraft = false;
                 $isTrashed = false;
                 $isInactiveTax = false;
 
@@ -95,8 +99,12 @@ class MenuManagementController extends Controller
                         if (!$post) {
                             $orphaned = true;
                         } else {
-                            if ($post->deleted_at) $isTrashed = true;
-                            if ($post->status === 'draft') $isDraft = true;
+                            if ($post->deleted_at) {
+                                $isTrashed = true;
+                            }
+                            if ($post->status === 'draft') {
+                                $isDraft = true;
+                            }
                         }
                     }
                 } elseif ($type === 'category' && $objectId) {
@@ -121,35 +129,35 @@ class MenuManagementController extends Controller
                 if ($type === 'category' && $objectId) {
                     $term = $termsData->get($objectId);
                     if ($term && $term->taxonomy_slug !== 'category') {
-                        $tax = \FalconCms\Core\Models\CustomTaxonomy::where('slug', $term->taxonomy_slug)->first();
+                        $tax = CustomTaxonomy::where('slug', $term->taxonomy_slug)->first();
                         $pts = $tax ? $tax->post_types : null;
                         $ptSlug = is_array($pts) ? reset($pts) : null;
-                        $pt = \FalconCms\Core\Models\PostType::where('slug', $ptSlug)->first();
+                        $pt = PostType::where('slug', $ptSlug)->first();
                         if ($pt && $tax) {
-                            $sourceLabel = $pt->singular_name . ' ' . $tax->singular_name;
+                            $sourceLabel = $pt->singular_name.' '.$tax->singular_name;
                         }
                     }
                 }
 
                 return [
-                    'id'          => (string)$item->id,
-                    'title'       => $item->title,
-                    'url'         => $item->url ?? '#',
-                    'type'        => $type,
-                    'object_id'   => $objectId,
-                    'icon'        => $item->icon ?? '',
-                    'show_only_icon' => (bool)($item->show_only_icon ?? false),
-                    'target'      => $item->target ?? '_self',
+                    'id' => (string) $item->id,
+                    'title' => $item->title,
+                    'url' => $item->url ?? '#',
+                    'type' => $type,
+                    'object_id' => $objectId,
+                    'icon' => $item->icon ?? '',
+                    'show_only_icon' => (bool) ($item->show_only_icon ?? false),
+                    'target' => $item->target ?? '_self',
                     'mega_menu_id' => $item->mega_menu_id ?? null,
-                    'depth'       => $depth,
-                    'orphaned'    => $orphaned || $isTrashed || $isInactiveTax,
-                    'is_draft'    => $isDraft,
+                    'depth' => $depth,
+                    'orphaned' => $orphaned || $isTrashed || $isInactiveTax,
+                    'is_draft' => $isDraft,
                     'is_inactive_tax' => $isInactiveTax,
-                    'source_label' => $sourceLabel
+                    'source_label' => $sourceLabel,
                 ];
             };
 
-            $flat     = [];
+            $flat = [];
             $topItems = $menu->allItems->where('parent_id', null)->sortBy('order')->values();
             foreach ($topItems as $item) {
                 $flat[] = $buildItem($item, 0);
@@ -163,7 +171,7 @@ class MenuManagementController extends Controller
             $menuItemsJson = json_encode($flat, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
         }
 
-        $productCategories = \FalconCms\Core\Models\ProductCategory::orderBy('name')->get();
+        $productCategories = ProductCategory::orderBy('name')->get();
 
         return view('falcon-cms::admin.menus.index', compact('menus', 'menu', 'pages', 'posts', 'categories', 'menuItemsJson', 'cptData', 'taxonomyData', 'productCategories'));
     }
@@ -171,7 +179,7 @@ class MenuManagementController extends Controller
     public function store(Request $request)
     {
         $request->validate(['name' => 'required|string|max:255']);
-        
+
         $isHeader = $request->has('is_header');
         $isFooter = $request->has('is_footer');
 
@@ -192,6 +200,7 @@ class MenuManagementController extends Controller
         falcon_log_activity('created', "Created a new menu: {$menu->name}", $menu);
 
         forget_nav_menu_cache();
+
         return redirect()->route('admin.menus.index', ['menu' => $menu->id])->with('success', 'Menu created successfully.');
     }
 
@@ -240,16 +249,16 @@ class MenuManagementController extends Controller
         foreach ($items as $index => $item) {
             $newItem = NavigationMenuItem::create([
                 'navigation_menu_id' => $menuId,
-                'parent_id'   => $parentId,
-                'title'       => $item['title'] ?? 'Item',
-                'url'         => $item['url'] ?? '#',
-                'type'        => $item['type'] ?? 'custom',
-                'object_id'   => $item['object_id'] ?? null,
-                'icon'        => $item['icon'] ?? null,
+                'parent_id' => $parentId,
+                'title' => $item['title'] ?? 'Item',
+                'url' => $item['url'] ?? '#',
+                'type' => $item['type'] ?? 'custom',
+                'object_id' => $item['object_id'] ?? null,
+                'icon' => $item['icon'] ?? null,
                 'show_only_icon' => !empty($item['show_only_icon']),
-                'target'      => $item['target'] ?? '_self',
+                'target' => $item['target'] ?? '_self',
                 'mega_menu_id' => $item['mega_menu_id'] ?? null,
-                'order'       => $index,
+                'order' => $index,
             ]);
 
             if (!empty($item['children'])) {
@@ -265,6 +274,7 @@ class MenuManagementController extends Controller
         $menu->delete();
         forget_nav_menu_cache();
         falcon_log_activity('deleted', "Deleted menu: {$name}");
+
         return redirect()->route('admin.menus.index')->with('success', 'Menu deleted.');
     }
 
@@ -275,8 +285,8 @@ class MenuManagementController extends Controller
         // The copy is a plain menu — it must never inherit the header/footer slot
         // (only one menu can hold each, and duplicating shouldn't steal it).
         $newMenu = NavigationMenu::create([
-            'name'      => $menu->name . ' (Copy)',
-            'slug'      => Str::slug($menu->name) . '-copy-' . Str::lower(Str::random(5)),
+            'name' => $menu->name.' (Copy)',
+            'slug' => Str::slug($menu->name).'-copy-'.Str::lower(Str::random(5)),
             'is_header' => false,
             'is_footer' => false,
         ]);
@@ -304,7 +314,7 @@ class MenuManagementController extends Controller
             // item fields stay in sync automatically as the model evolves.
             $newItem = $item->replicate();
             $newItem->navigation_menu_id = $newMenuId;
-            $newItem->parent_id          = $newParentId;
+            $newItem->parent_id = $newParentId;
             $newItem->save();
 
             // Recurse into this item's children.

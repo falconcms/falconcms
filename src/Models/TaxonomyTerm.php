@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 class TaxonomyTerm extends Model
 {
     protected $table = 'taxonomy_terms';
+
     protected $fillable = [
         'taxonomy_slug', 'cpt_slug', 'parent_id', 'name', 'slug',
         'lang_code', 'origin_id', 'description', 'order',
@@ -36,25 +37,30 @@ class TaxonomyTerm extends Model
             array_unshift($path, $parent->slug);
             $parent = $parent->parent;
         }
+
         return implode('/', $path);
     }
 
     public function translations()
     {
         $originId = $this->origin_id ?: $this->id;
+
         return $this->hasMany(TaxonomyTerm::class, 'origin_id', 'id')
-               ->orWhere('id', $originId)
-               ->orWhere('origin_id', $originId);
+            ->orWhere('id', $originId)
+            ->orWhere('origin_id', $originId);
     }
 
     public function getTranslation($locale)
     {
-        if ($this->lang_code === $locale) return $this;
+        if ($this->lang_code === $locale) {
+            return $this;
+        }
         $originId = $this->origin_id ?: $this->id;
+
         return TaxonomyTerm::where('lang_code', $locale)
-                    ->where(function($q) use ($originId) {
-                        $q->where('id', $originId)->orWhere('origin_id', $originId);
-                    })->first();
+            ->where(function ($q) use ($originId) {
+                $q->where('id', $originId)->orWhere('origin_id', $originId);
+            })->first();
     }
 
     public static function generateUniqueSlug($name, $id = 0, $cptSlug = null, $langCode = 'en')
@@ -76,11 +82,12 @@ class TaxonomyTerm extends Model
         $count = 1;
         while (static::where('slug', $slug)
             ->where('id', '!=', $id)
-            ->when($cptSlug, function($q) use ($cptSlug) {
+            ->when($cptSlug, function ($q) use ($cptSlug) {
                 return $q->where('cpt_slug', $cptSlug);
             })->exists()) {
-            $slug = "{$originalSlug}-" . ($count++);
+            $slug = "{$originalSlug}-".($count++);
         }
+
         return $slug;
     }
 }

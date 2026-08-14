@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -23,7 +24,7 @@ class CustomerAddress extends Model
     ];
 
     protected $casts = [
-        'is_default_billing'  => 'boolean',
+        'is_default_billing' => 'boolean',
         'is_default_shipping' => 'boolean',
     ];
 
@@ -35,14 +36,14 @@ class CustomerAddress extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(config('auth.providers.users.model', \App\Models\User::class), 'user_id');
+        return $this->belongsTo(config('auth.providers.users.model', User::class), 'user_id');
     }
 
     /** One line, for pickers and summaries. */
     public function getSummaryAttribute(): string
     {
         $parts = array_filter([
-            trim($this->first_name . ' ' . $this->last_name),
+            trim($this->first_name.' '.$this->last_name),
             $this->address_1,
             $this->address_2,
             $this->city,
@@ -63,7 +64,7 @@ class CustomerAddress extends Model
     {
         $out = [];
         foreach (self::FIELDS as $field) {
-            $out[$section . '_' . $field] = (string) ($this->{$field} ?? '');
+            $out[$section.'_'.$field] = (string) ($this->{$field} ?? '');
         }
 
         // Shipping has no email field on the checkout form; sending one would be a dead key.

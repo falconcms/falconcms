@@ -21,7 +21,7 @@ class Widget extends Model
     public function scopeForArea($query, $area)
     {
         return $query->where('area', $area)
-                     ->where('is_active', true)
-                     ->orderBy('order');
+            ->where('is_active', true)
+            ->orderBy('order');
     }
 }

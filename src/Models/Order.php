@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -10,6 +11,7 @@ class Order extends Model
     use SoftDeletes;
 
     protected $table = 'shop_orders';
+
     protected $fillable = [
         'user_id', 'order_number', 'status',
         'subtotal', 'shipping_total', 'tax_total', 'discount_total', 'coupon_code', 'total',
@@ -27,10 +29,10 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'paid_at'          => 'datetime',
-        'refunded_amount'  => 'decimal:2',
-        'refund_log'       => 'array',
-        'meta'             => 'array',
+        'paid_at' => 'datetime',
+        'refunded_amount' => 'decimal:2',
+        'refund_log' => 'array',
+        'meta' => 'array',
     ];
 
     protected static function boot()
@@ -63,7 +65,7 @@ class Order extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\Models\User::class);
+        return $this->belongsTo(User::class);
     }
 
     public function statusHistory()

@@ -29,8 +29,8 @@ class WordPressImporter
     /** WP status -> Lazy status. */
     private const STATUS_MAP = [
         'publish' => 'published',
-        'future'  => 'scheduled',
-        'draft'   => 'draft',
+        'future' => 'scheduled',
+        'draft' => 'draft',
         'pending' => 'draft',
         'private' => 'draft',
     ];
@@ -57,14 +57,14 @@ class WordPressImporter
 
         $channel = $root->channel;
         $ns = $root->getDocNamespaces(true);
-        $wpNs   = $ns['wp']      ?? 'http://wordpress.org/export/1.2/';
-        $dcNs   = $ns['dc']      ?? 'http://purl.org/dc/elements/1.1/';
-        $cNs    = $ns['content'] ?? 'http://purl.org/rss/1.0/modules/content/';
-        $excNs  = $ns['excerpt'] ?? 'http://wordpress.org/export/1.2/excerpt/';
+        $wpNs = $ns['wp'] ?? 'http://wordpress.org/export/1.2/';
+        $dcNs = $ns['dc'] ?? 'http://purl.org/dc/elements/1.1/';
+        $cNs = $ns['content'] ?? 'http://purl.org/rss/1.0/modules/content/';
+        $excNs = $ns['excerpt'] ?? 'http://wordpress.org/export/1.2/excerpt/';
 
         $out['site'] = [
-            'title'   => (string) ($channel->title ?? ''),
-            'link'    => (string) ($channel->link ?? ''),
+            'title' => (string) ($channel->title ?? ''),
+            'link' => (string) ($channel->link ?? ''),
             'baseUrl' => (string) ($channel->children($wpNs)->base_site_url ?? ''),
         ];
 
@@ -73,15 +73,15 @@ class WordPressImporter
             $out['authors'][] = [
                 'login' => (string) $a->author_login,
                 'email' => (string) $a->author_email,
-                'name'  => (string) $a->author_display_name,
+                'name' => (string) $a->author_display_name,
             ];
         }
 
         // Category & tag definitions (from the channel)
         foreach ($channel->children($wpNs)->category as $c) {
             $out['categories'][] = [
-                'slug'   => (string) $c->category_nicename,
-                'name'   => (string) $c->cat_name,
+                'slug' => (string) $c->category_nicename,
+                'name' => (string) $c->cat_name,
                 'parent' => (string) $c->category_parent, // parent slug or ''
             ];
         }
@@ -105,10 +105,14 @@ class WordPressImporter
             foreach ($term->termmeta as $tm) {
                 if ((string) $tm->meta_key === $wantKey) {
                     $decoded = json_decode((string) $tm->meta_value, true);
-                    if (is_array($decoded)) $payload = $decoded;
+                    if (is_array($decoded)) {
+                        $payload = $decoded;
+                    }
                 }
             }
-            if (!$payload) continue;
+            if (!$payload) {
+                continue;
+            }
             if ($taxonomy === 'nav_menu') {
                 $out['nav_menus'][] = $payload;
             } else {
@@ -124,6 +128,7 @@ class WordPressImporter
             // Attachments: remember their URL keyed by WP post id (for featured images)
             if ($type === 'attachment') {
                 $out['attachments'][(int) $wp->post_id] = (string) $wp->attachment_url;
+
                 continue;
             }
             // Skip non-content types
@@ -135,9 +140,9 @@ class WordPressImporter
             $tags = [];
             $taxTerms = [];
             foreach ($item->category as $cat) {
-                $domain   = (string) ($cat['domain'] ?? '');
+                $domain = (string) ($cat['domain'] ?? '');
                 $nicename = (string) ($cat['nicename'] ?? '');
-                $label    = (string) $cat;
+                $label = (string) $cat;
                 if ($domain === 'post_tag') {
                     $tags[] = ['slug' => $nicename ?: Str::slug($label), 'name' => $label];
                 } elseif ($domain === 'category' || $domain === '') {
@@ -154,30 +159,30 @@ class WordPressImporter
             }
 
             $out['items'][] = [
-                'wp_id'          => (int) $wp->post_id,
-                'type'           => $type,                                   // post | page | <cpt>
-                'title'          => (string) $item->title,
-                'slug'           => (string) $wp->post_name,
-                'status'         => (string) $wp->status,
-                'content'        => (string) $item->children($cNs)->encoded,
-                'excerpt'        => (string) $item->children($excNs)->encoded,
-                'author_login'   => (string) $item->children($dcNs)->creator,
-                'date'           => (string) $wp->post_date,
-                'date_gmt'       => (string) $wp->post_date_gmt,
-                'parent'         => (int) $wp->post_parent,
-                'menu_order'     => (int) $wp->menu_order,
-                'thumbnail_id'   => isset($meta['_thumbnail_id']) ? (int) $meta['_thumbnail_id'] : null,
+                'wp_id' => (int) $wp->post_id,
+                'type' => $type,                                   // post | page | <cpt>
+                'title' => (string) $item->title,
+                'slug' => (string) $wp->post_name,
+                'status' => (string) $wp->status,
+                'content' => (string) $item->children($cNs)->encoded,
+                'excerpt' => (string) $item->children($excNs)->encoded,
+                'author_login' => (string) $item->children($dcNs)->creator,
+                'date' => (string) $wp->post_date,
+                'date_gmt' => (string) $wp->post_date_gmt,
+                'parent' => (int) $wp->post_parent,
+                'menu_order' => (int) $wp->menu_order,
+                'thumbnail_id' => isset($meta['_thumbnail_id']) ? (int) $meta['_thumbnail_id'] : null,
                 'thumbnail_path' => $meta['_thumbnail_path'] ?? null,
-                'editor_type'    => $meta['_falcon_editor_type'] ?? null,
-                'template'       => $meta['_falcon_template'] ?? null,
-                'lang_code'      => $meta['_falcon_lang_code'] ?? null,
-                'seo_meta'       => self::decodeMeta($meta['_falcon_seo'] ?? null),
-                'gallery'        => self::decodeMeta($meta['_falcon_gallery'] ?? null),
-                'custom_fields'  => self::decodeMeta($meta['_falcon_custom_fields'] ?? null),
-                'product'        => self::decodeMeta($meta['_falcon_product'] ?? null),
-                'categories'     => $cats,
-                'tags'           => $tags,
-                'taxonomies'     => $taxTerms,
+                'editor_type' => $meta['_falcon_editor_type'] ?? null,
+                'template' => $meta['_falcon_template'] ?? null,
+                'lang_code' => $meta['_falcon_lang_code'] ?? null,
+                'seo_meta' => self::decodeMeta($meta['_falcon_seo'] ?? null),
+                'gallery' => self::decodeMeta($meta['_falcon_gallery'] ?? null),
+                'custom_fields' => self::decodeMeta($meta['_falcon_custom_fields'] ?? null),
+                'product' => self::decodeMeta($meta['_falcon_product'] ?? null),
+                'categories' => $cats,
+                'tags' => $tags,
+                'taxonomies' => $taxTerms,
             ];
         }
 
@@ -191,9 +196,14 @@ class WordPressImporter
      */
     private static function decodeMeta($value)
     {
-        if ($value === null || $value === '') return null;
-        if (is_array($value)) return $value;
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (is_array($value)) {
+            return $value;
+        }
         $decoded = json_decode((string) $value, true);
+
         return json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
     }
 
@@ -202,14 +212,14 @@ class WordPressImporter
     // =====================================================================
 
     /**
-     * @param  array  $parsed   Output of parse()
-     * @param  array  $opts     ['user_id' => int, 'lang' => string, 'import_pages' => bool]
-     * @return array  summary counts
+     * @param  array  $parsed  Output of parse()
+     * @param  array  $opts  ['user_id' => int, 'lang' => string, 'import_pages' => bool]
+     * @return array summary counts
      */
     public function import(array $parsed, array $opts = []): array
     {
         $userId = $opts['user_id'] ?? (auth()->id() ?? optional(DB::table('users')->first())->id);
-        $lang   = $opts['lang'] ?? (function_exists('app') ? app()->getLocale() : 'en');
+        $lang = $opts['lang'] ?? (function_exists('app') ? app()->getLocale() : 'en');
         $importPages = $opts['import_pages'] ?? true;
 
         $summary = [
@@ -220,12 +230,18 @@ class WordPressImporter
         // 1) Categories (two pass for parents)
         $catIdBySlug = [];
         foreach ($parsed['categories'] ?? [] as $c) {
-            if (empty($c['slug'])) continue;
+            if (empty($c['slug'])) {
+                continue;
+            }
             $cat = Category::firstOrCreate(
                 ['slug' => $c['slug'], 'lang_code' => $lang],
                 ['name' => $c['name'] ?: $c['slug']]
             );
-            if ($cat->wasRecentlyCreated) $summary['categories']++; else $summary['skipped']++;
+            if ($cat->wasRecentlyCreated) {
+                $summary['categories']++;
+            } else {
+                $summary['skipped']++;
+            }
             $catIdBySlug[$c['slug']] = ['id' => $cat->id, 'parent' => $c['parent'] ?? ''];
         }
         foreach ($catIdBySlug as $slug => $info) {
@@ -237,12 +253,18 @@ class WordPressImporter
         // 2) Tags
         $tagIdBySlug = [];
         foreach ($parsed['tags'] ?? [] as $t) {
-            if (empty($t['slug'])) continue;
+            if (empty($t['slug'])) {
+                continue;
+            }
             $tag = Tag::firstOrCreate(
                 ['slug' => $t['slug'], 'lang_code' => $lang],
                 ['name' => $t['name'] ?: $t['slug']]
             );
-            if ($tag->wasRecentlyCreated) $summary['tags']++; else $summary['skipped']++;
+            if ($tag->wasRecentlyCreated) {
+                $summary['tags']++;
+            } else {
+                $summary['skipped']++;
+            }
             $tagIdBySlug[$t['slug']] = $tag->id;
         }
 
@@ -251,7 +273,7 @@ class WordPressImporter
             try {
                 $summary['menus'] += $this->importNavMenu($menuData, $lang) ? 1 : 0;
             } catch (\Throwable $e) {
-                $summary['errors'][] = 'Menu ' . ($menuData['name'] ?? '?') . ': ' . $e->getMessage();
+                $summary['errors'][] = 'Menu '.($menuData['name'] ?? '?').': '.$e->getMessage();
             }
         }
 
@@ -260,7 +282,7 @@ class WordPressImporter
             try {
                 $summary['layouts'] = $this->importLayouts($parsed['layouts'], $lang);
             } catch (\Throwable $e) {
-                $summary['errors'][] = 'Layouts: ' . $e->getMessage();
+                $summary['errors'][] = 'Layouts: '.$e->getMessage();
             }
         }
 
@@ -271,7 +293,11 @@ class WordPressImporter
             try {
                 $wpType = $it['type'];
                 $isPage = $wpType === 'page';
-                if ($isPage && !$importPages) { $summary['skipped']++; continue; }
+                if ($isPage && !$importPages) {
+                    $summary['skipped']++;
+
+                    continue;
+                }
 
                 $type = $isPage ? 'page' : ($wpType === 'post' ? 'post' : $wpType);
 
@@ -287,6 +313,7 @@ class WordPressImporter
                     $this->restoreProductData($existing, $type, $it['product'] ?? null);
                     $this->restoreTaxonomyTerms($existing, $it['taxonomies'] ?? [], $lang);
                     $summary['skipped']++;
+
                     continue;
                 }
 
@@ -310,18 +337,18 @@ class WordPressImporter
                 }
 
                 $post = Post::create([
-                    'title'        => $it['title'] ?: '(no title)',
-                    'slug'         => $slug,
-                    'content'      => $it['content'],
-                    'excerpt'      => $it['excerpt'],
-                    'type'         => $type,
-                    'status'       => $status,
+                    'title' => $it['title'] ?: '(no title)',
+                    'slug' => $slug,
+                    'content' => $it['content'],
+                    'excerpt' => $it['excerpt'],
+                    'type' => $type,
+                    'status' => $status,
                     'published_at' => $date,
-                    'editor_type'  => $it['editor_type'] ?: 'rich',
-                    'user_id'      => $userId,
-                    'lang_code'    => $it['lang_code'] ?: $lang,
+                    'editor_type' => $it['editor_type'] ?: 'rich',
+                    'user_id' => $userId,
+                    'lang_code' => $it['lang_code'] ?: $lang,
                     'featured_image' => $featured,
-                    'menu_order'   => $it['menu_order'] ?? 0,
+                    'menu_order' => $it['menu_order'] ?? 0,
                 ]);
 
                 // Preserve original publish ordering on the front-end.
@@ -361,7 +388,9 @@ class WordPressImporter
                             $catIds[] = $cat->id;
                         }
                     }
-                    if ($catIds) $post->categories()->sync(array_unique($catIds));
+                    if ($catIds) {
+                        $post->categories()->sync(array_unique($catIds));
+                    }
 
                     $tagIds = [];
                     foreach ($it['tags'] as $t) {
@@ -373,14 +402,20 @@ class WordPressImporter
                             $tagIds[] = $tag->id;
                         }
                     }
-                    if ($tagIds) $post->tags()->sync(array_unique($tagIds));
+                    if ($tagIds) {
+                        $post->tags()->sync(array_unique($tagIds));
+                    }
                 }
 
-                if ($isPage)                 $summary['pages']++;
-                elseif ($type === 'post')    $summary['posts']++;
-                else                         $summary['cpt']++;
+                if ($isPage) {
+                    $summary['pages']++;
+                } elseif ($type === 'post') {
+                    $summary['posts']++;
+                } else {
+                    $summary['cpt']++;
+                }
             } catch (\Throwable $e) {
-                $summary['errors'][] = ($it['title'] ?? '?') . ': ' . $e->getMessage();
+                $summary['errors'][] = ($it['title'] ?? '?').': '.$e->getMessage();
             }
         }
 
@@ -391,11 +426,13 @@ class WordPressImporter
      * Recreate a navigation menu and its full item tree.
      * Idempotent: an existing menu with the same slug + language is left untouched.
      *
-     * @return bool  true if a menu was created.
+     * @return bool true if a menu was created.
      */
     private function importNavMenu(array $data, string $lang): bool
     {
-        if (!Schema::hasTable('navigation_menus')) return false;
+        if (!Schema::hasTable('navigation_menus')) {
+            return false;
+        }
 
         $name = (string) ($data['name'] ?? 'Imported Menu');
         $slug = (string) ($data['slug'] ?? Str::slug($name) ?: 'menu');
@@ -404,12 +441,14 @@ class WordPressImporter
         $existing = NavigationMenu::where('slug', $slug)
             ->when(Schema::hasColumn('navigation_menus', 'lang_code'), fn ($q) => $q->where('lang_code', $menuLang))
             ->first();
-        if ($existing) return false;
+        if ($existing) {
+            return false;
+        }
 
         $menu = NavigationMenu::create([
-            'name'      => $name,
-            'slug'      => $slug,
-            'location'  => $data['location'] ?? null,
+            'name' => $name,
+            'slug' => $slug,
+            'location' => $data['location'] ?? null,
             'lang_code' => $menuLang,
             'is_header' => (int) ($data['is_header'] ?? 0),
             'is_footer' => (int) ($data['is_footer'] ?? 0),
@@ -417,23 +456,25 @@ class WordPressImporter
 
         // Two-pass: create items, then remap parent ids from old -> new.
         $idMap = [];
-        $rows  = is_array($data['items'] ?? null) ? $data['items'] : [];
+        $rows = is_array($data['items'] ?? null) ? $data['items'] : [];
         foreach ($rows as $row) {
             $item = NavigationMenuItem::create([
                 'navigation_menu_id' => $menu->id,
-                'parent_id'          => null,
-                'title'              => (string) ($row['title'] ?? ''),
-                'url'                => (string) ($row['url'] ?? ''),
-                'type'               => (string) ($row['type'] ?? 'custom'),
-                'object_id'          => $row['object_id'] ?? null,
-                'target'             => (string) ($row['target'] ?? ''),
-                'classes'            => (string) ($row['classes'] ?? ''),
-                'icon'               => (string) ($row['icon'] ?? ''),
-                'show_only_icon'     => (int) ($row['show_only_icon'] ?? 0),
-                'order'              => (int) ($row['order'] ?? 0),
-                'mega_menu_id'       => $row['mega_menu_id'] ?? null,
+                'parent_id' => null,
+                'title' => (string) ($row['title'] ?? ''),
+                'url' => (string) ($row['url'] ?? ''),
+                'type' => (string) ($row['type'] ?? 'custom'),
+                'object_id' => $row['object_id'] ?? null,
+                'target' => (string) ($row['target'] ?? ''),
+                'classes' => (string) ($row['classes'] ?? ''),
+                'icon' => (string) ($row['icon'] ?? ''),
+                'show_only_icon' => (int) ($row['show_only_icon'] ?? 0),
+                'order' => (int) ($row['order'] ?? 0),
+                'mega_menu_id' => $row['mega_menu_id'] ?? null,
             ]);
-            if (isset($row['id'])) $idMap[(int) $row['id']] = $item->id;
+            if (isset($row['id'])) {
+                $idMap[(int) $row['id']] = $item->id;
+            }
         }
         foreach ($rows as $row) {
             if (empty($row['parent_id']) || !isset($idMap[(int) $row['id']], $idMap[(int) $row['parent_id']])) {
@@ -450,6 +491,7 @@ class WordPressImporter
     {
         $raw = get_cms_option($key, null);
         $val = is_string($raw) ? json_decode($raw, true) : $raw;
+
         return is_array($val) ? $val : [];
     }
 
@@ -465,26 +507,28 @@ class WordPressImporter
         // 1) Recreate section posts; build old-id → new-id map.
         $idMap = [];
         foreach (($data['sections'] ?? []) as $oldId => $sec) {
-            if (!is_array($sec) || empty($sec['type'])) continue;
+            if (!is_array($sec) || empty($sec['type'])) {
+                continue;
+            }
             $type = $sec['type'];
             $slug = $sec['slug'] ?: (Str::slug($sec['title'] ?? $type) ?: $type);
             $post = Post::where('type', $type)->where('slug', $slug)->first();
             if ($post) {
                 $post->update([
-                    'title'   => $sec['title']  ?? $post->title,
-                    'status'  => $sec['status'] ?? 'published',
+                    'title' => $sec['title'] ?? $post->title,
+                    'status' => $sec['status'] ?? 'published',
                     'content' => $sec['content'] ?? $post->content,
                 ]);
             } else {
                 $post = Post::create([
-                    'title'       => $sec['title'] ?: ucfirst(str_replace('falcon_', '', $type)),
-                    'slug'        => $slug,
-                    'type'        => $type,
-                    'status'      => $sec['status'] ?? 'published',
-                    'content'     => $sec['content'] ?? '',
+                    'title' => $sec['title'] ?: ucfirst(str_replace('falcon_', '', $type)),
+                    'slug' => $slug,
+                    'type' => $type,
+                    'status' => $sec['status'] ?? 'published',
+                    'content' => $sec['content'] ?? '',
                     'editor_type' => 'builder',
-                    'user_id'     => $userId,
-                    'lang_code'   => $lang,
+                    'user_id' => $userId,
+                    'lang_code' => $lang,
                 ]);
             }
             $idMap[(string) $oldId] = $post->id;
@@ -492,18 +536,28 @@ class WordPressImporter
 
         // Normalise + remap an assignment value → ['id','active'] (or null).
         $remap = function ($v) use ($idMap) {
-            $id = null; $active = true;
-            if (is_array($v) && !empty($v['id'])) { $id = (int) $v['id']; $active = !array_key_exists('active', $v) || (bool) $v['active']; }
-            elseif (is_numeric($v)) { $id = (int) $v; }
-            if (!$id) return null;
+            $id = null;
+            $active = true;
+            if (is_array($v) && !empty($v['id'])) {
+                $id = (int) $v['id'];
+                $active = !array_key_exists('active', $v) || (bool) $v['active'];
+            } elseif (is_numeric($v)) {
+                $id = (int) $v;
+            }
+            if (!$id) {
+                return null;
+            }
             $newId = $idMap[(string) $id] ?? null;
+
             return $newId ? ['id' => $newId, 'active' => $active] : null;
         };
 
         // 2) Global Layout — remap, merge into existing (imported wins for its slots).
         $global = $this->optionArrayLocal('falcon_layout_global');
         foreach (($data['global'] ?? []) as $slot => $v) {
-            if ($entry = $remap($v)) $global[$slot] = $entry;
+            if ($entry = $remap($v)) {
+                $global[$slot] = $entry;
+            }
         }
         update_cms_option('falcon_layout_global', json_encode($global));
 
@@ -511,20 +565,26 @@ class WordPressImporter
         $existing = $this->optionArrayLocal('falcon_layouts');
         $byName = [];
         foreach ($existing as $i => $l) {
-            if (!empty($l['name'])) $byName[$l['name']] = $i;
+            if (!empty($l['name'])) {
+                $byName[$l['name']] = $i;
+            }
         }
         $count = 0;
         foreach (($data['layouts'] ?? []) as $l) {
-            if (!is_array($l)) continue;
+            if (!is_array($l)) {
+                continue;
+            }
             $assignments = [];
             foreach (($l['assignments'] ?? []) as $slot => $v) {
-                if ($entry = $remap($v)) $assignments[$slot] = $entry;
+                if ($entry = $remap($v)) {
+                    $assignments[$slot] = $entry;
+                }
             }
             $name = $l['name'] ?? 'Imported Layout';
             $rebuilt = [
-                'id'          => 'lay_' . Str::lower(Str::random(8)),
-                'name'        => $name,
-                'conditions'  => is_array($l['conditions'] ?? null) ? $l['conditions'] : [],
+                'id' => 'lay_'.Str::lower(Str::random(8)),
+                'name' => $name,
+                'conditions' => is_array($l['conditions'] ?? null) ? $l['conditions'] : [],
                 'assignments' => $assignments,
             ];
             if (isset($byName[$name])) {
@@ -539,7 +599,9 @@ class WordPressImporter
         }
         update_cms_option('falcon_layouts', json_encode(array_values($existing)));
 
-        if (function_exists('clear_page_cache')) clear_page_cache();
+        if (function_exists('clear_page_cache')) {
+            clear_page_cache();
+        }
 
         return $count + (empty($data['global']) ? 0 : 1);
     }
@@ -551,19 +613,27 @@ class WordPressImporter
      */
     private function restoreCustomFields(Post $post, $fields): void
     {
-        if (empty($fields) || !is_array($fields) || !Schema::hasTable('post_custom_field_values')) return;
+        if (empty($fields) || !is_array($fields) || !Schema::hasTable('post_custom_field_values')) {
+            return;
+        }
 
         foreach ($fields as $name => $value) {
-            if ($value === null || $value === '') continue;
+            if ($value === null || $value === '') {
+                continue;
+            }
             $fieldId = DB::table('custom_fields')->where('name', $name)->value('id');
-            if (!$fieldId) continue;
+            if (!$fieldId) {
+                continue;
+            }
             $hasValue = DB::table('post_custom_field_values')
                 ->where('post_id', $post->id)->where('field_id', $fieldId)->exists();
-            if ($hasValue) continue; // don't clobber an existing value
+            if ($hasValue) {
+                continue;
+            } // don't clobber an existing value
             DB::table('post_custom_field_values')->insert([
-                'post_id'    => $post->id,
-                'field_id'   => $fieldId,
-                'value'      => is_array($value) ? json_encode($value) : (string) $value,
+                'post_id' => $post->id,
+                'field_id' => $fieldId,
+                'value' => is_array($value) ? json_encode($value) : (string) $value,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -573,8 +643,12 @@ class WordPressImporter
     /** Restore the shop product row (+ variations) for product posts (create if absent). */
     private function restoreProductData(Post $post, string $type, $product): void
     {
-        if ($type !== 'product' || empty($product) || !is_array($product) || !Schema::hasTable('shop_products')) return;
-        if (ProductData::where('post_id', $post->id)->exists()) return; // don't clobber
+        if ($type !== 'product' || empty($product) || !is_array($product) || !Schema::hasTable('shop_products')) {
+            return;
+        }
+        if (ProductData::where('post_id', $post->id)->exists()) {
+            return;
+        } // don't clobber
 
         $variations = $product['variations'] ?? null;
         unset($product['variations']);
@@ -583,7 +657,9 @@ class WordPressImporter
 
         if (is_array($variations) && Schema::hasTable('shop_product_variations')) {
             foreach ($variations as $v) {
-                if (!is_array($v)) continue;
+                if (!is_array($v)) {
+                    continue;
+                }
                 DB::table('shop_product_variations')->insert(array_merge($v, [
                     'product_id' => $row->id,
                     'created_at' => now(),
@@ -600,19 +676,25 @@ class WordPressImporter
      */
     private function restoreTaxonomyTerms(Post $post, array $terms, string $lang): void
     {
-        if (empty($terms) || !Schema::hasTable('taxonomy_terms') || !method_exists($post, 'taxonomyTerms')) return;
+        if (empty($terms) || !Schema::hasTable('taxonomy_terms') || !method_exists($post, 'taxonomyTerms')) {
+            return;
+        }
 
         $cptSlug = $post->type ?: 'post'; // cpt_slug is NOT NULL in the schema
         $ids = [];
         foreach ($terms as $t) {
-            if (empty($t['slug']) || empty($t['taxonomy'])) continue;
+            if (empty($t['slug']) || empty($t['taxonomy'])) {
+                continue;
+            }
             $term = TaxonomyTerm::firstOrCreate(
                 ['taxonomy_slug' => $t['taxonomy'], 'cpt_slug' => $cptSlug, 'slug' => $t['slug'], 'lang_code' => $lang],
                 ['name' => $t['name'] ?: $t['slug']]
             );
             $ids[] = $term->id;
         }
-        if ($ids) $post->taxonomyTerms()->syncWithoutDetaching(array_unique($ids));
+        if ($ids) {
+            $post->taxonomyTerms()->syncWithoutDetaching(array_unique($ids));
+        }
     }
 
     /** Convenience: parse + import in one call. */

@@ -2,9 +2,9 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
 use FalconCms\Core\Models\Media;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -17,10 +17,10 @@ class MediaController extends Controller
         // Search filter
         if ($request->filled('s')) {
             $search = $request->s;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('filename', 'like', "%{$search}%")
-                  ->orWhere('title', 'like', "%{$search}%")
-                  ->orWhere('alt_text', 'like', "%{$search}%");
+                    ->orWhere('title', 'like', "%{$search}%")
+                    ->orWhere('alt_text', 'like', "%{$search}%");
             });
         }
 
@@ -40,11 +40,11 @@ class MediaController extends Controller
             $year = substr($request->m, 0, 4);
             $month = substr($request->m, 4, 2);
             $query->whereYear('created_at', $year)
-                  ->whereMonth('created_at', $month);
+                ->whereMonth('created_at', $month);
         }
 
         $perPage = ($request->ajax() || $request->expectsJson())
-            ? (int)($request->input('per_page', 100))
+            ? (int) ($request->input('per_page', 100))
             : 10;
         $media = $query->latest()->paginate($perPage)->appends($request->all());
 
@@ -59,13 +59,20 @@ class MediaController extends Controller
         $hasPdfs = Media::where('mime_type', 'application/pdf')->exists();
 
         $types = [];
-        if ($hasImages) $types['image'] = 'Images';
-        if ($hasVideos) $types['video'] = 'Video';
-        if ($hasPdfs) $types['pdf'] = 'PDF';
+        if ($hasImages) {
+            $types['image'] = 'Images';
+        }
+        if ($hasVideos) {
+            $types['video'] = 'Video';
+        }
+        if ($hasPdfs) {
+            $types['pdf'] = 'PDF';
+        }
 
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json($media);
         }
+
         return view('falcon-cms::admin.media.index', compact('media', 'months', 'types'));
     }
 
@@ -81,7 +88,7 @@ class MediaController extends Controller
             // so the accepted size matches what the upload page shows.
             $maxKb = (int) (falcon_max_upload_bytes() / 1024);
             $request->validate([
-                'file' => 'required|file' . ($maxKb > 0 ? '|max:' . $maxKb : ''),
+                'file' => 'required|file'.($maxKb > 0 ? '|max:'.$maxKb : ''),
             ]);
 
             $file = $request->file('file');
@@ -91,13 +98,13 @@ class MediaController extends Controller
 
             // Block executable and server-side script extensions regardless of allowed list
             $blockedExtensions = ['php', 'php3', 'php4', 'php5', 'php7', 'phtml', 'phar',
-                                   'asp', 'aspx', 'jsp', 'js', 'cgi', 'pl', 'py', 'rb',
-                                   'sh', 'bash', 'exe', 'bat', 'cmd', 'htaccess', 'htpasswd',
-                                   'svg', 'svgz', 'xml', 'xsl', 'xslt'];
+                'asp', 'aspx', 'jsp', 'js', 'cgi', 'pl', 'py', 'rb',
+                'sh', 'bash', 'exe', 'bat', 'cmd', 'htaccess', 'htpasswd',
+                'svg', 'svgz', 'xml', 'xsl', 'xslt'];
             if (in_array($extension, $blockedExtensions)) {
                 return response()->json([
                     'success' => false,
-                    'message' => "File format '.{$extension}' is not allowed for security reasons."
+                    'message' => "File format '.{$extension}' is not allowed for security reasons.",
                 ], 422);
             }
 
@@ -108,14 +115,14 @@ class MediaController extends Controller
             if (!empty($allowedFormats) && !in_array($extension, $allowedFormats)) {
                 return response()->json([
                     'success' => false,
-                    'message' => "File format '.{$extension}' is not allowed. Allowed: " . implode(', ', $allowedFormats)
+                    'message' => "File format '.{$extension}' is not allowed. Allowed: ".implode(', ', $allowedFormats),
                 ], 422);
             }
-            
-            $slugName  = Str::slug($originalName) ?: 'upload';
-            $isImage   = strpos($mimeType, 'image/') === 0;
+
+            $slugName = Str::slug($originalName) ?: 'upload';
+            $isImage = strpos($mimeType, 'image/') === 0;
             $yearMonth = now()->format('Y/m');
-            $mediaDir  = 'media/' . $yearMonth;
+            $mediaDir = 'media/'.$yearMonth;
 
             $width = null;
             $height = null;
@@ -129,28 +136,28 @@ class MediaController extends Controller
                     $height = $imgSize[1];
                 }
 
-                $quality  = (int)get_cms_option('performance_image_quality', 80);
-                $maxWidth = (int)get_cms_option('performance_max_image_width', 1920);
+                $quality = (int) get_cms_option('performance_image_quality', 80);
+                $maxWidth = (int) get_cms_option('performance_max_image_width', 1920);
                 $autoWebp = get_cms_option('performance_webp_conversion', '1') == '1';
 
-                $targetExt  = ($autoWebp && function_exists('imagewebp')) ? 'webp' : $extension;
+                $targetExt = ($autoWebp && function_exists('imagewebp')) ? 'webp' : $extension;
                 $targetMime = $targetExt === 'webp' ? 'image/webp' : $mimeType;
-                $processed  = false;
+                $processed = false;
 
                 // Try processing with GD
                 if (function_exists('imagecreatefromstring')) {
                     $img = @imagecreatefromstring(file_get_contents($file->getRealPath()));
                     if ($img) {
                         if ($width > $maxWidth) {
-                            $newWidth  = $maxWidth;
-                            $newHeight = (int)floor($height * ($maxWidth / $width));
+                            $newWidth = $maxWidth;
+                            $newHeight = (int) floor($height * ($maxWidth / $width));
                             $tmp = imagecreatetruecolor($newWidth, $newHeight);
                             imagealphablending($tmp, false);
                             imagesavealpha($tmp, true);
                             imagecopyresampled($tmp, $img, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
                             imagedestroy($img);
-                            $img    = $tmp;
-                            $width  = $newWidth;
+                            $img = $tmp;
+                            $width = $newWidth;
                             $height = $newHeight;
                         }
 
@@ -161,17 +168,17 @@ class MediaController extends Controller
                             imagealphablending($img, true);
                             imagesavealpha($img, true);
                             $success = imagewebp($img, null, $quality);
-                        } elseif (in_array($targetMime, ['image/jpeg','image/jpg']) && function_exists('imagejpeg')) {
+                        } elseif (in_array($targetMime, ['image/jpeg', 'image/jpg']) && function_exists('imagejpeg')) {
                             $success = imagejpeg($img, null, $quality);
                         } elseif ($targetMime === 'image/png' && function_exists('imagepng')) {
-                            $success = imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
+                            $success = imagepng($img, null, (int) round(9 * (100 - $quality) / 100));
                         }
                         $imageData = ob_get_clean();
 
                         if ($success && $imageData) {
                             [$filename, $savePath] = $this->uniqueMediaPath($mediaDir, $slugName, $targetExt);
                             Storage::disk('public')->put($savePath, $imageData);
-                            $path     = $savePath;
+                            $path = $savePath;
                             $mimeType = $targetMime;
                             $processed = true;
                         }
@@ -192,7 +199,7 @@ class MediaController extends Controller
 
             // Ensure we have a path
             if (!$path) {
-                throw new \Exception("Failed to store file.");
+                throw new \Exception('Failed to store file.');
             }
 
             // Get file size
@@ -214,12 +221,12 @@ class MediaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $media
+                'data' => $media,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -255,21 +262,21 @@ class MediaController extends Controller
         // Rename file if title changed and it's not empty
         if ($newTitle && $newTitle !== $oldTitle) {
             $extension = pathinfo($media->path, PATHINFO_EXTENSION);
-            $slug = \Illuminate\Support\Str::slug($newTitle);
-            
+            $slug = Str::slug($newTitle);
+
             // Generate unique filename — preserve existing year/month directory
             $dir = dirname($media->path);
-            $newFilename = $slug . '.' . $extension;
-            $newPath = $dir . '/' . $newFilename;
+            $newFilename = $slug.'.'.$extension;
+            $newPath = $dir.'/'.$newFilename;
 
-            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($newPath)) {
-                $newFilename = $slug . '-' . time() . '.' . $extension;
-                $newPath = $dir . '/' . $newFilename;
+            if (Storage::disk('public')->exists($newPath)) {
+                $newFilename = $slug.'-'.time().'.'.$extension;
+                $newPath = $dir.'/'.$newFilename;
             }
 
             // Move the file
-            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($media->path)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->move($media->path, $newPath);
+            if (Storage::disk('public')->exists($media->path)) {
+                Storage::disk('public')->move($media->path, $newPath);
                 $media->path = $newPath;
                 $media->filename = $newFilename;
             }
@@ -279,9 +286,9 @@ class MediaController extends Controller
 
         if ($request->ajax() || $request->expectsJson()) {
             return response()->json([
-            'success' => true,
-            'data' => $media
-        ]);
+                'success' => true,
+                'data' => $media,
+            ]);
         }
 
         return redirect()->back()->with('success', 'Media updated successfully');
@@ -293,6 +300,7 @@ class MediaController extends Controller
         $this->deleteMediaFiles($media->path);
         $media->delete();
         falcon_log_activity('deleted', "Deleted media: {$name}");
+
         return response()->json(['success' => true]);
     }
 
@@ -308,12 +316,14 @@ class MediaController extends Controller
         $disk->delete($path); // the original
 
         $info = pathinfo($path);
-        if (empty($info['filename'])) return;
+        if (empty($info['filename'])) {
+            return;
+        }
 
-        $folder  = (!isset($info['dirname']) || $info['dirname'] === '.' || $info['dirname'] === '') ? '' : $info['dirname'];
-        $ext     = $info['extension'] ?? '';
-        $pattern = '/^' . preg_quote($info['filename'], '/') . '-\d+x\d+'
-                 . ($ext !== '' ? '\.' . preg_quote($ext, '/') : '') . '$/i';
+        $folder = (!isset($info['dirname']) || $info['dirname'] === '.' || $info['dirname'] === '') ? '' : $info['dirname'];
+        $ext = $info['extension'] ?? '';
+        $pattern = '/^'.preg_quote($info['filename'], '/').'-\d+x\d+'
+                 .($ext !== '' ? '\.'.preg_quote($ext, '/') : '').'$/i';
 
         foreach ($disk->files($folder) as $f) {
             if (preg_match($pattern, basename($f)) && !Media::where('path', $f)->exists()) {
@@ -327,23 +337,29 @@ class MediaController extends Controller
         try {
             $mediaItems = Media::where('mime_type', 'like', 'image/%')->get();
             $count = 0;
-            $quality = (int)get_cms_option('performance_image_quality', 80);
-            $maxWidth = (int)get_cms_option('performance_max_image_width', 1920);
+            $quality = (int) get_cms_option('performance_image_quality', 80);
+            $maxWidth = (int) get_cms_option('performance_max_image_width', 1920);
             $autoWebp = get_cms_option('performance_webp_conversion', '1') == '1';
 
             if (!function_exists('imagecreatefromstring')) {
-                throw new \Exception("GD extension with imagecreatefromstring is required.");
+                throw new \Exception('GD extension with imagecreatefromstring is required.');
             }
 
             foreach ($mediaItems as $media) {
-                $filePath = storage_path('app/public/' . $media->path);
-                if (!file_exists($filePath)) continue;
+                $filePath = storage_path('app/public/'.$media->path);
+                if (!file_exists($filePath)) {
+                    continue;
+                }
 
                 // Skip if already webp and we are targeting webp
-                if ($autoWebp && $media->mime_type === 'image/webp') continue;
+                if ($autoWebp && $media->mime_type === 'image/webp') {
+                    continue;
+                }
 
                 $img = @imagecreatefromstring(file_get_contents($filePath));
-                if (!$img) continue;
+                if (!$img) {
+                    continue;
+                }
 
                 $width = imagesx($img);
                 $height = imagesy($img);
@@ -351,7 +367,7 @@ class MediaController extends Controller
                 // Resize if needed
                 if ($width > $maxWidth) {
                     $newWidth = $maxWidth;
-                    $newHeight = (int)floor($height * ($maxWidth / $width));
+                    $newHeight = (int) floor($height * ($maxWidth / $width));
                     $tmp = imagecreatetruecolor($newWidth, $newHeight);
                     imagealphablending($tmp, false);
                     imagesavealpha($tmp, true);
@@ -364,9 +380,9 @@ class MediaController extends Controller
 
                 $filename = pathinfo($media->filename, PATHINFO_FILENAME);
                 $extension = $autoWebp ? 'webp' : pathinfo($media->path, PATHINFO_EXTENSION);
-                $newFilename = $filename . '-' . time() . '.' . $extension;
+                $newFilename = $filename.'-'.time().'.'.$extension;
                 $dir = dirname($media->path);
-                $newPath = $dir . '/' . $newFilename;
+                $newPath = $dir.'/'.$newFilename;
 
                 ob_start();
                 $success = false;
@@ -380,7 +396,7 @@ class MediaController extends Controller
                     if (($ext === 'jpg' || $ext === 'jpeg') && function_exists('imagejpeg')) {
                         $success = imagejpeg($img, null, $quality);
                     } elseif ($ext === 'png' && function_exists('imagepng')) {
-                        $success = imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
+                        $success = imagepng($img, null, (int) round(9 * (100 - $quality) / 100));
                     }
                 }
 
@@ -388,7 +404,7 @@ class MediaController extends Controller
                 if ($success && $imageData) {
                     // Delete old file
                     Storage::disk('public')->delete($media->path);
-                    
+
                     // Save new file
                     Storage::disk('public')->put($newPath, $imageData);
 
@@ -399,7 +415,7 @@ class MediaController extends Controller
                         'mime_type' => $autoWebp ? 'image/webp' : $media->mime_type,
                         'width' => $width,
                         'height' => $height,
-                        'compressed_size' => strlen($imageData)
+                        'compressed_size' => strlen($imageData),
                     ]);
                     $count++;
                 }
@@ -409,13 +425,13 @@ class MediaController extends Controller
             falcon_log_activity('settings_updated', "Bulk optimized {$count} media items");
 
             return response()->json([
-                'success' => true, 
-                'message' => "Successfully optimized {$count} images."
+                'success' => true,
+                'message' => "Successfully optimized {$count} images.",
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
-                'message' => $e->getMessage()
+                'success' => false,
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -426,21 +442,27 @@ class MediaController extends Controller
      */
     private function uniqueMediaPath(string $dir, string $slug, string $ext): array
     {
-        $filename = $slug . '.' . $ext;
-        $path     = $dir . '/' . $filename;
-        $n        = 1;
+        $filename = $slug.'.'.$ext;
+        $path = $dir.'/'.$filename;
+        $n = 1;
         while (Storage::disk('public')->exists($path)) {
-            $filename = $slug . '-' . $n . '.' . $ext;
-            $path     = $dir . '/' . $filename;
+            $filename = $slug.'-'.$n.'.'.$ext;
+            $path = $dir.'/'.$filename;
             $n++;
         }
+
         return [$filename, $path];
     }
 
     private function formatBytes(int $bytes): string
     {
-        if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';
-        if ($bytes >= 1024)    return round($bytes / 1024, 2) . ' KB';
-        return $bytes . ' B';
+        if ($bytes >= 1048576) {
+            return round($bytes / 1048576, 2).' MB';
+        }
+        if ($bytes >= 1024) {
+            return round($bytes / 1024, 2).' KB';
+        }
+
+        return $bytes.' B';
     }
 }

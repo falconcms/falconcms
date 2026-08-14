@@ -25,7 +25,7 @@ class SettingsTabController extends Controller
         }
 
         return view('falcon-cms::admin.settings.custom-tab', [
-            'tab'    => $config,
+            'tab' => $config,
             'fields' => $fields,
             'values' => $values,
         ]);
@@ -71,7 +71,7 @@ class SettingsTabController extends Controller
     protected function tab(string $tab): array
     {
         $config = app(SettingsExtension::class)->tab($tab);
-        abort_if(! $config, 404);
+        abort_if(!$config, 404);
         abort_unless(auth()->user()->hasPermission($config['permission'] ?? 'manage_settings'), 403);
 
         return $config;

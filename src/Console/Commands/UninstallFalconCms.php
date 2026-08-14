@@ -29,8 +29,9 @@ class UninstallFalconCms extends Command
             ? '  --all is set: shared Laravel tables (users, sessions, cache, jobs) will ALSO be dropped.'
             : '  Shared Laravel tables (users, sessions, cache, jobs) are kept. Pass --all to drop them too.');
 
-        if (! $this->option('force') && ! $this->confirm('Are you absolutely sure you want to uninstall FalconCMS?', false)) {
+        if (!$this->option('force') && !$this->confirm('Are you absolutely sure you want to uninstall FalconCMS?', false)) {
             $this->info('Aborted. Nothing was changed.');
+
             return self::SUCCESS;
         }
 
@@ -45,7 +46,7 @@ class UninstallFalconCms extends Command
         $this->info("Removed {$migrations} migration record(s).");
 
         // 3) Remove published files.
-        if (! $this->option('keep-files')) {
+        if (!$this->option('keep-files')) {
             $this->removePublishedFiles();
         } else {
             $this->line('Kept published files (--keep-files).');
@@ -53,7 +54,10 @@ class UninstallFalconCms extends Command
 
         // 4) Clear caches that don't depend on the (now dropped) tables — before touching Composer.
         foreach (['view:clear', 'route:clear', 'config:clear'] as $cmd) {
-            try { $this->callSilently($cmd); } catch (\Throwable $e) {}
+            try {
+                $this->callSilently($cmd);
+            } catch (\Throwable $e) {
+            }
         }
 
         // 5) Remove the Composer package itself.
@@ -78,10 +82,10 @@ class UninstallFalconCms extends Command
     protected function revertUserModel(): void
     {
         $path = app_path('Models/User.php');
-        if (! file_exists($path)) {
+        if (!file_exists($path)) {
             return;
         }
-        $content  = file_get_contents($path);
+        $content = file_get_contents($path);
         $original = $content;
 
         // Drop the namespace import first ("use FalconCms\Core\Traits\HasCmsPermissions;").
@@ -114,7 +118,7 @@ class UninstallFalconCms extends Command
             if (File::exists($path)) {
                 File::deleteDirectory($path);
                 $removed++;
-                $this->line('  • removed ' . str_replace(base_path() . DIRECTORY_SEPARATOR, '', $path));
+                $this->line('  • removed '.str_replace(base_path().DIRECTORY_SEPARATOR, '', $path));
             }
         }
         $this->info("Removed {$removed} published path(s).");
@@ -127,7 +131,7 @@ class UninstallFalconCms extends Command
             $path = base_path($rel);
             if (File::exists($path)) {
                 File::delete($path);
-                $this->line('  • cleared ' . $rel);
+                $this->line('  • cleared '.$rel);
             }
         }
     }
@@ -137,12 +141,12 @@ class UninstallFalconCms extends Command
     {
         $this->info('Removing the Composer package…');
         $composer = file_exists(base_path('composer.phar'))
-            ? '"' . PHP_BINARY . '" composer.phar'
+            ? '"'.PHP_BINARY.'" composer.phar'
             : 'composer';
 
         try {
             $process = Process::fromShellCommandline(
-                $composer . ' remove falconcms/falconcms --no-interaction --no-scripts',
+                $composer.' remove falconcms/falconcms --no-interaction --no-scripts',
                 base_path()
             );
             $process->setTimeout(600);
@@ -150,6 +154,7 @@ class UninstallFalconCms extends Command
 
             if ($process->isSuccessful()) {
                 $this->info('Composer package removed.');
+
                 return;
             }
         } catch (\Throwable $e) {

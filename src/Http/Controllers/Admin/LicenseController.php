@@ -3,6 +3,8 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Pro\LicenseGateway;
+use FalconCms\Pro\FalconProServiceProvider;
+use FalconCms\Pro\License\LicenseManager;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
@@ -24,18 +26,18 @@ class LicenseController extends Controller
         $gateway = app(LicenseGateway::class);
 
         return view('falcon-cms::admin.license.index', [
-            'licensed'    => $gateway->licensed(),
-            'plan'        => $gateway->plan(),
-            'features'    => $gateway->features(),
+            'licensed' => $gateway->licensed(),
+            'plan' => $gateway->plan(),
+            'features' => $gateway->features(),
             // Features are perpetual; expiry only ends the update window. Surface it so the
             // page reads "active — renew for updates" rather than looking locked out.
-            'expired'     => function_exists('falcon_pro_expired') ? falcon_pro_expired() : false,
-            'expiresAt'   => method_exists($gateway, 'expiresAt') ? $gateway->expiresAt() : null,
-            'proInstalled'=> $this->proInstalled(),
-            'maskedKey'   => $this->maskKey((string) get_cms_option('falcon_license_key', '')),
-            'hasKey'      => (string) get_cms_option('falcon_license_key', '') !== '',
-            'hasToken'    => $this->hasAccessToken(),
-            'licenseError'=> $this->currentLicenseError(),
+            'expired' => function_exists('falcon_pro_expired') ? falcon_pro_expired() : false,
+            'expiresAt' => method_exists($gateway, 'expiresAt') ? $gateway->expiresAt() : null,
+            'proInstalled' => $this->proInstalled(),
+            'maskedKey' => $this->maskKey((string) get_cms_option('falcon_license_key', '')),
+            'hasKey' => (string) get_cms_option('falcon_license_key', '') !== '',
+            'hasToken' => $this->hasAccessToken(),
+            'licenseError' => $this->currentLicenseError(),
         ]);
     }
 
@@ -63,7 +65,7 @@ class LicenseController extends Controller
         falcon_log_activity('license_activated', 'Saved a Pro license key');
 
         // Without the Pro package there is nothing to validate against yet.
-        if (! $this->proInstalled()) {
+        if (!$this->proInstalled()) {
             return redirect()->route('admin.license.index')
                 ->with('success', 'License key saved. Now install the Pro package below to activate it.');
         }
@@ -71,16 +73,17 @@ class LicenseController extends Controller
         // Pro is installed → resolve the new key right now so we can tell the admin
         // whether it actually worked, instead of a vague "saved". Forget the cached
         // gateway so it rebuilds with the key we just stored.
-        app()->forgetInstance(\FalconCms\Pro\License\LicenseManager::class);
+        app()->forgetInstance(LicenseManager::class);
         app()->forgetInstance(LicenseGateway::class);
         $gateway = app(LicenseGateway::class);
 
         if ($gateway->licensed()) {
             return redirect()->route('admin.license.index')
-                ->with('success', 'License activated — Pro (' . $gateway->plan() . ') is now active on this site.');
+                ->with('success', 'License activated — Pro ('.$gateway->plan().') is now active on this site.');
         }
 
         $state = json_decode((string) get_cms_option('falcon_license_state', ''), true);
+
         return redirect()->route('admin.license.index')
             ->with('error', $this->explainError(is_array($state) ? ($state['error'] ?? null) : null));
     }
@@ -92,9 +95,9 @@ class LicenseController extends Controller
 
         return match (true) {
             str_contains($error, 'activation limit') => 'This license key has reached its activation limit — it is already active on another site. Deactivate it there first, or buy another license.',
-            str_contains($error, 'instance')         => 'This site\'s activation was removed. Click Deactivate, then activate the key again.',
-            str_contains($error, 'expired')           => 'This license key has expired. Renew it to continue using Pro.',
-            str_contains($error, 'disabled')          => 'This license key has been disabled. Contact support with your order reference.',
+            str_contains($error, 'instance') => 'This site\'s activation was removed. Click Deactivate, then activate the key again.',
+            str_contains($error, 'expired') => 'This license key has expired. Renew it to continue using Pro.',
+            str_contains($error, 'disabled') => 'This license key has been disabled. Contact support with your order reference.',
             str_contains($error, 'offline'), str_contains($error, 'transient') => 'Could not reach the license server. Check your connection and try again.',
             default => 'This license key is not valid. Double-check that you pasted it correctly and try again.',
         };
@@ -131,10 +134,10 @@ class LicenseController extends Controller
         // Drop the cached result and the resolved gateway so the next resolve hits
         // the provider fresh.
         update_cms_option('falcon_license_state', '');
-        app()->forgetInstance(\FalconCms\Pro\License\LicenseManager::class);
+        app()->forgetInstance(LicenseManager::class);
         app()->forgetInstance(LicenseGateway::class);
 
-        if (! $this->proInstalled()) {
+        if (!$this->proInstalled()) {
             return redirect()->route('admin.license.index')
                 ->with('warning', 'Re-checked, but the Pro package is not installed on this site.');
         }
@@ -142,11 +145,11 @@ class LicenseController extends Controller
         $gateway = app(LicenseGateway::class);
         if ($gateway->licensed()) {
             return redirect()->route('admin.license.index')
-                ->with('success', 'Re-checked — Pro (' . $gateway->plan() . ') is active.');
+                ->with('success', 'Re-checked — Pro ('.$gateway->plan().') is active.');
         }
 
         return redirect()->route('admin.license.index')
-            ->with('warning', 'Re-checked — ' . ($this->currentLicenseError() ?? 'the license is not active.'));
+            ->with('warning', 'Re-checked — '.($this->currentLicenseError() ?? 'the license is not active.'));
     }
 
     /**
@@ -158,7 +161,7 @@ class LicenseController extends Controller
     {
         $this->authorizeAccess();
 
-        $data  = $request->validate([
+        $data = $request->validate([
             'access_token' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9_\-]+$/'],
         ]);
         $token = trim($data['access_token']);
@@ -175,14 +178,14 @@ class LicenseController extends Controller
 
         $ok = @file_put_contents(
             $path,
-            json_encode($auth, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+            json_encode($auth, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n"
         );
 
         if ($ok === false) {
             return redirect()->route('admin.license.index')->with(
                 'warning',
                 'Could not write auth.json — the web server has no write permission on the project root. '
-                . 'Create the file manually using the instructions below.'
+                .'Create the file manually using the instructions below.'
             );
         }
 
@@ -209,7 +212,7 @@ class LicenseController extends Controller
 
         return redirect()->route('admin.license.index')->with(
             'warning',
-            'Access token saved, but the Pro package could not be installed automatically (' . $install['reason'] . '). Run the two commands below manually.'
+            'Access token saved, but the Pro package could not be installed automatically ('.$install['reason'].'). Run the two commands below manually.'
         );
     }
 
@@ -225,18 +228,18 @@ class LicenseController extends Controller
         @set_time_limit(300);
 
         $composer = $this->findComposerBinary();
-        if (! $composer) {
+        if (!$composer) {
             return ['ok' => false, 'reason' => 'Composer was not found on the server'];
         }
-        if (! is_writable(base_path('composer.json')) || ! is_writable(base_path('vendor'))) {
+        if (!is_writable(base_path('composer.json')) || !is_writable(base_path('vendor'))) {
             return ['ok' => false, 'reason' => 'the project files are not writable by the web server'];
         }
 
         $base = escapeshellarg(base_path());
         $repo = 'https://github.com/falconcms/falconcms-pro.git';
 
-        exec('cd ' . $base . ' && ' . $composer . ' config repositories.falconcms-pro vcs ' . escapeshellarg($repo) . ' 2>&1', $o1, $e1);
-        exec('cd ' . $base . ' && ' . $composer . ' require falconcms/pro --no-interaction --prefer-dist --no-progress 2>&1', $o2, $e2);
+        exec('cd '.$base.' && '.$composer.' config repositories.falconcms-pro vcs '.escapeshellarg($repo).' 2>&1', $o1, $e1);
+        exec('cd '.$base.' && '.$composer.' require falconcms/pro --no-interaction --prefer-dist --no-progress 2>&1', $o2, $e2);
 
         if ($e2 !== 0) {
             $output = implode("\n", array_merge((array) $o1, (array) $o2));
@@ -262,7 +265,7 @@ class LicenseController extends Controller
     {
         foreach ([base_path('composer.phar'), '/usr/local/bin/composer', '/usr/bin/composer', '/usr/local/bin/composer.phar'] as $p) {
             if (is_file($p)) {
-                return str_ends_with($p, '.phar') ? 'php ' . escapeshellarg($p) : escapeshellarg($p);
+                return str_ends_with($p, '.phar') ? 'php '.escapeshellarg($p) : escapeshellarg($p);
             }
         }
         $which = shell_exec('which composer 2>/dev/null');
@@ -279,8 +282,8 @@ class LicenseController extends Controller
     {
         $file = base_path('.gitignore');
         $body = is_file($file) ? (string) @file_get_contents($file) : '';
-        if (! preg_match('/^\s*\/?' . preg_quote($entry, '/') . '\s*$/m', $body)) {
-            @file_put_contents($file, rtrim($body) . "\n" . $entry . "\n");
+        if (!preg_match('/^\s*\/?'.preg_quote($entry, '/').'\s*$/m', $body)) {
+            @file_put_contents($file, rtrim($body)."\n".$entry."\n");
         }
     }
 
@@ -288,17 +291,17 @@ class LicenseController extends Controller
     private function hasAccessToken(): bool
     {
         $path = base_path('auth.json');
-        if (! is_file($path)) {
+        if (!is_file($path)) {
             return false;
         }
         $auth = json_decode((string) @file_get_contents($path), true);
 
-        return ! empty($auth['github-oauth']['github.com'] ?? null);
+        return !empty($auth['github-oauth']['github.com'] ?? null);
     }
 
     private function authorizeAccess(): void
     {
-        if (! auth()->check() || ! auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->check() || !auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
     }
@@ -306,7 +309,7 @@ class LicenseController extends Controller
     /** Whether the falconcms/pro package is physically installed. */
     private function proInstalled(): bool
     {
-        return class_exists(\FalconCms\Pro\FalconProServiceProvider::class);
+        return class_exists(FalconProServiceProvider::class);
     }
 
     /** Show only the first/last few chars of the key, never the whole thing. */
@@ -317,8 +320,9 @@ class LicenseController extends Controller
             return '';
         }
         if (strlen($key) <= 8) {
-            return str_repeat('•', max(0, strlen($key) - 2)) . substr($key, -2);
+            return str_repeat('•', max(0, strlen($key) - 2)).substr($key, -2);
         }
-        return substr($key, 0, 4) . str_repeat('•', 8) . substr($key, -4);
+
+        return substr($key, 0, 4).str_repeat('•', 8).substr($key, -4);
     }
 }

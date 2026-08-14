@@ -3,8 +3,8 @@
 namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
-use Illuminate\Http\Request;
 use FalconCms\Core\Models\ApiToken;
+use Illuminate\Http\Request;
 
 /**
  * Authenticates an API request via a personal API token:

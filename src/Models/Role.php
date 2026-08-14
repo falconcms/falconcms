@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
@@ -15,6 +16,6 @@ class Role extends Model
 
     public function users()
     {
-        return $this->hasMany(\App\Models\User::class);
+        return $this->hasMany(User::class);
     }
 }

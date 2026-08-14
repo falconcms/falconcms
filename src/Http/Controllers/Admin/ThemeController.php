@@ -2,8 +2,8 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -45,28 +45,28 @@ class ThemeController extends Controller
                 }
 
                 $themeJson = [];
-                $themeJsonFile = $dir . '/theme.json';
+                $themeJsonFile = $dir.'/theme.json';
                 if (File::exists($themeJsonFile)) {
                     $themeJson = json_decode(File::get($themeJsonFile), true) ?: [];
                 }
                 $parentSlug = $themeJson['parent'] ?? null;
 
                 if ($parentSlug) {
-                    $parentPath = resource_path('views/themes/' . $parentSlug);
-                    $isActivatable = File::isDirectory($parentPath) && File::exists($parentPath . '/index.blade.php');
+                    $parentPath = resource_path('views/themes/'.$parentSlug);
+                    $isActivatable = File::isDirectory($parentPath) && File::exists($parentPath.'/index.blade.php');
                 } else {
-                    $isActivatable = File::exists($dir . '/index.blade.php');
+                    $isActivatable = File::exists($dir.'/index.blade.php');
                 }
 
                 $themes[$slug] = [
-                    'name'           => $themeJson['name'] ?? ucfirst(str_replace('-', ' ', $slug)),
-                    'slug'           => $slug,
-                    'screenshot'     => $screenshot,
-                    'is_active'      => ($slug === $activeTheme),
+                    'name' => $themeJson['name'] ?? ucfirst(str_replace('-', ' ', $slug)),
+                    'slug' => $slug,
+                    'screenshot' => $screenshot,
+                    'is_active' => ($slug === $activeTheme),
                     'is_activatable' => $isActivatable,
-                    'parent'         => $parentSlug,
-                    'description'    => $themeJson['description'] ?? null,
-                    'version'        => $themeJson['version']     ?? null,
+                    'parent' => $parentSlug,
+                    'description' => $themeJson['description'] ?? null,
+                    'version' => $themeJson['version'] ?? null,
                 ];
             }
         }
@@ -86,8 +86,8 @@ class ThemeController extends Controller
         }
 
         // Detect child theme
-        $themeJson  = [];
-        $jsonFile   = $themePath . '/theme.json';
+        $themeJson = [];
+        $jsonFile = $themePath.'/theme.json';
         if (File::exists($jsonFile)) {
             $themeJson = json_decode(File::get($jsonFile), true) ?: [];
         }
@@ -96,10 +96,10 @@ class ThemeController extends Controller
         // Validate: child theme checks parent's index.blade.php; regular theme checks its own
         if ($parentSlug) {
             $parentPath = $this->findThemePath($parentSlug);
-            if (!$parentPath || !File::exists($parentPath . '/index.blade.php')) {
+            if (!$parentPath || !File::exists($parentPath.'/index.blade.php')) {
                 return redirect()->back()->with('error', "Child theme '{$slug}' requires parent theme '{$parentSlug}' with an 'index.blade.php'.");
             }
-        } elseif (!File::exists($themePath . '/index.blade.php')) {
+        } elseif (!File::exists($themePath.'/index.blade.php')) {
             return redirect()->back()->with('error', "Theme '{$slug}' is invalid! It must contain an 'index.blade.php' file.");
         }
 
@@ -133,20 +133,21 @@ class ThemeController extends Controller
         }
 
         if ($slug === $activeTheme) {
-            return redirect()->back()->with('error', "Active theme cannot be deleted!");
+            return redirect()->back()->with('error', 'Active theme cannot be deleted!');
         }
 
         $themePath = $this->findThemePath($slug);
         if ($themePath) {
             File::deleteDirectory($themePath);
-            
+
             // Also delete assets if they exist
-            $assetsPath = public_path('themes/' . $slug);
+            $assetsPath = public_path('themes/'.$slug);
             if (File::isDirectory($assetsPath)) {
                 File::deleteDirectory($assetsPath);
             }
 
             falcon_log_activity('theme_deleted', "Deleted theme: {$slug}");
+
             return redirect()->back()->with('success', "Theme '{$slug}' deleted successfully!");
         }
 
@@ -164,19 +165,20 @@ class ThemeController extends Controller
         ]);
 
         $zipFile = $request->file('theme_zip');
-        $zip = new \ZipArchive();
-        
-        if ($zip->open($zipFile->getRealPath()) === TRUE) {
+        $zip = new \ZipArchive;
+
+        if ($zip->open($zipFile->getRealPath()) === true) {
             // Reject ZIP containing path traversal entries
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $entry = $zip->getNameIndex($i);
                 if (str_contains($entry, '..') || str_starts_with($entry, '/') || str_starts_with($entry, '\\')) {
                     $zip->close();
+
                     return redirect()->back()->with('error', 'Invalid ZIP file: contains unsafe file paths.');
                 }
             }
 
-            $tempPath = storage_path('app/temp_theme_' . time());
+            $tempPath = storage_path('app/temp_theme_'.time());
             File::makeDirectory($tempPath);
             $zip->extractTo($tempPath);
             $zip->close();
@@ -194,19 +196,22 @@ class ThemeController extends Controller
             }
 
             // Target path (Main App)
-            $targetPath = resource_path('views/themes/' . $themeSlug);
-            
+            $targetPath = resource_path('views/themes/'.$themeSlug);
+
             if (File::isDirectory($targetPath)) {
                 File::deleteDirectory($tempPath);
+
                 return redirect()->back()->with('error', "Theme '{$themeSlug}' already exists!");
             }
 
             // Move to resources/views/themes
             File::ensureDirectoryExists(resource_path('views/themes'));
             File::moveDirectory($sourcePath, $targetPath);
-            
+
             // Clean up temp
-            if (File::isDirectory($tempPath)) File::deleteDirectory($tempPath);
+            if (File::isDirectory($tempPath)) {
+                File::deleteDirectory($tempPath);
+            }
 
             falcon_log_activity('theme_uploaded', "Uploaded theme: {$themeSlug}");
 
@@ -218,7 +223,8 @@ class ThemeController extends Controller
 
     protected function findThemePath($slug)
     {
-        $path = resource_path('views/themes/' . $slug);
+        $path = resource_path('views/themes/'.$slug);
+
         return File::isDirectory($path) ? $path : null;
     }
 }

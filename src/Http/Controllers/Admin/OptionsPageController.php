@@ -20,7 +20,7 @@ class OptionsPageController extends Controller
 
         $values = [];
         foreach ($this->fieldsOf($page) as $field) {
-            if (! empty($field['name'])) {
+            if (!empty($field['name'])) {
                 $values[$field['name']] = get_cms_option($field['name'], $field['default'] ?? '');
             }
         }
@@ -34,7 +34,7 @@ class OptionsPageController extends Controller
 
         foreach ($this->fieldsOf($page) as $field) {
             $name = $field['name'] ?? null;
-            if (! $name || falcon_is_protected_option($name)) {
+            if (!$name || falcon_is_protected_option($name)) {
                 continue;
             }
 
@@ -55,7 +55,7 @@ class OptionsPageController extends Controller
         }
 
         if (function_exists('falcon_log_activity')) {
-            falcon_log_activity('options_saved', 'Saved settings page: ' . ($page['title'] ?? $slug));
+            falcon_log_activity('options_saved', 'Saved settings page: '.($page['title'] ?? $slug));
         }
 
         // Preserve the active tab across the save redirect.
@@ -65,7 +65,7 @@ class OptionsPageController extends Controller
         }
 
         return redirect()->route('admin.options.show', $params)
-            ->with('success', ($page['title'] ?? 'Settings') . ' saved.');
+            ->with('success', ($page['title'] ?? 'Settings').' saved.');
     }
 
     /**
@@ -76,13 +76,14 @@ class OptionsPageController extends Controller
      */
     protected function fieldsOf(array $page): array
     {
-        if (! empty($page['tabs'])) {
+        if (!empty($page['tabs'])) {
             $fields = [];
             foreach ($page['tabs'] as $tab) {
                 foreach ($tab['fields'] ?? [] as $field) {
                     $fields[] = $field;
                 }
             }
+
             return $fields;
         }
 
@@ -96,7 +97,7 @@ class OptionsPageController extends Controller
         abort_if($page === null, 404);
 
         $capability = $page['capability'] ?? 'manage_settings';
-        if (! auth()->check() || ! auth()->user()->hasPermission($capability)) {
+        if (!auth()->check() || !auth()->user()->hasPermission($capability)) {
             abort(403);
         }
 

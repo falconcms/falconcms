@@ -2,13 +2,14 @@
 
 namespace FalconCms\Core\Console\Commands;
 
-use Illuminate\Console\Command;
 use FalconCms\Core\Models\Post;
+use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
 class PublishScheduledPosts extends Command
 {
     protected $signature = 'falcon:publish-scheduled';
+
     protected $description = 'Publish posts whose scheduled publish time has arrived.';
 
     public function handle(): void

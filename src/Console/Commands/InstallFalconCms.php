@@ -2,19 +2,21 @@
 
 namespace FalconCms\Core\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
-use FalconCms\Core\Console\Concerns\ReconcilesMigrations;
-use FalconCms\Core\Models\Role;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use FalconCms\Core\Console\Concerns\ReconcilesMigrations;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\Role;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 
 class InstallFalconCms extends Command
 {
     use ReconcilesMigrations;
 
     protected $signature = 'falcon:install';
+
     protected $description = 'Full installation of Falcon CMS: migrations, assets, themes, and default data.';
 
     public function handle()
@@ -31,14 +33,14 @@ class InstallFalconCms extends Command
         $this->info('Step 2: Publishing dashboard assets...');
         $this->call('vendor:publish', [
             '--tag' => 'falcon-cms-assets',
-            '--force' => true
+            '--force' => true,
         ]);
 
         // 3. Publish Themes
         $this->info('Step 3: Publishing themes to resources/views/themes...');
         $this->call('vendor:publish', [
             '--tag' => 'falcon-themes',
-            '--force' => true
+            '--force' => true,
         ]);
 
         // 3b. Publish child theme skeleton (no --force: never overwrite user customizations)
@@ -53,11 +55,11 @@ class InstallFalconCms extends Command
         if (File::isDirectory($themesPath)) {
             foreach (File::directories($themesPath) as $themeDir) {
                 $slug = basename($themeDir);
-                $dest = public_path('themes/' . $slug);
+                $dest = public_path('themes/'.$slug);
                 File::ensureDirectoryExists($dest);
                 foreach (['screenshot.png', 'screenshot.jpg'] as $shot) {
-                    if (File::exists($themeDir . '/' . $shot)) {
-                        File::copy($themeDir . '/' . $shot, $dest . '/' . $shot);
+                    if (File::exists($themeDir.'/'.$shot)) {
+                        File::copy($themeDir.'/'.$shot, $dest.'/'.$shot);
                     }
                 }
             }
@@ -88,14 +90,14 @@ class InstallFalconCms extends Command
         $this->info('Step 6: Syncing Roles, Permissions and Menus...');
         $this->call('db:seed', [
             '--class' => 'FalconCms\\Core\\Database\\Seeders\\SystemSyncSeeder',
-            '--force' => true
+            '--force' => true,
         ]);
 
         // 7. Sync Languages
         $this->info('Step 7: Syncing Languages...');
         $this->call('db:seed', [
             '--class' => 'FalconCms\\Core\\Database\\Seeders\\LanguageSeeder',
-            '--force' => true
+            '--force' => true,
         ]);
 
         // 8. Auto-setup User Model Trait & Fillable
@@ -113,17 +115,18 @@ class InstallFalconCms extends Command
         }
 
         $adminRole = Role::where('slug', 'super-admin')->first();
-        
+
         if (!$adminRole) {
             $adminRole = Role::where('slug', 'administrator')->first();
         }
 
         if (!$adminRole) {
             $this->error('Admin role not found! Please run php artisan falcon:seed first.');
+
             return;
         }
 
-        $user = User::where('email', $email)->first() ?: new User();
+        $user = User::where('email', $email)->first() ?: new User;
         $user->forceFill([
             'name' => 'Administrator',
             'email' => $email,
@@ -142,15 +145,17 @@ class InstallFalconCms extends Command
         $this->info('---------------------------------------');
         $this->info('Falcon CMS installed successfully!');
         $this->info("Login Email: {$email}");
-        $this->info("Login Password: [hidden]");
-        $this->info('Login URL: ' . url('/' . get_cms_option('login_url', 'falcon-admin')));
+        $this->info('Login Password: [hidden]');
+        $this->info('Login URL: '.url('/'.get_cms_option('login_url', 'falcon-admin')));
         $this->info('---------------------------------------');
     }
 
     protected function setupUserModel()
     {
         $path = app_path('Models/User.php');
-        if (!file_exists($path)) return;
+        if (!file_exists($path)) {
+            return;
+        }
 
         $content = file_get_contents($path);
         $original = $content;
@@ -208,14 +213,14 @@ class InstallFalconCms extends Command
         $adminId = User::first()->id ?? 1;
 
         foreach ($pages as $page) {
-            \FalconCms\Core\Models\Post::firstOrCreate(
+            Post::firstOrCreate(
                 ['slug' => $page['slug'], 'type' => 'page'],
                 [
                     'title' => $page['title'],
                     'status' => 'published',
                     'lang_code' => 'en',
                     'user_id' => $adminId,
-                    'editor_type' => 'rich'
+                    'editor_type' => 'rich',
                 ]
             );
         }
@@ -226,34 +231,34 @@ class InstallFalconCms extends Command
         $adminId = User::first()->id ?? 1;
 
         // Sample blog post so the blog listing has content right after install.
-        \FalconCms\Core\Models\Post::firstOrCreate(
+        Post::firstOrCreate(
             ['slug' => 'hello-world', 'type' => 'post'],
             [
-                'title'       => 'Hello World — Welcome to Falcon CMS',
-                'status'      => 'published',
-                'lang_code'   => 'en',
-                'user_id'     => $adminId,
+                'title' => 'Hello World — Welcome to Falcon CMS',
+                'status' => 'published',
+                'lang_code' => 'en',
+                'user_id' => $adminId,
                 'editor_type' => 'rich',
-                'excerpt'     => 'Welcome to Falcon CMS! This is your first sample blog post — edit or delete it and start publishing your own stories.',
-                'content'     => "<p>Welcome to <strong>Falcon CMS</strong> 🎉</p>"
-                    . "<p>This is a sample blog post that was created automatically when you installed the CMS. "
-                    . "You can edit it, delete it, or use it as a reference for how your posts will look on the front-end.</p>"
-                    . "<h2>Getting started</h2>"
-                    . "<ul><li>Create new posts from <em>Dashboard → Posts</em>.</li>"
-                    . "<li>Customize colours, typography and the blog layout from <em>Appearance → Customize</em>.</li>"
-                    . "<li>Assign a page as your Blog page from <em>Settings → General</em>.</li></ul>"
-                    . "<p>Happy publishing!</p>",
+                'excerpt' => 'Welcome to Falcon CMS! This is your first sample blog post — edit or delete it and start publishing your own stories.',
+                'content' => '<p>Welcome to <strong>Falcon CMS</strong> 🎉</p>'
+                    .'<p>This is a sample blog post that was created automatically when you installed the CMS. '
+                    .'You can edit it, delete it, or use it as a reference for how your posts will look on the front-end.</p>'
+                    .'<h2>Getting started</h2>'
+                    .'<ul><li>Create new posts from <em>Dashboard → Posts</em>.</li>'
+                    .'<li>Customize colours, typography and the blog layout from <em>Appearance → Customize</em>.</li>'
+                    .'<li>Assign a page as your Blog page from <em>Settings → General</em>.</li></ul>'
+                    .'<p>Happy publishing!</p>',
             ]
         );
 
         // A ready-to-use "Blog" page the user can assign as the Blog page (Settings → General).
-        \FalconCms\Core\Models\Post::firstOrCreate(
+        Post::firstOrCreate(
             ['slug' => 'blog', 'type' => 'page'],
             [
-                'title'       => 'Blog',
-                'status'      => 'published',
-                'lang_code'   => 'en',
-                'user_id'     => $adminId,
+                'title' => 'Blog',
+                'status' => 'published',
+                'lang_code' => 'en',
+                'user_id' => $adminId,
                 'editor_type' => 'rich',
             ]
         );

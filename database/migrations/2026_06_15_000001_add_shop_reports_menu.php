@@ -8,7 +8,9 @@ return new class extends Migration
     public function up(): void
     {
         $shopMenu = DB::table('menus')->whereNull('parent_id')->where('title', 'Shop')->first();
-        if (!$shopMenu) return;
+        if (!$shopMenu) {
+            return;
+        }
 
         // Shift Orders (1→2) and Product Reviews (2→3) to make room.
         DB::table('menus')
@@ -25,14 +27,14 @@ return new class extends Migration
 
         if (!$existing) {
             DB::table('menus')->insert([
-                'parent_id'  => $shopMenu->id,
-                'title'      => 'Reports',
-                'route'      => 'admin.shop.reports.index',
-                'icon'       => null,
-                'group'      => null,
-                'order'      => 1,
+                'parent_id' => $shopMenu->id,
+                'title' => 'Reports',
+                'route' => 'admin.shop.reports.index',
+                'icon' => null,
+                'group' => null,
+                'order' => 1,
                 'permission' => null,
-                'params'     => null,
+                'params' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -42,7 +44,9 @@ return new class extends Migration
     public function down(): void
     {
         $shopMenu = DB::table('menus')->whereNull('parent_id')->where('title', 'Shop')->first();
-        if (!$shopMenu) return;
+        if (!$shopMenu) {
+            return;
+        }
 
         DB::table('menus')
             ->where('parent_id', $shopMenu->id)

@@ -2,7 +2,10 @@
 
 namespace FalconCms\Core\Support;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Runtime registry for extending the CMS's native Settings area.
@@ -42,10 +45,10 @@ class SettingsExtension
             return;
         }
         $this->tabs[$id] = [
-            'id'         => $id,
-            'label'      => $args['label'] ?? \Illuminate\Support\Str::headline($id),
-            'icon'       => $args['icon'] ?? null,
-            'order'      => $args['order'] ?? 100,
+            'id' => $id,
+            'label' => $args['label'] ?? Str::headline($id),
+            'icon' => $args['icon'] ?? null,
+            'order' => $args['order'] ?? 100,
             'permission' => $args['permission'] ?? 'manage_settings',
         ];
     }
@@ -67,10 +70,10 @@ class SettingsExtension
         if ($name === '') {
             return;
         }
-        $args['name']   = $name;
-        $args['tab']    = isset($args['tab']) ? (self::sanitizeKey($args['tab']) ?: null) : null;
+        $args['name'] = $name;
+        $args['tab'] = isset($args['tab']) ? (self::sanitizeKey($args['tab']) ?: null) : null;
         $args['screen'] = $args['screen'] ?? 'general';
-        $args['order']  = $args['order'] ?? 100;
+        $args['order'] = $args['order'] ?? 100;
         $this->fields[] = $args;
     }
 
@@ -96,6 +99,7 @@ class SettingsExtension
     public function tabs(): Collection
     {
         $this->collect();
+
         return collect($this->tabs)->sortBy('order')->values();
     }
 
@@ -103,6 +107,7 @@ class SettingsExtension
     public function tab(string $id): ?array
     {
         $this->collect();
+
         return $this->tabs[$id] ?? null;
     }
 
@@ -115,6 +120,7 @@ class SettingsExtension
                 return true;
             }
         }
+
         return false;
     }
 
@@ -122,6 +128,7 @@ class SettingsExtension
     public function inlineFields(string $screen): Collection
     {
         $this->collect();
+
         return collect($this->fields)
             ->filter(fn ($f) => empty($f['tab']) && ($f['screen'] ?? 'general') === $screen)
             ->sortBy('order')
@@ -132,6 +139,7 @@ class SettingsExtension
     public function fieldsForTab(string $tabId): Collection
     {
         $this->collect();
+
         return collect($this->fields)
             ->filter(fn ($f) => ($f['tab'] ?? null) === $tabId)
             ->sortBy('order')
@@ -147,6 +155,7 @@ class SettingsExtension
     public function fieldsForScreenGrouped(string $screen, string $defaultTab = 'general'): Collection
     {
         $this->collect();
+
         return collect($this->fields)
             ->filter(fn ($f) => ($f['screen'] ?? 'general') === $screen)
             ->sortBy('order')
@@ -159,7 +168,7 @@ class SettingsExtension
      * this so injected fields still save. Screens whose controller already
      * saves all posted fields (General, SEO) don't need it.
      */
-    public function persist(string $screen, \Illuminate\Http\Request $request): void
+    public function persist(string $screen, Request $request): void
     {
         foreach ($this->inlineFields($screen) as $field) {
             $name = $field['name'];
@@ -179,7 +188,7 @@ class SettingsExtension
                 $value = $value ?? '';
             }
 
-            \Illuminate\Support\Facades\DB::table('cms_settings')->updateOrInsert(
+            DB::table('cms_settings')->updateOrInsert(
                 ['key' => $name],
                 ['value' => $value, 'updated_at' => now()]
             );

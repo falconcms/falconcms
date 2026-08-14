@@ -31,24 +31,24 @@ class SeedFalconCms extends Command
             $this->info('Step 1: Syncing Roles, Permissions and Menus...');
             $this->call('db:seed', [
                 '--class' => 'FalconCms\\Core\\Database\\Seeders\\SystemSyncSeeder',
-                '--force' => true
+                '--force' => true,
             ]);
 
             $this->info('Step 2: Syncing Languages...');
             $this->call('db:seed', [
                 '--class' => 'FalconCms\\Core\\Database\\Seeders\\LanguageSeeder',
-                '--force' => true
+                '--force' => true,
             ]);
 
             $this->info('Step 3: Creating default pages & sample content...');
             $this->call('db:seed', [
                 '--class' => 'FalconCms\\Core\\Database\\Seeders\\DefaultContentSeeder',
-                '--force' => true
+                '--force' => true,
             ]);
 
             $this->info('Falcon CMS seeding completed successfully!');
         } catch (\Exception $e) {
-            $this->error('Seeding failed: ' . $e->getMessage());
+            $this->error('Seeding failed: '.$e->getMessage());
         }
     }
 }

@@ -3,10 +3,9 @@
 namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use FalconCms\Core\Models\Analytics;
+use FalconCms\Core\Support\UserAgentParser;
+use Illuminate\Http\Request;
 
 class TrackVisits
 {
@@ -35,13 +34,13 @@ class TrackVisits
         }
 
         $row = Analytics::create([
-            'ip_address'  => $request->ip(),
-            'url'         => $request->fullUrl(),
-            'referrer'    => $request->header('referer'),
-            'user_agent'  => $userAgent,
-            'browser'     => \FalconCms\Core\Support\UserAgentParser::browser($userAgent),
-            'os'          => \FalconCms\Core\Support\UserAgentParser::os($userAgent),
-            'device_type' => \FalconCms\Core\Support\UserAgentParser::device($userAgent),
+            'ip_address' => $request->ip(),
+            'url' => $request->fullUrl(),
+            'referrer' => $request->header('referer'),
+            'user_agent' => $userAgent,
+            'browser' => UserAgentParser::browser($userAgent),
+            'os' => UserAgentParser::os($userAgent),
+            'device_type' => UserAgentParser::device($userAgent),
         ]);
 
         // Resolve geo location AFTER the response is sent so it never slows the page.
@@ -53,9 +52,9 @@ class TrackVisits
 
                 if (!empty($geo['country'])) {
                     Analytics::where('id', $row->id)->update([
-                        'country'      => $geo['country'],
+                        'country' => $geo['country'],
                         'country_code' => $geo['country_code'] ?: null,
-                        'city'         => $geo['city'] ?: null,
+                        'city' => $geo['city'] ?: null,
                     ]);
                 }
             } catch (\Throwable $e) {

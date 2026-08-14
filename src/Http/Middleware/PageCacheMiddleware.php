@@ -16,11 +16,12 @@ class PageCacheMiddleware
         }
 
         // Create a unique key based on the URL and query parameters
-        $key = 'page_cache_' . md5($request->fullUrl());
+        $key = 'page_cache_'.md5($request->fullUrl());
 
         // Check if cache exists
         if (Cache::has($key) && get_cms_option('performance_static_caching', '0') === '1') {
             $cacheData = Cache::get($key);
+
             return response($cacheData['content'])
                 ->header('Content-Type', $cacheData['type'])
                 ->header('X-Lazy-Cache', 'HIT');
@@ -32,9 +33,9 @@ class PageCacheMiddleware
         if ($response->isSuccessful() && get_cms_option('performance_static_caching', '0') === '1') {
             Cache::put($key, [
                 'content' => $response->getContent(),
-                'type' => $response->headers->get('Content-Type')
+                'type' => $response->headers->get('Content-Type'),
             ], now()->addHours(24));
-            
+
             $response->header('X-Lazy-Cache', 'MISS');
         }
 

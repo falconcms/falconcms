@@ -3,9 +3,10 @@
 namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
+use FalconCms\Core\Models\Language;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
-use FalconCms\Core\Models\Language;
+use Illuminate\Support\Facades\Schema;
 
 class LocalizationMiddleware
 {
@@ -14,7 +15,7 @@ class LocalizationMiddleware
         $locale = $request->segment(1);
 
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) {
+            if (!Schema::hasTable('cms_languages')) {
                 return $next($request);
             }
 

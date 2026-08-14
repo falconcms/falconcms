@@ -1,5 +1,12 @@
 <?php
 
+use FalconCms\Core\Models\Analytics;
+use FalconCms\Core\Models\FieldGroup;
+use FalconCms\Core\Models\Language;
+use FalconCms\Core\Models\NavigationMenuItem;
+use FalconCms\Core\Models\Order;
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\PostTranslation;
 use Illuminate\Database\Migrations\Migration;
 
 /**
@@ -15,7 +22,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (! function_exists('get_cms_option') || ! function_exists('update_cms_option')) {
+        if (!function_exists('get_cms_option') || !function_exists('update_cms_option')) {
             return;
         }
         if (get_cms_option('falcon_freemium_initialized', null)) {
@@ -24,39 +31,43 @@ return new class extends Migration
         update_cms_option('falcon_freemium_initialized', now()->toIso8601String());
 
         $has = function (callable $cb): bool {
-            try { return (bool) $cb(); } catch (\Throwable $e) { return false; }
+            try {
+                return (bool) $cb();
+            } catch (Throwable $e) {
+                return false;
+            }
         };
 
         // Existing content at migrate time ⇒ this is an upgrade, not a fresh install.
-        if (! $has(fn () => \FalconCms\Core\Models\Post::query()->exists())) {
+        if (!$has(fn () => Post::query()->exists())) {
             return;
         }
 
         // Which Pro features was this site already using?
         $used = [];
-        if ($has(fn () => \FalconCms\Core\Models\Order::query()->exists())
-            || $has(fn () => \FalconCms\Core\Models\Post::where('type', 'product')->exists())) {
+        if ($has(fn () => Order::query()->exists())
+            || $has(fn () => Post::where('type', 'product')->exists())) {
             $used[] = 'ecommerce';
         }
-        if ($has(fn () => \FalconCms\Core\Models\Language::where('status', true)->count() > 1)
-            || $has(fn () => \FalconCms\Core\Models\PostTranslation::query()->exists())) {
+        if ($has(fn () => Language::where('status', true)->count() > 1)
+            || $has(fn () => PostTranslation::query()->exists())) {
             $used[] = 'multilang';
         }
-        if ($has(fn () => \FalconCms\Core\Models\FieldGroup::query()->exists())) {
+        if ($has(fn () => FieldGroup::query()->exists())) {
             $used[] = 'custom_fields';
         }
-        if ($has(fn () => \FalconCms\Core\Models\Analytics::query()->exists())) {
+        if ($has(fn () => Analytics::query()->exists())) {
             $used[] = 'analytics';
         }
         $rawLayouts = get_cms_option('falcon_layouts', null);
         $layouts = is_array($rawLayouts) ? $rawLayouts : (is_string($rawLayouts) ? json_decode($rawLayouts, true) : []);
-        if (! empty($layouts)
-            || $has(fn () => \FalconCms\Core\Models\NavigationMenuItem::whereNotNull('mega_menu_id')->exists())
-            || $has(fn () => \FalconCms\Core\Models\Post::where('type', 'falcon_content')->exists())) {
+        if (!empty($layouts)
+            || $has(fn () => NavigationMenuItem::whereNotNull('mega_menu_id')->exists())
+            || $has(fn () => Post::where('type', 'falcon_content')->exists())) {
             $used[] = 'builder_pro';
         }
 
-        if (! empty($used)) {
+        if (!empty($used)) {
             update_cms_option('falcon_grandfathered_features', json_encode(array_values(array_unique($used))));
         }
 

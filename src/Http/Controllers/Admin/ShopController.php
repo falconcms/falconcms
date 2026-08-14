@@ -2,10 +2,20 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
+use Carbon\Carbon;
 use FalconCms\Core\Http\Controllers\Concerns\SyncsOrderInventory;
+use FalconCms\Core\Mail\OrderNotificationMail;
+use FalconCms\Core\Models\Analytics;
+use FalconCms\Core\Models\Coupon;
 use FalconCms\Core\Models\Order;
+use FalconCms\Core\Services\EcommerceData;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class ShopController extends Controller
 {
@@ -14,42 +24,52 @@ class ShopController extends Controller
     public function overview(Request $request)
     {
         // Resolve the date range — preset or custom from/to.
-        $tz     = cms_timezone();
+        $tz = cms_timezone();
         $preset = $request->get('range', '30d');
-        $to     = $request->filled('to')   ? \Carbon\Carbon::parse($request->to, $tz)->endOfDay()->utc()   : cms_now()->endOfDay()->utc();
-        $from   = null;
+        $to = $request->filled('to') ? Carbon::parse($request->to, $tz)->endOfDay()->utc() : cms_now()->endOfDay()->utc();
+        $from = null;
 
         if ($request->filled('from')) {
-            $from   = \Carbon\Carbon::parse($request->from, $tz)->startOfDay()->utc();
+            $from = Carbon::parse($request->from, $tz)->startOfDay()->utc();
             $preset = 'custom';
         } else {
             switch ($preset) {
-                case 'today': $from = cms_now()->startOfDay()->utc(); break;
-                case '7d':    $from = cms_now()->subDays(6)->startOfDay()->utc(); break;
-                case 'month': $from = cms_now()->startOfMonth()->utc(); break;
-                case 'year':  $from = cms_now()->startOfYear()->utc(); break;
-                case 'all':   $from = null; break;
+                case 'today': $from = cms_now()->startOfDay()->utc();
+                    break;
+                case '7d':    $from = cms_now()->subDays(6)->startOfDay()->utc();
+                    break;
+                case 'month': $from = cms_now()->startOfMonth()->utc();
+                    break;
+                case 'year':  $from = cms_now()->startOfYear()->utc();
+                    break;
+                case 'all':   $from = null;
+                    break;
                 case '30d':
-                default:      $from = cms_now()->subDays(29)->startOfDay()->utc(); $preset = '30d'; break;
+                default:      $from = cms_now()->subDays(29)->startOfDay()->utc();
+                    $preset = '30d';
+                    break;
             }
         }
 
         $scoped = function () use ($from, $to) {
             $q = Order::query()->where('created_at', '<=', $to);
-            if ($from) $q->where('created_at', '>=', $from);
+            if ($from) {
+                $q->where('created_at', '>=', $from);
+            }
+
             return $q;
         };
 
         $revenueStatuses = ['completed', 'processing', 'partially-refunded'];
-        $netExpr = "COALESCE(SUM(total - COALESCE(refunded_amount, 0)), 0)";
+        $netExpr = 'COALESCE(SUM(total - COALESCE(refunded_amount, 0)), 0)';
 
         $stats = [
-            'total_orders'   => (clone $scoped())->count(),
-            'net_revenue'    => (float) $scoped()->whereIn('status', $revenueStatuses)->selectRaw("{$netExpr} as n")->value('n'),
-            'gross_revenue'  => (float) $scoped()->whereIn('status', $revenueStatuses)->sum('total'),
+            'total_orders' => (clone $scoped())->count(),
+            'net_revenue' => (float) $scoped()->whereIn('status', $revenueStatuses)->selectRaw("{$netExpr} as n")->value('n'),
+            'gross_revenue' => (float) $scoped()->whereIn('status', $revenueStatuses)->sum('total'),
             'total_refunded' => (float) $scoped()->where('refunded_amount', '>', 0)->sum('refunded_amount'),
-            'paid_orders'    => (clone $scoped())->whereIn('status', $revenueStatuses)->count(),
-            'pending'        => (clone $scoped())->where('status', 'pending')->count(),
+            'paid_orders' => (clone $scoped())->whereIn('status', $revenueStatuses)->count(),
+            'pending' => (clone $scoped())->where('status', 'pending')->count(),
         ];
         $stats['avg_order'] = $stats['paid_orders'] ? $stats['net_revenue'] / $stats['paid_orders'] : 0;
 
@@ -62,27 +82,27 @@ class ShopController extends Controller
             $s = $request->s;
             $ordersQuery->where(function ($q) use ($s) {
                 $q->where('order_number', 'like', "%{$s}%")
-                  ->orWhere('first_name', 'like', "%{$s}%")
-                  ->orWhere('last_name', 'like', "%{$s}%")
-                  ->orWhere('customer_email', 'like', "%{$s}%");
+                    ->orWhere('first_name', 'like', "%{$s}%")
+                    ->orWhere('last_name', 'like', "%{$s}%")
+                    ->orWhere('customer_email', 'like', "%{$s}%");
             });
         }
-        $orders   = $ordersQuery->latest()->paginate(15)->withQueryString();
-        $currency = \FalconCms\Core\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
+        $orders = $ordersQuery->latest()->paginate(15)->withQueryString();
+        $currency = EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD'));
 
         // E-commerce conversion funnel (visitors → product → cart → checkout → orders), scoped to this range.
         $ecommerce = null;
-        if (\Illuminate\Support\Facades\Schema::hasTable('cms_analytics')) {
-            $aQuery = fn () => \FalconCms\Core\Models\Analytics::query()
+        if (Schema::hasTable('cms_analytics')) {
+            $aQuery = fn () => Analytics::query()
                 ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
                 ->where('created_at', '<=', $to);
             $uniqueVisitors = $aQuery()->distinct()->count('ip_address');
             $orderCount = (int) $stats['total_orders'];
-            $convRate   = $uniqueVisitors > 0 ? round($orderCount / $uniqueVisitors * 100, 2) : 0;
+            $convRate = $uniqueVisitors > 0 ? round($orderCount / $uniqueVisitors * 100, 2) : 0;
             $stepVisitors = fn (string $like) => $aQuery()->where('url', 'like', $like)->distinct()->count('ip_address');
             $ecommerce = [
                 'convRate' => $convRate,
-                'funnel'   => [
+                'funnel' => [
                     ['label' => 'Visitors',      'count' => $uniqueVisitors],
                     ['label' => 'Product views', 'count' => $stepVisitors('%product%')],
                     ['label' => 'Cart',          'count' => $stepVisitors('%cart%')],
@@ -104,12 +124,13 @@ class ShopController extends Controller
         }
 
         if ($request->filled('s')) {
-            $query->where('order_number', 'like', '%' . $request->s . '%')
-                  ->orWhere('first_name', 'like', '%' . $request->s . '%')
-                  ->orWhere('last_name', 'like', '%' . $request->s . '%');
+            $query->where('order_number', 'like', '%'.$request->s.'%')
+                ->orWhere('first_name', 'like', '%'.$request->s.'%')
+                ->orWhere('last_name', 'like', '%'.$request->s.'%');
         }
 
         $orders = $query->latest()->paginate(10)->withQueryString();
+
         return view('falcon-cms::admin.shop.orders.index', compact('orders'));
     }
 
@@ -133,18 +154,20 @@ class ShopController extends Controller
                     $this->handleInventoryStatusChange($o, $oldStatus, $status);
                     if (!empty($o->customer_email)) {
                         try {
-                            \Illuminate\Support\Facades\Mail::to($o->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($o, 'status_updated'));
+                            Mail::to($o->customer_email)->send(new OrderNotificationMail($o, 'status_updated'));
                         } catch (\Exception $e) {
-                            \Illuminate\Support\Facades\Log::error("Order #{$o->order_number} status email failed: " . $e->getMessage());
+                            Log::error("Order #{$o->order_number} status email failed: ".$e->getMessage());
                         }
                     }
                 }
             }
+
             return back()->with('success', 'Orders status updated successfully.');
         }
 
         if ($action === 'delete') {
             Order::whereIn('id', $ids)->delete();
+
             return back()->with('success', 'Selected orders deleted successfully.');
         }
 
@@ -154,7 +177,7 @@ class ShopController extends Controller
     public function orderShow($id)
     {
         $order = Order::with('items.product')->findOrFail($id);
-        
+
         if (!$order->is_read) {
             $order->update(['is_read' => true]);
         }
@@ -165,6 +188,7 @@ class ShopController extends Controller
     public function orderInvoice($id)
     {
         $order = Order::with('items.product')->findOrFail($id);
+
         return view('falcon-cms::admin.shop.orders.invoice', compact('order'));
     }
 
@@ -177,9 +201,9 @@ class ShopController extends Controller
         // Save shipment tracking details (independent of status change).
         if ($request->has('tracking_number') || $request->has('tracking_carrier') || $request->has('tracking_url')) {
             $order->update([
-                'tracking_number'  => $request->input('tracking_number') ?: null,
+                'tracking_number' => $request->input('tracking_number') ?: null,
                 'tracking_carrier' => $request->input('tracking_carrier') ?: null,
-                'tracking_url'     => $request->input('tracking_url') ?: null,
+                'tracking_url' => $request->input('tracking_url') ?: null,
             ]);
         }
 
@@ -191,9 +215,9 @@ class ShopController extends Controller
                 $remainingBefore = max(0, (float) $order->total - (float) ($order->refunded_amount ?? 0));
                 [$ok, $msg] = $this->refundStripeOrder($order);
                 if (!$ok) {
-                    return redirect()->back()->with('error', 'Stripe refund failed: ' . $msg . ' — order status was not changed.');
+                    return redirect()->back()->with('error', 'Stripe refund failed: '.$msg.' — order status was not changed.');
                 }
-                $refundMsg = ' ' . $msg;
+                $refundMsg = ' '.$msg;
                 $emailRefundAmount = $remainingBefore; // amount refunded in this action
             }
 
@@ -205,14 +229,14 @@ class ShopController extends Controller
             // confirmed, completed, delivered, cancelled, refunded, partially-refunded, failed…).
             if (!empty($order->customer_email)) {
                 try {
-                    \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', $emailRefundAmount));
+                    Mail::to($order->customer_email)->send(new OrderNotificationMail($order, 'status_updated', null, 'customer', $emailRefundAmount));
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} status email failed: " . $e->getMessage());
+                    Log::error("Order #{$order->order_number} status email failed: ".$e->getMessage());
                 }
             }
         }
 
-        return redirect()->back()->with('success', 'Order status updated successfully.' . $refundMsg);
+        return redirect()->back()->with('success', 'Order status updated successfully.'.$refundMsg);
     }
 
     /**
@@ -223,59 +247,71 @@ class ShopController extends Controller
     private function refundStripeOrder(Order $order, ?float $amount = null): array
     {
         $secret = get_shop_option('shop_payment_stripe_secret');
-        if (!$secret) return [false, 'Stripe secret key is not configured.'];
-        if (!$order->transaction_id) return [false, 'No Stripe transaction reference found on this order.'];
+        if (!$secret) {
+            return [false, 'Stripe secret key is not configured.'];
+        }
+        if (!$order->transaction_id) {
+            return [false, 'No Stripe transaction reference found on this order.'];
+        }
 
         $alreadyRefunded = (float) ($order->refunded_amount ?? 0);
-        $remaining       = max(0, (float) $order->total - $alreadyRefunded);
-        if ($remaining <= 0) return [false, 'This order is already fully refunded.'];
+        $remaining = max(0, (float) $order->total - $alreadyRefunded);
+        if ($remaining <= 0) {
+            return [false, 'This order is already fully refunded.'];
+        }
 
         // Default: refund everything that is left.
         $refundAmount = $amount === null ? $remaining : (float) $amount;
-        if ($refundAmount <= 0) return [false, 'Refund amount must be greater than zero.'];
+        if ($refundAmount <= 0) {
+            return [false, 'Refund amount must be greater than zero.'];
+        }
         if ($refundAmount > $remaining + 0.001) {
-            return [false, 'Refund amount exceeds the remaining refundable balance (' . falcon_price_format($remaining, $order) . ').'];
+            return [false, 'Refund amount exceeds the remaining refundable balance ('.falcon_price_format($remaining, $order).').'];
         }
 
         // Stripe expects the smallest currency unit.
-        $currency    = strtolower(get_shop_option('shop_currency', 'usd'));
-        $zeroDecimal = ['bif','clp','djf','gnf','jpy','kmf','krw','mga','pyg','rwf','ugx','vnd','vuv','xaf','xof','xpf'];
+        $currency = strtolower(get_shop_option('shop_currency', 'usd'));
+        $zeroDecimal = ['bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg', 'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'];
         $stripeUnits = in_array($currency, $zeroDecimal, true) ? (int) round($refundAmount) : (int) round($refundAmount * 100);
 
         try {
-            $resp = \Illuminate\Support\Facades\Http::timeout(15)->connectTimeout(5)->asForm()->withToken($secret)->post('https://api.stripe.com/v1/refunds', [
-                'payment_intent'     => $order->transaction_id,
-                'amount'             => $stripeUnits,
+            $resp = Http::timeout(15)->connectTimeout(5)->asForm()->withToken($secret)->post('https://api.stripe.com/v1/refunds', [
+                'payment_intent' => $order->transaction_id,
+                'amount' => $stripeUnits,
                 'metadata[order_id]' => (string) $order->id,
             ]);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Stripe refund exception for order #{$order->order_number}: " . $e->getMessage());
+            Log::error("Stripe refund exception for order #{$order->order_number}: ".$e->getMessage());
+
             return [false, 'Could not reach Stripe. Please try again.'];
         }
 
         if ($resp->successful()) {
             $log = $order->refund_log ?? [];
             $log[] = [
-                'amount'  => round($refundAmount, 2),
-                'at'      => now()->utc()->toIso8601String(),
-                'by'      => optional(auth()->user())->name ?? 'Admin',
+                'amount' => round($refundAmount, 2),
+                'at' => now()->utc()->toIso8601String(),
+                'by' => optional(auth()->user())->name ?? 'Admin',
                 'gateway' => 'stripe',
-                'ref'     => $resp->json('id'),
+                'ref' => $resp->json('id'),
             ];
             $order->update([
                 'refunded_amount' => round($alreadyRefunded + $refundAmount, 2),
-                'refund_log'      => $log,
+                'refund_log' => $log,
             ]);
-            return [true, 'Refunded ' . falcon_price_format($refundAmount, $order) . ' via Stripe.'];
+
+            return [true, 'Refunded '.falcon_price_format($refundAmount, $order).' via Stripe.'];
         }
 
         // Treat an already-refunded charge as fully refunded so the status can still be set.
         if ($resp->json('error.code') === 'charge_already_refunded') {
             $order->update(['refunded_amount' => (float) $order->total]);
+
             return [true, 'This payment was already refunded in Stripe.'];
         }
 
-        \Illuminate\Support\Facades\Log::error("Stripe refund error for order #{$order->order_number}: " . $resp->body());
+        Log::error("Stripe refund error for order #{$order->order_number}: ".$resp->body());
+
         return [false, $resp->json('error.message') ?: 'Stripe rejected the refund.'];
     }
 
@@ -294,25 +330,27 @@ class ShopController extends Controller
 
         [$ok, $msg] = $this->refundStripeOrder($order, (float) $request->refund_amount);
         if (!$ok) {
-            return redirect()->back()->with('error', 'Refund failed: ' . $msg);
+            return redirect()->back()->with('error', 'Refund failed: '.$msg);
         }
 
         // Reflect the refund in the order status automatically.
-        $refunded   = (float) $order->fresh()->refunded_amount;
-        $fully      = $refunded >= (float) $order->total - 0.001;
-        $newStatus  = $fully ? 'refunded' : 'partially-refunded';
-        $oldStatus  = $order->status;
+        $refunded = (float) $order->fresh()->refunded_amount;
+        $fully = $refunded >= (float) $order->total - 0.001;
+        $newStatus = $fully ? 'refunded' : 'partially-refunded';
+        $oldStatus = $order->status;
         if ($oldStatus !== $newStatus) {
             $order->update(['status' => $newStatus]);
             // Only a full refund returns stock to inventory.
-            if ($fully) $this->handleInventoryStatusChange($order, $oldStatus, 'refunded');
+            if ($fully) {
+                $this->handleInventoryStatusChange($order, $oldStatus, 'refunded');
+            }
         }
 
         // Always notify the customer about the refund (even on repeat partial refunds), with the amount.
         try {
-            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', (float) $request->refund_amount));
+            Mail::to($order->customer_email)->send(new OrderNotificationMail($order, 'status_updated', null, 'customer', (float) $request->refund_amount));
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} refund email failed: " . $e->getMessage());
+            Log::error("Order #{$order->order_number} refund email failed: ".$e->getMessage());
         }
 
         return redirect()->back()->with('success', $msg);
@@ -329,39 +367,51 @@ class ShopController extends Controller
 
     public function settings()
     {
-        $countries = \FalconCms\Core\Services\EcommerceData::getCountriesWithStates(false);
-        $allowedCountries = \FalconCms\Core\Services\EcommerceData::getCountriesWithStates(true);
-        $currencies = \FalconCms\Core\Services\EcommerceData::getCurrencies();
-        $frontPageId    = get_cms_option('page_on_front');
-        $shopPageId     = get_shop_option('shop_shop_page_id');
-        $cartPageId     = get_shop_option('shop_cart_page_id');
+        $countries = EcommerceData::getCountriesWithStates(false);
+        $allowedCountries = EcommerceData::getCountriesWithStates(true);
+        $currencies = EcommerceData::getCurrencies();
+        $frontPageId = get_cms_option('page_on_front');
+        $shopPageId = get_shop_option('shop_shop_page_id');
+        $cartPageId = get_shop_option('shop_cart_page_id');
         $checkoutPageId = get_shop_option('shop_checkout_page_id');
-        $accountPageId  = get_shop_option('shop_account_page_id');
+        $accountPageId = get_shop_option('shop_account_page_id');
 
-        $pages = \Illuminate\Support\Facades\DB::table('posts')
+        $pages = DB::table('posts')
             ->where('type', 'page')
             ->get(['id', 'title', 'status']);
 
         foreach ($pages as $page) {
             $labels = [];
-            if ($page->id == $frontPageId) $labels[] = 'Front Page';
-            if ($page->id == $shopPageId) $labels[] = 'Shop Page';
-            if ($page->id == $cartPageId) $labels[] = 'Cart Page';
-            if ($page->id == $checkoutPageId) $labels[] = 'Checkout Page';
-            if ($page->id == $accountPageId) $labels[] = 'Account Page';
-            if ($page->status == 'draft') $labels[] = 'Draft';
-            
+            if ($page->id == $frontPageId) {
+                $labels[] = 'Front Page';
+            }
+            if ($page->id == $shopPageId) {
+                $labels[] = 'Shop Page';
+            }
+            if ($page->id == $cartPageId) {
+                $labels[] = 'Cart Page';
+            }
+            if ($page->id == $checkoutPageId) {
+                $labels[] = 'Checkout Page';
+            }
+            if ($page->id == $accountPageId) {
+                $labels[] = 'Account Page';
+            }
+            if ($page->status == 'draft') {
+                $labels[] = 'Draft';
+            }
+
             if (!empty($labels)) {
-                $page->title .= ' — ' . implode(', ', $labels);
+                $page->title .= ' — '.implode(', ', $labels);
             }
         }
 
-        $products = \Illuminate\Support\Facades\DB::table('posts')
+        $products = DB::table('posts')
             ->where('type', 'product')
             ->where('status', 'published')
             ->get(['id', 'title']);
 
-        $categories = \Illuminate\Support\Facades\DB::table('product_categories')
+        $categories = DB::table('product_categories')
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -392,7 +442,7 @@ class ShopController extends Controller
             }
 
             $amount = max(0, (float) ($row['amount'] ?? 0));
-            $type   = in_array($row['type'] ?? '', \FalconCms\Core\Models\Coupon::TYPES, true)
+            $type = in_array($row['type'] ?? '', Coupon::TYPES, true)
                 ? $row['type']
                 : 'fixed_cart';
 
@@ -410,10 +460,12 @@ class ShopController extends Controller
 
             $nullableNumber = static function ($value): ?float {
                 $value = is_scalar($value) ? trim((string) $value) : '';
+
                 return $value === '' ? null : max(0, (float) $value);
             };
             $nullableInt = static function ($value): ?int {
                 $value = is_scalar($value) ? trim((string) $value) : '';
+
                 return $value === '' ? null : max(0, (int) $value);
             };
             $idList = static function ($value): array {
@@ -423,25 +475,25 @@ class ShopController extends Controller
                 )));
             };
 
-            \FalconCms\Core\Models\Coupon::updateOrCreate(
+            Coupon::updateOrCreate(
                 ['code' => $code],
                 [
-                    'type'              => $type,
-                    'amount'            => $amount,
-                    'min_spend'         => $nullableNumber($row['min_spend'] ?? null),
-                    'products'          => $idList($row['products'] ?? []),
-                    'categories'        => $idList($row['categories'] ?? []),
-                    'usage_limit'       => $nullableInt($row['usage_limit'] ?? null),
+                    'type' => $type,
+                    'amount' => $amount,
+                    'min_spend' => $nullableNumber($row['min_spend'] ?? null),
+                    'products' => $idList($row['products'] ?? []),
+                    'categories' => $idList($row['categories'] ?? []),
+                    'usage_limit' => $nullableInt($row['usage_limit'] ?? null),
                     'total_usage_limit' => $nullableInt($row['total_usage_limit'] ?? null),
-                    'expiry_date'       => $expiry,
-                    'is_active'         => true,
+                    'expiry_date' => $expiry,
+                    'is_active' => true,
                 ]
             );
 
             $seen[$code] = true;
         }
 
-        \FalconCms\Core\Models\Coupon::when(
+        Coupon::when(
             !empty($seen),
             static fn ($q) => $q->whereNotIn('code', array_keys($seen))
         )->delete();
@@ -451,22 +503,22 @@ class ShopController extends Controller
     {
         // 1. Explicitly handle toggles (so they save 0 when unchecked)
         $toggles = [
-            'enable_coupons'          => 'shop_enable_coupons',
-            'multi_coupon_policy'     => 'shop_coupon_stacking_policy',
-            'enable_guest_checkout'   => 'shop_enable_guest_checkout',
-            'force_login_checkout'    => 'shop_force_login_checkout',
+            'enable_coupons' => 'shop_enable_coupons',
+            'multi_coupon_policy' => 'shop_coupon_stacking_policy',
+            'enable_guest_checkout' => 'shop_enable_guest_checkout',
+            'force_login_checkout' => 'shop_force_login_checkout',
         ];
 
         foreach ($toggles as $reqKey => $optKey) {
             $val = $request->has($reqKey) ? '1' : '0';
-            \Illuminate\Support\Facades\DB::table('cms_settings')->updateOrInsert(
+            DB::table('cms_settings')->updateOrInsert(
                 ['key' => $optKey],
                 ['value' => $val, 'updated_at' => now()]
             );
-            
+
             // Delete locale keys
-            \Illuminate\Support\Facades\DB::table('cms_settings')
-                ->where('key', 'like', $optKey . '_%')
+            DB::table('cms_settings')
+                ->where('key', 'like', $optKey.'_%')
                 ->delete();
         }
 
@@ -481,15 +533,15 @@ class ShopController extends Controller
         // 3. Save everything else
         $skip = array_merge(['_token', 'active_tab', 'coupons', 'coupons_submitted'], array_keys($toggles));
         foreach ($request->except($skip) as $key => $value) {
-            $optKey = 'shop_' . $key;
+            $optKey = 'shop_'.$key;
             if (falcon_is_protected_option($optKey) || falcon_is_protected_option($key)) {
                 continue;
             }
             update_shop_option($optKey, $value);
-            
+
             // Ensure global settings take precedence by deleting localized overrides
-            \Illuminate\Support\Facades\DB::table('cms_settings')
-                ->where('key', 'like', $optKey . '_%')
+            DB::table('cms_settings')
+                ->where('key', 'like', $optKey.'_%')
                 ->delete();
         }
 
@@ -499,6 +551,7 @@ class ShopController extends Controller
         }
 
         forget_cms_options_cache();
+
         return redirect()->back()->with('success', 'Shop settings saved successfully!');
     }
 }

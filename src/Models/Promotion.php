@@ -23,17 +23,19 @@ class Promotion extends Model
     ];
 
     protected $casts = [
-        'is_active'   => 'boolean',
-        'starts_at'   => 'datetime',
-        'ends_at'     => 'datetime',
+        'is_active' => 'boolean',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
         'trigger_ids' => 'array',
-        'reward_ids'  => 'array',
+        'reward_ids' => 'array',
         'trigger_qty' => 'float',
-        'reward_value'=> 'float',
+        'reward_value' => 'float',
     ];
 
     public const TRIGGER_TYPES = ['product', 'category', 'cart_total'];
-    public const REWARD_TYPES  = ['free_item', 'percent_off', 'fixed_off'];
+
+    public const REWARD_TYPES = ['free_item', 'percent_off', 'fixed_off'];
+
     public const REWARD_SCOPES = ['same', 'specific', 'category'];
 
     /** Active, inside its date window, and not past its global usage cap. */
@@ -67,7 +69,7 @@ class Promotion extends Model
 
         return $query->update([
             'usage_count' => DB::raw('usage_count + 1'),
-            'updated_at'  => now(),
+            'updated_at' => now(),
         ]) === 1;
     }
 
@@ -77,18 +79,18 @@ class Promotion extends Model
         $qty = (int) $this->trigger_qty;
 
         $trigger = match ($this->trigger_type) {
-            'cart_total' => 'Spend ' . falcon_price_format($this->trigger_qty),
-            'category'   => 'Buy ' . $qty . ' from selected categories',
-            default      => 'Buy ' . $qty . ' of selected products',
+            'cart_total' => 'Spend '.falcon_price_format($this->trigger_qty),
+            'category' => 'Buy '.$qty.' from selected categories',
+            default => 'Buy '.$qty.' of selected products',
         };
 
         $reward = match ($this->reward_type) {
-            'percent_off' => rtrim(rtrim(number_format($this->reward_value, 2), '0'), '.') . '% off',
-            'fixed_off'   => falcon_price_format($this->reward_value) . ' off',
-            default       => 'free',
+            'percent_off' => rtrim(rtrim(number_format($this->reward_value, 2), '0'), '.').'% off',
+            'fixed_off' => falcon_price_format($this->reward_value).' off',
+            default => 'free',
         };
 
-        return $trigger . ', get ' . (int) $this->reward_qty . ' ' . $reward;
+        return $trigger.', get '.(int) $this->reward_qty.' '.$reward;
     }
 
     /**

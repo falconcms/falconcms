@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 
 class Product extends Post
@@ -33,8 +34,13 @@ class Product extends Post
     public function getSalePriceAttribute()
     {
         $shopData = $this->shopData;
-        if (!$shopData || $shopData->sale_price === null) return null;
-        if ($shopData->sale_ends_at && \Carbon\Carbon::parse($shopData->sale_ends_at)->isPast()) return null;
+        if (!$shopData || $shopData->sale_price === null) {
+            return null;
+        }
+        if ($shopData->sale_ends_at && Carbon::parse($shopData->sale_ends_at)->isPast()) {
+            return null;
+        }
+
         return $shopData->sale_price;
     }
 
@@ -59,6 +65,7 @@ class Product extends Post
         if ($this->shopData->manage_stock && (int) $this->shopData->stock_quantity <= 0) {
             return false;
         }
+
         return true;
     }
 }

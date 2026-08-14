@@ -2,10 +2,10 @@
 
 namespace FalconCms\Core\Http\Controllers;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
-use FalconCms\Core\Models\Wishlist;
 use FalconCms\Core\Models\Product;
+use FalconCms\Core\Models\Wishlist;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class WishlistController extends Controller
 {
@@ -16,16 +16,16 @@ class WishlistController extends Controller
     {
         if (!auth()->check()) {
             return response()->json([
-                'success'       => false,
+                'success' => false,
                 'requires_login' => true,
-                'login_url'     => route('admin.login'),
-                'message'       => 'Please log in to use your wishlist.',
+                'login_url' => route('admin.login'),
+                'message' => 'Please log in to use your wishlist.',
             ], 200);
         }
 
         $request->validate(['product_id' => 'required|integer']);
         $productId = (int) $request->product_id;
-        $userId    = auth()->id();
+        $userId = auth()->id();
 
         $existing = Wishlist::where('user_id', $userId)->where('product_id', $productId)->first();
         if ($existing) {
@@ -38,8 +38,8 @@ class WishlistController extends Controller
 
         return response()->json([
             'success' => true,
-            'added'   => $added,
-            'count'   => Wishlist::where('user_id', $userId)->count(),
+            'added' => $added,
+            'count' => Wishlist::where('user_id', $userId)->count(),
             'message' => $added ? 'Added to your wishlist.' : 'Removed from your wishlist.',
         ]);
     }
@@ -51,6 +51,7 @@ class WishlistController extends Controller
     {
         if (!auth()->check()) {
             session()->put('url.intended', url()->current());
+
             return redirect()->route('admin.login')->with('error', 'Please log in to view your wishlist.');
         }
 
@@ -65,6 +66,7 @@ class WishlistController extends Controller
         }
 
         $post = null;
+
         return view($this->resolveWishlistView(), compact('products', 'post'));
     }
 
@@ -78,16 +80,22 @@ class WishlistController extends Controller
         }
         $request->validate(['product_id' => 'required|integer']);
         Wishlist::where('user_id', auth()->id())->where('product_id', (int) $request->product_id)->delete();
+
         return redirect()->route('shop.wishlist')->with('success', 'Removed from your wishlist.');
     }
 
     private function resolveWishlistView(): string
     {
         $theme = get_cms_option('active_theme', 'falcon-theme');
-        $app   = "themes.{$theme}.ecommerce.wishlist";
-        if (view()->exists($app)) return $app;
+        $app = "themes.{$theme}.ecommerce.wishlist";
+        if (view()->exists($app)) {
+            return $app;
+        }
         $pkg = "falcon-cms::themes.{$theme}.ecommerce.wishlist";
-        if (view()->exists($pkg)) return $pkg;
+        if (view()->exists($pkg)) {
+            return $pkg;
+        }
+
         return 'falcon-cms::themes.falcon-theme.ecommerce.wishlist';
     }
 }

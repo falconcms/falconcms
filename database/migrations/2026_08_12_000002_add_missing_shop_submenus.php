@@ -24,7 +24,7 @@ return new class extends Migration
 
     public function up(): void
     {
-        if (! Schema::hasTable('menus')) {
+        if (!Schema::hasTable('menus')) {
             return;
         }
 
@@ -39,7 +39,7 @@ return new class extends Migration
             ->where('title', 'Shop')
             ->value('id');
 
-        if (! $shopId) {
+        if (!$shopId) {
             return;   // no Shop menu on this site; nothing to hang these off
         }
 
@@ -54,11 +54,11 @@ return new class extends Migration
             }
 
             DB::table('menus')->insert([
-                'parent_id'  => $shopId,
-                'title'      => $item['title'],
-                'route'      => $item['route'],
-                'params'     => null,
-                'order'      => $item['order'],
+                'parent_id' => $shopId,
+                'title' => $item['title'],
+                'route' => $item['route'],
+                'params' => null,
+                'order' => $item['order'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -67,7 +67,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (! Schema::hasTable('menus')) {
+        if (!Schema::hasTable('menus')) {
             return;
         }
 

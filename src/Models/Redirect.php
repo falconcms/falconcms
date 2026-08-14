@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Redirect extends Model
 {
     protected $table = 'cms_redirects';
-    
+
     protected $fillable = [
         'old_url',
         'new_url',
         'status_code',
         'hits',
-        'last_hit_at'
+        'last_hit_at',
     ];
 
     protected $casts = [

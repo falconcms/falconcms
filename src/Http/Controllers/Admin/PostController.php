@@ -2,15 +2,26 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\CustomTaxonomy;
+use FalconCms\Core\Models\FieldGroup;
 use FalconCms\Core\Models\Post;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
+use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\ProductData;
+use FalconCms\Core\Models\ProductDownload;
+use FalconCms\Core\Models\ProductTag;
+use FalconCms\Core\Models\ProductVariation;
+use FalconCms\Core\Models\Redirect;
 use FalconCms\Core\Models\Revision;
+use FalconCms\Core\Models\Tag;
+use FalconCms\Core\Models\TaxonomyTerm;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
@@ -19,17 +30,17 @@ class PostController extends Controller
         $post = Post::findOrFail($id);
         $customElements = apply_falcon_filters('falcon_builder_elements', []);
 
-        $bodyRaw    = get_cms_option('theme_typography_body');
+        $bodyRaw = get_cms_option('theme_typography_body');
         $headingRaw = get_cms_option('theme_typography_h1');
-        $bodyFont    = is_array($bodyRaw)    ? $bodyRaw    : json_decode((string)$bodyRaw,    true);
-        $headingFont = is_array($headingRaw) ? $headingRaw : json_decode((string)$headingRaw, true);
-        $themeBodyFont    = $bodyFont['family']    ?? null;
+        $bodyFont = is_array($bodyRaw) ? $bodyRaw : json_decode((string) $bodyRaw, true);
+        $headingFont = is_array($headingRaw) ? $headingRaw : json_decode((string) $headingRaw, true);
+        $themeBodyFont = $bodyFont['family'] ?? null;
         $themeHeadingFont = $headingFont['family'] ?? null;
 
         // Detect a pending autosave newer than the saved content (for the recovery banner)
         $pendingAutosave = null;
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('cms_revisions')) {
+            if (Schema::hasTable('cms_revisions')) {
                 $auto = Revision::where('revisionable_type', $post->getMorphClass())
                     ->where('revisionable_id', $post->getKey())
                     ->where('type', 'autosave')->first();
@@ -37,7 +48,8 @@ class PostController extends Controller
                     $pendingAutosave = ['id' => $auto->id, 'time' => $auto->updated_at->format('M j, Y g:i A')];
                 }
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         // Where the builder's ✕ (close) returns to: the edit surface this item
         // came from — a layout section → the Layout Builder; a page/post/CPT →
@@ -48,9 +60,9 @@ class PostController extends Controller
             $builderBackUrl = $return;
         } elseif (in_array($post->type, $layoutTypes, true)) {
             $builderBackUrl = route('admin.falcon-builder.sections');
-        } elseif ($post->type === 'page' && \Illuminate\Support\Facades\Route::has('admin.pages.edit')) {
+        } elseif ($post->type === 'page' && Route::has('admin.pages.edit')) {
             $builderBackUrl = route('admin.pages.edit', $post->id);
-        } elseif (\Illuminate\Support\Facades\Route::has('admin.posts.edit')) {
+        } elseif (Route::has('admin.posts.edit')) {
             $builderBackUrl = route('admin.posts.edit', $post->id);
         } else {
             $builderBackUrl = route('admin.posts.index');
@@ -70,9 +82,9 @@ class PostController extends Controller
             if (function_exists('falcon_layout_assigned_section')) {
                 // [frame part => [section post type, layout slot key]]
                 $slots = [
-                    'header'   => ['falcon_header', 'header'],
+                    'header' => ['falcon_header', 'header'],
                     'titlebar' => ['falcon_ptb',    'page_title_bar'],
-                    'footer'   => ['falcon_footer', 'footer'],
+                    'footer' => ['falcon_footer', 'footer'],
                 ];
                 foreach ($slots as $part => $meta) {
                     // Always preview the slot: it renders the active custom section, or the theme
@@ -85,10 +97,19 @@ class PostController extends Controller
                     // Relative URL (absolute=false) so the iframe is always same-origin as the builder.
                     $frameUrl = route('admin.falcon-builder.frame', ['id' => $post->id, 'part' => $part], false);
                     // Edit → the assigned custom section if there is one, else the Layout Builder overview.
-                    $editUrl  = $sec ? route('admin.falcon-builder', $sec->id) : route('admin.falcon-builder.sections');
-                    if ($part === 'header')   { $frameHeaderUrl   = $frameUrl; $frameHeaderEditUrl   = $editUrl; }
-                    if ($part === 'titlebar') { $frameTitleBarUrl = $frameUrl; $frameTitleBarEditUrl = $editUrl; }
-                    if ($part === 'footer')   { $frameFooterUrl   = $frameUrl; $frameFooterEditUrl   = $editUrl; }
+                    $editUrl = $sec ? route('admin.falcon-builder', $sec->id) : route('admin.falcon-builder.sections');
+                    if ($part === 'header') {
+                        $frameHeaderUrl = $frameUrl;
+                        $frameHeaderEditUrl = $editUrl;
+                    }
+                    if ($part === 'titlebar') {
+                        $frameTitleBarUrl = $frameUrl;
+                        $frameTitleBarEditUrl = $editUrl;
+                    }
+                    if ($part === 'footer') {
+                        $frameFooterUrl = $frameUrl;
+                        $frameFooterEditUrl = $editUrl;
+                    }
                 }
             }
         }
@@ -115,14 +136,14 @@ class PostController extends Controller
         view()->share('current_post', $post);
         if (function_exists('falcon_layout_context')) {
             falcon_layout_context([
-                'kind'      => 'single',
+                'kind' => 'single',
                 'post_type' => $post->type,
-                'post_id'   => $post->id,
+                'post_id' => $post->id,
             ]);
         }
 
         return response(view('falcon-cms::admin.falcon-builder.frame-preview', [
-            'post'             => $post,
+            'post' => $post,
             'builderFramePart' => $part,
         ])->render())->header('X-Frame-Options', 'SAMEORIGIN');
     }
@@ -137,7 +158,7 @@ class PostController extends Controller
 
         $post->update([
             'content' => json_encode($request->input('layout')),
-            'editor_type' => 'builder'
+            'editor_type' => 'builder',
         ]);
         Revision::clearAutosave($post);
 
@@ -160,9 +181,9 @@ class PostController extends Controller
         $rev = Revision::snapshot($draft, 'autosave');
 
         return response()->json([
-            'success'  => (bool) $rev,
+            'success' => (bool) $rev,
             'saved_at' => $rev ? $rev->updated_at->toIso8601String() : null,
-            'time'     => $rev ? $rev->updated_at->format('g:i:s A') : null,
+            'time' => $rev ? $rev->updated_at->format('g:i:s A') : null,
         ]);
     }
 
@@ -176,12 +197,12 @@ class PostController extends Controller
             ->with('user:id,name')
             ->limit(60)
             ->get()
-            ->map(fn($r) => [
-                'id'       => $r->id,
-                'type'     => $r->type,
-                'user'     => $r->user->name ?? 'System',
-                'time'     => $r->created_at->format('M j, Y g:i A'),
-                'ago'      => $r->created_at->diffForHumans(),
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'type' => $r->type,
+                'user' => $r->user->name ?? 'System',
+                'time' => $r->created_at->format('M j, Y g:i A'),
+                'ago' => $r->created_at->diffForHumans(),
                 'is_autosave' => $r->type === 'autosave',
             ]);
 
@@ -192,7 +213,7 @@ class PostController extends Controller
     public function restoreRevision(Request $request, $id, $revisionId)
     {
         $post = Post::findOrFail($id);
-        $rev  = Revision::where('revisionable_type', $post->getMorphClass())
+        $rev = Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->findOrFail($revisionId);
 
@@ -205,6 +226,7 @@ class PostController extends Controller
 
         // Return the layout so the builder can reload it live.
         $layout = json_decode($rev->content, true);
+
         return response()->json(['success' => true, 'layout' => is_array($layout) ? $layout : [], 'message' => 'Revision restored.']);
     }
 
@@ -225,14 +247,14 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $draft = clone $post;
-        $draft->title   = $request->input('title', $post->title);
+        $draft->title = $request->input('title', $post->title);
         $draft->content = $request->input('content', $post->content);
 
         $rev = Revision::snapshot($draft, 'autosave');
 
         return response()->json([
             'success' => (bool) $rev,
-            'time'    => $rev ? $rev->updated_at->format('g:i:s A') : null,
+            'time' => $rev ? $rev->updated_at->format('g:i:s A') : null,
         ]);
     }
 
@@ -240,13 +262,13 @@ class PostController extends Controller
     public function restoreRevisionClassic(Request $request, $id, $revisionId)
     {
         $post = Post::findOrFail($id);
-        $rev  = Revision::where('revisionable_type', $post->getMorphClass())
+        $rev = Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->findOrFail($revisionId);
 
         Revision::snapshot($post, 'revision'); // preserve current first
         $post->update([
-            'title'   => $rev->title ?: $post->title,
+            'title' => $rev->title ?: $post->title,
             'content' => $rev->content,
         ]);
         Revision::clearAutosave($post);
@@ -305,20 +327,20 @@ class PostController extends Controller
             $shopData->variations()->delete();
             if ($request->has('variations')) {
                 foreach ($request->variations as $vData) {
-                        $shopData->variations()->create([
-                            'attributes_data' => $vData['attributes_data'] ?? [],
-                            'price' => $vData['price'] ?? null,
-                            'sale_price' => $vData['sale_price'] ?? null,
-                            'sku' => $vData['sku'] ?? null,
-                            'weight' => $vData['weight'] ?? null,
-                            'length' => $vData['length'] ?? null,
-                            'width' => $vData['width'] ?? null,
-                            'height' => $vData['height'] ?? null,
-                            'stock_status' => $vData['stock_status'] ?? 'instock',
-                            'stock_quantity' => $vData['stock_quantity'] ?? 0,
-                            'manage_stock' => $vData['manage_stock'] ?? false,
-                            'image' => $vData['image'] ?? null,
-                        ]);
+                    $shopData->variations()->create([
+                        'attributes_data' => $vData['attributes_data'] ?? [],
+                        'price' => $vData['price'] ?? null,
+                        'sale_price' => $vData['sale_price'] ?? null,
+                        'sku' => $vData['sku'] ?? null,
+                        'weight' => $vData['weight'] ?? null,
+                        'length' => $vData['length'] ?? null,
+                        'width' => $vData['width'] ?? null,
+                        'height' => $vData['height'] ?? null,
+                        'stock_status' => $vData['stock_status'] ?? 'instock',
+                        'stock_quantity' => $vData['stock_quantity'] ?? 0,
+                        'manage_stock' => $vData['manage_stock'] ?? false,
+                        'image' => $vData['image'] ?? null,
+                    ]);
                 }
             }
 
@@ -337,13 +359,15 @@ class PostController extends Controller
             return response()->json(['success' => true, 'message' => 'Variations saved successfully.']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+
+            return response()->json(['success' => false, 'message' => 'Error: '.$e->getMessage()], 500);
         }
     }
 
     public function previewBuilder($id)
     {
         $post = Post::findOrFail($id);
+
         // This would typically return a front-end view that renders the builder JSON
         return view('falcon-cms::admin.falcon-builder.preview', compact('post'));
     }
@@ -358,7 +382,7 @@ class PostController extends Controller
         // Products are an e-commerce (Pro) feature, "browse but locked": viewing the product
         // list/editor is fine, but creating/updating/deleting needs real Pro (licensed or grace,
         // not merely grandfathered). Only WRITE requests are blocked; GET browsing passes.
-        if ($slug === 'product' && ! request()->isMethodSafe() && ! falcon_pro_editable('ecommerce')) {
+        if ($slug === 'product' && !request()->isMethodSafe() && !falcon_pro_editable('ecommerce')) {
             $msg = 'This feature is available in the Pro version.';
             if (request()->ajax() || request()->expectsJson()) {
                 abort(response()->json(['success' => false, 'pro' => true, 'message' => $msg], 200));
@@ -384,9 +408,9 @@ class PostController extends Controller
         } else {
             $slug = Str::slug($title);
         }
-        
+
         if (empty($slug)) {
-            $slug = 'post-' . time();
+            $slug = 'post-'.time();
         }
 
         $originalSlug = $slug;
@@ -399,6 +423,7 @@ class PostController extends Controller
             $slug = "{$originalSlug}-{$count}";
             $count++;
         }
+
         return $slug;
     }
 
@@ -412,20 +437,29 @@ class PostController extends Controller
     private function userCanManageType(string $type, array $extra = []): bool
     {
         $user = auth()->user();
-        if (!$user) return false;
+        if (!$user) {
+            return false;
+        }
 
         $perms = [];
         foreach (array_unique([$type, Str::plural($type)]) as $t) {
-            $perms[] = 'manage_' . $t;
-            $perms[] = 'access_' . $t;
-            $perms[] = 'access_all_' . $t;
+            $perms[] = 'manage_'.$t;
+            $perms[] = 'access_'.$t;
+            $perms[] = 'access_all_'.$t;
         }
-        if ($type === 'page') $perms[] = 'manage_pages';
-        if ($type === 'post') $perms[] = 'manage_posts';
+        if ($type === 'page') {
+            $perms[] = 'manage_pages';
+        }
+        if ($type === 'post') {
+            $perms[] = 'manage_posts';
+        }
 
         foreach (array_merge($perms, $extra) as $p) {
-            if ($user->hasPermission($p)) return true;
+            if ($user->hasPermission($p)) {
+                return true;
+            }
         }
+
         return false;
     }
 
@@ -438,9 +472,9 @@ class PostController extends Controller
             $label = Str::plural($type);
             abort(403, "You do not have permission to manage {$label}.");
         }
-        
+
         $status = $request->query('status');
-        
+
         $lang = $request->query('lang');
         $eagerLoad = ['categories', 'tags', 'taxonomyTerms'];
         if ($type === 'product') {
@@ -462,36 +496,36 @@ class PostController extends Controller
         }
 
         if ($request->filled('s')) {
-            $query->where('title', 'like', '%' . $request->s . '%');
+            $query->where('title', 'like', '%'.$request->s.'%');
         }
 
         if ($request->filled('cat') && $request->cat != '-1') {
-            $query->whereHas('categories', function($q) use ($request) {
+            $query->whereHas('categories', function ($q) use ($request) {
                 $q->where('categories.id', $request->cat);
             });
         }
 
         if ($request->filled('tag_id')) {
-            $query->whereHas('tags', function($q) use ($request) {
+            $query->whereHas('tags', function ($q) use ($request) {
                 $q->where('tags.id', $request->tag_id);
             });
         }
 
         if ($request->filled('term_id')) {
-            $query->whereHas('taxonomyTerms', function($q) use ($request) {
+            $query->whereHas('taxonomyTerms', function ($q) use ($request) {
                 $q->where('taxonomy_terms.id', $request->term_id);
             });
         }
 
         // Dedicated Product Category / Tag filters (products)
         if ($request->filled('product_cat')) {
-            $query->whereHas('productCategories', function($q) use ($request) {
+            $query->whereHas('productCategories', function ($q) use ($request) {
                 $q->where('product_categories.id', $request->product_cat);
             });
         }
 
         if ($request->filled('product_tag')) {
-            $query->whereHas('productTags', function($q) use ($request) {
+            $query->whereHas('productTags', function ($q) use ($request) {
                 $q->where('product_tags.id', $request->product_tag);
             });
         }
@@ -512,9 +546,9 @@ class PostController extends Controller
         }
 
         $posts = $query->latest()->paginate(10)->withQueryString();
-        $categories = \FalconCms\Core\Models\Category::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
         $driver = \DB::connection()->getDriverName();
-        $yearCol  = $driver === 'sqlite' ? "strftime('%Y', created_at)" : 'YEAR(created_at)';
+        $yearCol = $driver === 'sqlite' ? "strftime('%Y', created_at)" : 'YEAR(created_at)';
         $monthCol = $driver === 'sqlite' ? "strftime('%m', created_at)" : 'MONTH(created_at)';
         $dates = Post::where('type', $type)
             ->selectRaw("$yearCol as year, $monthCol as month")
@@ -533,9 +567,9 @@ class PostController extends Controller
         $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
         $trashCount = (clone $countQuery)->onlyTrashed()->count();
 
-        $postType = \FalconCms\Core\Models\PostType::where('slug', $type)->first();
-        
-        $assignedTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
+        $postType = PostType::where('slug', $type)->first();
+
+        $assignedTaxonomies = CustomTaxonomy::where('is_active', true)
             ->whereJsonContains('post_types', $type)
             ->get();
 
@@ -555,8 +589,10 @@ class PostController extends Controller
 
         $tagIds = [];
         foreach (array_map('trim', explode(',', (string) $request->input('product_tags', ''))) as $name) {
-            if ($name === '') continue;
-            $tag = \FalconCms\Core\Models\ProductTag::firstOrCreate(
+            if ($name === '') {
+                continue;
+            }
+            $tag = ProductTag::firstOrCreate(
                 ['slug' => Str::slug($name)],
                 ['name' => $name]
             );
@@ -571,47 +607,49 @@ class PostController extends Controller
         $this->checkTypeActive($type);
 
         // Dynamic permission check
-        if (!$this->userCanManageType($type, ['access_add_new_' . Str::slug($type, '_'), 'access_add_new_' . Str::plural($type), 'access_add_new'])) {
+        if (!$this->userCanManageType($type, ['access_add_new_'.Str::slug($type, '_'), 'access_add_new_'.Str::plural($type), 'access_add_new'])) {
             $label = Str::plural($type);
             abort(403, "You do not have permission to create {$label}.");
         }
-        
+
         $pages = Post::where('type', 'page')->orderBy('title')->get();
-        $postType = \FalconCms\Core\Models\PostType::where('slug', $type)->first();
+        $postType = PostType::where('slug', $type)->first();
         $supports = $postType ? ($postType->supports ?? ['title', 'editor', 'excerpt', 'featured_image']) : ['title', 'editor', 'excerpt', 'featured_image'];
 
         $assignedTaxonomies = [];
-        
+
         // Detect custom taxonomies that override built-in ones
-        $overriddenTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
+        $overriddenTaxonomies = CustomTaxonomy::where('is_active', true)
             ->whereJsonContains('post_types', $type)
             ->whereIn('slug', ['categories', 'tags'])
             ->pluck('slug')
             ->toArray();
 
-        $taxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->get();
+        $taxonomies = CustomTaxonomy::where('is_active', true)->get();
         foreach ($taxonomies as $tax) {
             if (is_array($tax->post_types) && in_array($type, $tax->post_types)) {
                 $slugLower = strtolower($tax->slug);
-                if (in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']) && !in_array($slugLower, $overriddenTaxonomies) && $type !== 'product') continue;
-                
-                $tax->terms = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)
+                if (in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']) && !in_array($slugLower, $overriddenTaxonomies) && $type !== 'product') {
+                    continue;
+                }
+
+                $tax->terms = TaxonomyTerm::where('taxonomy_slug', $tax->slug)
                     ->where('cpt_slug', $type)
                     ->get();
                 $assignedTaxonomies[] = $tax;
             }
         }
-        
+
         // Custom Fields
-        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
-            ->where(function($q) use ($type) {
+        $fieldGroups = FieldGroup::where('is_active', true)
+            ->where(function ($q) use ($type) {
                 $q->whereJsonContains('rules->post_type', $type);
             })
             ->with('fields')
             ->orderBy('order')
             ->get();
 
-        $post = new Post();
+        $post = new Post;
 
         return view('falcon-cms::admin.posts.create', compact('post', 'type', 'pages', 'supports', 'assignedTaxonomies', 'fieldGroups', 'postType', 'overriddenTaxonomies'));
     }
@@ -620,33 +658,33 @@ class PostController extends Controller
     {
         $type = $request->input('type', 'post');
         $this->checkTypeActive($type);
-        
+
         // Dynamic permission check
-        if (!$this->userCanManageType($type, ['access_add_new_' . Str::slug($type, '_'), 'access_add_new_' . Str::plural($type), 'access_add_new'])) {
+        if (!$this->userCanManageType($type, ['access_add_new_'.Str::slug($type, '_'), 'access_add_new_'.Str::plural($type), 'access_add_new'])) {
             $label = Str::plural($type);
             abort(403, "You do not have permission to store {$label}.");
         }
-        
+
         $this->validateCustomFields($request);
 
         $status = $request->input('status', 'draft');
 
         $rules = [
-            'title'   => ($status === 'draft' ? 'nullable' : 'required') . '|string|max:255',
-            'slug'    => 'nullable|string|max:255',
+            'title' => ($status === 'draft' ? 'nullable' : 'required').'|string|max:255',
+            'slug' => 'nullable|string|max:255',
             'content' => 'nullable|string',
             'excerpt' => 'nullable|string',
-            'type'    => 'required|string',
-            'status'  => 'required|string|in:draft,published,scheduled',
-            'published_at'   => 'nullable|date',
+            'type' => 'required|string',
+            'status' => 'required|string|in:draft,published,scheduled',
+            'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
-            'parent_id'      => 'nullable|exists:posts,id',
-            'template'       => 'nullable|string',
-            'menu_order'     => 'nullable|integer',
-            'editor_type'    => 'nullable|string|in:rich,builder',
-            'lang_code'      => 'nullable|string|max:10',
-            'seo'            => 'nullable|array',
-            'gallery'        => 'nullable|array',
+            'parent_id' => 'nullable|exists:posts,id',
+            'template' => 'nullable|string',
+            'menu_order' => 'nullable|integer',
+            'editor_type' => 'nullable|string|in:rich,builder',
+            'lang_code' => 'nullable|string|max:10',
+            'seo' => 'nullable|array',
+            'gallery' => 'nullable|array',
         ];
 
         if ($type === 'product') {
@@ -664,7 +702,7 @@ class PostController extends Controller
             $rules['backorders'] = 'nullable|string|in:no,notify,yes';
             $rules['weight'] = 'nullable|numeric|min:0|max:999999';
             $rules['length'] = 'nullable|numeric|min:0|max:999999';
-            $rules['width']  = 'nullable|numeric|min:0|max:999999';
+            $rules['width'] = 'nullable|numeric|min:0|max:999999';
             $rules['height'] = 'nullable|numeric|min:0|max:999999';
             $rules['manage_stock'] = 'nullable|boolean';
             $rules['short_description'] = 'nullable|string';
@@ -685,7 +723,7 @@ class PostController extends Controller
         }
 
         $productFieldKeys = ['price', 'sale_price', 'sale_ends_at', 'is_downloadable', 'download_expiry_days', 'sku', 'stock_quantity', 'stock_status', 'manage_stock', 'short_description', 'attributes_data', 'tax_status', 'backorders', 'weight', 'length', 'width', 'height'];
-        
+
         // shop_products carries two columns for this. Only `type` was ever written, so
         // `product_type` drifted out of step and the same product could read as variable on one
         // screen and simple on another. Both are written now; the reconcile migration fixed the
@@ -727,14 +765,14 @@ class PostController extends Controller
         // tax_status is NOT NULL with a 'taxable' default; the field validates as nullable, so an
         // explicit null (or anything off the allowlist) is coerced rather than written through.
         if (array_key_exists('tax_status', $productData)
-            && !in_array($productData['tax_status'], \FalconCms\Core\Models\ProductData::TAX_STATUSES, true)) {
+            && !in_array($productData['tax_status'], ProductData::TAX_STATUSES, true)) {
             $productData['tax_status'] = 'taxable';
         }
 
         // backorders is NOT NULL with a 'no' default, so an empty or unknown value is coerced
         // rather than written through. Measurements stay nullable — blank means "not recorded".
         if (array_key_exists('backorders', $productData)
-            && !in_array($productData['backorders'], \FalconCms\Core\Models\ProductData::BACKORDER_MODES, true)) {
+            && !in_array($productData['backorders'], ProductData::BACKORDER_MODES, true)) {
             $productData['backorders'] = 'no';
         }
         foreach (['weight', 'length', 'width', 'height'] as $measure) {
@@ -751,13 +789,15 @@ class PostController extends Controller
 
         $slugSource = !empty($postData['slug']) ? $postData['slug'] : (!empty($postData['title']) ? $postData['title'] : 'no-title');
         $postData['slug'] = $this->generateUniqueSlug($slugSource, 0, $postData['type'], $lang);
-        if (empty($postData['title'])) $postData['title'] = '(no title)';
+        if (empty($postData['title'])) {
+            $postData['title'] = '(no title)';
+        }
         $postData['user_id'] = auth()->id();
 
         if ($request->hasFile('featured_image')) {
             $file = $request->file('featured_image');
-            $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp','image/avif'];
-            $allowedExts  = ['jpg','jpeg','png','gif','webp','avif'];
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+            $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
             if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedExts) || !in_array($file->getMimeType(), $allowedMimes)) {
                 return redirect()->back()->withErrors(['featured_image' => 'Featured image must be a valid image file (JPG, PNG, GIF, WebP, AVIF).'])->withInput();
             }
@@ -770,10 +810,10 @@ class PostController extends Controller
             $postData['template'] = 'site-width';
         }
 
-        $postType = \FalconCms\Core\Models\PostType::where('slug', $postData['type'])->first();
+        $postType = PostType::where('slug', $postData['type'])->first();
         $overriddenTaxonomies = [];
         if ($postType) {
-            $overriddenTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
+            $overriddenTaxonomies = CustomTaxonomy::where('is_active', true)
                 ->whereJsonContains('post_types', $postData['type'])
                 ->pluck('slug')
                 ->toArray();
@@ -791,7 +831,7 @@ class PostController extends Controller
         // Save Product Data
         if ($type === 'product') {
             $shopData = $post->shopData()->create($productData);
-            
+
             // Save Variations if product type is variable
             if ($productData['type'] === 'variable' && $request->has('variations')) {
                 foreach ($request->variations as $vData) {
@@ -826,9 +866,11 @@ class PostController extends Controller
         if ($request->tags && !in_array('tags', $overriddenTaxonomies)) {
             $tagIds = [];
             $tags = array_map('trim', explode(',', $request->tags));
-            foreach($tags as $tagName) {
-                if(empty($tagName)) continue;
-                $tag = \FalconCms\Core\Models\Tag::firstOrCreate(
+            foreach ($tags as $tagName) {
+                if (empty($tagName)) {
+                    continue;
+                }
+                $tag = Tag::firstOrCreate(
                     ['slug' => Str::slug($tagName)],
                     ['name' => $tagName]
                 );
@@ -849,7 +891,7 @@ class PostController extends Controller
                     'post_id' => $post->id,
                     'field_id' => $fieldId,
                     'value' => is_array($value) ? json_encode($value) : $value,
-                    'created_at' => now(), 'updated_at' => now()
+                    'created_at' => now(), 'updated_at' => now(),
                 ]);
             }
         }
@@ -867,20 +909,20 @@ class PostController extends Controller
                 $clone->lang_code = $langCode;
                 $clone->origin_id = $post->origin_id ?: $post->id;
                 $clone->slug = $post->slug;
-                
+
                 $clone->title = falcon_translate($post->title, $langCode);
-                
+
                 // Generate translated slug
                 $clone->slug = $this->generateUniqueSlug($clone->title, 0, $post->type, $langCode);
                 // but let's translate simple text if it's rich editor
                 if ($post->editor_type === 'rich') {
                     $clone->content = falcon_translate($post->content, $langCode);
                 }
-                
+
                 if ($post->excerpt) {
                     $clone->excerpt = falcon_translate($post->excerpt, $langCode);
                 }
-                
+
                 $clone->save();
 
                 // Sync relationships for the clone
@@ -904,7 +946,7 @@ class PostController extends Controller
                             'post_id' => $clone->id,
                             'field_id' => $fieldId,
                             'value' => is_array($value) ? json_encode($value) : $value,
-                            'created_at' => now(), 'updated_at' => now()
+                            'created_at' => now(), 'updated_at' => now(),
                         ]);
                     }
                 }
@@ -913,11 +955,13 @@ class PostController extends Controller
 
         if ($request->has('redirect_to_builder')) {
             clear_page_cache();
-            return redirect()->route('admin.falcon-builder', $post->id)->with('success', ucfirst($postData['type']) . ' created successfully.');
+
+            return redirect()->route('admin.falcon-builder', $post->id)->with('success', ucfirst($postData['type']).' created successfully.');
         }
 
         clear_page_cache();
-        return redirect()->route('admin.posts.edit', $post)->with('success', ucfirst($postData['type']) . ' created successfully.');
+
+        return redirect()->route('admin.posts.edit', $post)->with('success', ucfirst($postData['type']).' created successfully.');
     }
 
     /**
@@ -931,11 +975,11 @@ class PostController extends Controller
 
         // 1) Duplicate the post itself as a standalone draft (not a translation).
         $clone = $post->replicate();
-        $clone->title        = $post->title . ' (Copy)';
-        $clone->slug         = $this->generateUniqueSlug($post->title . ' copy', 0, $post->type, $post->lang_code ?? 'en');
-        $clone->status       = 'draft';
+        $clone->title = $post->title.' (Copy)';
+        $clone->slug = $this->generateUniqueSlug($post->title.' copy', 0, $post->type, $post->lang_code ?? 'en');
+        $clone->status = 'draft';
         $clone->published_at = null;
-        $clone->origin_id    = null;
+        $clone->origin_id = null;
         // Only reset columns that actually exist on this install (replicate() already
         // copies whatever columns are present, so this stays schema-safe everywhere).
         if (array_key_exists('is_sticky', $clone->getAttributes())) {
@@ -955,9 +999,9 @@ class PostController extends Controller
         // 3) ACPT custom field values.
         foreach (DB::table('post_custom_field_values')->where('post_id', $post->id)->get() as $row) {
             DB::table('post_custom_field_values')->insert([
-                'post_id'    => $clone->id,
-                'field_id'   => $row->field_id,
-                'value'      => $row->value,
+                'post_id' => $clone->id,
+                'field_id' => $row->field_id,
+                'value' => $row->value,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -969,14 +1013,14 @@ class PostController extends Controller
             $newData->post_id = $clone->id;
             $newData->save();
 
-            foreach (\FalconCms\Core\Models\ProductVariation::where('product_id', $post->shopData->id)->get() as $var) {
+            foreach (ProductVariation::where('product_id', $post->shopData->id)->get() as $var) {
                 $nv = $var->replicate();
                 $nv->product_id = $newData->id;
                 $nv->save();
             }
 
-            if (class_exists(\FalconCms\Core\Models\ProductDownload::class)) {
-                foreach (\FalconCms\Core\Models\ProductDownload::where('product_id', $post->shopData->id)->get() as $dl) {
+            if (class_exists(ProductDownload::class)) {
+                foreach (ProductDownload::where('product_id', $post->shopData->id)->get() as $dl) {
                     $nd = $dl->replicate();
                     $nd->product_id = $newData->id;
                     $nd->save();
@@ -989,7 +1033,7 @@ class PostController extends Controller
         }
         clear_page_cache();
 
-        return back()->with('success', ucfirst($post->type) . ' cloned successfully — the copy is saved as a draft.');
+        return back()->with('success', ucfirst($post->type).' cloned successfully — the copy is saved as a draft.');
     }
 
     public function edit(Post $post)
@@ -1004,7 +1048,7 @@ class PostController extends Controller
 
         // Ownership Check: Author and Contributor can only edit their own posts
         if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
-            abort(403, "You can only edit your own posts.");
+            abort(403, 'You can only edit your own posts.');
         }
 
         $locale = request('locale');
@@ -1025,24 +1069,26 @@ class PostController extends Controller
         $this->checkTypeActive($post->type);
         $type = $post->type;
         $pages = Post::where('type', 'page')->where('id', '!=', $post->id)->orderBy('title')->get();
-        $postType = \FalconCms\Core\Models\PostType::where('slug', $type)->first();
+        $postType = PostType::where('slug', $type)->first();
         $supports = $postType ? ($postType->supports ?? ['title', 'editor', 'excerpt', 'featured_image']) : ['title', 'editor', 'excerpt', 'featured_image'];
 
         // Detect custom taxonomies that override built-in ones
-        $overriddenTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
+        $overriddenTaxonomies = CustomTaxonomy::where('is_active', true)
             ->whereJsonContains('post_types', $type)
             ->whereIn('slug', ['categories', 'tags'])
             ->pluck('slug')
             ->toArray();
 
         $assignedTaxonomies = [];
-        $taxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)->get();
+        $taxonomies = CustomTaxonomy::where('is_active', true)->get();
         foreach ($taxonomies as $tax) {
             if (is_array($tax->post_types) && in_array($type, $tax->post_types)) {
                 $slugLower = strtolower($tax->slug);
-                if (in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']) && !in_array($slugLower, $overriddenTaxonomies)) continue;
+                if (in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']) && !in_array($slugLower, $overriddenTaxonomies)) {
+                    continue;
+                }
 
-                $tax->terms = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)
+                $tax->terms = TaxonomyTerm::where('taxonomy_slug', $tax->slug)
                     ->where('cpt_slug', $type)
                     ->get();
                 $tax->selected_ids = $post->taxonomyTerms()->where('taxonomy_slug', $tax->slug)->pluck('taxonomy_terms.id')->toArray();
@@ -1051,8 +1097,8 @@ class PostController extends Controller
         }
 
         // Fetch applicable custom field groups
-        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
-            ->where(function($q) use ($post) {
+        $fieldGroups = FieldGroup::where('is_active', true)
+            ->where(function ($q) use ($post) {
                 $q->whereJsonContains('rules->post_type', $post->type);
             })
             ->with('fields')
@@ -1065,7 +1111,7 @@ class PostController extends Controller
             ->pluck('value', 'field_id')
             ->toArray();
 
-        $postType = \FalconCms\Core\Models\PostType::where('slug', $post->type)->first();
+        $postType = PostType::where('slug', $post->type)->first();
 
         // Convert builder JSON → shortcodes for display in the rich editor.
         // The save path (BuilderShortcodeMiddleware) converts them back to JSON automatically.
@@ -1077,7 +1123,7 @@ class PostController extends Controller
         $pendingAutosave = null;
         $revisionCount = 0;
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('cms_revisions')) {
+            if (Schema::hasTable('cms_revisions')) {
                 $base = Revision::where('revisionable_type', $post->getMorphClass())
                     ->where('revisionable_id', $post->getKey());
                 $revisionCount = (clone $base)->where('type', 'revision')->count();
@@ -1086,7 +1132,8 @@ class PostController extends Controller
                     $pendingAutosave = ['id' => $auto->id, 'time' => $auto->updated_at->format('M j, Y g:i A')];
                 }
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return view('falcon-cms::admin.posts.edit', compact('post', 'pages', 'type', 'supports', 'assignedTaxonomies', 'fieldGroups', 'fieldValues', 'postType', 'overriddenTaxonomies', 'pendingAutosave', 'revisionCount'));
     }
@@ -1106,29 +1153,33 @@ class PostController extends Controller
         // Build selectable entries: the live "current" version + every stored revision.
         $entries = [];
         $entries['current'] = [
-            'key'     => 'current',
-            'label'   => 'Current Version (live)',
-            'title'   => $post->title,
+            'key' => 'current',
+            'label' => 'Current Version (live)',
+            'title' => $post->title,
             'content' => $post->content,
-            'meta'    => 'Currently published',
-            'type'    => 'current',
+            'meta' => 'Currently published',
+            'type' => 'current',
         ];
         foreach ($revs as $r) {
             $entries[(string) $r->id] = [
-                'key'     => (string) $r->id,
-                'label'   => ($r->type === 'autosave' ? 'Autosave' : 'Revision') . ' — ' . $r->created_at->format('M j, Y g:i A'),
-                'title'   => $r->title,
+                'key' => (string) $r->id,
+                'label' => ($r->type === 'autosave' ? 'Autosave' : 'Revision').' — '.$r->created_at->format('M j, Y g:i A'),
+                'title' => $r->title,
                 'content' => $r->content,
-                'meta'    => ($r->user->name ?? 'System') . ' · ' . $r->created_at->diffForHumans(),
-                'type'    => $r->type,
+                'meta' => ($r->user->name ?? 'System').' · '.$r->created_at->diffForHumans(),
+                'type' => $r->type,
             ];
         }
 
         // Resolve which two versions to compare (defaults: latest revision → current)
-        $to   = (string) $request->get('to', 'current');
+        $to = (string) $request->get('to', 'current');
         $from = (string) $request->get('from', $revs->count() ? (string) $revs->first()->id : 'current');
-        if (!isset($entries[$to]))   $to = 'current';
-        if (!isset($entries[$from])) $from = $to;
+        if (!isset($entries[$to])) {
+            $to = 'current';
+        }
+        if (!isset($entries[$from])) {
+            $from = $to;
+        }
 
         $diff = lazy_revision_diff($entries[$from]['content'] ?? '', $entries[$to]['content'] ?? '');
 
@@ -1147,31 +1198,31 @@ class PostController extends Controller
 
         // Ownership Check: Author and Contributor can only update their own posts
         if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
-            abort(403, "You can only update your own posts.");
+            abort(403, 'You can only update your own posts.');
         }
 
         $this->checkTypeActive($post->type);
-        
+
         $this->validateCustomFields($request);
 
         $status = $request->input('status', 'draft');
 
         $rules = [
-            'title'   => ($status === 'draft' ? 'nullable' : 'required') . '|string|max:255',
-            'slug'    => 'nullable|string|max:255',
+            'title' => ($status === 'draft' ? 'nullable' : 'required').'|string|max:255',
+            'slug' => 'nullable|string|max:255',
             'content' => 'nullable|string',
             'excerpt' => 'nullable|string',
-            'type'    => 'required|string',
-            'status'  => 'required|string|in:draft,published,scheduled',
-            'published_at'   => 'nullable|date',
+            'type' => 'required|string',
+            'status' => 'required|string|in:draft,published,scheduled',
+            'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
-            'parent_id'      => 'nullable|exists:posts,id',
-            'template'       => 'nullable|string',
-            'menu_order'     => 'nullable|integer',
-            'editor_type'    => 'nullable|string|in:rich,builder',
-            'lang_code'      => 'nullable|string|max:10',
-            'seo'            => 'nullable|array',
-            'gallery'        => 'nullable|array',
+            'parent_id' => 'nullable|exists:posts,id',
+            'template' => 'nullable|string',
+            'menu_order' => 'nullable|integer',
+            'editor_type' => 'nullable|string|in:rich,builder',
+            'lang_code' => 'nullable|string|max:10',
+            'seo' => 'nullable|array',
+            'gallery' => 'nullable|array',
         ];
 
         if ($type === 'product') {
@@ -1189,7 +1240,7 @@ class PostController extends Controller
             $rules['backorders'] = 'nullable|string|in:no,notify,yes';
             $rules['weight'] = 'nullable|numeric|min:0|max:999999';
             $rules['length'] = 'nullable|numeric|min:0|max:999999';
-            $rules['width']  = 'nullable|numeric|min:0|max:999999';
+            $rules['width'] = 'nullable|numeric|min:0|max:999999';
             $rules['height'] = 'nullable|numeric|min:0|max:999999';
             $rules['manage_stock'] = 'nullable|boolean';
             $rules['short_description'] = 'nullable|string';
@@ -1252,14 +1303,14 @@ class PostController extends Controller
         // tax_status is NOT NULL with a 'taxable' default; the field validates as nullable, so an
         // explicit null (or anything off the allowlist) is coerced rather than written through.
         if (array_key_exists('tax_status', $productData)
-            && !in_array($productData['tax_status'], \FalconCms\Core\Models\ProductData::TAX_STATUSES, true)) {
+            && !in_array($productData['tax_status'], ProductData::TAX_STATUSES, true)) {
             $productData['tax_status'] = 'taxable';
         }
 
         // backorders is NOT NULL with a 'no' default, so an empty or unknown value is coerced
         // rather than written through. Measurements stay nullable — blank means "not recorded".
         if (array_key_exists('backorders', $productData)
-            && !in_array($productData['backorders'], \FalconCms\Core\Models\ProductData::BACKORDER_MODES, true)) {
+            && !in_array($productData['backorders'], ProductData::BACKORDER_MODES, true)) {
             $productData['backorders'] = 'no';
         }
         foreach (['weight', 'length', 'width', 'height'] as $measure) {
@@ -1270,12 +1321,14 @@ class PostController extends Controller
 
         $slugSource = !empty($postData['slug']) ? $postData['slug'] : (!empty($postData['title']) ? $postData['title'] : 'no-title');
         $postData['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type, $postData['lang_code'] ?? $post->lang_code);
-        if (empty($postData['title'])) $postData['title'] = '(no title)';
+        if (empty($postData['title'])) {
+            $postData['title'] = '(no title)';
+        }
 
         if ($request->hasFile('featured_image')) {
             $file = $request->file('featured_image');
-            $allowedMimes = ['image/jpeg','image/png','image/gif','image/webp','image/avif'];
-            $allowedExts  = ['jpg','jpeg','png','gif','webp','avif'];
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+            $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
             if (!in_array(strtolower($file->getClientOriginalExtension()), $allowedExts) || !in_array($file->getMimeType(), $allowedMimes)) {
                 return redirect()->back()->withErrors(['featured_image' => 'Featured image must be a valid image file (JPG, PNG, GIF, WebP, AVIF).'])->withInput();
             }
@@ -1290,18 +1343,18 @@ class PostController extends Controller
             $postData['template'] = 'site-width';
         }
 
-        $postType = \FalconCms\Core\Models\PostType::where('slug', $postData['type'])->first();
+        $postType = PostType::where('slug', $postData['type'])->first();
         $overriddenTaxonomies = [];
         if ($postType) {
-            $overriddenTaxonomies = \FalconCms\Core\Models\CustomTaxonomy::where('is_active', true)
+            $overriddenTaxonomies = CustomTaxonomy::where('is_active', true)
                 ->whereJsonContains('post_types', $postData['type'])
                 ->pluck('slug')
                 ->toArray();
         }
 
         $oldSlug = $post->getOriginal('slug');
-        $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type . '/';
-        $oldUrl = '/' . ltrim($prefix . $oldSlug, '/');
+        $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type.'/';
+        $oldUrl = '/'.ltrim($prefix.$oldSlug, '/');
 
         // Ensure editor_type is never set to null, which would trigger the DB default 'rich'
         if (empty($postData['editor_type'])) {
@@ -1311,7 +1364,7 @@ class PostController extends Controller
         // Robust Protection: Prevent builder content from being overwritten by empty/HTML content from standard editor
         $currentContent = $post->content;
         $isCurrentBuilder = $post->editor_type === 'builder' || (is_string($currentContent) && (str_starts_with($currentContent, '[') || str_starts_with($currentContent, '{')));
-        
+
         $targetEditorType = $postData['editor_type'] ?? $post->editor_type;
         $incomingContent = $postData['content'] ?? '';
         $isIncomingBuilder = is_string($incomingContent) && (Str::startsWith($incomingContent, '[') || Str::startsWith($incomingContent, '{'));
@@ -1327,8 +1380,8 @@ class PostController extends Controller
         if ($locale && $locale !== app()->getLocale()) {
             // Save as translation instead of main post
             $translationData = [
-                'slug'    => Str::slug($postData['title']),
-                'title'   => $postData['title'],
+                'slug' => Str::slug($postData['title']),
+                'title' => $postData['title'],
                 'excerpt' => $postData['excerpt'],
                 'meta_title' => $postData['seo_meta']['title'] ?? null,
                 'meta_description' => $postData['seo_meta']['description'] ?? null,
@@ -1339,7 +1392,7 @@ class PostController extends Controller
             if (isset($postData['content'])) {
                 $translationData['content'] = $postData['content'];
             }
-            
+
             // Also preserve editor_type in translation
             $translationData['editor_type'] = $targetEditorType;
 
@@ -1347,10 +1400,11 @@ class PostController extends Controller
                 ['locale' => $locale],
                 $translationData
             );
-            
+
             falcon_log_activity('updated', "Updated {$locale} translation for {$post->type}: {$post->title}", $post);
             clear_page_cache();
-            return redirect()->back()->with('success', ucfirst($post->type) . ' translation updated successfully.');
+
+            return redirect()->back()->with('success', ucfirst($post->type).' translation updated successfully.');
         }
 
         // Snapshot the PRIOR state BEFORE overwriting (true undo on restore)
@@ -1395,7 +1449,7 @@ class PostController extends Controller
                         ]);
                     }
                 }
-                
+
                 // After variations are saved, sync parent stock status
                 $anyInStock = $shopData->variations()->where('stock_status', 'instock')->exists();
                 $shopData->update(['stock_status' => $anyInStock ? 'instock' : 'outofstock']);
@@ -1415,7 +1469,9 @@ class PostController extends Controller
                 // Check if already exists to avoid duplicates
                 $rootId = $post->origin_id ?: $post->id;
                 $exists = Post::where('origin_id', $rootId)->where('lang_code', $langCode)->exists();
-                if ($exists) continue;
+                if ($exists) {
+                    continue;
+                }
 
                 $clone = $post->replicate();
                 $clone->lang_code = $langCode;
@@ -1424,7 +1480,7 @@ class PostController extends Controller
 
                 // Auto Translate
                 $clone->title = falcon_translate($post->title, $langCode);
-                
+
                 // Generate translated slug
                 $clone->slug = $this->generateUniqueSlug($clone->title, 0, $post->type, $langCode);
                 if ($post->editor_type === 'rich') {
@@ -1438,10 +1494,16 @@ class PostController extends Controller
                 $clone->save();
 
                 // Sync relationships
-                if ($request->has('categories')) $clone->categories()->sync($request->categories);
-                if ($request->has('tax_terms')) $clone->taxonomyTerms()->sync($request->tax_terms);
-                if ($post->type === 'product') $this->syncProductTaxonomies($clone, $request);
-                
+                if ($request->has('categories')) {
+                    $clone->categories()->sync($request->categories);
+                }
+                if ($request->has('tax_terms')) {
+                    $clone->taxonomyTerms()->sync($request->tax_terms);
+                }
+                if ($post->type === 'product') {
+                    $this->syncProductTaxonomies($clone, $request);
+                }
+
                 // Copy custom fields
                 $originalFields = DB::table('post_custom_field_values')->where('post_id', $post->id)->get();
                 foreach ($originalFields as $field) {
@@ -1449,7 +1511,7 @@ class PostController extends Controller
                         'post_id' => $clone->id,
                         'field_id' => $field->field_id,
                         'value' => $field->value,
-                        'created_at' => now(), 'updated_at' => now()
+                        'created_at' => now(), 'updated_at' => now(),
                     ]);
                 }
             }
@@ -1457,10 +1519,10 @@ class PostController extends Controller
 
         // Automatic Redirection Logic
         if ($oldSlug !== $post->slug) {
-            $newUrl = '/' . ltrim($prefix . $post->slug, '/');
+            $newUrl = '/'.ltrim($prefix.$post->slug, '/');
 
             if ($oldUrl !== $newUrl) {
-                \FalconCms\Core\Models\Redirect::updateOrCreate(
+                Redirect::updateOrCreate(
                     ['old_url' => $oldUrl],
                     ['new_url' => $newUrl, 'status_code' => 301]
                 );
@@ -1485,9 +1547,11 @@ class PostController extends Controller
         if ($request->has('tags') && !in_array('tags', $overriddenTaxonomies)) {
             $tagIds = [];
             $tags = array_map('trim', explode(',', $request->tags));
-            foreach($tags as $tagName) {
-                if(empty($tagName)) continue;
-                $tag = \FalconCms\Core\Models\Tag::firstOrCreate(
+            foreach ($tags as $tagName) {
+                if (empty($tagName)) {
+                    continue;
+                }
+                $tag = Tag::firstOrCreate(
                     ['slug' => Str::slug($tagName)],
                     ['name' => $tagName]
                 );
@@ -1508,12 +1572,12 @@ class PostController extends Controller
                     ['post_id' => $post->id, 'field_id' => $fieldId],
                     [
                         'value' => is_array($value) ? json_encode($value) : $value,
-                        'updated_at' => now()
+                        'updated_at' => now(),
                     ]
                 );
             }
         }
-        
+
         if ($post->type === 'product') {
             do_falcon_action('falcon_admin_after_save_product', $post, $post->fresh()->shopData, $request, 'update');
         }
@@ -1522,7 +1586,7 @@ class PostController extends Controller
 
         clear_page_cache();
 
-        return redirect()->back()->with('success', ucfirst($post->type) . ' updated successfully.');
+        return redirect()->back()->with('success', ucfirst($post->type).' updated successfully.');
     }
 
     public function destroy(Post $post)
@@ -1537,7 +1601,7 @@ class PostController extends Controller
 
         // Ownership Check: Author and Contributor can only delete their own posts
         if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
-            abort(403, "You can only delete your own posts.");
+            abort(403, 'You can only delete your own posts.');
         }
 
         $type = $post->type;
@@ -1555,6 +1619,7 @@ class PostController extends Controller
 
         falcon_log_activity('deleted', "Moved {$type} to trash: {$title}", $post);
         clear_page_cache();
+
         return redirect()->route('admin.posts.index', ['type' => $type])->with('success', 'Moved to trash.');
     }
 
@@ -1563,15 +1628,17 @@ class PostController extends Controller
         $post = Post::onlyTrashed()->findOrFail($id);
         $post->restore();
         clear_page_cache();
+
         return redirect()->back()->with('success', 'Restored successfully.');
     }
 
     public function forceDelete($id)
     {
         $post = Post::onlyTrashed()->findOrFail($id);
-        
+
         $post->forceDelete();
         clear_page_cache();
+
         return redirect()->back()->with('success', 'Deleted permanently.');
     }
 
@@ -1580,7 +1647,9 @@ class PostController extends Controller
         $ids = $request->input('post_ids');
         $action = $request->input('action') !== '-1' ? $request->input('action') : $request->input('action2');
 
-        if (!$ids || $action === '-1') return redirect()->back()->with('error', 'Please select items and an action.');
+        if (!$ids || $action === '-1') {
+            return redirect()->back()->with('error', 'Please select items and an action.');
+        }
 
         if ($action === 'trash') {
             $posts = Post::whereIn('id', $ids)->get();
@@ -1589,6 +1658,7 @@ class PostController extends Controller
                 falcon_log_activity('deleted', "Moved {$post->type} to trash: {$post->title}", $post);
             }
             clear_page_cache();
+
             return redirect()->back()->with('success', 'Selected items moved to trash.');
         }
 
@@ -1599,18 +1669,20 @@ class PostController extends Controller
                 falcon_log_activity('restored', "Restored {$post->type} from trash: {$post->title}", $post);
             }
             clear_page_cache();
+
             return redirect()->back()->with('success', 'Selected items restored.');
         }
 
         if ($action === 'delete') {
             $posts = Post::onlyTrashed()->whereIn('id', $ids)->get();
-            foreach($posts as $p) {
+            foreach ($posts as $p) {
                 $title = $p->title;
                 $type = $p->type;
                 $p->forceDelete();
                 falcon_log_activity('deleted', "Deleted {$type} permanently: {$title}", $p);
             }
             clear_page_cache();
+
             return redirect()->back()->with('success', 'Selected items deleted permanently.');
         }
 
@@ -1621,10 +1693,12 @@ class PostController extends Controller
                 falcon_log_activity('updated', "Updated {$post->type} status to {$action}: {$post->title}", $post);
             }
             clear_page_cache();
+
             return redirect()->back()->with('success', 'Selected items updated.');
         }
 
         clear_page_cache();
+
         return redirect()->back();
     }
 
@@ -1632,11 +1706,13 @@ class PostController extends Controller
     {
         $type = $request->input('type');
         $status = $request->input('status');
-        
-        // If saving as draft, skip required validation for custom fields
-        if (!$type || $status === 'draft') return;
 
-        $fieldGroups = \FalconCms\Core\Models\FieldGroup::where('is_active', true)
+        // If saving as draft, skip required validation for custom fields
+        if (!$type || $status === 'draft') {
+            return;
+        }
+
+        $fieldGroups = FieldGroup::where('is_active', true)
             ->whereJsonContains('rules->post_type', $type)
             ->with('fields')
             ->get();

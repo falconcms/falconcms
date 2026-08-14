@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 class ExpireSalePrices extends Command
 {
     protected $signature = 'falcon:expire-sales';
+
     protected $description = 'Null out sale prices whose sale_ends_at date has passed.';
 
     public function handle(): int
@@ -19,6 +20,7 @@ class ExpireSalePrices extends Command
             ->update(['sale_price' => null, 'sale_ends_at' => null]);
 
         $this->info("Expired {$count} sale price(s).");
+
         return 0;
     }
 }

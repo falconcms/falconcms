@@ -61,14 +61,14 @@ trait RemovesFalconData
     /** Delete this package's rows from the migrations table so a reinstall re-runs cleanly. */
     protected function removeFalconMigrationRecords(): int
     {
-        if (! Schema::hasTable('migrations')) {
+        if (!Schema::hasTable('migrations')) {
             return 0;
         }
-        $dir = __DIR__ . '/../../../database/migrations';
-        if (! is_dir($dir)) {
+        $dir = __DIR__.'/../../../database/migrations';
+        if (!is_dir($dir)) {
             return 0;
         }
-        $names = array_map(fn ($p) => basename($p, '.php'), glob($dir . '/*.php') ?: []);
+        $names = array_map(fn ($p) => basename($p, '.php'), glob($dir.'/*.php') ?: []);
 
         return $names ? DB::table('migrations')->whereIn('migration', $names)->delete() : 0;
     }

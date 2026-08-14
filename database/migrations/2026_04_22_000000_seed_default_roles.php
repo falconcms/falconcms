@@ -1,7 +1,10 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
+use App\Models\User;
+use FalconCms\Core\Models\Permission;
 use FalconCms\Core\Models\Role;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\Hash;
 
 return new class extends Migration
 {
@@ -11,27 +14,27 @@ return new class extends Migration
             [
                 'name' => 'Administrator',
                 'slug' => 'administrator',
-                'description' => 'Full access to all settings and content.'
+                'description' => 'Full access to all settings and content.',
             ],
             [
                 'name' => 'Editor',
                 'slug' => 'editor',
-                'description' => 'Can publish and manage posts including the work of other users.'
+                'description' => 'Can publish and manage posts including the work of other users.',
             ],
             [
                 'name' => 'Author',
                 'slug' => 'author',
-                'description' => 'Can publish and manage their own posts.'
+                'description' => 'Can publish and manage their own posts.',
             ],
             [
                 'name' => 'Contributor',
                 'slug' => 'contributor',
-                'description' => 'Can write and manage their own posts but cannot publish them.'
+                'description' => 'Can write and manage their own posts but cannot publish them.',
             ],
             [
                 'name' => 'Subscriber',
                 'slug' => 'subscriber',
-                'description' => 'Can only manage their profile.'
+                'description' => 'Can only manage their profile.',
             ],
         ];
 
@@ -49,24 +52,24 @@ return new class extends Migration
         ];
 
         foreach ($permissions as $permission) {
-            \FalconCms\Core\Models\Permission::updateOrCreate(['slug' => $permission['slug']], $permission);
+            Permission::updateOrCreate(['slug' => $permission['slug']], $permission);
         }
 
         // Sync all permissions to administrator role
         $adminRole = Role::where('slug', 'administrator')->first();
         if ($adminRole) {
-            $allPermissionIds = \FalconCms\Core\Models\Permission::pluck('id')->toArray();
+            $allPermissionIds = Permission::pluck('id')->toArray();
             $adminRole->permissions()->sync($allPermissionIds);
         }
 
         // Seed default administrator user
         $adminRole = Role::where('slug', 'administrator')->first();
-        if ($adminRole && !\App\Models\User::where('email', 'admin@admin.com')->exists()) {
-            \App\Models\User::create([
+        if ($adminRole && !User::where('email', 'admin@admin.com')->exists()) {
+            User::create([
                 'name' => 'Administrator',
                 'username' => 'admin',
                 'email' => 'admin@admin.com',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'password' => Hash::make('password'),
                 'role_id' => $adminRole->id,
             ]);
         }

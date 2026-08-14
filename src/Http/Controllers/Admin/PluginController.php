@@ -17,9 +17,10 @@ class PluginController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            if (! auth()->user() || ! auth()->user()->hasPermission('manage_plugins')) {
+            if (!auth()->user() || !auth()->user()->hasPermission('manage_plugins')) {
                 abort(403);
             }
+
             return $next($request);
         });
     }
@@ -29,31 +30,31 @@ class PluginController extends Controller
         $all = $plugins->all();
 
         $counts = [
-            'all'      => count($all),
-            'active'   => count(array_filter($all, fn ($p) => $p['active'])),
-            'inactive' => count(array_filter($all, fn ($p) => ! $p['active'])),
-            'update'   => count(array_filter($all, fn ($p) => ! empty($p['update_available']))),
+            'all' => count($all),
+            'active' => count(array_filter($all, fn ($p) => $p['active'])),
+            'inactive' => count(array_filter($all, fn ($p) => !$p['active'])),
+            'update' => count(array_filter($all, fn ($p) => !empty($p['update_available']))),
         ];
 
         $status = $request->query('status');
         if ($status === 'active') {
             $all = array_filter($all, fn ($p) => $p['active']);
         } elseif ($status === 'inactive') {
-            $all = array_filter($all, fn ($p) => ! $p['active']);
+            $all = array_filter($all, fn ($p) => !$p['active']);
         } elseif ($status === 'update') {
-            $all = array_filter($all, fn ($p) => ! empty($p['update_available']));
+            $all = array_filter($all, fn ($p) => !empty($p['update_available']));
         }
 
         if ($search = trim((string) $request->query('s'))) {
             $needle = strtolower($search);
-            $all = array_filter($all, fn ($p) => str_contains(strtolower(($p['name'] ?? '') . ' ' . ($p['description'] ?? '') . ' ' . $p['slug']), $needle));
+            $all = array_filter($all, fn ($p) => str_contains(strtolower(($p['name'] ?? '').' '.($p['description'] ?? '').' '.$p['slug']), $needle));
         }
 
         return view('falcon-cms::admin.plugins.index', [
-            'plugins'    => $all,
-            'counts'     => $counts,
-            'status'     => $status,
-            'search'     => $search ?? '',
+            'plugins' => $all,
+            'counts' => $counts,
+            'status' => $status,
+            'search' => $search ?? '',
             'pluginsDir' => $plugins->path(),
         ]);
     }
@@ -67,19 +68,19 @@ class PluginController extends Controller
     public function bulk(Request $request, PluginManager $plugins)
     {
         $action = $request->input('action');
-        $slugs  = (array) $request->input('slugs', []);
+        $slugs = (array) $request->input('slugs', []);
 
-        if (! in_array($action, ['activate', 'deactivate', 'update', 'delete'], true) || empty($slugs)) {
+        if (!in_array($action, ['activate', 'deactivate', 'update', 'delete'], true) || empty($slugs)) {
             return redirect()->route('admin.plugins.index')->with('error', 'Select plugins and an action.');
         }
 
         $done = 0;
         foreach ($slugs as $slug) {
             $result = match ($action) {
-                'activate'   => $plugins->activate($slug),
+                'activate' => $plugins->activate($slug),
                 'deactivate' => $plugins->deactivate($slug),
-                'update'     => $plugins->update($slug),
-                'delete'     => $plugins->uninstall($slug),
+                'update' => $plugins->update($slug),
+                'delete' => $plugins->uninstall($slug),
             };
             $done += $result['ok'] ? 1 : 0;
         }
@@ -114,12 +115,13 @@ class PluginController extends Controller
             'plugin_zip' => 'required|file|mimes:zip|max:51200', // 50 MB
         ]);
 
-        $file   = $request->file('plugin_zip');
+        $file = $request->file('plugin_zip');
         $result = $plugins->installFromZip($file->getRealPath(), $file->getClientOriginalName());
 
         if ($result['ok']) {
-            falcon_log_activity('plugin_installed', 'Installed plugin: ' . ($result['slug'] ?? ''));
+            falcon_log_activity('plugin_installed', 'Installed plugin: '.($result['slug'] ?? ''));
         }
+
         return $this->flash($result);
     }
 
@@ -142,14 +144,15 @@ class PluginController extends Controller
             return $this->flash(['ok' => false, 'message' => 'Could not download the plugin from that URL.']);
         }
 
-        $tmp = storage_path('app/tmp_plugin_dl_' . time() . '.zip');
+        $tmp = storage_path('app/tmp_plugin_dl_'.time().'.zip');
         File::put($tmp, $contents);
         $result = $plugins->installFromZip($tmp, basename(parse_url($url, PHP_URL_PATH) ?: 'plugin.zip'));
         @unlink($tmp);
 
         if ($result['ok']) {
-            falcon_log_activity('plugin_installed', 'Installed plugin from URL: ' . ($result['slug'] ?? ''));
+            falcon_log_activity('plugin_installed', 'Installed plugin from URL: '.($result['slug'] ?? ''));
         }
+
         return $this->flash($result);
     }
 

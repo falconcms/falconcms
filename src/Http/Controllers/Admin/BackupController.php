@@ -2,10 +2,11 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class BackupController extends Controller
 {
@@ -26,6 +27,7 @@ class BackupController extends Controller
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
+
         return $dir;
     }
 
@@ -37,9 +39,10 @@ class BackupController extends Controller
     // Convert php.ini size string (e.g. "64M", "1G") to bytes
     private function iniToBytes(string $val): int
     {
-        $val  = trim($val);
+        $val = trim($val);
         $last = strtolower($val[strlen($val) - 1] ?? '');
-        $num  = (int) $val;
+        $num = (int) $val;
+
         return match ($last) {
             'g' => $num * 1024 * 1024 * 1024,
             'm' => $num * 1024 * 1024,
@@ -51,28 +54,42 @@ class BackupController extends Controller
     private function maxUploadBytes(): int
     {
         $upload = $this->iniToBytes(ini_get('upload_max_filesize') ?: '8M');
-        $post   = $this->iniToBytes(ini_get('post_max_size')       ?: '8M');
+        $post = $this->iniToBytes(ini_get('post_max_size') ?: '8M');
+
         return min($upload, $post);
     }
 
     private function formatBytes(int $bytes): string
     {
-        if ($bytes >= 1024 * 1024 * 1024) return round($bytes / 1024 / 1024 / 1024, 1) . ' GB';
-        if ($bytes >= 1024 * 1024)        return round($bytes / 1024 / 1024, 0) . ' MB';
-        return round($bytes / 1024, 0) . ' KB';
+        if ($bytes >= 1024 * 1024 * 1024) {
+            return round($bytes / 1024 / 1024 / 1024, 1).' GB';
+        }
+        if ($bytes >= 1024 * 1024) {
+            return round($bytes / 1024 / 1024, 0).' MB';
+        }
+
+        return round($bytes / 1024, 0).' KB';
     }
 
     /** Human label for what a backup file contains (best-effort, by name/extension). */
     private function backupType(string $filename): string
     {
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if (in_array($ext, ['sql', 'gz'])) return 'Database';
+        if (in_array($ext, ['sql', 'gz'])) {
+            return 'Database';
+        }
         if ($ext === 'zip') {
             $lower = strtolower($filename);
-            if (str_starts_with($lower, 'full-backup-'))  return 'Database + Media';
-            if (str_starts_with($lower, 'media-backup-')) return 'Media';
+            if (str_starts_with($lower, 'full-backup-')) {
+                return 'Database + Media';
+            }
+            if (str_starts_with($lower, 'media-backup-')) {
+                return 'Media';
+            }
+
             return 'Archive';
         }
+
         return 'Backup';
     }
 
@@ -85,12 +102,12 @@ class BackupController extends Controller
 
         if (is_dir($backupDir)) {
             foreach (array_diff(scandir($backupDir), ['.', '..']) as $file) {
-                $filePath = $backupDir . '/' . $file;
+                $filePath = $backupDir.'/'.$file;
                 if (is_file($filePath)) {
                     $backups[] = [
                         'name' => $file,
                         'type' => $this->backupType($file),
-                        'size' => round(filesize($filePath) / 1024 / 1024, 2) . ' MB',
+                        'size' => round(filesize($filePath) / 1024 / 1024, 2).' MB',
                         'date' => Carbon::createFromTimestamp(filemtime($filePath))->format('Y-m-d H:i:s'),
                         'path' => $filePath,
                     ];
@@ -122,11 +139,11 @@ class BackupController extends Controller
         try {
             return match ($type) {
                 'media' => $this->doMediaBackup(),
-                'both'  => $this->doFullBackup(),
+                'both' => $this->doFullBackup(),
                 default => $this->doDatabaseBackup(),
             };
         } catch (\Throwable $e) {
-            return back()->with('error', 'Backup failed: ' . $e->getMessage());
+            return back()->with('error', 'Backup failed: '.$e->getMessage());
         }
     }
 
@@ -138,16 +155,17 @@ class BackupController extends Controller
         try {
             return $this->doMediaBackup();
         } catch (\Throwable $e) {
-            return back()->with('error', 'Media backup failed: ' . $e->getMessage());
+            return back()->with('error', 'Media backup failed: '.$e->getMessage());
         }
     }
 
     private function doDatabaseBackup()
     {
-        $filename = 'backup-' . Carbon::now()->format('Y-m-d-H-i-s') . '.sql';
-        file_put_contents($this->backupDir() . '/' . $filename, $this->buildSqlDump());
+        $filename = 'backup-'.Carbon::now()->format('Y-m-d-H-i-s').'.sql';
+        file_put_contents($this->backupDir().'/'.$filename, $this->buildSqlDump());
 
         falcon_log_activity('created', "Created a database backup: {$filename}");
+
         return back()->with('success', 'Database backup created successfully.');
     }
 
@@ -160,10 +178,10 @@ class BackupController extends Controller
             return back()->with('error', 'No media folder found to back up.');
         }
 
-        $filename = 'media-backup-' . Carbon::now()->format('Y-m-d-H-i-s') . '.zip';
-        $path     = $this->backupDir() . '/' . $filename;
+        $filename = 'media-backup-'.Carbon::now()->format('Y-m-d-H-i-s').'.zip';
+        $path = $this->backupDir().'/'.$filename;
 
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             throw new \Exception('Could not create the zip archive.');
         }
@@ -171,17 +189,19 @@ class BackupController extends Controller
 
         // Bundle the Media Library records too, so restoring brings back the library
         // entries (not just the physical files — the library is database-driven).
-        if (\Illuminate\Support\Facades\Schema::hasTable('media')) {
+        if (Schema::hasTable('media')) {
             $zip->addFromString('_media-records.json', DB::table('media')->get()->toJson());
         }
         $zip->close();
 
         if ($count === 0) {
             @unlink($path);
+
             return back()->with('error', 'No media files found to back up.');
         }
 
         falcon_log_activity('created', "Created a media files backup: {$filename} ({$count} files)");
+
         return back()->with('success', "Media backup created successfully ({$count} files).");
     }
 
@@ -191,10 +211,10 @@ class BackupController extends Controller
             return back()->with('error', 'A full backup needs the PHP "zip" extension, which is not enabled on this server.');
         }
 
-        $filename = 'full-backup-' . Carbon::now()->format('Y-m-d-H-i-s') . '.zip';
-        $path     = $this->backupDir() . '/' . $filename;
+        $filename = 'full-backup-'.Carbon::now()->format('Y-m-d-H-i-s').'.zip';
+        $path = $this->backupDir().'/'.$filename;
 
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             throw new \Exception('Could not create the zip archive.');
         }
@@ -206,6 +226,7 @@ class BackupController extends Controller
         $zip->close();
 
         falcon_log_activity('created', "Created a full backup: {$filename} (database + {$mediaCount} media files)");
+
         return back()->with('success', "Full backup created successfully (database + {$mediaCount} media files).");
     }
 
@@ -213,7 +234,9 @@ class BackupController extends Controller
     private function addMediaToZip(\ZipArchive $zip, string $prefix): int
     {
         $mediaDir = $this->mediaDir();
-        if (!is_dir($mediaDir)) return 0;
+        if (!is_dir($mediaDir)) {
+            return 0;
+        }
 
         $count = 0;
         $files = new \RecursiveIteratorIterator(
@@ -221,13 +244,16 @@ class BackupController extends Controller
             \RecursiveIteratorIterator::LEAVES_ONLY
         );
         foreach ($files as $file) {
-            if ($file->isDir()) continue;
+            if ($file->isDir()) {
+                continue;
+            }
             // getSubPathname() gives the path relative to $mediaDir directly — robust
             // across OS path separators / drive-letter casing (no manual stripping).
             $relative = str_replace('\\', '/', $files->getSubPathname());
-            $zip->addFile($file->getPathname(), $prefix . $relative);
+            $zip->addFile($file->getPathname(), $prefix.$relative);
             $count++;
         }
+
         return $count;
     }
 
@@ -235,7 +261,7 @@ class BackupController extends Controller
     {
         $tables = DB::select('SHOW TABLES');
         $dbName = config('database.connections.mysql.database');
-        $sql  = "-- Falcon CMS Backup\n-- Database: {$dbName}\n-- Date: " . now() . "\n\n";
+        $sql = "-- Falcon CMS Backup\n-- Database: {$dbName}\n-- Date: ".now()."\n\n";
         $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
 
         foreach ($tables as $table) {
@@ -243,21 +269,25 @@ class BackupController extends Controller
 
             $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`")[0];
             $sql .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
-            $sql .= $createTable->{'Create Table'} . ";\n\n";
+            $sql .= $createTable->{'Create Table'}.";\n\n";
 
             foreach (DB::table($tableName)->get() as $row) {
-                $row     = (array) $row;
+                $row = (array) $row;
                 $columns = array_keys($row);
-                $values  = array_map(function ($value) {
-                    if (is_null($value)) return 'NULL';
-                    return "'" . addslashes($value) . "'";
+                $values = array_map(function ($value) {
+                    if (is_null($value)) {
+                        return 'NULL';
+                    }
+
+                    return "'".addslashes($value)."'";
                 }, array_values($row));
 
-                $sql .= "INSERT INTO `{$tableName}` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $values) . ");\n";
+                $sql .= "INSERT INTO `{$tableName}` (`".implode('`, `', $columns).'`) VALUES ('.implode(', ', $values).");\n";
             }
             $sql .= "\n";
         }
-        $sql .= "SET FOREIGN_KEY_CHECKS=1;";
+        $sql .= 'SET FOREIGN_KEY_CHECKS=1;';
+
         return $sql;
     }
 
@@ -274,7 +304,7 @@ class BackupController extends Controller
         @set_time_limit(0);
 
         $filename = basename($filename);
-        $path = storage_path('app/backups/' . $filename);
+        $path = storage_path('app/backups/'.$filename);
         if (!file_exists($path)) {
             return back()->with('error', 'Backup file not found.');
         }
@@ -293,10 +323,12 @@ class BackupController extends Controller
             $executed = $this->runSqlDump($sql);
 
             falcon_log_activity('restored', "Restored database from snapshot: {$filename} ({$executed} statements)");
+
             return back()->with('success', "Database restored successfully from \"{$filename}\" ({$executed} statements executed).");
         } catch (\Throwable $e) {
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
-            return back()->with('error', 'Restoration failed: ' . $e->getMessage());
+
+            return back()->with('error', 'Restoration failed: '.$e->getMessage());
         }
     }
 
@@ -307,14 +339,21 @@ class BackupController extends Controller
      */
     private function commonWrapperPrefix(array $names): string
     {
-        if (empty($names)) return '';
+        if (empty($names)) {
+            return '';
+        }
         $first = reset($names);
         $slash = strpos($first, '/');
-        if ($slash === false) return ''; // first entry is a root-level file → no wrapper
+        if ($slash === false) {
+            return '';
+        } // first entry is a root-level file → no wrapper
         $candidate = substr($first, 0, $slash + 1);
         foreach ($names as $n) {
-            if (!str_starts_with($n, $candidate)) return '';
+            if (!str_starts_with($n, $candidate)) {
+                return '';
+            }
         }
+
         return $candidate;
     }
 
@@ -330,7 +369,7 @@ class BackupController extends Controller
             return back()->with('error', 'Restoring a zip backup needs the PHP "zip" extension, which is not enabled on this server.');
         }
 
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($path) !== true) {
             throw new \Exception('Could not open the backup archive.');
         }
@@ -339,7 +378,9 @@ class BackupController extends Controller
         $entries = [];
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $name = $zip->getNameIndex($i);
-            if ($name === false || str_ends_with($name, '/')) continue;
+            if ($name === false || str_ends_with($name, '/')) {
+                continue;
+            }
             $entries[$i] = $name;
         }
 
@@ -349,12 +390,14 @@ class BackupController extends Controller
         $wrapper = $this->commonWrapperPrefix($entries);
 
         // Classify by logical (wrapper-stripped) name; read content by index.
-        $sqlIndex     = null;
+        $sqlIndex = null;
         $recordsIndex = null;
         $mediaEntries = []; // index => logical path
         foreach ($entries as $i => $name) {
             $logical = $wrapper !== '' ? substr($name, strlen($wrapper)) : $name;
-            if ($logical === '') continue;
+            if ($logical === '') {
+                continue;
+            }
             if (str_ends_with(strtolower($logical), '.sql')) {
                 if ($sqlIndex === null || strtolower(basename($logical)) === 'database.sql') {
                     $sqlIndex = $i;
@@ -376,13 +419,15 @@ class BackupController extends Controller
                 throw new \Exception('The archive contains an empty database dump.');
             }
             $executed = $this->runSqlDump($sql);
-            $done[]   = "database ({$executed} statements)";
+            $done[] = "database ({$executed} statements)";
         }
 
         // 2) Media
         if (!empty($mediaEntries)) {
             $dest = $this->mediaDir();
-            if (!is_dir($dest)) mkdir($dest, 0755, true);
+            if (!is_dir($dest)) {
+                mkdir($dest, 0755, true);
+            }
 
             // A *full* backup (one that also carries database.sql) nests its media
             // under a "media/" folder, so we strip that one prefix to land files at
@@ -394,15 +439,23 @@ class BackupController extends Controller
             $count = 0;
             foreach ($mediaEntries as $i => $logical) {
                 $target = $stripMediaPrefix ? preg_replace('#^media/#', '', $logical) : $logical;
-                if ($target === '' || str_contains($target, '..')) continue; // safety
+                if ($target === '' || str_contains($target, '..')) {
+                    continue;
+                } // safety
 
                 $content = $zip->getFromIndex($i);
-                if ($content === false) continue;
+                if ($content === false) {
+                    continue;
+                }
 
-                $full = $dest . '/' . $target;
-                $dir  = dirname($full);
-                if (!is_dir($dir)) mkdir($dir, 0755, true);
-                if (file_put_contents($full, $content) !== false) $count++; // count only real writes
+                $full = $dest.'/'.$target;
+                $dir = dirname($full);
+                if (!is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+                if (file_put_contents($full, $content) !== false) {
+                    $count++;
+                } // count only real writes
             }
             $done[] = "{$count} media files";
         }
@@ -410,18 +463,22 @@ class BackupController extends Controller
         // 3) Media Library records — only in a media-only backup. (A full backup
         // restores these through database.sql instead.) updateOrInsert brings back
         // deleted library entries without disturbing rows added since the backup.
-        if ($recordsIndex !== null && \Illuminate\Support\Facades\Schema::hasTable('media')) {
+        if ($recordsIndex !== null && Schema::hasTable('media')) {
             $records = json_decode((string) $zip->getFromIndex($recordsIndex), true);
             if (is_array($records)) {
-                $cols = \Illuminate\Support\Facades\Schema::getColumnListing('media');
+                $cols = Schema::getColumnListing('media');
                 $n = 0;
                 foreach ($records as $rec) {
                     $row = array_intersect_key((array) $rec, array_flip($cols));
-                    if (empty($row['id'])) continue;
+                    if (empty($row['id'])) {
+                        continue;
+                    }
                     DB::table('media')->updateOrInsert(['id' => $row['id']], $row);
                     $n++;
                 }
-                if ($n > 0) $done[] = "{$n} media library records";
+                if ($n > 0) {
+                    $done[] = "{$n} media library records";
+                }
             }
         }
 
@@ -431,8 +488,9 @@ class BackupController extends Controller
             return back()->with('error', 'The archive did not contain a recognizable database dump or media files.');
         }
 
-        falcon_log_activity('restored', "Restored from backup: {$filename} (" . implode(', ', $done) . ')');
-        return back()->with('success', "Restored from \"{$filename}\": " . implode(' + ', $done) . '.');
+        falcon_log_activity('restored', "Restored from backup: {$filename} (".implode(', ', $done).')');
+
+        return back()->with('success', "Restored from \"{$filename}\": ".implode(' + ', $done).'.');
     }
 
     /** Execute a full SQL dump string. Returns the number of statements run. */
@@ -440,7 +498,7 @@ class BackupController extends Controller
     {
         $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql); // strip UTF-8 BOM
         $statements = $this->parseSqlStatements($sql);
-        $executed   = 0;
+        $executed = 0;
 
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
         try {
@@ -451,6 +509,7 @@ class BackupController extends Controller
         } finally {
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
         }
+
         return $executed;
     }
 
@@ -459,19 +518,20 @@ class BackupController extends Controller
     private function parseSqlStatements(string $sql): array
     {
         $statements = [];
-        $current    = '';
-        $len        = strlen($sql);
-        $inString   = false;
-        $strChar    = '';
-        $i          = 0;
+        $current = '';
+        $len = strlen($sql);
+        $inString = false;
+        $strChar = '';
+        $i = 0;
 
         while ($i < $len) {
             $ch = $sql[$i];
 
             if ($inString) {
                 if ($ch === '\\') {
-                    $current .= $ch . ($sql[$i + 1] ?? '');
+                    $current .= $ch.($sql[$i + 1] ?? '');
                     $i += 2;
+
                     continue;
                 }
                 if ($ch === $strChar) {
@@ -479,26 +539,34 @@ class BackupController extends Controller
                 }
                 $current .= $ch;
                 $i++;
+
                 continue;
             }
 
             if ($ch === '"' || $ch === "'") {
                 $inString = true;
-                $strChar  = $ch;
+                $strChar = $ch;
                 $current .= $ch;
                 $i++;
+
                 continue;
             }
 
             if ($ch === '-' && isset($sql[$i + 1]) && $sql[$i + 1] === '-') {
-                while ($i < $len && $sql[$i] !== "\n") $i++;
+                while ($i < $len && $sql[$i] !== "\n") {
+                    $i++;
+                }
+
                 continue;
             }
 
             if ($ch === '/' && isset($sql[$i + 1]) && $sql[$i + 1] === '*') {
                 $i += 2;
-                while ($i < $len - 1 && !($sql[$i] === '*' && $sql[$i + 1] === '/')) $i++;
+                while ($i < $len - 1 && !($sql[$i] === '*' && $sql[$i + 1] === '/')) {
+                    $i++;
+                }
                 $i += 2;
+
                 continue;
             }
 
@@ -509,6 +577,7 @@ class BackupController extends Controller
                 }
                 $current = '';
                 $i++;
+
                 continue;
             }
 
@@ -529,7 +598,7 @@ class BackupController extends Controller
         $this->checkAccess();
 
         $filename = basename($filename);
-        $path = storage_path('app/backups/' . $filename);
+        $path = storage_path('app/backups/'.$filename);
         if (!file_exists($path)) {
             abort(404);
         }
@@ -542,13 +611,13 @@ class BackupController extends Controller
         $this->checkAccess();
 
         $maxBytes = $this->maxUploadBytes();
-        $maxKb    = (int) ($maxBytes / 1024);
+        $maxKb = (int) ($maxBytes / 1024);
 
         $request->validate([
             'backup_file' => [
                 'required',
                 'file',
-                'max:' . $maxKb,
+                'max:'.$maxKb,
                 function ($attribute, $value, $fail) {
                     $ext = strtolower($value->getClientOriginalExtension());
                     if (!in_array($ext, ['sql', 'gz', 'zip'])) {
@@ -557,22 +626,23 @@ class BackupController extends Controller
                 },
             ],
         ], [
-            'backup_file.max' => 'The file exceeds the server upload limit of ' . $this->formatBytes($maxBytes) . '.',
+            'backup_file.max' => 'The file exceeds the server upload limit of '.$this->formatBytes($maxBytes).'.',
         ]);
 
         try {
-            $file      = $request->file('backup_file');
-            $original  = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $ext       = $file->getClientOriginalExtension();
-            $safe      = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $original);
-            $filename  = $safe . '_uploaded_' . Carbon::now()->format('Y-m-d-H-i-s') . '.' . $ext;
+            $file = $request->file('backup_file');
+            $original = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $ext = $file->getClientOriginalExtension();
+            $safe = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $original);
+            $filename = $safe.'_uploaded_'.Carbon::now()->format('Y-m-d-H-i-s').'.'.$ext;
 
             $file->move($this->backupDir(), $filename);
 
             falcon_log_activity('uploaded', "Uploaded backup file: {$filename}");
+
             return back()->with('success', "Backup file \"{$filename}\" uploaded successfully. You can now restore it from the list below.");
         } catch (\Throwable $e) {
-            return back()->with('error', 'Upload failed: ' . $e->getMessage());
+            return back()->with('error', 'Upload failed: '.$e->getMessage());
         }
     }
 
@@ -581,9 +651,10 @@ class BackupController extends Controller
         $this->checkAccess();
 
         $filename = basename($filename);
-        $path = storage_path('app/backups/' . $filename);
+        $path = storage_path('app/backups/'.$filename);
         if (file_exists($path)) {
             unlink($path);
+
             return back()->with('success', 'Backup deleted successfully.');
         }
 

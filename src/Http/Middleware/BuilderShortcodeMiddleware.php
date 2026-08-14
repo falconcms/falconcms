@@ -3,8 +3,8 @@
 namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
-use Illuminate\Http\Request;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use Illuminate\Http\Request;
 
 class BuilderShortcodeMiddleware
 {

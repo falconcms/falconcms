@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -42,7 +42,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('posts')->nullOnDelete();
             $table->string('title');
-            $table->string('slug'); 
+            $table->string('slug');
             $table->longText('content')->nullable();
             $table->text('excerpt')->nullable();
             $table->string('type')->default('post')->index();
@@ -50,11 +50,11 @@ return new class extends Migration
             $table->string('lang_code', 5)->default('en')->index();
             $table->unsignedBigInteger('origin_id')->nullable()->index();
             $table->string('featured_image')->nullable();
-            $table->string('editor_type')->default('rich'); 
+            $table->string('editor_type')->default('rich');
             $table->string('template')->nullable();
             $table->integer('menu_order')->default(0);
             $table->timestamp('published_at')->nullable();
-            
+
             $table->json('gallery')->nullable();
             $table->json('seo_meta')->nullable();
 

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PostType extends Model
 {
     use SoftDeletes;
+
     protected $fillable = ['name', 'singular_name', 'slug', 'description', 'icon', 'is_builtin', 'is_active', 'show_in_menu', 'is_public', 'supports'];
 
     protected $casts = [

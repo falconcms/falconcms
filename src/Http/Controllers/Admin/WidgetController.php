@@ -2,10 +2,15 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use FalconCms\Core\Models\Widget;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\NavigationMenu;
 use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Models\ProductCategory;
+use FalconCms\Core\Models\TaxonomyTerm;
+use FalconCms\Core\Models\Widget;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 
 class WidgetController extends Controller
 {
@@ -23,49 +28,49 @@ class WidgetController extends Controller
             'search' => [
                 'name' => 'Search Bar',
                 'description' => 'A simple search form for your site.',
-                'settings' => ['placeholder' => 'Search...']
+                'settings' => ['placeholder' => 'Search...'],
             ],
             'recent_posts' => [
                 'name' => 'Recent Posts',
                 'description' => 'Displays a list of your most recent posts.',
-                'settings' => ['limit' => 5]
+                'settings' => ['limit' => 5],
             ],
             'categories' => [
                 'name' => 'Categories List',
                 'description' => 'Displays a list of post categories.',
-                'settings' => []
+                'settings' => [],
             ],
             'custom_html' => [
                 'name' => 'Custom HTML',
                 'description' => 'Add arbitrary HTML code.',
-                'settings' => ['content' => '']
+                'settings' => ['content' => ''],
             ],
             'social_media' => [
                 'name' => 'Social Media',
                 'description' => 'Display links to your social media profiles.',
-                'settings' => []
+                'settings' => [],
             ],
             'text' => [
                 'name' => 'Text',
                 'description' => 'Display rich formatted text content.',
-                'settings' => ['content' => '']
+                'settings' => ['content' => ''],
             ],
             'nav_menu' => [
                 'name' => 'Navigation Menu',
                 'description' => 'Display any navigation menu in a widget area.',
-                'settings' => ['menu_id' => '']
+                'settings' => ['menu_id' => ''],
             ],
             'image' => [
                 'name' => 'Image',
                 'description' => 'Display an image with an optional clickable link.',
-                'settings' => ['image_url' => '', 'link_url' => '', 'link_target' => '_self', 'alt_text' => '', 'caption' => '']
+                'settings' => ['image_url' => '', 'link_url' => '', 'link_target' => '_self', 'alt_text' => '', 'caption' => ''],
             ],
         ];
 
         // Scan active theme for custom widgets
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         $themeWidgetPath = base_path("vendor/tareqcodex/lazy-cms-rebuild/resources/views/themes/{$activeTheme}/widgets");
-        
+
         if (is_dir($themeWidgetPath)) {
             $files = scandir($themeWidgetPath);
             foreach ($files as $file) {
@@ -75,7 +80,7 @@ class WidgetController extends Controller
                         $availableWidgets[$slug] = [
                             'name' => ucwords(str_replace(['-', '_'], ' ', $slug)),
                             'description' => "Custom widget provided by {$activeTheme} theme.",
-                            'settings' => []
+                            'settings' => [],
                         ];
                     }
                 }
@@ -85,7 +90,7 @@ class WidgetController extends Controller
         $activeWidgets = Widget::orderBy('order')->get()->groupBy('area');
 
         // Active hierarchical (category) taxonomies for CPTs
-        $cptCatTaxonomies = \Illuminate\Support\Facades\DB::table('custom_taxonomies')
+        $cptCatTaxonomies = DB::table('custom_taxonomies')
             ->where('hierarchical', true)
             ->where('is_active', true)
             ->whereNull('deleted_at')
@@ -103,20 +108,23 @@ class WidgetController extends Controller
             ->get()
             ->filter(function ($pt) use ($cptCatTaxonomies) {
                 if ($pt->slug === 'post') {
-                    return \FalconCms\Core\Models\Category::exists();
+                    return Category::exists();
                 }
                 if ($pt->slug === 'product') {
-                    return \FalconCms\Core\Models\ProductCategory::exists();
+                    return ProductCategory::exists();
                 }
                 $taxSlugs = $cptCatTaxonomies
-                    ->filter(fn($t) => in_array($pt->slug, json_decode($t->post_types ?? '[]', true)))
+                    ->filter(fn ($t) => in_array($pt->slug, json_decode($t->post_types ?? '[]', true)))
                     ->pluck('slug');
-                if ($taxSlugs->isEmpty()) return false;
-                return \FalconCms\Core\Models\TaxonomyTerm::whereIn('taxonomy_slug', $taxSlugs)->exists();
+                if ($taxSlugs->isEmpty()) {
+                    return false;
+                }
+
+                return TaxonomyTerm::whereIn('taxonomy_slug', $taxSlugs)->exists();
             })
             ->pluck('name', 'slug');
 
-        $menus = \FalconCms\Core\Models\NavigationMenu::orderBy('name')->get(['id', 'name', 'slug']);
+        $menus = NavigationMenu::orderBy('name')->get(['id', 'name', 'slug']);
 
         return view('falcon-cms::admin.widgets.index', compact(
             'widgetAreas', 'availableWidgets', 'activeWidgets',
@@ -160,6 +168,7 @@ class WidgetController extends Controller
     public function destroy(Widget $widget)
     {
         $widget->delete();
+
         return back()->with('success', 'Widget removed successfully!');
     }
 
@@ -168,6 +177,7 @@ class WidgetController extends Controller
         foreach ($request->widgets as $data) {
             Widget::where('id', $data['id'])->update(['order' => $data['order'], 'area' => $data['area']]);
         }
+
         return response()->json(['status' => 'success']);
     }
 }

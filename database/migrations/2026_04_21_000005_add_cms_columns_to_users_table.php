@@ -1,4 +1,5 @@
 <?php
+
 /*
 |--------------------------------------------------------------------------
 | Consolidated Migration for Users Table Additions
@@ -20,7 +21,7 @@ return new class extends Migration
             if (!Schema::hasColumn('users', 'role_id')) {
                 $table->foreignId('role_id')->nullable()->after('id')->constrained('roles')->nullOnDelete();
             }
-            
+
             // Profile fields
             if (!Schema::hasColumn('users', 'username')) {
                 $table->string('username')->unique()->nullable()->after('name');
@@ -59,7 +60,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['role_id']);
             $table->dropColumn(['role_id', 'is_blocked', 'login_attempts', 'last_attempt_at', 'blocked_until']);
-            
+
             if (!Schema::hasColumn('users', 'role')) {
                 $table->string('role')->default('subscriber')->after('id');
             }

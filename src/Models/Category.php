@@ -3,9 +3,9 @@
 namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class Category extends Model
@@ -43,7 +43,7 @@ class Category extends Model
         while (static::where('slug', $slug)
             ->where('id', '!=', $id)
             ->exists()) {
-            $slug = $originalSlug . '-' . $count++;
+            $slug = $originalSlug.'-'.$count++;
         }
 
         return $slug;
@@ -52,33 +52,49 @@ class Category extends Model
     public function translations()
     {
         $originId = $this->origin_id ?: $this->id;
+
         return $this->hasMany(Category::class, 'origin_id', 'id')
-               ->orWhere('id', $originId)
-               ->orWhere('origin_id', $originId);
+            ->orWhere('id', $originId)
+            ->orWhere('origin_id', $originId);
     }
 
     public function getTranslation($locale)
     {
-        if ($this->lang_code === $locale) return $this;
+        if ($this->lang_code === $locale) {
+            return $this;
+        }
         $originId = $this->origin_id ?: $this->id;
+
         return Category::where('lang_code', $locale)
-                    ->where(function($q) use ($originId) {
-                        $q->where('id', $originId)->orWhere('origin_id', $originId);
-                    })->first();
+            ->where(function ($q) use ($originId) {
+                $q->where('id', $originId)->orWhere('origin_id', $originId);
+            })->first();
     }
 
-    public function parent(): BelongsTo { return $this->belongsTo(Category::class, 'parent_id'); }
-    public function children(): HasMany { return $this->hasMany(Category::class, 'parent_id'); }
-    public function posts(): BelongsToMany { return $this->belongsToMany(Post::class); }
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Category::class, 'parent_id');
+    }
+
+    public function posts(): BelongsToMany
+    {
+        return $this->belongsToMany(Post::class);
+    }
 
     public function getFullSlugPath()
     {
         $path = $this->slug;
         $parent = $this->parent;
         while ($parent) {
-            $path = $parent->slug . '/' . $path;
+            $path = $parent->slug.'/'.$path;
             $parent = $parent->parent;
         }
+
         return $path;
     }
 }

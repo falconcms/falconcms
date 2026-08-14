@@ -2,23 +2,28 @@
 
 namespace FalconCms\Core\Mail;
 
+use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
+use FalconCms\Core\Models\Order;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use FalconCms\Core\Mail\Concerns\QueueableViaConfig;
-use FalconCms\Core\Models\Order;
 
 class OrderNotificationMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels, QueueableViaConfig;
+    use Queueable, QueueableViaConfig, SerializesModels;
 
     public $order;
+
     public $notificationType;
+
     public $customMessage;
+
     public $recipientType;
+
     public $refundAmount;
 
     public function __construct(Order $order, $notificationType = 'placed', $customMessage = null, $recipientType = 'customer', $refundAmount = null)
@@ -50,16 +55,16 @@ class OrderNotificationMail extends Mailable implements ShouldQueue
         $subjectTpl = $tplData['subject'] ?? $defaultSubject;
         $subject = str_replace(
             ['{{order_number}}', '{{customer_name}}', '{{new_status}}', '{{site_name}}'],
-            [$this->order->order_number, $this->order->first_name . ' ' . $this->order->last_name, ucfirst($this->order->status), $shopName],
+            [$this->order->order_number, $this->order->first_name.' '.$this->order->last_name, ucfirst($this->order->status), $shopName],
             $subjectTpl
         );
 
         return new Envelope(
-            from: new \Illuminate\Mail\Mailables\Address(
-                get_shop_option('shop_email_from_address', 'store@' . request()->getHost()),
+            from: new Address(
+                get_shop_option('shop_email_from_address', 'store@'.request()->getHost()),
                 get_shop_option('shop_email_from_name', config('app.name', 'Lazy Panda Shop'))
             ),
-            subject: "[$shopName] " . $subject,
+            subject: "[$shopName] ".$subject,
         );
     }
 

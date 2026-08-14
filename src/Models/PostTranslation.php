@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class PostTranslation extends Model
 {
     protected $fillable = [
-        'post_id', 'locale', 'slug', 'title', 'content', 
-        'excerpt', 'meta_title', 'meta_description'
+        'post_id', 'locale', 'slug', 'title', 'content',
+        'excerpt', 'meta_title', 'meta_description',
     ];
 
     public function post()

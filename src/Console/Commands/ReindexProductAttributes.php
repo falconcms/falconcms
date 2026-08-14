@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Rebuilds the attribute filter index from the products themselves.
@@ -20,13 +21,14 @@ class ReindexProductAttributes extends Command
     {
         if (!function_exists('falcon_reindex_all_product_attributes')) {
             $this->error('FalconCMS helpers are not loaded.');
+
             return self::FAILURE;
         }
 
         $this->info('Rebuilding the product attribute index...');
         $count = falcon_reindex_all_product_attributes();
 
-        $rows = \Illuminate\Support\Facades\DB::table('shop_product_attribute_values')->count();
+        $rows = DB::table('shop_product_attribute_values')->count();
         $this->info("Done: {$count} product(s) indexed, {$rows} attribute value(s) available to filter on.");
 
         return self::SUCCESS;

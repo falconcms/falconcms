@@ -2,11 +2,11 @@
 
 namespace FalconCms\Core\Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use FalconCms\Core\Models\Role;
-use FalconCms\Core\Models\Permission;
 use FalconCms\Core\Models\Menu;
-use Illuminate\Support\Facades\DB;
+use FalconCms\Core\Models\Permission;
+use FalconCms\Core\Models\Role;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class SystemSyncSeeder extends Seeder
 {
@@ -81,20 +81,20 @@ class SystemSyncSeeder extends Seeder
 
         // 6. Assign Permissions to Roles
         $roleAssignments = [
-            'super-admin'   => 'all', 
-            'administrator' => 'all', 
-            'editor'        => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments', 'manage_analytics'],
-            'author'        => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
-            'contributor'   => ['access_dashboard', 'manage_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
-            'subscriber'    => ['access_dashboard', 'manage_users', 'access_your_profile'],
-            'customer'      => ['access_dashboard', 'manage_users', 'access_your_profile'],
-            'user'          => [
-                'access_dashboard', 
+            'super-admin' => 'all',
+            'administrator' => 'all',
+            'editor' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments', 'manage_analytics'],
+            'author' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
+            'contributor' => ['access_dashboard', 'manage_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
+            'subscriber' => ['access_dashboard', 'manage_users', 'access_your_profile'],
+            'customer' => ['access_dashboard', 'manage_users', 'access_your_profile'],
+            'user' => [
+                'access_dashboard',
                 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts',
                 'manage_pages', 'access_all_pages_pages', 'access_add_new_pages',
                 'manage_media', 'access_library', 'access_add_new_media',
                 'access_comments', 'manage_analytics',
-                'manage_tools', 'access_languages_tools'
+                'manage_tools', 'access_languages_tools',
             ],
         ];
 
@@ -116,22 +116,36 @@ class SystemSyncSeeder extends Seeder
 
     protected function generatePermissionSlug($menu, $parent = null)
     {
-        if ($menu->permission) return $menu->permission;
-        
-        $title = strtolower($menu->title);
-        if ($title === 'dashboard') return 'access_dashboard';
-        if ($title === 'posts') return 'manage_posts';
-        if ($title === 'pages') return 'manage_pages';
-        if ($title === 'media') return 'manage_media';
-        if ($title === 'users') return 'manage_users';
-        if ($title === 'settings') return 'manage_settings';
-        
-        $slug = \Illuminate\Support\Str::slug($menu->title, '_');
-        
-        if ($parent && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
-            $slug .= '_' . \Illuminate\Support\Str::slug($parent->title, '_');
+        if ($menu->permission) {
+            return $menu->permission;
         }
-        
-        return 'access_' . $slug;
+
+        $title = strtolower($menu->title);
+        if ($title === 'dashboard') {
+            return 'access_dashboard';
+        }
+        if ($title === 'posts') {
+            return 'manage_posts';
+        }
+        if ($title === 'pages') {
+            return 'manage_pages';
+        }
+        if ($title === 'media') {
+            return 'manage_media';
+        }
+        if ($title === 'users') {
+            return 'manage_users';
+        }
+        if ($title === 'settings') {
+            return 'manage_settings';
+        }
+
+        $slug = Str::slug($menu->title, '_');
+
+        if ($parent && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
+            $slug .= '_'.Str::slug($parent->title, '_');
+        }
+
+        return 'access_'.$slug;
     }
 }

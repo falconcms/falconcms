@@ -5,6 +5,7 @@ namespace FalconCms\Core\Support;
 use FalconCms\Core\Models\Plugin;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -44,7 +45,7 @@ class PluginManager
     /** Absolute path to the plugins directory, or a specific plugin folder. */
     public function path(?string $slug = null): string
     {
-        return $slug ? $this->path . DIRECTORY_SEPARATOR . $slug : $this->path;
+        return $slug ? $this->path.DIRECTORY_SEPARATOR.$slug : $this->path;
     }
 
     // ── Discovery ────────────────────────────────────────────────────────────
@@ -57,17 +58,17 @@ class PluginManager
         }
         $this->manifests = [];
 
-        if (! is_dir($this->path)) {
+        if (!is_dir($this->path)) {
             return $this->manifests;
         }
 
-        foreach (glob($this->path . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
-            $manifestFile = $dir . '/plugin.json';
-            if (! is_file($manifestFile)) {
+        foreach (glob($this->path.'/*', GLOB_ONLYDIR) ?: [] as $dir) {
+            $manifestFile = $dir.'/plugin.json';
+            if (!is_file($manifestFile)) {
                 continue;
             }
             $data = json_decode((string) file_get_contents($manifestFile), true);
-            if (! is_array($data)) {
+            if (!is_array($data)) {
                 continue;
             }
             // Slug comes from the manifest, falling back to the folder name; keep
@@ -77,7 +78,7 @@ class PluginManager
                 continue;
             }
             $data['slug'] = $slug;
-            $data['dir']  = $dir;
+            $data['dir'] = $dir;
             $this->manifests[$slug] = $data;
         }
 
@@ -103,17 +104,18 @@ class PluginManager
             $rec = $records[$slug] ?? null;
 
             $updateAvailable = false;
-            if ($rec && ! empty($manifest['version']) && ! empty($rec->version)) {
+            if ($rec && !empty($manifest['version']) && !empty($rec->version)) {
                 $updateAvailable = version_compare($manifest['version'], $rec->version, '>');
             }
 
             $out[$slug] = $manifest + [
-                'installed'        => $rec !== null,
-                'active'           => $rec ? (bool) $rec->is_active : false,
+                'installed' => $rec !== null,
+                'active' => $rec ? (bool) $rec->is_active : false,
                 'installed_version' => $rec->version ?? null,
                 'update_available' => $updateAvailable,
             ];
         }
+
         return $out;
     }
 
@@ -189,26 +191,26 @@ class PluginManager
     protected function loadPlugin($app, array $manifest, bool $safe = true): void
     {
         $slug = $manifest['slug'];
-        $dir  = $manifest['dir'];
+        $dir = $manifest['dir'];
 
         try {
-            if (! empty($manifest['namespace'])) {
-                $src = is_dir($dir . '/src') ? $dir . '/src' : $dir;
+            if (!empty($manifest['namespace'])) {
+                $src = is_dir($dir.'/src') ? $dir.'/src' : $dir;
                 $this->registerPsr4($manifest['namespace'], $src);
             }
 
-            if (! empty($manifest['provider']) && class_exists($manifest['provider'])) {
+            if (!empty($manifest['provider']) && class_exists($manifest['provider'])) {
                 $app->register($manifest['provider']);
             }
 
-            $bootstrap = $dir . '/' . ($manifest['bootstrap'] ?? 'plugin.php');
+            $bootstrap = $dir.'/'.($manifest['bootstrap'] ?? 'plugin.php');
             if (is_file($bootstrap)) {
                 require_once $bootstrap;
             }
 
             $this->loaded[$slug] = $manifest;
         } catch (Throwable $e) {
-            if (! $safe) {
+            if (!$safe) {
                 // During activation we want the failure to abort the activate, so
                 // a broken plugin never gets marked active in the first place.
                 throw $e;
@@ -224,7 +226,7 @@ class PluginManager
         if ($this->composer === null) {
             $this->composer = require base_path('vendor/autoload.php');
         }
-        $namespace = rtrim($namespace, '\\') . '\\';
+        $namespace = rtrim($namespace, '\\').'\\';
         $this->composer->addPsr4($namespace, $path);
     }
 
@@ -239,7 +241,7 @@ class PluginManager
     public function activate(string $slug): array
     {
         $manifest = $this->manifest($slug);
-        if (! $manifest) {
+        if (!$manifest) {
             return $this->result(false, "Plugin '{$slug}' not found.");
         }
 
@@ -257,11 +259,12 @@ class PluginManager
                 ['version' => $manifest['version'] ?? null, 'is_active' => true, 'activated_at' => now()]
             );
         } catch (Throwable $e) {
-            Log::error("Plugin activation failed [{$slug}]: " . $e->getMessage());
-            return $this->result(false, 'Activation failed: ' . $e->getMessage());
+            Log::error("Plugin activation failed [{$slug}]: ".$e->getMessage());
+
+            return $this->result(false, 'Activation failed: '.$e->getMessage());
         }
 
-        return $this->result(true, ($manifest['name'] ?? $slug) . ' activated.');
+        return $this->result(true, ($manifest['name'] ?? $slug).' activated.');
     }
 
     /**
@@ -282,17 +285,17 @@ class PluginManager
             try {
                 $this->callLifecycle($manifest, 'deactivate');
             } catch (Throwable $e) {
-                Log::error("Plugin deactivate hook failed [{$slug}]: " . $e->getMessage());
+                Log::error("Plugin deactivate hook failed [{$slug}]: ".$e->getMessage());
             }
         }
 
         try {
             Plugin::where('slug', $slug)->update(['is_active' => false]);
         } catch (Throwable $e) {
-            return $this->result(false, 'Deactivation failed: ' . $e->getMessage());
+            return $this->result(false, 'Deactivation failed: '.$e->getMessage());
         }
 
-        return $this->result(true, ($manifest['name'] ?? $slug) . ' deactivated.');
+        return $this->result(true, ($manifest['name'] ?? $slug).' deactivated.');
     }
 
     /**
@@ -305,11 +308,11 @@ class PluginManager
     public function update(string $slug): array
     {
         $manifest = $this->manifest($slug);
-        if (! $manifest) {
+        if (!$manifest) {
             return $this->result(false, "Plugin '{$slug}' not found.");
         }
         $record = $this->records()[$slug] ?? null;
-        if (! $record) {
+        if (!$record) {
             return $this->result(false, 'Plugin is not installed.');
         }
 
@@ -328,11 +331,12 @@ class PluginManager
 
             $record->update(['version' => $manifest['version'] ?? $record->version]);
         } catch (Throwable $e) {
-            Log::error("Plugin update failed [{$slug}]: " . $e->getMessage());
-            return $this->result(false, 'Update failed: ' . $e->getMessage());
+            Log::error("Plugin update failed [{$slug}]: ".$e->getMessage());
+
+            return $this->result(false, 'Update failed: '.$e->getMessage());
         }
 
-        return $this->result(true, ($manifest['name'] ?? $slug) . ' updated to ' . ($manifest['version'] ?? '?') . '.');
+        return $this->result(true, ($manifest['name'] ?? $slug).' updated to '.($manifest['version'] ?? '?').'.');
     }
 
     /**
@@ -364,15 +368,16 @@ class PluginManager
             Plugin::where('slug', $slug)->delete();
 
             if ($deleteFiles && $manifest && is_dir($manifest['dir'])) {
-                \Illuminate\Support\Facades\File::deleteDirectory($manifest['dir']);
+                File::deleteDirectory($manifest['dir']);
                 $this->manifests = null; // force re-discovery
             }
         } catch (Throwable $e) {
-            Log::error("Plugin uninstall failed [{$slug}]: " . $e->getMessage());
-            return $this->result(false, 'Uninstall failed: ' . $e->getMessage());
+            Log::error("Plugin uninstall failed [{$slug}]: ".$e->getMessage());
+
+            return $this->result(false, 'Uninstall failed: '.$e->getMessage());
         }
 
-        return $this->result(true, ($manifest['name'] ?? $slug) . ' uninstalled.');
+        return $this->result(true, ($manifest['name'] ?? $slug).' uninstalled.');
     }
 
     /**
@@ -383,11 +388,11 @@ class PluginManager
      */
     public function installFromZip(string $zipPath, ?string $originalName = null): array
     {
-        if (! class_exists(\ZipArchive::class)) {
+        if (!class_exists(\ZipArchive::class)) {
             return $this->result(false, 'PHP zip extension is not available.');
         }
 
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($zipPath) !== true) {
             return $this->result(false, 'Could not open ZIP file.');
         }
@@ -397,67 +402,72 @@ class PluginManager
             $entry = (string) $zip->getNameIndex($i);
             if (str_contains($entry, '..') || str_starts_with($entry, '/') || str_starts_with($entry, '\\')) {
                 $zip->close();
+
                 return $this->result(false, 'Invalid ZIP: contains unsafe file paths.');
             }
         }
 
-        $temp = storage_path('app/tmp_plugin_' . time());
-        \Illuminate\Support\Facades\File::makeDirectory($temp, 0755, true);
+        $temp = storage_path('app/tmp_plugin_'.time());
+        File::makeDirectory($temp, 0755, true);
         $zip->extractTo($temp);
         $zip->close();
 
         // The plugin may sit at the archive root or inside a single wrapper folder.
         $source = $temp;
-        if (! is_file($temp . '/plugin.json')) {
-            $dirs = \Illuminate\Support\Facades\File::directories($temp);
-            if (count($dirs) === 1 && is_file($dirs[0] . '/plugin.json')) {
+        if (!is_file($temp.'/plugin.json')) {
+            $dirs = File::directories($temp);
+            if (count($dirs) === 1 && is_file($dirs[0].'/plugin.json')) {
                 $source = $dirs[0];
             }
         }
 
-        $manifestFile = $source . '/plugin.json';
-        if (! is_file($manifestFile)) {
-            \Illuminate\Support\Facades\File::deleteDirectory($temp);
+        $manifestFile = $source.'/plugin.json';
+        if (!is_file($manifestFile)) {
+            File::deleteDirectory($temp);
+
             return $this->result(false, 'Invalid plugin: plugin.json not found.');
         }
         $data = json_decode((string) file_get_contents($manifestFile), true);
-        if (! is_array($data)) {
-            \Illuminate\Support\Facades\File::deleteDirectory($temp);
+        if (!is_array($data)) {
+            File::deleteDirectory($temp);
+
             return $this->result(false, 'Invalid plugin: plugin.json is malformed.');
         }
 
         $slug = preg_replace('/[^A-Za-z0-9_\-]/', '', (string) ($data['slug'] ?? ($originalName ? pathinfo($originalName, PATHINFO_FILENAME) : basename($source))));
         if ($slug === '') {
-            \Illuminate\Support\Facades\File::deleteDirectory($temp);
+            File::deleteDirectory($temp);
+
             return $this->result(false, 'Invalid plugin: missing slug.');
         }
 
         $target = $this->path($slug);
         if (is_dir($target)) {
-            \Illuminate\Support\Facades\File::deleteDirectory($temp);
+            File::deleteDirectory($temp);
+
             return $this->result(false, "Plugin '{$slug}' already exists. Uninstall it first to reinstall.");
         }
 
-        \Illuminate\Support\Facades\File::ensureDirectoryExists($this->path());
-        \Illuminate\Support\Facades\File::moveDirectory($source, $target);
-        \Illuminate\Support\Facades\File::deleteDirectory($temp);
+        File::ensureDirectoryExists($this->path());
+        File::moveDirectory($source, $target);
+        File::deleteDirectory($temp);
         $this->manifests = null; // force re-discovery
 
-        return $this->result(true, ($data['name'] ?? $slug) . ' installed. Activate it to enable.') + ['slug' => $slug];
+        return $this->result(true, ($data['name'] ?? $slug).' installed. Activate it to enable.') + ['slug' => $slug];
     }
 
     /** Roll back a plugin's own migrations (best-effort). */
     protected function rollbackMigrations(array $manifest): void
     {
-        $migrations = $manifest['dir'] . '/database/migrations';
-        if (! is_dir($migrations)) {
+        $migrations = $manifest['dir'].'/database/migrations';
+        if (!is_dir($migrations)) {
             return;
         }
         $relative = ltrim(str_replace(base_path(), '', $migrations), '/\\');
         try {
             Artisan::call('migrate:rollback', ['--path' => $relative, '--force' => true]);
         } catch (Throwable $e) {
-            Log::warning("Plugin migration rollback failed [{$manifest['slug']}]: " . $e->getMessage());
+            Log::warning("Plugin migration rollback failed [{$manifest['slug']}]: ".$e->getMessage());
         }
     }
 
@@ -467,12 +477,12 @@ class PluginManager
      */
     protected function checkRequirements(array $manifest): ?string
     {
-        if (! empty($manifest['requires_php']) && ! $this->versionSatisfied(PHP_VERSION, $manifest['requires_php'])) {
-            return "Requires PHP {$manifest['requires_php']} (running " . PHP_VERSION . ').';
+        if (!empty($manifest['requires_php']) && !$this->versionSatisfied(PHP_VERSION, $manifest['requires_php'])) {
+            return "Requires PHP {$manifest['requires_php']} (running ".PHP_VERSION.').';
         }
 
-        if (! empty($manifest['requires_cms']) && function_exists('falcon_cms_installed_version')) {
-            if (! $this->versionSatisfied((string) falcon_cms_installed_version(), $manifest['requires_cms'])) {
+        if (!empty($manifest['requires_cms']) && function_exists('falcon_cms_installed_version')) {
+            if (!$this->versionSatisfied((string) falcon_cms_installed_version(), $manifest['requires_cms'])) {
                 return "Requires FalconCMS {$manifest['requires_cms']}.";
             }
         }
@@ -482,10 +492,10 @@ class PluginManager
             if ($dep === '') {
                 continue;
             }
-            if (! $this->manifest($dep)) {
+            if (!$this->manifest($dep)) {
                 return "Missing dependency: {$dep}.";
             }
-            if (! in_array($dep, $this->activeSlugs(), true)) {
+            if (!in_array($dep, $this->activeSlugs(), true)) {
                 return "Dependency '{$dep}' must be activated first.";
             }
         }
@@ -498,18 +508,20 @@ class PluginManager
     {
         $constraint = trim($constraint);
         if (preg_match('/^(>=|<=|>|<|=)?\s*(.+)$/', $constraint, $m)) {
-            $op  = $m[1] ?: '>=';
+            $op = $m[1] ?: '>=';
             $ver = ltrim(trim($m[2]), 'v^~');
+
             return version_compare($current, $ver, $op);
         }
+
         return true;
     }
 
     /** Run a plugin's own migrations (plugins/<slug>/database/migrations). */
     protected function runMigrations(array $manifest): void
     {
-        $migrations = $manifest['dir'] . '/database/migrations';
-        if (! is_dir($migrations)) {
+        $migrations = $manifest['dir'].'/database/migrations';
+        if (!is_dir($migrations)) {
             return;
         }
         // --path is interpreted relative to the app base path.
@@ -571,6 +583,7 @@ class PluginManager
                 return $active;
             }
         }
+
         return null;
     }
 
@@ -579,7 +592,7 @@ class PluginManager
     /** Deactivate a plugin that threw during load, so the CMS stays up. */
     protected function handleFatal(string $slug, Throwable $e): void
     {
-        Log::error("Plugin '{$slug}' failed to load and was deactivated: " . $e->getMessage());
+        Log::error("Plugin '{$slug}' failed to load and was deactivated: ".$e->getMessage());
         try {
             Plugin::where('slug', $slug)->update(['is_active' => false]);
         } catch (Throwable $ignored) {

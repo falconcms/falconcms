@@ -90,28 +90,30 @@ return new class extends Migration
 
             $numeric = static function ($value): ?string {
                 $value = is_scalar($value) ? trim((string) $value) : '';
+
                 return $value === '' ? null : (string) (float) $value;
             };
             $intOrNull = static function ($value): ?int {
                 $value = is_scalar($value) ? trim((string) $value) : '';
+
                 return $value === '' ? null : (int) $value;
             };
 
             DB::table('shop_coupons')->insert([
-                'code'              => $code,
-                'type'              => in_array($coupon['type'] ?? '', ['percent', 'fixed_cart', 'fixed_product', 'free_shipping'], true) ? $coupon['type'] : 'fixed_cart',
-                'amount'            => $numeric($coupon['amount'] ?? ($coupon['discount'] ?? 0)) ?? 0,
-                'min_spend'         => $numeric($coupon['min_spend'] ?? null),
-                'max_spend'         => $numeric($coupon['max_spend'] ?? null),
-                'products'          => json_encode(array_values((array) ($coupon['products'] ?? []))),
-                'categories'        => json_encode(array_values((array) ($coupon['categories'] ?? []))),
-                'usage_limit'       => $intOrNull($coupon['usage_limit'] ?? null),
+                'code' => $code,
+                'type' => in_array($coupon['type'] ?? '', ['percent', 'fixed_cart', 'fixed_product', 'free_shipping'], true) ? $coupon['type'] : 'fixed_cart',
+                'amount' => $numeric($coupon['amount'] ?? ($coupon['discount'] ?? 0)) ?? 0,
+                'min_spend' => $numeric($coupon['min_spend'] ?? null),
+                'max_spend' => $numeric($coupon['max_spend'] ?? null),
+                'products' => json_encode(array_values((array) ($coupon['products'] ?? []))),
+                'categories' => json_encode(array_values((array) ($coupon['categories'] ?? []))),
+                'usage_limit' => $intOrNull($coupon['usage_limit'] ?? null),
                 'total_usage_limit' => $intOrNull($coupon['total_usage_limit'] ?? null),
-                'usage_count'       => (int) ($coupon['used_count'] ?? 0),
-                'expiry_date'       => $expiry,
-                'is_active'         => 1,
-                'created_at'        => now(),
-                'updated_at'        => now(),
+                'usage_count' => (int) ($coupon['used_count'] ?? 0),
+                'expiry_date' => $expiry,
+                'is_active' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             $existing[] = strtoupper($code);

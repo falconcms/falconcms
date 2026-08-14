@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Support;
 
+use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Support\Collection;
 
 /**
@@ -9,7 +10,7 @@ use Illuminate\Support\Collection;
  *
  * A package or a site's own service provider registers menus in code (never in the
  * database) by hooking the `falcon_admin_menu` action and calling
- * `falcon_add_menu_page()` / `falcon_add_submenu_page()`. The {@see \FalconCms\Core\View\Components\Admin\Sidebar}
+ * `falcon_add_menu_page()` / `falcon_add_submenu_page()`. The {@see Sidebar}
  * component asks this registry for those menus and merges them alongside the
  * database-driven core menus at render time.
  *
@@ -83,14 +84,14 @@ class AdminMenu
 
         // Wire the sidebar menu to the generic options route for this page.
         $this->addMenuPage([
-            'slug'       => $args['slug'],
+            'slug' => $args['slug'],
             'menu_title' => $args['menu_title'] ?? $args['title'] ?? 'Settings',
-            'route'      => 'admin.options.show',
-            'params'     => ['slug' => $args['slug']],
+            'route' => 'admin.options.show',
+            'params' => ['slug' => $args['slug']],
             'capability' => $args['capability'] ?? 'manage_settings',
-            'icon'       => $args['icon'] ?? 'tune',
-            'group'      => $args['group'] ?? 'Extend',
-            'position'   => $args['position'] ?? 100,
+            'icon' => $args['icon'] ?? 'tune',
+            'group' => $args['group'] ?? 'Extend',
+            'position' => $args['position'] ?? 100,
         ]);
     }
 
@@ -143,17 +144,17 @@ class AdminMenu
     protected function toItem(array $a, ?Collection $children = null): object
     {
         return (object) [
-            'title'      => $a['menu_title'] ?? $a['title'] ?? 'Menu',
-            'route'      => $a['route'] ?? '#',
-            'icon'       => $a['icon'] ?? '',
+            'title' => $a['menu_title'] ?? $a['title'] ?? 'Menu',
+            'route' => $a['route'] ?? '#',
+            'icon' => $a['icon'] ?? '',
             // The sidebar's getPermission() returns this verbatim when set, so an
             // explicit permission short-circuits any title-based derivation.
             'permission' => $a['capability'] ?? $a['permission'] ?? 'access_dashboard',
-            'params'     => $a['params'] ?? [],
-            'parent_id'  => null,
-            'order'      => $a['position'] ?? $a['order'] ?? 100,
-            'group'      => $a['group'] ?? 'Extend',
-            'children'   => $children ?? collect(),
+            'params' => $a['params'] ?? [],
+            'parent_id' => null,
+            'order' => $a['position'] ?? $a['order'] ?? 100,
+            'group' => $a['group'] ?? 'Extend',
+            'children' => $children ?? collect(),
         ];
     }
 }

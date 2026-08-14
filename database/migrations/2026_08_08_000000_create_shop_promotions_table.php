@@ -82,10 +82,10 @@ return new class extends Migration
 
         // Columns mirrored from the sibling Shop entries, which leave icon/permission blank.
         DB::table('menus')->insert([
-            'title'      => 'Promotions',
-            'route'      => 'admin.shop.promotions.index',
-            'parent_id'  => $shopMenu->id,
-            'order'      => $order + 1,
+            'title' => 'Promotions',
+            'route' => 'admin.shop.promotions.index',
+            'parent_id' => $shopMenu->id,
+            'order' => $order + 1,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

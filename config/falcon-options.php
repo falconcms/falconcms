@@ -39,8 +39,8 @@ return [
 
     'hooks' => [
         'general-settings' => [
-            'fields' => []
+            'fields' => [],
         ],
     ],
-    'pages' => []
+    'pages' => [],
 ];

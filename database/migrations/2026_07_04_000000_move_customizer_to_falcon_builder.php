@@ -13,12 +13,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('menus')) return;
+        if (!Schema::hasTable('menus')) {
+            return;
+        }
 
         // 1) Legacy "Lazy Builder" → "Falcon Builder".
         DB::table('menus')->whereNull('parent_id')->where('title', 'Lazy Builder')->update([
-            'title'      => 'Falcon Builder',
-            'route'      => 'admin.falcon-builder.sections',
+            'title' => 'Falcon Builder',
+            'route' => 'admin.falcon-builder.sections',
             'updated_at' => now(),
         ]);
 
@@ -32,14 +34,14 @@ return new class extends Migration
             $fbId = $fb->id;
         } else {
             $fbId = DB::table('menus')->insertGetId([
-                'parent_id'  => null,
-                'title'      => 'Falcon Builder',
-                'route'      => 'admin.falcon-builder.sections',
-                'icon'       => 'view_quilt',
-                'group'      => 'Main',
-                'order'      => 42,
+                'parent_id' => null,
+                'title' => 'Falcon Builder',
+                'route' => 'admin.falcon-builder.sections',
+                'icon' => 'view_quilt',
+                'group' => 'Main',
+                'order' => 42,
                 'permission' => null,
-                'params'     => null,
+                'params' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -59,22 +61,22 @@ return new class extends Migration
 
         // 3) Move the Customizer item under Falcon Builder (it lived under Appearance before).
         $moved = DB::table('menus')->where('route', 'admin.customizer.index')->update([
-            'parent_id'  => $fbId,
-            'order'      => 5,
+            'parent_id' => $fbId,
+            'order' => 5,
             'updated_at' => now(),
         ]);
 
         // If no Customizer row existed at all, create one under Falcon Builder.
         if ($moved === 0 && !DB::table('menus')->where('route', 'admin.customizer.index')->exists()) {
             DB::table('menus')->insert([
-                'parent_id'  => $fbId,
-                'title'      => 'Customizer',
-                'route'      => 'admin.customizer.index',
-                'icon'       => null,
-                'group'      => null,
-                'order'      => 5,
+                'parent_id' => $fbId,
+                'title' => 'Customizer',
+                'route' => 'admin.customizer.index',
+                'icon' => null,
+                'group' => null,
+                'order' => 5,
                 'permission' => null,
-                'params'     => null,
+                'params' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -83,14 +85,16 @@ return new class extends Migration
 
     public function down(): void
     {
-        if (!Schema::hasTable('menus')) return;
+        if (!Schema::hasTable('menus')) {
+            return;
+        }
 
         // Best-effort: put Customizer back under Appearance.
         $appearance = DB::table('menus')->whereNull('parent_id')->where('title', 'Appearance')->first();
         if ($appearance) {
             DB::table('menus')->where('route', 'admin.customizer.index')->update([
-                'parent_id'  => $appearance->id,
-                'order'      => 2,
+                'parent_id' => $appearance->id,
+                'order' => 2,
                 'updated_at' => now(),
             ]);
         }

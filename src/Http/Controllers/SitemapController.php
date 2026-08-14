@@ -2,11 +2,11 @@
 
 namespace FalconCms\Core\Http\Controllers;
 
-use Illuminate\Routing\Controller;
+use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
-use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Tag;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Response;
 
 class SitemapController extends Controller
@@ -20,7 +20,7 @@ class SitemapController extends Controller
         // All active post types (builtin + custom) — dynamic
         $allPostTypes = PostType::where('is_active', true)->get();
         foreach ($allPostTypes as $pt) {
-            if (get_cms_option('sitemap_include_' . $pt->slug, '1') == '1') {
+            if (get_cms_option('sitemap_include_'.$pt->slug, '1') == '1') {
                 $ptPosts = Post::where('type', $pt->slug)
                     ->where('status', 'published')
                     ->latest()

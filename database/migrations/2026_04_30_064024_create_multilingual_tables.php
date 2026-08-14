@@ -28,11 +28,11 @@ return new class extends Migration
             $table->string('slug')->nullable();
             $table->longText('content')->nullable();
             $table->text('excerpt')->nullable();
-            
+
             // SEO Fields
             $table->string('meta_title')->nullable();
             $table->text('meta_description')->nullable();
-            
+
             $table->unique(['post_id', 'locale']);
             $table->timestamps();
         });

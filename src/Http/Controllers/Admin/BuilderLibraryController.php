@@ -4,11 +4,14 @@ namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Str;
 
 class BuilderLibraryController extends Controller
 {
     const OPTION_KEY = 'lazy_builder_library';
+
     const GLOBAL_SECTIONS_KEY = 'lazy_global_sections';
+
     const MEGA_MENUS_KEY = 'lazy_mega_menus';
 
     private function getLibrary(): array
@@ -16,8 +19,11 @@ class BuilderLibraryController extends Controller
         $raw = get_cms_option(self::OPTION_KEY, null);
         if ($raw) {
             $decoded = json_decode($raw, true);
-            if (is_array($decoded)) return $decoded;
+            if (is_array($decoded)) {
+                return $decoded;
+            }
         }
+
         return ['containers' => [], 'columns' => [], 'nested_columns' => [], 'elements' => []];
     }
 
@@ -31,8 +37,11 @@ class BuilderLibraryController extends Controller
         $raw = get_cms_option('falcon_post_cards', null);
         if ($raw) {
             $decoded = json_decode($raw, true);
-            if (is_array($decoded)) return $decoded;
+            if (is_array($decoded)) {
+                return $decoded;
+            }
         }
+
         return [];
     }
 
@@ -41,35 +50,40 @@ class BuilderLibraryController extends Controller
         $raw = get_cms_option(self::MEGA_MENUS_KEY, null);
         if ($raw) {
             $decoded = json_decode($raw, true);
-            if (is_array($decoded)) return $decoded;
+            if (is_array($decoded)) {
+                return $decoded;
+            }
         }
+
         return [];
     }
 
     public function page()
     {
-        $library    = $this->getLibrary();
-        $postCards  = $this->getPostCards();
-        $megaMenus  = $this->getMegaMenus();
+        $library = $this->getLibrary();
+        $postCards = $this->getPostCards();
+        $megaMenus = $this->getMegaMenus();
+
         return view('falcon-cms::admin.falcon-builder.library', compact('library', 'postCards', 'megaMenus'));
     }
 
     public function saveMegaMenu(Request $request)
     {
         $request->validate([
-            'name'   => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'config' => 'nullable|array',
         ]);
 
         $menus = $this->getMegaMenus();
-        $menu  = [
-            'id'         => (string) \Illuminate\Support\Str::uuid(),
-            'name'       => $request->input('name'),
-            'config'     => $request->input('config') ?? [],
+        $menu = [
+            'id' => (string) Str::uuid(),
+            'name' => $request->input('name'),
+            'config' => $request->input('config') ?? [],
             'created_at' => now()->format('Y-m-d H:i'),
         ];
         array_unshift($menus, $menu);
         update_cms_option(self::MEGA_MENUS_KEY, json_encode($menus));
+
         return response()->json(['success' => true, 'menu' => $menu]);
     }
 
@@ -77,20 +91,22 @@ class BuilderLibraryController extends Controller
     {
         // Editing needs Pro (licensed or grace, not merely grandfathered) — backstop for a
         // direct URL; the Library's Edit button is also disabled in the locked preview.
-        if (! falcon_pro_editable('builder_pro')) {
+        if (!falcon_pro_editable('builder_pro')) {
             return response()->view('falcon-cms::pro-required', ['message' => 'This feature is available in the Pro version.'], 200);
         }
 
-        $menus    = $this->getMegaMenus();
+        $menus = $this->getMegaMenus();
         $megaMenu = collect($menus)->firstWhere('id', $id);
-        if (!$megaMenu) abort(404);
+        if (!$megaMenu) {
+            abort(404);
+        }
 
-        $customElements   = apply_falcon_filters('falcon_builder_elements', []);
-        $bodyRaw          = get_cms_option('theme_typography_body');
-        $headingRaw       = get_cms_option('theme_typography_h1');
-        $bodyFont         = is_array($bodyRaw)    ? $bodyRaw    : json_decode((string)$bodyRaw,    true);
-        $headingFont      = is_array($headingRaw) ? $headingRaw : json_decode((string)$headingRaw, true);
-        $themeBodyFont    = $bodyFont['family']    ?? null;
+        $customElements = apply_falcon_filters('falcon_builder_elements', []);
+        $bodyRaw = get_cms_option('theme_typography_body');
+        $headingRaw = get_cms_option('theme_typography_h1');
+        $bodyFont = is_array($bodyRaw) ? $bodyRaw : json_decode((string) $bodyRaw, true);
+        $headingFont = is_array($headingRaw) ? $headingRaw : json_decode((string) $headingRaw, true);
+        $themeBodyFont = $bodyFont['family'] ?? null;
         $themeHeadingFont = $headingFont['family'] ?? null;
 
         return view('falcon-cms::admin.falcon-builder.mega-menu-builder', compact(
@@ -109,26 +125,28 @@ class BuilderLibraryController extends Controller
             }
         }
         update_cms_option(self::MEGA_MENUS_KEY, json_encode($menus));
+
         return response()->json(['success' => true]);
     }
 
     public function saveMegaMenuSettings(Request $request, string $id)
     {
         $validated = $request->validate([
-            'width_type'   => 'required|in:site_width,full_width,custom',
+            'width_type' => 'required|in:site_width,full_width,custom',
             'custom_width' => 'nullable|integer|min:200|max:3000',
         ]);
         $menus = $this->getMegaMenus();
         foreach ($menus as &$menu) {
             if ($menu['id'] === $id) {
                 $menu['config']['settings'] = [
-                    'width_type'   => $validated['width_type'],
-                    'custom_width' => (int)($validated['custom_width'] ?? 1200),
+                    'width_type' => $validated['width_type'],
+                    'custom_width' => (int) ($validated['custom_width'] ?? 1200),
                 ];
                 break;
             }
         }
         update_cms_option(self::MEGA_MENUS_KEY, json_encode($menus));
+
         return response()->json(['success' => true]);
     }
 
@@ -137,36 +155,42 @@ class BuilderLibraryController extends Controller
         $request->validate(['name' => 'required|string|max:255']);
         $menus = $this->getMegaMenus();
         foreach ($menus as &$menu) {
-            if ($menu['id'] === $id) { $menu['name'] = $request->input('name'); break; }
+            if ($menu['id'] === $id) {
+                $menu['name'] = $request->input('name');
+                break;
+            }
         }
         update_cms_option(self::MEGA_MENUS_KEY, json_encode($menus));
+
         return response()->json(['success' => true]);
     }
 
     public function deleteMegaMenu(string $id)
     {
         $menus = $this->getMegaMenus();
-        $menus = array_values(array_filter($menus, fn($m) => $m['id'] !== $id));
+        $menus = array_values(array_filter($menus, fn ($m) => $m['id'] !== $id));
         update_cms_option(self::MEGA_MENUS_KEY, json_encode($menus));
+
         return response()->json(['success' => true]);
     }
 
     public function savePostCard(Request $request)
     {
         $request->validate([
-            'name'   => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'config' => 'nullable|array',
         ]);
 
-        $cards  = $this->getPostCards();
-        $card   = [
-            'id'         => (string) \Illuminate\Support\Str::uuid(),
-            'name'       => $request->input('name'),
-            'config'     => $request->input('config') ?? [],
+        $cards = $this->getPostCards();
+        $card = [
+            'id' => (string) Str::uuid(),
+            'name' => $request->input('name'),
+            'config' => $request->input('config') ?? [],
             'created_at' => now()->format('Y-m-d H:i'),
         ];
         array_unshift($cards, $card);
         update_cms_option('falcon_post_cards', json_encode($cards));
+
         return response()->json(['success' => true, 'card' => $card]);
     }
 
@@ -174,20 +198,22 @@ class BuilderLibraryController extends Controller
     {
         // Editing needs Pro (licensed or grace, not merely grandfathered) — backstop for a
         // direct URL; the Library's Edit button is also disabled in the locked preview.
-        if (! falcon_pro_editable('builder_pro')) {
+        if (!falcon_pro_editable('builder_pro')) {
             return response()->view('falcon-cms::pro-required', ['message' => 'This feature is available in the Pro version.'], 200);
         }
 
         $cards = $this->getPostCards();
         $postCard = collect($cards)->firstWhere('id', $id);
-        if (!$postCard) abort(404);
+        if (!$postCard) {
+            abort(404);
+        }
 
-        $customElements  = apply_falcon_filters('falcon_builder_elements', []);
-        $bodyRaw         = get_cms_option('theme_typography_body');
-        $headingRaw      = get_cms_option('theme_typography_h1');
-        $bodyFont        = is_array($bodyRaw)    ? $bodyRaw    : json_decode((string)$bodyRaw,    true);
-        $headingFont     = is_array($headingRaw) ? $headingRaw : json_decode((string)$headingRaw, true);
-        $themeBodyFont   = $bodyFont['family']    ?? null;
+        $customElements = apply_falcon_filters('falcon_builder_elements', []);
+        $bodyRaw = get_cms_option('theme_typography_body');
+        $headingRaw = get_cms_option('theme_typography_h1');
+        $bodyFont = is_array($bodyRaw) ? $bodyRaw : json_decode((string) $bodyRaw, true);
+        $headingFont = is_array($headingRaw) ? $headingRaw : json_decode((string) $headingRaw, true);
+        $themeBodyFont = $bodyFont['family'] ?? null;
         $themeHeadingFont = $headingFont['family'] ?? null;
 
         return view('falcon-cms::admin.falcon-builder.post-card-builder', compact(
@@ -206,6 +232,7 @@ class BuilderLibraryController extends Controller
             }
         }
         update_cms_option('falcon_post_cards', json_encode($cards));
+
         return response()->json(['success' => true]);
     }
 
@@ -214,17 +241,22 @@ class BuilderLibraryController extends Controller
         $request->validate(['name' => 'required|string|max:255']);
         $cards = $this->getPostCards();
         foreach ($cards as &$card) {
-            if ($card['id'] === $id) { $card['name'] = $request->input('name'); break; }
+            if ($card['id'] === $id) {
+                $card['name'] = $request->input('name');
+                break;
+            }
         }
         update_cms_option('falcon_post_cards', json_encode($cards));
+
         return response()->json(['success' => true]);
     }
 
     public function deletePostCard(string $id)
     {
         $cards = $this->getPostCards();
-        $cards = array_values(array_filter($cards, fn($c) => $c['id'] !== $id));
+        $cards = array_values(array_filter($cards, fn ($c) => $c['id'] !== $id));
         update_cms_option('falcon_post_cards', json_encode($cards));
+
         return response()->json(['success' => true]);
     }
 
@@ -233,7 +265,10 @@ class BuilderLibraryController extends Controller
     public function exportPostCard(string $id)
     {
         $card = collect($this->getPostCards())->firstWhere('id', $id);
-        if (!$card) abort(404);
+        if (!$card) {
+            abort(404);
+        }
+
         return $this->downloadLibraryItem('falcon_post_card', $card, 'post-card');
     }
 
@@ -247,6 +282,7 @@ class BuilderLibraryController extends Controller
         $cards = $this->getPostCards();
         array_unshift($cards, $this->newLibraryItem($item));
         update_cms_option('falcon_post_cards', json_encode($cards));
+
         return redirect()->route('admin.falcon-builder.library', ['tab' => 'post_cards'])
             ->with('success', 'Post card imported successfully.');
     }
@@ -254,7 +290,10 @@ class BuilderLibraryController extends Controller
     public function exportMegaMenu(string $id)
     {
         $menu = collect($this->getMegaMenus())->firstWhere('id', $id);
-        if (!$menu) abort(404);
+        if (!$menu) {
+            abort(404);
+        }
+
         return $this->downloadLibraryItem('falcon_mega_menu', $menu, 'mega-menu');
     }
 
@@ -268,6 +307,7 @@ class BuilderLibraryController extends Controller
         $menus = $this->getMegaMenus();
         array_unshift($menus, $this->newLibraryItem($item));
         update_cms_option(self::MEGA_MENUS_KEY, json_encode($menus));
+
         return redirect()->route('admin.falcon-builder.library', ['tab' => 'mega_menus'])
             ->with('success', 'Mega menu imported successfully.');
     }
@@ -276,20 +316,20 @@ class BuilderLibraryController extends Controller
     private function downloadLibraryItem(string $type, array $item, string $suffix)
     {
         $payload = [
-            '_type'       => $type,
-            'version'     => 1,
+            '_type' => $type,
+            'version' => 1,
             'exported_at' => now()->toIso8601String(),
-            'item'        => [
-                'name'   => $item['name']   ?? '',
+            'item' => [
+                'name' => $item['name'] ?? '',
                 'config' => $item['config'] ?? [],
             ],
         ];
-        $filename = (\Illuminate\Support\Str::slug($item['name'] ?? $suffix) ?: $suffix) . '-' . $suffix . '.json';
+        $filename = (Str::slug($item['name'] ?? $suffix) ?: $suffix).'-'.$suffix.'.json';
 
         return response()->json(
             $payload,
             200,
-            ['Content-Disposition' => 'attachment; filename="' . $filename . '"'],
+            ['Content-Disposition' => 'attachment; filename="'.$filename.'"'],
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
         );
     }
@@ -313,6 +353,7 @@ class BuilderLibraryController extends Controller
         if (!is_array($data) || ($data['_type'] ?? null) !== $expectedType || empty($data['item']) || !is_array($data['item'])) {
             return null;
         }
+
         return $data['item'];
     }
 
@@ -320,9 +361,9 @@ class BuilderLibraryController extends Controller
     private function newLibraryItem(array $item): array
     {
         return [
-            'id'         => (string) \Illuminate\Support\Str::uuid(),
-            'name'       => trim((string) ($item['name'] ?? '')) ?: 'Imported',
-            'config'     => is_array($item['config'] ?? null) ? $item['config'] : [],
+            'id' => (string) Str::uuid(),
+            'name' => trim((string) ($item['name'] ?? '')) ?: 'Imported',
+            'config' => is_array($item['config'] ?? null) ? $item['config'] : [],
             'created_at' => now()->format('Y-m-d H:i'),
         ];
     }
@@ -336,13 +377,13 @@ class BuilderLibraryController extends Controller
         ]);
 
         $library = $this->getLibrary();
-        $type    = $request->input('type');
+        $type = $request->input('type');
 
         $item = [
-            'id'         => (string) \Illuminate\Support\Str::uuid(),
-            'name'       => $request->input('name'),
+            'id' => (string) Str::uuid(),
+            'name' => $request->input('name'),
             'created_at' => now()->format('Y-m-d H:i'),
-            'data'       => $request->input('data'),
+            'data' => $request->input('data'),
         ];
 
         array_unshift($library[$type], $item);
@@ -358,8 +399,11 @@ class BuilderLibraryController extends Controller
         $raw = get_cms_option(self::GLOBAL_SECTIONS_KEY, null);
         if ($raw) {
             $decoded = json_decode($raw, true);
-            if (is_array($decoded)) return $decoded;
+            if (is_array($decoded)) {
+                return $decoded;
+            }
         }
+
         return [];
     }
 
@@ -376,14 +420,15 @@ class BuilderLibraryController extends Controller
         ]);
 
         $sections = $this->getGlobalSections();
-        $section  = [
-            'id'         => (string) \Illuminate\Support\Str::uuid(),
-            'name'       => $request->input('name'),
-            'data'       => $request->input('data'),
+        $section = [
+            'id' => (string) Str::uuid(),
+            'name' => $request->input('name'),
+            'data' => $request->input('data'),
             'created_at' => now()->format('Y-m-d H:i'),
         ];
         array_unshift($sections, $section);
         update_cms_option(self::GLOBAL_SECTIONS_KEY, json_encode($sections));
+
         return response()->json(['success' => true, 'section' => $section]);
     }
 
@@ -392,20 +437,26 @@ class BuilderLibraryController extends Controller
         $sections = $this->getGlobalSections();
         foreach ($sections as &$section) {
             if ($section['id'] === $id) {
-                if ($request->has('name')) $section['name'] = $request->input('name');
-                if ($request->has('data')) $section['data'] = $request->input('data');
+                if ($request->has('name')) {
+                    $section['name'] = $request->input('name');
+                }
+                if ($request->has('data')) {
+                    $section['data'] = $request->input('data');
+                }
                 break;
             }
         }
         update_cms_option(self::GLOBAL_SECTIONS_KEY, json_encode($sections));
+
         return response()->json(['success' => true]);
     }
 
     public function deleteGlobalSection(string $id)
     {
         $sections = $this->getGlobalSections();
-        $sections = array_values(array_filter($sections, fn($s) => $s['id'] !== $id));
+        $sections = array_values(array_filter($sections, fn ($s) => $s['id'] !== $id));
         update_cms_option(self::GLOBAL_SECTIONS_KEY, json_encode($sections));
+
         return response()->json(['success' => true]);
     }
 
@@ -418,7 +469,7 @@ class BuilderLibraryController extends Controller
         }
 
         $library = $this->getLibrary();
-        $library[$type] = array_values(array_filter($library[$type], fn($i) => $i['id'] !== $id));
+        $library[$type] = array_values(array_filter($library[$type], fn ($i) => $i['id'] !== $id));
         update_cms_option(self::OPTION_KEY, json_encode($library));
 
         return response()->json(['success' => true]);

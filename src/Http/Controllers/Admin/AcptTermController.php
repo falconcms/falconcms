@@ -2,11 +2,13 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use Illuminate\Http\Request;
 use FalconCms\Core\Models\CustomTaxonomy;
 use FalconCms\Core\Models\TaxonomyTerm;
-use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 
 class AcptTermController extends Controller
 {
@@ -19,13 +21,13 @@ class AcptTermController extends Controller
         if ($lang && $lang !== 'all') {
             $query->where('lang_code', $lang);
         }
-        
+
         if ($request->filled('cpt')) {
             $query->where('cpt_slug', $request->cpt);
         }
 
         if ($request->filled('s')) {
-            $query->where('name', 'like', '%' . $request->s . '%');
+            $query->where('name', 'like', '%'.$request->s.'%');
             $terms = $query->withCount('posts')->latest()->paginate(10)->withQueryString();
             $fullTree = collect();
         } else {
@@ -33,23 +35,27 @@ class AcptTermController extends Controller
             $tree = collect();
             $visitedIds = [];
 
-            $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$tree, &$visitedIds) {
+            $buildTree = function ($parentId, $level) use (&$buildTree, $allTerms, &$tree, &$visitedIds) {
                 foreach ($allTerms->where('parent_id', $parentId) as $term) {
-                    if (in_array($term->id, $visitedIds)) continue;
+                    if (in_array($term->id, $visitedIds)) {
+                        continue;
+                    }
                     $visitedIds[] = $term->id;
                     $term->level = $level;
                     $tree->push($term);
                     $buildTree($term->id, $level + 1);
                 }
             };
-            
+
             $buildTree(null, 0);
 
             // Handle orphans/loops
             if ($tree->count() < $allTerms->count()) {
                 $orphans = $allTerms->whereNotIn('id', $visitedIds);
                 foreach ($orphans as $orphan) {
-                    if (in_array($orphan->id, $visitedIds)) continue;
+                    if (in_array($orphan->id, $visitedIds)) {
+                        continue;
+                    }
                     $orphan->level = 0;
                     $tree->push($orphan);
                     $visitedIds[] = $orphan->id;
@@ -58,24 +64,24 @@ class AcptTermController extends Controller
             }
 
             $fullTree = $tree;
-            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+            $page = Paginator::resolveCurrentPage() ?: 1;
             $perPage = 10;
-            $terms = new \Illuminate\Pagination\LengthAwarePaginator(
+            $terms = new LengthAwarePaginator(
                 $tree->forPage($page, $perPage),
                 $tree->count(),
                 $perPage,
                 $page,
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+                ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
             );
         }
-        
+
         return view('falcon-cms::admin.acpt.taxonomies.terms.index', compact('taxonomy', 'terms', 'fullTree'));
     }
 
     public function store(Request $request, $taxonomySlug)
     {
         $taxonomy = CustomTaxonomy::where('slug', $taxonomySlug)->firstOrFail();
-        
+
         $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255',
@@ -113,7 +119,7 @@ class AcptTermController extends Controller
         $ids = $request->input('ids');
         $action = $request->input('action');
 
-        \Illuminate\Support\Facades\Log::info("Bulk action: Action=$action, IDs=" . json_encode($ids));
+        Log::info("Bulk action: Action=$action, IDs=".json_encode($ids));
 
         if (!$ids || !is_array($ids) || $action === '-1') {
             return redirect()->back()->with('error', 'Please select items and an action.');
@@ -121,6 +127,7 @@ class AcptTermController extends Controller
 
         if ($action === 'delete') {
             TaxonomyTerm::whereIn('id', $ids)->delete();
+
             return redirect()->back()->with('success', 'Selected terms deleted.');
         }
 
@@ -134,6 +141,7 @@ class AcptTermController extends Controller
         }
         $term = TaxonomyTerm::findOrFail($id);
         $term->delete();
+
         return redirect()->back()->with('success', 'Term deleted successfully!');
     }
 
@@ -146,12 +154,14 @@ class AcptTermController extends Controller
             ->where('id', '!=', $id)
             ->orderBy('name')
             ->get();
-            
+
         $fullTree = collect();
         $visitedIds = [];
-        $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$fullTree, &$visitedIds) {
+        $buildTree = function ($parentId, $level) use (&$buildTree, $allTerms, &$fullTree, &$visitedIds) {
             foreach ($allTerms->where('parent_id', $parentId) as $t) {
-                if (in_array($t->id, $visitedIds)) continue;
+                if (in_array($t->id, $visitedIds)) {
+                    continue;
+                }
                 $visitedIds[] = $t->id;
                 $t->level = $level;
                 $fullTree->push($t);
@@ -166,7 +176,7 @@ class AcptTermController extends Controller
     public function update(Request $request, $taxonomySlug, $id)
     {
         $term = TaxonomyTerm::findOrFail($id);
-        
+
         $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255',
@@ -176,6 +186,7 @@ class AcptTermController extends Controller
                 function ($attribute, $value, $fail) use ($term) {
                     if ($value == $term->id) {
                         $fail('A term cannot be its own parent.');
+
                         return;
                     }
                     if ($value) {
@@ -207,12 +218,14 @@ class AcptTermController extends Controller
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
             foreach ($request->copy_to_languages as $targetLang) {
                 $exists = TaxonomyTerm::where('origin_id', $term->id)->where('lang_code', $targetLang)->exists();
-                if ($exists) continue;
+                if ($exists) {
+                    continue;
+                }
 
                 $clone = $term->replicate();
                 $clone->lang_code = $targetLang;
                 $clone->origin_id = $term->id;
-                
+
                 $clone->name = falcon_translate($term->name, $targetLang);
                 $clone->slug = TaxonomyTerm::generateUniqueSlug($clone->name, 0, $term->cpt_slug, $targetLang);
                 if ($term->description) {
@@ -230,7 +243,7 @@ class AcptTermController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'taxonomy_slug' => 'required|string',
-            'lang_code' => 'nullable|string'
+            'lang_code' => 'nullable|string',
         ]);
 
         $lang = $request->input('lang_code', app()->getLocale());
