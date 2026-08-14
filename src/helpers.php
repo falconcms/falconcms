@@ -5488,6 +5488,19 @@ if (!function_exists('get_falcon_cart_shipping_details')) {
     {
         $country = $country ?? falcon_customer_shipping_country();
 
+        // Nothing in the basket, nothing to deliver. Without this the flat rate is quoted
+        // against an empty cart, so a mini-cart or a "you are ৳X from free delivery" banner
+        // reads the shipping charge as the whole total. Checkout itself is guarded separately,
+        // so this was never chargeable — just wrong on screen.
+        if (empty(session()->get('falcon_cart', []))) {
+            return [
+                'cost' => 0.0,
+                'label' => 'Calculated at checkout',
+                'method' => 'delivery',
+                'pending' => true,
+            ];
+        }
+
         // "Only display shipping fees after a valid address is provided" — with no destination
         // yet there is nothing honest to quote, so nothing is charged either and the cart total
         // matches what the customer is shown. Checkout always has a country (billing_country is
@@ -5894,20 +5907,50 @@ if (!function_exists('falcon_tax_rate_for')) {
     }
 }
 
+if (!function_exists('falcon_request_memo')) {
+    /**
+     * A scratchpad that lives exactly as long as the application instance does.
+     *
+     * Several helpers are asked the same question many times while rendering one page, and
+     * memoising the answer is worth it. Doing that in a `static` is what you reach for first
+     * and is wrong twice over: under Octane or inside a queue worker the static survives into
+     * the next request — serving stale data, and in the case of anything user-scoped, serving
+     * one visitor's data to the next — and in tests it carries fixtures across cases.
+     *
+     * Keyed per caller so two helpers never collide.
+     */
+    function falcon_request_memo(string $key): ArrayObject
+    {
+        $binding = 'falcon.memo.'.$key;
+
+        if (!app()->bound($binding)) {
+            app()->instance($binding, new ArrayObject);
+        }
+
+        return app($binding);
+    }
+}
+
 if (!function_exists('falcon_product_tax_status')) {
     /**
      * A product's tax status ('taxable' | 'shipping' | 'none'), defaulting to taxable.
      * Results are memoised per request — the cart asks for the same handful of ids repeatedly.
+     *
+     * The memo lives on the container rather than in a `static`. A static outlives the
+     * request in any long-running worker (Octane, a queue process), so it would keep
+     * serving a tax status the shop owner has since changed, and would carry one test's
+     * fixtures into the next. Bound to the application instance, it dies with it.
      */
     function falcon_product_tax_status($postId): string
     {
-        static $cache = [];
-
         $postId = (int) $postId;
         if ($postId <= 0) {
             return 'taxable';
         }
-        if (array_key_exists($postId, $cache)) {
+
+        $cache = falcon_request_memo('product_tax_statuses');
+
+        if ($cache->offsetExists($postId)) {
             return $cache[$postId];
         }
 
@@ -5925,7 +5968,9 @@ if (!function_exists('falcon_product_tax_status')) {
             // Leave the default; a lookup failure must never block a checkout.
         }
 
-        return $cache[$postId] = $status;
+        $cache[$postId] = $status;
+
+        return $status;
     }
 }
 
@@ -6417,20 +6462,25 @@ if (!function_exists('falcon_wishlist_product_ids')) {
      */
     function falcon_wishlist_product_ids(): array
     {
-        static $cache = null;
-        if ($cache !== null) {
-            return $cache;
-        }
-        if (!auth()->check()) {
-            return $cache = [];
-        }
-        try {
-            $cache = Wishlist::where('user_id', auth()->id())->pluck('product_id')->map(fn ($v) => (int) $v)->all();
-        } catch (Throwable $e) {
-            $cache = [];
+        // Container-scoped, never static: this list belongs to one signed-in visitor, and a
+        // static would hand it to whoever the worker serves next. See falcon_request_memo().
+        $memo = falcon_request_memo('wishlist_product_ids');
+
+        if ($memo->offsetExists('ids')) {
+            return $memo['ids'];
         }
 
-        return $cache;
+        if (!auth()->check()) {
+            return $memo['ids'] = [];
+        }
+
+        try {
+            $ids = Wishlist::where('user_id', auth()->id())->pluck('product_id')->map(fn ($v) => (int) $v)->all();
+        } catch (Throwable $e) {
+            $ids = [];
+        }
+
+        return $memo['ids'] = $ids;
     }
 }
 

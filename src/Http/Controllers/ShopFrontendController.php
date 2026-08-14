@@ -303,7 +303,7 @@ class ShopFrontendController extends Controller
                         return $this->couponResponse(false, 'You have already used this coupon the maximum number of times.', $request);
                     }
                 } else {
-                    $usedCoupons = Session::get('lazy_used_coupons', []);
+                    $usedCoupons = Session::get('falcon_used_coupons', []);
                     if (($usedCoupons[$code] ?? 0) >= $perUserLimit) {
                         return $this->couponResponse(false, 'Usage limit reached for this coupon.', $request);
                     }
@@ -970,11 +970,26 @@ class ShopFrontendController extends Controller
         // Redeem each applied coupon. Coupon::redeem() is a single conditional UPDATE, so the
         // global usage cap holds even when two checkouts complete at the same instant — the
         // previous read-modify-write on the settings blob could hand out the last use twice.
+        // A guest has no order history to count against, so their per-customer usage is
+        // tallied in the session. Nothing wrote this counter before, which meant the
+        // "limit per customer" rule applied to signed-in shoppers only — a guest could
+        // redeem a one-per-customer coupon as many times as they liked.
+        $guestUsage = $request->session()->get('falcon_used_coupons', []);
+
         foreach ($couponCodes as $couponCode) {
             $couponModel = Coupon::findByCode($couponCode);
             if ($couponModel && !$couponModel->redeem()) {
                 Log::warning("Coupon {$couponCode} hit its usage limit while placing order #{$order->order_number}.");
             }
+
+            if (!auth()->check()) {
+                $key = strtoupper($couponCode);
+                $guestUsage[$key] = (int) ($guestUsage[$key] ?? 0) + 1;
+            }
+        }
+
+        if (!auth()->check()) {
+            $request->session()->put('falcon_used_coupons', $guestUsage);
         }
 
         do_falcon_action('falcon_before_place_order', $order, $cart, $request);
