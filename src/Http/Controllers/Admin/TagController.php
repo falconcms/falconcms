@@ -2,10 +2,9 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use FalconCms\Core\Models\Tag;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Routing\Controller;
 
 class TagController extends Controller
 {
@@ -21,10 +20,11 @@ class TagController extends Controller
         $query->latest();
 
         if ($request->has('s')) {
-            $query->where('name', 'like', '%' . $request->s . '%');
+            $query->where('name', 'like', '%'.$request->s.'%');
         }
 
         $tags = $query->paginate(10);
+
         return view('falcon-cms::admin.tags.index', compact('tags'));
     }
 
@@ -35,6 +35,7 @@ class TagController extends Controller
 
         if (($action === 'delete') && !empty($ids)) {
             Tag::whereIn('id', $ids)->delete();
+
             return back()->with('success', 'Selected tags deleted.');
         }
 
@@ -47,7 +48,7 @@ class TagController extends Controller
         $baseSlug = $request->slug ?: $request->name;
         $request->merge([
             'slug' => Tag::generateUniqueSlug($baseSlug, 0, $lang),
-            'lang_code' => $lang
+            'lang_code' => $lang,
         ]);
 
         $validated = $request->validate([
@@ -87,12 +88,14 @@ class TagController extends Controller
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
             foreach ($request->copy_to_languages as $targetLang) {
                 $exists = Tag::where('origin_id', $tag->id)->where('lang_code', $targetLang)->exists();
-                if ($exists) continue;
+                if ($exists) {
+                    continue;
+                }
 
                 $clone = $tag->replicate();
                 $clone->lang_code = $targetLang;
                 $clone->origin_id = $tag->id;
-                
+
                 $clone->name = falcon_translate($tag->name, $targetLang);
                 $clone->slug = Tag::generateUniqueSlug($clone->name, 0, $targetLang);
                 if ($tag->description) {
@@ -112,8 +115,10 @@ class TagController extends Controller
         $name = $tag->name;
         $tag->delete();
         falcon_log_activity('deleted', "Deleted tag: {$name}", $tag);
+
         return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag deleted.');
     }
+
     public function ajax(Request $request)
     {
         $request->validate(['name' => 'required|string|max:255']);
@@ -122,6 +127,7 @@ class TagController extends Controller
             'name' => $request->name,
             'slug' => $slug,
         ]);
+
         return response()->json($tag);
     }
 }

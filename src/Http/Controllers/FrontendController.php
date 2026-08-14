@@ -2,22 +2,31 @@
 
 namespace FalconCms\Core\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\User;
+use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\Comment;
+use FalconCms\Core\Models\CustomTaxonomy;
+use FalconCms\Core\Models\Form;
+use FalconCms\Core\Models\FormSubmission;
+use FalconCms\Core\Models\Language;
+use FalconCms\Core\Models\Order;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
-use Illuminate\Http\Request;
-
-use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\ProductCategory;
+use FalconCms\Core\Models\ProductTag;
 use FalconCms\Core\Models\Tag;
 use FalconCms\Core\Models\TaxonomyTerm;
-
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class FrontendController extends Controller
 {
     protected function resolveThemeView($view, $fallback = null)
     {
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
-        
+
         // 1. Try App-level theme
         $appView = "themes.{$activeTheme}.{$view}";
         if (view()->exists($appView)) {
@@ -48,20 +57,21 @@ class FrontendController extends Controller
     public function index($locale = null)
     {
         try {
-            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
+            $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
             if ($locale && in_array($locale, $supportedLocales)) {
                 app()->setLocale($locale);
             }
-        } catch (\Exception $e) {}
-        
+        } catch (\Exception $e) {
+        }
+
         $homePageId = get_cms_option('home_page_id');
-        
+
         if ($homePageId) {
             $post = Post::where('id', $homePageId)
                 ->where('lang_code', app()->getLocale())
                 ->where('status', 'published')
                 ->first();
-            
+
             // If not found in current locale, try to find the linked post in this locale
             if (!$post) {
                 $originalPost = Post::find($homePageId);
@@ -69,9 +79,11 @@ class FrontendController extends Controller
                     $post = Post::where('origin_id', $originalPost->id)
                         ->where('lang_code', app()->getLocale())
                         ->first();
-                    
+
                     // Final fallback to original if still not found
-                    if (!$post) $post = $originalPost;
+                    if (!$post) {
+                        $post = $originalPost;
+                    }
                 }
             }
             if ($post) {
@@ -83,45 +95,50 @@ class FrontendController extends Controller
                     return view($this->resolveThemeView('index'), compact('post'));
                 }
                 $viewName = ($post->type === 'page') ? 'page' : 'single';
+
                 return view($this->resolveThemeView($viewName), compact('post'));
             }
         }
 
         falcon_layout_context(['kind' => 'home']);
+
         return view($this->resolveThemeView('index'));
     }
 
     public function archive($slug)
     {
         try {
-            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
+            $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
             $firstSegment = request()->segment(1);
             if (in_array($firstSegment, $supportedLocales)) {
                 app()->setLocale($firstSegment);
             }
-        } catch (\Exception $e) {}
-        
-        $routeName       = request()->route()->getName();
-        $items           = collect();
-        $title           = '';
+        } catch (\Exception $e) {
+        }
+
+        $routeName = request()->route()->getName();
+        $items = collect();
+        $title = '';
         $archivePostType = 'post'; // 'post' or 'product'
-        $ctxTaxonomy     = null;   // which taxonomy this archive is for
-        $ctxTermId       = null;   // the resolved term id
+        $ctxTaxonomy = null;   // which taxonomy this archive is for
+        $ctxTermId = null;   // the resolved term id
 
         if (in_array($routeName, ['frontend.category', 'frontend.category.locale'])) {
-            $slugs    = explode('/', urldecode($slug));
+            $slugs = explode('/', urldecode($slug));
             $lastSlug = end($slugs);
             try {
-                $category   = Category::where('slug', $lastSlug)->firstOrFail();
+                $category = Category::where('slug', $lastSlug)->firstOrFail();
                 $postsQuery = $category->posts()->where('status', 'published');
-                $title      = $category->name;
-                $ctxTaxonomy = 'category'; $ctxTermId = $category->id;
+                $title = $category->name;
+                $ctxTaxonomy = 'category';
+                $ctxTermId = $category->id;
             } catch (\Throwable $e) {
                 $term = TaxonomyTerm::where('slug', $lastSlug)->first();
                 abort_if(!$term, 404);
                 $postsQuery = $term->posts()->where('status', 'published');
-                $title      = $term->name;
-                $ctxTaxonomy = $term->taxonomy_slug; $ctxTermId = $term->id;
+                $title = $term->name;
+                $ctxTaxonomy = $term->taxonomy_slug;
+                $ctxTermId = $term->id;
             }
             $archivePostType = 'post';
 
@@ -129,58 +146,64 @@ class FrontendController extends Controller
             $tagSlugs = explode('/', urldecode($slug));
             $lastSlug = end($tagSlugs);
             try {
-                $tag        = Tag::where('slug', $lastSlug)->firstOrFail();
+                $tag = Tag::where('slug', $lastSlug)->firstOrFail();
                 $postsQuery = $tag->posts()->where('status', 'published');
-                $title      = $tag->name;
-                $ctxTaxonomy = 'post_tag'; $ctxTermId = $tag->id;
+                $title = $tag->name;
+                $ctxTaxonomy = 'post_tag';
+                $ctxTermId = $tag->id;
             } catch (\Throwable $e) {
                 $term = TaxonomyTerm::where('slug', $lastSlug)->first();
                 abort_if(!$term, 404);
                 $postsQuery = $term->posts()->where('status', 'published');
-                $title      = $term->name;
-                $ctxTaxonomy = $term->taxonomy_slug; $ctxTermId = $term->id;
+                $title = $term->name;
+                $ctxTaxonomy = $term->taxonomy_slug;
+                $ctxTermId = $term->id;
             }
             $archivePostType = 'post';
 
         } elseif (in_array($routeName, ['frontend.product_category', 'frontend.product_category.locale'])) {
-            $slugs    = explode('/', urldecode($slug));
+            $slugs = explode('/', urldecode($slug));
             $lastSlug = end($slugs);
 
             // Try the dedicated ProductCategory table first, fall back to ACPT taxonomy_terms
             try {
-                $category   = \FalconCms\Core\Models\ProductCategory::where('slug', $lastSlug)->firstOrFail();
+                $category = ProductCategory::where('slug', $lastSlug)->firstOrFail();
                 $postsQuery = $category->posts()->where('status', 'published');
-                $title      = $category->name;
-                $ctxTaxonomy = 'product_category'; $ctxTermId = $category->id;
+                $title = $category->name;
+                $ctxTaxonomy = 'product_category';
+                $ctxTermId = $category->id;
             } catch (\Throwable $e) {
                 $term = TaxonomyTerm::where('slug', $lastSlug)
                     ->where('taxonomy_slug', 'like', 'product%')
                     ->first();
                 abort_if(!$term, 404);
                 $postsQuery = $term->posts()->where('status', 'published');
-                $title      = $term->name;
-                $ctxTaxonomy = $term->taxonomy_slug; $ctxTermId = $term->id;
+                $title = $term->name;
+                $ctxTaxonomy = $term->taxonomy_slug;
+                $ctxTermId = $term->id;
             }
             $archivePostType = 'product';
 
         } elseif (in_array($routeName, ['frontend.product_tag', 'frontend.product_tag.locale'])) {
             // Try the dedicated ProductTag table first, fall back to ACPT taxonomy_terms
             try {
-                $tag        = \FalconCms\Core\Models\ProductTag::where('slug', $slug)->firstOrFail();
+                $tag = ProductTag::where('slug', $slug)->firstOrFail();
                 $postsQuery = $tag->posts()->where('status', 'published');
-                $title      = $tag->name;
-                $ctxTaxonomy = 'product_tag'; $ctxTermId = $tag->id;
+                $title = $tag->name;
+                $ctxTaxonomy = 'product_tag';
+                $ctxTermId = $tag->id;
             } catch (\Throwable $e) {
                 $term = TaxonomyTerm::where('slug', $slug)
                     ->where(function ($q) {
                         $q->where('taxonomy_slug', 'like', 'product%tag%')
-                          ->orWhere('taxonomy_slug', 'like', 'product%');
+                            ->orWhere('taxonomy_slug', 'like', 'product%');
                     })
                     ->first();
                 abort_if(!$term, 404);
                 $postsQuery = $term->posts()->where('status', 'published');
-                $title      = $term->name;
-                $ctxTaxonomy = $term->taxonomy_slug; $ctxTermId = $term->id;
+                $title = $term->name;
+                $ctxTaxonomy = $term->taxonomy_slug;
+                $ctxTermId = $term->id;
             }
             $archivePostType = 'product';
         }
@@ -203,17 +226,17 @@ class FrontendController extends Controller
         falcon_layout_context(['kind' => 'archive', 'archive_type' => 'taxonomy', 'post_type' => $archivePostType, 'taxonomy' => $ctxTaxonomy, 'term_id' => $ctxTermId]);
 
         return view($this->resolveThemeView('archive'), [
-            'posts'           => $items,
-            'title'           => $title,
-            'type'            => ucfirst($archivePostType),
+            'posts' => $items,
+            'title' => $title,
+            'type' => ucfirst($archivePostType),
             'archivePostType' => $archivePostType,
-            'filterOptions'   => $filterOptions,
+            'filterOptions' => $filterOptions,
         ]);
     }
 
     public function authorArchive($id)
     {
-        $user            = \App\Models\User::findOrFail($id);
+        $user = User::findOrFail($id);
         $archivePostType = request('type', 'post');
 
         falcon_layout_context(['kind' => 'archive', 'archive_type' => 'author', 'post_type' => $archivePostType, 'author_id' => (int) $id]);
@@ -226,9 +249,9 @@ class FrontendController extends Controller
             ->withQueryString();
 
         return view($this->resolveThemeView('archive'), [
-            'posts'           => $posts,
-            'title'           => $user->name,
-            'type'            => 'Author',
+            'posts' => $posts,
+            'title' => $user->name,
+            'type' => 'Author',
             'archivePostType' => $archivePostType,
         ]);
     }
@@ -237,12 +260,13 @@ class FrontendController extends Controller
     {
         $supportedLocales = [];
         try {
-            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
-        } catch (\Exception $e) {}
+            $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
+        } catch (\Exception $e) {
+        }
 
         $firstSegment = request()->segment(1);
         $isLocale = in_array($firstSegment, $supportedLocales);
-        
+
         $type = null;
         $postSlug = null;
 
@@ -250,7 +274,7 @@ class FrontendController extends Controller
             app()->setLocale($firstSegment);
             $secondSegment = request()->segment(2);
             $thirdSegment = request()->segment(3);
-            
+
             if ($thirdSegment) {
                 // URL: /bn/post/slug
                 $type = $secondSegment;
@@ -269,27 +293,30 @@ class FrontendController extends Controller
             }
         }
 
-        if (!$postSlug) abort(404);
+        if (!$postSlug) {
+            abort(404);
+        }
 
         $homePageId = get_cms_option('home_page_id');
 
         if ($type && !in_array($type, ['post', 'page'])) {
             // Check if it's a Custom Taxonomy first
-            $customTaxonomy = \FalconCms\Core\Models\CustomTaxonomy::where('slug', $type)->first();
+            $customTaxonomy = CustomTaxonomy::where('slug', $type)->first();
             if ($customTaxonomy) {
                 $slugs = explode('/', $postSlug);
                 $lastSlug = end($slugs);
-                $term = \FalconCms\Core\Models\TaxonomyTerm::where('taxonomy_slug', $type)
+                $term = TaxonomyTerm::where('taxonomy_slug', $type)
                     ->where('slug', $lastSlug)
                     ->firstOrFail();
-                $posts           = $term->posts()->where('status', 'published')->where('lang_code', app()->getLocale())->latest()->paginate(12)->withQueryString();
-                $title           = $term->name;
+                $posts = $term->posts()->where('status', 'published')->where('lang_code', app()->getLocale())->latest()->paginate(12)->withQueryString();
+                $title = $term->name;
                 $archivePostType = $term->cpt_slug ?? 'post';
                 falcon_layout_context(['kind' => 'archive', 'archive_type' => 'taxonomy', 'post_type' => $archivePostType, 'taxonomy' => $type, 'term_id' => $term->id]);
+
                 return view($this->resolveThemeView('archive'), [
-                    'posts'           => $posts,
-                    'title'           => $title,
-                    'type'            => $customTaxonomy->name,
+                    'posts' => $posts,
+                    'title' => $title,
+                    'type' => $customTaxonomy->name,
                     'archivePostType' => $archivePostType,
                 ]);
             }
@@ -298,7 +325,7 @@ class FrontendController extends Controller
             if (!$postType || !$postType->is_active || !$postType->is_public) {
                 abort(404);
             }
-            
+
             $post = Post::where('type', $type)
                 ->where('slug', $postSlug)
                 ->where('lang_code', app()->getLocale())
@@ -309,36 +336,37 @@ class FrontendController extends Controller
             if (!$type) {
                 $postType = PostType::where('slug', $postSlug)->first();
                 if ($postType && $postType->is_active && $postType->is_public) {
-                $postsQuery = Post::where('posts.type', $postType->slug)
-                    ->where('posts.lang_code', app()->getLocale())
-                    ->where('posts.status', 'published');
-
-                // Products get the archive filter panel; every other CPT just gets sorting.
-                $filterOptions = null;
-                if ($postType->slug === 'product') {
-                    // Options come from the unfiltered set so a choice never disappears once used.
-                    $filterOptions = falcon_product_filter_options(fn () => Post::where('posts.type', $postType->slug)
+                    $postsQuery = Post::where('posts.type', $postType->slug)
                         ->where('posts.lang_code', app()->getLocale())
-                        ->where('posts.status', 'published'));
+                        ->where('posts.status', 'published');
 
-                    $postsQuery->with(['taxonomyTerms', 'productCategories', 'shopData.variations']);
-                    falcon_apply_product_filters($postsQuery);
-                }
+                    // Products get the archive filter panel; every other CPT just gets sorting.
+                    $filterOptions = null;
+                    if ($postType->slug === 'product') {
+                        // Options come from the unfiltered set so a choice never disappears once used.
+                        $filterOptions = falcon_product_filter_options(fn () => Post::where('posts.type', $postType->slug)
+                            ->where('posts.lang_code', app()->getLocale())
+                            ->where('posts.status', 'published'));
 
-                falcon_apply_product_sorting($postsQuery);
+                        $postsQuery->with(['taxonomyTerms', 'productCategories', 'shopData.variations']);
+                        falcon_apply_product_filters($postsQuery);
+                    }
 
-                $posts = $postsQuery->paginate(12)->withQueryString();
+                    falcon_apply_product_sorting($postsQuery);
+
+                    $posts = $postsQuery->paginate(12)->withQueryString();
                     $title = $postType->name;
                     $type = $postType->name;
 
-                    $archiveView = 'archive-' . $postType->slug;
+                    $archiveView = 'archive-'.$postType->slug;
                     $resolvedArchiveView = $this->resolveThemeView($archiveView);
-                    
+
                     if (!view()->exists($resolvedArchiveView)) {
                         $resolvedArchiveView = $this->resolveThemeView('archive');
                     }
 
                     falcon_layout_context(['kind' => 'archive', 'archive_type' => 'post_type', 'post_type' => $postType->slug]);
+
                     return view($resolvedArchiveView, compact('posts', 'title', 'type', 'filterOptions'));
                 }
             }
@@ -347,26 +375,26 @@ class FrontendController extends Controller
             $postQuery = Post::where('slug', $postSlug)
                 ->where('lang_code', app()->getLocale())
                 ->where('status', 'published');
-            
+
             if ($type) {
                 $postQuery->where('type', $type);
             }
-            
+
             $post = $postQuery->first();
-                
+
             if (!$post) {
                 // Try finding by translation slug (old system or linked posts)
                 $post = Post::where('slug', $postSlug)
                     ->where('status', 'published')
                     ->first();
-                
+
                 if ($post) {
                     // If found in another language, check if there's a translation in current language
                     $translation = Post::where('origin_id', $post->id)
                         ->where('lang_code', app()->getLocale())
                         ->where('status', 'published')
                         ->first();
-                    
+
                     if ($translation) {
                         $post = $translation;
                     } elseif ($post->lang_code !== app()->getLocale()) {
@@ -384,7 +412,7 @@ class FrontendController extends Controller
             if (!in_array($post->type, ['post', 'page'])) {
                 $postType = $post->postTypeDefinition;
                 if ($postType && (!$postType->is_active || !$postType->is_public)) {
-                     abort(404);
+                    abort(404);
                 }
             }
         }
@@ -401,7 +429,7 @@ class FrontendController extends Controller
         // 2. If it's a Custom Post Type, try single-{type} first
         if ($post->type !== 'page' && $post->type !== 'post') {
             $viewName = "single-{$post->type}";
-            
+
             // Special check for variable products — detect the "variable" flag in either column
             // (shopData stores it under `type` or `product_type` depending on how it was saved).
             if ($post->type === 'product' && $post->shopData) {
@@ -415,7 +443,7 @@ class FrontendController extends Controller
         // 3. Resolve the view with fallback
         $fallback = ($post->type === 'product') ? 'single-product' : $baseView;
         $view = $this->resolveThemeView($viewName, $fallback);
-        
+
         // 4. Final override check for slug-specific view (e.g. themes/falcon-theme/my-custom-page-slug.blade.php)
         if (preg_match('/^[a-z0-9-]+$/', $post->slug) && view()->exists($post->slug)) {
             $view = $post->slug;
@@ -438,7 +466,7 @@ class FrontendController extends Controller
         // Cart / checkout / account are the transactional storefront — a Pro feature that
         // locks the moment the freemium grace window ends (strict = license OR grace, so
         // grandfathering is ignored, mirroring EnsurePro:ecommerce,strict on the shop routes).
-        if (! falcon_pro_editable('ecommerce')
+        if (!falcon_pro_editable('ecommerce')
             && in_array($post->id, array_filter([$cartPageId, $checkoutPageId, $accountPageId]))) {
             return response()->view('falcon-cms::pro-required', [
                 'message' => 'This feature is available in the Pro version.',
@@ -447,7 +475,7 @@ class FrontendController extends Controller
 
         // The Shop listing page stays reachable whenever ecommerce is available
         // (grandfather-inclusive), so products can still be browsed after grace ends.
-        if ($post->id == $shopPageId && ! falcon_pro('ecommerce')) {
+        if ($post->id == $shopPageId && !falcon_pro('ecommerce')) {
             return response()->view('falcon-cms::pro-required', [
                 'message' => 'This feature is available in the Pro version.',
             ], 200);
@@ -474,16 +502,19 @@ class FrontendController extends Controller
             $title = $post->title;
             $type = 'Shop';
             falcon_layout_context(['kind' => 'archive', 'post_type' => 'product']);
+
             return view($this->resolveThemeView('archive-product', 'archive'), compact('posts', 'title', 'type', 'post', 'filterOptions'));
         }
 
         if ($post->id == $cartPageId) {
             $cart = session()->get('falcon_cart', []);
+
             return view($this->resolveThemeView('ecommerce.cart'), compact('cart', 'post'));
         }
 
         if ($post->id == $checkoutPageId) {
             $cart = session()->get('falcon_cart', []);
+
             return view($this->resolveThemeView('ecommerce.checkout'), compact('cart', 'post'));
         }
 
@@ -491,39 +522,42 @@ class FrontendController extends Controller
             if (!auth()->check()) {
                 return view($this->resolveThemeView('ecommerce.account'), [
                     'orders' => null,
-                    'post'   => $post,
+                    'post' => $post,
                 ]);
             }
-            $ordersQuery = \FalconCms\Core\Models\Order::with(['items.product'])->where('user_id', auth()->id());
+            $ordersQuery = Order::with(['items.product'])->where('user_id', auth()->id());
             if (request()->filled('s')) {
                 $s = request('s');
                 $ordersQuery->where(function ($q) use ($s) {
                     $q->where('order_number', 'like', "%{$s}%")
-                      ->orWhere('status', 'like', "%{$s}%");
+                        ->orWhere('status', 'like', "%{$s}%");
                 });
             }
             $orders = $ordersQuery->latest()->paginate(8)->withQueryString();
+
             return view($this->resolveThemeView('ecommerce.account'), compact('orders', 'post'));
         }
 
         $post->load('comments.replies');
 
         falcon_layout_context(['kind' => 'single', 'post_type' => $post->type, 'post_id' => $post->id]);
+
         return view($view, compact('post'));
     }
 
     public function search(Request $request)
     {
         try {
-            $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
+            $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
             $firstSegment = request()->segment(1);
             if (in_array($firstSegment, $supportedLocales)) {
                 app()->setLocale($firstSegment);
             }
-        } catch (\Exception $e) {}
-        
+        } catch (\Exception $e) {
+        }
+
         $query = $request->input('s');
-        $title = 'Search results for: ' . ($query ?: 'All');
+        $title = 'Search results for: '.($query ?: 'All');
 
         $postsQuery = Post::where('status', 'published')->where('lang_code', app()->getLocale());
 
@@ -536,17 +570,17 @@ class FrontendController extends Controller
         }
         if ($cat) {
             if (in_array('product', $types, true)) {
-                $postsQuery->whereHas('productCategories', fn($c) => $c->where('product_categories.id', $cat));
+                $postsQuery->whereHas('productCategories', fn ($c) => $c->where('product_categories.id', $cat));
             } else {
-                $postsQuery->whereHas('categories', fn($c) => $c->where('categories.id', $cat));
+                $postsQuery->whereHas('categories', fn ($c) => $c->where('categories.id', $cat));
             }
         }
 
         if ($query) {
-            $postsQuery->where(function($q) use ($query) {
+            $postsQuery->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('content', 'like', "%{$query}%")
-                  ->orWhere('excerpt', 'like', "%{$query}%");
+                    ->orWhere('content', 'like', "%{$query}%")
+                    ->orWhere('excerpt', 'like', "%{$query}%");
             });
         }
 
@@ -554,6 +588,7 @@ class FrontendController extends Controller
 
         $type = 'Search';
         falcon_layout_context(['kind' => 'search']);
+
         return view($this->resolveThemeView('archive'), compact('posts', 'title', 'type'));
     }
 
@@ -576,10 +611,10 @@ class FrontendController extends Controller
 
         $postTypeRaw = (string) $request->input('post_type', '');
         $types = $postTypeRaw !== '' ? array_values(array_filter(array_map('trim', explode(',', $postTypeRaw)))) : [];
-        $cat   = $request->input('cat');
+        $cat = $request->input('cat');
 
         $query = Post::where('status', 'published')
-            ->where('title', 'like', '%' . $q . '%');
+            ->where('title', 'like', '%'.$q.'%');
 
         if (!empty($types)) {
             $query->whereIn('type', $types);
@@ -587,17 +622,17 @@ class FrontendController extends Controller
 
         if ($cat) {
             if (in_array('product', $types, true)) {
-                $query->whereHas('productCategories', fn($c) => $c->where('product_categories.id', $cat));
+                $query->whereHas('productCategories', fn ($c) => $c->where('product_categories.id', $cat));
             } else {
-                $query->whereHas('categories', fn($c) => $c->where('categories.id', $cat));
+                $query->whereHas('categories', fn ($c) => $c->where('categories.id', $cat));
             }
         }
 
         $results = $query->latest()->limit(8)->get()->map(function ($p) {
             return [
                 'title' => $p->title,
-                'url'   => get_falcon_permalink($p),
-                'type'  => $p->type,
+                'url' => get_falcon_permalink($p),
+                'type' => $p->type,
                 'image' => $p->featured_image ? get_falcon_image_url($p->featured_image) : null,
             ];
         });
@@ -612,7 +647,7 @@ class FrontendController extends Controller
             'comment' => 'required|string|min:3|max:3000',
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
-            'parent_id' => 'nullable|exists:comments,id'
+            'parent_id' => 'nullable|exists:comments,id',
         ]);
 
         $userId = auth()->id();
@@ -621,33 +656,35 @@ class FrontendController extends Controller
 
         // Check if this user/email already has at least one approved comment
         $isApproved = false;
-        $query = \FalconCms\Core\Models\Comment::where('is_approved', true);
-        
+        $query = Comment::where('is_approved', true);
+
         if ($userId) {
             $isApproved = (clone $query)->where('user_id', $userId)->exists();
         } elseif ($email) {
             $isApproved = (clone $query)->where('email', $email)->exists();
         }
 
-        \FalconCms\Core\Models\Comment::create([
+        Comment::create([
             'post_id' => $validated['post_id'],
             'user_id' => $userId,
             'name' => $name,
             'email' => $email,
             'comment' => $validated['comment'],
             'parent_id' => $validated['parent_id'] ?? null,
-            'is_approved' => $isApproved
+            'is_approved' => $isApproved,
         ]);
 
         $message = $isApproved ? 'Comment posted successfully.' : 'Your comment is awaiting moderation.';
+
         return back()->with('success', $message);
     }
+
     public function robots()
     {
         $content = get_cms_option('robots_txt');
-        
+
         if (!$content) {
-            $content = "User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: " . url('/sitemap.xml');
+            $content = "User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: ".url('/sitemap.xml');
         }
 
         return response($content, 200)->header('Content-Type', 'text/plain');
@@ -655,7 +692,7 @@ class FrontendController extends Controller
 
     public function setLocale($locale)
     {
-        $supportedLocales = \FalconCms\Core\Models\Language::where('status', true)->pluck('code')->toArray();
+        $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
         if (in_array($locale, $supportedLocales)) {
             session(['locale' => $locale]);
             app()->setLocale($locale);
@@ -665,34 +702,40 @@ class FrontendController extends Controller
             $baseUrl = url('/');
             $path = str_replace($baseUrl, '', $previousUrl);
             $path = ltrim($path, '/');
-            
+
             // Find actual default language from DB
             $defaultLang = 'en';
             try {
-                $dbDefault = \Illuminate\Support\Facades\DB::table('cms_languages')->where('is_default', true)->value('code');
-                if ($dbDefault) $defaultLang = $dbDefault;
-            } catch (\Exception $e) {}
+                $dbDefault = DB::table('cms_languages')->where('is_default', true)->value('code');
+                if ($dbDefault) {
+                    $defaultLang = $dbDefault;
+                }
+            } catch (\Exception $e) {
+            }
 
             $segments = explode('/', $path);
             if (isset($segments[0]) && in_array($segments[0], $supportedLocales)) {
                 // Replace existing locale prefix
                 $segments[0] = $locale;
-                return redirect($baseUrl . '/' . implode('/', $segments));
+
+                return redirect($baseUrl.'/'.implode('/', $segments));
             } else {
                 // Add new locale prefix if not present (except for root /)
                 if (empty($path)) {
-                    return redirect($baseUrl . ($locale === $defaultLang ? '' : '/' . $locale));
+                    return redirect($baseUrl.($locale === $defaultLang ? '' : '/'.$locale));
                 }
-                return redirect($baseUrl . '/' . $locale . '/' . $path);
+
+                return redirect($baseUrl.'/'.$locale.'/'.$path);
             }
         }
+
         return back();
     }
 
-    public function submitForm(\Illuminate\Http\Request $request)
+    public function submitForm(Request $request)
     {
         try {
-            $form = \FalconCms\Core\Models\Form::findOrFail($request->input('form_id'));
+            $form = Form::findOrFail($request->input('form_id'));
 
             // Turnstile verification
             if (!empty($form->settings['turnstile_enabled'])) {
@@ -713,7 +756,7 @@ class FrontendController extends Controller
             }
 
             // Honeypot check — bots fill in this hidden field, real users never see it
-            if ($request->filled('_lf_hp_' . $form->id)) {
+            if ($request->filled('_lf_hp_'.$form->id)) {
                 return response()->json([
                     'success' => true,
                     'message' => $form->settings['success_message'] ?? 'Thank you! Your message has been sent.',
@@ -721,7 +764,7 @@ class FrontendController extends Controller
             }
 
             // Build submission data from all fields except internal fields
-            $data = $request->except(['_token', 'form_id', '_lf_hp_' . $form->id, 'cf-turnstile-response']);
+            $data = $request->except(['_token', 'form_id', '_lf_hp_'.$form->id, 'cf-turnstile-response']);
 
             // Handle file uploads — store and replace value with path
             foreach ($request->allFiles() as $key => $file) {
@@ -732,9 +775,9 @@ class FrontendController extends Controller
                 }
             }
 
-            \FalconCms\Core\Models\FormSubmission::create([
-                'form_id'    => $form->id,
-                'data'       => $data,
+            FormSubmission::create([
+                'form_id' => $form->id,
+                'data' => $data,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
@@ -744,7 +787,7 @@ class FrontendController extends Controller
             if ($notifyEmail && filter_var($notifyEmail, FILTER_VALIDATE_EMAIL)) {
                 try {
                     $submittedAt = now()->format('d M Y, H:i');
-                    $ip          = $request->ip();
+                    $ip = $request->ip();
 
                     // Build label map from form field definitions
                     $labelMap = [];
@@ -757,33 +800,34 @@ class FrontendController extends Controller
                     // Build rows array for the email view
                     $rows = [];
                     foreach ($data as $key => $value) {
-                        $label  = $labelMap[$key] ?? ucwords(str_replace('_', ' ', $key));
-                        $val    = is_array($value) ? implode(', ', $value) : (string) $value;
+                        $label = $labelMap[$key] ?? ucwords(str_replace('_', ' ', $key));
+                        $val = is_array($value) ? implode(', ', $value) : (string) $value;
                         $isFile = str_starts_with($val, 'form-uploads/');
                         $rows[] = [
-                            'label'    => $label,
-                            'is_file'  => $isFile,
+                            'label' => $label,
+                            'is_file' => $isFile,
                             'is_empty' => !$isFile && trim($val) === '',
-                            'display'  => $isFile
-                                ? url('storage/' . $val)
+                            'display' => $isFile
+                                ? url('storage/'.$val)
                                 : nl2br(htmlspecialchars($val, ENT_QUOTES, 'UTF-8')),
                         ];
                     }
 
-                    $tplData    = json_decode(get_cms_option('email_template_form_notification', '{}'), true) ?: [];
+                    $tplData = json_decode(get_cms_option('email_template_form_notification', '{}'), true) ?: [];
                     $subjectTpl = $tplData['subject'] ?? 'New Submission: {{form_name}}';
-                    $subject    = str_replace('{{form_name}}', $form->title, $subjectTpl);
-                    $introText  = $tplData['intro'] ?? 'You have received a new submission. Review the details below to follow up promptly.';
+                    $subject = str_replace('{{form_name}}', $form->title, $subjectTpl);
+                    $introText = $tplData['intro'] ?? 'You have received a new submission. Review the details below to follow up promptly.';
                     $footerText = $tplData['footer'] ?? 'This is an automated notification — no reply is needed.';
 
-                    \Illuminate\Support\Facades\Mail::send(
+                    Mail::send(
                         'falcon-cms::emails.form.notification',
                         compact('form', 'rows', 'submittedAt', 'ip', 'introText', 'footerText'),
                         function ($msg) use ($notifyEmail, $subject) {
                             $msg->to($notifyEmail)->subject($subject);
                         }
                     );
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                }
             }
 
             return response()->json([

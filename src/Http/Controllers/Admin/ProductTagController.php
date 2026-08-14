@@ -2,10 +2,9 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use FalconCms\Core\Models\ProductTag;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Routing\Controller;
 
 class ProductTagController extends Controller
 {
@@ -21,10 +20,11 @@ class ProductTagController extends Controller
         $query->latest();
 
         if ($request->has('s')) {
-            $query->where('name', 'like', '%' . $request->s . '%');
+            $query->where('name', 'like', '%'.$request->s.'%');
         }
 
         $tags = $query->paginate(10);
+
         return view('falcon-cms::admin.product-tags.index', compact('tags'));
     }
 
@@ -35,6 +35,7 @@ class ProductTagController extends Controller
 
         if (($action === 'delete') && !empty($ids)) {
             ProductTag::whereIn('id', $ids)->delete();
+
             return back()->with('success', 'Selected tags deleted.');
         }
 
@@ -47,7 +48,7 @@ class ProductTagController extends Controller
         $baseSlug = $request->slug ?: $request->name;
         $request->merge([
             'slug' => ProductTag::generateUniqueSlug($baseSlug, 0, $lang),
-            'lang_code' => $lang
+            'lang_code' => $lang,
         ]);
 
         $validated = $request->validate([
@@ -67,6 +68,7 @@ class ProductTagController extends Controller
     public function edit(ProductTag $product_tag)
     {
         $tag = $product_tag;
+
         return view('falcon-cms::admin.product-tags.edit', compact('tag'));
     }
 
@@ -88,7 +90,9 @@ class ProductTagController extends Controller
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
             foreach ($request->copy_to_languages as $targetLang) {
                 $exists = ProductTag::where('origin_id', $tag->id)->where('lang_code', $targetLang)->exists();
-                if ($exists) continue;
+                if ($exists) {
+                    continue;
+                }
 
                 $clone = $tag->replicate();
                 $clone->lang_code = $targetLang;
@@ -112,6 +116,7 @@ class ProductTagController extends Controller
         $name = $product_tag->name;
         $product_tag->delete();
         falcon_log_activity('deleted', "Deleted product tag: {$name}", $product_tag);
+
         return redirect()->route('admin.product-tags.index')->with('success', 'Tag deleted.');
     }
 
@@ -123,6 +128,7 @@ class ProductTagController extends Controller
             'name' => $request->name,
             'slug' => $slug,
         ]);
+
         return response()->json($tag);
     }
 }

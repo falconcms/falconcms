@@ -2,15 +2,32 @@
 
 namespace FalconCms\Core\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\User;
 use FalconCms\Core\Http\Controllers\Concerns\SyncsOrderInventory;
+use FalconCms\Core\Mail\MagicLoginMail;
+use FalconCms\Core\Mail\OrderNotificationMail;
+use FalconCms\Core\Models\Coupon;
+use FalconCms\Core\Models\CustomerAddress;
+use FalconCms\Core\Models\Order;
+use FalconCms\Core\Models\OrderDownload;
+use FalconCms\Core\Models\OrderItem;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\Product;
-use FalconCms\Core\Models\Order;
-use FalconCms\Core\Models\OrderItem;
+use FalconCms\Core\Models\ProductVariation;
+use FalconCms\Core\Models\Promotion;
+use FalconCms\Core\Models\Review;
+use FalconCms\Core\Models\Role;
+use FalconCms\Core\Services\EcommerceData;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class ShopFrontendController extends Controller
 {
@@ -20,10 +37,14 @@ class ShopFrontendController extends Controller
     {
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         $appView = "themes.{$activeTheme}.ecommerce.{$view}";
-        if (view()->exists($appView)) return $appView;
+        if (view()->exists($appView)) {
+            return $appView;
+        }
 
         $packageView = "falcon-cms::themes.{$activeTheme}.ecommerce.{$view}";
-        if (view()->exists($packageView)) return $packageView;
+        if (view()->exists($packageView)) {
+            return $packageView;
+        }
 
         return "falcon-cms::themes.falcon-theme.ecommerce.{$view}";
     }
@@ -37,6 +58,7 @@ class ShopFrontendController extends Controller
         falcon_refresh_cart_prices();
         $this->revalidateCoupon();
         $cart = Session::get('falcon_cart', []);
+
         return view($this->resolveThemeView('cart'), compact('cart'));
     }
 
@@ -59,10 +81,10 @@ class ShopFrontendController extends Controller
         $html = view($this->resolveThemeView('mini-cart-items'), compact('cart'))->render();
 
         return response()->json([
-            'success'  => true,
-            'count'    => get_falcon_cart_count(),
+            'success' => true,
+            'count' => get_falcon_cart_count(),
             'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
-            'html'     => $html,
+            'html' => $html,
         ]);
     }
 
@@ -77,7 +99,7 @@ class ShopFrontendController extends Controller
 
         $variation = null;
         if ($variationId) {
-            $variation = \FalconCms\Core\Models\ProductVariation::find($variationId);
+            $variation = ProductVariation::find($variationId);
         }
 
         // Inventory Check
@@ -90,18 +112,19 @@ class ShopFrontendController extends Controller
             $cart = Session::get('falcon_cart', []);
             $cartKey = $variationId ? "{$productId}_{$variationId}" : $productId;
             $currentInCart = isset($cart[$cartKey]) ? $cart[$cartKey]['quantity'] : 0;
-            
+
             if (($currentInCart + $quantity) > $stockSource->stock_quantity) {
-                $errorMsg = $stockSource->stock_quantity <= 0 
-                    ? 'Sorry, this product is currently out of stock.' 
-                    : 'Sorry, only ' . $stockSource->stock_quantity . ' items available in stock.';
+                $errorMsg = $stockSource->stock_quantity <= 0
+                    ? 'Sorry, this product is currently out of stock.'
+                    : 'Sorry, only '.$stockSource->stock_quantity.' items available in stock.';
 
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => $errorMsg
+                        'message' => $errorMsg,
                     ], 422);
                 }
+
                 return redirect()->back()->with('error', $errorMsg);
             }
         }
@@ -131,21 +154,21 @@ class ShopFrontendController extends Controller
             // Determine name and attributes for variation
             $itemName = $product->title;
             if ($variation) {
-                $attrString = collect($variation->attributes_data)->map(fn($v, $k) => "$k: $v")->implode(', ');
-                $itemName .= " - " . $attrString;
+                $attrString = collect($variation->attributes_data)->map(fn ($v, $k) => "$k: $v")->implode(', ');
+                $itemName .= ' - '.$attrString;
             }
 
             $cart[$cartKey] = [
-                'id'           => $product->id,
-                'name'         => $itemName,
-                'slug'         => $product->slug,
-                'price'        => $variation ? $variation->price : $product->price,
-                'sale_price'   => $variation ? $variation->sale_price : $product->sale_price,
-                'quantity'     => $quantity,
-                'thumbnail'    => ($variation && $variation->image) ? $variation->image : $product->featured_image,
+                'id' => $product->id,
+                'name' => $itemName,
+                'slug' => $product->slug,
+                'price' => $variation ? $variation->price : $product->price,
+                'sale_price' => $variation ? $variation->sale_price : $product->sale_price,
+                'quantity' => $quantity,
+                'thumbnail' => ($variation && $variation->image) ? $variation->image : $product->featured_image,
                 'variation_id' => $variationId,
-                'sku'          => $variation ? $variation->sku : $product->sku,
-                'meta'         => !empty($customFields) ? ['custom_fields' => $customFields] : [],
+                'sku' => $variation ? $variation->sku : $product->sku,
+                'meta' => !empty($customFields) ? ['custom_fields' => $customFields] : [],
             ];
 
             $cart[$cartKey] = apply_falcon_filters('falcon_cart_item_data', $cart[$cartKey], $product, $variation);
@@ -157,7 +180,7 @@ class ShopFrontendController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Product added to cart!',
-                'cart_count' => get_falcon_cart_count()
+                'cart_count' => get_falcon_cart_count(),
             ]);
         }
 
@@ -167,7 +190,7 @@ class ShopFrontendController extends Controller
     public function updateCart(Request $request)
     {
         $request->validate([
-            'quantity'   => ['required', 'array', 'max:100'],
+            'quantity' => ['required', 'array', 'max:100'],
             'quantity.*' => ['required', 'integer', 'min:1', 'max:9999'],
         ]);
 
@@ -176,8 +199,10 @@ class ShopFrontendController extends Controller
 
         foreach ($quantities as $key => $qty) {
             // Only process keys that genuinely exist in the session cart
-            if (!isset($cart[$key])) continue;
-            $cart[$key]['quantity'] = (int)$qty;
+            if (!isset($cart[$key])) {
+                continue;
+            }
+            $cart[$key]['quantity'] = (int) $qty;
         }
 
         Session::put('falcon_cart', $cart);
@@ -196,7 +221,7 @@ class ShopFrontendController extends Controller
             }
 
             return response()->json($this->cartTotalsPayload([
-                'message'        => 'Cart updated!',
+                'message' => 'Cart updated!',
                 'item_subtotals' => $item_subtotals,
             ]));
         }
@@ -211,7 +236,7 @@ class ShopFrontendController extends Controller
         // when the item went into the basket.
         falcon_refresh_cart_prices();
         $this->revalidateCoupon(); // Prune first based on current settings
-        
+
         // Check if coupons are enabled in settings
         if (get_shop_option('shop_enable_coupons', '1') !== '1') {
             return $this->couponResponse(false, 'Coupons are currently disabled.', $request);
@@ -230,9 +255,9 @@ class ShopFrontendController extends Controller
             }
 
             // Check if multiple coupons are allowed
-            $isMultipleAllowed = (int)get_shop_option('shop_coupon_stacking_policy', '1') === 1;
+            $isMultipleAllowed = (int) get_shop_option('shop_coupon_stacking_policy', '1') === 1;
             $appliedCoupons = Session::get('falcon_coupons', []);
-            
+
             if (!$isMultipleAllowed && count($appliedCoupons) > 0) {
                 return $this->couponResponse(false, 'Multiple coupons are not allowed for this order.', $request);
             }
@@ -250,29 +275,29 @@ class ShopFrontendController extends Controller
 
             // 2. Min Spend Check
             $subtotal = round(get_falcon_cart_subtotal(), 2);
-            $minSpend = !empty($coupon['min_spend']) ? round((float)$coupon['min_spend'], 2) : 0;
-            
+            $minSpend = !empty($coupon['min_spend']) ? round((float) $coupon['min_spend'], 2) : 0;
+
             if ($minSpend > 0 && $subtotal < $minSpend) {
-                return $this->couponResponse(false, 'Minimum spend for this coupon is ' . falcon_price_format($minSpend), $request);
+                return $this->couponResponse(false, 'Minimum spend for this coupon is '.falcon_price_format($minSpend), $request);
             }
 
             // 3a. Total Usage Limit Check (global across all customers)
-            $totalLimit = (int)($coupon['total_usage_limit'] ?? 0);
-            $usedCount  = (int)($coupon['used_count'] ?? 0);
+            $totalLimit = (int) ($coupon['total_usage_limit'] ?? 0);
+            $usedCount = (int) ($coupon['used_count'] ?? 0);
             if ($totalLimit > 0 && $usedCount >= $totalLimit) {
                 return $this->couponResponse(false, 'This coupon has reached its total usage limit.', $request);
             }
 
             // 3b. Per-User Usage Limit Check
             if (!empty($coupon['usage_limit'])) {
-                $perUserLimit = (int)$coupon['usage_limit'];
+                $perUserLimit = (int) $coupon['usage_limit'];
                 if (auth()->check()) {
-                    $userUsageCount = \FalconCms\Core\Models\Order::where('user_id', auth()->id())
+                    $userUsageCount = Order::where('user_id', auth()->id())
                         ->where(function ($q) use ($code) {
                             $q->where('coupon_code', $code)
-                              ->orWhere('coupon_code', 'like', $code . ',%')
-                              ->orWhere('coupon_code', 'like', '%, ' . $code . ',%')
-                              ->orWhere('coupon_code', 'like', '%, ' . $code);
+                                ->orWhere('coupon_code', 'like', $code.',%')
+                                ->orWhere('coupon_code', 'like', '%, '.$code.',%')
+                                ->orWhere('coupon_code', 'like', '%, '.$code);
                         })->count();
                     if ($userUsageCount >= $perUserLimit) {
                         return $this->couponResponse(false, 'You have already used this coupon the maximum number of times.', $request);
@@ -300,9 +325,9 @@ class ShopFrontendController extends Controller
                 'type' => $coupon['type'] ?? 'percent',
                 'amount' => $coupon['amount'] ?? ($coupon['discount'] ?? 0),
                 'products' => $coupon['products'] ?? [],
-                'categories' => $coupon['categories'] ?? []
+                'categories' => $coupon['categories'] ?? [],
             ];
-            
+
             Session::put('falcon_coupons', $appliedCoupons);
             Session::save();
             Session::forget('falcon_coupon'); // Ensure old singular key is gone
@@ -313,10 +338,11 @@ class ShopFrontendController extends Controller
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'System Error: ' . $e->getMessage()
+                    'message' => 'System Error: '.$e->getMessage(),
                 ], 500);
             }
-            return redirect()->back()->with('error', 'System Error: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'System Error: '.$e->getMessage());
         }
     }
 
@@ -337,13 +363,15 @@ class ShopFrontendController extends Controller
     private function getDiscountHtml()
     {
         $coupons = Session::get('falcon_coupons', []);
-        if (empty($coupons)) return '';
-        
+        if (empty($coupons)) {
+            return '';
+        }
+
         $cart = Session::get('falcon_cart', []);
-        $isSequential = (int)get_shop_option('shop_coupon_stacking_policy', '1') == 1;
+        $isSequential = (int) get_shop_option('shop_coupon_stacking_policy', '1') == 1;
         $subtotal = get_falcon_cart_subtotal();
         $currentSubtotal = $subtotal;
-        
+
         $html = '';
         foreach ($coupons as $coupon) {
             $discount = get_falcon_coupon_discount_amount($coupon, $cart, $isSequential ? $currentSubtotal : $subtotal);
@@ -354,11 +382,11 @@ class ShopFrontendController extends Controller
                     <tr class="coupon-row bg-emerald-50/5 border-b border-gray-100">
                         <th class="p-4 bg-gray-50 text-left font-bold text-emerald-700 w-1/3 whitespace-nowrap">
                             <div class="flex items-center gap-2">
-                                Coupon: ' . $coupon['code'] . '
-                                <a href="' . route('shop.cart.coupon.remove') . '?code=' . urlencode($coupon['code']) . '" class="text-rose-500 hover:text-rose-700 text-[10px] font-normal">[Remove]</a>
+                                Coupon: '.$coupon['code'].'
+                                <a href="'.route('shop.cart.coupon.remove').'?code='.urlencode($coupon['code']).'" class="text-rose-500 hover:text-rose-700 text-[10px] font-normal">[Remove]</a>
                             </div>
                         </th>
-                        <td class="p-4 font-bold text-emerald-700">-' . falcon_price_format($discount) . '</td>
+                        <td class="p-4 font-bold text-emerald-700">-'.falcon_price_format($discount).'</td>
                     </tr>';
             }
         }
@@ -389,13 +417,13 @@ class ShopFrontendController extends Controller
                 continue;
             }
 
-            $product  = Product::with('shopData')->find($item['id'] ?? 0);
+            $product = Product::with('shopData')->find($item['id'] ?? 0);
             $shopData = $product?->shopData;
 
             // Which row actually tracks stock for this line.
             $table = $id = null;
             if (!empty($item['variation_id'])) {
-                $variation = \FalconCms\Core\Models\ProductVariation::find($item['variation_id']);
+                $variation = ProductVariation::find($item['variation_id']);
                 if ($variation && $variation->manage_stock) {
                     [$table, $id] = ['shop_product_variations', $variation->id];
                 }
@@ -409,28 +437,28 @@ class ShopFrontendController extends Controller
 
             $allowsBackorder = $shopData && method_exists($shopData, 'allowsBackorders') && $shopData->allowsBackorders();
 
-            $query = \Illuminate\Support\Facades\DB::table($table)->where('id', $id);
+            $query = DB::table($table)->where('id', $id);
             if (!$allowsBackorder) {
                 $query->where('stock_quantity', '>=', $qty);
             }
 
             // $qty is an int, so the raw expression carries no user input.
             $affected = $query->update([
-                'stock_quantity' => \Illuminate\Support\Facades\DB::raw('stock_quantity - ' . $qty),
-                'updated_at'     => now(),
+                'stock_quantity' => DB::raw('stock_quantity - '.$qty),
+                'updated_at' => now(),
             ]);
 
             if ($affected !== 1) {
                 $this->releaseClaimedStock($claimed);
                 $name = $item['name'] ?? 'An item';
 
-                return [false, 'Sorry, "' . $name . '" is no longer available in the quantity you asked for. Someone else may have just bought it — please adjust your cart and try again.', []];
+                return [false, 'Sorry, "'.$name.'" is no longer available in the quantity you asked for. Someone else may have just bought it — please adjust your cart and try again.', []];
             }
 
             $claimed[] = [
                 'table' => $table,
-                'id'    => $id,
-                'qty'   => $qty,
+                'id' => $id,
+                'qty' => $qty,
                 'title' => $product->title ?? ($item['name'] ?? 'Product'),
             ];
         }
@@ -442,11 +470,11 @@ class ShopFrontendController extends Controller
     private function releaseClaimedStock(array $claims): void
     {
         foreach ($claims as $claim) {
-            \Illuminate\Support\Facades\DB::table($claim['table'])
+            DB::table($claim['table'])
                 ->where('id', $claim['id'])
                 ->update([
-                    'stock_quantity' => \Illuminate\Support\Facades\DB::raw('stock_quantity + ' . (int) $claim['qty']),
-                    'updated_at'     => now(),
+                    'stock_quantity' => DB::raw('stock_quantity + '.(int) $claim['qty']),
+                    'updated_at' => now(),
                 ]);
         }
     }
@@ -464,7 +492,8 @@ class ShopFrontendController extends Controller
                 'offers' => falcon_pending_promotion_offers(),
             ])->render();
         } catch (\Throwable $e) {
-            Log::error('Promotion offer render failed: ' . $e->getMessage());
+            Log::error('Promotion offer render failed: '.$e->getMessage());
+
             return '';
         }
     }
@@ -485,11 +514,11 @@ class ShopFrontendController extends Controller
                         <th class="p-4 bg-gray-50 text-left font-bold text-amber-700 w-1/3">
                             <div class="flex items-center gap-2">
                                 <span>&#127873;</span>
-                                <span>' . e($promo['name']) . '</span>
+                                <span>'.e($promo['name']).'</span>
                             </div>
-                            <div class="text-[11px] font-normal text-amber-700/70 mt-0.5">' . e($promo['summary']) . '</div>
+                            <div class="text-[11px] font-normal text-amber-700/70 mt-0.5">'.e($promo['summary']).'</div>
                         </th>
-                        <td class="p-4 font-bold text-amber-700">-' . falcon_price_format($promo['discount']) . '</td>
+                        <td class="p-4 font-bold text-amber-700">-'.falcon_price_format($promo['discount']).'</td>
                     </tr>';
         }
 
@@ -512,7 +541,7 @@ class ShopFrontendController extends Controller
             Session::forget('falcon_coupons');
         }
         Session::forget('falcon_coupon');
-        
+
         return redirect()->back()->with('success', 'Coupon removed successfully!');
     }
 
@@ -520,7 +549,10 @@ class ShopFrontendController extends Controller
     {
         // Reject keys that don't look like our session keys (alphanumeric + dash/underscore, max 128 chars)
         if (!preg_match('/^[a-zA-Z0-9_\-]{1,128}$/', $key)) {
-            if ($request->ajax()) return response()->json(['success' => false, 'message' => 'Invalid request.'], 422);
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Invalid request.'], 422);
+            }
+
             return redirect()->route('shop.cart');
         }
 
@@ -529,10 +561,10 @@ class ShopFrontendController extends Controller
             unset($cart[$key]);
             Session::put('falcon_cart', $cart);
             // Prices first: the coupon rules below (minimum spend, and the totals themselves)
-        // have to be judged against what the catalogue charges today, not what it charged
-        // when the item went into the basket.
-        falcon_refresh_cart_prices();
-        $this->revalidateCoupon();
+            // have to be judged against what the catalogue charges today, not what it charged
+            // when the item went into the basket.
+            falcon_refresh_cart_prices();
+            $this->revalidateCoupon();
         }
 
         if ($request->ajax()) {
@@ -552,6 +584,7 @@ class ShopFrontendController extends Controller
         $coupons = Session::get('falcon_coupons', []);
         if (empty($coupons)) {
             Session::forget('falcon_coupon');
+
             return;
         }
 
@@ -562,14 +595,18 @@ class ShopFrontendController extends Controller
             // edited after it was applied must stop discounting the cart immediately.
             $couponData = falcon_find_coupon($applied['code'] ?? null);
 
-            if (!$couponData) continue;
+            if (!$couponData) {
+                continue;
+            }
 
             // Check Min Spend
             $subtotal = round(get_falcon_cart_subtotal(), 2);
-            $minSpend = !empty($couponData['min_spend']) ? round((float)$couponData['min_spend'], 2) : 0;
-            
-            if ($minSpend > 0 && $subtotal < $minSpend) continue;
-            
+            $minSpend = !empty($couponData['min_spend']) ? round((float) $couponData['min_spend'], 2) : 0;
+
+            if ($minSpend > 0 && $subtotal < $minSpend) {
+                continue;
+            }
+
             // Check Expiry
             if (!empty($couponData['expiry']) && strtotime($couponData['expiry']) < strtotime(date('Y-m-d'))) {
                 continue;
@@ -580,14 +617,16 @@ class ShopFrontendController extends Controller
             $discount = get_falcon_coupon_discount_amount($couponData, $cart);
             // Free Shipping coupons discount nothing off the cart by design — dropping them here
             // would silently un-apply them on the next page load.
-            if ($discount <= 0 && ($couponData['type'] ?? '') !== 'free_shipping') continue;
+            if ($discount <= 0 && ($couponData['type'] ?? '') !== 'free_shipping') {
+                continue;
+            }
 
             $newCoupons[] = [
                 'code' => $couponData['code'],
                 'type' => $couponData['type'] ?? 'percent',
                 'amount' => $couponData['amount'] ?? ($couponData['discount'] ?? 0),
                 'products' => $couponData['products'] ?? [],
-                'categories' => $couponData['categories'] ?? []
+                'categories' => $couponData['categories'] ?? [],
             ];
         }
 
@@ -596,6 +635,7 @@ class ShopFrontendController extends Controller
             Session::forget('falcon_coupons');
             Session::forget('falcon_coupon');
             Session::save();
+
             return;
         }
 
@@ -603,7 +643,7 @@ class ShopFrontendController extends Controller
         Session::forget('falcon_coupon');
 
         // Prune if multiple not allowed anymore
-        $isMultipleAllowed = (int)get_shop_option('shop_coupon_stacking_policy', '1') === 1;
+        $isMultipleAllowed = (int) get_shop_option('shop_coupon_stacking_policy', '1') === 1;
 
         if (!$isMultipleAllowed) {
             $currentCoupons = Session::get('falcon_coupons', []);
@@ -627,6 +667,7 @@ class ShopFrontendController extends Controller
         if (empty($cart)) {
             return redirect()->route('shop.cart')->with('error', 'Your cart is empty!');
         }
+
         return view($this->resolveThemeView('checkout'), compact('cart'));
     }
 
@@ -685,14 +726,16 @@ class ShopFrontendController extends Controller
         ];
 
         // Collect extra fields registered via falcon_billing_fields / lazy_shipping_fields hooks
-        $allHookFields   = array_merge(falcon_get_checkout_fields('billing'), falcon_get_checkout_fields('shipping'));
-        $standardNames   = falcon_standard_checkout_field_names();
+        $allHookFields = array_merge(falcon_get_checkout_fields('billing'), falcon_get_checkout_fields('shipping'));
+        $standardNames = falcon_standard_checkout_field_names();
 
         foreach ($allHookFields as $hf) {
             $hfName = $hf['name'] ?? '';
-            if (!$hfName || in_array($hfName, $standardNames)) continue;
+            if (!$hfName || in_array($hfName, $standardNames)) {
+                continue;
+            }
             if (!empty($hf['required'])) {
-                $rules[$hfName]      = $hf['rules'] ?? 'required';
+                $rules[$hfName] = $hf['rules'] ?? 'required';
                 $attributes[$hfName] = $hf['label'] ?? $hfName;
             }
         }
@@ -702,14 +745,15 @@ class ShopFrontendController extends Controller
         // Handle guest checkout based on shop settings
         if (!auth()->check()) {
             $guestCheckoutEnabled = get_shop_option('shop_enable_guest_checkout', '1') === '1';
-            $forceLogin           = get_shop_option('shop_force_login_checkout', '0') === '1';
-            $submittingPassword   = $request->filled('account_password');
+            $forceLogin = get_shop_option('shop_force_login_checkout', '0') === '1';
+            $submittingPassword = $request->filled('account_password');
 
             // Block only pure guest orders (no password) when force login is required
             if ($forceLogin && !$submittingPassword) {
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json(['success' => false, 'message' => 'Please log in or register to place an order.']);
                 }
+
                 return redirect()->back()->with('error', 'Please log in or register to place an order.');
             }
 
@@ -719,26 +763,27 @@ class ShopFrontendController extends Controller
                     'account_password' => 'required|min:6',
                 ], [
                     'account_password.required' => 'Please enter a password to create your account.',
-                    'account_password.min'      => 'Password must be at least 6 characters.',
+                    'account_password.min' => 'Password must be at least 6 characters.',
                 ]);
 
-                $existingUser = \App\Models\User::where('email', $request->billing_email)->first();
+                $existingUser = User::where('email', $request->billing_email)->first();
                 if ($existingUser) {
                     if ($request->ajax() || $request->wantsJson()) {
                         return response()->json(['success' => false, 'message' => 'An account with this email already exists. Please log in.']);
                     }
+
                     return redirect()->back()->with('error', 'An account with this email already exists. Please log in.');
                 }
 
-                $customerRole = \FalconCms\Core\Models\Role::firstOrCreate(
+                $customerRole = Role::firstOrCreate(
                     ['slug' => 'customer'],
                     ['name' => 'Customer', 'description' => 'Customer who registered via store checkout or account.']
                 );
-                $newUser = \App\Models\User::create([
-                    'name'     => trim($request->billing_first_name . ' ' . $request->billing_last_name),
-                    'email'    => $request->billing_email,
-                    'password' => \Illuminate\Support\Facades\Hash::make($request->account_password),
-                    'role_id'  => $customerRole->id,
+                $newUser = User::create([
+                    'name' => trim($request->billing_first_name.' '.$request->billing_last_name),
+                    'email' => $request->billing_email,
+                    'password' => Hash::make($request->account_password),
+                    'role_id' => $customerRole->id,
                 ]);
                 auth()->login($newUser);
             }
@@ -761,6 +806,7 @@ class ShopFrontendController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $msg]);
             }
+
             return redirect()->back()->with('error', $msg);
         }
 
@@ -789,7 +835,9 @@ class ShopFrontendController extends Controller
         // Coupon Logic for Multiple Coupons
         $coupons = Session::get('falcon_coupons', []);
         $single = Session::get('falcon_coupon');
-        if ($single && empty($coupons)) $coupons[] = $single;
+        if ($single && empty($coupons)) {
+            $coupons[] = $single;
+        }
 
         $couponCodes = [];
         foreach ($coupons as $coupon) {
@@ -804,7 +852,7 @@ class ShopFrontendController extends Controller
         // anything the browser sent — a rule may have expired, hit its usage cap or stopped
         // matching since the cart page was rendered.
         $appliedPromotions = falcon_evaluate_promotions();
-        $promotionTotal    = 0.0;
+        $promotionTotal = 0.0;
         foreach ($appliedPromotions as $applied) {
             $promotionTotal += $applied['discount'];
         }
@@ -813,7 +861,7 @@ class ShopFrontendController extends Controller
 
         $orderData = [
             'user_id' => auth()->id(),
-            'order_number' => 'ORD-' . strtoupper(\Illuminate\Support\Str::random(8)),
+            'order_number' => 'ORD-'.strtoupper(Str::random(8)),
             'status' => 'pending',
             'subtotal' => $subtotal,
             'shipping_total' => $shipping,
@@ -836,7 +884,7 @@ class ShopFrontendController extends Controller
             'customer_note' => $request->order_comments,
             // Snapshot currency settings for historical accuracy
             'currency' => get_shop_option('shop_currency', 'USD'),
-            'currency_symbol' => \FalconCms\Core\Services\EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD')),
+            'currency_symbol' => EcommerceData::getCurrencySymbol(get_shop_option('shop_currency', 'USD')),
             'currency_position' => get_shop_option('shop_currency_pos', 'left'),
             'thousand_separator' => get_shop_option('shop_thousand_sep', ','),
             'decimal_separator' => get_shop_option('shop_decimal_sep', '.'),
@@ -858,7 +906,9 @@ class ShopFrontendController extends Controller
         $customCheckout = [];
         foreach ($allHookFields as $hf) {
             $hfName = $hf['name'] ?? '';
-            if (!$hfName || in_array($hfName, $standardNames)) continue;
+            if (!$hfName || in_array($hfName, $standardNames)) {
+                continue;
+            }
             $val = $request->input($hfName);
             if ($val !== null && $val !== '') {
                 $customCheckout[$hfName] = $val;
@@ -874,9 +924,9 @@ class ShopFrontendController extends Controller
         if (!empty($appliedPromotions)) {
             $orderData['meta'] = array_merge($orderData['meta'] ?? [], [
                 'promotions' => array_map(static fn (array $p) => [
-                    'id'       => $p['id'],
-                    'name'     => $p['name'],
-                    'summary'  => $p['summary'],
+                    'id' => $p['id'],
+                    'name' => $p['name'],
+                    'summary' => $p['summary'],
                     'discount' => $p['discount'],
                 ], $appliedPromotions),
             ]);
@@ -889,6 +939,7 @@ class ShopFrontendController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['success' => false, 'message' => $stockError], 409);
             }
+
             return redirect()->back()->with('error', $stockError);
         }
 
@@ -900,14 +951,14 @@ class ShopFrontendController extends Controller
             try {
                 $this->rememberCustomerAddress($request);
             } catch (\Throwable $e) {
-                Log::warning('Could not save the customer address for order #' . $order->order_number . ': ' . $e->getMessage());
+                Log::warning('Could not save the customer address for order #'.$order->order_number.': '.$e->getMessage());
             }
         }
 
         // Claim a use of each promotion. redeem() is a conditional UPDATE, so a usage cap holds
         // even when two checkouts complete at the same instant.
         foreach ($appliedPromotions as $applied) {
-            $promo = \FalconCms\Core\Models\Promotion::find($applied['id']);
+            $promo = Promotion::find($applied['id']);
             if ($promo && !$promo->redeem()) {
                 Log::warning("Promotion #{$applied['id']} hit its usage limit while placing order #{$order->order_number}.");
             }
@@ -920,7 +971,7 @@ class ShopFrontendController extends Controller
         // global usage cap holds even when two checkouts complete at the same instant — the
         // previous read-modify-write on the settings blob could hand out the last use twice.
         foreach ($couponCodes as $couponCode) {
-            $couponModel = \FalconCms\Core\Models\Coupon::findByCode($couponCode);
+            $couponModel = Coupon::findByCode($couponCode);
             if ($couponModel && !$couponModel->redeem()) {
                 Log::warning("Coupon {$couponCode} hit its usage limit while placing order #{$order->order_number}.");
             }
@@ -933,14 +984,14 @@ class ShopFrontendController extends Controller
             $itemMeta = apply_falcon_filters('falcon_order_item_meta', $itemMeta, $item, $order);
 
             OrderItem::create([
-                'order_id'     => $order->id,
-                'product_id'   => $item['id'],
+                'order_id' => $order->id,
+                'product_id' => $item['id'],
                 'variation_id' => $item['variation_id'] ?? null,
                 'product_name' => $item['name'],
-                'quantity'     => $item['quantity'],
-                'price'        => $item['sale_price'] ?? $item['price'],
-                'subtotal'     => ($item['sale_price'] ?? $item['price']) * $item['quantity'],
-                'meta'         => !empty($itemMeta) ? $itemMeta : null,
+                'quantity' => $item['quantity'],
+                'price' => $item['sale_price'] ?? $item['price'],
+                'subtotal' => ($item['sale_price'] ?? $item['price']) * $item['quantity'],
+                'meta' => !empty($itemMeta) ? $itemMeta : null,
             ]);
 
             // Stock was already taken by claimCartStock(), atomically, before the order existed.
@@ -948,7 +999,7 @@ class ShopFrontendController extends Controller
 
         // Low/no-stock alerts, now that the quantities have settled.
         foreach ($claimedStock as $claim) {
-            $remaining = \Illuminate\Support\Facades\DB::table($claim['table'])->where('id', $claim['id'])->value('stock_quantity');
+            $remaining = DB::table($claim['table'])->where('id', $claim['id'])->value('stock_quantity');
             $this->maybeNotifyStock($claim['title'], (int) $remaining);
         }
 
@@ -960,8 +1011,8 @@ class ShopFrontendController extends Controller
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
-                    'success'  => true,
-                    'message'  => 'Order placed successfully!',
+                    'success' => true,
+                    'message' => 'Order placed successfully!',
                     'redirect' => route('shop.confirmation', $order->id),
                     'order_id' => $order->id,
                 ]);
@@ -973,7 +1024,7 @@ class ShopFrontendController extends Controller
 
         // Online gateways: send the customer to the gateway to pay before finalizing.
         $gateways = falcon_enabled_payment_gateways();
-        $gateway  = $gateways[$order->payment_method] ?? null;
+        $gateway = $gateways[$order->payment_method] ?? null;
 
         if ($gateway && $gateway['type'] === 'online') {
             // Stripe → inline card (Stripe Elements). Create a PaymentIntent; the card is confirmed on-page.
@@ -983,13 +1034,14 @@ class ShopFrontendController extends Controller
                     $order->update(['transaction_id' => $intent['id']]);
                     if ($request->ajax() || $request->wantsJson()) {
                         return response()->json([
-                            'success'        => true,
+                            'success' => true,
                             'stripe_payment' => true,
-                            'client_secret'  => $intent['client_secret'],
-                            'return_url'     => route('shop.payment.return', $order->id) . '?gateway=stripe&payment_intent=' . $intent['id'],
-                            'order_id'       => $order->id,
+                            'client_secret' => $intent['client_secret'],
+                            'return_url' => route('shop.payment.return', $order->id).'?gateway=stripe&payment_intent='.$intent['id'],
+                            'order_id' => $order->id,
                         ]);
                     }
+
                     return redirect()->route('shop.confirmation', $order->id)->with('error', 'JavaScript is required to pay by card.');
                 }
             } else {
@@ -1000,10 +1052,11 @@ class ShopFrontendController extends Controller
                         if ($request->ajax() || $request->wantsJson()) {
                             return response()->json(['success' => true, 'redirect' => $payUrl, 'order_id' => $order->id]);
                         }
+
                         return redirect()->away($payUrl);
                     }
                 } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error("Payment init failed for order #{$order->order_number}: " . $e->getMessage());
+                    Log::error("Payment init failed for order #{$order->order_number}: ".$e->getMessage());
                 }
             }
             // Gateway init failed → leave the order pending and inform the customer.
@@ -1011,6 +1064,7 @@ class ShopFrontendController extends Controller
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => true, 'redirect' => route('shop.confirmation', $order->id), 'order_id' => $order->id, 'message' => $msg]);
             }
+
             return redirect()->route('shop.confirmation', $order->id)->with('error', $msg);
         }
 
@@ -1022,7 +1076,7 @@ class ShopFrontendController extends Controller
                 'success' => true,
                 'message' => 'Order placed successfully!',
                 'redirect' => route('shop.confirmation', $order->id),
-                'order_id' => $order->id
+                'order_id' => $order->id,
             ]);
         }
 
@@ -1035,17 +1089,17 @@ class ShopFrontendController extends Controller
     private function finalizeOrder(Order $order): void
     {
         try {
-            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'placed'));
+            Mail::to($order->customer_email)->send(new OrderNotificationMail($order, 'placed'));
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} email failed: " . $e->getMessage());
+            Log::error("Order #{$order->order_number} email failed: ".$e->getMessage());
         }
 
         $adminRecipient = get_shop_option('shop_email_admin_recipient');
         if (!empty($adminRecipient)) {
             try {
-                \Illuminate\Support\Facades\Mail::to($adminRecipient)->send(new \FalconCms\Core\Mail\OrderNotificationMail($order, 'placed', 'New Order Received'));
+                Mail::to($adminRecipient)->send(new OrderNotificationMail($order, 'placed', 'New Order Received'));
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Order #{$order->order_number} admin email failed: " . $e->getMessage());
+                Log::error("Order #{$order->order_number} admin email failed: ".$e->getMessage());
             }
         }
 
@@ -1058,32 +1112,36 @@ class ShopFrontendController extends Controller
         Session::forget('falcon_shipping_method');
     }
 
-    private function generateDownloadTokens(\FalconCms\Core\Models\Order $order): void
+    private function generateDownloadTokens(Order $order): void
     {
         try {
             $items = $order->items()->with(['product.shopData.downloads'])->get();
             foreach ($items as $item) {
                 $shopData = $item->product?->shopData;
-                if (!$shopData || !$shopData->is_downloadable) continue;
+                if (!$shopData || !$shopData->is_downloadable) {
+                    continue;
+                }
                 $files = $shopData->downloads;
-                if ($files->isEmpty()) continue;
+                if ($files->isEmpty()) {
+                    continue;
+                }
 
                 $expiryDays = $shopData->download_expiry_days;
-                $expiresAt  = $expiryDays ? now()->addDays($expiryDays) : null;
+                $expiresAt = $expiryDays ? now()->addDays($expiryDays) : null;
 
                 foreach ($files as $file) {
-                    \FalconCms\Core\Models\OrderDownload::create([
-                        'order_id'            => $order->id,
-                        'order_item_id'       => $item->id,
+                    OrderDownload::create([
+                        'order_id' => $order->id,
+                        'order_item_id' => $item->id,
                         'product_download_id' => $file->id,
-                        'token'               => \Illuminate\Support\Str::random(48),
-                        'expires_at'          => $expiresAt,
-                        'download_limit'      => $file->download_limit,
+                        'token' => Str::random(48),
+                        'expires_at' => $expiresAt,
+                        'download_limit' => $file->download_limit,
                     ]);
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Download token generation failed for order #' . $order->id . ': ' . $e->getMessage());
+            Log::error('Download token generation failed for order #'.$order->id.': '.$e->getMessage());
         }
     }
 
@@ -1097,7 +1155,8 @@ class ShopFrontendController extends Controller
     private function stripeAmount(Order $order): int
     {
         $currency = strtolower(get_shop_option('shop_currency', 'usd'));
-        $zeroDecimal = ['bif','clp','djf','gnf','jpy','kmf','krw','mga','pyg','rwf','ugx','vnd','vuv','xaf','xof','xpf'];
+        $zeroDecimal = ['bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg', 'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'];
+
         return in_array($currency, $zeroDecimal, true) ? (int) round($order->total) : (int) round($order->total * 100);
     }
 
@@ -1108,22 +1167,25 @@ class ShopFrontendController extends Controller
     private function createStripePaymentIntent(Order $order): ?array
     {
         $secret = get_shop_option('shop_payment_stripe_secret');
-        if (!$secret) return null;
+        if (!$secret) {
+            return null;
+        }
 
         $resp = falcon_gateway_http(fn ($h) => $h->asForm()->withToken($secret)->post('https://api.stripe.com/v1/payment_intents', [
-            'amount'                 => $this->stripeAmount($order),
-            'currency'               => strtolower(get_shop_option('shop_currency', 'usd')),
-            'description'            => 'Order ' . $order->order_number,
-            'receipt_email'          => $order->customer_email,
-            'payment_method_types[0]'=> 'card',
-            'metadata[order_id]'     => (string) $order->id,
+            'amount' => $this->stripeAmount($order),
+            'currency' => strtolower(get_shop_option('shop_currency', 'usd')),
+            'description' => 'Order '.$order->order_number,
+            'receipt_email' => $order->customer_email,
+            'payment_method_types[0]' => 'card',
+            'metadata[order_id]' => (string) $order->id,
             'metadata[order_number]' => $order->order_number,
         ]));
 
         if ($resp && $resp->successful() && !empty($resp->json('client_secret'))) {
             return ['id' => $resp->json('id'), 'client_secret' => $resp->json('client_secret')];
         }
-        \Illuminate\Support\Facades\Log::error('Stripe PaymentIntent error: ' . ($resp ? $resp->body() : 'connection failed'));
+        Log::error('Stripe PaymentIntent error: '.($resp ? $resp->body() : 'connection failed'));
+
         return null;
     }
 
@@ -1131,61 +1193,68 @@ class ShopFrontendController extends Controller
     {
         if ($method === 'paypal') {
             // PayPal Standard (email based) — redirect with a hosted button form via query string.
-            $email   = get_shop_option('shop_payment_paypal_email');
-            if (!$email) return null;
+            $email = get_shop_option('shop_payment_paypal_email');
+            if (!$email) {
+                return null;
+            }
             $sandbox = get_shop_option('shop_payment_paypal_sandbox') === '1';
-            $base    = $sandbox ? 'https://www.sandbox.paypal.com/cgi-bin/webscr' : 'https://www.paypal.com/cgi-bin/webscr';
-            $params  = http_build_query([
-                'cmd'           => '_xclick',
-                'business'      => $email,
-                'item_name'     => 'Order ' . $order->order_number,
-                'amount'        => number_format((float) $order->total, 2, '.', ''),
+            $base = $sandbox ? 'https://www.sandbox.paypal.com/cgi-bin/webscr' : 'https://www.paypal.com/cgi-bin/webscr';
+            $params = http_build_query([
+                'cmd' => '_xclick',
+                'business' => $email,
+                'item_name' => 'Order '.$order->order_number,
+                'amount' => number_format((float) $order->total, 2, '.', ''),
                 'currency_code' => strtoupper(get_shop_option('shop_currency', 'USD')),
-                'custom'        => $order->id,
-                'return'        => route('shop.payment.return', $order->id) . '?gateway=paypal',
-                'cancel_return' => route('shop.payment.cancel', $order->id) . '?gateway=paypal',
-                'notify_url'    => route('shop.payment.return', $order->id) . '?gateway=paypal&ipn=1',
-                'no_shipping'   => 1,
+                'custom' => $order->id,
+                'return' => route('shop.payment.return', $order->id).'?gateway=paypal',
+                'cancel_return' => route('shop.payment.cancel', $order->id).'?gateway=paypal',
+                'notify_url' => route('shop.payment.return', $order->id).'?gateway=paypal&ipn=1',
+                'no_shipping' => 1,
             ]);
-            return $base . '?' . $params;
+
+            return $base.'?'.$params;
         }
 
         if ($method === 'sslcommerz') {
-            $storeId   = get_shop_option('shop_payment_sslcommerz_store_id');
+            $storeId = get_shop_option('shop_payment_sslcommerz_store_id');
             $storePass = get_shop_option('shop_payment_sslcommerz_store_pass');
-            if (!$storeId || !$storePass) return null;
+            if (!$storeId || !$storePass) {
+                return null;
+            }
             $sandbox = get_shop_option('shop_payment_sslcommerz_sandbox') === '1';
-            $apiUrl  = $sandbox
+            $apiUrl = $sandbox
                 ? 'https://sandbox.sslcommerz.com/gwprocess/v4/api.php'
                 : 'https://securepay.sslcommerz.com/gwprocess/v4/api.php';
 
             $resp = falcon_gateway_http(fn ($h) => $h->asForm()->post($apiUrl, [
-                'store_id'         => $storeId,
-                'store_passwd'     => $storePass,
-                'total_amount'     => number_format((float) $order->total, 2, '.', ''),
-                'currency'         => strtoupper(get_shop_option('shop_currency', 'BDT')),
-                'tran_id'          => $order->order_number,
-                'success_url'      => route('shop.payment.return', $order->id) . '?gateway=sslcommerz',
-                'fail_url'         => route('shop.payment.cancel', $order->id) . '?gateway=sslcommerz',
-                'cancel_url'       => route('shop.payment.cancel', $order->id) . '?gateway=sslcommerz',
-                'ipn_url'          => route('shop.payment.return', $order->id) . '?gateway=sslcommerz&ipn=1',
-                'shipping_method'  => 'NO',
-                'product_name'     => 'Order ' . $order->order_number,
+                'store_id' => $storeId,
+                'store_passwd' => $storePass,
+                'total_amount' => number_format((float) $order->total, 2, '.', ''),
+                'currency' => strtoupper(get_shop_option('shop_currency', 'BDT')),
+                'tran_id' => $order->order_number,
+                'success_url' => route('shop.payment.return', $order->id).'?gateway=sslcommerz',
+                'fail_url' => route('shop.payment.cancel', $order->id).'?gateway=sslcommerz',
+                'cancel_url' => route('shop.payment.cancel', $order->id).'?gateway=sslcommerz',
+                'ipn_url' => route('shop.payment.return', $order->id).'?gateway=sslcommerz&ipn=1',
+                'shipping_method' => 'NO',
+                'product_name' => 'Order '.$order->order_number,
                 'product_category' => 'General',
-                'product_profile'  => 'general',
-                'cus_name'         => trim($order->first_name . ' ' . $order->last_name),
-                'cus_email'        => $order->customer_email,
-                'cus_phone'        => $order->customer_phone,
-                'cus_add1'         => $order->address_line_1,
-                'cus_city'         => $order->city,
-                'cus_country'      => $order->country,
+                'product_profile' => 'general',
+                'cus_name' => trim($order->first_name.' '.$order->last_name),
+                'cus_email' => $order->customer_email,
+                'cus_phone' => $order->customer_phone,
+                'cus_add1' => $order->address_line_1,
+                'cus_city' => $order->city,
+                'cus_country' => $order->country,
             ]));
 
             if ($resp && $resp->successful() && $resp->json('status') === 'SUCCESS' && !empty($resp->json('GatewayPageURL'))) {
                 $order->update(['transaction_id' => $resp->json('sessionkey')]);
+
                 return $resp->json('GatewayPageURL');
             }
-            \Illuminate\Support\Facades\Log::error('SSLCommerz session error: ' . ($resp ? $resp->body() : 'connection failed'));
+            Log::error('SSLCommerz session error: '.($resp ? $resp->body() : 'connection failed'));
+
             return null;
         }
 
@@ -1220,42 +1289,42 @@ class ShopFrontendController extends Controller
         $paid = false;
 
         if ($gateway === 'stripe') {
-            $secret       = get_shop_option('shop_payment_stripe_secret');
+            $secret = get_shop_option('shop_payment_stripe_secret');
             $paymentIntent = $request->get('payment_intent');
-            $sessionId     = $request->get('session_id');
+            $sessionId = $request->get('session_id');
             if ($secret && $paymentIntent) {
                 // Inline (Stripe Elements) — verify the PaymentIntent.
-                $resp = falcon_gateway_http(fn ($h) => $h->withToken($secret)->get('https://api.stripe.com/v1/payment_intents/' . $paymentIntent));
+                $resp = falcon_gateway_http(fn ($h) => $h->withToken($secret)->get('https://api.stripe.com/v1/payment_intents/'.$paymentIntent));
                 if ($resp && $resp->successful() && $resp->json('status') === 'succeeded') {
                     $paid = true;
                     $order->update(['transaction_id' => $paymentIntent]);
                 }
             } elseif ($secret && $sessionId) {
                 // Hosted Stripe Checkout (fallback) — verify the session.
-                $resp = falcon_gateway_http(fn ($h) => $h->withToken($secret)->get('https://api.stripe.com/v1/checkout/sessions/' . $sessionId));
+                $resp = falcon_gateway_http(fn ($h) => $h->withToken($secret)->get('https://api.stripe.com/v1/checkout/sessions/'.$sessionId));
                 if ($resp && $resp->successful() && $resp->json('payment_status') === 'paid') {
                     $paid = true;
                     $order->update(['transaction_id' => $resp->json('payment_intent') ?: $sessionId]);
                 }
             }
         } elseif ($gateway === 'sslcommerz') {
-            $storeId   = get_shop_option('shop_payment_sslcommerz_store_id');
+            $storeId = get_shop_option('shop_payment_sslcommerz_store_id');
             $storePass = get_shop_option('shop_payment_sslcommerz_store_pass');
-            $valId     = $request->input('val_id');
+            $valId = $request->input('val_id');
             $postedStatus = $request->input('status');
             if ($storeId && $storePass && $valId && in_array($postedStatus, ['VALID', 'VALIDATED'], true)) {
                 $sandbox = get_shop_option('shop_payment_sslcommerz_sandbox') === '1';
-                $valApi  = $sandbox
+                $valApi = $sandbox
                     ? 'https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php'
                     : 'https://securepay.sslcommerz.com/validator/api/validationserverAPI.php';
                 $resp = falcon_gateway_http(fn ($h) => $h->get($valApi, [
-                    'val_id'       => $valId,
-                    'store_id'     => $storeId,
+                    'val_id' => $valId,
+                    'store_id' => $storeId,
                     'store_passwd' => $storePass,
-                    'format'       => 'json',
+                    'format' => 'json',
                 ]));
                 if ($resp && $resp->successful()) {
-                    $st  = $resp->json('status');
+                    $st = $resp->json('status');
                     $amt = (float) $resp->json('amount');
                     // Confirm the gateway validated it AND the amount matches the order total.
                     if (in_array($st, ['VALID', 'VALIDATED'], true) && $amt >= (float) $order->total - 0.5) {
@@ -1275,6 +1344,7 @@ class ShopFrontendController extends Controller
             // payment at almost the same moment, and finalizing twice would double-send the
             // customer's order email and mint a second set of download tokens.
             $this->markOrderPaid($order);
+
             return redirect()->route('shop.confirmation', $order->id)->with('success', 'Payment successful! Your order is confirmed.');
         }
 
@@ -1333,6 +1403,7 @@ class ShopFrontendController extends Controller
 
         if (!$this->stripeSignatureIsValid($payload, (string) $request->header('Stripe-Signature'), (string) $secret)) {
             Log::warning('Stripe webhook rejected: signature verification failed.');
+
             return response('Invalid signature', 400);
         }
 
@@ -1355,11 +1426,12 @@ class ShopFrontendController extends Controller
                 case 'charge.refunded':
                     $this->stripeHandleRefunded($object);
                     break;
-                // Anything else is acknowledged and ignored — Stripe sends far more event
-                // types than a shop needs, and 2xx stops it retrying them forever.
+                    // Anything else is acknowledged and ignored — Stripe sends far more event
+                    // types than a shop needs, and 2xx stops it retrying them forever.
             }
         } catch (\Throwable $e) {
-            Log::error('Stripe webhook handler failed (' . $event['type'] . '): ' . $e->getMessage());
+            Log::error('Stripe webhook handler failed ('.$event['type'].'): '.$e->getMessage());
+
             // 500 asks Stripe to retry with backoff rather than dropping the event.
             return response('Handler error', 500);
         }
@@ -1380,7 +1452,7 @@ class ShopFrontendController extends Controller
             return false;
         }
 
-        $timestamp  = null;
+        $timestamp = null;
         $signatures = [];
 
         foreach (explode(',', $header) as $part) {
@@ -1404,7 +1476,7 @@ class ShopFrontendController extends Controller
             return false;
         }
 
-        $expected = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+        $expected = hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
 
         foreach ($signatures as $signature) {
             if (hash_equals($expected, $signature)) {
@@ -1455,7 +1527,8 @@ class ShopFrontendController extends Controller
 
         if ($currency !== strtolower(get_shop_option('shop_currency', 'usd')) || $received < $expected) {
             Log::warning("Stripe webhook: intent for order #{$order->order_number} did not match "
-                . "(received {$received} {$currency}, expected {$expected}).");
+                ."(received {$received} {$currency}, expected {$expected}).");
+
             return;
         }
 
@@ -1506,42 +1579,42 @@ class ShopFrontendController extends Controller
             return;
         }
 
-        $log   = $order->refund_log ?? [];
+        $log = $order->refund_log ?? [];
         $log[] = [
-            'amount'  => round($refunded - $recorded, 2),
-            'at'      => now()->utc()->toIso8601String(),
-            'by'      => 'Stripe (webhook)',
+            'amount' => round($refunded - $recorded, 2),
+            'at' => now()->utc()->toIso8601String(),
+            'by' => 'Stripe (webhook)',
             'gateway' => 'stripe',
-            'ref'     => (string) ($charge['id'] ?? ''),
+            'ref' => (string) ($charge['id'] ?? ''),
         ];
 
         $oldStatus = $order->status;
-        $fully     = $refunded >= (float) $order->total - 0.001;
+        $fully = $refunded >= (float) $order->total - 0.001;
         $newStatus = $fully ? 'refunded' : 'partially-refunded';
 
         $order->update([
             'refunded_amount' => round($refunded, 2),
-            'refund_log'      => $log,
-            'status'          => $newStatus,
+            'refund_log' => $log,
+            'status' => $newStatus,
         ]);
 
         // Only a full refund returns stock to inventory, matching the admin refund screen.
         $this->syncOrderInventory($order, $oldStatus, $newStatus);
 
         try {
-            \Illuminate\Support\Facades\Mail::to($order->customer_email)->send(
-                new \FalconCms\Core\Mail\OrderNotificationMail($order, 'status_updated', null, 'customer', round($refunded - $recorded, 2))
+            Mail::to($order->customer_email)->send(
+                new OrderNotificationMail($order, 'status_updated', null, 'customer', round($refunded - $recorded, 2))
             );
         } catch (\Exception $e) {
-            Log::error("Order #{$order->order_number} refund email failed: " . $e->getMessage());
+            Log::error("Order #{$order->order_number} refund email failed: ".$e->getMessage());
         }
     }
 
     /** Inverse of stripeAmount(): smallest currency unit back to the shop's major unit. */
     private function stripeToMajorUnits(int $amount): float
     {
-        $currency    = strtolower(get_shop_option('shop_currency', 'usd'));
-        $zeroDecimal = ['bif','clp','djf','gnf','jpy','kmf','krw','mga','pyg','rwf','ugx','vnd','vuv','xaf','xof','xpf'];
+        $currency = strtolower(get_shop_option('shop_currency', 'usd'));
+        $zeroDecimal = ['bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg', 'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'];
 
         return in_array($currency, $zeroDecimal, true) ? (float) $amount : $amount / 100;
     }
@@ -1560,17 +1633,19 @@ class ShopFrontendController extends Controller
         if ($host && $host !== parse_url(config('app.url'), PHP_URL_HOST)) {
             return url('/');
         }
+
         return $url;
     }
 
     public function accountLogout(Request $request)
     {
-        \Illuminate\Support\Facades\Auth::logout();
+        Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        $raw      = $request->input('redirect_to') ?: url('/');
+        $raw = $request->input('redirect_to') ?: url('/');
         $redirect = $this->safeRedirectUrl($raw);
+
         return redirect($redirect);
     }
 
@@ -1581,23 +1656,24 @@ class ShopFrontendController extends Controller
     public function accountLogin(Request $request)
     {
         $request->validate([
-            'account_email'    => 'required|email',
+            'account_email' => 'required|email',
             'account_password' => 'required',
         ], [
-            'account_email.required'    => 'Please enter your email address.',
-            'account_email.email'       => 'Please enter a valid email address.',
+            'account_email.required' => 'Please enter your email address.',
+            'account_email.email' => 'Please enter a valid email address.',
             'account_password.required' => 'Please enter your password.',
         ]);
 
         $credentials = [
-            'email'    => $request->input('account_email'),
+            'email' => $request->input('account_email'),
             'password' => $request->input('account_password'),
         ];
 
-        if (\Illuminate\Support\Facades\Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            $raw      = $request->input('redirect_to') ?: url('/');
+            $raw = $request->input('redirect_to') ?: url('/');
             $redirect = $this->safeRedirectUrl($raw);
+
             return redirect($redirect);
         }
 
@@ -1606,9 +1682,11 @@ class ShopFrontendController extends Controller
             ->onlyInput('account_email');
     }
 
-    public function updateProfile(\Illuminate\Http\Request $request)
+    public function updateProfile(Request $request)
     {
-        if (!auth()->check()) return redirect()->back();
+        if (!auth()->check()) {
+            return redirect()->back();
+        }
 
         $user = auth()->user();
         $request->validate([
@@ -1622,25 +1700,27 @@ class ShopFrontendController extends Controller
         return redirect()->back()->with('profile_success', 'Profile updated successfully.');
     }
 
-    public function updatePassword(\Illuminate\Http\Request $request)
+    public function updatePassword(Request $request)
     {
-        if (!auth()->check()) return redirect()->back();
+        if (!auth()->check()) {
+            return redirect()->back();
+        }
 
         $request->validate([
             'current_password' => 'required',
-            'password'         => 'required|min:8|confirmed',
+            'password' => 'required|min:8|confirmed',
         ], [
-            'password.min'       => 'New password must be at least 8 characters.',
+            'password.min' => 'New password must be at least 8 characters.',
             'password.confirmed' => 'New password confirmation does not match.',
         ]);
 
         $user = auth()->user();
 
-        if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($request->current_password, $user->password)) {
             return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
-        $user->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+        $user->update(['password' => Hash::make($request->password)]);
 
         return redirect()->back()->with('password_success', 'Password updated successfully.');
     }
@@ -1651,23 +1731,25 @@ class ShopFrontendController extends Controller
      * Every lookup is scoped to auth()->id(): the id in the request is a claim, not a permission,
      * so an address belonging to someone else simply is not found.
      */
-    public function saveAddress(\Illuminate\Http\Request $request)
+    public function saveAddress(Request $request)
     {
-        if (!auth()->check()) return redirect()->back();
+        if (!auth()->check()) {
+            return redirect()->back();
+        }
 
         $validated = $request->validate([
             'address_id' => 'nullable|integer',
-            'label'      => 'nullable|string|max:60',
+            'label' => 'nullable|string|max:60',
             'first_name' => 'required|string|max:100',
-            'last_name'  => 'nullable|string|max:100',
-            'country'    => 'nullable|string|max:100',
-            'address_1'  => 'required|string|max:191',
-            'address_2'  => 'nullable|string|max:191',
-            'city'       => 'nullable|string|max:100',
-            'state'      => 'nullable|string|max:100',
-            'postcode'   => 'nullable|string|max:30',
-            'phone'      => 'nullable|string|max:40',
-            'email'      => 'nullable|email|max:191',
+            'last_name' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'address_1' => 'required|string|max:191',
+            'address_2' => 'nullable|string|max:191',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'postcode' => 'nullable|string|max:30',
+            'phone' => 'nullable|string|max:40',
+            'email' => 'nullable|email|max:191',
         ]);
 
         $userId = auth()->id();
@@ -1675,7 +1757,7 @@ class ShopFrontendController extends Controller
         $data['user_id'] = $userId;
 
         if (!empty($validated['address_id'])) {
-            $address = \FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)
+            $address = CustomerAddress::where('user_id', $userId)
                 ->find($validated['address_id']);
 
             if (!$address) {
@@ -1685,15 +1767,15 @@ class ShopFrontendController extends Controller
             $message = 'Address updated.';
         } else {
             // A cap keeps one account from filling the table; nobody legitimately needs 50.
-            if (\FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->count() >= 20) {
+            if (CustomerAddress::where('user_id', $userId)->count() >= 20) {
                 return redirect()->back()->withErrors(['address' => 'You can save up to 20 addresses. Delete one to add another.']);
             }
 
-            $address = \FalconCms\Core\Models\CustomerAddress::create($data);
+            $address = CustomerAddress::create($data);
             $message = 'Address saved.';
 
             // The first address a customer saves is the one they mean.
-            if (\FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->count() === 1) {
+            if (CustomerAddress::where('user_id', $userId)->count() === 1) {
                 $address->update(['is_default_billing' => true, 'is_default_shipping' => true]);
             }
         }
@@ -1707,23 +1789,23 @@ class ShopFrontendController extends Controller
      * Matching is on the parts that identify a place, normalised for case and spacing — otherwise
      * every order would add a near-duplicate and the address book would become useless.
      */
-    protected function rememberCustomerAddress(\Illuminate\Http\Request $request): void
+    protected function rememberCustomerAddress(Request $request): void
     {
-        if (!\Illuminate\Support\Facades\Schema::hasTable('shop_customer_addresses')) {
+        if (!Schema::hasTable('shop_customer_addresses')) {
             return;
         }
 
         $data = [
             'first_name' => trim((string) $request->input('billing_first_name', '')),
-            'last_name'  => trim((string) $request->input('billing_last_name', '')),
-            'country'    => trim((string) $request->input('billing_country', '')),
-            'address_1'  => trim((string) $request->input('billing_address_1', '')),
-            'address_2'  => trim((string) $request->input('billing_address_2', '')),
-            'city'       => trim((string) $request->input('billing_city', '')),
-            'state'      => trim((string) $request->input('billing_state', '')),
-            'postcode'   => trim((string) $request->input('billing_postcode', '')),
-            'phone'      => trim((string) $request->input('billing_phone', '')),
-            'email'      => trim((string) $request->input('billing_email', '')),
+            'last_name' => trim((string) $request->input('billing_last_name', '')),
+            'country' => trim((string) $request->input('billing_country', '')),
+            'address_1' => trim((string) $request->input('billing_address_1', '')),
+            'address_2' => trim((string) $request->input('billing_address_2', '')),
+            'city' => trim((string) $request->input('billing_city', '')),
+            'state' => trim((string) $request->input('billing_state', '')),
+            'postcode' => trim((string) $request->input('billing_postcode', '')),
+            'phone' => trim((string) $request->input('billing_phone', '')),
+            'email' => trim((string) $request->input('billing_email', '')),
         ];
 
         if ($data['first_name'] === '' || $data['address_1'] === '') {
@@ -1737,7 +1819,7 @@ class ShopFrontendController extends Controller
         ]))));
 
         $mine = $fingerprint($data);
-        $existing = \FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->get();
+        $existing = CustomerAddress::where('user_id', $userId)->get();
         foreach ($existing as $address) {
             if ($fingerprint($address->toArray()) === $mine) {
                 return;
@@ -1750,30 +1832,32 @@ class ShopFrontendController extends Controller
         }
 
         $data['user_id'] = $userId;
-        $data['is_default_billing']  = $existing->isEmpty();
+        $data['is_default_billing'] = $existing->isEmpty();
         $data['is_default_shipping'] = $existing->isEmpty();
 
-        \FalconCms\Core\Models\CustomerAddress::create($data);
+        CustomerAddress::create($data);
     }
 
-    public function deleteAddress(\Illuminate\Http\Request $request, $id)
+    public function deleteAddress(Request $request, $id)
     {
-        if (!auth()->check()) return redirect()->back();
+        if (!auth()->check()) {
+            return redirect()->back();
+        }
 
-        $address = \FalconCms\Core\Models\CustomerAddress::where('user_id', auth()->id())->find($id);
+        $address = CustomerAddress::where('user_id', auth()->id())->find($id);
         if (!$address) {
             return redirect()->back()->withErrors(['address' => 'That address could not be found.']);
         }
 
-        $wasBilling  = $address->is_default_billing;
+        $wasBilling = $address->is_default_billing;
         $wasShipping = $address->is_default_shipping;
         $address->delete();
 
         // Never leave the customer with no default while they still have addresses.
-        $next = \FalconCms\Core\Models\CustomerAddress::where('user_id', auth()->id())->oldest('id')->first();
+        $next = CustomerAddress::where('user_id', auth()->id())->oldest('id')->first();
         if ($next) {
             $next->update(array_filter([
-                'is_default_billing'  => $wasBilling ?: null,
+                'is_default_billing' => $wasBilling ?: null,
                 'is_default_shipping' => $wasShipping ?: null,
             ]));
         }
@@ -1781,41 +1865,43 @@ class ShopFrontendController extends Controller
         return redirect()->back()->with('address_success', 'Address deleted.');
     }
 
-    public function setDefaultAddress(\Illuminate\Http\Request $request, $id)
+    public function setDefaultAddress(Request $request, $id)
     {
-        if (!auth()->check()) return redirect()->back();
+        if (!auth()->check()) {
+            return redirect()->back();
+        }
 
         $type = $request->input('type') === 'shipping' ? 'shipping' : 'billing';
-        $column = 'is_default_' . $type;
+        $column = 'is_default_'.$type;
 
         $userId = auth()->id();
-        $address = \FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->find($id);
+        $address = CustomerAddress::where('user_id', $userId)->find($id);
         if (!$address) {
             return redirect()->back()->withErrors(['address' => 'That address could not be found.']);
         }
 
         // Exactly one default per type, so clear the rest in the same breath.
-        \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $column, $address) {
-            \FalconCms\Core\Models\CustomerAddress::where('user_id', $userId)->update([$column => false]);
+        DB::transaction(function () use ($userId, $column, $address) {
+            CustomerAddress::where('user_id', $userId)->update([$column => false]);
             $address->update([$column => true]);
         });
 
         return redirect()->back()->with('address_success', 'Default address updated.');
     }
 
-    public function checkMagicEmail(\Illuminate\Http\Request $request)
+    public function checkMagicEmail(Request $request)
     {
-        $email  = strtolower(trim($request->input('email', '')));
+        $email = strtolower(trim($request->input('email', '')));
         $exists = false;
 
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $exists = \App\Models\User::where('email', $email)->exists();
+            $exists = User::where('email', $email)->exists();
         }
 
         return response()->json(['exists' => $exists]);
     }
 
-    public function requestMagicLink(\Illuminate\Http\Request $request)
+    public function requestMagicLink(Request $request)
     {
         if (!get_cms_option('magic_login_enabled')) {
             return redirect()->back()->withErrors(['magic_email' => 'Magic login is not enabled.']);
@@ -1823,25 +1909,25 @@ class ShopFrontendController extends Controller
 
         $request->validate(['magic_email' => 'required|email'], [
             'magic_email.required' => 'Please enter your email address.',
-            'magic_email.email'    => 'Please enter a valid email address.',
+            'magic_email.email' => 'Please enter a valid email address.',
         ]);
 
         $email = strtolower(trim($request->magic_email));
-        $user  = \App\Models\User::where('email', $email)->first();
+        $user = User::where('email', $email)->first();
 
         // Always show the same success message — never confirm whether an email exists
         if ($user) {
-            \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+            DB::table('magic_login_tokens')
                 ->where('email', $email)
                 ->where('used_at', null)
                 ->delete();
 
-            $rawToken = \Illuminate\Support\Str::random(48);
-            $hash     = hash('sha256', $rawToken);
+            $rawToken = Str::random(48);
+            $hash = hash('sha256', $rawToken);
 
-            \Illuminate\Support\Facades\DB::table('magic_login_tokens')->insert([
-                'email'      => $email,
-                'token'      => $hash,
+            DB::table('magic_login_tokens')->insert([
+                'email' => $email,
+                'token' => $hash,
                 'expires_at' => now()->addMinutes(10),
                 'ip_address' => $request->ip(),
                 'created_at' => now(),
@@ -1850,23 +1936,23 @@ class ShopFrontendController extends Controller
 
             $magicUrl = route('shop.magic.verify', ['token' => $rawToken]);
 
-            \Illuminate\Support\Facades\Mail::to($email)->send(
-                new \FalconCms\Core\Mail\MagicLoginMail($magicUrl, $user->name)
+            Mail::to($email)->send(
+                new MagicLoginMail($magicUrl, $user->name)
             );
         }
 
         return redirect()->back()->with('magic_sent', true);
     }
 
-    public function verifyMagicLink(\Illuminate\Http\Request $request, string $token)
+    public function verifyMagicLink(Request $request, string $token)
     {
         $accountPageId = get_shop_option('shop_account_page_id');
-        $accountPage   = $accountPageId ? \FalconCms\Core\Models\Post::find($accountPageId) : null;
-        $accountUrl    = $accountPage ? url('/' . $accountPage->slug) : url('/');
+        $accountPage = $accountPageId ? Post::find($accountPageId) : null;
+        $accountUrl = $accountPage ? url('/'.$accountPage->slug) : url('/');
 
         $hash = hash('sha256', $token);
 
-        $row = \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+        $row = DB::table('magic_login_tokens')
             ->where('token', $hash)
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
@@ -1877,11 +1963,11 @@ class ShopFrontendController extends Controller
                 ->withErrors(['account_email' => 'This magic link is invalid or has expired. Please request a new one.']);
         }
 
-        \Illuminate\Support\Facades\DB::table('magic_login_tokens')
+        DB::table('magic_login_tokens')
             ->where('token', $hash)
             ->update(['used_at' => now()]);
 
-        $user = \App\Models\User::where('email', $row->email)->first();
+        $user = User::where('email', $row->email)->first();
 
         if (!$user) {
             return redirect($accountUrl)
@@ -1898,39 +1984,50 @@ class ShopFrontendController extends Controller
      */
     public function downloadFile(Request $request, string $token)
     {
-        $dl = \FalconCms\Core\Models\OrderDownload::with('productDownload')
+        $dl = OrderDownload::with('productDownload')
             ->where('token', $token)
             ->first();
 
-        if (!$dl) abort(404, 'Download link not found.');
-        if ($dl->isExpired()) abort(410, 'This download link has expired.');
-        if ($dl->isExhausted()) abort(410, 'Download limit reached for this file.');
+        if (!$dl) {
+            abort(404, 'Download link not found.');
+        }
+        if ($dl->isExpired()) {
+            abort(410, 'This download link has expired.');
+        }
+        if ($dl->isExhausted()) {
+            abort(410, 'Download limit reached for this file.');
+        }
 
         $file = $dl->productDownload;
-        if (!$file) abort(404, 'File not found.');
+        if (!$file) {
+            abort(404, 'File not found.');
+        }
 
         // Files from media library live on the public disk; legacy uploads used local disk.
         if (str_starts_with($file->file_path, 'downloads/')) {
-            $path = storage_path('app/' . $file->file_path);
+            $path = storage_path('app/'.$file->file_path);
         } else {
-            $path = storage_path('app/public/' . $file->file_path);
+            $path = storage_path('app/public/'.$file->file_path);
         }
 
-        if (!file_exists($path)) abort(404, 'File not found on server.');
+        if (!file_exists($path)) {
+            abort(404, 'File not found on server.');
+        }
 
         $dl->increment('download_count');
 
         $filename = $file->name ?: basename($file->file_path);
+
         return response()->download($path, $filename, [
-            'Content-Type'        => mime_content_type($path) ?: 'application/octet-stream',
-            'Content-Disposition' => 'attachment; filename="' . addslashes($filename) . '"',
+            'Content-Type' => mime_content_type($path) ?: 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="'.addslashes($filename).'"',
         ]);
     }
 
     /**
      * Public order tracking — look up an order by number + email.
      */
-    public function trackOrder(\Illuminate\Http\Request $request)
+    public function trackOrder(Request $request)
     {
         $order = null;
         $notFound = false;
@@ -1938,7 +2035,7 @@ class ShopFrontendController extends Controller
         if ($request->isMethod('post') || ($request->filled('order_number') && $request->filled('email'))) {
             $request->validate([
                 'order_number' => 'required|string',
-                'email'        => 'required|email',
+                'email' => 'required|email',
             ], [], ['order_number' => 'Order Number', 'email' => 'Email']);
 
             $order = Order::with(['items.product.shopData', 'statusHistory'])
@@ -1988,16 +2085,18 @@ class ShopFrontendController extends Controller
     {
         try {
             $admin = get_shop_option('shop_email_admin_recipient') ?: get_shop_option('shop_email_from_address');
-            if (!$admin) return;
+            if (!$admin) {
+                return;
+            }
             $out = (int) get_shop_option('shop_out_of_stock_threshold', '0');
             $low = (int) get_shop_option('shop_low_stock_threshold', '2');
             if ($qty <= $out && get_shop_option('shop_notification_no_stock', '1') === '1') {
-                \Illuminate\Support\Facades\Mail::raw("Product \"{$name}\" is now OUT OF STOCK (remaining: {$qty}).", function ($m) use ($admin, $name) {
-                    $m->to($admin)->subject('Out of stock: ' . $name);
+                Mail::raw("Product \"{$name}\" is now OUT OF STOCK (remaining: {$qty}).", function ($m) use ($admin, $name) {
+                    $m->to($admin)->subject('Out of stock: '.$name);
                 });
             } elseif ($qty <= $low && get_shop_option('shop_notification_low_stock', '1') === '1') {
-                \Illuminate\Support\Facades\Mail::raw("Product \"{$name}\" is running LOW on stock (remaining: {$qty}).", function ($m) use ($admin, $name) {
-                    $m->to($admin)->subject('Low stock: ' . $name);
+                Mail::raw("Product \"{$name}\" is running LOW on stock (remaining: {$qty}).", function ($m) use ($admin, $name) {
+                    $m->to($admin)->subject('Low stock: '.$name);
                 });
             }
         } catch (\Throwable $e) {
@@ -2020,7 +2119,7 @@ class ShopFrontendController extends Controller
         $validated = $request->validate([
             'post_id' => 'required|exists:posts,id',
             'parent_id' => 'nullable|exists:shop_reviews,id',
-            'rating' => ($ratingOn ? 'required' : 'nullable') . '|integer|min:1|max:5',
+            'rating' => ($ratingOn ? 'required' : 'nullable').'|integer|min:1|max:5',
             'comment' => 'required|string|min:3',
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
@@ -2032,12 +2131,12 @@ class ShopFrontendController extends Controller
 
         // Check if this user/email already has at least one approved review (auto-approve logic)
         $isApproved = false;
-        
+
         // Auto-approve if user is an admin
         if (auth()->check() && (auth()->user()->role && in_array(auth()->user()->role->slug, ['admin', 'super-admin']))) {
             $isApproved = true;
         } else {
-            $query = \FalconCms\Core\Models\Review::where('is_approved', true);
+            $query = Review::where('is_approved', true);
             if ($userId) {
                 $isApproved = (clone $query)->where('user_id', $userId)->exists();
             } elseif ($email) {
@@ -2045,7 +2144,7 @@ class ShopFrontendController extends Controller
             }
         }
 
-        \FalconCms\Core\Models\Review::create([
+        Review::create([
             'post_id' => $validated['post_id'],
             'parent_id' => $validated['parent_id'] ?? null,
             'user_id' => $userId,
@@ -2053,15 +2152,15 @@ class ShopFrontendController extends Controller
             'email' => $email,
             'rating' => $ratingOn ? ($validated['rating'] ?? 0) : 0,
             'comment' => $validated['comment'],
-            'is_approved' => $isApproved
+            'is_approved' => $isApproved,
         ]);
 
         $message = $isApproved ? 'Review posted successfully.' : 'Your review is awaiting moderation.';
-        
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => $message
+                'message' => $message,
             ]);
         }
 
@@ -2074,7 +2173,9 @@ class ShopFrontendController extends Controller
     private function validateCartItems()
     {
         $cart = Session::get('falcon_cart', []);
-        if (empty($cart)) return;
+        if (empty($cart)) {
+            return;
+        }
 
         $productIds = array_column($cart, 'id');
         // Fetch all products in cart with their shopData
@@ -2083,11 +2184,12 @@ class ShopFrontendController extends Controller
         $updated = false;
         foreach ($cart as $key => $item) {
             $productId = $item['id'];
-            
+
             // 1. Check if product exists and is published
             if (!isset($products[$productId])) {
                 unset($cart[$key]);
                 $updated = true;
+
                 continue;
             }
 
@@ -2099,9 +2201,10 @@ class ShopFrontendController extends Controller
                 if ($shopData->stock_status === 'outofstock' || ($shopData->manage_stock && $shopData->stock_quantity <= 0)) {
                     unset($cart[$key]);
                     $updated = true;
+
                     continue;
                 }
-                
+
                 // Adjust quantity if it exceeds available stock
                 if ($shopData->manage_stock && $item['quantity'] > $shopData->stock_quantity) {
                     $cart[$key]['quantity'] = $shopData->stock_quantity;
@@ -2111,8 +2214,8 @@ class ShopFrontendController extends Controller
         }
 
         if ($updated) {
-            \Illuminate\Support\Facades\Session::put('falcon_cart', $cart);
-            \Illuminate\Support\Facades\Session::save();
+            Session::put('falcon_cart', $cart);
+            Session::save();
         }
     }
 
@@ -2123,44 +2226,44 @@ class ShopFrontendController extends Controller
      * update) so no endpoint can quietly leave a row behind — the tax line used to be missing
      * from the shipping response alone, which is why it only refreshed on a full page load.
      *
-     * @param array<string, mixed> $extra Endpoint-specific keys merged on top.
+     * @param  array<string, mixed>  $extra  Endpoint-specific keys merged on top.
      */
     private function cartTotalsPayload(array $extra = []): array
     {
-        $country  = falcon_customer_shipping_country();
+        $country = falcon_customer_shipping_country();
         $shipping = get_falcon_cart_shipping_details($country);
-        $tax      = falcon_tax_enabled() ? (float) get_falcon_cart_tax() : 0.0;
+        $tax = falcon_tax_enabled() ? (float) get_falcon_cart_tax() : 0.0;
 
         // Shipping renders as its own label + amount ("Flat rate: ৳25.00"), or just the label
         // when it is free or not yet known.
         $shippingHtml = !empty($shipping['pending'])
             ? '<span class="text-gray-500">Enter your address to see shipping options.</span>'
             : ($shipping['cost'] > 0
-                ? e($shipping['label']) . ': <span class="font-bold text-heading">' . falcon_price_format($shipping['cost']) . '</span>'
-                : '<span class="font-bold text-heading">' . e($shipping['label']) . '</span>');
+                ? e($shipping['label']).': <span class="font-bold text-heading">'.falcon_price_format($shipping['cost']).'</span>'
+                : '<span class="font-bold text-heading">'.e($shipping['label']).'</span>');
 
         return array_merge([
-            'success'         => true,
-            'cart_count'      => get_falcon_cart_count(),
-            'subtotal'        => falcon_price_format(get_falcon_cart_subtotal()),
-            'shipping'        => $shippingHtml,
+            'success' => true,
+            'cart_count' => get_falcon_cart_count(),
+            'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
+            'shipping' => $shippingHtml,
             'shipping_method' => $shipping['method'] ?? 'delivery',
-            'shipping_pending'=> (bool) ($shipping['pending'] ?? false),
-            'tax'             => falcon_price_format($tax),
-            'tax_label'       => falcon_cart_tax_label(),
-            'tax_included'    => falcon_prices_include_tax(),
+            'shipping_pending' => (bool) ($shipping['pending'] ?? false),
+            'tax' => falcon_price_format($tax),
+            'tax_label' => falcon_cart_tax_label(),
+            'tax_included' => falcon_prices_include_tax(),
             // The row is hidden rather than removed, so the storefront only has to toggle it.
-            'tax_visible'     => falcon_tax_enabled() && $tax > 0,
-            'total'           => falcon_price_format(get_falcon_cart_total()),
-            'discount_html'   => $this->getDiscountHtml(),
-            'promotion_html'  => $this->getPromotionHtml(),
+            'tax_visible' => falcon_tax_enabled() && $tax > 0,
+            'total' => falcon_price_format(get_falcon_cart_total()),
+            'discount_html' => $this->getDiscountHtml(),
+            'promotion_html' => $this->getPromotionHtml(),
             // Qualifying for an offer can start or stop from a quantity change alone, so the
             // prompt travels with every cart update instead of waiting for a page reload.
-            'offer_html'      => $this->getPromotionOfferHtml(),
+            'offer_html' => $this->getPromotionOfferHtml(),
         ], $extra);
     }
 
-    public function updateShipping(\Illuminate\Http\Request $request)
+    public function updateShipping(Request $request)
     {
         // Only overwrite the stored country when one was actually supplied — a method-only
         // update (the pickup/delivery radio) must not blank out the customer's chosen country
@@ -2184,16 +2287,16 @@ class ShopFrontendController extends Controller
         $methods = [];
         foreach (falcon_shipping_methods($country) as $id => $method) {
             $methods[] = [
-                'id'    => $id,
+                'id' => $id,
                 'label' => $method['label'],
-                'cost'  => $method['cost'] > 0 ? falcon_price_format($method['cost']) : 'Free',
+                'cost' => $method['cost'] > 0 ? falcon_price_format($method['cost']) : 'Free',
             ];
         }
 
         // Full totals payload: changing country moves the tax rate as well as the shipping cost,
         // so subtotal, tax, discounts and total all have to travel back with it.
         return response()->json($this->cartTotalsPayload([
-            'method'  => get_falcon_cart_shipping_details($country)['method'],
+            'method' => get_falcon_cart_shipping_details($country)['method'],
             'methods' => $methods,
         ]));
     }

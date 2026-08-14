@@ -2,10 +2,11 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use FalconCms\Core\Models\ProductCategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Routing\Controller;
 
 class ProductCategoryController extends Controller
 {
@@ -21,16 +22,18 @@ class ProductCategoryController extends Controller
         $query->latest();
 
         if ($request->has('s')) {
-            $query->where('name', 'like', '%' . $request->s . '%');
+            $query->where('name', 'like', '%'.$request->s.'%');
             $categories = $query->paginate(10);
         } else {
             $allCategories = $query->get();
             $tree = collect();
             $visitedIds = [];
 
-            $buildTree = function($parentId, $level) use (&$buildTree, $allCategories, &$tree, &$visitedIds) {
+            $buildTree = function ($parentId, $level) use (&$buildTree, $allCategories, &$tree, &$visitedIds) {
                 foreach ($allCategories->where('parent_id', $parentId) as $cat) {
-                    if (in_array($cat->id, $visitedIds)) continue;
+                    if (in_array($cat->id, $visitedIds)) {
+                        continue;
+                    }
                     $visitedIds[] = $cat->id;
                     $cat->level = $level;
                     $tree->push($cat);
@@ -43,7 +46,9 @@ class ProductCategoryController extends Controller
             if ($tree->count() < $allCategories->count()) {
                 $orphans = $allCategories->whereNotIn('id', $visitedIds);
                 foreach ($orphans as $orphan) {
-                    if (in_array($orphan->id, $visitedIds)) continue;
+                    if (in_array($orphan->id, $visitedIds)) {
+                        continue;
+                    }
                     $orphan->level = 0;
                     $tree->push($orphan);
                     $visitedIds[] = $orphan->id;
@@ -51,15 +56,15 @@ class ProductCategoryController extends Controller
                 }
             }
 
-            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+            $page = Paginator::resolveCurrentPage() ?: 1;
             $perPage = 10;
             $fullTree = $tree;
-            $categories = new \Illuminate\Pagination\LengthAwarePaginator(
+            $categories = new LengthAwarePaginator(
                 $tree->forPage($page, $perPage),
                 $tree->count(),
                 $perPage,
                 $page,
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+                ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
             );
         }
 
@@ -73,6 +78,7 @@ class ProductCategoryController extends Controller
 
         if (($action === 'delete') && !empty($ids)) {
             ProductCategory::whereIn('id', $ids)->delete();
+
             return back()->with('success', 'Selected categories deleted.');
         }
 
@@ -89,7 +95,7 @@ class ProductCategoryController extends Controller
         $baseSlug = $request->slug ?: $request->name;
         $request->merge([
             'slug' => ProductCategory::generateUniqueSlug($baseSlug, 0, $lang),
-            'lang_code' => $lang
+            'lang_code' => $lang,
         ]);
 
         $validated = $request->validate([
@@ -117,9 +123,11 @@ class ProductCategoryController extends Controller
         $fullTree = collect();
         $visitedIds = [];
 
-        $buildTree = function($parentId, $level) use (&$buildTree, $allCategories, &$fullTree, &$visitedIds) {
+        $buildTree = function ($parentId, $level) use (&$buildTree, $allCategories, &$fullTree, &$visitedIds) {
             foreach ($allCategories->where('parent_id', $parentId) as $cat) {
-                if (in_array($cat->id, $visitedIds)) continue;
+                if (in_array($cat->id, $visitedIds)) {
+                    continue;
+                }
                 $visitedIds[] = $cat->id;
                 $cat->level = $level;
                 $fullTree->push($cat);
@@ -146,6 +154,7 @@ class ProductCategoryController extends Controller
                 function ($attribute, $value, $fail) use ($category) {
                     if ($value == $category->id) {
                         $fail('A category cannot be its own parent.');
+
                         return;
                     }
                     if ($value) {
@@ -169,7 +178,9 @@ class ProductCategoryController extends Controller
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
             foreach ($request->copy_to_languages as $targetLang) {
                 $exists = ProductCategory::where('origin_id', $category->id)->where('lang_code', $targetLang)->exists();
-                if ($exists) continue;
+                if ($exists) {
+                    continue;
+                }
 
                 $clone = $category->replicate();
                 $clone->lang_code = $targetLang;
@@ -193,6 +204,7 @@ class ProductCategoryController extends Controller
         $name = $product_category->name;
         $product_category->delete();
         falcon_log_activity('deleted', "Deleted product category: {$name}", $product_category);
+
         return redirect()->route('admin.product-categories.index')->with('success', 'Category deleted.');
     }
 
@@ -201,7 +213,7 @@ class ProductCategoryController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'parent_id' => 'nullable|exists:product_categories,id',
-            'lang_code' => 'nullable|string'
+            'lang_code' => 'nullable|string',
         ]);
 
         $lang = $request->lang_code ?: app()->getLocale();
@@ -210,8 +222,9 @@ class ProductCategoryController extends Controller
             'name' => $request->name,
             'slug' => $slug,
             'parent_id' => $request->parent_id,
-            'lang_code' => $lang
+            'lang_code' => $lang,
         ]);
+
         return response()->json($category);
     }
 }
