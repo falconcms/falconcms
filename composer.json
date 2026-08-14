@@ -5,7 +5,17 @@
     "type": "library",
     "require": {
         "php": "^8.1",
-        "illuminate/support": "^10.0|^11.0|^12.0|^13.0"
+        "illuminate/bus": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/console": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/database": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/mail": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/pagination": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/queue": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/routing": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/view": "^10.0|^11.0|^12.0|^13.0"
     },
     "autoload": {
         "psr-4": {
@@ -24,9 +34,37 @@
         }
     },
     "scripts": {
-        "post-autoload-dump": [
-            "@php artisan vendor:publish --tag=falcon-themes --force",
-            "@php artisan vendor:publish --tag=falcon-cms-assets --force"
-        ]
+        "lint": "pint --test",
+        "format": "pint",
+        "analyse": "phpstan analyse --memory-limit=1G"
+    },
+    "scripts-descriptions": {
+        "lint": "Check code style without changing anything (what CI runs).",
+        "format": "Apply Laravel Pint's code style to the whole package.",
+        "analyse": "Run PHPStan/Larastan static analysis at level 3."
+    },
+    "authors": [
+        {
+            "name": "Tarequl Islam",
+            "email": "tareqcodex@gmail.com"
+        }
+    ],
+    "homepage": "https://falconcms.com",
+    "keywords": [
+        "laravel",
+        "cms",
+        "page-builder",
+        "ecommerce",
+        "admin-panel",
+        "multilingual"
+    ],
+    "support": {
+        "issues": "https://github.com/falconcms/falconcms/issues",
+        "docs": "https://falconcms.github.io/falconcms/"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.18",
+        "larastan/larastan": "^2.9|^3.0",
+        "orchestra/testbench": "^9.0|^10.0|^11.0"
     }
 }

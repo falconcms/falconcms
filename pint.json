@@ -1,0 +1,11 @@
+{
+    "preset": "laravel",
+    "exclude": [
+        "docs",
+        "resources/views"
+    ],
+    "rules": {
+        "declare_strict_types": false,
+        "not_operator_with_successor_space": false
+    }
+}

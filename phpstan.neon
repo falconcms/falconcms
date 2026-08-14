@@ -1,0 +1,20 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 3
+
+    paths:
+        - src
+        - database
+        - routes
+
+    # helpers.php is one long file of procedural template helpers (the WordPress-style API
+    # themes call). It is not analysed — but it IS scanned, so every falcon_*() call site
+    # elsewhere resolves to a real signature instead of "function not found".
+    excludePaths:
+        - src/helpers.php
+
+    scanFiles:
+        - src/helpers.php
