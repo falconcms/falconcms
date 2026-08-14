@@ -420,13 +420,20 @@ class ShopFrontendController extends Controller
             $product = Product::with('shopData')->find($item['id'] ?? 0);
             $shopData = $product?->shopData;
 
-            // Which row actually tracks stock for this line.
+            // Which row actually tracks stock for this line. A variation only holds its own
+            // count when it says so; otherwise it draws on the parent's shelf, exactly as
+            // addToCart() and ProductData::isInStock() already do.
+            //
+            // Without that fallback a variable product whose variations do not each track
+            // stock reserved nothing at checkout: the parent quantity never moved, so it
+            // stayed "in stock" and could be sold over and over.
             $table = $id = null;
-            if (!empty($item['variation_id'])) {
-                $variation = ProductVariation::find($item['variation_id']);
-                if ($variation && $variation->manage_stock) {
-                    [$table, $id] = ['shop_product_variations', $variation->id];
-                }
+            $variation = !empty($item['variation_id'])
+                ? ProductVariation::find($item['variation_id'])
+                : null;
+
+            if ($variation && $variation->manage_stock) {
+                [$table, $id] = ['shop_product_variations', $variation->id];
             } elseif ($shopData && $shopData->manage_stock) {
                 [$table, $id] = ['shop_products', $shopData->id];
             }
@@ -1640,13 +1647,37 @@ class ShopFrontendController extends Controller
      */
     private function safeRedirectUrl(string $url): string
     {
-        // Protocol-relative (//evil.com) and external hosts are rejected
-        if (str_starts_with($url, '//')) {
-            return url('/');
+        $home = url('/');
+
+        // Judge a normalised copy, return the original. Two things have to be levelled out
+        // before parse_url() can be trusted:
+        //
+        //  - Browsers read a backslash in the authority position as a forward slash, so
+        //    "/\evil.test" navigates to //evil.test — while parse_url() reports no host at
+        //    all and it reads as an innocent relative path.
+        //  - Leading control characters and whitespace are stripped by the browser before
+        //    it parses, so "\n//evil.test" is also protocol-relative in practice.
+        $candidate = str_replace('\\', '/', trim($url, " \t\n\r\0\x0B"));
+        $candidate = preg_replace('/[\x00-\x1F\x7F]/', '', $candidate) ?? '';
+
+        if ($candidate === '') {
+            return $home;
         }
-        $host = parse_url($url, PHP_URL_HOST);
-        if ($host && $host !== parse_url(config('app.url'), PHP_URL_HOST)) {
-            return url('/');
+
+        // Protocol-relative: //evil.test, and now /\evil.test with it.
+        if (str_starts_with($candidate, '//')) {
+            return $home;
+        }
+
+        // An absolute URL is only allowed to point back at us. Note that the host is what
+        // matters, not the userinfo: "https://evil.test@shop.test" really does go to
+        // shop.test, while "https://shop.test@evil.test" goes to evil.test and is refused.
+        $host = parse_url($candidate, PHP_URL_HOST);
+        if ($host !== null && $host !== false) {
+            $ourHost = (string) parse_url(config('app.url'), PHP_URL_HOST);
+            if (strcasecmp($host, $ourHost) !== 0) {
+                return $home;
+            }
         }
 
         return $url;
@@ -1978,15 +2009,34 @@ class ShopFrontendController extends Controller
                 ->withErrors(['account_email' => 'This magic link is invalid or has expired. Please request a new one.']);
         }
 
-        DB::table('magic_login_tokens')
+        // Claiming the token is the authentication step, so it has to be the atomic one:
+        // a conditional UPDATE that only one caller can win. Marking it used after an
+        // unconditional read let two requests carrying the same link — a mail scanner
+        // prefetching it alongside the customer's own click — both get a session.
+        $claimed = DB::table('magic_login_tokens')
             ->where('token', $hash)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
             ->update(['used_at' => now()]);
+
+        if ($claimed !== 1) {
+            return redirect($accountUrl)
+                ->withErrors(['account_email' => 'This magic link is invalid or has expired. Please request a new one.']);
+        }
 
         $user = User::where('email', $row->email)->first();
 
         if (!$user) {
             return redirect($accountUrl)
                 ->withErrors(['account_email' => 'No account found for this magic link.']);
+        }
+
+        // A blocked account must not be able to sign in by email either. The admin magic
+        // link already refuses one; the storefront's did not, so blocking a customer left
+        // them a working way in.
+        if ($user->is_blocked || ($user->blocked_until && $user->blocked_until->isFuture())) {
+            return redirect($accountUrl)
+                ->withErrors(['account_email' => 'This account has been disabled.']);
         }
 
         auth()->login($user, false);
@@ -2020,14 +2070,26 @@ class ShopFrontendController extends Controller
 
         // Files from media library live on the public disk; legacy uploads used local disk.
         if (str_starts_with($file->file_path, 'downloads/')) {
-            $path = storage_path('app/'.$file->file_path);
+            $base = storage_path('app');
         } else {
-            $path = storage_path('app/public/'.$file->file_path);
+            $base = storage_path('app/public');
         }
+        $path = $base.'/'.$file->file_path;
 
         if (!file_exists($path)) {
             abort(404, 'File not found on server.');
         }
+
+        // file_path is set in the admin, not by the customer, so this is defence in depth —
+        // but "downloads/../../../.env" resolves to a real file the web user can read, and
+        // this route hands whatever it points at to anyone holding the token. Resolve the
+        // path and refuse anything that has climbed out of the directory it belongs to.
+        $real = realpath($path);
+        $realBase = realpath($base);
+        if ($real === false || $realBase === false || !str_starts_with($real, $realBase.DIRECTORY_SEPARATOR)) {
+            abort(404, 'File not found on server.');
+        }
+        $path = $real;
 
         $dl->increment('download_count');
 

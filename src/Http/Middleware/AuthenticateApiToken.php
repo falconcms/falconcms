@@ -28,9 +28,16 @@ class AuthenticateApiToken
             return response()->json(['success' => false, 'message' => 'Invalid API token.'], 401);
         }
 
+        // Blocking a user has to mean blocking them everywhere. Both dashboard login paths
+        // refuse a blocked account; without this the API did not, so an issued token kept
+        // working for as long as it existed and "block this user" was not actually true.
+        $user = $record->user;
+        if ($user->is_blocked || ($user->blocked_until && $user->blocked_until->isFuture())) {
+            return response()->json(['success' => false, 'message' => 'This account is blocked.'], 403);
+        }
+
         $record->forceFill(['last_used_at' => now()])->save();
 
-        $user = $record->user;
         auth()->setUser($user);
         $request->setUserResolver(fn () => $user);
 
