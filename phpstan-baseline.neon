@@ -1879,6 +1879,18 @@ parameters:
 			path: src/Http/Controllers/FrontendController.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$blocked_until\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/ShopFrontendController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$is_blocked\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/ShopFrontendController.php
+
+		-
 			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2175,7 +2187,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\ApiToken\:\:\$user\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: src/Http/Middleware/AuthenticateApiToken.php
 
 		-
@@ -3079,6 +3091,48 @@ parameters:
 			path: tests/Feature/Cms/WordPressImporterTest.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 6
+			path: tests/Feature/Security/AccessControlTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/AccessControlTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\OrderDownload\:\:\$download_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/DigitalDownloadTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\OrderDownload\:\:\$productDownload\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/DigitalDownloadTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\OrderDownload\:\:\$product_download_id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: tests/Feature/Security/DigitalDownloadTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\OrderDownload\:\:\$token\.$#'
+			identifier: property.notFound
+			count: 17
+			path: tests/Feature/Security/DigitalDownloadTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Security/DigitalDownloadTest.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active_sale_price\.$#'
 			identifier: property.notFound
 			count: 1
@@ -3179,6 +3233,18 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/Shop/ShippingWeightTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/StockClaimTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/StockClaimTest.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
