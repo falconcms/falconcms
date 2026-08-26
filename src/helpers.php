@@ -5907,6 +5907,35 @@ if (!function_exists('falcon_tax_rate_for')) {
     }
 }
 
+if (!function_exists('falcon_blocked_upload_extensions')) {
+    /**
+     * File extensions this CMS will never keep, whichever door they arrive through.
+     *
+     * Two kinds of thing are on the list. Most are executable or server-side scripts: a
+     * file the web server would run rather than serve. The rest — svg, svgz, xml, xsl,
+     * xslt — are documents that can carry script, which matters because the media library
+     * is shared and its files are embedded in pages every visitor loads, from the site's
+     * own origin.
+     *
+     * It lives here, once, because there is more than one way into the library: the upload
+     * screen and the WordPress media importer both write to it. The importer used to keep
+     * its own list, which had drifted to allow SVG.
+     *
+     * @return array<int, string>
+     */
+    function falcon_blocked_upload_extensions(): array
+    {
+        return apply_falcon_filters('falcon_blocked_upload_extensions', [
+            // Executed by the server rather than served to the browser.
+            'php', 'php3', 'php4', 'php5', 'php7', 'phtml', 'phar',
+            'asp', 'aspx', 'jsp', 'js', 'cgi', 'pl', 'py', 'rb',
+            'sh', 'bash', 'exe', 'bat', 'cmd', 'htaccess', 'htpasswd',
+            // Documents that can carry script.
+            'svg', 'svgz', 'xml', 'xsl', 'xslt',
+        ]);
+    }
+}
+
 if (!function_exists('falcon_request_memo')) {
     /**
      * A scratchpad that lives exactly as long as the application instance does.

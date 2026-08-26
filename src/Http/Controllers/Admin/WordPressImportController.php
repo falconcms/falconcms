@@ -132,7 +132,7 @@ class WordPressImportController extends Controller
 
             $mimeMap = [
                 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
-                'gif' => 'image/gif',  'webp' => 'image/webp', 'svg' => 'image/svg+xml',
+                'gif' => 'image/gif',  'webp' => 'image/webp',
                 'bmp' => 'image/bmp',  'ico' => 'image/x-icon', 'tif' => 'image/tiff',
                 'tiff' => 'image/tiff', 'pdf' => 'application/pdf',
                 'mp4' => 'video/mp4',  'mov' => 'video/quicktime', 'avi' => 'video/x-msvideo',
@@ -151,7 +151,13 @@ class WordPressImportController extends Controller
                 }
 
                 $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-                if (!in_array($ext, $allowed)) {
+
+                // Two gates, deliberately. The allow-list above is what this importer knows
+                // how to record; the shared block-list is what the CMS refuses to keep at
+                // all. Consulting both means an extension added to the map later cannot
+                // quietly re-open a door the upload screen keeps shut — which is exactly how
+                // SVG came to be importable while being refused on upload.
+                if (!in_array($ext, $allowed, true) || in_array($ext, falcon_blocked_upload_extensions(), true)) {
                     $skipped++;
 
                     continue;

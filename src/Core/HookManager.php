@@ -19,6 +19,20 @@ class HookManager
         return self::$instance;
     }
 
+    /**
+     * Drop every registered hook and start again.
+     *
+     * The registry is a process-wide singleton, which is right for one PHP-FPM request and
+     * wrong for anything longer-lived: hooks are registered during boot, so a process that
+     * boots more than once — a test run, a queue worker, Octane — accumulates a second copy
+     * of every callback and fires each of them twice. Call this immediately before a
+     * re-boot, never during a request.
+     */
+    public static function reset(): void
+    {
+        self::$instance = null;
+    }
+
     // Actions
     public function addAction($tag, $callback, $priority = 10)
     {

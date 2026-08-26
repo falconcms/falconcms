@@ -96,12 +96,10 @@ class MediaController extends Controller
             $extension = strtolower($file->getClientOriginalExtension());
             $mimeType = $file->getMimeType();
 
-            // Block executable and server-side script extensions regardless of allowed list
-            $blockedExtensions = ['php', 'php3', 'php4', 'php5', 'php7', 'phtml', 'phar',
-                'asp', 'aspx', 'jsp', 'js', 'cgi', 'pl', 'py', 'rb',
-                'sh', 'bash', 'exe', 'bat', 'cmd', 'htaccess', 'htpasswd',
-                'svg', 'svgz', 'xml', 'xsl', 'xslt'];
-            if (in_array($extension, $blockedExtensions)) {
+            // Block executable and script-bearing extensions regardless of the allowed list.
+            // The list is shared with the WordPress media importer, the other way into the
+            // library — see falcon_blocked_upload_extensions().
+            if (in_array($extension, falcon_blocked_upload_extensions(), true)) {
                 return response()->json([
                     'success' => false,
                     'message' => "File format '.{$extension}' is not allowed for security reasons.",
