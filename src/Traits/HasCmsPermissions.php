@@ -77,10 +77,18 @@ trait HasCmsPermissions
             return true;
         }
 
-        static $adminCheck = [];
+        // Memoised on the container, never in a static. The key is a set of role ids, and
+        // role ids are small integers that get reused — across an Octane request, a queue
+        // worker, or a restored backup. A static therefore answers "yes, admin" for an id
+        // that now belongs to a subscriber, which is an privilege escalation rather than
+        // merely stale data. Bound to the application instance, it dies with the request.
         $key = implode(',', $ids);
-        if (isset($adminCheck[$key])) {
-            return $adminCheck[$key];
+        $memo = function_exists('falcon_request_memo')
+            ? falcon_request_memo('is_admin')
+            : new \ArrayObject;
+
+        if ($memo->offsetExists($key)) {
+            return $memo[$key];
         }
 
         $isAdmin = DB::table('roles')
@@ -88,7 +96,9 @@ trait HasCmsPermissions
             ->whereIn('slug', ['super-admin', 'administrator', 'admin'])
             ->exists();
 
-        return $adminCheck[$key] = $isAdmin;
+        $memo[$key] = $isAdmin;
+
+        return $isAdmin;
     }
 
     /**
