@@ -3121,6 +3121,12 @@ parameters:
 			path: tests/Feature/Security/AdminAccessTest.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/BackupRestoreTest.php
+
+		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\OrderDownload\:\:\$download_count\.$#'
 			identifier: property.notFound
 			count: 1

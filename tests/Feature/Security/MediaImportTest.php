@@ -168,11 +168,14 @@ class MediaImportTest extends TestCase
     // ---- the rule stays in one place -------------------------------------------
 
     /**
-     * The guarantee behind this whole file: both doors read the same list, so neither can
-     * drift again. A future contributor who reintroduces a private copy in either
-     * controller trips this.
+     * The guarantee behind this whole file: every door reads the same list, so none of them
+     * can drift again. A future contributor who reintroduces a private copy trips this.
+     *
+     * There are three doors into the media directory — the upload screen, this importer,
+     * and a backup restore. Each was written separately, and two of the three had already
+     * drifted by the time anyone looked.
      */
-    public function test_both_doors_read_the_same_block_list(): void
+    public function test_every_door_reads_the_same_block_list(): void
     {
         $blocked = falcon_blocked_upload_extensions();
 
@@ -182,6 +185,7 @@ class MediaImportTest extends TestCase
         foreach ([
             'src/Http/Controllers/Admin/MediaController.php',
             'src/Http/Controllers/Admin/WordPressImportController.php',
+            'src/Http/Controllers/Admin/BackupController.php',
         ] as $file) {
             $source = file_get_contents(__DIR__.'/../../../'.$file);
 
