@@ -246,6 +246,8 @@ class PostController extends Controller
     public function autosaveClassic(Request $request, $id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
+
         $draft = clone $post;
         $draft->title = $request->input('title', $post->title);
         $draft->content = $request->input('content', $post->content);
@@ -262,6 +264,8 @@ class PostController extends Controller
     public function restoreRevisionClassic(Request $request, $id, $revisionId)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
+
         $rev = Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->findOrFail($revisionId);
@@ -281,6 +285,8 @@ class PostController extends Controller
     public function deleteRevision(Request $request, $id, $revisionId)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
+
         Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->where('id', $revisionId)
@@ -293,6 +299,8 @@ class PostController extends Controller
     public function clearRevisions(Request $request, $id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
+
         Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->delete();
@@ -461,6 +469,35 @@ class PostController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * The guard AdminMiddleware defers to.
+     *
+     * canUserAccessUrl() waves every /admin/posts/... and /admin/pages/... row-level path
+     * straight through, because the permission such a path needs depends on the row's own
+     * type and the middleware cannot know it. That makes this the only check standing
+     * between a signed-in user and someone else's content, so every action reachable under
+     * those paths has to call it.
+     *
+     * It lives here as one method rather than being repeated per action: the same six
+     * lines copied into each of store/edit/update/destroy is precisely why the other eight
+     * actions were written without them.
+     */
+    private function authorizePostAction(Post $post, string $verb): void
+    {
+        $this->checkTypeActive($post->type);
+
+        if (!$this->userCanManageType($post->type)) {
+            abort(403, "You do not have permission to {$verb} ".Str::plural($post->type).'.');
+        }
+
+        // Authors and contributors own only their own work.
+        $user = auth()->user();
+        if ($user && ($user->hasRole('author') || $user->hasRole('contributor'))
+            && (int) $post->user_id !== (int) $user->id) {
+            abort(403, "You can only {$verb} your own posts.");
+        }
     }
 
     public function index(Request $request)
@@ -972,6 +1009,7 @@ class PostController extends Controller
     public function clonePost($id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'duplicate');
 
         // 1) Duplicate the post itself as a standalone draft (not a translation).
         $clone = $post->replicate();
@@ -1626,6 +1664,8 @@ class PostController extends Controller
     public function restore($id)
     {
         $post = Post::onlyTrashed()->findOrFail($id);
+        $this->authorizePostAction($post, 'restore');
+
         $post->restore();
         clear_page_cache();
 
@@ -1635,6 +1675,7 @@ class PostController extends Controller
     public function forceDelete($id)
     {
         $post = Post::onlyTrashed()->findOrFail($id);
+        $this->authorizePostAction($post, 'permanently delete');
 
         $post->forceDelete();
         clear_page_cache();
@@ -1649,6 +1690,34 @@ class PostController extends Controller
 
         if (!$ids || $action === '-1') {
             return redirect()->back()->with('error', 'Please select items and an action.');
+        }
+
+        // Every selected row is checked individually. A bulk action is not a way around
+        // the per-row rules: the ids come from the request, so a hand-edited form could
+        // otherwise reach content the user cannot open one at a time. Anything they are
+        // not allowed to touch is dropped from the selection rather than failing the whole
+        // batch, so a legitimate bulk action over a mixed list still does its job.
+        $ids = Post::withTrashed()
+            ->whereIn('id', (array) $ids)
+            ->get()
+            ->filter(function (Post $post) {
+                $user = auth()->user();
+                if (!$user || !$this->userCanManageType($post->type)) {
+                    return false;
+                }
+
+                if (($user->hasRole('author') || $user->hasRole('contributor'))
+                    && (int) $post->user_id !== (int) $user->id) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->pluck('id')
+            ->all();
+
+        if (empty($ids)) {
+            return redirect()->back()->with('error', 'You do not have permission to change the selected items.');
         }
 
         if ($action === 'trash') {
