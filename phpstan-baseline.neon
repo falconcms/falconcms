@@ -3163,6 +3163,108 @@ parameters:
 			path: tests/Feature/Shop/CartPriceRefreshTest.php
 
 		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$address_line_1\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$country\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$coupon_code\.$#'
+			identifier: property.notFound
+			count: 3
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$customer_email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$discount_total\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$first_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$order_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$payment_method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$shipping_total\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$subtotal\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$tax_total\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$total\.$#'
+			identifier: property.notFound
+			count: 5
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/CheckoutTest.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1

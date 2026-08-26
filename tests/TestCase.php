@@ -4,6 +4,8 @@ namespace FalconCms\Core\Tests;
 
 use App\Models\User;
 use FalconCms\Core\FalconCmsServiceProvider;
+use FalconCms\Core\Pro\LicenseGateway;
+use FalconCms\Core\Tests\Doubles\LicensedGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -54,6 +56,21 @@ abstract class TestCase extends Orchestra
         $app['config']->set('queue.default', 'sync');
 
         $app['config']->set('auth.providers.users.model', User::class);
+    }
+
+    /**
+     * Open the Pro-gated storefront routes.
+     *
+     * cart/checkout sit behind EnsurePro, which asks the LicenseGateway contract. Whether
+     * that gate is right is the Pro package's business and is tested there; a test about
+     * checkout needs it open so it can reach checkout.
+     */
+    protected function withProLicensed(): void
+    {
+        $this->app->instance(
+            LicenseGateway::class,
+            new LicensedGateway
+        );
     }
 
     /**
