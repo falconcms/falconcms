@@ -1107,7 +1107,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$type\.$#'
 			identifier: property.notFound
-			count: 22
+			count: 26
 			path: src/Http/Controllers/Admin/PostController.php
 
 		-
@@ -1119,7 +1119,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$user_id\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 5
 			path: src/Http/Controllers/Admin/PostController.php
 
 		-
@@ -1239,7 +1239,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasRole\(\)\.$#'
 			identifier: method.notFound
-			count: 8
+			count: 12
 			path: src/Http/Controllers/Admin/PostController.php
 
 		-
@@ -3149,6 +3149,24 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: tests/Feature/Security/DigitalDownloadTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Security/PostActionGuardTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Security/PostActionGuardTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/PostActionGuardTest.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active_sale_price\.$#'
