@@ -3451,6 +3451,42 @@ parameters:
 			path: tests/Feature/Shop/ShippingWeightTest.php
 
 		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Coupon\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 6
+			path: tests/Feature/Shop/ShopSettingsTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Coupon\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/ShopSettingsTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Coupon\:\:\$min_spend\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/ShopSettingsTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Coupon\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Shop/ShopSettingsTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Coupon\:\:\$usage_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/ShopSettingsTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Shop/ShopSettingsTest.php
+
+		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$title\.$#'
 			identifier: property.notFound
 			count: 1
