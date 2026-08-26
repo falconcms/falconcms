@@ -7352,6 +7352,13 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
             'itemColor' => ['type' => 'color', 'label' => 'Item Text Color', 'default' => '#333333', 'tab' => 'design'],
             'itemColorHover' => ['type' => 'color', 'label' => 'Item Text Color Hover', 'default' => '#0091ea', 'tab' => 'design'],
 
+            // The current page's menu item. The template has always marked it with an
+            // .active class, but nothing ever styled it — so the setting people looked for
+            // was simply missing rather than broken. Empty means "leave it as the resting
+            // colour", which keeps every existing menu looking exactly as it does now.
+            'itemColorActive' => ['type' => 'color', 'label' => 'Item Text Color (Active)', 'default' => '', 'tab' => 'design'],
+            'itemBgColorActive' => ['type' => 'color', 'label' => 'Item Background Color (Active)', 'default' => '', 'tab' => 'design'],
+
             'itemBorderSizeTop' => ['type' => 'number', 'label' => 'Item Border Size Top', 'default' => 0, 'tab' => 'design'],
             'itemBorderSizeRight' => ['type' => 'number', 'label' => 'Item Border Size Right', 'default' => 0, 'tab' => 'design'],
             'itemBorderSizeBottom' => ['type' => 'number', 'label' => 'Item Border Size Bottom', 'default' => 0, 'tab' => 'design'],
@@ -7366,12 +7373,13 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
             'itemBorderColorHover' => ['type' => 'color', 'label' => 'Item Border Color Hover', 'default' => '#0091ea', 'tab' => 'design'],
 
             // Design - Sub Menu Styling
-            'showArrows' => ['type' => 'text', 'label' => 'Show Arrows', 'default' => 'yes', 'tab' => 'submenu'],
+            // NOTE: showArrows and submenuSpace are declared once, above, on the design tab.
+            // They used to be repeated here as well; PHP keeps the last declaration, so the
+            // duplicates quietly overrode the originals and moved both controls to this tab.
             'submenuDirection' => ['type' => 'text', 'label' => 'Expand Direction', 'default' => 'right', 'tab' => 'submenu'],
             'submenuTransition' => ['type' => 'text', 'label' => 'Expand Transition', 'default' => 'fade', 'tab' => 'submenu'],
             'submenuMinWidth' => ['type' => 'text', 'label' => 'Min Width', 'default' => '200px', 'tab' => 'submenu'],
             'submenuMaxWidth' => ['type' => 'text', 'label' => 'Max Width', 'default' => '220px', 'tab' => 'submenu'],
-            'submenuSpace' => ['type' => 'number', 'label' => 'Submenu Space', 'default' => 10, 'tab' => 'submenu'],
 
             // Submenu Typography
             'submenuFontFamily' => ['type' => 'text', 'label' => 'Submenu Font Family', 'default' => 'inherit', 'tab' => 'submenu'],
