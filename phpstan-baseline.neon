@@ -3211,6 +3211,42 @@ parameters:
 			path: tests/Feature/Security/PostActionGuardTest.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/PrivilegeEscalationTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$is_blocked\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/PrivilegeEscalationTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 5
+			path: tests/Feature/Security/PrivilegeEscalationTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$role_id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: tests/Feature/Security/PrivilegeEscalationTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/PrivilegeEscalationTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/PrivilegeEscalationTest.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active_sale_price\.$#'
 			identifier: property.notFound
 			count: 1
