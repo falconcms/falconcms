@@ -26,9 +26,20 @@
           rel="stylesheet" 
           :href="'https://fonts.googleapis.com/css2?family=' + el.settings.fontFamily.replace(/ /g, '+') + ':wght@100;200;300;400;500;600;700;800;900&display=swap'">
 
-    <!-- CSS hover for desktop submenu visibility (supplements JS events for builder canvas compatibility) -->
+    <!--
+        CSS hover for desktop submenu visibility (supplements JS events for builder canvas
+        compatibility), plus the main items' own colours.
+
+        Those colours are written as rules rather than left to the :style object further
+        down, which carries no !important and is therefore the weakest declaration on the
+        page — anything in the admin stylesheet that does carry it would win, and the canvas
+        is supposed to show what the front end will show. Resting and hover are both written
+        here so the pair keeps its own cascade: :hover is the more specific selector, so it
+        wins without either having to outrank the other by weight. The front-end template
+        does the same thing for the same reason.
+    -->
     <component :is="'style'" v-if="device === 'desktop'"
-        :key="'menu-style-' + el.id + '-' + (el.settings.justification || 'flex-start') + '-' + (el.settings.submenuDirection || 'left') + '-' + (el.settings.submenuSpace || 10) + '-' + (el.settings.subSubMenuDirection || 'right') + '-' + (el.settings.subSubMenuOffset ?? 5) + '-' + (el.settings.submenuTextColorHover || '#2271b1')"
+        :key="'menu-style-' + el.id + '-' + (el.settings.justification || 'flex-start') + '-' + (el.settings.submenuDirection || 'left') + '-' + (el.settings.submenuSpace || 10) + '-' + (el.settings.subSubMenuDirection || 'right') + '-' + (el.settings.subSubMenuOffset ?? 5) + '-' + (el.settings.submenuTextColorHover || '#2271b1') + '-' + (el.settings.itemColor || '') + '-' + (el.settings.itemBgColor || '') + '-' + (el.settings.itemColorHover || '') + '-' + (el.settings.itemBgColorHover || '')"
         :innerHTML="
             '.menu-container-' + el.id + ' .lazy-menu-nav { justify-content: ' + (el.settings.justification || 'flex-start') + '!important; }' +
             '.menu-container-' + el.id + ' .lazy-menu-list { justify-content: ' + (el.settings.justification || 'flex-start') + '!important; }' +
@@ -38,7 +49,13 @@
             '.menu-container-' + el.id + ' .admin-submenu > .admin-menu-item:hover > .admin-submenu {' +
             'opacity:1!important;visibility:visible!important;' +
             'transform:translateX(' + (el.settings.subSubMenuDirection === 'left' ? '-' : '') + (el.settings.subSubMenuOffset !== undefined ? el.settings.subSubMenuOffset : 5) + 'px)!important;}' +
-            '.menu-container-' + el.id + ' .admin-submenu .admin-menu-item:hover>.admin-menu-link{color:' + (el.settings.submenuTextColorHover || '#2271b1') + '!important;}'
+            '.menu-container-' + el.id + ' .admin-submenu .admin-menu-item:hover>.admin-menu-link{color:' + (el.settings.submenuTextColorHover || '#2271b1') + '!important;}' +
+            '.menu-container-' + el.id + ' .lazy-menu-list > .admin-menu-item > .admin-menu-link{' +
+            'color:' + (el.settings.itemColor || '#333') + '!important;' +
+            'background-color:' + (el.settings.itemBgColor || 'transparent') + '!important;}' +
+            '.menu-container-' + el.id + ' .lazy-menu-list > .admin-menu-item:hover > .admin-menu-link{' +
+            'color:' + (el.settings.itemColorHover || '#2271b1') + '!important;' +
+            'background-color:' + (el.settings.itemBgColorHover || 'transparent') + '!important;}'
         ">
     </component>
 

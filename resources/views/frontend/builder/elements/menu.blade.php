@@ -226,13 +226,13 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         return $style;
     };
 
-    // Colours carry !important like the typography above them. Without it a theme rule
-    // marked !important beats the inline style, and because the :hover rule further down
-    // does carry it the menu ends up with a working hover colour and a dead resting one —
-    // which reads as "the colour setting does nothing".
+    // Colours are deliberately NOT set here. They belong in the stylesheet below, next to
+    // their :hover counterparts, for two reasons that pull in opposite directions from an
+    // inline style: without !important a theme rule that has it wins and the colour looks
+    // dead, and *with* !important the inline declaration outranks every stylesheet rule
+    // including :hover, so the hover colour dies instead. As a rule beside :hover both work,
+    // because :hover is the more specific selector.
     $mainLinkStyle = $getTypographyStyle('', '16px');
-    $mainLinkStyle .= ' color: ' . ($s['itemColor'] ?? '#333') . ' !important;';
-    $mainLinkStyle .= ' background-color: ' . ($s['itemBgColor'] ?? 'transparent') . ' !important;';
     $mainLinkStyle .= ' padding: ' . ($s['itemPaddingTop'] ?? 10) . 'px ' . ($s['itemPaddingRight'] ?? 15) . 'px ' . ($s['itemPaddingBottom'] ?? 10) . 'px ' . ($s['itemPaddingLeft'] ?? 15) . 'px;';
     $mainLinkStyle .= ' border-radius: ' . ($s['itemBorderRadius'] ?? 0) . 'px;';
     
@@ -244,14 +244,11 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     $mainLinkStyle .= ' transition: all ' . $transitionTime . 's ease-in-out; text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;';
 
     $subLinkStyle = $getTypographyStyle('submenu', '14px');
-    $subLinkStyle .= ' color: ' . ($s['submenuTextColor'] ?? '#333') . ' !important;';
-    $subLinkStyle .= ' background-color: ' . ($s['submenuBgColor'] ?? 'transparent') . ' !important;';
     $subLinkStyle .= ' padding: ' . ($s['submenuPaddingTop'] ?? 10) . 'px ' . ($s['submenuPaddingRight'] ?? 20) . 'px ' . ($s['submenuPaddingBottom'] ?? 10) . 'px ' . ($s['submenuPaddingLeft'] ?? 20) . 'px;';
     $subLinkStyle .= ' text-decoration: none; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; gap: 10px;';
 
     // Mobile Specifics
     $mobileLinkStyle = $getTypographyStyle('mobileMenu', '16px');
-    $mobileLinkStyle .= ' color: ' . ($s['mobileMenuTextColor'] ?? '#333') . ' !important;';
     $mobileLinkStyle .= ' min-height: ' . ($s['mobileMenuItemMinHeight'] ?? 60) . 'px;';
     
     $mPtop = $s['mobileMenuItemPaddingTop'] ?? 12;
@@ -390,24 +387,30 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             ? "border-style: solid !important; border-width: {$bth}px {$brh}px {$bbh}px {$blh}px !important; border-color: {$bch} !important;"
             : '';
     @endphp
+    .menu-{{ $elId }} .falcon-menu-link { color: {{ $s['itemColor'] ?? '#333' }} !important; background-color: {{ $s['itemBgColor'] ?? 'transparent' }} !important; }
     .menu-{{ $elId }} .falcon-menu-link:hover { color: {{ $s['itemColorHover'] ?? '#0091ea' }} !important; background-color: {{ $s['itemBgColorHover'] ?? 'transparent' }} !important; {{ $hoverBorderStyle }} }
 
-    {{-- The item for the page you are on. The .active class has always been emitted; these
-         are the rules that were missing. Each colour is written only when it was set, so a
-         menu that never had these settings keeps its resting colours exactly as before. --}}
-    @if(!empty($s['itemColorActive']) || !empty($s['itemBgColorActive']))
+    {{-- The item for the page you are on. The .active class has always been emitted; this
+         is the rule that was missing.
+
+         There is no separate "active colour" setting in the design panel — only the four
+         pickers for resting and hover. So the active item is styled with the SAME colours
+         as hover: the current page is shown the way any other item looks the instant you
+         point at it, which is the ordinary meaning of "this is where you are". Falling
+         back to itemColorActive/itemBgColorActive keeps room for a future panel to offer a
+         distinct active colour without another migration of this template. --}}
     .menu-{{ $elId }} .falcon-menu-item.active > .falcon-menu-link,
     .menu-{{ $elId }} .falcon-menu-link.active {
-        @if(!empty($s['itemColorActive'])) color: {{ $s['itemColorActive'] }} !important; @endif
-        @if(!empty($s['itemBgColorActive'])) background-color: {{ $s['itemBgColorActive'] }} !important; @endif
+        color: {{ $s['itemColorActive'] ?: ($s['itemColorHover'] ?? '#0091ea') }} !important;
+        background-color: {{ $s['itemBgColorActive'] ?: ($s['itemBgColorHover'] ?? 'transparent') }} !important;
     }
-    {{-- Hover still wins over the active state, so the menu keeps responding to the pointer. --}}
+    {{-- The pointer still wins over the active state while it is actually there, so the
+         menu keeps responding to a hover on top of the current page too. --}}
     .menu-{{ $elId }} .falcon-menu-item.active > .falcon-menu-link:hover,
     .menu-{{ $elId }} .falcon-menu-link.active:hover {
         color: {{ $s['itemColorHover'] ?? '#0091ea' }} !important;
         background-color: {{ $s['itemBgColorHover'] ?? 'transparent' }} !important;
     }
-    @endif
     
     /* Arrow Styling & Visibility */
     .menu-{{ $elId }} .falcon-menu-arrow {
@@ -481,6 +484,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     .menu-{{ $elId }} .falcon-submenu .falcon-menu-link { border-bottom: 1px solid {{ $subSepColor }} !important; }
     /* Remove bottom border only from the last item of the FIRST-LEVEL submenu (L2), not nested (L3+) */
     .menu-{{ $elId }} .lazy-desktop-nav .lazy-menu-list > .falcon-menu-item > .falcon-submenu > .falcon-menu-item:last-child > .falcon-menu-link { border-bottom: none !important; }
+    .menu-{{ $elId }} .falcon-submenu .falcon-menu-link { color: {{ $s['submenuTextColor'] ?? '#333' }} !important; background-color: {{ $s['submenuBgColor'] ?? 'transparent' }} !important; }
     .menu-{{ $elId }} .falcon-submenu .falcon-menu-link:hover { color: {{ $s['submenuTextColorHover'] ?? '#0091ea' }} !important; background: rgba(0,0,0,0.02); }
     .menu-{{ $elId }} .falcon-menu-item:hover > .falcon-submenu { opacity: 1; visibility: visible; transform: {{ $subHoverTransform }}; }
     .menu-{{ $elId }} .falcon-submenu .falcon-menu-item:hover > .falcon-submenu {
@@ -523,6 +527,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     @else
     .menu-{{ $elId }} .falcon-mobile-nav .falcon-menu-link { border-bottom: none !important; }
     @endif
+    .menu-{{ $elId }} .falcon-mobile-nav .falcon-menu-link { color: {{ $s['mobileMenuTextColor'] ?? '#333' }} !important; }
     .menu-{{ $elId }} .falcon-mobile-nav .falcon-menu-link:hover { color: {{ $s['mobileMenuTextColorHover'] ?? '#0091ea' }} !important; background: {{ $s['mobileMenuBgColorHover'] ?? '#f8f9fa' }} !important; }
     
     .menu-{{ $elId }} .mobile-submenu {
