@@ -21,6 +21,29 @@ class BackupController extends Controller
         }
     }
 
+    /**
+     * Whether this connection can be dumped and restored as SQL.
+     *
+     * buildSqlDump() is written in MySQL — SHOW TABLES, SHOW CREATE TABLE, backticks — and
+     * runSqlDump() replays it the same way. The README lists SQLite as a supported database
+     * for running the CMS, and it is; this one tool is the exception. Saying so plainly
+     * beats letting a shop owner press Create Backup and receive a raw SQL syntax error
+     * that reads like the CMS is broken.
+     *
+     * Media backups carry no SQL and work on every driver.
+     */
+    private function supportsSqlDump(): bool
+    {
+        return DB::connection()->getDriverName() === 'mysql';
+    }
+
+    private function sqlDumpUnsupportedMessage(): string
+    {
+        return 'Database backups need MySQL or MariaDB. This site runs on '
+            .DB::connection()->getDriverName()
+            .', so only media backups are available here.';
+    }
+
     private function backupDir(): string
     {
         $dir = storage_path('app/backups');
@@ -161,6 +184,10 @@ class BackupController extends Controller
 
     private function doDatabaseBackup()
     {
+        if (!$this->supportsSqlDump()) {
+            return back()->with('error', $this->sqlDumpUnsupportedMessage());
+        }
+
         $filename = 'backup-'.Carbon::now()->format('Y-m-d-H-i-s').'.sql';
         file_put_contents($this->backupDir().'/'.$filename, $this->buildSqlDump());
 
@@ -207,6 +234,10 @@ class BackupController extends Controller
 
     private function doFullBackup()
     {
+        if (!$this->supportsSqlDump()) {
+            return back()->with('error', $this->sqlDumpUnsupportedMessage());
+        }
+
         if (!class_exists('\ZipArchive')) {
             return back()->with('error', 'A full backup needs the PHP "zip" extension, which is not enabled on this server.');
         }
@@ -326,7 +357,7 @@ class BackupController extends Controller
 
             return back()->with('success', "Database restored successfully from \"{$filename}\" ({$executed} statements executed).");
         } catch (\Throwable $e) {
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            $this->toggleForeignKeys(true);
 
             return back()->with('error', 'Restoration failed: '.$e->getMessage());
         }
@@ -437,11 +468,25 @@ class BackupController extends Controller
             $stripMediaPrefix = ($sqlIndex !== null);
 
             $count = 0;
+            $skippedUnsafe = 0;
             foreach ($mediaEntries as $i => $logical) {
                 $target = $stripMediaPrefix ? preg_replace('#^media/#', '', $logical) : $logical;
                 if ($target === '' || str_contains($target, '..')) {
                     continue;
                 } // safety
+
+                // This is the third door into the media directory, after the upload screen
+                // and the WordPress importer, and it writes to the public disk — which is
+                // web-accessible. An archive is input like any other: it can be uploaded on
+                // the Backup screen, and a site restoring a copy it was handed has no way to
+                // know what is inside. So the same rule applies here as at the other two
+                // doors; see falcon_blocked_upload_extensions().
+                $ext = strtolower(pathinfo($target, PATHINFO_EXTENSION));
+                if ($ext === '' || in_array($ext, falcon_blocked_upload_extensions(), true)) {
+                    $skippedUnsafe++;
+
+                    continue;
+                }
 
                 $content = $zip->getFromIndex($i);
                 if ($content === false) {
@@ -458,6 +503,11 @@ class BackupController extends Controller
                 } // count only real writes
             }
             $done[] = "{$count} media files";
+            if ($skippedUnsafe > 0) {
+                // Worth saying out loud: a backup that carries files the CMS will not store
+                // is either damaged or was built by someone else.
+                $done[] = "{$skippedUnsafe} unsafe file".($skippedUnsafe === 1 ? '' : 's').' skipped';
+            }
         }
 
         // 3) Media Library records — only in a media-only backup. (A full backup
@@ -500,17 +550,42 @@ class BackupController extends Controller
         $statements = $this->parseSqlStatements($sql);
         $executed = 0;
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        $this->toggleForeignKeys(false);
         try {
             foreach ($statements as $stmt) {
                 DB::unprepared($stmt);
                 $executed++;
             }
         } finally {
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            $this->toggleForeignKeys(true);
         }
 
         return $executed;
+    }
+
+    /**
+     * Turn foreign-key enforcement off around a restore, in whatever dialect this
+     * connection speaks. A dump drops and recreates tables in an arbitrary order, so the
+     * constraints have to stand aside while it runs.
+     *
+     * Unrecognised drivers are left alone rather than guessed at: failing to relax the
+     * constraints is recoverable, and throwing here would take down the restore — which is
+     * what the unconditional MySQL statement used to do on every other database, including
+     * from inside the catch block that was meant to report the error.
+     */
+    private function toggleForeignKeys(bool $on): void
+    {
+        try {
+            match (DB::connection()->getDriverName()) {
+                'mysql', 'mariadb' => DB::statement('SET FOREIGN_KEY_CHECKS='.($on ? '1' : '0')),
+                'sqlite' => DB::statement('PRAGMA foreign_keys = '.($on ? 'ON' : 'OFF')),
+                'pgsql' => DB::statement("SET session_replication_role = '".($on ? 'origin' : 'replica')."'"),
+                default => null,
+            };
+        } catch (\Throwable $e) {
+            // Best effort. A restore that cannot relax its constraints may still succeed,
+            // and must not be aborted by the attempt.
+        }
     }
 
     // Parse a multi-statement SQL dump into individual statements,
