@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Tests\Feature;
 
 use FalconCms\Core\Tests\TestCase;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -46,5 +47,51 @@ class MigrationsTest extends TestCase
         $this->assertTrue(Schema::hasColumn('shop_products', 'cross_sell_ids'));
 
         $this->assertTrue(Schema::hasColumn('users', 'is_blocked'));
+    }
+
+    /**
+     * Every table a model names has to be created by a migration.
+     *
+     * This is the general form of a bug that shipped: Wishlist named shop_wishlists and no
+     * migration ever created it. The development site had the table, made by hand while the
+     * feature was being built, so the wishlist worked there and 500'd on every real install
+     * — nobody noticed because the only machine anyone tried it on was the one where it had
+     * been created by accident.
+     *
+     * Reading the models rather than listing tables by hand means the next model added with
+     * a forgotten migration fails here, not on someone's site.
+     */
+    public function test_every_table_a_model_names_exists_after_migrating(): void
+    {
+        $missing = [];
+
+        foreach (glob(__DIR__.'/../../src/Models/*.php') as $file) {
+            $class = 'FalconCms\\Core\\Models\\'.basename($file, '.php');
+            if (!class_exists($class)) {
+                continue;
+            }
+
+            $reflection = new \ReflectionClass($class);
+            if ($reflection->isAbstract() || !$reflection->isSubclassOf(Model::class)) {
+                continue;
+            }
+
+            $table = $reflection->newInstanceWithoutConstructor()->getTable();
+            if (!Schema::hasTable($table)) {
+                $missing[] = $reflection->getShortName().' → '.$table;
+            }
+        }
+
+        $this->assertSame([], $missing,
+            'these models name a table no migration creates: '.implode(', ', $missing));
+    }
+
+    public function test_the_wishlist_table_is_created_with_the_shape_the_model_uses(): void
+    {
+        $this->assertTrue(Schema::hasTable('shop_wishlists'));
+
+        foreach (['id', 'user_id', 'product_id', 'created_at', 'updated_at'] as $column) {
+            $this->assertTrue(Schema::hasColumn('shop_wishlists', $column), $column);
+        }
     }
 }

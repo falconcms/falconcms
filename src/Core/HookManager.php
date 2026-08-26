@@ -27,10 +27,45 @@ class HookManager
      * boots more than once — a test run, a queue worker, Octane — accumulates a second copy
      * of every callback and fires each of them twice. Call this immediately before a
      * re-boot, never during a request.
+     *
+     * Note what this does NOT bring back. Hooks registered while a file is being loaded —
+     * helpers.php registers the whole builder element library that way — run once per
+     * process and are gone for good once this is called. Prefer snapshot()/restore() when
+     * what you want is isolation rather than a genuinely empty registry.
      */
     public static function reset(): void
     {
         self::$instance = null;
+    }
+
+    /**
+     * Capture the current registry, to be handed back to restore() later.
+     *
+     * The pair exists for callers that re-boot the application inside one process and want
+     * every boot to start from the same baseline: take a snapshot before the first boot,
+     * restore it before each subsequent one. Unlike reset() this keeps whatever was
+     * registered at file-load time, because the snapshot was taken while it was still there.
+     *
+     * @return array{actions: array<string, mixed>, filters: array<string, mixed>}
+     */
+    public static function snapshot(): array
+    {
+        $instance = self::getInstance();
+
+        return [
+            'actions' => $instance->actions,
+            'filters' => $instance->filters,
+        ];
+    }
+
+    /**
+     * @param  array{actions: array<string, mixed>, filters: array<string, mixed>}  $state
+     */
+    public static function restore(array $state): void
+    {
+        $instance = self::getInstance();
+        $instance->actions = $state['actions'] ?? [];
+        $instance->filters = $state['filters'] ?? [];
     }
 
     // Actions
