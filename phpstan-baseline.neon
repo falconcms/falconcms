@@ -3103,6 +3103,24 @@ parameters:
 			path: tests/Feature/Security/AccessControlTest.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$role_id\.$#'
+			identifier: property.notFound
+			count: 5
+			path: tests/Feature/Security/AdminAccessTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/AdminAccessTest.php
+
+		-
+			message: '#^Method Illuminate\\Testing\\TestResponse\<Symfony\\Component\\HttpFoundation\\Response\>\:\:assertForbidden\(\) invoked with 1 parameter, 0 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: tests/Feature/Security/AdminAccessTest.php
+
+		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\OrderDownload\:\:\$download_count\.$#'
 			identifier: property.notFound
 			count: 1
