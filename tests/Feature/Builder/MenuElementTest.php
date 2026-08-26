@@ -147,15 +147,21 @@ class MenuElementTest extends TestCase
     {
         $template = $this->template();
 
+        // Null-coalesced before the Elvis check: itemColorActive/itemBgColorActive did not
+        // exist when older menus were saved, so the key can be genuinely absent rather than
+        // merely empty. `$s['x'] ?: ...` still evaluates `$s['x']` first and throws on a
+        // missing key exactly where `?? ''` does not — this is pinned by an actual render
+        // in test_a_menu_saved_before_the_active_fallback_existed_still_renders() below,
+        // which is the only way this class of bug is ever caught.
         $this->assertStringContainsString(
-            "\$s['itemColorActive'] ?: (\$s['itemColorHover']",
+            "(\$s['itemColorActive'] ?? '') ?: (\$s['itemColorHover']",
             $template,
-            'the active text colour no longer falls back to the hover colour'
+            'the active text colour no longer falls back to the hover colour safely'
         );
         $this->assertStringContainsString(
-            "\$s['itemBgColorActive'] ?: (\$s['itemBgColorHover']",
+            "(\$s['itemBgColorActive'] ?? '') ?: (\$s['itemBgColorHover']",
             $template,
-            'the active background no longer falls back to the hover colour'
+            'the active background no longer falls back to the hover colour safely'
         );
     }
 
@@ -197,5 +203,56 @@ class MenuElementTest extends TestCase
         $this->assertStringContainsString("'#'", $template, 'anchors are not excluded');
         $this->assertStringContainsString('PHP_URL_HOST', $template,
             'a link to another host would be treated as the current page');
+    }
+
+    // ---- rendering with data an old menu could actually have --------------------
+
+    /**
+     * itemColorActive and itemBgColorActive were added after menus already existed in the
+     * wild, so a menu saved before that has a settings array that does not merely have
+     * them empty — it does not have the keys at all. `?:` still evaluates its left side,
+     * so `$s['itemColorActive'] ?: ...` throws on a genuinely missing key exactly the way
+     * `??` does not; this shipped in the same commit that added the fallback and crashed
+     * every page carrying an old menu. Only a real render catches it — no amount of
+     * string-matching the source would have.
+     */
+    public function test_a_menu_saved_before_the_active_fallback_existed_still_renders(): void
+    {
+        $settings = [
+            'menuId' => null,
+            'itemColor' => '#333333',
+            'itemBgColor' => 'transparent',
+            'itemColorHover' => '#0091ea',
+            'itemBgColorHover' => 'transparent',
+            // itemColorActive / itemBgColorActive deliberately absent.
+        ];
+
+        $html = view('falcon-cms::frontend.builder.elements.menu', [
+            'el' => ['id' => 'test-menu-1', 'settings' => $settings],
+        ])->render();
+
+        $this->assertStringContainsString('color: #0091ea', $html,
+            'a menu with no active colours of its own must fall back to the hover colour');
+    }
+
+    // ---- the canvas must lay items out the way the front end will --------------
+
+    /**
+     * The `<li>` on the canvas hardcoded alignItems: 'stretch' for desktop, ignoring
+     * el.settings.alignItems entirely — while the front end always honoured the setting,
+     * defaulting to 'center'. A stretched item is exactly as tall as the row, which is not
+     * what its own padding says; a WYSIWYG canvas that silently overrides a setting the
+     * front end respects is a bug on its own, whatever it looks like on screen.
+     */
+    public function test_the_canvas_honours_the_align_items_setting_instead_of_forcing_stretch(): void
+    {
+        $canvas = file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/components/elements/menu.blade.php'
+        );
+
+        $this->assertStringNotContainsString("alignItems: 'stretch'", $canvas,
+            'the canvas still forces every item to the full row height');
+        $this->assertStringContainsString('el.settings.alignItems', $canvas,
+            'the canvas does not read the alignItems setting at all');
     }
 }

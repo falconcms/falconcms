@@ -158,7 +158,7 @@
                 <li v-for="(item, idx) in falconMenuData[el.settings.menuId]"
                     class="admin-menu-item relative group/item"
                     :key="idx"
-                    :style="device === 'desktop' ? { display: 'flex', alignItems: 'stretch' } : {}"
+                    :style="device === 'desktop' ? { display: 'flex', alignItems: (el.settings.alignItems || 'center') } : {}"
                     @mouseenter="el._hoveredIdx = idx; el._hoveredSubIdx = null; el._hoveredGSubIdx = null; el._activeMenuLink = null; el._activeSubMenuLink = null"
                     @mouseleave="el._hoveredIdx = null; el._hoveredSubIdx = null; el._hoveredGSubIdx = null; el._activeMenuLink = null; el._activeSubMenuLink = null">
                     

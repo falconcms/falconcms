@@ -401,8 +401,8 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
          distinct active colour without another migration of this template. --}}
     .menu-{{ $elId }} .falcon-menu-item.active > .falcon-menu-link,
     .menu-{{ $elId }} .falcon-menu-link.active {
-        color: {{ $s['itemColorActive'] ?: ($s['itemColorHover'] ?? '#0091ea') }} !important;
-        background-color: {{ $s['itemBgColorActive'] ?: ($s['itemBgColorHover'] ?? 'transparent') }} !important;
+        color: {{ ($s['itemColorActive'] ?? '') ?: ($s['itemColorHover'] ?? '#0091ea') }} !important;
+        background-color: {{ ($s['itemBgColorActive'] ?? '') ?: ($s['itemBgColorHover'] ?? 'transparent') }} !important;
     }
     {{-- The pointer still wins over the active state while it is actually there, so the
          menu keeps responding to a hover on top of the current page too. --}}
