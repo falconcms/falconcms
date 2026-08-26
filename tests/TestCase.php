@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Tests;
 
 use App\Models\User;
+use FalconCms\Core\Core\HookManager;
 use FalconCms\Core\FalconCmsServiceProvider;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Tests\Doubles\LicensedGateway;
@@ -23,6 +24,11 @@ abstract class TestCase extends Orchestra
 
     protected function setUp(): void
     {
+        // Before the app boots, because booting is what registers the hooks. The registry
+        // is a process-wide singleton, so without this each test would inherit the previous
+        // test's filters and a second copy of every hook the provider registers.
+        HookManager::reset();
+
         parent::setUp();
 
         // get_cms_option() keeps a per-request static store on top of the cache. Tests run

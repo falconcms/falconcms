@@ -3151,6 +3151,48 @@ parameters:
 			path: tests/Feature/Security/DigitalDownloadTest.php
 
 		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Media\:\:\$path\.$#'
+			identifier: property.notFound
+			count: 4
+			path: tests/Feature/Security/MediaImportTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/MediaImportTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Media\:\:\$filename\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/MediaUploadTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Media\:\:\$path\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Security/MediaUploadTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Media\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/MediaUploadTest.php
+
+		-
+			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Media\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/MediaUploadTest.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/MediaUploadTest.php
+
+		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$content\.$#'
 			identifier: property.notFound
 			count: 2
