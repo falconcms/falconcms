@@ -6982,11 +6982,24 @@ if (!function_exists('lazy_render_special_menu_item')) {
             'special_search' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
             'special_wishlist' => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
         ];
-        $icon = $icons[$type] ?? '';
+        // The Menu Item Options modal lets an editor pick a FontAwesome icon for every item,
+        // special ones included — but this always drew its own fixed SVG regardless, so a
+        // chosen icon was saved (and shown correctly on the item's row in that modal) and then
+        // silently ignored the moment the menu actually rendered. The fallback SVG is only for
+        // an item nobody has picked an icon for, matching how it looked before this existed.
+        $icon = !empty($item->icon) ? '<i class="'.e($item->icon).'"></i>' : ($icons[$type] ?? '');
 
         // Count-badge appearance (NO display property here — Tailwind classes control show/hide,
         // matching the header badge so LazyCart's `hidden`-class toggle keeps working).
-        $badgeStyle = 'min-width:18px;height:18px;padding:0 5px;margin-left:6px;font-size:11px;font-weight:700;line-height:1;color:#fff;background:#0091ea;border-radius:9999px;';
+        //
+        // Background follows the Customizer's Primary Color — the same setting the theme
+        // header's own cart badge uses (there via the `bg-primary` Tailwind class, which reads
+        // the identical option through the theme's runtime Tailwind config). Read directly
+        // rather than assuming a `--primary` CSS variable or Tailwind config is in scope: this
+        // HTML can end up wherever the menu element is placed, not only inside the theme's own
+        // header markup.
+        $badgeColor = get_cms_option('theme_primary_color', '#0091ea');
+        $badgeStyle = 'min-width:18px;height:18px;padding:0 5px;margin-left:6px;font-size:11px;font-weight:700;line-height:1;color:#fff;background:'.e($badgeColor).';border-radius:9999px;';
         $badgeCls = 'inline-flex items-center justify-center';
         $iconWrap = 'display:inline-flex;align-items:center;gap:2px;';
 
