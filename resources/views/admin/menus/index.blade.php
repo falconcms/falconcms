@@ -1,5 +1,10 @@
 <x-falcon-cms::layouts.admin title="Menus">
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
+    {{-- Extra icon libraries the Menu Item Options icon picker also offers (unconditional here
+         — this is an admin screen, not the front end falcon_icon_set_links() is careful about). --}}
+    @foreach(falcon_icon_sets() as $__iconSet)
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/'.$__iconSet['asset']) }}">
+    @endforeach
     <x-falcon-cms::admin.delete-modal />
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Menus</h1>
@@ -542,23 +547,12 @@
 
     /* ──────────────────────────────────
        Menu item Options (icon picker + show-only-icon)
+
+       Every icon the Falcon Builder's own icon picker offers — Font Awesome plus every extra
+       set (Bootstrap, Remix, Boxicons, Lucide) — as one flat combined list, not a hand-picked
+       subset. An icon available anywhere else in the builder is available here too.
     ────────────────────────────────── */
-    const MI_ICONS = [
-        'fa fa-house','fa fa-home','fa fa-bars','fa fa-grip','fa fa-table-cells','fa fa-list','fa fa-bars-staggered',
-        'fa fa-magnifying-glass','fa fa-search','fa fa-cart-shopping','fa fa-bag-shopping','fa fa-basket-shopping','fa fa-store',
-        'fa fa-heart','fa fa-star','fa fa-user','fa fa-users','fa fa-circle-user','fa fa-right-to-bracket','fa fa-right-from-bracket',
-        'fa fa-gear','fa fa-sliders','fa fa-bell','fa fa-envelope','fa fa-phone','fa fa-location-dot','fa fa-map',
-        'fa fa-tag','fa fa-tags','fa fa-folder','fa fa-folder-open','fa fa-file','fa fa-file-lines','fa fa-newspaper','fa fa-book',
-        'fa fa-image','fa fa-images','fa fa-camera','fa fa-video','fa fa-music','fa fa-play','fa fa-podcast',
-        'fa fa-info','fa fa-circle-info','fa fa-circle-question','fa fa-headset','fa fa-comment','fa fa-comments',
-        'fa fa-gift','fa fa-truck','fa fa-box','fa fa-credit-card','fa fa-wallet','fa fa-percent','fa fa-fire','fa fa-bolt',
-        'fa fa-globe','fa fa-language','fa fa-calendar','fa fa-clock','fa fa-bookmark','fa fa-thumbs-up','fa fa-share-nodes',
-        'fa fa-arrow-right','fa fa-arrow-left','fa fa-chevron-right','fa fa-chevron-down','fa fa-angles-right','fa fa-link','fa fa-paperclip',
-        'fa fa-laptop','fa fa-mobile','fa fa-desktop','fa fa-headphones','fa fa-keyboard','fa fa-plug','fa fa-wifi','fa fa-camera-retro',
-        'fa fa-shirt','fa fa-gem','fa fa-crown','fa fa-utensils','fa fa-mug-hot','fa fa-cake-candles','fa fa-leaf','fa fa-seedling',
-        'fa fa-dumbbell','fa fa-heart-pulse','fa fa-pills','fa fa-stethoscope','fa fa-graduation-cap','fa fa-briefcase','fa fa-building',
-        'fab fa-facebook-f','fab fa-instagram','fab fa-x-twitter','fab fa-whatsapp','fab fa-youtube','fab fa-linkedin-in','fab fa-tiktok','fab fa-telegram','fab fa-pinterest-p'
-    ];
+    const MI_ICONS = @json(falcon_all_builder_icons());
     let miOptionsItemId = null;
 
     const MEGA_MENUS_DATA = @json($megaMenusList);
@@ -571,6 +565,8 @@
         document.getElementById('mi-show-only-icon').checked = !!item.show_only_icon;
         document.getElementById('mi-icon-search').value = '';
         miUpdateSelectedPreview();
+        miIconLimit = MI_ICON_PAGE;
+        miLastIconQuery = null;
         renderIconGrid('');
 
         // Mega menu section: only show for top-level (depth=0) items
@@ -632,19 +628,43 @@
         }
     }
 
+    // 10,000+ icons across five fonts is too many DOM nodes to paint at once without the grid
+    // stuttering, so it's paginated instead of capped outright: a page renders instantly, and
+    // "Show more" grows it — every icon is reachable either by searching or by paging through,
+    // never permanently hidden the way a flat cutoff would leave the other ~9,800 of them.
+    const MI_ICON_PAGE = 300;
+    let miIconLimit = MI_ICON_PAGE;
+    let miLastIconQuery = null;
+
     function renderIconGrid(query) {
         const grid = document.getElementById('mi-icon-grid');
         if (!grid) return;
         const item = items.find(i => i.id === miOptionsItemId);
         const cur = item ? item.icon : '';
         const q = (query || '').toLowerCase().trim();
-        const list = q ? MI_ICONS.filter(ic => ic.toLowerCase().includes(q)) : MI_ICONS;
+        if (q !== miLastIconQuery) {
+            miIconLimit = MI_ICON_PAGE;
+            miLastIconQuery = q;
+        }
+        const full = q ? MI_ICONS.filter(ic => ic.toLowerCase().includes(q)) : MI_ICONS;
+        const list = full.slice(0, miIconLimit);
+        const remaining = full.length - list.length;
         grid.innerHTML = list.map(ic => {
             const active = (ic === cur);
             return `<button type="button" onclick="setItemIcon('${ic}')" title="${ic}"
                 style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px solid ${active ? '#2271b1' : '#e5e7eb'};background:${active ? '#eaf3fb' : '#fff'};border-radius:6px;cursor:pointer;font-size:16px;color:${active ? '#2271b1' : '#555'};">
                 <i class="${ic}"></i></button>`;
         }).join('') || '<p style="grid-column:1/-1;text-align:center;color:#646970;font-size:12px;padding:20px;">No icons found.</p>';
+        if (remaining > 0) {
+            grid.innerHTML += `<button type="button" onclick="miShowMoreIcons()"
+                style="grid-column:1/-1;padding:8px;font-size:12px;font-weight:700;color:#2271b1;background:#f0f6fb;border:1px dashed #c3d9ef;border-radius:6px;cursor:pointer;margin-top:4px;">
+                Show ${Math.min(MI_ICON_PAGE, remaining)} more (${remaining} left of ${full.length})</button>`;
+        }
+    }
+
+    function miShowMoreIcons() {
+        miIconLimit += MI_ICON_PAGE;
+        renderIconGrid(document.getElementById('mi-icon-search').value || '');
     }
 
     function toggleSettings(id) {

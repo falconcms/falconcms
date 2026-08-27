@@ -574,6 +574,53 @@ if (!function_exists('falcon_google_fonts')) {
     }
 }
 
+if (!function_exists('falcon_font_awesome_icons')) {
+    /**
+     * The full set of FontAwesome icon classes bundled with the theme's icon font — every
+     * Solid, Regular and Brand icon it ships. The Falcon Builder's own icon picker has always
+     * offered this whole set; the Menu Item Options icon picker had a hand-picked ~100-icon
+     * subset instead, so an icon that existed in the builder simply wasn't there when picking
+     * one for a menu item. One shared list means adding an icon anywhere adds it everywhere.
+     *
+     * @return array<int,string>
+     */
+    function falcon_font_awesome_icons(): array
+    {
+        static $icons = null;
+        if ($icons !== null) {
+            return $icons;
+        }
+        $file = __DIR__.'/../resources/font-awesome-icons.json';
+        $decoded = is_file($file) ? json_decode((string) file_get_contents($file), true) : [];
+
+        return $icons = is_array($decoded) ? $decoded : [];
+    }
+}
+
+if (!function_exists('falcon_all_builder_icons')) {
+    /**
+     * Every icon the builder offers, from every set, as one flat combined list — Font Awesome
+     * plus each of falcon_icon_sets() (Bootstrap, Remix, Boxicons, Lucide).
+     *
+     * The builder's own icon picker keeps these in separate tabs, so it fetches each set's
+     * icons on demand as a tab is opened. A picker that has no tabs — like Menu Item Options —
+     * needs them as one list instead: offering "all our icons" means all of them, not just the
+     * Font Awesome ones, or a Bootstrap/Remix/Boxicons/Lucide icon picked for a menu item
+     * would show as a blank glyph everywhere this list is the only source.
+     *
+     * @return array<int,string>
+     */
+    function falcon_all_builder_icons(): array
+    {
+        $icons = falcon_font_awesome_icons();
+        foreach (array_keys(falcon_icon_sets()) as $set) {
+            $icons = array_merge($icons, falcon_icon_set_names($set));
+        }
+
+        return $icons;
+    }
+}
+
 if (!function_exists('falcon_pro_installed_version')) {
     /** The installed falconcms/pro package version, or null when Pro isn't installed. */
     function falcon_pro_installed_version(): ?string
