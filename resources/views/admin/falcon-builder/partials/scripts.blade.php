@@ -494,6 +494,10 @@
             // Customizer theme fonts (passed from controller)
             const themeBodyFont    = @json($themeBodyFont ?? null);
             const themeHeadingFont = @json($themeHeadingFont ?? null);
+            // The theme styles `body nav` with its own typography setting (falls back to the
+            // body font on a site that never set one), so this — not themeBodyFont — is what
+            // "Default/Inherit" actually renders as on the real site for the Menu element.
+            const themeNavFont     = @json($themeNavFont ?? $themeBodyFont ?? null);
 
             // Google Fonts database (mirrors customizer list)
             const BUILDER_FONTS = @json(falcon_google_fonts());
@@ -2591,6 +2595,29 @@
             }, { flush: 'post' });
 
             // Dynamic Styles
+            // Desktop preview is floored at the real desktop breakpoint (.canvas-container.desktop's
+            // min-width in styles.blade.php) so a menu or a row of columns lays out exactly as it
+            // will for a real visitor — but the editor panel is rarely that wide once the sidebar
+            // and design panel are open. Left alone that just moves the problem: either the extra
+            // width silently clips (content cut off) or the canvas grows a horizontal scrollbar
+            // under every single edit. `zoom` shrinks the space the canvas occupies while still
+            // laying its contents out at the real, unscaled desktop width internally — so children
+            // size themselves for a real desktop and nothing spills past the visible panel, without
+            // a permanent scrollbar. (transform: scale() cannot do this: it repaints smaller but
+            // leaves the original, oversized layout box in the document flow.)
+            const canvasScale = ref(1);
+            const updateCanvasScale = () => {
+                if (device.value !== 'desktop' || isPreview.value) {
+                    canvasScale.value = 1;
+                    return;
+                }
+                const panel = document.querySelector('.builder-canvas-area');
+                if (!panel) return;
+                const floor = (window.builderBreakpoints?.medium || 1100) + 1;
+                const available = panel.clientWidth;
+                canvasScale.value = (available > 0 && available < floor) ? available / floor : 1;
+            };
+
             const canvasStyle = computed(() => {
                 const pt = window.builderPagePadding?.top || '60px';
                 const pb = window.builderPagePadding?.bottom || '60px';
@@ -2602,7 +2629,7 @@
                 if (device.value === 'tablet') {
                     return { ...baseStyle, width: (window.builderBreakpoints?.medium || 1100) + 'px' };
                 }
-                return { ...baseStyle, width: '100%' };
+                return { ...baseStyle, width: '100%', zoom: canvasScale.value !== 1 ? canvasScale.value : undefined };
             });
 
             const formatBasisToFraction = (basis) => {
@@ -2657,6 +2684,17 @@
                 // Only bare numbers get the unit appended. Mirrors PHP getUnitVal().
                 if (isNaN(str)) return str;
                 return str + unit;
+            };
+
+            // A saved font is "Josefin Sans, sans-serif" — the fallback stack, not just the
+            // Google Fonts name. Building the css2 URL from the raw value asks the API for
+            // the family "Josefin Sans, sans-serif", which it doesn't recognise, so the
+            // canvas silently falls back to a system font while the frontend (which already
+            // strips to the first name) renders the real one — same padding, visibly
+            // different box because the glyphs differ. Mirrors PHP's explode(',', $ff)[0].
+            const googleFontFamily = (family) => {
+                const name = String(family || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+                return name.replace(/ /g, '+');
             };
 
             // ── Content Box canvas helpers ───────────────────────────────────────
@@ -4247,6 +4285,20 @@
             });
             // ── End Undo / Redo ──────────────────────────────────────────────────
 
+            // ── Desktop canvas zoom-to-fit ───────────────────────────────────────
+            onMounted(() => {
+                nextTick(updateCanvasScale);
+                const panel = document.querySelector('.builder-canvas-area');
+                if (panel && window.ResizeObserver) {
+                    new ResizeObserver(updateCanvasScale).observe(panel);
+                } else {
+                    window.addEventListener('resize', updateCanvasScale);
+                }
+            });
+            watch(device, () => nextTick(updateCanvasScale));
+            watch(isPreview, () => nextTick(updateCanvasScale));
+            // ── End desktop canvas zoom-to-fit ───────────────────────────────────
+
             return {
                 layout, isPreview, isSaving, isDirty, activeTab, activePanelTab, activeColPanelTab, device, activeResponsiveMenu, availableElements,
                 activeCi, editingCi, activeColi, activeColCi, editingContext,
@@ -4258,7 +4310,7 @@
                 addContainer, addColumn, addNestedColumn, addElement, duplicateContainer, duplicateColumn, duplicateElement, duplicateNestedColumn, duplicateNestedRow, duplicateNestedElement, saveLayout, openMediaModal, openMediaModalForTarget, openGalleryImageMedia, openGalleryBulkMedia, galleryDragStart, galleryDrop, openColorPicker, falconEyeDropper, falconColorDisplay, falconColorInput,
                 isDragging, isColumnDrag, dragType, dragSource, dragCi, dragColi, dragEli, dragNcoli, startDrag,
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
-                canvasStyle, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal,
+                canvasStyle, canvasScale, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal, googleFontFamily,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
                 cardPerView, cardPreviewCols, cardPreviewCount,
                 searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements, elementLocked, isElementPro,
@@ -4274,7 +4326,7 @@
                 navDragSrc, navDragOver, navDragStart, navDragEnd, navDragOverHandler, navDrop,
                 ctxMenu, ctxClipboard, ctxMenuTitle, openCtxMenu, closeCtxMenu, ctxEdit, ctxSave, ctxClone, ctxRemove, ctxCopy, ctxPaste, ctxSaveAsGlobal,
                 globalSections, showGlobalModal, globalModalName, isSavingGlobal, openGlobalModal, saveAsGlobal, unlinkGlobal, insertGlobalSection, deleteGlobalSection,
-                themeBodyFont, themeHeadingFont, builderFontGroups, builderFonts: BUILDER_FONTS,
+                themeBodyFont, themeHeadingFont, themeNavFont, builderFontGroups, builderFonts: BUILDER_FONTS,
                 titleFontVariants, loadBuilderFont,
                 undo, redo, canUndo, canRedo,
                 applyButtonSize, searchIconQuery, filteredIcons, iconTabCount, selectIcon, activeIconTab, iconTabs, selectIconTab, iconSetLoading, clearColorField, activeAccordionItem, activeTabsItem, activeIconListItem,

@@ -255,4 +255,93 @@ class MenuElementTest extends TestCase
         $this->assertStringContainsString('el.settings.alignItems', $canvas,
             'the canvas does not read the alignItems setting at all');
     }
+
+    /**
+     * A saved font is "Josefin Sans, sans-serif" — the fallback stack, not just the Google
+     * Fonts name. The front end strips to the first name before building the css2 URL
+     * (explode(',', $ff)[0]); the canvas built the same URL straight from the raw setting,
+     * asking Google Fonts for the family "Josefin Sans, sans-serif", which it doesn't
+     * recognise. The custom font silently failed to load and the canvas fell back to a
+     * system font — same padding as the front end, visibly different box, because the
+     * glyphs it was measuring were not the same glyphs. This is what the user's "canvas
+     * padding looks narrower" screenshots actually were: a font that never loaded.
+     */
+    public function test_the_canvas_strips_the_font_family_before_requesting_it_from_google(): void
+    {
+        $canvas = file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/components/elements/menu.blade.php'
+        );
+
+        foreach (['el.settings.fontFamily', 'el.settings.submenuFontFamily', 'el.settings.mobileMenuFontFamily'] as $setting) {
+            $this->assertStringNotContainsString($setting.'.replace(/ /g', $canvas,
+                "{$setting} is still built into the Google Fonts URL without stripping the fallback stack first");
+            $this->assertStringContainsString('googleFontFamily(('.$setting, $canvas,
+                "{$setting} does not go through googleFontFamily() before being requested");
+        }
+    }
+
+    /** The helper itself has to do what the front end's explode(',', $ff)[0] does. */
+    public function test_the_google_font_family_helper_strips_the_fallback_stack(): void
+    {
+        $scripts = file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/scripts.blade.php'
+        );
+
+        $start = strpos($scripts, 'const googleFontFamily = ');
+        $this->assertNotFalse($start, 'the googleFontFamily helper is missing');
+
+        $body = substr($scripts, $start, 400);
+        $this->assertStringContainsString("split(',')[0]", $body,
+            'the helper no longer isolates the first font in the stack');
+    }
+
+    /**
+     * "Inherit" resolves to two different fonts depending on where you're looking. On the
+     * real site the theme styles `body nav` with its own Navigation typography setting from
+     * the customizer — not the body font — so that's what a menu left on "Inherit" actually
+     * renders as there. The canvas has no theme stylesheet at all, so "inherit" fell through
+     * to the admin panel's own UI font (Inter/Outfit) instead: identical padding, visibly
+     * different box, because the two were measuring different glyphs. This — not a padding
+     * bug — is what a user seeing "the same menu looks narrower in the canvas" was actually
+     * looking at; confirmed by rendering both with a real browser and comparing computed
+     * styles, which showed matching padding down to the pixel and only the font differing.
+     *
+     * themeBodyFont resolves to the site's *body* font (e.g. headings/paragraphs), which is
+     * a different customizer setting from Navigation and would reproduce the same class of
+     * mismatch with a different font swapped in — so it is deliberately not an acceptable
+     * fallback here, only themeNavFont is.
+     */
+    public function test_the_canvas_falls_back_to_the_theme_nav_font_not_the_body_font(): void
+    {
+        $canvas = file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/components/elements/menu.blade.php'
+        );
+
+        $this->assertStringNotContainsString('themeBodyFont', $canvas,
+            'the menu canvas reads the body font, not the Navigation typography setting the theme actually styles it with');
+
+        foreach (['el.settings.fontFamily', 'el.settings.submenuFontFamily', 'el.settings.mobileMenuFontFamily'] as $setting) {
+            $this->assertMatchesRegularExpression(
+                '/'.preg_quote($setting, '/').'.*?!== "inherit"\\).*?themeNavFont/',
+                $canvas,
+                "{$setting} does not fall back to themeNavFont when left on Inherit"
+            );
+        }
+    }
+
+    /** The controllers have to actually supply what the canvas now reads. */
+    public function test_the_builder_controllers_pass_the_theme_nav_font_to_the_view(): void
+    {
+        foreach ([
+            'src/Http/Controllers/Admin/PostController.php',
+            'src/Http/Controllers/Admin/BuilderLibraryController.php',
+        ] as $file) {
+            $source = file_get_contents(__DIR__.'/../../../'.$file);
+
+            $this->assertStringContainsString('theme_typography_nav', $source,
+                "{$file} no longer reads the Navigation typography setting");
+            $this->assertStringContainsString('themeNavFont', $source,
+                "{$file} no longer computes themeNavFont for the view");
+        }
+    }
 }

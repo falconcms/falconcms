@@ -104,13 +104,16 @@ class BuilderLibraryController extends Controller
         $customElements = apply_falcon_filters('falcon_builder_elements', []);
         $bodyRaw = get_cms_option('theme_typography_body');
         $headingRaw = get_cms_option('theme_typography_h1');
+        $navRaw = get_cms_option('theme_typography_nav');
         $bodyFont = is_array($bodyRaw) ? $bodyRaw : json_decode((string) $bodyRaw, true);
         $headingFont = is_array($headingRaw) ? $headingRaw : json_decode((string) $headingRaw, true);
+        $navFont = is_array($navRaw) ? $navRaw : json_decode((string) $navRaw, true);
         $themeBodyFont = $bodyFont['family'] ?? null;
         $themeHeadingFont = $headingFont['family'] ?? null;
+        $themeNavFont = $navFont['family'] ?? $themeBodyFont;
 
         return view('falcon-cms::admin.falcon-builder.mega-menu-builder', compact(
-            'megaMenu', 'customElements', 'themeBodyFont', 'themeHeadingFont'
+            'megaMenu', 'customElements', 'themeBodyFont', 'themeHeadingFont', 'themeNavFont'
         ));
     }
 

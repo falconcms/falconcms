@@ -110,6 +110,13 @@
         display: flex;
         flex-direction: column;
         padding: 0;
+        /* The desktop canvas below is floored at a real desktop width and zoomed out to fit
+           this area (see canvasScale in scripts.blade.php) — a properly-computed zoom leaves
+           no overflow to scroll. Left as auto this also un-hides a small, unrelated few-px
+           rounding slop that was always here (scrollbar-width vs 100%-width arithmetic) and
+           was never a problem while it was silently clipped; auto turned it into a permanent
+           scrollbar under every edit for no layout benefit. Hidden here; the rare frame before
+           the zoom script has run is not worth trading that for.  */
         overflow-x: hidden;
     }
 
@@ -129,6 +136,16 @@
     .canvas-container.mobile, .canvas-container.tablet {
         box-shadow: 0 10px 45px rgba(0,0,0,0.15) !important;
         outline: 1px solid #cbd5e1;
+    }
+    /* "Desktop" only means what the front end's desktop media query means when the canvas is
+       actually as wide as that breakpoint. At 100% width the panel can be narrower than that
+       (sidebar + design panel both eat into the same screen a real visitor's browser doesn't
+       have), so desktop-only layouts — a menu with enough items, a row of unstacked columns —
+       were shown less room than they will ever actually have, and unwrapped content spilled
+       out past its own column with nothing wrong in the column's or the element's own CSS.
+       Floor it at the real breakpoint; .builder-canvas-area scrolls horizontally on the rest. */
+    .canvas-container.desktop {
+        min-width: {{ (int) get_cms_option('theme_medium_screen_breakpoint', '1100') + 1 }}px;
     }
 
 

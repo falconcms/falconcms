@@ -15,16 +15,28 @@
          getCanvasVisibilityStyle(el.settings)
      ]">
     
-    <!-- Font Loader for Builder -->
-    <link v-if="el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== 'inherit'" 
-          rel="stylesheet" 
-          :href="'https://fonts.googleapis.com/css2?family=' + el.settings.mobileMenuFontFamily.replace(/ /g, '+') + ':wght@100;200;300;400;500;600;700;800;900&display=swap'">
-    <link v-if="el.settings.submenuFontFamily && el.settings.submenuFontFamily !== 'inherit'" 
-          rel="stylesheet" 
-          :href="'https://fonts.googleapis.com/css2?family=' + el.settings.submenuFontFamily.replace(/ /g, '+') + ':wght@100;200;300;400;500;600;700;800;900&display=swap'">
-    <link v-if="el.settings.fontFamily && el.settings.fontFamily !== 'inherit'" 
-          rel="stylesheet" 
-          :href="'https://fonts.googleapis.com/css2?family=' + el.settings.fontFamily.replace(/ /g, '+') + ':wght@100;200;300;400;500;600;700;800;900&display=swap'">
+    <!--
+        Font Loader for Builder.
+
+        "Inherit" does not mean the same thing in both places. The theme layout styles
+        `body nav` with its own Navigation typography setting from the customizer — not the
+        body font — so on the real site a menu left on "Inherit" renders in that font. The
+        canvas has no theme stylesheet at all, so "inherit" fell through to the admin panel's
+        own UI font instead: same padding, visibly different box, because the two were
+        measuring different glyphs. themeNavFont is that same customizer setting (already
+        passed into this page for the font pickers, falling back to the body font on a site
+        that never set one), so a menu left on "inherit" loads and renders the real font here
+        too, the way the front end already does simply by being on the themed page.
+    -->
+    <link v-if="(el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== 'inherit') || themeNavFont"
+          rel="stylesheet"
+          :href="'https://fonts.googleapis.com/css2?family=' + googleFontFamily((el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== 'inherit') ? el.settings.mobileMenuFontFamily : themeNavFont) + ':wght@100;200;300;400;500;600;700;800;900&display=swap'">
+    <link v-if="(el.settings.submenuFontFamily && el.settings.submenuFontFamily !== 'inherit') || themeNavFont"
+          rel="stylesheet"
+          :href="'https://fonts.googleapis.com/css2?family=' + googleFontFamily((el.settings.submenuFontFamily && el.settings.submenuFontFamily !== 'inherit') ? el.settings.submenuFontFamily : themeNavFont) + ':wght@100;200;300;400;500;600;700;800;900&display=swap'">
+    <link v-if="(el.settings.fontFamily && el.settings.fontFamily !== 'inherit') || themeNavFont"
+          rel="stylesheet"
+          :href="'https://fonts.googleapis.com/css2?family=' + googleFontFamily((el.settings.fontFamily && el.settings.fontFamily !== 'inherit') ? el.settings.fontFamily : themeNavFont) + ':wght@100;200;300;400;500;600;700;800;900&display=swap'">
 
     <!--
         CSS hover for desktop submenu visibility (supplements JS events for builder canvas
@@ -175,7 +187,7 @@
                               "min-height: " + getUnitVal(el.settings.mobileMenuItemMinHeight || 50, "px") + " !important; " +
                               "font-size: " + getUnitVal(el.settings.mobileMenuFontSize || 16, "px") + " !important; " +
                               "font-weight: " + (el.settings.mobileMenuFontWeight || "400") + " !important; " +
-                              "font-family: " + (el.settings.mobileMenuFontFamily || "inherit") + " !important; " +
+                              "font-family: " + ((el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== "inherit") ? el.settings.mobileMenuFontFamily : (themeNavFont || "inherit")) + " !important; " +
                               "text-transform: " + (el.settings.mobileMenuTextTransform || "none") + " !important; " +
                               "letter-spacing: " + getUnitVal(el.settings.mobileMenuLetterSpacing || 0, "px") + " !important; " +
                               "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
@@ -196,7 +208,7 @@
                                borderBottomWidth: getUnitVal(el._hoveredIdx === idx ? (el.settings.itemBorderSizeBottomHover ?? el.settings.itemBorderSizeBottom ?? 0) : (el.settings.itemBorderSizeBottom ?? 0), "px"),
                                borderLeftWidth: getUnitVal(el._hoveredIdx === idx ? (el.settings.itemBorderSizeLeftHover ?? el.settings.itemBorderSizeLeft ?? 0) : (el.settings.itemBorderSizeLeft ?? 0), "px"),
                                borderColor: el._hoveredIdx === idx ? (el.settings.itemBorderColorHover || el.settings.itemBorderColor || "transparent") : (el.settings.itemBorderColor || "transparent"),
-                               fontFamily: el.settings.fontFamily !== "inherit" ? el.settings.fontFamily : "inherit",
+                               fontFamily: (el.settings.fontFamily && el.settings.fontFamily !== "inherit") ? el.settings.fontFamily : (themeNavFont || "inherit"),
                                fontSize: getUnitVal(el.settings.fontSize || 14, "px"),
                                fontWeight: el.settings.fontWeight || "400",
                                lineHeight: el.settings.lineHeight || "inherit",
@@ -216,7 +228,7 @@
                             "letter-spacing: " + (el.settings.mobileMenuLetterSpacing ? (isNaN(el.settings.mobileMenuLetterSpacing) ? el.settings.mobileMenuLetterSpacing : el.settings.mobileMenuLetterSpacing + "px") : "0px") + " !important; " +
                             "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
                             "text-transform: " + (el.settings.mobileMenuTextTransform || "none") + " !important; " +
-                            "font-family: " + (el.settings.mobileMenuFontFamily || "inherit") + " !important; " +
+                            "font-family: " + ((el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== "inherit") ? el.settings.mobileMenuFontFamily : (themeNavFont || "inherit")) + " !important; " +
                             "font-weight: " + (el.settings.mobileMenuFontWeight || "400") + " !important; " +
                             "color: inherit !important;"
                         ) : ""'>@{{ item.title }}</span>
@@ -290,7 +302,7 @@
                                        "min-height: " + getUnitVal(el.settings.mobileMenuItemMinHeight || 50, "px") + " !important; " +
                                        "font-size: " + getUnitVal(el.settings.mobileMenuFontSize || 15, "px") + " !important; " +
                                        "font-weight: " + (el.settings.mobileMenuFontWeight || "400") + " !important; " +
-                                       "font-family: " + (el.settings.mobileMenuFontFamily || "inherit") + " !important; " +
+                                       "font-family: " + ((el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== "inherit") ? el.settings.mobileMenuFontFamily : (themeNavFont || "inherit")) + " !important; " +
                                        "letter-spacing: " + getUnitVal(el.settings.mobileMenuLetterSpacing || 0, "px") + " !important; " +
                                        "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
                                        "text-transform: " + (el.settings.mobileMenuTextTransform || "none") + " !important; " +
@@ -303,7 +315,7 @@
                                     paddingRight: (el.settings.submenuPaddingRight !== undefined ? el.settings.submenuPaddingRight : 20) + "px",
                                     paddingBottom: (el.settings.submenuPaddingBottom !== undefined ? el.settings.submenuPaddingBottom : 10) + "px",
                                     paddingLeft: (el.settings.submenuPaddingLeft !== undefined ? el.settings.submenuPaddingLeft : 20) + "px",
-                                    fontFamily: el.settings.submenuFontFamily !== "inherit" ? el.settings.submenuFontFamily : "inherit",
+                                    fontFamily: (el.settings.submenuFontFamily && el.settings.submenuFontFamily !== "inherit") ? el.settings.submenuFontFamily : (themeNavFont || "inherit"),
                                     fontSize: getUnitVal(el.settings.submenuFontSize || 14, "px"),
                                     fontWeight: el.settings.submenuFontWeight || "400",
                                     letterSpacing: el.settings.submenuLetterSpacing || "normal",
@@ -327,7 +339,7 @@
                                      "letter-spacing: " + (el.settings.mobileMenuLetterSpacing ? (isNaN(el.settings.mobileMenuLetterSpacing) ? el.settings.mobileMenuLetterSpacing : el.settings.mobileMenuLetterSpacing + "px") : "0px") + " !important; " +
                                      "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
                                      "text-transform: " + (el.settings.mobileMenuTextTransform || "none") + " !important; " +
-                                     "font-family: " + (el.settings.mobileMenuFontFamily || "inherit") + " !important; " +
+                                     "font-family: " + ((el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== "inherit") ? el.settings.mobileMenuFontFamily : (themeNavFont || "inherit")) + " !important; " +
                                      "font-weight: " + (el.settings.mobileMenuFontWeight || "400") + " !important; " +
                                      "color: inherit !important;"
                                  ) : ""'>@{{ child.title }}</span>
@@ -402,7 +414,7 @@
                                        "min-height: " + getUnitVal(el.settings.mobileMenuItemMinHeight || 50, "px") + " !important; " +
                                        "font-size: " + getUnitVal(el.settings.mobileMenuFontSize || 15, "px") + " !important; " +
                                        "font-weight: " + (el.settings.mobileMenuFontWeight || "400") + " !important; " +
-                                       "font-family: " + (el.settings.mobileMenuFontFamily || "inherit") + " !important; " +
+                                       "font-family: " + ((el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== "inherit") ? el.settings.mobileMenuFontFamily : (themeNavFont || "inherit")) + " !important; " +
                                        "letter-spacing: " + getUnitVal(el.settings.mobileMenuLetterSpacing || 0, "px") + " !important; " +
                                        "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
                                        "text-transform: " + (el.settings.mobileMenuTextTransform || "none") + " !important; " +
@@ -415,7 +427,7 @@
                                              paddingRight: (el.settings.submenuPaddingRight !== undefined ? el.settings.submenuPaddingRight : 20) + "px",
                                              paddingBottom: (el.settings.submenuPaddingBottom !== undefined ? el.settings.submenuPaddingBottom : 10) + "px",
                                              paddingLeft: (el.settings.submenuPaddingLeft !== undefined ? el.settings.submenuPaddingLeft : 20) + "px",
-                                             fontFamily: el.settings.submenuFontFamily !== "inherit" ? el.settings.submenuFontFamily : "inherit",
+                                             fontFamily: (el.settings.submenuFontFamily && el.settings.submenuFontFamily !== "inherit") ? el.settings.submenuFontFamily : (themeNavFont || "inherit"),
                                              fontSize: getUnitVal(el.settings.submenuFontSize || 14, "px"),
                                              fontWeight: el.settings.submenuFontWeight || "400",
                                              letterSpacing: el.settings.submenuLetterSpacing || "normal",
@@ -439,7 +451,7 @@
                                              "letter-spacing: " + (el.settings.mobileMenuLetterSpacing ? (isNaN(el.settings.mobileMenuLetterSpacing) ? el.settings.mobileMenuLetterSpacing : el.settings.mobileMenuLetterSpacing + "px") : "0px") + " !important; " +
                                              "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
                                              "text-transform: " + (el.settings.mobileMenuTextTransform || "none") + " !important; " +
-                                             "font-family: " + (el.settings.mobileMenuFontFamily || "inherit") + " !important; " +
+                                             "font-family: " + ((el.settings.mobileMenuFontFamily && el.settings.mobileMenuFontFamily !== "inherit") ? el.settings.mobileMenuFontFamily : (themeNavFont || "inherit")) + " !important; " +
                                              "font-weight: " + (el.settings.mobileMenuFontWeight || "400") + " !important; " +
                                              "color: inherit !important;"
                                          ) : ""'>@{{ gchild.title }}</span>
