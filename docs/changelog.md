@@ -5,7 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.4.0 <Badge type="tip" text="Latest" /> {#v2-4-0}
+## v2.5.0 <Badge type="tip" text="Latest" /> {#v2-5-0}
+
+**Released: 2026-08-28**
+
+### Added
+
+- **Column Order field** — rearrange a column, or a nested column, visually per breakpoint from
+  the General tab. Desktop, Tablet and Mobile can each have their own order without moving the
+  column in the document, so tab order and screen readers are unaffected.
+- **Full icon library in Menu Item Options** — the icon picker for menu items now offers every
+  icon the builder ships (Font Awesome, Bootstrap, Remix, Boxicons, Lucide — ~10,000 icons)
+  instead of a curated subset of about a hundred, with paging so the grid stays fast.
+
+### Fixed
+
+- The builder canvas could render a menu's text in the wrong font — both a broken Google Fonts
+  request for a custom font, and reading the theme's body font instead of its Navigation font
+  for "Inherit".
+- Desktop preview in the canvas could be narrower than a real desktop, so content spilled past
+  its own column; the canvas now matches the theme's real desktop breakpoint.
+- Cart / Search / Wishlist menu items ignored a custom icon chosen for them, and the count
+  badge ignored the Customizer's Primary Color.
+
+---
+
+## v2.4.0 {#v2-4-0}
 
 **Released: 2026-08-12**
 

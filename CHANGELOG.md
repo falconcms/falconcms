@@ -4,6 +4,47 @@ All notable changes to FalconCMS are recorded here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.5.0] — 2026-08-28
+
+### Added
+
+- **An Order field for columns and nested columns**, in the General tab's existing responsive
+  picker. A column can be given a different visual order for Desktop, Tablet and Mobile
+  independently — it's a flex `order` only, so the column never moves in the document and tab
+  order / screen readers keep following the real content regardless of what any breakpoint
+  says.
+- **The Menu Item Options icon picker now offers every icon the builder ships** — Font Awesome
+  plus Bootstrap, Remix, Boxicons and Lucide, around 10,000 icons combined, instead of a
+  hand-picked subset of about a hundred. Rendering that many at once made the grid stutter, so
+  it pages instead: an instant first batch, and a "Show more" control that reaches the rest,
+  same as narrowing with search.
+
+### Fixed
+
+- **The builder menu's "Inherit" font, and its Google Fonts request, were both wrong in the
+  canvas.** A saved font like "Josefin Sans, sans-serif" was sent to Google's API whole instead
+  of split to just the family name, which the API doesn't recognise — the canvas silently fell
+  back to a system font while the real site (which already stripped the value correctly)
+  rendered the real one. Separately, a menu left on "Inherit" read the theme's *body* font
+  instead of its actual *Navigation* typography setting, a different customizer option on
+  themes that set one. Both left the same padding rendering as a visibly different box, because
+  the two were measuring different glyphs.
+- **Desktop preview could be narrower than any real desktop, so content overflowed its own
+  column in the canvas.** "Desktop" mode used whatever width the editor panel had free — less
+  than a real visitor's browser once the sidebar and design panel are open — so a menu or row
+  of columns that fits perfectly for a real visitor spilled out past its own column in the
+  editor. The desktop canvas is now floored at the theme's real breakpoint and zoomed to fit
+  the panel, so it always lays out exactly as a real desktop would.
+- **Cart, Search and Wishlist menu items ignored their own chosen icon.** The Menu Item Options
+  modal let an editor pick one and previewed it correctly, but the menu itself always drew a
+  fixed built-in icon regardless — the choice was saved and simply never reached the page. A
+  chosen icon is now used; an item nobody has touched keeps the original icon unchanged.
+- **The Cart/Wishlist count badge ignored the Customizer's Primary Color**, hardcoded to the
+  color's own default instead — correct by coincidence on a stock install, wrong the moment a
+  site picked its own color.
+
+---
+
 ## [2.4.2] — 2026-08-15
 
 **A security and correctness release. Updating is strongly recommended for every site,
