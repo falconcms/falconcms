@@ -1353,7 +1353,7 @@
                 boxShadowBlurRadius: 0, boxShadowSpreadRadius: 0, boxShadowColor: '#000000', boxShadowStyle: 'outer',
                 sticky: false, stickyDesktop: true, stickyTablet: true, stickyMobile: true,
                 stickyOffset: 0, stickyZIndex: 99,
-                zIndex: null, overflow: 'default',
+                zIndex: null, overflow: 'default', order: null,
                 ...overrides
             });
 
@@ -3087,6 +3087,10 @@
                     marginTop: getUnitVal(getResponsiveVal(s, 'marginTop', device.value), getResponsiveVal(s, 'marginTopUnit', device.value) || s.marginTopUnit || 'px'),
                     marginBottom: getUnitVal(getResponsiveVal(s, 'marginBottom', device.value), getResponsiveVal(s, 'marginBottomUnit', device.value) || s.marginBottomUnit || 'px'),
                     zIndex: getResponsiveVal(s, 'zIndex', device.value) || s.zIndex || 'auto',
+                    // Visual position only — the column stays exactly where it is in the DOM
+                    // (source order, tab order, screen readers), the same trade-off the front
+                    // end makes with the identical CSS property at the identical breakpoints.
+                    order: getResponsiveVal(s, 'order', device.value) || 0,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'stretch',

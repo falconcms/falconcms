@@ -102,6 +102,33 @@
                 </div>
             </div>
 
+            <!-- Order -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-[11px] font-bold text-[#444]">Order</label>
+                    <div class="flex gap-1 items-center">
+                        <button @click="resetResponsiveVal(editingColumn.settings, 'order', device, null)" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
+                        <div class="relative inline-block">
+                            <button @click="activeResponsiveMenu = activeResponsiveMenu === 'colOrder' ? null : 'colOrder'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
+                                <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
+                                <i class="fa fa-caret-down text-[8px] text-slate-400"></i>
+                            </button>
+                            <div v-show="activeResponsiveMenu === 'colOrder'" class="absolute right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 flex gap-0.5 p-1 min-w-max">
+                                <button @click="device = 'desktop'; activeResponsiveMenu = null" :class="device === 'desktop' ? 'bg-[#2271b1] text-white' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Desktop"><i class="fa fa-desktop text-[11px]"></i></button>
+                                <button @click="device = 'tablet'; activeResponsiveMenu = null" :class="device === 'tablet' ? 'bg-[#2271b1] text-white' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Tablet"><i class="fa fa-tablet-alt text-[11px]"></i></button>
+                                <button @click="device = 'mobile'; activeResponsiveMenu = null" :class="device === 'mobile' ? 'bg-[#2271b1] text-white' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Mobile"><i class="fa fa-mobile-alt text-[11px]"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="number"
+                       :value="getResponsiveVal(editingColumn.settings, 'order', device)"
+                       @input="setResponsiveVal(editingColumn.settings, 'order', device, $event.target.value === '' ? null : Number($event.target.value))"
+                       placeholder="0"
+                       class="w-full border border-slate-200 rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                <p class="text-[10px] text-slate-400 mt-1.5 leading-snug">Rearranges columns visually within this row — lower numbers come first. Switch to Tablet or Mobile above to set a different order for that device without changing Desktop. Content itself isn't moved, only where it's shown.</p>
+            </div>
+
             <!-- Content Layout -->
             <div>
                 <div class="flex justify-between items-center mb-2">

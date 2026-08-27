@@ -245,6 +245,9 @@
             . ($s['boxShadowColor'] ?? '#000000');
     }
     if (!empty($s['zIndex']))   $outerStyles[] = 'z-index: ' . $s['zIndex'];
+    // Visual position only — order never moves the column in the DOM, so tab order and
+    // screen readers keep following the real content, only the flex layout reads differently.
+    if (!empty($s['order']))   $outerStyles[] = 'order: ' . $s['order'];
     if (!empty($s['overflow']) && $s['overflow'] !== 'default') $innerStyles[] = 'overflow: ' . $s['overflow'];
     if (!empty($s['maxHeight'])) $innerStyles[] = 'max-height: ' . $s['maxHeight'];
 
@@ -479,6 +482,9 @@
         // Responsive z-index (outer)
         $rZIdx = $getColRespOvr('zIndex', $rDev);
         if ($rZIdx !== null) $rOuter[] = "z-index:{$rZIdx}!important";
+        // Responsive order (outer) — reorder columns per breakpoint without touching the DOM
+        $rOrder = $getColRespOvr('order', $rDev);
+        if ($rOrder !== null) $rOuter[] = "order:{$rOrder}!important";
         // Responsive overflow (inner)
         $rOvf = $getColRespOvr('overflow', $rDev);
         if ($rOvf !== null && $rOvf !== 'default') $rInner[] = "overflow:{$rOvf}!important";
