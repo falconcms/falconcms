@@ -200,9 +200,9 @@ genuine bug.
 
 ## Requirements
 
-- PHP 8.1+
-- Laravel 10, 11, 12, or 13
-- MySQL 5.7+ / MariaDB 10.3+ / SQLite 3.x
+- PHP 8.3+
+- Laravel 13+
+- MySQL 5.7+ / MariaDB 10.3+
 
 ---
 

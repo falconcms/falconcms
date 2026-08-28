@@ -10,20 +10,51 @@ export default defineConfig({
   lang: 'en-US',
   base: '/falconcms/',
   title: 'FalconCMS',
-  titleTemplate: '%s | FalconCMS',
-  description: 'A WordPress-like drag-and-drop CMS package for Laravel — page builder, e-commerce, multi-language, hooks API, mega menus, and more.',
+  titleTemplate: ':title | FalconCMS',
+  description: 'Documentation for FalconCMS — an open-source Laravel CMS with a visual page builder, e-commerce, dynamic content, themes, plugins, and developer APIs.',
   lastUpdated: true,
 
   head: [
     ['link', { rel: 'icon', href: '/falconcms/falcon-cms-logo.png', type: 'image/png' }],
     ['meta', { property: 'og:type',        content: 'website' }],
     ['meta', { property: 'og:site_name',   content: 'FalconCMS' }],
-    ['meta', { property: 'og:description', content: 'A WordPress-like drag-and-drop CMS package for Laravel — page builder, e-commerce, multi-language, hooks API, mega menus, and more.' }],
     ['meta', { property: 'og:image',       content: 'https://falconcms.github.io/falconcms/falcon-cms-logo.png' }],
     ['meta', { name: 'twitter:card',       content: 'summary_large_image' }],
     ['meta', { name: 'twitter:image',      content: 'https://falconcms.github.io/falconcms/falcon-cms-logo.png' }],
-    ['meta', { name: 'keywords',           content: 'Laravel CMS, Laravel page builder, drag-and-drop, e-commerce, multi-language, mega menu, hooks API' }],
+    ['meta', { name: 'keywords',           content: 'Laravel CMS, open source Laravel CMS, Laravel content management system, Laravel page builder, Laravel e-commerce, Laravel CMS plugins, Laravel CMS themes' }],
   ],
+
+  // Emits a canonical URL for every page, plus per-page Open Graph / Twitter
+  // metadata — but only where the page has not already declared its own.
+  transformHead({ pageData, head, title, description }) {
+    const origin = 'https://falconcms.github.io/falconcms/'
+    const path = pageData.relativePath
+      .replace(/(^|\/)index\.md$/, '$1')
+      .replace(/\.md$/, '.html')
+    const url = origin + path
+
+    const declared = (key, value) => head.some(([, attrs = {}]) => attrs[key] === value)
+
+    const tags = [['link', { rel: 'canonical', href: url }]]
+
+    if (!declared('property', 'og:url')) {
+      tags.push(['meta', { property: 'og:url', content: url }])
+    }
+    if (title && !declared('property', 'og:title')) {
+      tags.push(['meta', { property: 'og:title', content: title }])
+    }
+    if (description && !declared('property', 'og:description')) {
+      tags.push(['meta', { property: 'og:description', content: description }])
+    }
+    if (title && !declared('name', 'twitter:title')) {
+      tags.push(['meta', { name: 'twitter:title', content: title }])
+    }
+    if (description && !declared('name', 'twitter:description')) {
+      tags.push(['meta', { name: 'twitter:description', content: description }])
+    }
+
+    return tags
+  },
 
   themeConfig: {
     logo: '/falcon-cms-logo.png',
@@ -154,7 +185,8 @@ export default defineConfig({
         {
           text: 'Changelog',
           items: [
-            { text: 'v2.5.0 (Latest)', link: '/changelog#v2-5-0' },
+            { text: 'v2.6.0 (Latest)', link: '/changelog#v2-6-0' },
+            { text: 'v2.5.0', link: '/changelog#v2-5-0' },
             { text: 'v2.4.0', link: '/changelog#v2-4-0' },
             { text: 'v2.3.0', link: '/changelog#v2-3-0' },
             { text: 'v2.2.7', link: '/changelog#v2-2-7' },

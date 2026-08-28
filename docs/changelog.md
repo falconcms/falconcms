@@ -5,7 +5,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.5.0 <Badge type="tip" text="Latest" /> {#v2-5-0}
+## v2.6.0 <Badge type="tip" text="Latest" /> {#v2-6-0}
+
+**Released: 2026-08-28**
+
+### Changed
+
+- **Requirements are now Laravel 13+ and PHP 8.3+.** The package previously declared support for
+  Laravel 10, 11 and 12 and PHP 8.1, but only Laravel 13 was ever exercised by the test suite.
+  The Composer constraints, the CI matrix and the documentation now all state the versions
+  FalconCMS is actually built and tested against. Existing sites on an older Laravel are not
+  broken — Composer simply keeps them on the last release that matched their framework.
+- The CI test and syntax matrices run on PHP 8.3 and 8.4, and `orchestra/testbench` is pinned
+  to `^11.0`, the release line that targets Laravel 13.
+
+### Fixed
+
+- Every documentation page rendered a literal `%s` in its browser title (for example
+  `Installation | %s | FalconCMS`). The site's `titleTemplate` used printf syntax instead of
+  VitePress's `:title` placeholder.
+
+### Documentation
+
+- The documentation homepage now links into the docs from every feature card, and adds sections
+  covering installation, custom post types, the builder, e-commerce, plugins, the hook API,
+  requirements and a grouped documentation map.
+- Added a Plugins feature card, a Live Demo call to action, and a card-based
+  "Explore the Documentation" link map.
+- Added page metadata across the site — canonical URLs, Open Graph and Twitter tags, and
+  `SoftwareApplication` / `WebSite` structured data on the homepage.
+- Enlarged the homepage hero image and reduced the hero heading size.
+
+---
+
+## v2.5.0 {#v2-5-0}
 
 **Released: 2026-08-28**
 

@@ -4,8 +4,8 @@
 
 Before installing, make sure your environment meets these requirements:
 
-- PHP **8.1** or higher
-- Laravel **10, 11, 12, or 13**
+- PHP **8.3** or higher
+- Laravel **13+**
 - **MySQL 5.7+** (recommended) or **MariaDB 10.3+** — the officially supported database
 
 ::: warning Database support

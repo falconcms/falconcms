@@ -74,7 +74,7 @@ jobs:
       matrix:
         # The oldest and newest runtimes the package supports. The suite migrates all 65
         # migrations into in-memory SQLite, so it also proves the install path on both.
-        php: ['8.2', '8.4']
+        php: ['8.3', '8.4']
     steps:
       - uses: actions/checkout@v4
 
@@ -102,8 +102,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The package claims PHP ^8.1 — prove every supported runtime can parse it.
-        php: ['8.1', '8.2', '8.3', '8.4']
+        # The package claims PHP ^8.3 — prove every supported runtime can parse it.
+        php: ['8.3', '8.4']
     steps:
       - uses: actions/checkout@v4
 
