@@ -123,7 +123,7 @@
                 <tr>
                     <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:14px 40px;text-align:center;">
                         <p style="margin:0;font-size:11px;color:#9ca3af;">
-                            &copy; {{ date('Y') }} {{ $siteName }} &mdash; Powered by <strong>FalconCMS</strong>
+                            &copy; {{ date('Y') }} {{ $siteName }}@if(!falcon_pro('white_label')) &mdash; Powered by <strong>FalconCMS</strong>@endif
                         </p>
                     </td>
                 </tr>
