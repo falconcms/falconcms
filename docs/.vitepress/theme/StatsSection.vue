@@ -34,12 +34,14 @@ onMounted(async () => {
   try {
     const res = await fetch('https://api.github.com/repos/falconcms/falconcms')
     const data = await res.json()
-    stars.value = data.stargazers_count
+    // Unauthenticated GitHub requests are rate limited; that response carries a
+    // message instead of the repo, so only accept a real number here.
+    if (typeof data.stargazers_count === 'number') stars.value = data.stargazers_count
   } catch (_) {}
 })
 
 function fmt(n) {
-  if (n === null) return '—'
+  if (typeof n !== 'number' || !Number.isFinite(n)) return '—'
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k'
   return String(n)
 }
@@ -63,7 +65,7 @@ function agoDay(dateStr) {
 
       <div class="stat-card">
         <div class="stat-icon">📦</div>
-        <div class="stat-value">{{ fmt(downloads) }}<span v-if="downloads !== null">+</span></div>
+        <div class="stat-value">{{ fmt(downloads) }}<span v-if="typeof downloads === 'number'">+</span></div>
         <div class="stat-label">Total Downloads</div>
       </div>
 
@@ -99,6 +101,7 @@ function agoDay(dateStr) {
 
 <style scoped>
 .stats-wrap {
+  margin-top: 64px;
   padding: 56px 24px 64px;
   text-align: center;
   border-top: 1px solid var(--vp-c-divider);
@@ -168,6 +171,12 @@ function agoDay(dateStr) {
   color: var(--vp-c-text-2);
   text-transform: uppercase;
   letter-spacing: .06em;
+}
+
+@media (max-width: 640px) {
+  .stats-wrap {
+    margin-top: 40px;
+  }
 }
 
 @media (max-width: 480px) {
