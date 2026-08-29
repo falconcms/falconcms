@@ -1,5 +1,7 @@
 # Builder Elements
 
+Elements marked <Badge type="warning" text="Pro" /> need a [Pro licence](/guide/pro). The builder shows them in the palette with a lock badge and prompts to upgrade when you add one. Every other element is part of the free core.
+
 Elements are the content blocks inside columns. Falcon Builder ships with **22 built-in element types**.
 
 ## Text Elements
@@ -41,7 +43,7 @@ A simple single-line text element with dynamic source support.
 - Font size, weight, color
 - Text alignment
 
-### Ticker
+### Ticker <Badge type="warning" text="Pro" />
 A horizontally scrolling text marquee — great for announcements or news tickers.
 
 **Settings:**
@@ -75,7 +77,7 @@ A single image with optional link.
 - Hover effect
 - Sticky width (shrinks when header is sticky)
 
-### Gallery
+### Gallery <Badge type="warning" text="Pro" />
 A responsive image grid or slider.
 
 **Settings:**
@@ -98,7 +100,7 @@ Embed YouTube, Vimeo, or self-hosted video.
 
 ## Interactive Elements
 
-### Counter
+### Counter <Badge type="warning" text="Pro" />
 An animated number that counts up on scroll.
 
 **Settings:**
@@ -112,7 +114,7 @@ An animated number that counts up on scroll.
 
 **Example:** `$` → `10,000` → `+` counted from `0` in `2000ms`.
 
-### Accordion
+### Accordion <Badge type="warning" text="Pro" />
 Collapsible FAQ / content sections.
 
 **Settings:**
@@ -122,7 +124,7 @@ Collapsible FAQ / content sections.
 - Icon position (left / right)
 - Colors, border, padding
 
-### Tabs
+### Tabs <Badge type="warning" text="Pro" />
 Tabbed content panels.
 
 **Settings:**
@@ -149,7 +151,7 @@ A call-to-action button.
 - Icon (FontAwesome class + position)
 - Full width toggle
 
-### Card
+### Card <Badge type="warning" text="Pro" />
 A content card with image, title, description, and optional button.
 
 **Settings:**
@@ -166,7 +168,7 @@ Empty vertical space for layout control.
 - Height (px)
 - Desktop / Tablet / Mobile heights (responsive)
 
-### Icon Box
+### Icon Box <Badge type="warning" text="Pro" />
 An icon paired with a title and description.
 
 **Settings:**
@@ -177,7 +179,7 @@ An icon paired with a title and description.
 - Link
 - Layout: icon above / icon left
 
-### Icon List
+### Icon List <Badge type="warning" text="Pro" />
 A styled list with icons.
 
 **Settings:**
@@ -215,7 +217,7 @@ Displays post metadata — author, date, category, tags, etc.
 - Date format
 - Separator style
 
-### Star Rating
+### Star Rating <Badge type="warning" text="Pro" />
 Display a static star rating.
 
 **Settings:**
@@ -227,13 +229,13 @@ Display a static star rating.
 
 ## Advanced Elements
 
-### HTML
+### HTML <Badge type="warning" text="Pro" />
 A raw HTML block — paste any embed code or custom markup.
 
 **Settings:**
 - Raw HTML / embed code
 
-### Menu
+### Menu <Badge type="warning" text="Pro" />
 Render a navigation menu inline inside the builder canvas — primarily used in the header builder.
 
 **Settings:**

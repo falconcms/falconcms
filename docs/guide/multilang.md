@@ -2,6 +2,10 @@
 
 Falcon CMS has built-in multi-language support. You can create content in multiple languages and switch between them from the frontend.
 
+::: warning Pro feature
+Multi-language requires a **FalconCMS Pro** licence. The settings below are only available on a licensed site. See [Installing Pro](/guide/pro).
+:::
+
 ## Enabling Multi-language
 
 1. Go to **Admin → Settings → General**

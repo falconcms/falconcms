@@ -59,7 +59,7 @@ head:
 hero:
   name: "FalconCMS"
   text: "WordPress-like CMS for Laravel"
-  tagline: Build powerful websites faster with a drag-and-drop page builder, full e-commerce, and multi-language support — all inside Laravel.
+  tagline: Build powerful websites faster with a drag-and-drop page builder, full e-commerce, and a WordPress-like theme and hook system — all inside Laravel.
   image:
     src: /hero.svg
     alt: FalconCMS
@@ -77,7 +77,7 @@ hero:
 features:
   - icon: 🏗️
     title: Drag & Drop Page Builder
-    details: Build stunning pages visually with Falcon Builder — containers, columns, and 22 built-in elements including text, image, gallery, counter, accordion, tabs, ticker, card, and more.
+    details: Build stunning pages visually with Falcon Builder — containers, columns, and built-in elements including heading, text, image, video, button, and post grid. Advanced elements come with Pro.
     link: /builder/overview
     linkText: Explore Falcon Builder
 
@@ -94,8 +94,8 @@ features:
     linkText: Explore E-commerce
 
   - icon: 🌐
-    title: Multi-language
-    details: Native multi-language support with clean URL prefixes (/en/, /bn/). Easily manage content in multiple languages from one dashboard.
+    title: Multi-language (Pro)
+    details: Native multi-language support with clean URL prefixes (/en/, /bn/). Manage content in multiple languages from one dashboard. Requires a Pro licence.
     link: /guide/multilang
     linkText: Read the Multi-language Guide
 
@@ -192,13 +192,16 @@ $properties = get_falcon_posts([
 
 Falcon Builder works for pages, posts, custom post types, and the site header and footer.
 
+Editing a page or post with the builder is part of the free core:
+
 - Drag-and-drop containers and columns with preset column layouts
-- 22 built-in elements — headings, text, images, galleries, video, counters, accordions, tabs, cards, post grids, and more
+- Elements — heading, title, text, image, video, button, spacer, post grid, post content, and post meta
 - Desktop, tablet, and mobile preview with per-device visibility controls
-- Library — save any container or column and reuse it as an independent copy
-- Global Sections — edit once, update everywhere the section is used
-- Header and footer building from **Appearance → Builder Sections**
 - Autosave every 30 seconds, plus draft and publish states
+
+::: tip Pro adds
+The advanced elements (gallery, counter, accordion, tabs, card, icon box, icon list, ticker, menu, HTML and more), the reusable **Library**, **Global Sections**, and the **Layout Builder** that creates and assigns headers and footers.
+:::
 
 [Read the Falcon Builder Guide](/builder/overview) · [See the Builder in Action](/demo)
 

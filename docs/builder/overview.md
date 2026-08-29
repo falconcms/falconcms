@@ -14,7 +14,9 @@ It works for **Pages**, **Posts**, **Custom Post Types**, the **Header**, and th
 3. Click **Open Builder** in the editor toolbar
 4. The builder canvas opens in full-screen mode
 
-### For Header & Footer
+### For Header & Footer <Badge type="warning" text="Pro" />
+Header and footer layouts are built in the **Layout Builder**, which needs a [Pro licence](/guide/pro) to create, edit or assign.
+
 1. Go to **Admin → Appearance → Builder Sections**
 2. Click **Edit Header** or **Edit Footer**
 3. The same builder opens, scoped to that section
@@ -99,30 +101,32 @@ Hover over any container or column to reveal its toolbar:
 
 ## All 22 Built-in Elements
 
+Eleven elements are part of the free core. The rest are marked <Badge type="warning" text="Pro" /> and need a [Pro licence](/guide/pro) — the palette shows them with a lock badge and prompts to upgrade.
+
 | Element | Category | What it does |
 |---|---|---|
 | **Heading** | Text | H1–H6 title with full typography control |
 | **Title** | Text | Dynamic post/page title — auto-filled from content |
 | **Text Block** | Text | Rich text paragraph (WYSIWYG editor) |
 | **Text** | Text | Single-line text with dynamic source support |
-| **Ticker** | Text | Horizontally scrolling announcement ticker |
+| **Ticker** <Badge type="warning" text="Pro" /> | Text | Horizontally scrolling announcement ticker |
 | **Image** | Media | Single image — static or dynamic (Feature Image, Logo, Author Avatar) |
-| **Gallery** | Media | Image grid, masonry, or slider with lightbox |
+| **Gallery** <Badge type="warning" text="Pro" /> | Media | Image grid, masonry, or slider with lightbox |
 | **Video** | Media | YouTube, Vimeo, or self-hosted video |
-| **Counter** | Interactive | Animated number that counts up on scroll |
-| **Accordion** | Interactive | Collapsible FAQ / content sections |
-| **Tabs** | Interactive | Tabbed content panels |
+| **Counter** <Badge type="warning" text="Pro" /> | Interactive | Animated number that counts up on scroll |
+| **Accordion** <Badge type="warning" text="Pro" /> | Interactive | Collapsible FAQ / content sections |
+| **Tabs** <Badge type="warning" text="Pro" /> | Interactive | Tabbed content panels |
 | **Button** | Layout | CTA button — solid, outline, or ghost style |
-| **Card** | Layout | Image + title + description + button |
+| **Card** <Badge type="warning" text="Pro" /> | Layout | Image + title + description + button |
 | **Spacer** | Layout | Vertical spacing — different per device |
-| **Icon Box** | Layout | Icon + title + description, icon above or left |
-| **Icon List** | Layout | Styled list with FontAwesome icons |
+| **Icon Box** <Badge type="warning" text="Pro" /> | Layout | Icon + title + description, icon above or left |
+| **Icon List** <Badge type="warning" text="Pro" /> | Layout | Styled list with FontAwesome icons |
 | **Post Grid** | Dynamic | Query and display posts in a responsive grid |
 | **Post Content** | Dynamic | Renders the current post's full content body |
 | **Post Meta** | Dynamic | Author, date, category, tags for the current post |
-| **Star Rating** | Dynamic | Static star display (0–5 stars) |
-| **Menu** | Navigation | Render a navigation menu — used in header builder |
-| **HTML** | Advanced | Raw HTML / embed code block |
+| **Star Rating** <Badge type="warning" text="Pro" /> | Dynamic | Static star display (0–5 stars) |
+| **Menu** <Badge type="warning" text="Pro" /> | Navigation | Render a navigation menu — used in header builder |
+| **HTML** <Badge type="warning" text="Pro" /> | Advanced | Raw HTML / embed code block |
 
 > **Custom elements** can be registered via the hook API — see [Hooks Reference](/api/hooks).
 
@@ -141,6 +145,10 @@ Each element, column, and container can be independently hidden per device. See 
 ---
 
 ## Saving Layouts for Reuse
+
+::: warning Pro features
+The Library, Global Sections and the Layout Builder all need a [Pro licence](/guide/pro). Editing a page or post with the builder stays free.
+:::
 
 ### Library
 Save any container or column to the **Library** — reuse it on other pages as an independent copy.

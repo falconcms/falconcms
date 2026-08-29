@@ -2,6 +2,10 @@
 
 A Global Section is a container saved once and reused across multiple pages. When you edit the Global Section, every page that uses it updates automatically.
 
+::: warning Pro feature
+Global Sections requires a **FalconCMS Pro** licence. Without one the screen stays browsable, but creating, editing and assigning is locked. See [Installing Pro](/guide/pro).
+:::
+
 ## Creating a Global Section
 
 1. Open any page in the Falcon Builder

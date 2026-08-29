@@ -2,6 +2,10 @@
 
 The Library lets you save containers and columns as reusable templates. Unlike Global Sections, library items are **independent copies** — editing one insert doesn't affect others.
 
+::: warning Pro feature
+The Library requires a **FalconCMS Pro** licence. Without one the screen stays browsable, but creating, editing and assigning is locked. See [Installing Pro](/guide/pro).
+:::
+
 ## Saving to Library
 
 ### Save a Container
