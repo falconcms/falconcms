@@ -54,10 +54,10 @@ if ($menu && $menu->items) {
 
 For maximum flexibility, use the **Falcon Builder** to create your header and footer visually:
 
-1. Go to **Admin → Appearance → Builder Sections**
-2. Click **Edit Header** or **Edit Footer**
-3. Build your layout using the full Falcon Builder
-4. Save
+1. Go to **Admin → Falcon Builder → Layout**
+2. On the **Global Layout** card, click the **Header** or **Footer** slot
+3. Create a new section, or pick an existing one from the **Existing Section** tab
+4. Build your layout using the full Falcon Builder, and save
 
 Render in your theme's `layouts/app.blade.php`:
 

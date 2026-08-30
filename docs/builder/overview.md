@@ -21,13 +21,28 @@ It works for **Pages**, **Posts**, **Custom Post Types**, the **Header**, and th
 ### For Header & Footer <Badge type="warning" text="Pro" />
 Header and footer layouts are built in the **Layout Builder**, which needs a [Pro licence](/guide/pro) to create, edit or assign.
 
-1. Go to **Admin → Appearance → Builder Sections**
-2. Click **Edit Header** or **Edit Footer**
-3. The same builder opens, scoped to that section
+1. Go to **Admin → Falcon Builder → Layout**
+2. Name a layout and click **Create New Layout** — or use the **Global Layout**, which is already there
+3. Click a slot (**Select Header**, **Select Footer**, …) to assign an existing section or create a new one
+4. The same builder opens, scoped to that section
 
 ![The Layout Builder](/screenshots/layout-builder.webp)
 
-*A layout is a set of slots — header, title bar, content, footer. The Global Layout applies everywhere; additional layouts carry their own conditions, like the 404 page above.*
+*Each layout is four slots — Header, Page Title Bar, Content, Footer — and each slot can be switched off without unassigning what is in it.*
+
+A layout is a set of four section slots:
+
+| Slot | Backed by |
+|---|---|
+| **Header** | a `falcon_header` section |
+| **Page Title Bar** | a `falcon_ptb` section |
+| **Content** | a `falcon_content` section |
+| **Footer** | a `falcon_footer` section |
+
+The **Global Layout** applies everywhere. Any other layout carries its own conditions —
+set them with the gear icon on the layout card — so a site can run a different header on,
+say, its 404 page than everywhere else. The toggle beside a filled slot turns that section
+off without unassigning it, which is the quickest way to compare two headers.
 
 ---
 

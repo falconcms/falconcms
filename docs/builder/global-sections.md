@@ -30,15 +30,15 @@ The container appears on the page, linked to the Global Section.
 **Option 1 — Edit in-place:**
 Click the Global Section container in the builder and edit its elements normally. Changes save to the global section and propagate everywhere.
 
-**Option 2 — From the Sections Manager:**
-1. Go to **Admin → Appearance → Builder Sections**
-2. Find your section and click **Edit**
-3. Opens the builder for that specific section
+**Option 2 — From the Layout screen:**
+1. Go to **Admin → Falcon Builder → Layout**
+2. Click the slot your section is assigned to, then the **Existing Section** tab
+3. Pick the section — the builder opens on it
 
 ## Deleting a Global Section
 
-1. Go to **Admin → Appearance → Builder Sections**
-2. Click **Delete**
+1. Go to **Admin → Falcon Builder → Layout**
+2. Open the slot's **Existing Section** list and delete it there
 
 ::: warning
 Deleting a Global Section removes it from all pages that were using it.

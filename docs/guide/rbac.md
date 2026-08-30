@@ -4,14 +4,25 @@ Falcon CMS includes a full Role-Based Access Control (RBAC) system. Every user h
 
 ## Built-in Roles
 
-| Role | Description |
-|---|---|
-| **Super Admin** | Bypasses all permission checks. Full access to everything. |
-| **Administrator** | Full access to all settings, content, and configurations. |
-| **Editor** | Can publish and manage all posts, pages, and media. Can moderate comments. |
-| **Author** | Can publish and manage **only their own** posts. |
-| **Contributor** | Can write posts but **cannot publish** them (pending review). |
-| **Subscriber** | Access to their own profile and basic dashboard view. |
+Installing FalconCMS seeds eight roles.
+
+| Role | Slug | Description |
+|---|---|---|
+| **Super Admin** | `super-admin` | Bypasses all permission checks. Full access to everything. |
+| **Administrator** | `administrator` | Full access to all settings, content, and configurations. |
+| **Editor** | `editor` | Can publish and manage all posts, pages, and media. Can moderate comments. |
+| **Author** | `author` | Can publish and manage **only their own** posts. |
+| **Contributor** | `contributor` | Can write posts but **cannot publish** them (pending review). |
+| **Subscriber** | `subscriber` | Access to their own profile and basic dashboard view. |
+| **User** | `user` | Standard user with content management access. |
+| **Customer** | `customer` | Registered through store checkout or the account page. |
+
+::: warning Customers never reach the dashboard
+A user with the `customer` role is redirected to the shop account page on any admin URL —
+this is enforced in middleware, not by permissions, so granting a customer extra
+permissions will not let them in. Give a shop user who also needs the dashboard a
+different role.
+:::
 
 ## Managing Roles
 
@@ -23,6 +34,11 @@ Go to **Admin → Roles** to:
 ![Roles and permissions](/screenshots/roles.webp)
 
 *The built-in roles, with how many users hold each. Open one to see and edit its permissions, or add your own role.*
+
+Two rules are enforced on this screen:
+
+- **Administrator**, **Super Admin** and **Subscriber** cannot be deleted — they are system roles.
+- The **Super Admin** role can only be opened and edited by a user who is themselves a Super Admin.
 
 ## Permissions Reference
 
