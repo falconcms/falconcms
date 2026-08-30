@@ -8,8 +8,9 @@
 <h1 align="center">FalconCMS</h1>
 
 <p align="center">
-  A WordPress-like CMS for Laravel — drag-and-drop page builder, full e-commerce,<br>
-  multi-language content, themes, plugins, and a WordPress-style hook system.
+  <b>Build your application. Not your CMS.</b><br>
+  An open-source CMS foundation for Laravel — visual page builder, custom post types,<br>
+  media, menus, SEO, e-commerce, themes, plugins, and a WordPress-like hook system.
 </p>
 
 <p align="center">
@@ -32,20 +33,35 @@
 
 ---
 
+## Why FalconCMS
+
+Every Laravel project eventually needs the same building blocks — pages, posts, media,
+navigation, forms, SEO, users, permissions, custom fields, settings. Building them again
+for every project takes time away from the product you actually set out to build.
+
+FalconCMS gives you that foundation as a Composer package, running inside your existing
+Laravel app alongside your own routes, models and service providers. You keep Laravel;
+you skip rebuilding the CMS.
+
+---
+
 ## 🚀 Installation
 
-To install the package in a fresh Laravel project:
+**Requirements:** PHP 8.3+ · Laravel 13+ · MySQL 5.7+ / MariaDB 10.3+
 
-1. **Require the package via Composer:**
-   ```bash
-   composer require falconcms/falconcms
-   ```
+Add it to an existing Laravel application:
 
-2. **Run the Automated Installation:**
-   ```bash
-   php artisan falcon:install
-   ```
-   *This command handles migrations, asset publishing, theme distribution, storage linking, and default admin creation.*
+```bash
+composer require falconcms/falconcms
+php artisan falcon:install
+```
+
+`falcon:install` runs the migrations, publishes assets and the default theme, links
+storage, and creates your admin user — the credentials are printed in the terminal. Then
+visit `/admin`.
+
+📖 [Installation guide](https://falconcms.github.io/falconcms/guide/installation) ·
+[Configuration](https://falconcms.github.io/falconcms/guide/configuration)
 
 ---
 
@@ -63,56 +79,21 @@ Falcon CMS comes with a set of automated commands to make development easier.
 
 ---
 
-## 🔐 Role-Based Access Control (RBAC)
+## ✨ What's in the free core
 
-FalconCMS includes a granular permission system with several predefined roles:
+Everything below is MIT-licensed and needs no purchase.
 
-- **Administrator**: Full access to all settings, content, and system configurations.
-- **Editor**: Can publish and manage all posts and pages, access media library, and moderate comments.
-- **Author**: Can publish and manage **only their own** posts.
-- **Contributor**: Can write and manage their own posts but **cannot** publish them (pending review).
-- **Subscriber**: Access to their own profile and basic dashboard view.
-- **User**: Custom role with access to Posts, Pages, Media, Comments, and Language Tools.
-
-> **Note:** Content ownership is strictly enforced. Authors and Contributors are isolated from other users' content.
-
----
-
-## 🎨 Theme Development & Isolation
-
-### 📂 Strict Theme Structure
-Frontend views **MUST** be located in `resources/views/themes/{theme-name}/`.
-For security and organization, any view file created directly in the root `resources/views/` folder will be blocked from frontend rendering (returns a 404).
-
-### 🪄 Automated Theme Sync
-When you update the package, your themes are automatically refreshed. To ensure this works, add the following to your `composer.json` scripts:
-```json
-"post-autoload-dump": [
-    "@php artisan vendor:publish --tag=falcon-cms-themes --force"
-]
-```
-
----
-
-## 🌐 Multi-Language Support
-
-Falcon CMS supports dynamic localization. You can enable or disable multi-language support from the Admin Settings.
-
-- **Clean URLs:** When multi-language is disabled, URLs are clean (e.g., `/my-post`).
-- **ISO Prefixes:** When enabled, URLs include the language code (e.g., `/en/my-post`).
-- **Dynamic Admin UI:** The language selection metabox automatically hides when multi-language is disabled.
-
----
-
-## 🛠 Features
-
-- **Consolidated Migrations:** Optimized database structure.
-- **Dynamic Post Types (CPT):** Create custom post types from the dashboard.
-- **Advanced Hook System:** WordPress-like Action and Filter hooks.
-- **Headless Mode:** Full REST API support for decoupled apps.
-- **Theme Isolation:** High-security frontend view resolution.
-- **Falcon Builder:** Drag-and-drop page builder with global header/footer sections.
-- **E-Commerce:** Built-in shop, orders, product management, and checkout flow.
+| | |
+| :--- | :--- |
+| **Content** | Pages, posts, and unlimited custom post types created from the dashboard — each with its own admin panel, archive and single view. Categories, tags, revisions, scheduling, and a media library. |
+| **Falcon Builder** | Drag-and-drop containers, columns and elements over a live preview of the real theme, with desktop / tablet / mobile previews and per-device visibility. |
+| **E-commerce** | Products and variants, cart, guest or registered checkout, orders and invoices, coupons, shipping zones, per-country tax, and PayPal / Stripe / SSLCommerz / bank transfer. |
+| **Themes** | A WordPress-like, file-based theme system with strict view isolation — frontend views live in `resources/views/themes/{theme}/`, and anything in the root `resources/views/` is blocked from frontend rendering (404). |
+| **Plugins** | Drop-in folders that add admin pages, settings, routes, views, tables and hooks without touching the core. Scaffold one with `php artisan make:plugin`. |
+| **Menus & widgets** | A visual menu builder including mega menus, plus widget areas for sidebars and footer columns. |
+| **Roles & permissions** | Eight seeded roles with granular per-capability permissions, and strict content ownership — Authors and Contributors never reach another user's content. |
+| **Developer API** | 109 hooks (63 actions, 46 filters), template tags, helper functions, an Admin Menu API, and a REST API for headless use. |
+| **Migration** | A WordPress importer that parses WXR and can be re-run without duplicating anything. |
 
 ---
 
@@ -213,6 +194,37 @@ tablet and mobile to set per-device values and visibility.
 
 ---
 
+## 💎 Core vs Pro
+
+FalconCMS is **open-core**. The core above is MIT-licensed and stays free. **Pro** is a
+separate, proprietary package (`falconcms/pro`) that unlocks the commercial features.
+
+| Capability | Core | Pro | Agency |
+| :--- | :---: | :---: | :---: |
+| CMS — pages, posts, custom types, media | ✓ | ✓ | ✓ |
+| Drag-and-drop page builder | ✓ | ✓ | ✓ |
+| E-commerce — products, cart, orders, coupons | ✓ | ✓ | ✓ |
+| Themes, plugins, hooks API & WordPress importer | ✓ | ✓ | ✓ |
+| Menus, widgets, roles & permissions | ✓ | ✓ | ✓ |
+| Layout Builder, global sections & library | — | ✓ | ✓ |
+| Multi-language & translation | — | ✓ | ✓ |
+| Advanced builder elements | — | ✓ | ✓ |
+| Advanced custom fields (ACPT) | — | ✓ | ✓ |
+| Falcon Slider — layered slider builder | — | ✓ | ✓ |
+| Analytics — live visitor map & real-time users | — | ✓ | ✓ |
+| Multi-device & passwordless (magic) login | — | ✓ | ✓ |
+| Sites per license | 1 | 1 | Unlimited |
+| White-label branding | — | — | ✓ |
+| Support | Community | Standard | Priority |
+
+Pro is a **one-time license per site** and includes 12 months of updates and support;
+renew only if you want to keep receiving them. Agency covers unlimited client sites.
+
+💎 [Pricing](https://falconcms.com/#pricing) ·
+[Installing Pro](https://falconcms.github.io/falconcms/guide/pro)
+
+---
+
 ## ⚓ Hook System Examples
 
 ### Adding a Filter
@@ -242,91 +254,41 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 });
 ```
 
----
-
-## 🧪 Testing
-
-The suite lives in this repository under `tests/` and runs on
-[Testbench](https://packages.tools/testbench), which boots a throwaway Laravel application
-around the package. Every migration is applied to an in-memory SQLite database, so the
-tests exercise the real service provider, the real schema and the real helper API without
-needing a host site — and without any possibility of touching real data.
-
-Requirements: the `pdo_sqlite` PHP extension must be enabled (`extension=pdo_sqlite` in `php.ini`).
-
-```bash
-composer install     # first time only
-composer test        # run everything
-
-# a single class, or a single test
-./vendor/bin/phpunit --filter StockStatusTest
-./vendor/bin/phpunit --filter test_an_expired_sale_disappears_from_every_surface_at_once
-```
-
-Current coverage — deliberately concentrated on the money and the parsing of untrusted input:
-
-| File | Guards |
-|------|--------|
-| `Shop/StockStatusTest` | the badge, the archive filter and the shelf never disagree — variations, backorders, thresholds |
-| `Shop/PricingTest` | expired sales vanish from every surface but survive for the admin form; variable products show a range, not ৳0.00 |
-| `Shop/TaxTest` | how prices were entered vs how they are displayed, rate matching, per-product tax status, taxed shipping |
-| `Shop/CouponTest` | every rule between a coupon and giving stock away: expiry, minimum spend, usage caps, restrictions, stacking |
-| `Shop/OrderTotalTest` | how the parts compose, and the cart, the order row and the gateway amount all agreeing |
-| `Shop/CheckoutTest` | end to end through the real route: the order written, stock taken, coupon spent, nothing half-done |
-| `Shop/CartPriceRefreshTest` | a cart left open is reconciled against the database before checkout totals anything |
-| `Shop/ShippingWeightTest` | weight bands, fractional weights, and a malformed rule falling back to the base cost instead of shipping free |
-| `Shop/StockClaimTest` | the last-unit race, and a partly-claimed cart putting everything back |
-| `Shop/ArchiveFilterTest` | filters do what was asked, and a hand-edited query string cannot crash or steer them |
-| `Shop/ProductAttributeIndexTest` | the derived attribute index matches what can actually be bought; slug collisions stay distinct |
-| `Shop/CustomerAddressTest` | defaults, checkout pre-fill, and one customer never reaching another's address |
-| `Shop/LinkedProductsTest` | upsells/cross-sells survive their targets being unpublished or deleted; schema.org output |
-| `Security/AdminAccessTest` | who reaches the dashboard and what of it — the default is deny |
-| `Security/PostActionGuardTest` | the row-level post actions AdminMiddleware hands off to the controller |
-| `Security/AccessControlTest` | open redirects, API tokens, magic links — written from the attacker's side |
-| `Security/MediaUploadTest` | what the CMS will accept onto its own disk |
-| `Security/MediaImportTest` | the second door into the media library, held to the same rule |
-| `Security/DigitalDownloadTest` | paid files: token scope, expiry, per-file cap, no path escaping storage |
-| `Cms/BuilderShortcodeConverterTest` | JSON ↔ shortcode round-trip stays lossless & readable (no base64) |
-| `Cms/ScheduleStatusTest` | "schedule only on a future time" status logic |
-| `Cms/PublishTimezoneTest` | publish date is interpreted in the CMS timezone and stored as UTC |
-| `Cms/SchedulePublishFlowTest` | due posts auto-publish; scheduled posts stay hidden until live |
-| `Cms/WordPressImporterTest` | WXR parsing, and re-importing the same file creating nothing twice |
-| `MigrationsTest` | the install path — every table and column the shop logic reads |
-
-The suite is checked in reverse order as well as forwards, so nothing in it depends on
-the order tests happen to run in.
-
-Green ✓ = safe; red ⨯ = something regressed (the diff shows expected vs actual).
+📖 [Hooks API reference](https://falconcms.github.io/falconcms/api/hooks) — all 109 hooks
 
 ---
 
-## 🧹 Code style & static analysis
+## 📚 Documentation
 
-The package ships with [Laravel Pint](https://laravel.com/docs/pint) and
-[PHPStan/Larastan](https://github.com/larastan/larastan). Both run on every push and pull
-request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)), so a contribution only
-needs these three commands locally:
+| | |
+| :--- | :--- |
+| [Introduction](https://falconcms.github.io/falconcms/guide/introduction) | What FalconCMS is and when to reach for it |
+| [Installation](https://falconcms.github.io/falconcms/guide/installation) | Requirements, install, first project |
+| [Falcon Builder](https://falconcms.github.io/falconcms/builder/overview) | Containers, columns, elements, global sections |
+| [Post types & taxonomies](https://falconcms.github.io/falconcms/guide/post-types) | Custom content, ACPT, revisions |
+| [Themes](https://falconcms.github.io/falconcms/guide/themes) | Theme structure, template tags, the customizer |
+| [Plugins](https://falconcms.github.io/falconcms/guide/plugins) | Scaffolding and shipping your own |
+| [E-commerce](https://falconcms.github.io/falconcms/ecommerce/overview) | Products, storefront, checkout, orders, tax |
+| [Hooks API](https://falconcms.github.io/falconcms/api/hooks) | Actions and filters, with examples |
 
-```bash
-composer install     # dev dependencies (Pint, Larastan, Testbench)
-
-composer format      # apply the Laravel code style
-composer lint        # check the style without changing anything — what CI runs
-composer analyse     # PHPStan level 3
-```
-
-`phpstan-baseline.neon` records the errors that already existed when analysis was switched on.
-New code is expected to be clean: add to the baseline only with a reason, never to silence a
-genuine bug.
+Full documentation: **[falconcms.github.io/falconcms](https://falconcms.github.io/falconcms/)**
+· Try it first on the **[live demo](https://demo.falconcms.com)**.
 
 ---
 
-## Requirements
+## 🤝 Contributing
 
-- PHP 8.3+
-- Laravel 13+
-- MySQL 5.7+ / MariaDB 10.3+
+Bug reports, fixes and features are welcome. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers
+the local setup, the test suite and what CI checks before a PR can merge.
+
+Found a security issue? Please email tareqcodex@gmail.com rather than opening a public
+issue.
 
 ---
+
+## 📄 License
+
+The FalconCMS core is open source under the [MIT license](LICENSE). FalconCMS Pro is a
+separate commercial package under its own terms.
 
 Developed by **[Tareq Codex](https://github.com/tareqcodex)**

@@ -33,7 +33,7 @@ on (in the dashboard).
 ## Requirements
 
 - FalconCMS core **v2.0** or higher (`composer show falconcms/falconcms`)
-- PHP **8.1+**
+- PHP **8.3+** — the same floor the core requires
 - Composer **2.x**
 
 If you are on core v1.x, [upgrade to v2](/guide/upgrade) first.
