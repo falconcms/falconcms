@@ -4,6 +4,10 @@ Elements marked <Badge type="warning" text="Pro" /> need a [Pro licence](/guide/
 
 Elements are the content blocks inside columns. Falcon Builder ships with **22 built-in element types**.
 
+![The settings panel for an Icon Box element](/screenshots/builder-element-settings.webp)
+
+*Selecting an element opens its settings in the sidebar — here an Icon Box, with the icon picker, layout and alignment.*
+
 ## Text Elements
 
 ### Heading

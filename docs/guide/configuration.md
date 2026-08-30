@@ -2,6 +2,10 @@
 
 All CMS settings are stored in the `cms_settings` database table and accessed through the `get_cms_option()` helper. You can change most settings from the **Admin → Settings** panel.
 
+![The settings screen](/screenshots/settings.webp)
+
+*Settings are grouped into tabs — General, SEO, Activity Logs, REST API, Integrations, and Email Templates.*
+
 ## General Settings
 
 Navigate to **Admin → Settings → General**.

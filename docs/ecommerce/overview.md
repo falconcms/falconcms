@@ -2,6 +2,10 @@
 
 Falcon CMS includes a complete e-commerce system built directly into the package — no extra plugins needed.
 
+![Shop overview](/screenshots/shop-overview.webp)
+
+*Revenue, order counts and conversion, with the order-status breakdown — **Admin → Shop → Overview**.*
+
 ::: tip Free in the core
 As of **v2.2**, the full e-commerce system is part of the **free core** — no Pro license required. Build and run a complete store on any FalconCMS site.
 :::

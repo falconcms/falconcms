@@ -2,6 +2,10 @@
 
 Falcon CMS has a visual drag-and-drop menu builder for creating and managing navigation menus.
 
+![The menu builder](/screenshots/menus.webp)
+
+*Add items from the panels on the left, then drag them into order — indent an item to nest it.*
+
 ## Creating a Menu
 
 1. Go to **Admin → Appearance → Menus**

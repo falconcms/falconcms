@@ -2,6 +2,10 @@
 
 The Media Library handles all file uploads: images, videos, and documents.
 
+![The media library](/screenshots/media-library.webp)
+
+*Every upload in one grid, filterable by type and date, with bulk selection.*
+
 ## Uploading Files
 
 **Admin → Media → Add New**

@@ -20,6 +20,10 @@ Go to **Admin → Roles** to:
 - Assign permissions to roles
 - Edit or delete existing roles
 
+![Roles and permissions](/screenshots/roles.webp)
+
+*The built-in roles, with how many users hold each. Open one to see and edit its permissions, or add your own role.*
+
 ## Permissions Reference
 
 | Permission | Controls |

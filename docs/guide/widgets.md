@@ -2,6 +2,10 @@
 
 Widgets are content blocks placed in predefined areas like the sidebar and footer columns.
 
+![The widgets screen](/screenshots/widgets.webp)
+
+*Available widgets on the left, the areas they can be dropped into on the right.*
+
 ## Widget Areas
 
 Falcon CMS includes these built-in widget areas:

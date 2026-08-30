@@ -2,12 +2,20 @@
 
 Falcon CMS uses a file-based theme system similar to WordPress. Themes live in `resources/views/themes/{theme-name}/`.
 
+![A site rendered by a theme](/screenshots/site-frontend.webp)
+
+*A page built in Falcon Builder, rendered on the frontend by the theme's `layouts/app.blade.php` and its header and footer partials.*
+
 ::: tip Themes vs plugins
 Themes own **presentation**; [plugins](/guide/plugins) own **functionality**.
 Both are loaded at the same point in the boot cycle and share the same hook API,
 so build anything design-related here and anything feature-related as a plugin —
 that way it survives a theme switch.
 :::
+
+![Installed themes](/screenshots/themes.webp)
+
+***Admin → Appearance → Themes** lists what is installed, marks the active one, and takes a `.zip` upload.*
 
 ## Theme Structure
 
@@ -104,6 +112,10 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 ```
 
 ## options.php
+
+![The theme customizer](/screenshots/customizer.webp)
+
+*The panels declared in `options.php` become the sections down the left of the Customizer — Layout, Colors, Typography, Header, Footer, Custom CSS and the rest.*
 
 Define customizer settings panels:
 

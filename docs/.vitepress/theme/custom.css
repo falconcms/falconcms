@@ -129,3 +129,45 @@
 .vp-doc .doc-map-card a:hover {
   color: var(--vp-c-brand-1);
 }
+
+/* ---------------------------------------------------------------------------
+   Screenshots.
+
+   Any image served from /screenshots/ is a capture of the admin UI, so it gets
+   framed automatically — no per-image markup in the Markdown. The frame matters
+   most in dark mode, where a mostly-white dashboard would otherwise sit on the
+   page as a bright rectangle with no edge.
+
+   An italic line directly under the image becomes its caption.
+   --------------------------------------------------------------------------- */
+
+.vp-doc img[src*="/screenshots/"] {
+  display: block;
+  width: 100%;
+  margin: 24px 0 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  background-color: var(--vp-c-bg-soft);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.dark .vp-doc img[src*="/screenshots/"] {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* The caption line. `p > img + em` would not match — VitePress puts the image and
+   the italic text in separate paragraphs — so the caption is matched as the
+   paragraph that follows the image's own paragraph. */
+.vp-doc p:has(> img[src*="/screenshots/"]) {
+  margin-bottom: 0;
+}
+
+.vp-doc p:has(> img[src*="/screenshots/"]) + p > em:only-child {
+  display: block;
+  margin-top: 10px;
+  text-align: center;
+  line-height: 20px;
+  font-size: 13px;
+  font-style: normal;
+  color: var(--vp-c-text-3);
+}

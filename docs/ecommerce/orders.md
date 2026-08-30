@@ -1,5 +1,9 @@
 # Orders
 
+![The orders list](/screenshots/orders.webp)
+
+*Every order with its code, total, payment method and status — **Admin → Shop → Orders**.*
+
 ## Order Lifecycle
 
 ```

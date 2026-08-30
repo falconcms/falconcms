@@ -1,10 +1,36 @@
-# FalconCMS
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/falconcms/falconcms/main/public/assets/images/falcon-cms-white-logo.png">
+    <img alt="FalconCMS" height="64" src="https://raw.githubusercontent.com/falconcms/falconcms/main/public/assets/images/falcon-cms-logo.png">
+  </picture>
+</p>
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/falconcms/falconcms.svg)](https://packagist.org/packages/falconcms/falconcms)
-[![CI](https://github.com/falconcms/falconcms/actions/workflows/ci.yml/badge.svg)](https://github.com/falconcms/falconcms/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/falconcms/falconcms)](LICENSE)
+<h1 align="center">FalconCMS</h1>
 
-A powerful, modular, and easy-to-use CMS package for Laravel applications with built-in multi-language support, robust Role-Based Access Control (RBAC), a drag-and-drop page builder (Falcon Builder), and a WordPress-like theme & hook system.
+<p align="center">
+  A WordPress-like CMS for Laravel — drag-and-drop page builder, full e-commerce,<br>
+  multi-language content, themes, plugins, and a WordPress-style hook system.
+</p>
+
+<p align="center">
+  <a href="https://packagist.org/packages/falconcms/falconcms"><img alt="Latest Version on Packagist" src="https://img.shields.io/packagist/v/falconcms/falconcms.svg"></a>
+  <a href="https://github.com/falconcms/falconcms/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/falconcms/falconcms/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://packagist.org/packages/falconcms/falconcms"><img alt="Total Downloads" src="https://img.shields.io/packagist/dt/falconcms/falconcms.svg"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/falconcms/falconcms"></a>
+</p>
+
+<p align="center">
+  <a href="https://demo.falconcms.com">Live Demo</a> ·
+  <a href="https://falconcms.github.io/falconcms/">Documentation</a> ·
+  <a href="https://falconcms.com">Website</a> ·
+  <a href="https://falconcms.github.io/falconcms/changelog">Changelog</a>
+</p>
+
+<p align="center">
+  <img alt="The FalconCMS dashboard — content counts, activity chart, and store metrics at a glance" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/dashboard.webp" width="900">
+</p>
+
+---
 
 ## 🚀 Installation
 
@@ -87,6 +113,103 @@ Falcon CMS supports dynamic localization. You can enable or disable multi-langua
 - **Theme Isolation:** High-security frontend view resolution.
 - **Falcon Builder:** Drag-and-drop page builder with global header/footer sections.
 - **E-Commerce:** Built-in shop, orders, product management, and checkout flow.
+
+---
+
+## 📸 A Look Inside
+
+Every screenshot below is the live [demo site](https://demo.falconcms.com) — sign in with
+`admin@falconcms.demo` / `FalconDemo2025!` and click through it yourself.
+
+### Falcon Builder
+
+Drag-and-drop containers, columns and elements over a live preview of the real theme. The
+navigator on the left is the page structure; changes render exactly as the frontend will
+serve them.
+
+<p align="center">
+  <img alt="Falcon Builder editing a page, with the structure navigator open beside a live canvas" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/page-builder.webp" width="900">
+</p>
+
+Select any element to open its settings panel, and switch the canvas between desktop,
+tablet and mobile to set per-device values and visibility.
+
+<table>
+<tr>
+<td width="50%"><img alt="Icon Box element settings — icon picker, layout and alignment" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/builder-element-settings.webp"></td>
+<td width="50%"><img alt="The builder canvas in mobile preview" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/builder-responsive.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Element settings</b></td>
+<td align="center"><b>Responsive preview</b></td>
+</tr>
+</table>
+
+### Content & Media
+
+<table>
+<tr>
+<td width="50%"><img alt="The posts list with author, slug, category, SEO and publish date columns" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/posts.webp"></td>
+<td width="50%"><img alt="The media library grid" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/media-library.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Posts &amp; pages</b></td>
+<td align="center"><b>Media library</b></td>
+</tr>
+<tr>
+<td width="50%"><img alt="Custom post types created from the dashboard" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/custom-post-types.webp"></td>
+<td width="50%"><img alt="The mega menu builder" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/menus.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Custom post types</b></td>
+<td align="center"><b>Menu builder</b></td>
+</tr>
+</table>
+
+### E-commerce — in the free core
+
+<table>
+<tr>
+<td width="50%"><img alt="The product list with price, stock and sale columns" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/products.webp"></td>
+<td width="50%"><img alt="The orders list with payment and fulfilment status" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/orders.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Products</b></td>
+<td align="center"><b>Orders</b></td>
+</tr>
+<tr>
+<td width="50%"><img alt="Shop overview with revenue, orders and conversion metrics" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/shop-overview.webp"></td>
+<td width="50%"><img alt="The storefront with filters, product grid and sale badges" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/storefront.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Shop overview</b></td>
+<td align="center"><b>Storefront</b></td>
+</tr>
+</table>
+
+### Appearance & Administration
+
+<table>
+<tr>
+<td width="50%"><img alt="The theme customizer — layout, colors, typography, header and footer options" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/customizer.webp"></td>
+<td width="50%"><img alt="Installed themes with parent and child theme cards" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/themes.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Customizer</b></td>
+<td align="center"><b>Themes</b></td>
+</tr>
+<tr>
+<td width="50%"><img alt="Roles and permissions, with the number of users holding each role" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/roles.webp"></td>
+<td width="50%"><img alt="Installed plugins with activate and delete actions" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/plugins.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Roles &amp; permissions</b></td>
+<td align="center"><b>Plugins</b></td>
+</tr>
+</table>
+
+> Screenshots are regenerated from the live demo with `node docs/scripts/screenshots.mjs`.
+> See [`docs/scripts/README.md`](docs/scripts/README.md).
 
 ---
 

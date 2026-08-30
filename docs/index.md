@@ -161,6 +161,10 @@ FalconCMS is a Laravel-native content management system for developers who want 
 
 Instead of rebuilding pages, posts, media management, menus, custom content, users, and permissions for every project, FalconCMS provides the foundation so you can focus on the application itself. It installs as a Composer package and runs inside your existing Laravel app, alongside your own routes, models, and service providers.
 
+![The FalconCMS dashboard](/screenshots/dashboard.webp)
+
+*The dashboard after installation — content counts, activity, store metrics, and the full admin menu down the left.*
+
 [Read the Introduction](/guide/introduction)
 
 ## Model Your Content Your Way
@@ -186,11 +190,19 @@ $properties = get_falcon_posts([
 ]);
 ```
 
+![Custom post types in the dashboard](/screenshots/custom-post-types.webp)
+
+*Each custom post type gets its own admin panel, archive, and single view.*
+
 [Learn About Custom Post Types](/guide/post-types)
 
 ## Build Pages Visually with Falcon Builder
 
 Falcon Builder works for pages, posts, custom post types, and the site header and footer.
+
+![Falcon Builder editing a page](/screenshots/page-builder.webp)
+
+*The navigator on the left is the page structure; the canvas on the right is the real theme, rendering as the frontend will serve it.*
 
 Editing a page or post with the builder is part of the free core:
 
@@ -216,6 +228,14 @@ As of v2.2, the full e-commerce system is part of the free FalconCMS core — no
 - **Checkout & orders** — guest or registered checkout, coupons and promotions, shipping zones, per-country tax, order workflow, invoices, refunds, and order tracking
 - **Payments** — PayPal, Stripe, SSLCommerz, or bank transfer, with schema.org product structured data
 
+![The storefront](/screenshots/storefront.webp)
+
+*The storefront, rendered by the default theme — filters, sale badges, and add-to-cart, with nothing to build.*
+
+![Shop overview](/screenshots/shop-overview.webp)
+
+*Revenue, orders, and conversion in the dashboard, next to the product catalogue and the order workflow.*
+
 [Read the E-commerce Guide](/ecommerce/overview)
 
 ## Extend FalconCMS with Plugins
@@ -227,6 +247,10 @@ php artisan make:plugin "SEO Booster"
 ```
 
 This scaffolds `plugins/seo-booster/` with a manifest, a bootstrap file, and a lifecycle class. Plugins and themes load at the same point in the boot cycle, so a plugin can use every hook a theme can.
+
+![The plugins screen](/screenshots/plugins.webp)
+
+*Installed plugins, with activate, deactivate, and delete — or drag a `.zip` onto the screen to install one.*
 
 [Read the Plugin Development Guide](/guide/plugins)
 

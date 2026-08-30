@@ -20,6 +20,10 @@ Go to **Admin → Tools → Languages**:
 
 - **Add** a new language (name, ISO code, flag emoji)
 - **Set default** — the language used when no prefix is in the URL
+
+![The languages screen](/screenshots/languages.webp)
+
+*Active languages, the default among them, and the list a new language is added from.*
 - **Enable/disable** individual languages
 - **Language switcher display:** flag, text, code, or all
 

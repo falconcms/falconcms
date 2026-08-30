@@ -4,6 +4,10 @@ Falcon Builder is the visual drag-and-drop page builder built into Falcon CMS. B
 
 It works for **Pages**, **Posts**, **Custom Post Types**, the **Header**, and the **Footer**.
 
+![Falcon Builder editing a page](/screenshots/page-builder.webp)
+
+*The navigator on the left is the page structure; the canvas on the right renders the real theme.*
+
 ---
 
 ## How to Open the Builder
@@ -20,6 +24,10 @@ Header and footer layouts are built in the **Layout Builder**, which needs a [Pr
 1. Go to **Admin → Appearance → Builder Sections**
 2. Click **Edit Header** or **Edit Footer**
 3. The same builder opens, scoped to that section
+
+![The Layout Builder](/screenshots/layout-builder.webp)
+
+*A layout is a set of slots — header, title bar, content, footer. The Global Layout applies everywhere; additional layouts carry their own conditions, like the 404 page above.*
 
 ---
 

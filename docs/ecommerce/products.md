@@ -1,5 +1,9 @@
 # Products
 
+![The product list](/screenshots/products.webp)
+
+*The catalogue — **Admin → Products** — with price, stock and category per row.*
+
 ## Creating a Product
 
 1. Go to **Admin → Products → Add New**

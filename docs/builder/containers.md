@@ -2,6 +2,10 @@
 
 Every Falcon Builder layout starts with Containers, which hold Columns, which hold Elements.
 
+![Containers and columns in the builder](/screenshots/builder-canvas.webp)
+
+*The navigator on the left shows the nesting: a container holds columns, a column can hold a nested row, and elements sit at the leaves.*
+
 ## Containers
 
 A container is a full-width row on your page. Click **+ Add Container** to open the Column Select modal.

@@ -3,6 +3,10 @@
 What shoppers see outside the admin: the shop archive and its filters, the customer account,
 and the structured data search engines read.
 
+![The shop archive](/screenshots/storefront.webp)
+
+*The shop archive as the default theme renders it — filter sidebar, product grid, sale badges, and add-to-cart.*
+
 ## Shop filters
 
 The shop page and every product category archive carry a filter sidebar:

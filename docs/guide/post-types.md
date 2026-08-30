@@ -6,6 +6,10 @@ Falcon CMS has three layers of content types:
 2. **Custom Post Types** — Created from Admin → Post Types
 3. **Advanced Custom Post Types (ACPT)** — Full featured CPTs with custom fields and taxonomies
 
+![Custom post types in the dashboard](/screenshots/custom-post-types.webp)
+
+*Custom post types are created from the dashboard. Each one gets its own admin panel, archive, and single view.*
+
 ## Built-in Post Types
 
 ### Pages
@@ -14,6 +18,10 @@ Static pages with full builder support. Each page can use a template and the dra
 - **Admin:** Admin → Pages
 - **Frontend URL:** `/{slug}` (e.g., `/about-us`)
 - **Builder:** Full Falcon Builder support
+
+![The page editor](/screenshots/page-editor.webp)
+
+*The editor for a page: title and permalink, a Rich Editor / Page Builder switch, publish controls, featured image, and the SEO panel below.*
 
 ### Posts
 Blog posts with categories, tags, comments, and scheduling.

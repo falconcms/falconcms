@@ -7,6 +7,10 @@ your theme.
 
 Plugins are **free and unrestricted** — anyone can write, install and share them.
 
+![The plugins screen](/screenshots/plugins.webp)
+
+*Installed plugins, with activate, deactivate and delete. Dragging a `.zip` onto this screen installs one.*
+
 ::: tip Theme parity
 Anything a theme can do from `functions.php`, a plugin can do from `plugin.php`.
 Both are loaded at the same point in the boot cycle, so plugins can use every hook

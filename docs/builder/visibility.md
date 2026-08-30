@@ -2,6 +2,10 @@
 
 Every element in Falcon Builder has visibility controls to show or hide it on specific devices.
 
+![The builder canvas in mobile preview](/screenshots/builder-responsive.webp)
+
+*Switching the canvas to mobile narrows it to the device width, so you set and check per-device values against the layout the visitor actually gets.*
+
 ## How It Works
 
 In any element's **General** tab, you'll find the **Element Visibility** row:

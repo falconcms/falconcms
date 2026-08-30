@@ -2,6 +2,10 @@
 
 **FalconCMS** is a full-featured, WordPress-inspired CMS package for Laravel. Drop it into any Laravel app and get a complete admin dashboard with a drag-and-drop page builder, e-commerce, multi-language support, and much more — in minutes.
 
+![The FalconCMS dashboard](/screenshots/dashboard.webp)
+
+*This is what `php artisan falcon:install` leaves you with. Everything below is reachable from that sidebar — and you can click through it yourself on the [live demo](/demo).*
+
 ## Why FalconCMS?
 
 Most Laravel CMS solutions are either too simple or require you to rebuild everything from scratch. FalconCMS gives you a production-ready foundation:
