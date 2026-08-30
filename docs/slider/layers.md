@@ -2,6 +2,10 @@
 
 **Layers** are the building blocks placed on top of a slide's background — headlines, buttons, images, timers and more. Each layer is freely positioned, sized, styled, made responsive per device, and [animated](/slider/animations) on its own schedule.
 
+![A layer selected in the slider editor](/screenshots/slider-layer.webp)
+
+*Selecting a layer — on the canvas, in the list, or on its timeline bar — opens its properties: text and SEO tag, reveal, link, and the effect sliders.*
+
 ---
 
 ## Adding a layer

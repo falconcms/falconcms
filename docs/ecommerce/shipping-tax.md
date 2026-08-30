@@ -31,6 +31,10 @@ A zone is a group of countries with their own rates. For each zone you set:
 | **Free shipping threshold** | Free above this subtotal, for this zone only |
 | **Calculation type** | Flat rate, quantity based, or weight based |
 
+![The shipping tab in shop settings](/screenshots/shipping-zones.webp)
+
+*The global flat rate and free-shipping threshold sit above the zones. Adding a zone opens the fields listed here; local pickup is further down the same tab.*
+
 Zones are matched on the customer's country, falling back to the parent country when the value
 includes a state (`Bangladesh - Dhaka` matches a zone listing `Bangladesh`).
 
@@ -71,12 +75,16 @@ lands on the shipping line. See [Coupons](/ecommerce/coupons).
 
 ## Tax
 
-Tax is off until **General → Enable tax rates and calculations** is ticked. Nothing below has
-any effect while it is off.
+Tax is off until **Tax → Enable tax calculations and display** is ticked. Nothing below has
+any effect while it is off — the rest of the tab stays hidden until then.
+
+![The tax tab in shop settings](/screenshots/tax-rates.webp)
+
+*With tax enabled, the tab reveals which address decides the rate, how prices are entered and displayed, and the Custom Tax Rates table.*
 
 ### Rates
 
-**Tax → Tax rates** is a table:
+**Tax → Custom Tax Rates** is a table:
 
 | Field | Meaning |
 |---|---|

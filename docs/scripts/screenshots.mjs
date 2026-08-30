@@ -44,6 +44,21 @@ const VIEWPORT = { width: 1440, height: 900 };
  */
 const BUILDER_PAGE_ID = 47;
 
+/** Likewise for the slider the Falcon Slider captures open. */
+const SLIDER_ID = 1;
+
+/**
+ * The slider editor's right-hand panel is a row of Material-symbol ligature icons
+ * with no title or data attribute, so the icon name is the only thing to match on.
+ * Scoping to `.fse-itab` matters: the same ligatures appear elsewhere on the page —
+ * in the CMS sidebar, on the slide thumbnails, and inside zero-sized hidden buttons
+ * — and matching one of those either navigates away or times out.
+ */
+const openSliderTab = async (page, icon) => {
+  await page.locator(`.fse-itab:has-text("${icon}")`).click();
+  await page.waitForTimeout(1800);
+};
+
 /**
  * name -> how to reach it. `steps` runs after the page has settled and before the
  * capture; it is where a panel gets opened or a device preview selected.
@@ -66,8 +81,91 @@ const TARGETS = [
   { name: 'products',                 url: '/admin/posts?type=product' },
   { name: 'orders',                   url: '/admin/shop/orders' },
   { name: 'shop-overview',            url: '/admin/shop/overview' },
+  { name: 'promotion-editor',         url: '/admin/shop/promotions/create' },
   { name: 'site-frontend',            url: '/' },
   { name: 'storefront',               url: '/product' },
+
+  // Shipping, tax and coupons are tabs of one Alpine-driven settings page. The tab
+  // is read from `?tab=` on load, so each one is reachable as its own URL.
+  //
+  // The demo has no zones, rates or coupons configured, and the empty states show
+  // none of the fields the guide describes. Each of these opens the form the button
+  // reveals — all of it client-side Alpine state, so nothing is written to the demo
+  // as long as the capture never clicks Save.
+  {
+    name: 'shipping-zones',
+    url: '/admin/shop/settings?tab=shipping',
+    steps: async (page) => {
+      await page.click('text=Create First Shipping Zone');
+      await page.waitForTimeout(1500);
+    },
+  },
+  {
+    name: 'tax-rates',
+    url: '/admin/shop/settings?tab=tax',
+    steps: async (page) => {
+      // Unchecked, the whole rate table is hidden behind x-show. Three controls
+      // share this name — a hidden input the General tab posts, and a zero-sized
+      // checkbox on an inactive tab — so match on the one that is actually laid out.
+      await page.locator('input[type=checkbox][name=calc_taxes]:visible').check();
+      await page.waitForTimeout(1500);
+    },
+  },
+  {
+    name: 'coupons',
+    url: '/admin/shop/settings?tab=coupons',
+    steps: async (page) => {
+      await page.click('text=Add New Coupon');
+      await page.waitForTimeout(1000);
+      // The new card starts collapsed; its header toggles it open.
+      await page.click('text=UNNAMED_COUPON');
+      await page.waitForTimeout(1500);
+    },
+  },
+
+  // Falcon Slider (Pro). SLIDER_ID is the demo's slider; see BUILDER_PAGE_ID above
+  // for why an id baked into a URL is the first thing to check when a capture is
+  // empty.
+  { name: 'sliders',                  url: '/admin/falcon-slider' },
+  { name: 'slider-editor',            url: `/admin/falcon-slider/${SLIDER_ID}/edit`, settle: 6000 },
+  {
+    // The layer panel, with a layer selected on the canvas. Clicking its timeline
+    // bar selects it; the bars carry no label, hence the class.
+    name: 'slider-layer',
+    url: `/admin/falcon-slider/${SLIDER_ID}/edit`,
+    settle: 6000,
+    steps: async (page) => {
+      await page.locator('.fse-tl-bar').first().click();
+      await page.waitForTimeout(2200);
+    },
+  },
+  {
+    // Same layer selection, then the properties panel scrolled down to the
+    // animation controls. The panel scrolls under the pointer, so the wheel has to
+    // be moved over it first.
+    name: 'slider-animation',
+    url: `/admin/falcon-slider/${SLIDER_ID}/edit`,
+    settle: 6000,
+    steps: async (page) => {
+      await page.locator('.fse-tl-bar').first().click();
+      await page.waitForTimeout(1500);
+      await page.mouse.move(1300, 600);
+      await page.mouse.wheel(0, 2200);
+      await page.waitForTimeout(1200);
+    },
+  },
+  {
+    name: 'slider-slide',
+    url: `/admin/falcon-slider/${SLIDER_ID}/edit`,
+    settle: 6000,
+    steps: async (page) => openSliderTab(page, 'wallpaper'),
+  },
+  {
+    name: 'slider-navigation',
+    url: `/admin/falcon-slider/${SLIDER_ID}/edit`,
+    settle: 6000,
+    steps: async (page) => openSliderTab(page, 'swipe'),
+  },
 
   // Falcon Builder. Each of these enters the builder fresh so one capture's open
   // panel or device preview cannot leak into the next.

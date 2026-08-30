@@ -6,6 +6,10 @@
 Falcon Slider is part of **FalconCMS Pro**. It appears in the admin sidebar once a Pro license is active. See [Installing Pro](/guide/pro).
 :::
 
+![The slider editor](/screenshots/slider-editor.webp)
+
+*The editor: slide rail along the bottom left, the canvas in the middle, the layer panel on the right, and the animation timeline underneath.*
+
 ---
 
 ## What you can build
@@ -72,6 +76,10 @@ Use the shortcode in any content, widget, or Blade view that renders shortcodes:
 ```
 [falcon_slider id="1"]
 ```
+
+![The sliders list](/screenshots/sliders.webp)
+
+***Admin → Falcon Slider** lists every slider with its shortcode ready to copy, and how many slides it holds.*
 
 You can reference a slider by **id** or by **slug**:
 

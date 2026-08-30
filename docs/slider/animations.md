@@ -10,6 +10,10 @@ Whatever you set — animation, reveal, duration, delay, idle loop — plays the
 
 ## Entrance & exit animations
 
+![A layer's animation settings](/screenshots/slider-animation.webp)
+
+*Scroll a layer's panel to its animation block: the In preset with its delay, duration and easing, then Out, then Loop / Idle. The timeline below shows the same timings as bars.*
+
 In the **Layers** tab, each layer has an **In** (entrance) and **Out** (exit) animation. Pick a **preset**:
 
 | Preset | Motion |

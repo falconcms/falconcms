@@ -2,18 +2,26 @@
 
 Coupons let customers apply discount codes at checkout.
 
+![The coupons tab in shop settings](/screenshots/coupons.webp)
+
+*Each coupon is a card on the **Coupons** tab. Adding one opens the code, discount type and value, expiry, minimum spend, and the two usage limits.*
+
 ## Creating a Coupon
 
 Go to **Admin → Shop → Settings → Coupons** (or wherever your CMS routes it):
 
 | Field | Description |
 |---|---|
-| Code | The code customers enter (e.g., `SUMMER20`) |
-| Discount Type | `percentage` or `fixed` |
-| Discount Value | Amount (e.g., `20` for 20% or $20 off) |
-| Usage Limit | Max times the coupon can be used (0 = unlimited) |
+| Coupon Code | The code customers enter (e.g., `SUMMER20`) |
+| Discount Type | `percent`, `fixed_cart`, `fixed_product` or `free_shipping` |
+| Coupon Amount / Value | Amount (e.g., `20` for 20% or $20 off) |
 | Expiry Date | Optional expiration |
-| Active | Enable/disable without deleting |
+| Minimum Spend Required | Cart subtotal the coupon needs before it applies |
+| Usage Limit Per User | Times one customer may use the code — blank for unlimited |
+| Total Usage Limit | Redemptions across all customers — blank for unlimited |
+
+Two global switches sit above the coupon cards: whether coupon codes are accepted at all, and
+whether more than one may be stacked on an order.
 
 ## How Coupons Work
 

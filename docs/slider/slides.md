@@ -2,6 +2,10 @@
 
 A slider is a stack of **slides**. Each slide has its own background, its own set of [layers](/slider/layers), and its own entrance transition. This page covers building slides and everything about backgrounds.
 
+![The Slide tab in the slider editor](/screenshots/slider-slide.webp)
+
+*The **Slide** tab holds everything that belongs to one slide — its name, an optional whole-slide link, its transition and speed, and the background colour and image.*
+
 ---
 
 ## Managing slides

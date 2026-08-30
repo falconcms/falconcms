@@ -2,6 +2,10 @@
 
 This page covers how visitors move between slides — arrows, bullets, progress, thumbnails and autoplay — plus the productivity tools that keep your work safe: version history, full-screen preview, templates and import/export.
 
+![The navigation tab in the slider editor](/screenshots/slider-navigation.webp)
+
+*Arrows and bullets each have their own style, position and offsets — set on the **Navigation** tab and previewed live on the canvas.*
+
 ---
 
 ## Autoplay

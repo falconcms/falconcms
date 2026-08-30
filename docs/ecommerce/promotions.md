@@ -6,6 +6,10 @@ rules are evaluated on every cart read and applied on their own.
 
 Manage them under **Admin → Shop → Promotions**.
 
+![The promotion editor](/screenshots/promotion-editor.webp)
+
+*A promotion is written as three blocks — Basics, the Condition the cart must meet, and the Reward it earns.*
+
 ## Creating a promotion
 
 A promotion is a **trigger** (what has to be in the cart) and a **reward** (what the customer
