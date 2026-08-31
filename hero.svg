@@ -8,7 +8,7 @@
   <circle cx="52" cy="32" r="5" fill="#febc2e"/>
   <circle cx="68" cy="32" r="5" fill="#28c840"/>
   <rect x="88" y="24" width="280" height="16" rx="8" fill="#0f3460" opacity=".8"/>
-  <text x="158" y="36" fill="#6b7db3" font-size="9" font-family="monospace">lazycmsapp.github.io/lazy-cms-builder</text>
+  <text x="170" y="36" fill="#6b7db3" font-size="9" font-family="monospace">falconcms.test/admin/falcon-builder</text>
 
   <!-- Builder canvas area -->
   <rect x="16" y="56" width="100" height="288" rx="6" fill="#16213e"/>
@@ -81,5 +81,5 @@
 
   <!-- Top-right badge -->
   <rect x="360" y="24" width="60" height="16" rx="8" fill="#10b981" opacity=".15"/>
-  <text x="372" y="35" fill="#10b981" font-size="8" font-family="monospace" font-weight="bold">v1.2.0</text>
+  <text x="374" y="35" fill="#10b981" font-size="8" font-family="monospace" font-weight="bold">saved</text>
 </svg>
