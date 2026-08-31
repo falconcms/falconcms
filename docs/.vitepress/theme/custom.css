@@ -32,39 +32,67 @@
 
 /* Image ------------------------------------------------------------------- */
 
+/* hero.svg carries a viewBox but no width/height, so the browser lays it out at
+   the 300px default for a replaced element. The theme only ever caps it with
+   max-width, and a cap cannot make an image bigger than that — which is why the
+   hero rendered small no matter what the cap said. Giving the image an explicit
+   width is what makes it grow.
+
+   The image is absolutely positioned and centred by the theme, so it adds no
+   height of its own; the container carries the size, and aspect-ratio keeps it
+   locked to the artwork's 4:3 rather than to the theme's square. */
+
 .VPHero .image .image-container {
-  width: 350px;
-  height: 350px;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  aspect-ratio: 4 / 3;
 }
 
 .VPHero .image-container .image-src {
-  max-width: 224px;
-  max-height: 224px;
+  width: 100%;
+  max-width: 100%;
+  max-height: none;
 }
 
 @media (min-width: 640px) {
   .VPHero .image .image-container {
-    width: 430px;
-    height: 430px;
-  }
-
-  .VPHero .image-container .image-src {
-    max-width: 300px;
-    max-height: 300px;
+    max-width: 500px;
   }
 }
 
 @media (min-width: 960px) {
-  /* Above this breakpoint the container is sized by the flex row, so only the
-     image itself needs to grow. */
+  /* The hero is a two-column row here: .main is capped at 592px inside a 1152px
+     container, so the image column has ~560px to fill.
+
+     The theme nudges the container by translate(-32px, -32px). At the default
+     image size that shift is harmless, but a full-width image pulled 32px left
+     crosses into the text column and clips the end of the tagline. Only the
+     horizontal half is dropped — the lift is what keeps the artwork optically
+     level with the heading. */
   .VPHero .image .image-container {
-    width: 100%;
-    height: 100%;
+    max-width: 560px;
+    /*rtl:ignore*/
+    transform: translate(0, -32px);
+  }
+}
+
+/* Stacking order below the two-column breakpoint.
+
+   The theme puts the image first (.image order 1, .main order 2) so it sits
+   under the nav as a banner. Read on a phone that buries the heading and the
+   call-to-action below a fold of artwork, so the order is swapped back. The
+   theme's negative margins existed only to pull the image up under the nav;
+   once it follows the text they would crop it, so they are cleared. */
+
+@media (max-width: 959px) {
+  .VPHero .main {
+    order: 1;
   }
 
-  .VPHero .image-container .image-src {
-    max-width: 420px;
-    max-height: 420px;
+  .VPHero .image {
+    order: 2;
+    margin: 8px 0 0;
   }
 }
 
