@@ -2363,6 +2363,67 @@ if (!function_exists('falcon_activity_log_cutoff')) {
     }
 }
 
+if (!function_exists('falcon_prune_activity_logs')) {
+    /**
+     * Delete activity log entries older than the configured cutoff. Returns how many
+     * rows went, so a caller can say so rather than leaving the admin guessing.
+     *
+     * Deleted in chunks: a table left alone for months should not go at it in one
+     * statement and lock everyone else out. $maxBatches caps that work for callers
+     * running inside a web request; 0 means sweep until there is nothing left.
+     */
+    function falcon_prune_activity_logs(?Illuminate\Support\Carbon $cutoff = null, int $maxBatches = 0): int
+    {
+        $cutoff ??= falcon_activity_log_cutoff();
+
+        if (!$cutoff) {
+            return 0;
+        }
+
+        $total = 0;
+        $batches = 0;
+
+        do {
+            $count = DB::table('activity_logs')
+                ->where('created_at', '<', $cutoff)
+                ->limit(5000)
+                ->delete();
+
+            $total += $count;
+            $batches++;
+        } while ($count > 0 && ($maxBatches === 0 || $batches < $maxBatches));
+
+        return $total;
+    }
+}
+
+if (!function_exists('falcon_prune_activity_logs_throttled')) {
+    /**
+     * The hourly-throttled prune behind the cron-independent fallback, kept here so
+     * it can be exercised without standing up a whole request.
+     *
+     * The cutoff is resolved BEFORE the lock is claimed, and that order is the whole
+     * point: claim first and a request arriving while automatic removal is switched
+     * off burns the hour on nothing — then switching it on a minute later removes
+     * nothing until that hour is up, which reads exactly like the feature being
+     * broken. One batch only; the scheduled command does the full sweep.
+     */
+    function falcon_prune_activity_logs_throttled(): int
+    {
+        $cutoff = falcon_activity_log_cutoff();
+
+        if (!$cutoff) {
+            return 0;
+        }
+
+        if (!Cache::add('falcon_activity_log_prune_lock', 1, now()->addHour())) {
+            return 0;
+        }
+
+        return falcon_prune_activity_logs($cutoff, 1);
+    }
+}
+
 if (!function_exists('falcon_log_activity')) {
     function falcon_log_activity($action, $description, $model = null, $properties = [])
     {

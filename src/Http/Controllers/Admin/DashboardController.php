@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -727,7 +728,29 @@ class DashboardController extends Controller
         forget_cms_options_cache();
         falcon_log_activity('settings_updated', 'Updated CMS settings');
 
-        return redirect()->back()->with('success', 'Settings updated successfully!');
+        $message = 'Settings updated successfully!';
+
+        // Apply the retention window immediately. Waiting for the next hourly sweep
+        // means saving a window appears to do nothing, and the natural conclusion is
+        // that it is broken rather than that it has not run yet. The hourly lock is
+        // released so the schedule picks up cleanly from here.
+        if ($request->has('activity_log_form')) {
+            Cache::forget('falcon_activity_log_prune_lock');
+
+            $cutoff = falcon_activity_log_cutoff();
+
+            if ($cutoff) {
+                $removed = falcon_prune_activity_logs($cutoff);
+
+                // Says what happened either way — "0 removed, nothing was older than
+                // this" is an answer; silence is not.
+                $message .= $removed > 0
+                    ? " Removed {$removed} activity log entr".($removed === 1 ? 'y' : 'ies').' recorded before '.cms_date($cutoff).'.'
+                    : ' No activity log entries were older than '.cms_date($cutoff).'.';
+            }
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     public function seoSettings()

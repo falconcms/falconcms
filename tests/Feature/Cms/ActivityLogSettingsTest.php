@@ -6,6 +6,7 @@ use App\Models\User;
 use FalconCms\Core\Models\ActivityLog;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -226,6 +227,92 @@ class ActivityLogSettingsTest extends TestCase
         $this->artisan('falcon:prune-activity-logs')->assertSuccessful();
 
         $this->assertSame(2, ActivityLog::count());
+    }
+
+    public function test_saving_the_window_applies_it_straight_away(): void
+    {
+        $this->logAt(Carbon::now('UTC')->subHours(30)->toDateTimeString());
+        $this->logAt(Carbon::now('UTC')->subHour()->toDateTimeString());
+
+        $this->actingAs($this->administrator())->post('/admin/settings', [
+            'activity_log_form' => '1',
+            'activity_log_enabled' => '1',
+            'activity_log_autoprune' => '1',
+            'activity_log_retention' => '24',
+        ])->assertRedirect();
+
+        // Counted by action: saving settings records an entry of its own, which is
+        // inside the window and correctly stays.
+        $this->assertSame(1, ActivityLog::where('action', 'test')->count(),
+            'Saving a window must not wait for the next sweep.');
+    }
+
+    public function test_saving_says_what_it_removed(): void
+    {
+        $this->logAt(Carbon::now('UTC')->subHours(30)->toDateTimeString());
+
+        $this->actingAs($this->administrator())->post('/admin/settings', [
+            'activity_log_form' => '1',
+            'activity_log_enabled' => '1',
+            'activity_log_autoprune' => '1',
+            'activity_log_retention' => '24',
+        ])->assertSessionHas('success', fn ($m) => str_contains($m, 'Removed 1 activity log entry'));
+    }
+
+    public function test_saving_says_so_even_when_nothing_was_old_enough(): void
+    {
+        // The case that reads as "it is broken": a window is set, nothing happens,
+        // because nothing was old enough yet. Saying so is the whole point.
+        $this->logAt(Carbon::now('UTC')->subHour()->toDateTimeString());
+
+        $this->actingAs($this->administrator())->post('/admin/settings', [
+            'activity_log_form' => '1',
+            'activity_log_enabled' => '1',
+            'activity_log_autoprune' => '1',
+            'activity_log_retention' => '24',
+        ])->assertSessionHas('success', fn ($m) => str_contains($m, 'No activity log entries were older than'));
+
+        $this->assertSame(1, ActivityLog::where('action', 'test')->count());
+    }
+
+    public function test_the_hourly_fallback_does_not_burn_its_lock_on_nothing(): void
+    {
+        // The lock used to be claimed before checking whether there was anything to
+        // do. A visit arriving while removal was off spent the hour on nothing, and
+        // switching it on a minute later removed nothing until that hour was up —
+        // which is indistinguishable from the feature not working.
+        $this->setCmsOptions(['activity_log_autoprune' => '0']);
+        $this->logAt(Carbon::now('UTC')->subHours(30)->toDateTimeString());
+
+        falcon_prune_activity_logs_throttled();
+
+        $this->assertFalse(
+            Cache::has('falcon_activity_log_prune_lock'),
+            'Nothing to prune must not consume the window for something that is.'
+        );
+
+        // Switched on a moment later — the very next visit has to act on it.
+        $this->setCmsOptions([
+            'activity_log_autoprune' => '1',
+            'activity_log_retention' => '24',
+        ]);
+
+        $this->assertSame(1, falcon_prune_activity_logs_throttled());
+        $this->assertSame(0, ActivityLog::where('action', 'test')->count());
+    }
+
+    public function test_the_hourly_fallback_runs_only_once_an_hour(): void
+    {
+        $this->setCmsOptions([
+            'activity_log_autoprune' => '1',
+            'activity_log_retention' => '24',
+        ]);
+
+        $this->logAt(Carbon::now('UTC')->subHours(30)->toDateTimeString());
+        $this->assertSame(1, falcon_prune_activity_logs_throttled());
+
+        $this->logAt(Carbon::now('UTC')->subHours(30)->toDateTimeString());
+        $this->assertSame(0, falcon_prune_activity_logs_throttled(), 'The lock holds for the hour.');
     }
 
     public function test_the_command_deletes_nothing_while_automatic_removal_is_off(): void

@@ -4,7 +4,6 @@ namespace FalconCms\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class PruneActivityLogs extends Command
 {
@@ -34,13 +33,7 @@ class PruneActivityLogs extends Command
             return self::SUCCESS;
         }
 
-        $total = 0;
-
-        // Chunked so a long-neglected table never goes at it in one locking statement.
-        do {
-            $count = DB::table('activity_logs')->where('created_at', '<', $cutoff)->limit(5000)->delete();
-            $total += $count;
-        } while ($count > 0);
+        $total = falcon_prune_activity_logs($cutoff);
 
         $this->info("Pruned {$total} activity log entr(ies) older than ".cms_date($cutoff).'.');
 

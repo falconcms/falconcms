@@ -223,18 +223,11 @@ class FalconCmsServiceProvider extends ServiceProvider
 
                 // Same idea for activity logs, but hourly: the shortest retention on
                 // offer is 24 hours, so a daily sweep would let entries outlive their
-                // window by most of a day on a host with no cron. falcon_activity_log_cutoff()
-                // returns null unless automatic removal is actually switched on.
+                // window by most of a day on a host with no cron. The throttling and
+                // the order it does things in live in the helper, where they can be
+                // tested without standing up a request.
                 try {
-                    if (Cache::add('falcon_activity_log_prune_lock', 1, now()->addHour())) {
-                        $cutoff = falcon_activity_log_cutoff();
-
-                        if ($cutoff) {
-                            DB::table('activity_logs')
-                                ->where('created_at', '<', $cutoff)
-                                ->limit(5000)->delete();
-                        }
-                    }
+                    falcon_prune_activity_logs_throttled();
                 } catch (\Throwable $e) {
                     // Best-effort; never let maintenance affect the request.
                 }
