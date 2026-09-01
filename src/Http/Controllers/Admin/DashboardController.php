@@ -35,13 +35,17 @@ class DashboardController extends Controller
         $impressionsData = [];
         $visitorsData = [];
 
+        // Calendar boundaries follow the CMS timezone (Settings → General), not the
+        // server's. A month has to begin at midnight where the site is, so its first
+        // and last hours are counted into the right column. Rows stay in UTC — the
+        // boundary is worked out locally and queried as the UTC instant it maps to.
         for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
+            $date = cms_now()->subMonths($i);
             $monthLabel = $date->format('M');
             $labels[] = $monthLabel;
 
-            $startOfMonth = $date->copy()->startOfMonth();
-            $endOfMonth = $date->copy()->endOfMonth();
+            $startOfMonth = $date->copy()->startOfMonth()->utc();
+            $endOfMonth = $date->copy()->endOfMonth()->utc();
 
             $impressions = Analytics::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
             $visitors = Analytics::whereBetween('created_at', [$startOfMonth, $endOfMonth])
@@ -153,8 +157,17 @@ class DashboardController extends Controller
                     ->selectRaw("{$netRevenue} as net")->value('net');
                 $ecoStats['pending_orders'] = Order::where('status', 'pending')->count();
                 $ecoStats['total_products'] = Post::where('type', 'product')->count();
-                $ecoStats['orders_today'] = Order::whereDate('created_at', today())->count();
-                $ecoStats['orders_month'] = Order::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count();
+                // "Today" and "this month" are the shop owner's today and month, so
+                // an evening order in a UTC+6 site counts on the day it was placed
+                // rather than the server's next one. Half-open ranges on the UTC
+                // instants, which also lets the created_at index do the work —
+                // whereDate/whereMonth wrap the column in a function and cannot.
+                $ecoStats['orders_today'] = Order::whereBetween('created_at', [
+                    cms_now()->startOfDay()->utc(), cms_now()->endOfDay()->utc(),
+                ])->count();
+                $ecoStats['orders_month'] = Order::whereBetween('created_at', [
+                    cms_now()->startOfMonth()->utc(), cms_now()->endOfMonth()->utc(),
+                ])->count();
                 $ecoStats['status_counts'] = Order::selectRaw('status, count(*) as total')
                     ->groupBy('status')->pluck('total', 'status')->toArray();
                 // "Partially Refunded" is driven by actual refund data (any order with a partial refund),
@@ -164,10 +177,10 @@ class DashboardController extends Controller
                 $rev = [];
                 $revLabels = [];
                 for ($i = 6; $i >= 0; $i--) {
-                    $d = now()->subMonths($i);
+                    $d = cms_now()->subMonths($i);
                     $revLabels[] = $d->format('M');
                     $rev[] = (float) Order::whereIn('status', $revenueStatuses)
-                        ->whereBetween('created_at', [$d->copy()->startOfMonth(), $d->copy()->endOfMonth()])
+                        ->whereBetween('created_at', [$d->copy()->startOfMonth()->utc(), $d->copy()->endOfMonth()->utc()])
                         ->selectRaw("{$netRevenue} as net")->value('net');
                 }
                 $ecoStats['monthly_revenue'] = $rev;
@@ -195,9 +208,12 @@ class DashboardController extends Controller
                     ->values();
 
                 // Month-over-month deltas + context for the KPI cards
-                $lastMonthRef = now()->subMonthNoOverflow();
-                $ordersLastMonth = Order::whereMonth('created_at', $lastMonthRef->month)
-                    ->whereYear('created_at', $lastMonthRef->year)->count();
+                // Same month boundaries as orders_month above, so the two halves of
+                // the delta are measured the same way.
+                $lastMonthRef = cms_now()->subMonthNoOverflow();
+                $ordersLastMonth = Order::whereBetween('created_at', [
+                    $lastMonthRef->copy()->startOfMonth()->utc(), $lastMonthRef->copy()->endOfMonth()->utc(),
+                ])->count();
                 $thisRev = (float) ($rev[6] ?? 0);   // current month (last entry in the 7-month series)
                 $lastRev = (float) ($rev[5] ?? 0);   // previous month
                 $ecoStats['revenue_this_month'] = $thisRev;
@@ -968,7 +984,7 @@ class DashboardController extends Controller
                     ['label' => 'Email', 'is_file' => false, 'is_empty' => false, 'display' => $toEmail],
                     ['label' => 'Message', 'is_file' => false, 'is_empty' => false, 'display' => 'This is a test submission.'],
                 ];
-                $submittedAt = now()->format('d M Y, H:i');
+                $submittedAt = cms_now()->format('d M Y, H:i');
                 $ip = request()->ip();
 
                 Mail::send(
@@ -1029,6 +1045,13 @@ class DashboardController extends Controller
         // without DST; across a DST change one boundary day can land an hour out.
         $tzShift = (int) cms_now()->utcOffset() * 60;
 
+        // Same shift, spelled for the driver in use. MySQL/MariaDB is what the CMS
+        // supports and what production runs; SQLite is spelled out too so this query
+        // does not become the one thing that cannot run on it.
+        $localDate = DB::connection()->getDriverName() === 'sqlite'
+            ? sprintf("DATE(datetime(created_at, '%+d seconds'))", $tzShift)
+            : sprintf('DATE(created_at + INTERVAL %d SECOND)', $tzShift);
+
         // ── KPIs (with % change vs the previous equal period) ─────────────────
         $totalVisits = Analytics::where('created_at', '>=', $start)->count();
         $uniqueVisitors = Analytics::where('created_at', '>=', $start)->distinct()->count('ip_address');
@@ -1039,7 +1062,7 @@ class DashboardController extends Controller
 
         // ── Daily series (visits + unique), zero-filled across the range ──────
         $daily = Analytics::where('created_at', '>=', $start)
-            ->select(DB::raw("DATE(created_at + INTERVAL {$tzShift} SECOND) as d"), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
+            ->select(DB::raw("{$localDate} as d"), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
             ->groupBy('d')->orderBy('d')->get()->keyBy('d');
 
         $labels = $visitsSeries = $uniqueSeries = [];

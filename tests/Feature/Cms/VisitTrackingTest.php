@@ -2,9 +2,9 @@
 
 namespace FalconCms\Core\Tests\Feature\Cms;
 
+use App\Models\User;
 use FalconCms\Core\Http\Middleware\TrackVisits;
 use FalconCms\Core\Models\Analytics;
-use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,9 +23,16 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class VisitTrackingTest extends TestCase
 {
-    use MakesShopFixtures;
-
     private const HUMAN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+
+    private function someone(): User
+    {
+        return User::forceCreate([
+            'name' => 'Visitor',
+            'email' => 'visitor@example.test',
+            'password' => 'secret-password',
+        ]);
+    }
 
     /** Run one request through the middleware and return how many rows it left behind. */
     private function visit(string $path = '/a-page', string $userAgent = self::HUMAN, int $status = 200): int
@@ -46,14 +53,14 @@ class VisitTrackingTest extends TestCase
 
     public function test_a_signed_in_visitor_is_not_counted(): void
     {
-        $this->actingAs($this->makeUser());
+        $this->actingAs($this->someone());
 
         $this->assertSame(0, $this->visit(), 'A signed-in visitor must not appear in analytics.');
     }
 
     public function test_signing_out_starts_counting_again(): void
     {
-        $this->actingAs($this->makeUser());
+        $this->actingAs($this->someone());
         $this->assertSame(0, $this->visit());
 
         auth()->logout();
