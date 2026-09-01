@@ -2305,9 +2305,73 @@ if (!function_exists('falcon_geoip')) {
     }
 }
 
+if (!function_exists('falcon_activity_log_enabled')) {
+    /**
+     * Whether activity logging is switched on in Settings → General.
+     *
+     * Defaults to on: a site upgrading into this option was already logging, and
+     * silently stopping would leave a gap in the audit trail nobody asked for.
+     */
+    function falcon_activity_log_enabled(): bool
+    {
+        return get_cms_option('activity_log_enabled', '1') === '1';
+    }
+}
+
+if (!function_exists('falcon_activity_log_cutoff')) {
+    /**
+     * The moment before which activity logs should be deleted, or null when nothing
+     * is due to be removed.
+     *
+     * The presets are ages ("older than 24 hours"); Custom is an absolute moment the
+     * admin picked. Both end up as the same thing — one instant, and everything older
+     * than it goes. The custom value is entered and read in the CMS timezone
+     * (Settings → General), so a cutoff of "1 Sep, 10:00 PM" means ten at night where
+     * the site is, not on whatever clock the server happens to keep.
+     */
+    function falcon_activity_log_cutoff(): ?Illuminate\Support\Carbon
+    {
+        if (!falcon_activity_log_enabled() || get_cms_option('activity_log_autoprune', '0') !== '1') {
+            return null;
+        }
+
+        $retention = (string) get_cms_option('activity_log_retention', '72');
+
+        if ($retention === 'custom') {
+            $raw = trim((string) get_cms_option('activity_log_prune_before', ''));
+            if ($raw === '') {
+                return null;
+            }
+
+            try {
+                return Illuminate\Support\Carbon::parse($raw, cms_timezone())->utc();
+            } catch (Throwable $e) {
+                // A malformed stored value must not start deleting from the epoch.
+                return null;
+            }
+        }
+
+        $hours = (int) $retention;
+
+        // Anything unrecognised falls back to the longest preset rather than the
+        // shortest: a bad value should keep more history, never less.
+        if (!in_array($hours, [24, 48, 72], true)) {
+            $hours = 72;
+        }
+
+        return cms_now()->subHours($hours)->utc();
+    }
+}
+
 if (!function_exists('falcon_log_activity')) {
     function falcon_log_activity($action, $description, $model = null, $properties = [])
     {
+        // One choke point for every caller in the package: switched off in settings
+        // means no row is written at all, not merely hidden from the screen.
+        if (!falcon_activity_log_enabled()) {
+            return null;
+        }
+
         try {
             $ip = request()->ip();
             $country = null;

@@ -275,6 +275,66 @@
                         <p class="text-[12px] text-[#646970] mt-1">When enabled, users can sign in without a password — both on the shop account page and the admin login form.</p>
                     </td>
                 </tr>
+
+                <!-- Activity Log -->
+                @php
+                    $logOn = ($settings['activity_log_enabled'] ?? '1') === '1';
+                    $logPrune = ($settings['activity_log_autoprune'] ?? '0') === '1';
+                    $logRetention = $settings['activity_log_retention'] ?? '72';
+                    $logBefore = trim((string) ($settings['activity_log_prune_before'] ?? ''));
+                    // datetime-local wants Y-m-d\TH:i; the value is stored as local wall-clock time.
+                    $logBeforeInput = $logBefore !== '' ? str_replace(' ', 'T', substr($logBefore, 0, 16)) : '';
+                @endphp
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Activity Log</label>
+                    </th>
+                    <td>
+                        {{-- Marks this as the General form. Every settings tab posts to the same
+                             action, so without it an unrelated save would read these absent
+                             checkboxes as "unticked" and quietly switch logging off. --}}
+                        <input type="hidden" name="activity_log_form" value="1">
+
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="activity_log_enabled" id="activity_log_enabled"
+                                class="w-4 h-4 mr-2" {{ $logOn ? 'checked' : '' }}>
+                            <span class="text-[14px] text-[#1d2327]">Is Activity Log on?</span>
+                        </label>
+                        <p class="text-[12px] text-[#646970] mt-1">Records who changed what, and from where. Switch it off and the Activity Logs tab disappears and nothing further is recorded — entries already stored are kept.</p>
+
+                        <div id="activity_log_options" class="mt-4 pl-4 border-l-2 border-[#e0e0e0] {{ $logOn ? '' : 'hidden' }}">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="activity_log_autoprune" id="activity_log_autoprune"
+                                    class="w-4 h-4 mr-2" {{ $logPrune ? 'checked' : '' }}>
+                                <span class="text-[14px] text-[#1d2327]">Remove old entries automatically?</span>
+                            </label>
+                            <p class="text-[12px] text-[#646970] mt-1">Anything older than the window below is deleted. Deleting is permanent.</p>
+
+                            <div id="activity_log_retention" class="mt-3 {{ $logPrune ? '' : 'hidden' }}">
+                                <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+                                    @foreach(['24' => 'Older than 24 hours', '48' => 'Older than 48 hours', '72' => 'Older than 72 hours', 'custom' => 'Custom…'] as $value => $label)
+                                        <label class="inline-flex items-center cursor-pointer">
+                                            <input type="radio" name="activity_log_retention" value="{{ $value }}"
+                                                class="activity-log-retention w-4 h-4 mr-2"
+                                                {{ (string) $logRetention === (string) $value ? 'checked' : '' }}>
+                                            <span class="text-[14px] text-[#1d2327]">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                <div id="activity_log_custom" class="mt-3 {{ (string) $logRetention === 'custom' ? '' : 'hidden' }}">
+                                    <label class="block text-[13px] font-semibold text-[#1d2327] mb-1.5">Delete entries recorded before</label>
+                                    <input type="datetime-local" name="activity_log_prune_before"
+                                        value="{{ $logBeforeInput }}" class="wp-input h-9 text-[13px]">
+                                    <p class="text-[12px] text-[#646970] mt-1">
+                                        Read in the site timezone — <strong>{{ cms_timezone() }}</strong>, currently {{ cms_now()->format('M j, Y g:i A') }}.
+                                        Change the timezone above and this moment moves with it.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
             </table>
 
             {!! do_falcon_action('falcon_settings_form_bottom') !!}
@@ -288,6 +348,32 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                // Activity log — each control only reveals the next once it is on, so the
+                // page never shows a retention window for logging that is switched off.
+                (function () {
+                    const on = document.getElementById('activity_log_enabled');
+                    const prune = document.getElementById('activity_log_autoprune');
+                    const options = document.getElementById('activity_log_options');
+                    const retention = document.getElementById('activity_log_retention');
+                    const custom = document.getElementById('activity_log_custom');
+                    if (!on || !prune || !options || !retention || !custom) return;
+
+                    function sync() {
+                        options.classList.toggle('hidden', !on.checked);
+                        retention.classList.toggle('hidden', !(on.checked && prune.checked));
+
+                        const picked = document.querySelector('.activity-log-retention:checked');
+                        custom.classList.toggle('hidden',
+                            !(on.checked && prune.checked && picked && picked.value === 'custom'));
+                    }
+
+                    on.addEventListener('change', sync);
+                    prune.addEventListener('change', sync);
+                    document.querySelectorAll('.activity-log-retention')
+                        .forEach(r => r.addEventListener('change', sync));
+                    sync();
+                })();
+
                 const registerCheckbox = document.getElementById('users_can_register');
                 const regRows = [
                     document.getElementById('reg-theme-row'),

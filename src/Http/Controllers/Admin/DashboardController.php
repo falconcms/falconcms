@@ -648,6 +648,41 @@ class DashboardController extends Controller
         // Handle Checkboxes
         $data['users_can_register'] = $request->has('users_can_register') ? '1' : '0';
         $data['require_email_verification'] = $request->has('require_email_verification') ? '1' : '0';
+
+        // Activity log switches only exist on the General tab, so only take them when
+        // that form is the one being submitted — every other settings screen posts
+        // through here too, and would otherwise read a missing checkbox as "off".
+        if ($request->has('activity_log_form')) {
+            $data['activity_log_enabled'] = $request->has('activity_log_enabled') ? '1' : '0';
+            $data['activity_log_autoprune'] = $request->has('activity_log_autoprune') ? '1' : '0';
+
+            $retention = (string) $request->input('activity_log_retention', '72');
+            $data['activity_log_retention'] = in_array($retention, ['24', '48', '72', 'custom'], true)
+                ? $retention
+                : '72';
+
+            // Read the picked moment in the CMS timezone and keep it in that shape —
+            // it is shown back in the same field, and the cutoff helper parses it the
+            // same way. A datetime-local input posts "Y-m-d\TH:i".
+            $before = trim((string) $request->input('activity_log_prune_before', ''));
+            if ($before !== '' && $data['activity_log_retention'] === 'custom') {
+                try {
+                    $data['activity_log_prune_before'] = Carbon::parse($before, cms_timezone())
+                        ->format('Y-m-d H:i:s');
+                } catch (\Throwable $e) {
+                    $data['activity_log_prune_before'] = '';
+                }
+            } elseif ($data['activity_log_retention'] !== 'custom') {
+                $data['activity_log_prune_before'] = '';
+            }
+        } else {
+            unset(
+                $data['activity_log_enabled'],
+                $data['activity_log_autoprune'],
+                $data['activity_log_retention'],
+                $data['activity_log_prune_before'],
+            );
+        }
         // Multi-device Login & Magic Login are Pro features. Only accept changes to them
         // when the site can edit Pro features; otherwise preserve the stored values so a
         // locked (or crafted) request can never enable them.
@@ -777,6 +812,13 @@ class DashboardController extends Controller
     {
         if (!auth()->user()->hasPermission('manage_settings')) {
             abort(403);
+        }
+
+        // Hiding the tab is presentation; this is what actually closes the screen.
+        // Without it the page stays reachable by typing the URL, showing a frozen
+        // history nobody can add to.
+        if (!falcon_activity_log_enabled()) {
+            return redirect()->route('admin.settings.index');
         }
 
         $query = ActivityLog::with('user')->latest();
@@ -1383,6 +1425,10 @@ class DashboardController extends Controller
     {
         if (!auth()->user()->hasPermission('manage_settings')) {
             abort(403);
+        }
+
+        if (!falcon_activity_log_enabled()) {
+            return redirect()->route('admin.settings.index');
         }
 
         $ids = $request->input('log_ids', []);

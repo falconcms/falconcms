@@ -11,6 +11,7 @@ use FalconCms\Core\Console\Commands\MakeTheme;
 use FalconCms\Core\Console\Commands\PluginActivate;
 use FalconCms\Core\Console\Commands\PluginDeactivate;
 use FalconCms\Core\Console\Commands\PluginList;
+use FalconCms\Core\Console\Commands\PruneActivityLogs;
 use FalconCms\Core\Console\Commands\PruneAnalytics;
 use FalconCms\Core\Console\Commands\PublishScheduledPosts;
 use FalconCms\Core\Console\Commands\ReindexProductAttributes;
@@ -171,6 +172,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             ExpireSalePrices::class,
             ReindexProductAttributes::class,
             PruneAnalytics::class,
+            PruneActivityLogs::class,
             PluginList::class,
             PluginActivate::class,
             PluginDeactivate::class,
@@ -183,6 +185,9 @@ class FalconCmsServiceProvider extends ServiceProvider
             $schedule->command('falcon:publish-scheduled')->everyMinute()->withoutOverlapping();
             $schedule->command('falcon:expire-sales')->daily();
             $schedule->command('falcon:prune-analytics')->dailyAt('03:30')->withoutOverlapping();
+            // Hourly, because the shortest retention this offers is 24 hours — a daily
+            // sweep would let entries outlive their window by most of a day.
+            $schedule->command('falcon:prune-activity-logs')->hourly()->withoutOverlapping();
         });
 
         // Cron-independent fallback: many hosts (and local dev) never run `schedule:run`,
@@ -211,6 +216,24 @@ class FalconCmsServiceProvider extends ServiceProvider
                         DB::table('cms_analytics')
                             ->where('created_at', '<', now()->subDays($days))
                             ->limit(5000)->delete();
+                    }
+                } catch (\Throwable $e) {
+                    // Best-effort; never let maintenance affect the request.
+                }
+
+                // Same idea for activity logs, but hourly: the shortest retention on
+                // offer is 24 hours, so a daily sweep would let entries outlive their
+                // window by most of a day on a host with no cron. falcon_activity_log_cutoff()
+                // returns null unless automatic removal is actually switched on.
+                try {
+                    if (Cache::add('falcon_activity_log_prune_lock', 1, now()->addHour())) {
+                        $cutoff = falcon_activity_log_cutoff();
+
+                        if ($cutoff) {
+                            DB::table('activity_logs')
+                                ->where('created_at', '<', $cutoff)
+                                ->limit(5000)->delete();
+                        }
                     }
                 } catch (\Throwable $e) {
                     // Best-effort; never let maintenance affect the request.
