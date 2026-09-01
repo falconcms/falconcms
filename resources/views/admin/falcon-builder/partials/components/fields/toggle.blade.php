@@ -1,4 +1,4 @@
-﻿{{-- Reusable On/Off toggle.
+{{-- Reusable On/Off toggle.
      Vars: $key (setting key), $label (optional), $target (optional JS object path) --}}
 @php
     $target = $target ?? 'editingElement.settings';

@@ -1,4 +1,4 @@
-﻿<div class="space-y-6 pb-10">
+<div class="space-y-6 pb-10">
     <!-- Button Style Toggle -->
     <div>
         <div class="flex justify-between items-center mb-3">

@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'card'"
+<div v-if="el.type === 'card'"
      class="w-full py-2"
      :style="[getCanvasVisibilityStyle(el.settings), {
          marginTop:    (el.settings.marginTop    || 0) + (el.settings.marginTopUnit    || 'px'),

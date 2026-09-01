@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'image'"
+<div v-if="el.type === 'image'"
      class="element-image-wrapper w-full relative group/img-preview"
      :class="[el.settings.cssClass || '', 'image-container-' + el.id, el.settings.hoverType ? 'hover-' + el.settings.hoverType : '']"
      :id="el.settings.cssId || undefined"

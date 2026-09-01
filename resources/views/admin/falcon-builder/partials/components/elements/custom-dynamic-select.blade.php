@@ -1,4 +1,4 @@
-﻿{{-- Dynamic source blue-pill for custom element fields.
+{{-- Dynamic source blue-pill for custom element fields.
      Variables: $dynKey (settings key holding source), $dynCtx ('text'|'link'|'image') --}}
 <div class="flex items-center justify-between px-3 py-2.5 bg-[#2271b1]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
      @click.stop="openDynSrcMenu(editingElement.settings, '{{ $dynKey }}', '{{ $dynCtx ?? 'text' }}', $event)">

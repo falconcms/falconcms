@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'button'"
+<div v-if="el.type === 'button'"
      class="element-button-wrapper w-full"
      :class="[el.settings.cssClass || '', 'button-container-' + el.id]"
      :id="el.settings.cssId || undefined"

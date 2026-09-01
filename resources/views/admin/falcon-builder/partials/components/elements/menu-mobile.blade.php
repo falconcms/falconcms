@@ -1,4 +1,4 @@
-﻿<div class="space-y-8 pb-10">
+<div class="space-y-8 pb-10">
     <!-- Collapse to Mobile Breakpoint -->
     <div class="space-y-4">
         <div class="flex justify-between items-center">

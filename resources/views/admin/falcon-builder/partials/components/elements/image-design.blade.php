@@ -1,4 +1,4 @@
-﻿<!-- Dimension Settings -->
+<!-- Dimension Settings -->
 <div class="space-y-6">
     <div class="bg-slate-50/50 p-4 rounded-lg border border-slate-100">
         <h4 class="text-[11px] font-black uppercase tracking-widest text-[#0091ea] mb-4">Dimension</h4>

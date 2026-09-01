@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'icon_list'"
+<div v-if="el.type === 'icon_list'"
      class="element-icon-list w-full"
      :class="[el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"

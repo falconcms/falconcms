@@ -1,4 +1,4 @@
-﻿<div class="space-y-8 pb-10">
+<div class="space-y-8 pb-10">
     <!-- Submenu Behavior -->
     <div class="space-y-6">
         <div class="flex items-center gap-2 pb-2 border-b border-slate-50">

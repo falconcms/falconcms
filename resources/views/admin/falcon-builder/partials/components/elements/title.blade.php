@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'title'"
+<div v-if="el.type === 'title'"
      class="element-title-wrapper"
      :class="[el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"

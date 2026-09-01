@@ -1,4 +1,4 @@
-﻿{{-- 1. Flex Grow --}}
+{{-- 1. Flex Grow --}}
 <div>
     <div class="flex justify-between items-center mb-2">
         <label class="text-[12px] font-bold text-[#333]">Flex Grow</label>

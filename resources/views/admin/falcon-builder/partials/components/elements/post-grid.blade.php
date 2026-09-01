@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'post_grid'"
+<div v-if="el.type === 'post_grid'"
      class="w-full py-3"
      :style="getCanvasVisibilityStyle(el.settings)">
     <div class="border border-dashed border-[#0091ea]/30 rounded-lg bg-gradient-to-br from-[#f8fbff] to-[#f0f6fb] p-5">

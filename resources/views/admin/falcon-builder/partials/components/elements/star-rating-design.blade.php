@@ -1,4 +1,4 @@
-﻿<div class="space-y-5">
+<div class="space-y-5">
 
     <!-- Star Size -->
     <div>

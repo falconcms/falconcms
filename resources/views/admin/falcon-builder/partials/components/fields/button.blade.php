@@ -1,4 +1,4 @@
-﻿{{-- Reusable Button control (label + url + open-in target).
+{{-- Reusable Button control (label + url + open-in target).
      Vars: $key (setting key for label; url = {key}_url, target = {key}_target), $label (optional), $placeholder (optional) --}}
 @php
     $label = $label ?? 'Button';

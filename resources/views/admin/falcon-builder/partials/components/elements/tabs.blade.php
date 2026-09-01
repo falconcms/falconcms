@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'tabs'"
+<div v-if="el.type === 'tabs'"
      class="w-full"
      :class="[el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"

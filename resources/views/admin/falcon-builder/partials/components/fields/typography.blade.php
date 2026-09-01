@@ -1,4 +1,4 @@
-﻿{{-- Reusable Typography control — identical design to the Title element.
+{{-- Reusable Typography control — identical design to the Title element.
      Variable: $prefix (settings key prefix). Binds to:
        {prefix}_family, {prefix}_weight, {prefix}_size, {prefix}_line_height,
        {prefix}_letter_spacing, {prefix}_transform

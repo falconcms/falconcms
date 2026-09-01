@@ -1,4 +1,4 @@
-﻿{{-- Reusable responsive device-mode dropdown (desktop/tablet/mobile).
+{{-- Reusable responsive device-mode dropdown (desktop/tablet/mobile).
      Var: $menu (unique menu id used with activeResponsiveMenu) --}}
 @php $menu = $menu ?? 'respmenu'; @endphp
 <div class="relative inline-block">

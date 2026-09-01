@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'accordion'"
+<div v-if="el.type === 'accordion'"
      class="w-full"
      :class="[el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"

@@ -1,4 +1,4 @@
-﻿<div class="space-y-6">
+<div class="space-y-6">
     <!-- Alignment -->
     <div>
         <div class="flex justify-between items-center mb-3">

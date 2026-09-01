@@ -1,4 +1,4 @@
-﻿{{-- Builder Library Modal --}}
+{{-- Builder Library Modal --}}
 <transition name="modal-fade">
 <div v-if="showLibraryModal"
      class="fixed inset-0 bg-black/50 z-[9998] flex items-center justify-center p-4"

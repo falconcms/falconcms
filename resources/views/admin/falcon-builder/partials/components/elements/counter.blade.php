@@ -1,4 +1,4 @@
-﻿<div v-if="el.type === 'counter'" class="element-counter w-full" :class="getVisibilityClasses(el.settings)"
+<div v-if="el.type === 'counter'" class="element-counter w-full" :class="getVisibilityClasses(el.settings)"
      :style="{
          textAlign: el.settings.textAlign || 'center',
          padding: '8px 0',
