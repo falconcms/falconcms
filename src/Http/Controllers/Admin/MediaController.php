@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Media;
+use FalconCms\Core\Support\SvgSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Storage;
@@ -117,8 +118,37 @@ class MediaController extends Controller
                 ], 422);
             }
 
+            // A format that has to be sanitised is never allowed implicitly. An empty or
+            // unset Allowed Upload Formats list means "no restriction" for ordinary files,
+            // which would otherwise let SVG in on any site that never opened that panel —
+            // so these have to be named there before the library will keep them.
+            if (in_array($extension, falcon_sanitized_upload_extensions(), true)
+                && !in_array($extension, (array) $allowedFormats, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "File format '.{$extension}' is switched off. Enable it under "
+                        .'Customizer → Performance → Allowed Upload Formats to accept it.',
+                ], 422);
+            }
+
+            // Formats that may be kept only once their contents have been rewritten.
+            // SVG is the one: it reports image/* but is a document that can carry script,
+            // so what gets stored is the sanitised markup, never the bytes as uploaded.
+            $sanitized = null;
+            if (in_array($extension, falcon_sanitized_upload_extensions(), true)) {
+                $sanitized = SvgSanitizer::clean(@file_get_contents($file->getRealPath()));
+                if ($sanitized === '') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "That .{$extension} file could not be read as valid, safe markup.",
+                    ], 422);
+                }
+            }
+
             $slugName = Str::slug($originalName) ?: 'upload';
-            $isImage = strpos($mimeType, 'image/') === 0;
+            // Sanitised formats skip the image pipeline — GD cannot read them, and re-encoding
+            // is exactly what we do not want for markup we have just vetted.
+            $isImage = $sanitized === null && strpos($mimeType, 'image/') === 0;
             $yearMonth = now()->format('Y/m');
             $mediaDir = 'media/'.$yearMonth;
 
@@ -189,6 +219,11 @@ class MediaController extends Controller
                     [$filename, $savePath] = $this->uniqueMediaPath($mediaDir, $slugName, $extension);
                     $path = $file->storeAs($mediaDir, $filename, 'public');
                 }
+            } elseif ($sanitized !== null) {
+                // Write the cleaned markup rather than the uploaded file.
+                [$filename, $savePath] = $this->uniqueMediaPath($mediaDir, $slugName, $extension);
+                Storage::disk('public')->put($savePath, $sanitized);
+                $path = $savePath;
             } else {
                 // Non-image files
                 [$filename, $savePath] = $this->uniqueMediaPath($mediaDir, $slugName, $extension);

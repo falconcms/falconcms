@@ -188,18 +188,47 @@ class BackupRestoreTest extends TestCase
             'a backup archive dropped a PHP file into a web-accessible directory');
     }
 
-    public function test_a_restore_will_not_write_an_svg_into_the_public_disk(): void
+    /**
+     * A backup of a site that legitimately used SVG should restore its artwork, but an
+     * archive is untrusted input like any other — so what lands on the public disk is the
+     * sanitised markup, never the bytes the archive carried.
+     */
+    public function test_a_restore_writes_an_svg_only_after_sanitising_it(): void
     {
         $this->placeBackup('full2.zip', [
             'database.sql' => 'SELECT 1;',
             'media/ok2.png' => $this->onePixelPng(),
-            'media/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+            'media/logo.svg' => '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">'
+                .'<script>alert(2)</script><path d="M0 0h10v10H0z"/></svg>',
         ]);
 
         $this->restore('full2.zip');
 
         $this->assertFileExists(storage_path('app/public/ok2.png'), 'the media half did not run');
-        $this->assertFileDoesNotExist(storage_path('app/public/logo.svg'));
+
+        $restored = @file_get_contents(storage_path('app/public/logo.svg'));
+        $this->assertIsString($restored, 'the artwork was dropped instead of sanitised');
+        $this->assertStringNotContainsString('<script', $restored);
+        $this->assertStringNotContainsString('onload', $restored);
+        $this->assertStringContainsString('<path', $restored);
+    }
+
+    /**
+     * An archive entry named .svg that is not markup has nothing to sanitise, so nothing
+     * is written.
+     */
+    public function test_a_restore_drops_an_svg_that_is_not_markup(): void
+    {
+        $this->placeBackup('full3.zip', [
+            'database.sql' => 'SELECT 1;',
+            'media/ok3.png' => $this->onePixelPng(),
+            'media/payload.svg' => '<?php echo 1;',
+        ]);
+
+        $this->restore('full3.zip');
+
+        $this->assertFileExists(storage_path('app/public/ok3.png'), 'the media half did not run');
+        $this->assertFileDoesNotExist(storage_path('app/public/payload.svg'));
     }
 
     public function test_a_traversing_archive_entry_cannot_escape_the_public_disk(): void

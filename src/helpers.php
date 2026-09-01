@@ -6084,10 +6084,16 @@ if (!function_exists('falcon_blocked_upload_extensions')) {
      * File extensions this CMS will never keep, whichever door they arrive through.
      *
      * Two kinds of thing are on the list. Most are executable or server-side scripts: a
-     * file the web server would run rather than serve. The rest — svg, svgz, xml, xsl,
-     * xslt — are documents that can carry script, which matters because the media library
-     * is shared and its files are embedded in pages every visitor loads, from the site's
-     * own origin.
+     * file the web server would run rather than serve. The rest — svgz, xml, xsl, xslt —
+     * are documents that can carry script, which matters because the media library is
+     * shared and its files are embedded in pages every visitor loads, from the site's own
+     * origin.
+     *
+     * SVG used to be on this list. It is now handled by falcon_sanitized_upload_extensions()
+     * instead: a site decides whether to accept it under Customizer → Performance → Allowed
+     * Upload Formats (it is off by default), and what is written to disk is the sanitised
+     * markup rather than the file as uploaded. svgz stays here — it is gzipped, so the
+     * sanitiser cannot read it.
      *
      * It lives here, once, because there is more than one way into the library: the upload
      * screen and the WordPress media importer both write to it. The importer used to keep
@@ -6103,8 +6109,27 @@ if (!function_exists('falcon_blocked_upload_extensions')) {
             'asp', 'aspx', 'jsp', 'js', 'cgi', 'pl', 'py', 'rb',
             'sh', 'bash', 'exe', 'bat', 'cmd', 'htaccess', 'htpasswd',
             // Documents that can carry script.
-            'svg', 'svgz', 'xml', 'xsl', 'xslt',
+            'svgz', 'xml', 'xsl', 'xslt',
         ]);
+    }
+}
+
+if (!function_exists('falcon_sanitized_upload_extensions')) {
+    /**
+     * Extensions that may be kept, but only after their contents have been rewritten.
+     *
+     * These are not blocked and not simply trusted either. A file with one of these
+     * extensions is passed through FalconCms\Core\Support\SvgSanitizer before anything
+     * reaches disk, and is refused outright if nothing usable survives — so an SVG in the
+     * library cannot carry <script>, an event handler or a javascript: link, however it
+     * arrived. Turning the format on at all is still a site decision, made under
+     * Customizer → Performance → Allowed Upload Formats.
+     *
+     * @return array<int, string>
+     */
+    function falcon_sanitized_upload_extensions(): array
+    {
+        return apply_falcon_filters('falcon_sanitized_upload_extensions', ['svg']);
     }
 }
 

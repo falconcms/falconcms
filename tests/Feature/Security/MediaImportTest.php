@@ -180,7 +180,12 @@ class MediaImportTest extends TestCase
         $blocked = falcon_blocked_upload_extensions();
 
         $this->assertContains('php', $blocked);
-        $this->assertContains('svg', $blocked);
+        $this->assertContains('svgz', $blocked, 'gzipped SVG cannot be sanitised, so it stays blocked');
+
+        // SVG moved off the block list: it is now kept only in rewritten form, and only if
+        // the site has turned the format on. It must not have simply become trusted.
+        $this->assertNotContains('svg', $blocked);
+        $this->assertContains('svg', falcon_sanitized_upload_extensions());
 
         foreach ([
             'src/Http/Controllers/Admin/MediaController.php',

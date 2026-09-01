@@ -3177,7 +3177,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Media\:\:\$path\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 3
 			path: tests/Feature/Security/MediaUploadTest.php
 
 		-

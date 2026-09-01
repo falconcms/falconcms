@@ -65,14 +65,57 @@ class MediaUploadTest extends TestCase
     }
 
     /**
-     * SVG is refused because it is a document, not a picture: it can carry script, and it
-     * is served from the site's own origin once it is in the library.
+     * SVG is off by default. It is a document, not a picture — it can carry script, and it
+     * is served from the site's own origin once it is in the library — so a site has to
+     * turn it on under Allowed Upload Formats before anything will accept it.
      */
-    public function test_an_svg_is_refused(): void
+    public function test_an_svg_is_refused_unless_the_site_allows_it(): void
     {
         $svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
 
         $response = $this->upload(UploadedFile::fake()->createWithContent('logo.svg', $svg));
+
+        $this->assertSame(422, $response->getStatusCode());
+        $this->assertSame(0, Media::count());
+    }
+
+    /**
+     * With SVG allowed, the file is kept — but what lands on disk is the sanitised markup,
+     * not the bytes that were uploaded. Allowing the format is a decision about file types,
+     * not permission for one of them to carry script.
+     */
+    public function test_an_allowed_svg_is_stored_sanitised(): void
+    {
+        $this->setCmsOptions(['performance_allowed_formats' => json_encode(['png', 'svg'])]);
+
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">'
+            .'<script>alert(2)</script>'
+            .'<a href="javascript:alert(3)"><path d="M0 0h10v10H0z"/></a>'
+            .'</svg>';
+
+        $response = $this->upload(UploadedFile::fake()->createWithContent('logo.svg', $svg));
+
+        $this->assertSame(200, $response->getStatusCode(), 'an allowed SVG was still refused');
+        $this->assertSame(1, Media::count());
+
+        $stored = Storage::disk('public')->get(Media::first()->path);
+
+        $this->assertStringNotContainsString('<script', $stored, 'a script survived into the library');
+        $this->assertStringNotContainsString('onload', $stored, 'an event handler survived into the library');
+        $this->assertStringNotContainsString('javascript:', $stored, 'a javascript: link survived into the library');
+        $this->assertStringContainsString('<path', $stored, 'the drawing itself was thrown away');
+    }
+
+    /**
+     * Something that is not markup at all must not be kept just because it is named .svg.
+     */
+    public function test_an_allowed_svg_that_is_not_markup_is_refused(): void
+    {
+        $this->setCmsOptions(['performance_allowed_formats' => json_encode(['svg'])]);
+
+        $response = $this->upload(
+            UploadedFile::fake()->createWithContent('payload.svg', '<?php echo 1;')
+        );
 
         $this->assertSame(422, $response->getStatusCode());
         $this->assertSame(0, Media::count());

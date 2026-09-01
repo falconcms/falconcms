@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Carbon\Carbon;
+use FalconCms\Core\Support\SvgSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -491,6 +492,18 @@ class BackupController extends Controller
                 $content = $zip->getFromIndex($i);
                 if ($content === false) {
                     continue;
+                }
+
+                // Formats we keep only in rewritten form get rewritten here too. An archive
+                // is untrusted input, so a backup cannot smuggle back a raw SVG that the
+                // upload screen would have sanitised on the way in.
+                if (in_array($ext, falcon_sanitized_upload_extensions(), true)) {
+                    $content = SvgSanitizer::clean($content);
+                    if ($content === '') {
+                        $skippedUnsafe++;
+
+                        continue;
+                    }
                 }
 
                 $full = $dest.'/'.$target;
