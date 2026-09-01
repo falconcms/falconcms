@@ -1315,6 +1315,112 @@
 
                             </div>
 
+                            <!-- ══ SECTION SEPARATOR ELEMENT ══ -->
+                            <div v-else-if="editingElement?.type === 'section_separator'" class="space-y-8">
+
+                                <!-- Separator Style -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Separator Style</label>
+                                    <sep-style-select v-model="editingElement.settings.sepStyle"
+                                                      :groups="sepStyleGroups"></sep-style-select>
+                                </div>
+
+                                <!-- Custom SVG source -->
+                                <div v-if="editingElement.settings.sepStyle === 'custom_svg'" class="space-y-3">
+                                    <div class="flex items-center gap-2">
+                                        {{-- Inline !important on purpose: partials/styles.blade.php sets
+                                             `.builder-sidebar label { color:#111 !important }` and a muted colour on
+                                             grouped buttons, and an !important author rule beats a plain inline one —
+                                             so the utility class alone left this text dark on the blue fill. --}}
+                                        <button type="button"
+                                                @click="sepPickSvgFromMedia(editingElement.settings)"
+                                                style="color:#ffffff !important"
+                                                class="flex-1 cursor-pointer bg-[#2271b1] hover:bg-[#1a5a96] text-[11px] font-bold uppercase tracking-wide py-2.5 rounded flex items-center justify-center gap-2 transition-colors">
+                                            <i class="fa fa-photo-film text-[11px]" style="color:#ffffff !important"></i>
+                                            <span style="color:#ffffff !important">Choose SVG</span>
+                                        </button>
+                                        <button v-if="editingElement.settings.customSvg"
+                                                @click="editingElement.settings.customSvg = ''; editingElement.settings.customSvgName = ''"
+                                                class="px-3 py-2.5 rounded border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors"
+                                                title="Remove SVG">
+                                            <i class="fa fa-trash-alt text-[11px]"></i>
+                                        </button>
+                                    </div>
+
+                                    <div v-if="editingElement.settings.customSvgName"
+                                         class="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 border border-slate-100 rounded px-3 py-2">
+                                        <i class="fa fa-check-circle text-emerald-500 text-[11px]"></i>
+                                        <span class="truncate" v-text="editingElement.settings.customSvgName"></span>
+                                    </div>
+
+                                    <div>
+                                        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wide block mb-2">Or paste SVG code</label>
+                                        <textarea rows="5" spellcheck="false"
+                                                  :value="editingElement.settings.customSvg"
+                                                  @input="sepPasteSvg($event.target.value, editingElement.settings)"
+                                                  placeholder="&lt;svg viewBox=&quot;0 0 1200 120&quot;&gt;…&lt;/svg&gt;"
+                                                  class="w-full border border-slate-200 rounded px-3 py-2 text-[11px] font-mono text-slate-600 focus:outline-none focus:border-[#0091ea]"></textarea>
+                                        <p class="text-[11px] text-slate-400 mt-1">
+                                            Scripts and event handlers are stripped automatically. The artwork is copied onto
+                                            this element so colour, height and flip can reach it — the element does not keep
+                                            pointing at the file afterwards.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Add Element (text / icon in the middle) -->
+                                <div>
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Add Element</label>
+                                    <div class="flex bg-slate-50 border border-slate-100 rounded p-1">
+                                        <button v-for="opt in [{v:'none',l:'None'},{v:'text',l:'Text'},{v:'icon',l:'Icon'}]"
+                                                :key="opt.v"
+                                                @click="editingElement.settings.sepContent = opt.v"
+                                                :class="(editingElement.settings.sepContent || 'none') === opt.v ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                                                class="flex-1 py-1.5 rounded transition-all text-[10px] font-bold uppercase">
+                                            @{{ opt.l }}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Text -->
+                                <div v-if="editingElement.settings.sepContent === 'text'">
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Text</label>
+                                    <input type="text" v-model="editingElement.settings.sepText"
+                                           placeholder="Section"
+                                           class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                </div>
+
+                                <!-- Icon -->
+                                <div v-if="editingElement.settings.sepContent === 'icon'">
+                                    @include('falcon-cms::admin.falcon-builder.partials.components.fields.icon', ['key' => 'sepIcon', 'label' => 'Icon'])
+                                </div>
+
+                                <!-- Content Position -->
+                                <div v-if="editingElement.settings.sepContent && editingElement.settings.sepContent !== 'none'">
+                                    <label class="text-[12px] font-bold text-[#333] block mb-2">Element Position</label>
+                                    <div class="flex bg-slate-50 border border-slate-100 rounded p-1">
+                                        <button v-for="opt in [{v:'left',i:'fa-align-left'},{v:'center',i:'fa-align-center'},{v:'right',i:'fa-align-right'}]"
+                                                :key="opt.v"
+                                                @click="editingElement.settings.contentPos = opt.v"
+                                                :class="(editingElement.settings.contentPos || 'center') === opt.v ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                                                class="flex-1 py-1.5 rounded transition-all flex items-center justify-center">
+                                            <i :class="'fa ' + opt.i" class="text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Element Visibility -->
+                                <div class="pt-4 border-t border-slate-50">
+                                    @include('falcon-cms::admin.falcon-builder.partials.components.fields.element-visibility')
+                                </div>
+
+                                <!-- CSS Class & ID -->
+                                <div class="pt-4 border-t border-slate-50">
+                                    @include('falcon-cms::admin.falcon-builder.partials.components.fields.css-attributes')
+                                </div>
+
+                            </div>
+
                             <!-- ══ HTML BLOCK ELEMENT ══ -->
                             <div v-else-if="editingElement?.type === 'html'" class="space-y-6">
 
@@ -3499,6 +3605,11 @@
                              <!-- Design Settings for Spacer -->
                              <div v-else-if="editingElement?.type === 'spacer'" class="space-y-6">
                                  @include('falcon-cms::admin.falcon-builder.partials.components.elements.spacer-design')
+                             </div>
+
+                             <!-- Design Settings for Section Separator -->
+                             <div v-else-if="editingElement?.type === 'section_separator'" class="space-y-6 pb-10">
+                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.section-separator-design')
                              </div>
 
                              <!-- Design Settings for HTML Block -->

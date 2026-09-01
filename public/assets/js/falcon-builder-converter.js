@@ -60,7 +60,7 @@
     // so a rich-editor round-trip stays lossless AND the shortcode stays human-readable.
     var FIDELITY_STRUCTURAL = ['id', 'type', 'width', 'width_tablet', 'width_mobile', 'hide_mobile', 'hide_tablet', 'hide_desktop'];
     // Element types with a concrete built-in serializer/parser case (parsed via parseElementInner).
-    var BUILTIN_TYPES = ['heading', 'title', 'text', 'button', 'image', 'spacer', 'video', 'menu', 'row', 'counter', 'star_rating', 'gallery'];
+    var BUILTIN_TYPES = ['heading', 'title', 'text', 'button', 'image', 'spacer', 'section_separator', 'video', 'menu', 'row', 'counter', 'star_rating', 'gallery'];
     var _suppressExtras = false;
 
     function isTransientKey(k) {
@@ -585,6 +585,56 @@
                 var a = base;
                 a = attrI(a, 'height', s.height !== undefined ? s.height : 20);
                 return '[falcon_spacer ' + a.trim() + vis + ' /]';
+            }
+            case 'section_separator': {
+                var a = base;
+                a = attrI(a, 'style',              s.sepStyle, 'solid');
+                a = attrI(a, 'sep_width',          s.sepWidth);
+                a = attrI(a, 'sep_width_unit',     s.sepWidthUnit, '%');
+                a = attrI(a, 'align',              s.sepAlign, 'center');
+                a = attrI(a, 'weight',             s.sepWeight);
+                a = attrI(a, 'color',              s.sepColor);
+                a = attrI(a, 'pat_height',         s.patHeight);
+                a = attrI(a, 'pat_spacing',        s.patSpacing);
+                a = attrI(a, 'shape_height',       s.shapeHeight);
+                a = attrI(a, 'flip_h',             s.shapeFlipH ? 'yes' : null);
+                a = attrI(a, 'flip_v',             s.shapeFlipV ? 'yes' : null);
+                a = attrI(a, 'content',            s.sepContent, 'none');
+                a = attrI(a, 'text',               s.sepText);
+                a = attrI(a, 'icon',               s.sepIcon);
+                a = attrI(a, 'content_pos',        s.contentPos, 'center');
+                a = attrI(a, 'content_gap',        s.contentGap);
+                a = attrI(a, 'text_color',         s.textColor);
+                a = attrI(a, 'txt_family',         s.sep_text_family);
+                a = attrI(a, 'txt_weight',         s.sep_text_weight);
+                a = attrI(a, 'txt_size',           s.sep_text_size);
+                a = attrI(a, 'txt_line_height',    s.sep_text_line_height);
+                a = attrI(a, 'txt_letter_spacing', s.sep_text_letter_spacing);
+                a = attrI(a, 'txt_transform',      s.sep_text_transform);
+                a = attrI(a, 'icon_size',          s.iconSize);
+                a = attrI(a, 'icon_color',         s.iconColor);
+                a = attrI(a, 'icon_rotate',        s.iconRotate);
+                a = attrI(a, 'icon_view',          s.iconView, 'default');
+                a = attrI(a, 'icon_shape',         s.iconShape, 'circle');
+                a = attrI(a, 'icon_bg',            s.iconBgColor);
+                a = attrI(a, 'icon_border_color',  s.iconBorderColor);
+                a = attrI(a, 'icon_border_width',  s.iconBorderWidth);
+                a = attrI(a, 'icon_padding',       s.iconPadding);
+                a = attrI(a, 'margin_top',         s.marginTop);
+                a = attrI(a, 'margin_top_unit',    s.marginTopUnit, 'px');
+                a = attrI(a, 'margin_bottom',      s.marginBottom);
+                a = attrI(a, 'margin_bottom_unit', s.marginBottomUnit, 'px');
+                a = attrI(a, 'css_class',          s.cssClass);
+                a = attrI(a, 'css_id',             s.cssId);
+                a = attrI(a, 'svg_name',           s.customSvgName);
+                a = attrI(a, 'svg_recolor',        s.svgRecolor === false ? 'no' : null);
+                a = attrI(a, 'svg_stretch',        s.svgStretch === false ? 'no' : null);
+                // Raw SVG goes in the body, not an attribute — it carries quotes and brackets.
+                var svgBody = (s.customSvg || '').replace(/[\r\n]+/g, '');
+                if (svgBody) {
+                    return '[falcon_section_separator ' + a.trim() + vis + ']' + svgBody + '[/falcon_section_separator]';
+                }
+                return '[falcon_section_separator ' + a.trim() + vis + ' /]';
             }
             case 'video': {
                 var a = base;
@@ -1163,6 +1213,53 @@
             case 'spacer':
                 return { id: a.id || generateId(), type: 'spacer', settings: {
                     height:    a.height ? parseInt(a.height) : 20,
+                    visibility: vis
+                }};
+
+            case 'section_separator':
+                return { id: a.id || generateId(), type: 'section_separator', settings: {
+                    sepStyle:      a.style           || 'solid',
+                    sepWidth:      a.sep_width      !== undefined ? num(a.sep_width) : 100,
+                    sepWidthUnit:  a.sep_width_unit  || '%',
+                    sepAlign:      a.align           || 'center',
+                    sepWeight:     a.weight         !== undefined ? num(a.weight)    : 1,
+                    sepColor:      a.color           || '#e2e8f0',
+                    patHeight:     a.pat_height     !== undefined ? parseInt(a.pat_height)  : 20,
+                    patSpacing:    a.pat_spacing    !== undefined ? parseInt(a.pat_spacing) : 20,
+                    shapeHeight:   a.shape_height   !== undefined ? parseInt(a.shape_height) : 60,
+                    shapeFlipH:    a.flip_h === 'yes',
+                    shapeFlipV:    a.flip_v === 'yes',
+                    customSvg:     inner || '',
+                    customSvgName: a.svg_name || '',
+                    svgRecolor:    a.svg_recolor !== 'no',
+                    svgStretch:    a.svg_stretch !== 'no',
+                    sepContent:    a.content         || 'none',
+                    sepText:       a.text            || '',
+                    sepIcon:       a.icon            || '',
+                    contentPos:    a.content_pos     || 'center',
+                    contentGap:    a.content_gap    !== undefined ? parseInt(a.content_gap) : 15,
+                    textColor:     a.text_color      || '#333333',
+                    sep_text_family:         a.txt_family         || 'inherit',
+                    sep_text_weight:         a.txt_weight         || '400',
+                    sep_text_size:           a.txt_size           || '15px',
+                    sep_text_line_height:    a.txt_line_height    || '1.4',
+                    sep_text_letter_spacing: a.txt_letter_spacing || 'normal',
+                    sep_text_transform:      a.txt_transform      || 'none',
+                    iconSize:        a.icon_size         !== undefined ? parseInt(a.icon_size)         : 20,
+                    iconColor:       a.icon_color         || '#333333',
+                    iconRotate:      a.icon_rotate       !== undefined ? parseInt(a.icon_rotate)       : 0,
+                    iconView:        a.icon_view          || 'default',
+                    iconShape:       a.icon_shape         || 'circle',
+                    iconBgColor:     a.icon_bg            || '#f1f5f9',
+                    iconBorderColor: a.icon_border_color  || '#e2e8f0',
+                    iconBorderWidth: a.icon_border_width !== undefined ? parseInt(a.icon_border_width) : 1,
+                    iconPadding:     a.icon_padding      !== undefined ? parseInt(a.icon_padding)      : 10,
+                    marginTop:        a.margin_top    !== undefined ? num(a.margin_top)    : 0,
+                    marginTopUnit:    a.margin_top_unit    || 'px',
+                    marginBottom:     a.margin_bottom !== undefined ? num(a.margin_bottom) : 0,
+                    marginBottomUnit: a.margin_bottom_unit || 'px',
+                    cssClass:  a.css_class || '',
+                    cssId:     a.css_id    || '',
                     visibility: vis
                 }};
 

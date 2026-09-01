@@ -605,6 +605,7 @@
                 { type: 'icon_box', name: 'Icon Box', icon: 'fa fa-star-half-alt' },
                 { type: 'content_box', name: 'Content Box', icon: 'fa fa-newspaper' },
                 { type: 'spacer', name: 'Spacer', icon: 'fa fa-arrows-alt-v' },
+                { type: 'section_separator', name: 'Section Separator', icon: 'fa fa-grip-lines' },
                 { type: 'tabs', name: 'Tabs', icon: 'fa fa-folder' },
                 { type: 'title', name: 'Title', icon: 'fa fa-heading' },
                 { type: 'breadcrumb', name: 'Bread Crumb', icon: 'fa fa-angle-right' },
@@ -3137,10 +3138,12 @@
                 const colAlignRaw = getResponsiveVal(s, 'alignment', device.value) || 'default';
                 const colAlign = (colAlignRaw && colAlignRaw !== 'default') ? colAlignRaw : containerAlign;
                 const isStretch = colAlign === 'stretch';
-                // Match front-end: when column alignment is "default", the inner does NOT grow
-                // vertically (no flex:1 1 auto) — it stays content-height even if the column is
-                // stretched by a taller sibling. Front-end gates this on !$isDefaultAlign.
-                const isDefaultAlign = !colAlignRaw || colAlignRaw === 'default';
+                // The front end gates flex-grow/min-height/align-self on !$isDefaultAlign for the
+                // OUTER column only — its inner box carries a flat `flex-grow: 1` and always fills
+                // the outer. The canvas used to gate the inner too, so with default alignment the
+                // inner stayed content-height while the outer stretched, and whatever sat behind
+                // (the container's background) showed as a band above and below the column even
+                // with every padding set to 0. Keep this matching column.blade.php's $innerStyles.
                 const containerHeight = getResponsiveVal(container?.settings || {}, 'height', device.value) || 'auto';
                 const hasDefinedHeight = containerHeight === 'full' || containerHeight === 'custom';
 
@@ -3162,7 +3165,7 @@
                     maxHeight: s.maxHeight || undefined,
                     height: 'auto',
                     paddingBottom: getUnitVal(rPB,  rPBU),
-                    flex: (isStretch && !isDefaultAlign) ? '1 1 auto' : '0 1 auto',
+                    flex: '1 1 auto',
                     display: 'flex',
                     flexDirection: 'column',
                     borderTopWidth: getUnitVal(getResponsiveVal(s, 'borderSizeTop', device.value) ?? s.borderSizeTop) || '0px',
@@ -3415,6 +3418,255 @@
                 return hidden ? { opacity: '0.4', outline: '2px dashed #fbbf24', outlineOffset: '-2px' } : {};
             };
 
+            // ── Section Separator ────────────────────────────────────────────────
+            // Canvas preview maths — mirrors the PHP in
+            // resources/views/frontend/builder/elements/section-separator.blade.php.
+            // Geometry comes straight from FalconCms\Core\Support\SeparatorShapes — the same
+            // arrays the frontend renderer reads — so the canvas preview and the published
+            // page are guaranteed to agree. Never hand-copy these tables into JS.
+            const SEP_PATTERNS     = @json(\FalconCms\Core\Support\SeparatorShapes::patterns());
+            const SEP_SHAPES       = @json(\FalconCms\Core\Support\SeparatorShapes::shapes());
+            const SEP_STYLE_GROUPS = @json(\FalconCms\Core\Support\SeparatorShapes::styleOptions());
+
+            const sepNum = (v, d) => {
+                const n = parseFloat(v);
+                return isNaN(n) ? d : n;
+            };
+            const sepIsPattern = (style) => typeof style === 'string' && style.indexOf('pattern_') === 0;
+            const sepIsShape   = (style) => typeof style === 'string' && style.indexOf('shape_') === 0
+                                            && !!SEP_SHAPES[style.slice(6)];
+            const sepHasContent = (el) => {
+                const s = el.settings || {};
+                if (s.sepContent === 'text') return !!(s.sepText && String(s.sepText).length);
+                if (s.sepContent === 'icon') return !!s.sepIcon;
+                return false;
+            };
+            const sepOuterStyle = (el) => {
+                const s = el.settings || {};
+                const align = s.sepAlign || 'center';
+                return {
+                    display: 'flex',
+                    width: '100%',
+                    alignItems: 'center',
+                    justifyContent: align === 'left' ? 'flex-start' : (align === 'right' ? 'flex-end' : 'center'),
+                    marginTop:    sepNum(s.marginTop, 0)    + (s.marginTopUnit    || 'px'),
+                    marginBottom: sepNum(s.marginBottom, 0) + (s.marginBottomUnit || 'px'),
+                };
+            };
+            const sepInnerStyle = (el) => {
+                const s = el.settings || {};
+                const st = {
+                    display: 'flex',
+                    alignItems: 'center',
+                    maxWidth: '100%',
+                    width: sepNum(s.sepWidth, 100) + (s.sepWidthUnit || '%'),
+                };
+                if (sepHasContent(el)) st.gap = sepNum(s.contentGap, 15) + 'px';
+                return st;
+            };
+            const sepLineStyle = (el, side) => {
+                const s        = el.settings || {};
+                const style    = s.sepStyle || 'solid';
+                const color    = s.sepColor || '#e2e8f0';
+                const weight   = Math.max(1, sepNum(s.sepWeight, 1));
+                const patH     = Math.max(1, sepNum(s.patHeight, 20));
+                const patW     = Math.max(1, sepNum(s.patSpacing, 20));
+                const pos      = s.contentPos || 'center';
+                const withCnt  = sepHasContent(el);
+                const shrink   = withCnt && ((side === 'left' && pos === 'left') || (side === 'right' && pos === 'right'));
+
+                const st = {
+                    flex: shrink ? '0 0 6%' : '1 1 0%',
+                    flexShrink: 0,
+                    fontSize: '0',
+                    lineHeight: '0',
+                    height: '0',
+                    border: 'none',
+                };
+                if (style === 'none') return st;
+
+                if (sepIsPattern(style)) {
+                    const def = SEP_PATTERNS[style.slice(8)];
+                    if (!def) return st;
+                    const inner = def[2].replace(/\{C\}/g, color).replace(/\{W\}/g, String(weight * 2));
+                    const svg   = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + def[0] + ' ' + def[1] + '" preserveAspectRatio="none">' + inner + '</svg>';
+                    st.height             = patH + 'px';
+                    // Unquoted on purpose: the payload is fully URL-encoded, so it carries no
+                    // characters that need quoting — and this matches the PHP renderer byte for byte.
+                    st.backgroundImage    = 'url(data:image/svg+xml,' + encodeURIComponent(svg) + ')';
+                    st.backgroundRepeat   = 'repeat-x';
+                    st.backgroundPosition = 'center center';
+                    st.backgroundSize     = patW + 'px ' + patH + 'px';
+                    return st;
+                }
+
+                st.borderTop = weight + 'px ' + style + ' ' + color;
+                return st;
+            };
+            const sepTextStyle = (el) => {
+                const s = el.settings || {};
+                return {
+                    display: 'inline-block',
+                    whiteSpace: 'nowrap',
+                    color:         s.textColor              || '#333333',
+                    fontFamily:    s.sep_text_family        || 'inherit',
+                    fontWeight:    s.sep_text_weight        || '400',
+                    fontSize:      s.sep_text_size          || '15px',
+                    lineHeight:    s.sep_text_line_height   || '1.4',
+                    letterSpacing: s.sep_text_letter_spacing || 'normal',
+                    textTransform: s.sep_text_transform     || 'none',
+                };
+            };
+            const sepIconStyle = (el) => {
+                const s = el.settings || {};
+                const st = {
+                    fontSize: sepNum(s.iconSize, 20) + 'px',
+                    lineHeight: 1,
+                    color: s.iconColor || '#333333',
+                };
+                const rot = sepNum(s.iconRotate, 0);
+                if (rot) st.transform = 'rotate(' + rot + 'deg)';
+                return st;
+            };
+            const sepIconWrapStyle = (el) => {
+                const s = el.settings || {};
+                const st = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'content-box' };
+                const radius = (s.iconShape === 'square') ? '4px' : '50%';
+                if (s.iconView === 'stacked') {
+                    st.backgroundColor = s.iconBgColor || '#f1f5f9';
+                    st.padding = sepNum(s.iconPadding, 10) + 'px';
+                    st.borderRadius = radius;
+                } else if (s.iconView === 'framed') {
+                    st.border = sepNum(s.iconBorderWidth, 1) + 'px solid ' + (s.iconBorderColor || '#e2e8f0');
+                    st.padding = sepNum(s.iconPadding, 10) + 'px';
+                    st.borderRadius = radius;
+                }
+                return st;
+            };
+            // ── Custom SVG ───────────────────────────────────────────────────────
+            // Mirrors sanitizeCustomSvg() / customSvgMarkup() / customSvgCss() in
+            // FalconCms\Core\Support\SeparatorShapes. The markup is sanitised here on
+            // import and again on the server at render — stored settings are also
+            // reachable through the shortcode, so neither side trusts the other.
+            const SEP_SVG_FORBIDDEN = /<\s*(script|foreignObject|iframe|object|embed|handler)\b[\s\S]*?<\/\s*\1\s*>/gi;
+            const sepSanitizeSvg = (raw) => {
+                const m = /<svg\b[\s\S]*<\/svg\s*>/i.exec(String(raw || ''));
+                if (!m) return '';
+                return m[0]
+                    .replace(SEP_SVG_FORBIDDEN, '')
+                    .replace(/<\s*(script|foreignObject|iframe|object|embed|handler)\b[^>]*>/gi, '')
+                    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+                    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+                    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+                    .replace(/\s(?:xlink:)?href\s*=\s*(["'])\s*javascript:[^"']*\1/gi, '')
+                    .trim();
+            };
+            const sepIsCustom = (el) => {
+                const s = el.settings || {};
+                return s.sepStyle === 'custom_svg' && !!(s.customSvg && String(s.customSvg).trim());
+            };
+            const sepCustomMarkup = (el) => {
+                const s = el.settings || {};
+                let svg = sepSanitizeSvg(s.customSvg);
+                if (!svg) return '';
+                if (!/^\s*<svg\b[^>]*\sviewBox\s*=/i.test(svg)) {
+                    const w = /^\s*<svg\b[^>]*\swidth\s*=\s*["']?([\d.]+)/i.exec(svg);
+                    const h = /^\s*<svg\b[^>]*\sheight\s*=\s*["']?([\d.]+)/i.exec(svg);
+                    if (w && h) svg = svg.replace(/^(\s*<svg\b)/i, '$1 viewBox="0 0 ' + w[1] + ' ' + h[1] + '"');
+                }
+                svg = svg.replace(/^(\s*<svg\b[^>]*?)\s+preserveAspectRatio\s*=\s*(["']).*?\2/i, '$1');
+                const par = (s.svgStretch !== false) ? 'none' : 'xMidYMid meet';
+                return svg.replace(/^(\s*<svg\b)/i, '$1 preserveAspectRatio="' + par + '"');
+            };
+            const sepCustomCss = (el) => {
+                const s = el.settings || {};
+                const wrap = '#' + sepScopeId(el) + ' .falcon-separator-custom';
+                let css = wrap + '>svg{display:block;width:100%;height:100%}';
+                if (s.svgRecolor !== false) {
+                    const c = s.sepColor || '#e2e8f0';
+                    css += wrap + ' svg *:not([fill="none"]){fill:' + c + ' !important}'
+                         + wrap + ' svg [stroke]:not([stroke="none"]){stroke:' + c + ' !important}';
+                }
+                return css;
+            };
+            // Same id the frontend renderer uses, so the scoped CSS above matches.
+            const sepScopeId = (el) => (el.settings && el.settings.cssId) ? el.settings.cssId : ('separator-' + el.id);
+
+            /**
+             * Pick an SVG from the media library and inline its markup on the element.
+             *
+             * We read the file's contents rather than pointing at its URL: the shape has to be
+             * inline for the separator colour, flip and height to reach it, and inlining also
+             * means the stored markup goes through the same sanitiser as pasted code.
+             */
+            const sepPickSvgFromMedia = (settings) => {
+                if (!window.openMediaModal) {
+                    showToast('Media library is not available here — paste the SVG code instead', 'error');
+                    return;
+                }
+                window.openMediaModal((media) => {
+                    const path = (media && media.path) ? String(media.path) : '';
+                    if (!path) return;
+                    if (!/\.svgz?$/i.test(path)) {
+                        showToast('Please choose an .svg file', 'error');
+                        return;
+                    }
+                    fetch('/storage/' + path)
+                        .then((r) => (r.ok ? r.text() : Promise.reject(new Error('HTTP ' + r.status))))
+                        .then((text) => {
+                            const clean = sepSanitizeSvg(text);
+                            if (!clean) { showToast('That file does not contain an <svg> element', 'error'); return; }
+                            settings.customSvg = clean;
+                            settings.customSvgName = path.split('/').pop();
+                            settings.sepStyle = 'custom_svg';
+                            showToast('SVG shape loaded', 'success');
+                        })
+                        .catch(() => showToast('Could not read that file', 'error'));
+                });
+            };
+
+            /** Sanitise pasted markup as it is typed, so nothing unsafe is ever stored. */
+            const sepPasteSvg = (raw, settings) => {
+                const clean = sepSanitizeSvg(raw);
+                settings.customSvg = clean;
+                if (clean && !settings.customSvgName) settings.customSvgName = 'Pasted SVG';
+                if (!clean) settings.customSvgName = '';
+            };
+
+            // ── Shape family ─────────────────────────────────────────────────────
+            const sepShapeLayers = (el) => {
+                const s = el.settings || {};
+                return sepIsShape(s.sepStyle) ? SEP_SHAPES[s.sepStyle.slice(6)] : [];
+            };
+            const sepShapeWrapStyle = (el) => {
+                const s = el.settings || {};
+                return {
+                    position: 'relative',
+                    maxWidth: '100%',
+                    lineHeight: '0',
+                    width: sepNum(s.sepWidth, 100) + (s.sepWidthUnit || '%'),
+                };
+            };
+            const sepShapeSvgStyle = (el) => {
+                const s  = el.settings || {};
+                const st = { display: 'block', width: '100%', height: Math.max(4, sepNum(s.shapeHeight, 60)) + 'px' };
+                if (s.shapeFlipH || s.shapeFlipV) {
+                    st.transform = 'scale(' + (s.shapeFlipH ? -1 : 1) + ',' + (s.shapeFlipV ? -1 : 1) + ')';
+                }
+                return st;
+            };
+            const sepShapeOverlayStyle = (el) => {
+                const s   = el.settings || {};
+                const pos = s.contentPos || 'center';
+                return {
+                    position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: pos === 'left' ? 'flex-start' : (pos === 'right' ? 'flex-end' : 'center'),
+                    padding: '0 ' + Math.max(12, sepNum(s.contentGap, 15)) + 'px',
+                    lineHeight: 'normal',
+                };
+            };
+
             // Sample rows for the Product Meta canvas preview (real data shows on the frontend).
             const pmCanvasRows = (s) => {
                 s = s || {};
@@ -3589,6 +3841,29 @@
                             fontWeight: '500',
                             height: 44,
                             borderRadius: 0,
+                            marginTop: 0, marginTopUnit: 'px',
+                            marginBottom: 0, marginBottomUnit: 'px',
+                            cssClass: '', cssId: '',
+                            visibility: { mobile: true, tablet: true, desktop: true },
+                        } : {}),
+                        ...(type === 'section_separator' ? {
+                            sepStyle: 'solid',
+                            sepWidth: 100, sepWidthUnit: '%',
+                            sepAlign: 'center',
+                            sepWeight: 1,
+                            sepColor: '#e2e8f0',
+                            patHeight: 20, patSpacing: 20,
+                            shapeHeight: 60, shapeFlipH: false, shapeFlipV: false,
+                            customSvg: '', customSvgName: '', svgRecolor: true, svgStretch: true,
+                            sepContent: 'none',
+                            sepText: 'Section', sepIcon: 'fas fa-star',
+                            contentPos: 'center', contentGap: 15,
+                            textColor: '#333333',
+                            sep_text_family: 'inherit', sep_text_weight: '400', sep_text_size: '15px',
+                            sep_text_line_height: '1.4', sep_text_letter_spacing: 'normal', sep_text_transform: 'none',
+                            iconSize: 20, iconColor: '#333333', iconRotate: 0,
+                            iconView: 'default', iconShape: 'circle',
+                            iconBgColor: '#f1f5f9', iconBorderColor: '#e2e8f0', iconBorderWidth: 1, iconPadding: 10,
                             marginTop: 0, marginTopUnit: 'px',
                             marginBottom: 0, marginBottomUnit: 'px',
                             cssClass: '', cssId: '',
@@ -4316,6 +4591,11 @@
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, canvasScale, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal, googleFontFamily,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
+                sepStyleGroups: SEP_STYLE_GROUPS, sepIsPattern, sepIsShape,
+                sepHasContent, sepOuterStyle, sepInnerStyle, sepLineStyle,
+                sepTextStyle, sepIconStyle, sepIconWrapStyle,
+                sepShapeLayers, sepShapeWrapStyle, sepShapeSvgStyle, sepShapeOverlayStyle,
+                sepIsCustom, sepCustomMarkup, sepCustomCss, sepScopeId, sepPickSvgFromMedia, sepPasteSvg,
                 cardPerView, cardPreviewCols, cardPreviewCount,
                 searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements, elementLocked, isElementPro,
                 shouldShowGuide,
@@ -4453,6 +4733,73 @@
                                 <div v-for="f in list" :key="f.family" @click="pick(f)" class="px-2 py-1.5 text-[12px] rounded cursor-pointer hover:bg-[#0091ea] hover:text-white" :class="selectedFamily === f.family ? 'bg-[#e6f4fb] text-[#0091ea] font-medium' : ''">@{{ f.family }}</div>
                             </template>
                             <div v-if="Object.keys(filtered).length === 0" class="px-2 py-3 text-[12px] text-slate-400 text-center">No fonts match “@{{ q }}”.</div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        `
+    });
+
+    // Searchable picker for the separator style list — 62 grouped options is too many for a
+    // plain <select>. Same interaction model as <font-select> above.
+    __builderApp.component('sep-style-select', {
+        props: {
+            modelValue: { default: 'solid' },
+            groups: { type: Array, required: true },
+        },
+        emits: ['update:modelValue'],
+        data() { return { open: false, q: '' }; },
+        computed: {
+            label() {
+                for (const g of this.groups) {
+                    for (const o of g.options) if (o.v === this.modelValue) return o.label;
+                }
+                return 'Select a style…';
+            },
+            groupOf() {
+                for (const g of this.groups) {
+                    for (const o of g.options) if (o.v === this.modelValue) return g.group;
+                }
+                return '';
+            },
+            filtered() {
+                const q = (this.q || '').toLowerCase().trim();
+                const out = [];
+                for (const g of this.groups) {
+                    const list = q
+                        ? g.options.filter(o => o.label.toLowerCase().indexOf(q) >= 0 || g.group.toLowerCase().indexOf(q) >= 0)
+                        : g.options;
+                    if (list.length) out.push({ group: g.group, options: list });
+                }
+                return out;
+            },
+            total() { return this.filtered.reduce((n, g) => n + g.options.length, 0); },
+        },
+        methods: {
+            toggle() { this.open = !this.open; if (this.open) this.$nextTick(() => this.$refs.q && this.$refs.q.focus()); },
+            close() { this.open = false; this.q = ''; },
+            pick(o) { this.$emit('update:modelValue', o.v); this.close(); },
+        },
+        template: `
+            <div class="relative">
+                <button type="button" @click="toggle" class="w-full border border-slate-300 rounded px-3 py-2.5 pr-7 text-[13px] focus:outline-none focus:border-[#0091ea] bg-white text-left relative truncate cursor-pointer">
+                    <span class="text-slate-700">@{{ label }}</span>
+                    <span v-if="groupOf" class="text-[10px] text-slate-400 uppercase ml-1">· @{{ groupOf }}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <template v-if="open">
+                    <div class="fixed inset-0 z-40" @click="close"></div>
+                    <div class="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg p-2">
+                        <input ref="q" v-model="q" type="text" placeholder="Search styles…" @click.stop
+                               class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] mb-1.5 focus:outline-none focus:border-[#0091ea]">
+                        <div class="max-h-72 overflow-y-auto">
+                            <template v-for="g in filtered" :key="g.group">
+                                <div class="px-2 pt-2 pb-0.5 text-[10px] font-bold text-slate-400 uppercase">@{{ g.group }}</div>
+                                <div v-for="o in g.options" :key="o.v" @click="pick(o)"
+                                     class="px-2 py-1.5 text-[12px] rounded cursor-pointer hover:bg-[#0091ea] hover:text-white"
+                                     :class="modelValue === o.v ? 'bg-[#e6f4fb] text-[#0091ea] font-medium' : ''">@{{ o.label }}</div>
+                            </template>
+                            <div v-if="total === 0" class="px-2 py-3 text-[12px] text-slate-400 text-center">No styles match “@{{ q }}”.</div>
                         </div>
                     </div>
                 </template>
