@@ -5,7 +5,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.0 <Badge type="tip" text="Latest" /> {#v2-6-0}
+## v2.6.1 <Badge type="tip" text="Latest" /> {#v2-6-1}
+
+**Released: 2026-09-01**
+
+### Added
+
+- **Section Separator element.** A divider you can drop into any column, with 61 styles in three
+  families: 8 CSS line styles, 15 repeating SVG patterns, and 37 full-width shape dividers
+  (waves, hills, clouds, mountains, grass, arches, aurora and more). Text or an icon can sit on
+  the line, positioned left, centre or right. Shapes take a height, can be flipped horizontally
+  or inverted, and layered shapes carry their own opacities.
+- **Custom SVG shapes.** Pick an SVG from the media library and its artwork is inlined on the
+  element, so the separator colour, height and flip reach it. The markup is sanitised on the way
+  in and again on render.
+- **SVG uploads are now a site decision.** SVG was refused outright before, even though
+  Customizer -> Performance -> Allowed Upload Formats offered it. It is now governed by that
+  setting, is off unless a site names it explicitly, and whatever is kept has been rewritten
+  through the sanitiser first, so an SVG in the library cannot carry a script, an event handler
+  or a `javascript:` link. The same rule applies to a backup restore.
+
+### Fixed
+
+- **The builder canvas added height a published page never had.** Blade partials that began with
+  a UTF-8 byte-order mark emitted it into the page; a BOM is not whitespace, so each one formed a
+  text line inside the element wrapper. A nested row was pushed about 24px down its column and
+  the column's background showed as a band above it, with every padding set to 0. The mark is
+  gone from 29 templates, and the wrapper is now a flex container so stray whitespace cannot do
+  the same again.
+- A column's hover effect (Lift, Zoom, Glow, Fade) was applied to the outer box while the card's
+  background, radius and padding live on the inner one. The lift shadow was drawn square around
+  a rounded card, and hovering the empty area beside the card still triggered it.
+- A nested row carried a 1px transparent border and a `flex-basis: 100%` that, in a
+  column-direction flex parent, asked it to be as tall as the whole column.
+
+---
+
+## v2.6.0 {#v2-6-0}
 
 **Released: 2026-08-28**
 
