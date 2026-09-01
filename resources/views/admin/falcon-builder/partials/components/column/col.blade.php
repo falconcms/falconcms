@@ -1,14 +1,17 @@
 <!-- Columns Loop -->
 <div v-for="(column, coli) in container.columns" :key="column.id"
      class="column-outer relative"
-     :class="['col-' + column.id, (column.settings.hoverType && column.settings.hoverType !== 'none') ? 'hover-effect-' + column.settings.hoverType : '', getVisibilityClasses(column.settings), isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '']"
+     :class="['col-' + column.id, getVisibilityClasses(column.settings), isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '']"
      :style="columnOuterStyle(container, column, container.columns.length)">
 
     <component :is="'style'" v-if="(!column.settings.bgType || column.settings.bgType === 'color') && getResponsiveVal(column.settings, 'bgHoverColor', device)"
                v-text="'.col-' + column.id + '>.column-inner{transition:background-color .25s ease}.col-' + column.id + ':hover>.column-inner{background-color:' + hexToRgba(getResponsiveVal(column.settings, 'bgHoverColor', device), getResponsiveVal(column.settings, 'bgHoverColorOpacity', device) !== undefined ? getResponsiveVal(column.settings, 'bgHoverColorOpacity', device) : 1) + ' !important}'"></component>
 
+    {{-- Hover effect sits here, not on .column-outer: this box carries the background,
+         border, radius and padding, so it is the card the visitor actually sees. --}}
     <component :is="column.settings.htmlTag || 'div'" class="column-inner group/col relative"
          :class="[
+            (column.settings.hoverType && column.settings.hoverType !== 'none') ? 'hover-effect-' + column.settings.hoverType : '',
             (!isPreview && activeColi === coli && activeColCi === ci) ? 'column-active' : '', 
             isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '',
             dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragPosition === 'left' ? 'border-l-4 border-l-blue-500' : '',
@@ -151,7 +154,13 @@
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
              ]"
-             :style="el.type === 'row' ? { width: '100%', maxWidth: '100%' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : (column.settings.contentLayout === 'row' ? { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0', width: 'auto', minWidth: '0' } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' }))"
+             {{-- A row/separator wrapper must be a flex container. Every other element type
+                  gets display:flex + line-height:0 here; these two used to get a plain block,
+                  so the whitespace between the @includeIf lines below formed an anonymous line
+                  box and pushed a nested row ~24px down inside its column — the parent column's
+                  background then showed as a band above it, with all padding set to 0.
+                  A flex container does not render whitespace-only text runs at all. --}}
+             :style="(el.type === 'row' || el.type === 'section_separator') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : (column.settings.contentLayout === 'row' ? { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0', width: 'auto', minWidth: '0' } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' }))"
              @dragover="onDragOver($event, 'element', ci, coli, eli)"
              @drop="onDrop($event, 'element', ci, coli, eli)">
 
@@ -170,6 +179,7 @@
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.button')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.video')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.spacer')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.section-separator')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.html')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.icon-box')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.content-box')
@@ -187,7 +197,7 @@
 
             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
             @php
-            $builtInTypes = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','row']";
+            $builtInTypes = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','row']";
             @endphp
             <div v-if="customElements[el.type] !== undefined && !{!! $builtInTypes !!}.includes(el.type)"
                  :style="[{ width: '100%' }, getCustomElementRender(el).wrapperStyle, getCanvasVisibilityStyle(el.settings)]"
@@ -231,7 +241,7 @@
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                              @click.stop="setEditingContext('element', ci, coli, eli)">
                             <i class="fa fa-pen text-[10px]"></i>
-                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit @{{ {heading:'Heading',title:'Title',text:'Text',image:'Image',button:'Button',video:'Video',spacer:'Spacer',html:'HTML',icon_box:'Icon Box',content_box:'Content Box',text_block:'Text Block',menu:'Menu',card:'Card',row:'Nested Row',post_grid:'Post Grid',post_content:'Post Content',star_rating:'Star Rating',gallery:'Gallery',special_text:'Special Text',accordion:'Accordion',tabs:'Tabs'}[el.type] || 'Element' }}</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit @{{ {heading:'Heading',title:'Title',text:'Text',image:'Image',button:'Button',video:'Video',spacer:'Spacer',section_separator:'Section Separator',html:'HTML',icon_box:'Icon Box',content_box:'Content Box',text_block:'Text Block',menu:'Menu',card:'Card',row:'Nested Row',post_grid:'Post Grid',post_content:'Post Content',star_rating:'Star Rating',gallery:'Gallery',special_text:'Special Text',accordion:'Accordion',tabs:'Tabs'}[el.type] || 'Element' }}</div>
                         </div>
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                              @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)">

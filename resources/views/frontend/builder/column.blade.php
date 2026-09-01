@@ -625,7 +625,7 @@
     $colAnimType = $s['anim_type'] ?? '';
 @endphp
 @if($colShowByCondition)
-<{{ $htmlTag }} class="lazy-column {{ $colCid }} {{ $hoverClass }} {{ $visibilityClasses }} {{ $s['cssClass'] ?? '' }} {{ !empty($s['sticky']) ? 'lazy-sticky-col' : '' }}{{ $colAnimType ? ' lz-anim lz-anim-' . $colAnimType : '' }}"
+<{{ $htmlTag }} class="lazy-column {{ $colCid }} {{ $visibilityClasses }} {{ $s['cssClass'] ?? '' }} {{ !empty($s['sticky']) ? 'lazy-sticky-col' : '' }}{{ $colAnimType ? ' lz-anim lz-anim-' . $colAnimType : '' }}"
     @if(!empty($s['cssId'])) id="{{ $s['cssId'] }}" @endif
     style="{{ implode('; ', $outerStyles) }}"@if($colAnimType) data-anim-duration="{{ $s['anim_duration'] ?? 600 }}" data-anim-delay="{{ $s['anim_delay'] ?? 0 }}" data-anim-easing="{{ $s['anim_easing'] ?? 'ease' }}"@endif>
     
@@ -636,7 +636,11 @@
     @if($colBgLazyUrl)
     <script>if(!window.__lzBgObserverInit){window.__lzBgObserverInit=1;document.addEventListener('DOMContentLoaded',function(){var f=function(el){var u=el.getAttribute('data-bg');if(!u)return;var p=el.style.backgroundImage;el.style.backgroundImage=p?u+', '+p:u;el.removeAttribute('data-bg');el.classList.remove('lz-lazy-bg');};if(!('IntersectionObserver'in window)){document.querySelectorAll('.lz-lazy-bg').forEach(f);return;}var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){f(e.target);o.unobserve(e.target);}});},{rootMargin:'200px 0px'});document.querySelectorAll('.lz-lazy-bg').forEach(function(el){o.observe(el);});});}</script>
     @endif
-    <div class="lazy-column-inner{{ $colBgLazyUrl ? ' lz-lazy-bg' : '' }}" style="{{ implode('; ', $innerStyles) }}"@if($colBgLazyUrl) data-bg="{{ $colBgLazyUrl }}"@endif>
+    {{-- The hover effect belongs on the inner box, not the outer one. Background, border,
+         radius and padding all live here, so this element IS the visible card — putting the
+         effect on the outer drew the hover shadow as a square around a rounded card, and
+         made the whole column area hover-sensitive even where the card does not reach. --}}
+    <div class="lazy-column-inner {{ $hoverClass }}{{ $colBgLazyUrl ? ' lz-lazy-bg' : '' }}" style="{{ implode('; ', $innerStyles) }}"@if($colBgLazyUrl) data-bg="{{ $colBgLazyUrl }}"@endif>
         @if(!empty($column['elements']))
             @php $__customBuilderDefs = apply_falcon_filters('falcon_builder_elements', []); @endphp
             @foreach($column['elements'] as $el)

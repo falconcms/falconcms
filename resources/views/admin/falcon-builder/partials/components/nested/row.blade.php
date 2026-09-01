@@ -1,4 +1,10 @@
-<div v-if="el.type === 'row'" class="nested-row-outer-wrapper w-full basis-full shrink-0 relative border border-transparent rounded-lg group/nrow transition-colors hover:bg-slate-50/20 hover:border-slate-100"
+<div v-if="el.type === 'row'" class="nested-row-outer-wrapper w-full shrink-0 relative rounded-lg group/nrow transition-colors hover:bg-slate-50/20"
+     {{-- flex-basis is the MAIN size, and .column-inner is a column-direction flex box, so a
+          flat `basis-full` here meant "be as tall as the whole column" — the nested row then
+          stretched past its own content and the container background showed through above and
+          below it, with 0 padding set. Full width is what was wanted; that comes from w-full.
+          Only a row-direction column needs basis:100%, to push the nested row onto its own line. --}}
+     :style="{ flexBasis: column.settings.contentLayout === 'row' ? '100%' : 'auto' }"
      @contextmenu.prevent.stop="openCtxMenu($event, 'nested-row', ci, coli, eli)"
      @mouseenter="setHover('nested-row', ci, coli, eli)"
      @mouseleave="setHover(null)">
@@ -53,7 +59,7 @@
     <div :style="containerInnerStyle(el)" class="w-full relative">
         <div v-for="(ncol, ncoli) in el.columns" 
              class="column-outer relative"
-             :class="['ncol-' + ncol.id, (ncol.settings.hoverType && ncol.settings.hoverType !== 'none') ? 'hover-effect-' + ncol.settings.hoverType : '', getVisibilityClasses(ncol.settings)]"
+             :class="['ncol-' + ncol.id, getVisibilityClasses(ncol.settings)]"
              :style="columnOuterStyle(el, ncol, el.columns.length)">
 
             <component :is="'style'" v-if="(!ncol.settings.bgType || ncol.settings.bgType === 'color') && getResponsiveVal(ncol.settings, 'bgHoverColor', device)"
@@ -62,6 +68,7 @@
             <!-- Nested Column Inner (Handles Background, Padding, Border, Shadow) -->
             <div class="column-inner group/ncol-inner relative"
                  :class="[
+                    (ncol.settings.hoverType && ncol.settings.hoverType !== 'none') ? 'hover-effect-' + ncol.settings.hoverType : '',
                     (!isPreview && activeColi === ncoli && activeColCi === eli) ? 'nested-column-active' : '',
                     isDragging && dragCi === ci && dragColi === coli && dragEli === eli && dragNcoli === ncoli ? 'dragging-no-transition' : '',
                     dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragPosition === 'left' ? 'border-l-4 border-l-blue-500' : '',
@@ -250,7 +257,7 @@
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
                      ]"
-                     :style="nestedEl.type === 'row' ? { width: '100%', maxWidth: '100%' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
+                     :style="(nestedEl.type === 'row' || nestedEl.type === 'section_separator') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
                      @dragover="onDragOver($event, 'element', ci, coli, eli, ncoli, nestedEli)"
                      @drop="onDrop($event, 'element', ci, coli, eli, ncoli, nestedEli)">
                         <div v-if="elementLocked(nestedEl.type)" class="absolute top-1 right-1 z-30 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm pointer-events-none" title="Pro element — upgrade to edit or move">
@@ -270,6 +277,7 @@
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.button')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.video')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.spacer')
+                            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.section-separator')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.html')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.icon-box')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.content-box')
@@ -285,7 +293,7 @@
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.ticker')
                             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
                             @php
-                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','row']";
+                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','row']";
                             @endphp
                             <div v-if="customElements[el.type] !== undefined && !{!! $builtInTypesNested !!}.includes(el.type)"
                                  :style="[{ width: '100%' }, getCustomElementRender(el).wrapperStyle, getCanvasVisibilityStyle(el.settings)]"

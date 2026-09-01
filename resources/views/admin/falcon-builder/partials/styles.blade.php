@@ -57,6 +57,18 @@
     .is-preview .column-outer:hover {
         outline: 2px solid transparent !important;
     }
+    /* A nested row is outlined, never bordered. A 1px border is real layout space, so a row
+       with 0 padding came out 2px taller in the canvas than on the published page - the
+       editor must not add height the visitor will never see. Outline paints without
+       occupying space, the same trick .column-outer already uses. */
+    .nested-row-outer-wrapper {
+        outline: 1px solid transparent;
+        outline-offset: -1px;
+    }
+    .nested-row-outer-wrapper:hover {
+        outline-color: #f1f5f9;
+    }
+
     .is-preview .nested-row-outer-wrapper {
         outline: 2px solid transparent !important;
         border-color: transparent !important;
@@ -588,6 +600,14 @@
     /* Hover Effects */
     .lazy-column, .lazy-container, .column-outer, .container-row {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* The column effects moved onto .column-inner (it is the box with the background and
+       radius, so it is the card people see). Hang the transition off the effect class
+       itself rather than the element, so it applies wherever the class ends up. */
+    .hover-effect-zoom, .hover-effect-lift, .hover-effect-glow, .hover-effect-fade {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .hover-effect-zoom:hover { transform: scale(1.03) !important; z-index: 50 !important; }
     .hover-effect-lift:hover { transform: translateY(-10px) !important; z-index: 50 !important; box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important; }
