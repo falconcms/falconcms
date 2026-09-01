@@ -26,6 +26,16 @@ class TrackVisits
 
     protected function logVisit(Request $request): void
     {
+        // Signed-in people are not the audience these figures are read for: an
+        // editor checking a page they just published, or a customer in their own
+        // account, is the site looking at itself. Counting them inflates every
+        // number on the analytics page — most visibly on a site whose own team
+        // browses it all day. This middleware is pushed to the end of the `web`
+        // group, so the session has already been resolved by the time it runs.
+        if (auth()->check()) {
+            return;
+        }
+
         $userAgent = (string) $request->header('User-Agent');
 
         // Skip bots/crawlers/monitors so analytics reflect real human traffic.

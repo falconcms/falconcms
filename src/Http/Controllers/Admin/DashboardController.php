@@ -1003,9 +1003,9 @@ class DashboardController extends Controller
         }
 
         // ── Date range (dynamic) ──────────────────────────────────────────────
-        $range = (int) request()->query('range', 30);
+        $range = (int) request()->query('range', 7);
         if (!in_array($range, [7, 30, 90, 365], true)) {
-            $range = 30;
+            $range = 7;
         }
 
         // Locked preview: without Pro (analytics), show believable SAMPLE data behind an
@@ -1015,26 +1015,36 @@ class DashboardController extends Controller
                 $this->sampleAnalyticsData($range) + ['analyticsLocked' => true]);
         }
 
-        $start = now()->subDays($range - 1)->startOfDay();
+        // A day here is a day in the CMS timezone (Settings → General), not the
+        // server's. On a site set to Asia/Dhaka, "today" has to begin at midnight
+        // in Dhaka — six hours before the server's own midnight. Rows stay in UTC:
+        // each boundary is worked out in the site's timezone and handed to the
+        // query as the UTC instant it maps to, so nothing stored has to change.
+        $start = cms_now()->subDays($range - 1)->startOfDay()->utc();
         $prevStart = (clone $start)->subDays($range);
         $prevEnd = (clone $start)->subSecond();
+
+        // Seconds to add to a stored UTC timestamp to read it as local wall-clock
+        // time, for the GROUP BY below. A fixed offset is exact for every zone
+        // without DST; across a DST change one boundary day can land an hour out.
+        $tzShift = (int) cms_now()->utcOffset() * 60;
 
         // ── KPIs (with % change vs the previous equal period) ─────────────────
         $totalVisits = Analytics::where('created_at', '>=', $start)->count();
         $uniqueVisitors = Analytics::where('created_at', '>=', $start)->distinct()->count('ip_address');
         $prevVisits = Analytics::whereBetween('created_at', [$prevStart, $prevEnd])->count();
         $visitsChange = $prevVisits > 0 ? round((($totalVisits - $prevVisits) / $prevVisits) * 100, 1) : ($totalVisits > 0 ? 100 : 0);
-        $today = Analytics::whereDate('created_at', now()->toDateString())->count();
-        $thisMonth = Analytics::where('created_at', '>=', now()->startOfMonth())->count();
+        $today = Analytics::where('created_at', '>=', cms_now()->startOfDay()->utc())->count();
+        $thisMonth = Analytics::where('created_at', '>=', cms_now()->startOfMonth()->utc())->count();
 
         // ── Daily series (visits + unique), zero-filled across the range ──────
         $daily = Analytics::where('created_at', '>=', $start)
-            ->select(DB::raw('DATE(created_at) as d'), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
+            ->select(DB::raw("DATE(created_at + INTERVAL {$tzShift} SECOND) as d"), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
             ->groupBy('d')->orderBy('d')->get()->keyBy('d');
 
         $labels = $visitsSeries = $uniqueSeries = [];
         for ($i = $range - 1; $i >= 0; $i--) {
-            $day = now()->subDays($i);
+            $day = cms_now()->subDays($i);
             $key = $day->toDateString();
             $labels[] = $day->format('M j');
             $visitsSeries[] = (int) ($daily[$key]->visits ?? 0);
@@ -1216,7 +1226,9 @@ class DashboardController extends Controller
     {
         $labels = $visitsSeries = $uniqueSeries = [];
         for ($i = $range - 1; $i >= 0; $i--) {
-            $day = now()->subDays($i);
+            // Same day labels as the live chart, so the preview does not shift a
+            // day against the real page once Pro is active.
+            $day = cms_now()->subDays($i);
             $labels[] = $day->format('M j');
             $v = (int) max(45, round(300 + 130 * sin($i / 3.2) + ($range - $i) * 1.4 + mt_rand(-45, 70)));
             $visitsSeries[] = $v;
@@ -1303,7 +1315,7 @@ class DashboardController extends Controller
                     ['path' => '/pricing', 'country' => 'United Kingdom', 'code' => 'gb', 'device' => 'Mobile',  'ago' => '1 min ago'],
                     ['path' => '/blog',    'country' => 'India',          'code' => 'in', 'device' => 'Mobile',  'ago' => '3 mins ago'],
                 ],
-                'time' => now()->format('g:i:s A'),
+                'time' => cms_now()->format('g:i:s A'),
             ]);
         }
 
@@ -1340,7 +1352,7 @@ class DashboardController extends Controller
             'minutes' => $minutes,
             'activePages' => $activePages,
             'recent' => $recent,
-            'time' => now()->format('g:i:s A'),
+            'time' => cms_now()->format('g:i:s A'),
         ]);
     }
 
