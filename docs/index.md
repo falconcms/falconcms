@@ -135,11 +135,17 @@ features:
     link: /guide/post-types
     linkText: Learn About Custom Post Types
 
-  - icon: 🔄
-    title: Revisions & Autosave
-    details: Never lose content. Every save creates a revision. Compare versions side-by-side and restore any previous state instantly.
-    link: /guide/post-types#revisions
-    linkText: Learn About Revisions
+  - icon: 🪄
+    title: Magic Login
+    details: Sign in to the dashboard without a password. Request a link by email and it signs you in — single use, valid for ten minutes, and only ever stored as a hash.
+    link: /guide/pro
+    linkText: See Pro Features
+
+  - icon: 📝
+    title: Form Builder
+    details: Build contact and lead forms visually — eleven field types, validation, and a success message or redirect. Submissions land in the dashboard and can be emailed on arrival.
+    link: /guide/forms
+    linkText: Learn About Forms
 ---
 
 ## Install FalconCMS in Minutes

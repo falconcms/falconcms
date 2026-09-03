@@ -99,6 +99,7 @@ export default defineConfig({
             { text: 'Menus', link: '/guide/menus' },
             { text: 'Widgets', link: '/guide/widgets' },
             { text: 'Media Library', link: '/guide/media' },
+            { text: 'Forms', link: '/guide/forms' },
             { text: 'Multi-language', link: '/guide/multilang' },
           ]
         },
