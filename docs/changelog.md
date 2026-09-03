@@ -5,7 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.1 <Badge type="tip" text="Latest" /> {#v2-6-1}
+## v2.6.2 <Badge type="tip" text="Latest" /> {#v2-6-2}
+
+**Released: 2026-09-03**
+
+### Fixed
+
+- **The sitemap returned a 500 for the whole site when it met a post with no timestamps.**
+  `lastmod` was written unconditionally, so `updated_at` being null ended the response —
+  and with it every URL in the file. Content that arrives through the WordPress importer,
+  a seeder, or a raw insert can have no timestamps at all. `lastmod` is optional in the
+  sitemap spec, so it is now emitted only when there is a date, falling back to
+  `created_at` before being left out entirely. Nobody sees this failure while it is
+  happening — it is fetched by search engines, not people — so the site simply stops being
+  crawled.
+- A post with an empty slug no longer appears in the sitemap. Its `<loc>` resolved to the
+  site root, so the home page was listed once more for every such row.
+- The category and tag sections are skipped when a site has removed those archive routes,
+  rather than failing to generate a URL for a route that is not there.
+- The sitemap query now selects only the columns the file actually uses, instead of
+  hydrating every column of every published post on the site.
+
+---
+
+## v2.6.1 {#v2-6-1}
 
 **Released: 2026-09-01**
 
