@@ -4636,7 +4636,16 @@
                             visibility: { mobile: true, tablet: true, desktop: true },
                         } : {}),
                         ...(type === 'code_block' ? {
-                            code: "<?php\n\nnamespace App;\n\nclass Greeter\n{\n    public function greet(string $name = 'world'): string\n    {\n        return \"Hello, {$name}!\";\n    }\n}\n",
+                            // The opening tag is joined at runtime so the characters that
+                            // start one never sit together in this file — not in the
+                            // string below, and not in this comment either. Blade
+                            // compiles a template by running token_get_all() over it, so
+                            // an opening tag written out here would put the tokenizer
+                            // into PHP mode inside what is only a JavaScript string, and
+                            // everything after it would be passed through uncompiled. The
+                            // builder died with "unexpected identifier App" on every
+                            // server with short_open_tag On. Same trap the sitemap hit.
+                            code: "<" + "?php\n\nnamespace App;\n\nclass Greeter\n{\n    public function greet(string $name = 'world'): string\n    {\n        return \"Hello, {$name}!\";\n    }\n}\n",
                             language: 'php',
                             codeTheme: 'falcon-dark',
                             showChrome: true, chromeDots: true, filename: 'app/Greeter.php', showLangTag: true,

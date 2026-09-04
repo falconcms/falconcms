@@ -74,6 +74,57 @@ class BladeShortOpenTagTest extends TestCase
     }
 
     /**
+     * Every template must compile under short_open_tag=On as well as Off.
+     *
+     * The static scan above only rejects a bare "<?", because "<?php" is legitimate in a
+     * Blade file — it is how raw PHP blocks are written. But an opening tag inside a
+     * JavaScript string is not a PHP block, and Blade cannot tell the difference: it
+     * runs token_get_all() over the source, so the tag puts the tokenizer into PHP mode
+     * and everything below it is passed through uncompiled. The Code Block element
+     * shipped a default snippet beginning with one, and the whole page builder died with
+     * "unexpected identifier App" on every server with short_open_tag On — while
+     * compiling perfectly here, where it is Off.
+     *
+     * A scan cannot catch that; only compiling can. Templates with no "<?" in them at
+     * all cannot hit it, so they are skipped and the check stays quick.
+     */
+    public function test_every_template_compiles_with_short_open_tag_on(): void
+    {
+        $php = PHP_BINARY;
+        $checked = 0;
+        $broken = [];
+
+        foreach ($this->bladeFiles() as $path) {
+            $source = (string) file_get_contents($path);
+            if (!str_contains($source, '<?')) {
+                continue;
+            }
+
+            $checked++;
+            $compiled = Blade::compileString($source);
+
+            $tmp = tempnam(sys_get_temp_dir(), 'fcblade').'.php';
+            file_put_contents($tmp, $compiled);
+            $out = [];
+            $status = 0;
+            exec(escapeshellarg($php).' -d short_open_tag=1 -l '.escapeshellarg($tmp).' 2>&1', $out, $status);
+            @unlink($tmp);
+
+            if ($status !== 0) {
+                $broken[] = str_replace(DIRECTORY_SEPARATOR, '/', substr($path, strlen(realpath(__DIR__.'/../../'))))
+                    .'  '.trim(implode(' ', $out));
+            }
+        }
+
+        $this->assertGreaterThan(0, $checked, 'nothing was checked; the scan found no templates');
+        $this->assertSame([], $broken, implode("\n", array_merge(
+            ['these templates do not compile where short_open_tag is On:'],
+            $broken,
+            ['an opening tag inside a string must be joined at runtime, e.g. "<" + "?php"']
+        )));
+    }
+
+    /**
      * An XML declaration is only a declaration when it is the first thing in the document;
      * a stray newline ahead of it — a Blade comment above it is enough — makes the file
      * invalid XML for strict parsers.

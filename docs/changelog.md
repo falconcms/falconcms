@@ -5,7 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.4 <Badge type="tip" text="Latest" /> {#v2-6-4}
+## v2.6.5 <Badge type="tip" text="Latest" /> {#v2-6-5}
+
+**Released: 2026-09-04**
+
+### Fixed
+
+- **The page builder returned a 500 on servers with `short_open_tag` enabled.** The Code
+  Block element added in v2.6.4 ships a sample snippet, and the sample was PHP, so the
+  builder's script file contained the characters that open a PHP tag. Blade compiles a
+  template by running PHP's tokenizer over it, so on a server where a bare `<?` opens
+  code, everything below that point was handed back as PHP and passed through without
+  being compiled — and the builder died with `unexpected identifier "App"` before drawing
+  anything. Sites where the setting is off, which includes every development machine we
+  build on, were never affected.
+
+  The snippet is now joined at runtime, and the test that has guarded against this since
+  v2.6.3 no longer only reads the templates: it compiles every one of them with the
+  setting on and checks the result parses. That is the check that would have caught this,
+  and it would equally have caught the sitemap fault behind v2.6.3.
+
+---
+
+## v2.6.4 {#v2-6-4}
 
 **Released: 2026-09-04**
 
