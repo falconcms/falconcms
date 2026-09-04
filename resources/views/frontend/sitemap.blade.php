@@ -1,4 +1,11 @@
-{!! '<?xml version="1.0" encoding="UTF-8"?>' !!}
+{!! '<'.'?xml version="1.0" encoding="UTF-8"?'.'>' !!}
+{{-- That declaration is glued together from three pieces so the two characters that open
+     a PHP tag never sit next to each other in this file, and it stays on line 1 so nothing
+     is emitted ahead of it. Blade compiles a template by running token_get_all() over it
+     and applies its directives only to T_INLINE_HTML tokens; where short_open_tag is On
+     the tokenizer reads a literal declaration as the start of PHP code, so every line
+     below it is passed through uncompiled and the visitor gets a parse error instead of a
+     sitemap. --}}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     {{-- Home --}}
     <url>

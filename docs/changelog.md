@@ -5,7 +5,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.2 <Badge type="tip" text="Latest" /> {#v2-6-2}
+## v2.6.3 <Badge type="tip" text="Latest" /> {#v2-6-3}
+
+**Released: 2026-09-04**
+
+### Fixed
+
+- **The sitemap returned a 500 on any server with `short_open_tag` enabled.** Blade does not
+  read a template as plain text — it runs `token_get_all()` over the source and applies its
+  directives only to the inline-HTML tokens that come back. Where `short_open_tag` is On,
+  PHP's tokenizer treats the `<?` that opens an XML declaration as the start of PHP code, so
+  the rest of the template was handed back as PHP tokens and written to the compiled view
+  uncompiled. Visitors got a parse error instead of a sitemap. The declaration is now
+  assembled from pieces so those two characters never sit together in the file. The template
+  renders identically either way; only servers with `short_open_tag=On` were affected, which
+  is why it never appeared in local development.
+- A guard now scans every Blade template in the package for the same hazard, so no future
+  template can be served uncompiled on those servers.
+
+---
+
+## v2.6.2 {#v2-6-2}
 
 **Released: 2026-09-03**
 
