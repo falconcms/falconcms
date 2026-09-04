@@ -523,15 +523,15 @@
                                                                    oninput="document.getElementById('range_{{ $key }}').value = this.value; if('{{ $key }}' === 'theme_medium_screen_breakpoint') { var el = document.getElementById('large-screen-bp-val'); if(el) el.textContent = this.value; }">
                                                         </div>
 
-                                                    @elseif($type === 'css' || $type === 'script')
-                                                        {{-- Monaco Editor for CSS/JS --}}
+                                                    @elseif($type === 'css' || $type === 'script' || $type === 'html')
+                                                        {{-- Monaco Editor for CSS/JS/HTML --}}
                                                         <div class="monaco-wrapper border border-[#3c434a] rounded overflow-hidden shadow-inner" style="height: 500px;">
                                                             <div id="monaco-editor-{{ $key }}" class="w-full h-full"></div>
                                                             <textarea name="{{ $key }}" id="field_{{ $key }}" class="hidden">{{ $val }}</textarea>
                                                         </div>
                                                         <script>
                                                             window.addEventListener('load', function() {
-                                                                initMonaco('{{ $key }}', '{{ $type === "css" ? "css" : "javascript" }}');
+                                                                initMonaco('{{ $key }}', '{{ ['css' => 'css', 'html' => 'html'][$type] ?? 'javascript' }}');
                                                             });
                                                         </script>
                                                     @endif

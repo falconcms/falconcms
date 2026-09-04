@@ -778,6 +778,38 @@ if (!function_exists('forget_cms_options_cache')) {
     }
 }
 
+if (!function_exists('falcon_refresh_route_cache')) {
+    /**
+     * Rebuild the route cache, so a setting that routes are built from takes effect.
+     *
+     * The login and registration slugs are read in routes/web.php while the routes are
+     * being registered. On a cached site that file never runs, so changing either one
+     * did nothing: the new URL 404'd, the old one kept working, and nothing said why.
+     *
+     * Rebuilt rather than only cleared — a site that was cached stays cached, instead
+     * of quietly losing the speed it was set up with. If the rebuild fails (a host with
+     * no writable bootstrap/cache, say) the stale cache is dropped anyway: a site that
+     * has to compile its routes each request is slower, but it is correct, and a login
+     * URL that silently refuses to change is not something to leave in place.
+     */
+    function falcon_refresh_route_cache(): void
+    {
+        try {
+            if (!app()->routesAreCached()) {
+                return;
+            }
+
+            Artisan::call('route:cache');
+        } catch (Throwable $e) {
+            try {
+                Artisan::call('route:clear');
+            } catch (Throwable $inner) {
+                // Nothing further to try; the next deploy will rebuild it.
+            }
+        }
+    }
+}
+
 if (!function_exists('cms_timezone')) {
     /**
      * The CMS display/input timezone chosen in Settings → General.

@@ -838,6 +838,22 @@ class CustomizerController extends Controller
                         'default' => '',
                         'placeholder' => "// Google Analytics or other head scripts\nconsole.log('Head script loaded');",
                     ],
+                    /*
+                     * Head Script above takes JavaScript only -- the theme wraps it in a
+                     * <script> tag -- so there is no way to add markup that is not script:
+                     * a verification <meta>, a <link>, or a loader like Google Tag Manager
+                     * and Lemon Squeezy that arrives as <script src="...">. This field is
+                     * emitted verbatim instead. The two script fields keep their existing
+                     * behaviour: changing them to raw markup would print the JavaScript that
+                     * sites have already saved as visible text on the page.
+                     */
+                    'theme_head_html' => [
+                        'type' => 'html',
+                        'label' => 'Head HTML',
+                        'desc' => 'Markup placed inside &lt;head&gt; exactly as written — verification &lt;meta&gt; tags, &lt;link&gt; tags, and loaders such as Google Tag Manager or Lemon Squeezy. Unlike the field above, this is not wrapped in a &lt;script&gt; tag, so write complete tags here.',
+                        'default' => '',
+                        'placeholder' => '<meta name="google-site-verification" content="...">'."\n".'<script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>',
+                    ],
                     'theme_footer_script' => [
                         'type' => 'script',
                         'label' => 'Footer Script',

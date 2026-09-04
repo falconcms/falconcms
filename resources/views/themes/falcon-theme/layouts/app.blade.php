@@ -402,6 +402,13 @@
     @if(get_cms_option('theme_head_script'))
         <script>{!! get_cms_option('theme_head_script') !!}</script>
     @endif
+
+    {{-- PRIORITY HEAD HTML — emitted verbatim, not wrapped in a <script> tag, so it can
+         carry verification <meta> tags, <link> tags and external script loaders. Only a
+         user with manage_settings can write it, the same gate the script fields use. --}}
+    @if(get_cms_option('theme_head_html'))
+        {!! get_cms_option('theme_head_html') !!}
+    @endif
 </head>
 @php
     $bodyClasses = "antialiased selection:bg-primary selection:text-white";

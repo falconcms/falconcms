@@ -600,6 +600,8 @@
                 { type: 'card', name: 'Card', icon: 'fa fa-th-large' },
                 { type: 'counter', name: 'Counter', icon: 'fa fa-hashtag' },
                 { type: 'html', name: 'HTML Block', icon: 'fa fa-code' },
+                { type: 'code_block', name: 'Code Block', icon: 'fa fa-terminal' },
+                { type: 'table', name: 'Table', icon: 'fa fa-table' },
                 { type: 'icon_list', name: 'Item List', icon: 'fa fa-list-check' },
                 { type: 'video', name: 'Video', icon: 'fa fa-play-circle' },
                 { type: 'icon_box', name: 'Icon Box', icon: 'fa fa-star-half-alt' },
@@ -615,7 +617,7 @@
             ];
             // Advanced elements — available only with a builder_pro license. The palette shows
             // them with a lock badge; adding one without a license shows an upgrade prompt.
-            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu'];
+            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block'];
             const isElementPro   = (type) => proElementTypes.includes(type);
             const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
             if (postCardMode.value || layoutMode.value) {
@@ -2483,6 +2485,26 @@
                 return el;
             });
 
+            // Choosing a reveal on a Code Block plays it once on the canvas, so the choice
+            // shows what it does. Watching mode and speed only — not the code — keeps it
+            // from replaying while the editor is still typing the snippet.
+            //
+            // It has to sit below editingElement, not up with the other watchers: watch()
+            // runs its getter immediately, and a const is unreachable before its own
+            // declaration, so registering this earlier threw out of setup() and took the
+            // whole builder down with it.
+            watch(
+                () => {
+                    const el = editingElement.value;
+                    if (!el || el.type !== 'code_block') return null;
+                    return el.id + '|' + (el.settings.typeMode || 'none') + '|' + (el.settings.typeSpeed || 30);
+                },
+                (now, before) => {
+                    if (!now || now === before) return;
+                    nextTick(() => fcCodePlayPreview(editingElement.value));
+                }
+            );
+
             // Dynamic font variants for the selected title element's font
             const titleFontVariants = computed(() => {
                 const rawFamily = editingElement.value?.settings?.fontFamily || '';
@@ -3418,6 +3440,750 @@
                 return hidden ? { opacity: '0.4', outline: '2px dashed #fbbf24', outlineOffset: '-2px' } : {};
             };
 
+            // ── Table ────────────────────────────────────────────────────────────
+            // Canvas preview — mirrors
+            // resources/views/frontend/builder/elements/table.blade.php.
+            // Presets and the inline-markup rules come straight from
+            // FalconCms\Core\Support\TableStyles, the same arrays the front end reads,
+            // so a cell can never be formatted one way here and another way on the
+            // published page. Never hand-copy these into JS.
+            const FC_TBL_PRESETS = @json(\FalconCms\Core\Support\TableStyles::presets());
+            const FC_TBL_PRESET_OPTIONS = @json(\FalconCms\Core\Support\TableStyles::presetOptions());
+            const FC_TBL_INLINE = @json(\FalconCms\Core\Support\TableStyles::inlineRules());
+            const FC_TBL_ALIGNMENTS = @json(\FalconCms\Core\Support\TableStyles::ALIGNMENTS);
+
+            const fcTblEsc = (s) => String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+            function fcTblPreset(el) {
+                const key = (el.settings || {}).preset || 'docs';
+                return FC_TBL_PRESETS[key] || FC_TBL_PRESETS['docs'];
+            }
+
+            // A preset only supplies the default; anything set on the element wins.
+            function fcTblVal(el, key) {
+                const s = el.settings || {};
+                return s[key] !== undefined && s[key] !== null && s[key] !== ''
+                    ? s[key] : fcTblPreset(el)[key];
+            }
+
+            // Mirrors TableStyles::cell(): escape first, then one left-to-right scan
+            // where the first matching rule wins and what a rule produces is never
+            // scanned again. `y` is the JavaScript equivalent of PCRE's A modifier,
+            // which is what the PHP side applies to these very patterns.
+            let fcTblInlineCompiled = null;
+            // fcTblCell() is called straight from the template with only the text, so the
+            // two icon colours are staged here by fcTblCellFor() just before it runs.
+            let fcTblIconColors = { yes: '', no: '' };
+            function fcTblCellFor(el, text) {
+                const s = el.settings || {};
+                fcTblIconColors = { yes: s.iconYesColor || '', no: s.iconNoColor || '' };
+                return fcTblCell(text);
+            }
+
+            function fcTblCell(text) {
+                if (!fcTblInlineCompiled) {
+                    fcTblInlineCompiled = FC_TBL_INLINE.map(([n, p, r]) => [n, new RegExp(p, 'y'), r]);
+                }
+
+                const input = fcTblEsc(text);
+                let out = '', i = 0;
+                // Icon colours are inline here because the canvas has no per-element
+                // stylesheet to hang .fc-tbl-yes on the way the front end does.
+                const yes = 'color:' + (fcTblIconColors.yes || '#3E7D4F');
+                const no = 'color:' + (fcTblIconColors.no || '#B0392B');
+
+                while (i < input.length) {
+                    let matched = false;
+
+                    for (const [name, re, replacement] of fcTblInlineCompiled) {
+                        re.lastIndex = i;
+                        const m = re.exec(input);
+                        if (!m || m[0] === '') continue;
+
+                        if (name === 'link') {
+                            const plain = m[2].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
+                            out += '<a href="' + (/^\s*javascript:/i.test(plain) ? '#' : m[2]) + '">' + m[1] + '</a>';
+                        } else {
+                            let piece = replacement.replace(/\$(\d)/g, (_, d) => m[+d] === undefined ? '' : m[+d]);
+                            if (name === 'iconyes') piece = piece.replace('"><', '" style="' + yes + '"><');
+                            if (name === 'iconno') piece = piece.replace('"><', '" style="' + no + '"><');
+                            out += piece;
+                        }
+
+                        i += m[0].length;
+                        matched = true;
+                        break;
+                    }
+
+                    if (!matched) { out += input[i]; i++; }
+                }
+
+                return out;
+            }
+
+            // Pad every row to the widest, exactly as TableStyles::rectangular() does —
+            // a ragged grid reads as a broken table, not an empty one.
+            function fcTblRows(el) {
+                const rows = ((el.settings || {}).rows || []).map(r => Array.isArray(r) ? r : []);
+                const width = Math.max(1, ...rows.map(r => r.length), 0) || 1;
+                return rows.map(r => {
+                    const out = r.slice();
+                    while (out.length < width) out.push('');
+                    return out;
+                });
+            }
+
+            const fcTblHead = (el) => (el.settings || {}).headerRow !== false ? (fcTblRows(el)[0] || []) : [];
+            const fcTblBody = (el) => (el.settings || {}).headerRow !== false ? fcTblRows(el).slice(1) : fcTblRows(el);
+
+            function fcTblAlign(el, i) {
+                const cols = (el.settings || {}).cols || [];
+                const a = cols[i] && cols[i].align;
+                return FC_TBL_ALIGNMENTS.indexOf(a) !== -1 ? a : 'left';
+            }
+
+            // Mirrors TableStyles::parseSpec(): "2, 5-6" -> [2, 5, 6], 1-based, counted
+            // the way the table reads so row 1 is the first body row.
+            function fcTblSpec(text) {
+                const out = [];
+                String(text || '').split(/[,\s]+/).filter(Boolean).forEach(part => {
+                    const range = part.match(/^(\d+)-(\d+)$/);
+                    if (range) {
+                        const a = Math.min(+range[1], +range[2]), b = Math.max(+range[1], +range[2]);
+                        for (let i = a; i <= b && i - a < 500; i++) out.push(i);
+                    } else if (/^\d+$/.test(part)) {
+                        out.push(+part);
+                    }
+                });
+                return out;
+            }
+
+            // The shared typography control writes {prefix}_family and friends; empty
+            // means "leave it to the preset", so an untouched table still follows
+            // whichever preset is chosen.
+            function fcTblTypo(el, prefix) {
+                const s = el.settings || {};
+                const map = {
+                    family: 'fontFamily', weight: 'fontWeight', size: 'fontSize',
+                    line_height: 'lineHeight', letter_spacing: 'letterSpacing',
+                    transform: 'textTransform',
+                };
+                const out = {};
+                for (const key in map) {
+                    let v = s[prefix + '_' + key];
+                    if (v === undefined || v === null) continue;
+                    v = String(v).trim();
+                    if (v === '' || v === 'inherit') continue;
+                    if (key === 'transform' && v === 'none') continue;
+                    if (key === 'size' && /^[0-9.]+$/.test(v)) v += 'px';
+                    out[map[key]] = v;
+                }
+                return out;
+            }
+
+            function fcTblOuterStyle(el) {
+                const s = el.settings || {};
+                return {
+                    width: '100%',
+                    marginTop: (s.marginTop || 0) + (s.marginTopUnit || 'px'),
+                    marginBottom: (s.marginBottom || 0) + (s.marginBottomUnit || 'px'),
+                };
+            }
+
+            function fcTblScrollStyle(el) {
+                const h = parseInt((el.settings || {}).maxHeight, 10) || 0;
+                return {
+                    overflowX: 'auto',
+                    overflowY: h > 0 ? 'auto' : 'visible',
+                    maxHeight: h > 0 ? h + 'px' : 'none',
+                    borderRadius: (fcTblVal(el, 'radius') || 0) + 'px',
+                    border: fcTblVal(el, 'borders') === 'all' ? '1px solid ' + fcTblVal(el, 'borderColor') : 'none',
+                };
+            }
+
+            function fcTblTableStyle(el) {
+                return Object.assign({
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: fcTblVal(el, 'fontSize') + 'px',
+                    color: fcTblVal(el, 'textColor'),
+                    background: fcTblVal(el, 'bodyBg'),
+                }, fcTblTypo(el, 'tbl_body'));
+            }
+
+            function fcTblBorderStyle(el) {
+                const b = fcTblVal(el, 'borders');
+                const line = '1px solid ' + fcTblVal(el, 'borderColor');
+                if (b === 'all') return { border: line };
+                if (b === 'horizontal') return { borderBottom: line };
+                return {};
+            }
+
+            function fcTblPad(el) {
+                return fcTblVal(el, 'cellPaddingY') + 'px ' + fcTblVal(el, 'cellPaddingX') + 'px';
+            }
+
+            function fcTblHeadCellStyle(el, i) {
+                return Object.assign({
+                    padding: fcTblPad(el),
+                    background: fcTblVal(el, 'headerBg'),
+                    color: fcTblVal(el, 'headerColor'),
+                    fontWeight: String(fcTblVal(el, 'headerWeight')),
+                    textAlign: fcTblAlign(el, i),
+                    whiteSpace: 'nowrap',
+                    verticalAlign: 'top',
+                }, fcTblBorderStyle(el), fcTblTypo(el, 'tbl_head'),
+                   fcTblSpec((el.settings || {}).highlightCols).indexOf(i + 1) !== -1
+                     ? { boxShadow: 'inset 0 -2px 0 ' + ((el.settings || {}).highlightColor || '#B9720F') }
+                     : {});
+            }
+
+            function fcTblCellStyle(el, r, c) {
+                const s = el.settings || {};
+                const isHeadCol = s.headerCol && c === 0;
+                const striped = fcTblVal(el, 'stripe') && (r % 2 === 1);
+
+                // A picked-out row or column wins over the stripe, the same order the
+                // front end's stylesheet puts them in — otherwise a highlighted row
+                // would lose its colour on every other line.
+                const lit = fcTblSpec(s.highlightRows).indexOf(r + 1) !== -1
+                         || fcTblSpec(s.highlightCols).indexOf(c + 1) !== -1;
+
+                let background = isHeadCol ? fcTblVal(el, 'headerBg')
+                               : (striped ? fcTblVal(el, 'stripeBg') : 'transparent');
+                if (lit) background = s.highlightBg || 'rgba(232,145,43,.10)';
+
+                return Object.assign({
+                    padding: fcTblPad(el),
+                    textAlign: fcTblAlign(el, c),
+                    verticalAlign: 'top',
+                    background: background,
+                    color: lit && s.highlightColor ? s.highlightColor
+                         : (isHeadCol ? fcTblVal(el, 'headerColor') : 'inherit'),
+                    fontWeight: isHeadCol ? String(fcTblVal(el, 'headerWeight')) : 'inherit',
+                }, fcTblBorderStyle(el), fcTblTypo(el, 'tbl_body'));
+            }
+
+            // A hover cannot be expressed as an inline style, and the canvas paints every
+            // cell inline — so row hover worked on the published page and did nothing in
+            // the editor. This injects the one rule that needs a pseudo-class, scoped to
+            // this element's id, the same way the Section Separator injects its own.
+            const fcTblScopeId = (el) => 'fc-tbl-canvas-' + el.id;
+
+            function fcTblHoverCss(el) {
+                if (!fcTblVal(el, 'hover')) return '';
+                const id = fcTblScopeId(el);
+                // Not on the header, and not on a header column: those carry their own
+                // background and the front end leaves them alone too.
+                return '#' + id + ' tbody tr:hover > td { background: ' + fcTblVal(el, 'hoverBg') + ' !important; }';
+            }
+
+            function fcTblCaptionStyle(el) {
+                return {
+                    padding: '10px 2px 0',
+                    fontSize: Math.max(11, (parseFloat(fcTblVal(el, 'fontSize')) || 15) - 2) + 'px',
+                    color: '#79838F',
+                    textAlign: 'left',
+                };
+            }
+
+            // -- grid editing -------------------------------------------------------
+            // Every one of these rewrites settings.rows / settings.cols as a new array
+            // rather than mutating in place, so the builder's undo history and its
+            // dirty-state watcher both see the change.
+
+            function fcTblEnsure(el) {
+                const s = el.settings;
+                if (!Array.isArray(s.rows) || !s.rows.length) s.rows = [['', ''], ['', '']];
+                if (!Array.isArray(s.cols)) s.cols = [];
+                const width = Math.max(1, ...s.rows.map(r => r.length));
+                s.rows = s.rows.map(r => { const o = r.slice(); while (o.length < width) o.push(''); return o; });
+                while (s.cols.length < width) s.cols.push({ align: 'left', width: '' });
+                s.cols = s.cols.slice(0, width);
+            }
+
+            function fcTblAddRow(el, at) {
+                fcTblEnsure(el);
+                const width = el.settings.rows[0].length;
+                const row = new Array(width).fill('');
+                const rows = el.settings.rows.slice();
+                rows.splice(at === undefined ? rows.length : at, 0, row);
+                el.settings.rows = rows;
+            }
+
+            function fcTblRemoveRow(el, i) {
+                fcTblEnsure(el);
+                if (el.settings.rows.length <= 1) return;
+                el.settings.rows = el.settings.rows.filter((_, r) => r !== i);
+            }
+
+            function fcTblMoveRow(el, i, delta) {
+                fcTblEnsure(el);
+                const rows = el.settings.rows.slice();
+                const j = i + delta;
+                if (j < 0 || j >= rows.length) return;
+                [rows[i], rows[j]] = [rows[j], rows[i]];
+                el.settings.rows = rows;
+            }
+
+            function fcTblAddCol(el, at) {
+                fcTblEnsure(el);
+                const idx = at === undefined ? el.settings.rows[0].length : at;
+                el.settings.rows = el.settings.rows.map(r => {
+                    const o = r.slice(); o.splice(idx, 0, ''); return o;
+                });
+                const cols = el.settings.cols.slice();
+                cols.splice(idx, 0, { align: 'left', width: '' });
+                el.settings.cols = cols;
+            }
+
+            function fcTblRemoveCol(el, i) {
+                fcTblEnsure(el);
+                if (el.settings.rows[0].length <= 1) return;
+                el.settings.rows = el.settings.rows.map(r => r.filter((_, c) => c !== i));
+                el.settings.cols = el.settings.cols.filter((_, c) => c !== i);
+            }
+
+            function fcTblMoveCol(el, i, delta) {
+                fcTblEnsure(el);
+                const j = i + delta;
+                if (j < 0 || j >= el.settings.rows[0].length) return;
+                el.settings.rows = el.settings.rows.map(r => {
+                    const o = r.slice(); [o[i], o[j]] = [o[j], o[i]]; return o;
+                });
+                const cols = el.settings.cols.slice();
+                [cols[i], cols[j]] = [cols[j], cols[i]];
+                el.settings.cols = cols;
+            }
+
+            function fcTblSetCell(el, r, c, value) {
+                const rows = el.settings.rows.map(row => row.slice());
+                rows[r][c] = value;
+                el.settings.rows = rows;
+            }
+
+            function fcTblSetAlign(el, i, align) {
+                fcTblEnsure(el);
+                const cols = el.settings.cols.map(c => ({ ...c }));
+                cols[i].align = align;
+                el.settings.cols = cols;
+            }
+
+            // -- import -------------------------------------------------------------
+            // The docs hold well over a thousand Markdown table rows. Retyping those into
+            // a grid is not a migration anyone finishes, so a paste is parsed instead —
+            // Markdown first, then tab- or comma-separated, which is what a spreadsheet
+            // or a CSV file gives. The alignment row of a Markdown table sets the column
+            // alignments and is dropped.
+            const fcTblImportText = ref('');
+            const fcTblImportNote = ref('');
+
+            function fcTblLooksMarkdown(text) {
+                const lines = text.split(/\r\n|\r|\n/).map(l => l.trim()).filter(Boolean);
+                return lines.length > 0 && lines.some(l => l.indexOf('|') !== -1);
+            }
+
+            function fcTblSplitMd(line) {
+                let l = line.replace(/^\|/, '').replace(/\|$/, '');
+                return l.split(/(?<!\\)\|/).map(c => c.replace(/\\\|/g, '|').trim());
+            }
+
+            function fcTblImport(el, mode) {
+                const text = String(fcTblImportText.value || '').trim();
+                if (!text) { fcTblImportNote.value = 'Nothing to import — paste a table first.'; return; }
+
+                let rows = [], align = [];
+
+                if (mode !== 'delimited' && fcTblLooksMarkdown(text)) {
+                    const lines = text.split(/\r\n|\r|\n/).map(l => l.trim()).filter(Boolean);
+                    lines.forEach((line, i) => {
+                        const isAlign = /^\|?[\s:|-]+\|?$/.test(line) && line.indexOf('-') !== -1;
+                        if (i === 1 && isAlign) {
+                            align = fcTblSplitMd(line).map(spec => {
+                                const l = spec.charAt(0) === ':';
+                                const r = spec.charAt(spec.length - 1) === ':';
+                                return l && r ? 'center' : (r ? 'right' : 'left');
+                            });
+                            return;
+                        }
+                        rows.push(fcTblSplitMd(line));
+                    });
+                } else {
+                    const lines = text.split(/\r\n|\r|\n/).filter(l => l.trim() !== '');
+                    const sep = (lines[0].split('\t').length - 1) >= (lines[0].split(',').length - 1) ? '\t' : ',';
+                    rows = lines.map(l => l.split(sep).map(c => c.trim().replace(/^"|"$/g, '')));
+                }
+
+                if (!rows.length) { fcTblImportNote.value = 'Could not read a table out of that.'; return; }
+
+                const width = Math.max(...rows.map(r => r.length));
+                el.settings.rows = rows.map(r => { const o = r.slice(); while (o.length < width) o.push(''); return o; });
+                el.settings.cols = Array.from({ length: width }, (_, i) => ({
+                    align: align[i] || 'left', width: (el.settings.cols || [])[i]?.width || '',
+                }));
+                el.settings.headerRow = true;
+
+                fcTblImportNote.value = 'Imported ' + el.settings.rows.length + ' rows x ' + width + ' columns.';
+                fcTblImportText.value = '';
+            }
+
+            // ── Code Block ───────────────────────────────────────────────────────
+            // Canvas preview — mirrors
+            // resources/views/frontend/builder/elements/code-block.blade.php.
+            // The language rules and colour themes come straight from
+            // FalconCms\Core\Support\CodeHighlighter, the same arrays the server-side
+            // highlighter uses, so a token can never be coloured one way here and
+            // another way on the published page. Never hand-copy these into JS.
+            const FC_CODE_LANGS  = @json(\FalconCms\Core\Support\CodeHighlighter::languages());
+            const FC_CODE_THEMES = @json(\FalconCms\Core\Support\CodeHighlighter::themes());
+            const FC_CODE_LANG_OPTIONS  = @json(\FalconCms\Core\Support\CodeHighlighter::languageOptions());
+            const FC_CODE_THEME_OPTIONS = @json(\FalconCms\Core\Support\CodeHighlighter::themeOptions());
+
+            const FC_MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
+
+            // Compiled sticky regexes, built once per language. `y` is the JavaScript
+            // equivalent of PCRE's A modifier, which is what CodeHighlighter::compile()
+            // applies to these very patterns.
+            const fcCodeRuleCache = {};
+            function fcCodeRules(lang) {
+                if (!fcCodeRuleCache[lang]) {
+                    const rules = (FC_CODE_LANGS[lang] && FC_CODE_LANGS[lang].rules) || [];
+                    fcCodeRuleCache[lang] = rules.map(r => [r[0], new RegExp(r[1], 'y')]);
+                }
+                return fcCodeRuleCache[lang];
+            }
+
+            const fcCodeEsc = (s) => String(s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+            function fcCodeTheme(el) {
+                const key = (el.settings && el.settings.codeTheme) || 'falcon-dark';
+                return FC_CODE_THEMES[key] || FC_CODE_THEMES['falcon-dark'];
+            }
+
+            function fcCodeTokenColor(el, token) {
+                const t = fcCodeTheme(el);
+                return (t.tokens && t.tokens[token]) || t.fg;
+            }
+
+            // Same scan as CodeHighlighter::tokenize(): first rule that matches at the
+            // cursor wins, an unmatched position contributes one plain character.
+            function fcCodeTokenize(code, lang) {
+                const rules = fcCodeRules(lang);
+                if (!rules.length) return code === '' ? [] : [[null, code]];
+                const out = [];
+                let i = 0, plain = '';
+                while (i < code.length) {
+                    let matched = false;
+                    for (const [token, re] of rules) {
+                        re.lastIndex = i;
+                        const m = re.exec(code);
+                        if (m && m[0] !== '') {
+                            if (plain !== '') { out.push([null, plain]); plain = ''; }
+                            out.push([token, m[0]]);
+                            i += m[0].length;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) { plain += code[i]; i++; }
+                }
+                if (plain !== '') out.push([null, plain]);
+                return out;
+            }
+
+            // Mirrors CodeHighlighter::highlightLines(): split on the token list, not on
+            // the finished markup, so a token running across newlines re-opens its span
+            // on the next line instead of leaving one hanging.
+            function fcCodeLines(el) {
+                const s = el.settings || {};
+                const code = String(s.code || '');
+                const lang = s.language || 'php';
+                const lines = [''];
+                for (const [token, text] of fcCodeTokenize(code, lang)) {
+                    const pieces = text.split(/\r\n|\r|\n/);
+                    pieces.forEach((piece, k) => {
+                        if (k > 0) lines.push('');
+                        if (piece === '') return;
+                        lines[lines.length - 1] += token === null
+                            ? fcCodeEsc(piece)
+                            : '<span style="color:' + fcCodeTokenColor(el, token) +
+                              (token === 'comment' ? ';font-style:italic' : '') + '">' +
+                              fcCodeEsc(piece) + '</span>';
+                    });
+                }
+                if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+                return lines;
+            }
+
+            const fcCodeLangName = (el) =>
+                FC_CODE_LANG_OPTIONS[(el.settings || {}).language] || (el.settings || {}).language || '';
+
+            const fcCodeStart = (el) => Math.max(1, parseInt((el.settings || {}).startLine, 10) || 1);
+            const fcCodeLineNo = (el, i) => fcCodeStart(el) + i;
+
+            function fcCodeMarks(el) {
+                const spec = String((el.settings || {}).highlightLines || '');
+                const out = [];
+                spec.split(/[,\s]+/).filter(Boolean).forEach(part => {
+                    const range = part.match(/^(\d+)-(\d+)$/);
+                    if (range) {
+                        const a = Math.min(+range[1], +range[2]), b = Math.max(+range[1], +range[2]);
+                        for (let i = a; i <= b && i - a < 500; i++) out.push(i);
+                    } else if (/^\d+$/.test(part)) {
+                        out.push(+part);
+                    }
+                });
+                return out;
+            }
+
+            function fcCodeOuterStyle(el) {
+                const s = el.settings || {};
+                return {
+                    width: '100%',
+                    marginTop: (s.marginTop || 0) + (s.marginTopUnit || 'px'),
+                    marginBottom: (s.marginBottom || 0) + (s.marginBottomUnit || 'px'),
+                };
+            }
+
+            function fcCodeShellStyle(el) {
+                const s = el.settings || {}, t = fcCodeTheme(el);
+                return {
+                    position: 'relative',
+                    background: t.bg,
+                    border: (s.borderWidth != null ? s.borderWidth : 1) + 'px solid ' + t.border,
+                    borderRadius: (s.borderRadius != null ? s.borderRadius : 10) + 'px',
+                    overflow: 'hidden',
+                    fontFamily: s.fontFamily || FC_MONO,
+                };
+            }
+
+            function fcCodeChromeStyle(el) {
+                const t = fcCodeTheme(el);
+                return {
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '9px 12px', background: t.chrome,
+                    borderBottom: '1px solid ' + t.border,
+                    color: t.chromeText, fontSize: '12px', lineHeight: '1',
+                };
+            }
+
+            function fcCodeScrollStyle(el) {
+                const h = parseInt((el.settings || {}).maxHeight, 10) || 0;
+                return h > 0 ? { overflow: 'auto', maxHeight: h + 'px' } : { overflow: 'auto' };
+            }
+
+            function fcCodePreStyle(el) {
+                const s = el.settings || {}, t = fcCodeTheme(el);
+                const pad = (s.padding != null ? s.padding : 18);
+                return {
+                    margin: '0', padding: pad + 'px', background: 'none', border: '0',
+                    color: t.fg, fontFamily: 'inherit',
+                    fontSize: (s.fontSize || 14) + 'px',
+                    lineHeight: String(s.lineHeight || 1.7),
+                    tabSize: '4',
+                };
+            }
+
+            function fcCodeLineStyle(el, i) {
+                const s = el.settings || {}, t = fcCodeTheme(el);
+                const marked = fcCodeMarks(el).indexOf(fcCodeLineNo(el, i)) !== -1;
+                // In "lines" mode the reveal is this fade; in typewriter the text itself is
+                // cut short by fcCodeCanvasLines(), and a line only needs hiding until the
+                // caret has reached it.
+                const play = fcCodePlay.value[el.id];
+                const hidden = play
+                    ? (play.mode === 'lines' ? i >= play.n : !fcCodeCanvasLines(el)[i]?.shown)
+                    : false;
+
+                return {
+                    display: 'flex',
+                    whiteSpace: s.wrapLines ? 'pre-wrap' : 'pre',
+                    overflowWrap: s.wrapLines ? 'anywhere' : 'normal',
+                    background: marked ? t.mark : 'transparent',
+                    boxShadow: marked ? ('inset 2px 0 0 ' + t.fg) : 'none',
+                    opacity: hidden ? 0 : 1,
+                    transform: hidden && play && play.mode === 'lines' ? 'translateY(4px)' : 'none',
+                    transition: play && play.mode === 'lines' ? 'opacity .3s ease, transform .3s ease' : 'none',
+                };
+            }
+
+            function fcCodeNoStyle(el) {
+                const t = fcCodeTheme(el);
+                const digits = String(fcCodeStart(el) + fcCodeLines(el).length).length;
+                return {
+                    flex: 'none', width: (Math.max(2, digits) + 1) + 'ch',
+                    marginRight: '14px', textAlign: 'right',
+                    color: t.lineNo, userSelect: 'none',
+                };
+            }
+
+            function fcCodeCopyStyle(el) {
+                const s = el.settings || {}, t = fcCodeTheme(el);
+                return {
+                    position: 'absolute', top: (s.showChrome ? 6 : 10) + 'px', right: '10px', zIndex: 2,
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '5px 10px', borderRadius: '5px',
+                    font: '600 11.5px/1 ' + (s.fontFamily || FC_MONO),
+                    color: t.chromeText, background: t.chrome,
+                    border: '1px solid ' + t.border,
+                    pointerEvents: 'none',
+                };
+            }
+
+            // How far a canvas preview has got: element id → { mode, n }, where n counts
+            // revealed lines in "lines" mode and typed characters in "typewriter", or
+            // absent when nothing is playing.
+            //
+            // Driving this through reactive state rather than reaching into the DOM is
+            // deliberate. An earlier version looked the block up with getElementById and
+            // set inline styles on it, and did nothing at all: the canvas re-renders
+            // whenever a setting changes, so the node found by id is not necessarily the
+            // node still on screen a moment later, and any style written onto it is
+            // discarded by the next render. Reading the state from fcCodeLineStyle()
+            // instead means Vue paints the reveal itself and re-renders cannot lose it.
+            const fcCodePlay = ref({});
+            const fcCodePlayTimers = {};
+
+            function fcCodeStopPlay(id) {
+                (fcCodePlayTimers[id] || []).forEach(t => {
+                    // The typewriter runs on an interval; everything else is a timeout.
+                    t && t.__interval ? clearInterval(t.__interval) : clearTimeout(t);
+                });
+                fcCodePlayTimers[id] = [];
+                const next = { ...fcCodePlay.value };
+                delete next[id];
+                fcCodePlay.value = next;
+            }
+
+            // Plays the chosen reveal once, at the speed the element is set to, so the
+            // pace on the canvas is the pace visitors get. It does not replay on every
+            // keystroke — only when the mode or speed is changed, see the watcher below —
+            // because an editor writing code needs to see the whole snippet.
+            function fcCodePlayPreview(el) {
+                if (!el || !el.settings) return;
+                const mode = el.settings.typeMode || 'none';
+                const id = el.id;
+
+                fcCodeStopPlay(id);
+                if (mode === 'none') return;
+
+                const speed = Math.max(1, parseInt(el.settings.typeSpeed, 10) || 30);
+                const lines = fcCodeLines(el);
+                if (!lines.length) return;
+
+                fcCodePlayTimers[id] = [];
+
+                if (mode === 'lines') {
+                    fcCodePlay.value = { ...fcCodePlay.value, [id]: { mode: 'lines', n: 0 } };
+                    lines.forEach((line, i) => {
+                        fcCodePlayTimers[id].push(setTimeout(() => {
+                            fcCodePlay.value = { ...fcCodePlay.value, [id]: { mode: 'lines', n: i + 1 } };
+                            if (i === lines.length - 1) {
+                                fcCodePlayTimers[id].push(setTimeout(() => fcCodeStopPlay(id), 350));
+                            }
+                        }, i * speed * 2));
+                    });
+                    return;
+                }
+
+                // Typewriter: one character at a time, the same as the published page.
+                // The count drives fcCodeCanvasLines(), which re-cuts the highlighted
+                // markup from the token list at each step — truncating the finished HTML
+                // instead would slice through a <span> and leave a broken tag on screen.
+                const total = fcCodeCharCount(el);
+                if (!total) return;
+
+                let typed = 0;
+                fcCodePlay.value = { ...fcCodePlay.value, [id]: { mode: 'typewriter', n: 0 } };
+
+                const tick = setInterval(() => {
+                    typed += 1;
+                    fcCodePlay.value = { ...fcCodePlay.value, [id]: { mode: 'typewriter', n: typed } };
+                    if (typed >= total) {
+                        clearInterval(tick);
+                        fcCodePlayTimers[id].push(setTimeout(() => fcCodeStopPlay(id), 350));
+                    }
+                }, speed);
+                fcCodePlayTimers[id].push({ __interval: tick });
+            }
+
+            // Visible characters in the snippet — newlines are structure, not typing, so
+            // they are not counted, which is also how the front end paces itself.
+            function fcCodeCharCount(el) {
+                const s = el.settings || {};
+                let n = 0;
+                for (const [, text] of fcCodeTokenize(String(s.code || ''), s.language || 'php')) {
+                    n += text.replace(/\r\n|\r|\n/g, '').length;
+                }
+                return n;
+            }
+
+            /**
+             * What the canvas should actually draw: [{ html, shown }] per line.
+             *
+             * Idle, and in "lines" mode, that is simply every line — the reveal there is
+             * a fade handled by fcCodeLineStyle(). Mid-typewriter it is the snippet cut
+             * to the characters typed so far, rebuilt from tokens so every span still
+             * closes, with lines that have not been reached yet marked not-shown so they
+             * hold their height instead of the block growing line by line.
+             */
+            function fcCodeCanvasLines(el) {
+                const play = fcCodePlay.value[el.id];
+                const full = fcCodeLines(el);
+
+                if (!play || play.mode !== 'typewriter') {
+                    return full.map(html => ({ html, shown: true }));
+                }
+
+                const s = el.settings || {};
+                const budget = play.n;
+                const out = [{ html: '', touched: false }];
+                let used = 0;
+
+                for (const [token, text] of fcCodeTokenize(String(s.code || ''), s.language || 'php')) {
+                    const pieces = text.split(/\r\n|\r|\n/);
+                    for (let k = 0; k < pieces.length; k++) {
+                        if (k > 0) out.push({ html: '', touched: false });
+                        const piece = pieces[k];
+                        if (piece === '' || used >= budget) { used += piece.length; continue; }
+
+                        const take = piece.slice(0, budget - used);
+                        used += piece.length;
+                        out[out.length - 1].touched = true;
+                        out[out.length - 1].html += token === null
+                            ? fcCodeEsc(take)
+                            : '<span style="color:' + fcCodeTokenColor(el, token) +
+                              (token === 'comment' ? ';font-style:italic' : '') + '">' +
+                              fcCodeEsc(take) + '</span>';
+                    }
+                }
+
+                // Blank lines inside an already-typed stretch are part of the code, so a
+                // line counts as reached once anything after it has been typed.
+                let last = -1;
+                out.forEach((l, i) => { if (l.touched) last = i; });
+
+                return full.map((html, i) => ({
+                    html: i < out.length ? out[i].html : '',
+                    shown: i <= last,
+                }));
+            }
+
+            function fcCodeBadgeStyle(el) {
+                const t = fcCodeTheme(el);
+                return {
+                    position: 'absolute', bottom: '8px', right: '10px',
+                    padding: '3px 8px', borderRadius: '4px',
+                    font: '600 10px/1 ' + FC_MONO, letterSpacing: '.06em', textTransform: 'uppercase',
+                    color: t.chromeText, background: t.chrome,
+                    border: '1px solid ' + t.border, opacity: '.85', pointerEvents: 'none',
+                };
+            }
+
             // ── Section Separator ────────────────────────────────────────────────
             // Canvas preview maths — mirrors the PHP in
             // resources/views/frontend/builder/elements/section-separator.blade.php.
@@ -3841,6 +4607,44 @@
                             fontWeight: '500',
                             height: 44,
                             borderRadius: 0,
+                            marginTop: 0, marginTopUnit: 'px',
+                            marginBottom: 0, marginBottomUnit: 'px',
+                            cssClass: '', cssId: '',
+                            visibility: { mobile: true, tablet: true, desktop: true },
+                        } : {}),
+                        ...(type === 'table' ? {
+                            rows: [
+                                ['Setting', 'Type', 'Default'],
+                                ['`preset`', 'string', '`docs`'],
+                                ['`sortable`', 'bool', '`false`'],
+                            ],
+                            cols: [
+                                { align: 'left', width: '' },
+                                { align: 'left', width: '' },
+                                { align: 'left', width: '' },
+                            ],
+                            headerRow: true, headerCol: false, caption: '',
+                            preset: 'docs',
+                            highlightRows: '', highlightCols: '',
+                            highlightBg: '', highlightColor: '',
+                            iconYesColor: '', iconNoColor: '',
+                            sortable: false, stickyHeader: false, maxHeight: 0,
+                            responsive: 'scroll',
+                            marginTop: 0, marginTopUnit: 'px',
+                            marginBottom: 0, marginBottomUnit: 'px',
+                            cssClass: '', cssId: '',
+                            visibility: { mobile: true, tablet: true, desktop: true },
+                        } : {}),
+                        ...(type === 'code_block' ? {
+                            code: "<?php\n\nnamespace App;\n\nclass Greeter\n{\n    public function greet(string $name = 'world'): string\n    {\n        return \"Hello, {$name}!\";\n    }\n}\n",
+                            language: 'php',
+                            codeTheme: 'falcon-dark',
+                            showChrome: true, chromeDots: true, filename: 'app/Greeter.php', showLangTag: true,
+                            showLineNumbers: true, startLine: 1, highlightLines: '', wrapLines: false, maxHeight: 0,
+                            showCopy: true, copyLabel: 'Copy', copiedLabel: 'Copied!',
+                            typeMode: 'none', typeSpeed: 30, typeStart: 'view', typeCaret: true,
+                            fontSize: 14, lineHeight: 1.7, fontFamily: '',
+                            padding: 18, borderRadius: 10, borderWidth: 1,
                             marginTop: 0, marginTopUnit: 'px',
                             marginBottom: 0, marginBottomUnit: 'px',
                             cssClass: '', cssId: '',
@@ -4591,6 +5395,18 @@
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, canvasScale, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal, googleFontFamily,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
+                fcCodeLangOptions: FC_CODE_LANG_OPTIONS, fcCodeThemeOptions: FC_CODE_THEME_OPTIONS,
+                fcTblPresetOptions: FC_TBL_PRESET_OPTIONS, fcTblAlignments: FC_TBL_ALIGNMENTS,
+                fcTblCell, fcTblCellFor, fcTblRows, fcTblHead, fcTblBody, fcTblAlign, fcTblVal,
+                fcTblSpec, fcTblTypo, fcTblHoverCss, fcTblScopeId,
+                fcTblOuterStyle, fcTblScrollStyle, fcTblTableStyle,
+                fcTblHeadCellStyle, fcTblCellStyle, fcTblCaptionStyle,
+                fcTblEnsure, fcTblAddRow, fcTblRemoveRow, fcTblMoveRow,
+                fcTblAddCol, fcTblRemoveCol, fcTblMoveCol, fcTblSetCell, fcTblSetAlign,
+                fcTblImport, fcTblImportText, fcTblImportNote,
+                fcCodeLines, fcCodeCanvasLines, fcCodeLineNo, fcCodeLangName,
+                fcCodeOuterStyle, fcCodeShellStyle, fcCodeChromeStyle, fcCodeScrollStyle,
+                fcCodePreStyle, fcCodeLineStyle, fcCodeNoStyle, fcCodeCopyStyle, fcCodeBadgeStyle,
                 sepStyleGroups: SEP_STYLE_GROUPS, sepIsPattern, sepIsShape,
                 sepHasContent, sepOuterStyle, sepInnerStyle, sepLineStyle,
                 sepTextStyle, sepIconStyle, sepIconWrapStyle,

@@ -1315,6 +1315,16 @@
 
                             </div>
 
+                            <!-- ══ TABLE ELEMENT ══ -->
+                            <div v-else-if="editingElement?.type === 'table'" class="space-y-8">
+                                @include('falcon-cms::admin.falcon-builder.partials.components.elements.table-content')
+                            </div>
+
+                            <!-- ══ CODE BLOCK ELEMENT ══ -->
+                            <div v-else-if="editingElement?.type === 'code_block'" class="space-y-8">
+                                @include('falcon-cms::admin.falcon-builder.partials.components.elements.code-block-content')
+                            </div>
+
                             <!-- ══ SECTION SEPARATOR ELEMENT ══ -->
                             <div v-else-if="editingElement?.type === 'section_separator'" class="space-y-8">
 
@@ -3605,6 +3615,16 @@
                              <!-- Design Settings for Spacer -->
                              <div v-else-if="editingElement?.type === 'spacer'" class="space-y-6">
                                  @include('falcon-cms::admin.falcon-builder.partials.components.elements.spacer-design')
+                             </div>
+
+                             <!-- Design Settings for Table -->
+                             <div v-else-if="editingElement?.type === 'table'" class="space-y-6 pb-10">
+                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.table-design')
+                             </div>
+
+                             <!-- Design Settings for Code Block -->
+                             <div v-else-if="editingElement?.type === 'code_block'" class="space-y-6 pb-10">
+                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.code-block-design')
                              </div>
 
                              <!-- Design Settings for Section Separator -->

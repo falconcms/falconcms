@@ -5,7 +5,65 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.3 <Badge type="tip" text="Latest" /> {#v2-6-3}
+## v2.6.4 <Badge type="tip" text="Latest" /> {#v2-6-4}
+
+**Released: 2026-09-04**
+
+### Added
+
+- **Table element** <Badge type="warning" text="Pro" />. A real table in the page builder,
+  with six presets, per-column alignment and width, an optional header row and header
+  column, a caption, sticky headers and a max height. Readers can sort by clicking a
+  header — numbers and versions sort as values, so `10` does not land before `9`, nor
+  `v2.10.0` before `v2.9.0`. On phones a wide table either scrolls or turns each row into
+  a card carrying its column names, because side-scrolling hides the first column, the one
+  that says what the row is about.
+
+  Cells take a small markup — `` `code` ``, `**bold**`, `*italic*`, `[text](url)`,
+  `<br>` — and `[check]`, `[cross]` or `[icon fas fa-star]` for icons, which is what a
+  comparison or pricing table is mostly made of. Cells hold text, never HTML, so one can
+  never carry a script.
+
+  **Paste a Markdown table and it imports**, alignment row and all, along with CSV and a
+  spreadsheet paste, which is the difference between adopting the element and retyping a
+  documentation site by hand. Rows and columns can be picked out with their own colour,
+  and the header and body each take the same typography controls as every other element.
+
+- **Code Block element** <Badge type="warning" text="Pro" />. Syntax highlighting for
+  thirteen languages in five colour themes, with line numbers, highlighted lines, a
+  window bar with the file name, word wrap and a max height. A copy button puts the
+  original source on the clipboard rather than the numbered lines beside it, and says so
+  when a browser refuses to copy instead of sitting there looking dead.
+
+  Highlighting happens on the server, so a visitor with JavaScript off still gets a
+  coloured, selectable block. Two reveals are available on top of the builder's own
+  entrance animations: a typewriter that types the snippet out character by character,
+  and a line-by-line fade. Both stand aside for `prefers-reduced-motion`.
+
+- **Head HTML** in Appearance → Customize → Custom Scripts. The two existing script
+  fields take JavaScript and are wrapped in a `<script>` tag, which left nowhere to put
+  the things a site needs in its head that are not script: a Search Console or Facebook
+  verification `<meta>`, a `<link>`, or a loader that arrives as `<script src="…">` —
+  which is how Google Tag Manager, Meta Pixel and Lemon Squeezy are all published. Sites
+  had to edit a theme file, and the next update overwrote it.
+
+### Fixed
+
+- **DOMPurify was missing from the package.** The builder loads it and guards against its
+  absence, so nothing ever appeared broken — it simply fell back to unguarded `innerHTML`,
+  which means client-side sanitising in the canvas has never actually run, on any site.
+  The library is now shipped, and reaches existing sites on the next update.
+
+- **Changing the login or registration URL did nothing on a live site.** Both slugs are
+  read while routes are being registered, and a site with cached routes never runs that
+  file — so the setting saved, the new URL returned 404 and the old one carried on
+  working, with nothing to say a cache was in the way. Every production install caches
+  its routes, so this affected all of them. Saving either slug now rebuilds the route
+  cache, and a site without one is left alone.
+
+---
+
+## v2.6.3 {#v2-6-3}
 
 **Released: 2026-09-04**
 

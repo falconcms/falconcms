@@ -726,6 +726,18 @@ class DashboardController extends Controller
         }
 
         forget_cms_options_cache();
+
+        // The login and registration routes are built from these two options when
+        // routes/web.php runs — and on a cached site it never runs. Every production
+        // install caches its routes (falcon:update does, and the demo's boot script
+        // does), so changing either slug did nothing at all there: the new URL 404'd
+        // and the old one kept working, with no hint that a cache was in the way.
+        // Rebuilt here rather than merely cleared, so a site that was cached stays
+        // cached and does not quietly lose the speed it was set up with.
+        if (isset($data['login_url']) || isset($data['register_url'])) {
+            falcon_refresh_route_cache();
+        }
+
         falcon_log_activity('settings_updated', 'Updated CMS settings');
 
         $message = 'Settings updated successfully!';
