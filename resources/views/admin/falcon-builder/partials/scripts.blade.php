@@ -1722,31 +1722,134 @@
                 e.preventDefault();
                 navDragOver.value = { type, ci, coli, eli, ncoli, neli };
             };
+            // -- Navigator drop targeting -------------------------------------
+            // The navigator draws one tree, so it invites dragging across branches: an
+            // element from one column onto another, a column into a different container,
+            // an element in or out of a nested column. Every one of those used to be
+            // dropped on the floor, because each branch of the old handler demanded that
+            // the source and destination share a parent (src.coli === coli, and so on)
+            // and that their context types match exactly. Reordering inside one parent
+            // worked, which is why the tree looked like it half-worked.
+            const NAV_KINDS = {
+                container: 'container',
+                column: 'column', 'nested-column': 'column',
+                element: 'element', 'nested-element': 'element',
+            };
+            const navKind = (t) => NAV_KINDS[t] || null;
+            const _navAt = (v) => (v !== null && v !== undefined);
+
+            /** The array a navigator node lives in, and where it sits in it. */
+            const navSlot = (n) => {
+                if (!n || !n.type) return null;
+                const L = layout.value;
+                const cont = _navAt(n.ci) ? L[n.ci] : null;
+                const col = (cont && _navAt(n.coli)) ? cont.columns[n.coli] : null;
+                const rowEl = (col && _navAt(n.eli)) ? col.elements[n.eli] : null;
+                const ncol = (rowEl && Array.isArray(rowEl.columns) && _navAt(n.ncoli)) ? rowEl.columns[n.ncoli] : null;
+
+                if (n.type === 'container') return cont ? { list: L, index: n.ci } : null;
+                if (n.type === 'column') return col ? { list: cont.columns, index: n.coli } : null;
+                if (n.type === 'element') return rowEl ? { list: col.elements, index: n.eli } : null;
+                if (n.type === 'nested-column') return ncol ? { list: rowEl.columns, index: n.ncoli } : null;
+                if (n.type === 'nested-element') {
+                    const el = (ncol && Array.isArray(ncol.elements) && _navAt(n.neli)) ? ncol.elements[n.neli] : null;
+                    return el ? { list: ncol.elements, index: n.neli } : null;
+                }
+                return null;
+            };
+            const navNode = (n) => { const s = navSlot(n); return s ? s.list[s.index] : null; };
+
+            /** True when `list` lives somewhere inside `node` — a move into its own child. */
+            const navHolds = (node, list) => {
+                if (!node || typeof node !== 'object') return false;
+                if (node === list) return true;
+                if (Array.isArray(node)) return node.some((n) => navHolds(n, list));
+                return Object.keys(node).some((k) => {
+                    const v = node[k];
+                    return v && typeof v === 'object' && navHolds(v, list);
+                });
+            };
+
+            /**
+             * Where a dragged node would land: { list, index } or { error }.
+             * Dropping onto a like node means "take its place"; dropping onto the parent
+             * kind — an element onto a column, a column onto a container — means "go
+             * inside", which is the only way to reach a branch that is still empty.
+             */
+            const navDropTarget = (src, dst) => {
+                const sk = navKind(src.type), dk = navKind(dst.type);
+                if (!sk || !dk) return { error: '' };
+
+                if (sk === dk) {
+                    const slot = navSlot(dst);
+                    return slot ? { list: slot.list, index: slot.index } : { error: '' };
+                }
+                if (sk === 'element' && dk === 'column') {
+                    const col = navNode(dst);
+                    return (col && Array.isArray(col.elements))
+                        ? { list: col.elements, index: col.elements.length }
+                        : { error: '' };
+                }
+                if (sk === 'column' && dk === 'container') {
+                    const cont = navNode(dst);
+                    return (cont && Array.isArray(cont.columns))
+                        ? { list: cont.columns, index: cont.columns.length }
+                        : { error: '' };
+                }
+                return { error: '' };   // e.g. an element dropped on a container: nothing sensible
+            };
+
             const navDrop = (e, type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
                 e.preventDefault();
                 const src = navDragSrc.value;
-                if (!src || src.type !== type) { navDragEnd(); return; }
-                if (type === 'container' && src.ci !== ci) {
-                    const [item] = layout.value.splice(src.ci, 1);
-                    layout.value.splice(ci, 0, item);
-                } else if (type === 'column' && src.ci === ci && src.coli !== coli) {
-                    const cols = layout.value[ci].columns;
-                    const [item] = cols.splice(src.coli, 1);
-                    cols.splice(coli, 0, item);
-                } else if (type === 'element' && src.ci === ci && src.coli === coli && src.eli !== eli) {
-                    const els = layout.value[ci].columns[coli].elements;
-                    const [item] = els.splice(src.eli, 1);
-                    els.splice(eli, 0, item);
-                } else if (type === 'nested-column' && src.ci === ci && src.coli === coli && src.eli === eli && src.ncoli !== ncoli) {
-                    const cols = layout.value[ci].columns[coli].elements[eli].columns;
-                    const [item] = cols.splice(src.ncoli, 1);
-                    cols.splice(ncoli, 0, item);
-                } else if (type === 'nested-element' && src.ci === ci && src.coli === coli && src.eli === eli && src.ncoli === ncoli && src.neli !== neli) {
-                    const els = layout.value[ci].columns[coli].elements[eli].columns[ncoli].elements;
-                    const [item] = els.splice(src.neli, 1);
-                    els.splice(neli, 0, item);
+                const dst = { type, ci, coli, eli, ncoli, neli };
+                if (!src) { navDragEnd(); return; }
+
+                const from = navSlot(src);
+                const target = navDropTarget(src, dst);
+                if (!from || !target.list) { navDragEnd(); return; }
+
+                const moved = from.list[from.index];
+                if (!moved) { navDragEnd(); return; }
+
+                // Nothing moved: dropped on itself.
+                if (target.list === from.list && target.index === from.index) { navDragEnd(); return; }
+
+                // A nested column renders elements, never another nested row.
+                const intoNested = (dst.type === 'nested-element')
+                    || (navKind(src.type) === 'element' && dst.type === 'nested-column');
+                if (intoNested && moved.type === 'row') {
+                    showToast('A nested row cannot sit inside a nested column.', 'error');
+                    navDragEnd();
+                    return;
                 }
+                // And nothing may be dropped into itself.
+                if (navHolds(moved, target.list)) {
+                    showToast('That would put it inside itself.', 'error');
+                    navDragEnd();
+                    return;
+                }
+
+                from.list.splice(from.index, 1);
+                target.list.splice(target.index, 0, moved);
                 navDragEnd();
+            };
+
+            /** Would this drop do anything? Drives the drop-line the navigator draws. */
+            const navCanDrop = (type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
+                const src = navDragSrc.value;
+                if (!src) return false;
+                const dst = { type, ci, coli, eli, ncoli, neli };
+                const from = navSlot(src);
+                const target = navDropTarget(src, dst);
+                if (!from || !target.list) return false;
+                if (target.list === from.list && target.index === from.index) return false;
+                const moved = from.list[from.index];
+                if (!moved) return false;
+                const intoNested = (dst.type === 'nested-element')
+                    || (navKind(src.type) === 'element' && dst.type === 'nested-column');
+                if (intoNested && moved.type === 'row') return false;
+                return !navHolds(moved, target.list);
             };
 
             // Canvas Right-Click Context Menu
@@ -6192,7 +6295,7 @@
                 libraryTabs, libraryCurrentItems, libraryActiveTabLabel, libraryTabIcon, libraryCanSave,
                 openLibraryModal, saveToLibrary, insertFromLibrary, insertGlobalFromLibrary, deleteFromLibrary,
                 hoveredType, hoveredCi, hoveredColi, hoveredEli, hoveredNcoli, setHover,
-                navDragSrc, navDragOver, navDragStart, navDragEnd, navDragOverHandler, navDrop,
+                navDragSrc, navDragOver, navDragStart, navDragEnd, navDragOverHandler, navDrop, navCanDrop,
                 ctxMenu, ctxClipboard, ctxMenuTitle, openCtxMenu, closeCtxMenu, ctxEdit, ctxSave, ctxClone, ctxRemove, ctxCopy, ctxPaste, ctxSaveAsGlobal,
                 globalSections, showGlobalModal, globalModalName, isSavingGlobal, openGlobalModal, saveAsGlobal, unlinkGlobal, insertGlobalSection, deleteGlobalSection,
                 themeBodyFont, themeHeadingFont, themeNavFont, builderFontGroups, builderFonts: BUILDER_FONTS,
