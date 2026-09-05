@@ -117,9 +117,20 @@
             {{-- The wrapper carries the trigger rather than the <img>, so the whole box —
                  including the letterboxing an aspect ratio adds — is clickable, which is
                  what a reader aims at. --}}
-            <div style="{{ $elemStyle }}font-size:0;line-height:0;cursor:zoom-in;"
+            {{-- line-height only, never font-size: alt text renders in place of a picture
+                 that could not load, and it renders at the image's own font size. Zeroing
+                 that makes the one thing alt text is for invisible. The theme already
+                 gives .element-image img display:block, which is what closes the inline
+                 gap this would otherwise have been for. --}}
+            <div style="{{ $elemStyle }}line-height:0;cursor:zoom-in;"
                  data-lz-gallery="{{ $lightboxId }}" data-lz-gallery-idx="0"
-                 data-lz-gallery-url="{{ $url }}" data-lz-gallery-cap="{{ $alt }}"
+                 data-lz-gallery-url="{{ $url }}"
+                 {{-- No caption. Alt text describes the picture for a screen reader and
+                      for a browser that could not load it — printing it under the image
+                      in the lightbox turns that description into a visible label the
+                      author never asked for, in a place they would not think to look for
+                      it. It stays on the img, where it belongs, and names the trigger for
+                      anyone listening to the page. --}}
                  aria-label="{{ $alt !== '' ? $alt.' — view larger' : 'View larger' }}">
                 <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $hasRatio ? $imgStyle : 'max-width:100%;height:auto;' }}">
             </div>

@@ -41,9 +41,17 @@
     window.__falconLightbox=true;
 
     var _lzg={};
+    /* Locking body alone is not enough: on most pages it is <html> that scrolls, so the
+       page went on scrolling behind the overlay and kept its scrollbar, leaving a strip
+       of the page down the right-hand edge. Both are locked, and both are given back. */
+    function _lzLock(on){
+        var v=on?'hidden':'';
+        document.body.style.overflow=v;
+        document.documentElement.style.overflow=v;
+    }
     window.lzGalleryClose=function(gid){
         var lb=document.getElementById('lz-lb-'+gid);
-        if(lb){lb.style.display='none';document.body.style.overflow='';}
+        if(lb){lb.style.display='none';_lzLock(false);}
     };
     window.lzGalleryNav=function(gid,dir){
         var g=_lzg[gid];if(!g)return;
@@ -61,9 +69,32 @@
         lb.querySelector('.lz-lb-img').src=g.imgs[idx].u;
         lb.querySelector('.lz-lb-cap').textContent=g.imgs[idx].c||'';
         lb.style.display='flex';
-        document.body.style.overflow='hidden';
+        _lzLock(true);
+    }
+    /* Move every lightbox to the end of <body> before anything else.
+
+       A `position: fixed` box is only fixed to the viewport while no ancestor has a
+       transform, a filter or a will-change — any of those makes that ancestor the
+       containing block instead, and the "full screen" overlay is then the size of
+       whatever it happens to sit inside. The builder's own entrance animations set
+       `will-change: opacity, transform` on a wrapper around every animated element, so an
+       image inside one opened into a lightbox the size of that image's column: the
+       backdrop covered a corner of the page and the picture spilled out of it. It looked
+       like the lightbox was not working, which is exactly what it was.
+
+       Reparenting is the fix that does not depend on knowing what the page wraps things
+       in. The close and next buttons call functions on window, so nothing breaks by
+       moving. */
+    function _lzHoist(){
+        if(!document.body)return;
+        document.querySelectorAll('.lz-lightbox').forEach(function(lb){
+            if(lb.dataset.lzHoisted)return;
+            lb.dataset.lzHoisted='1';
+            document.body.appendChild(lb);
+        });
     }
     function _lzInit(){
+        _lzHoist();
         document.querySelectorAll('[data-lz-gallery]').forEach(function(el){
             if(el.dataset.lzGalleryInit)return;
             el.dataset.lzGalleryInit='1';
@@ -86,7 +117,7 @@
             bg.dataset.lzBgInit='1';
             bg.addEventListener('click',function(){
                 var lb=bg.closest('.lz-lightbox');
-                if(lb){lb.style.display='none';document.body.style.overflow='';}
+                if(lb){lb.style.display='none';_lzLock(false);}
             });
         });
     }
@@ -94,7 +125,7 @@
     document.addEventListener('keydown',function(ev){
         if(ev.key!=='Escape')return;
         document.querySelectorAll('.lz-lightbox').forEach(function(lb){
-            if(lb.style.display!=='none'){lb.style.display='none';document.body.style.overflow='';}
+            if(lb.style.display!=='none'){lb.style.display='none';_lzLock(false);}
         });
     });
     /* Images added after load — a builder preview, a lazy-loaded section — are picked up

@@ -49,9 +49,67 @@ class ImageLightboxTest extends TestCase
             'the trigger and the lightbox do not share an id');
         $this->assertStringContainsString('data-lz-gallery-url="/a.jpg"', $html);
 
-        // The alt text becomes the caption — it is the description the author already
-        // wrote, so asking for a second one would be asking twice.
-        $this->assertStringContainsString('data-lz-gallery-cap="A photo"', $html);
+        // The alt text does NOT become a caption. It describes the picture for a screen
+        // reader and for a browser that could not load it; printing it under the image in
+        // the lightbox turns that description into a visible label the author never asked
+        // for. It stays on the img, and names the trigger for anyone listening.
+        $this->assertStringNotContainsString('data-lz-gallery-cap', $html);
+        $this->assertStringContainsString('alt="A photo"', $html);
+        $this->assertStringContainsString('aria-label="A photo — view larger"', $html);
+    }
+
+    /**
+     * A missing picture must still be able to show its alt text.
+     *
+     * The wrapper the lightbox adds sets line-height to close the inline gap under an
+     * image — but not font-size, which was the first attempt: alt text renders in place of
+     * the picture and at the picture's own font size, so zeroing it made the one thing alt
+     * text exists for invisible.
+     */
+    public function test_a_missing_image_can_still_show_its_alt_text(): void
+    {
+        $html = $this->render(['url' => '/missing.jpg', 'alt' => 'Not here', 'lightbox' => true]);
+
+        $this->assertMatchesRegularExpression('/cursor:zoom-in/', $html);
+        $this->assertDoesNotMatchRegularExpression('/style="[^"]*font-size:0[^"]*cursor:zoom-in/', $html,
+            'the lightbox wrapper zeroes the font size, which hides the alt text of a missing image');
+    }
+
+    /**
+     * The lightbox is moved to the end of body before it is ever opened.
+     *
+     * A fixed-position box is only fixed to the viewport while no ancestor has a
+     * transform, a filter or a will-change — any of those makes that ancestor the
+     * containing block instead. The builder's own entrance animations put
+     * `will-change: opacity, transform` on a wrapper around every animated element, so an
+     * image inside one opened into an overlay the size of its own column: the backdrop
+     * covered a corner of the page and the picture spilled out of it. Measured on a real
+     * page it was 593px wide inside a 1200px window.
+     */
+    public function test_the_lightbox_is_hoisted_out_of_whatever_wraps_it(): void
+    {
+        $partial = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/components/frontend/lightbox.blade.php'
+        );
+
+        $this->assertStringContainsString('document.body.appendChild(lb)', $partial,
+            'the lightbox is left where it was rendered, so any transformed ancestor traps it');
+        $this->assertStringContainsString('_lzHoist()', $partial);
+    }
+
+    /**
+     * Opening it locks the page behind it — both elements, because it is usually <html>
+     * that scrolls, not <body>. Locking only body left the page scrolling behind the
+     * overlay and kept its scrollbar, showing a strip of the page down the right edge.
+     */
+    public function test_opening_it_locks_the_page_behind_it(): void
+    {
+        $partial = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/components/frontend/lightbox.blade.php'
+        );
+
+        $this->assertStringContainsString('document.documentElement.style.overflow=v', $partial);
+        $this->assertStringContainsString('document.body.style.overflow=v', $partial);
     }
 
     /**
