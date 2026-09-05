@@ -168,6 +168,29 @@ class TocTest extends TestCase
         $this->assertSame($php, $js, 'PHP and the browser disagree about a heading anchor');
     }
 
+    /**
+     * The canvas preview must read both spellings of a heading's tag.
+     *
+     * The two heading-ish elements disagree and always have: the Heading stores its tag
+     * as `tag`, the Title as `htmlTag`. Reading only one of them made every Heading on
+     * the page look like an H2 in the preview, so the list came out flat however the
+     * author had nested their sections — while the published page, which reads the right
+     * key, nested it correctly. The two previews disagreed about the shape of the page.
+     */
+    public function test_the_canvas_preview_reads_both_heading_tag_keys(): void
+    {
+        $scripts = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/scripts.blade.php'
+        );
+
+        $this->assertSame(1, preg_match('/function fcTocScan\(\)[\s\S]*?
+            \}/', $scripts, $m),
+            'the canvas heading scan is gone');
+
+        $this->assertStringContainsString('s.tag || s.htmlTag', $m[0],
+            'the canvas reads only one of the two tag keys, so one element previews flat');
+    }
+
     // ---- presets ---------------------------------------------------------------
 
     /** A preset short of a value leaves that rule unwritten in the stylesheet. */

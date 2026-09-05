@@ -4145,7 +4145,13 @@
                     const s = it.settings || {};
 
                     if (it.type === 'title' || it.type === 'heading') {
-                        const tag = String(s.htmlTag || 'h2').toLowerCase();
+                        // Two keys, because the two elements disagree: the Heading stores
+                        // its tag as `tag` and the Title as `htmlTag`, and both the
+                        // renderer and the shortcode have always read them that way.
+                        // Reading only one of them made every Heading on the page look
+                        // like an H2 here, so the preview was always flat however the
+                        // author had nested their sections.
+                        const tag = String(s.tag || s.htmlTag || 'h2').toLowerCase();
                         const level = /^h[1-6]$/.test(tag) ? +tag.substring(1) : 2;
                         const text = String(s.title || '').replace(/<[^>]*>/g, '').trim();
                         if (text && level >= 2) found.push({ level: level, text: text });

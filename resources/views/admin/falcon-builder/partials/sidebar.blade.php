@@ -610,8 +610,13 @@
                                 </div>
                             </div>
 
+                            <!-- ══ HEADING ELEMENT ══ -->
+                            <div v-else-if="editingElement?.type === 'heading'" class="space-y-8">
+                                @include('falcon-cms::admin.falcon-builder.partials.components.elements.heading-content')
+                            </div>
+
                             <!-- Other Elements Placeholder -->
-                            <div v-else-if="editingElement?.type === 'heading' || editingElement?.type === 'text'">
+                            <div v-else-if="editingElement?.type === 'text'">
                                  <!-- We can add these later to match the same style -->
                                  <component :is="editingElement?.settingsComponent || 'div'" :settings="editingElement?.settings"></component>
                             </div>
@@ -3630,6 +3635,11 @@
                              <!-- Design Settings for Table -->
                              <div v-else-if="editingElement?.type === 'table'" class="space-y-6 pb-10">
                                  @include('falcon-cms::admin.falcon-builder.partials.components.elements.table-design')
+                             </div>
+
+                             <!-- Design Settings for Heading -->
+                             <div v-else-if="editingElement?.type === 'heading'" class="space-y-6 pb-10">
+                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.heading-design')
                              </div>
 
                              <!-- Design Settings for Callout -->
