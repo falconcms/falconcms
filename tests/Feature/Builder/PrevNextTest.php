@@ -230,7 +230,7 @@ class PrevNextTest extends TestCase
      */
     public function test_nothing_renders_when_there_is_nowhere_to_go(): void
     {
-        $this->assertSame('', trim($this->render(['source' => 'manual'], null)));
+        $this->assertSame('', trim($this->render(['source' => 'manual'])));
     }
 
     /** Both links, their labels and their arrows have to reach the page. */
@@ -240,7 +240,7 @@ class PrevNextTest extends TestCase
             'source' => 'manual',
             'prevUrl' => '/docs/install', 'prevTitle' => 'Installing',
             'nextUrl' => '/docs/config', 'nextTitle' => 'Configuring',
-        ], null);
+        ]);
 
         $this->assertStringContainsString('href="/docs/install"', $html);
         $this->assertStringContainsString('Installing', $html);
@@ -256,7 +256,7 @@ class PrevNextTest extends TestCase
     /** A lone Next keeps the right-hand column, where a reader looks for it. */
     public function test_a_single_link_keeps_its_own_side(): void
     {
-        $html = $this->render(['source' => 'manual', 'nextUrl' => '/b', 'nextTitle' => 'B'], null);
+        $html = $this->render(['source' => 'manual', 'nextUrl' => '/b', 'nextTitle' => 'B']);
 
         $this->assertStringContainsString('.fc-pn-next:only-child { grid-column: 2; }', $html);
         $this->assertStringNotContainsString('fc-pn-prev', $html);
@@ -267,7 +267,7 @@ class PrevNextTest extends TestCase
     {
         $html = $this->render([
             'source' => 'manual', 'prevUrl' => '/a', 'prevTitle' => 'A', 'prevLabel' => '',
-        ], null);
+        ]);
 
         // The class is always defined in the stylesheet; what must not exist is a tag
         // wearing it.
@@ -280,7 +280,7 @@ class PrevNextTest extends TestCase
     {
         $html = $this->render([
             'source' => 'manual', 'nextUrl' => '/b', 'nextTitle' => 'B', 'bg' => '', 'titleColor' => '',
-        ], null);
+        ]);
 
         $this->assertStringNotContainsString('background: ;', $html);
         $this->assertStringContainsString('background: '.PrevNext::preset('cards')['bg'], $html);
@@ -292,10 +292,65 @@ class PrevNextTest extends TestCase
         $html = $this->render([
             'source' => 'manual', 'nextUrl' => '/b', 'nextTitle' => 'B',
             'pn_title_letter_spacing' => '2', 'pn_label_transform' => 'lowercase',
-        ], null);
+        ]);
 
         $this->assertStringContainsString('letter-spacing: 2px', $html);
         $this->assertStringContainsString('text-transform: lowercase', $html);
+    }
+
+    /**
+     * The element is only active on a page that carries a Table of Contents.
+     *
+     * That is what marks a page as one of a sequence. On a landing page there is nothing
+     * to step through, and a pair of links to unrelated pages under it is worse than no
+     * links at all. The builder greys the element out under the same rule, so the page
+     * and the preview agree rather than one showing something the other does not.
+     */
+    public function test_it_is_inert_on_a_page_with_no_contents_list(): void
+    {
+        $settings = [
+            'source' => 'manual',
+            'prevUrl' => '/a', 'prevTitle' => 'A', 'nextUrl' => '/b', 'nextTitle' => 'B',
+        ];
+
+        // Even links set by hand — the strongest case there is — do not render there.
+        $this->assertSame('', trim($this->render($settings, $this->plainPage())));
+        $this->assertStringContainsString('href="/a"', $this->render($settings, $this->docsPage()));
+    }
+
+    /** A contents list is recognised however the page's content is stored. */
+    public function test_a_contents_list_is_found_in_either_content_format(): void
+    {
+        // Saved from the builder.
+        $this->assertTrue(PrevNext::pageHasToc(new Post(['content' => '[{"columns":[{"elements":[{"type":"toc"}]}]}]'])));
+        // Pretty-printed, which json_encode does with JSON_PRETTY_PRINT.
+        $this->assertTrue(PrevNext::pageHasToc(new Post(['content' => '{"type": "toc"}'])));
+        // Arrived as shortcodes, from the classic editor.
+        $this->assertTrue(PrevNext::pageHasToc(new Post(['content' => 'x [falcon_toc preset="card" /] y'])));
+
+        $this->assertFalse(PrevNext::pageHasToc(new Post(['content' => '[{"columns":[]}]'])));
+        $this->assertFalse(PrevNext::pageHasToc(new Post(['content' => ''])));
+        $this->assertFalse(PrevNext::pageHasToc(null));
+    }
+
+    /**
+     * The builder decides it from one map, the way Pro elements come from one list.
+     * Written as an if instead, the next element with a companion would be a second copy
+     * of the same reasoning somewhere else in the file.
+     */
+    public function test_the_builder_knows_what_this_element_needs(): void
+    {
+        $scripts = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/scripts.blade.php'
+        );
+
+        $this->assertMatchesRegularExpression("/const elementRequires = \{[^}]*prev_next: 'toc'/", $scripts,
+            'Previous / Next is no longer tied to the Table of Contents');
+        $this->assertStringContainsString('const elementRequirement =', $scripts);
+
+        // And it is enforced where an element is added, not only shown in the list.
+        $this->assertStringContainsString('const needs = elementRequirement(type);', $scripts,
+            'an element can be added even when what it needs is missing');
     }
 
     // ---- shortcode round trip --------------------------------------------------
@@ -423,11 +478,27 @@ class PrevNextTest extends TestCase
         return $back[0]['columns'][0]['elements'][0]['settings'] ?? [];
     }
 
-    private function render(array $settings, ?Post $post): string
+    /**
+     * Rendered on a page that carries a Table of Contents, which is the condition for
+     * this element being active at all. Pass a post to override it.
+     */
+    private function render(array $settings, ?Post $post = null): string
     {
         return view('falcon-cms::frontend.builder.elements.prev-next', [
             'el' => ['id' => 'e1', 'type' => 'prev_next', 'settings' => $settings],
-            'post' => $post,
+            'post' => $post ?? $this->docsPage(),
         ])->render();
+    }
+
+    /** A page with a contents list on it, so the element is active. */
+    private function docsPage(): Post
+    {
+        return new Post(['content' => '[{"columns":[{"elements":[{"type":"toc"}]}]}]']);
+    }
+
+    /** A page without one — a landing page, where the element is inert. */
+    private function plainPage(): Post
+    {
+        return new Post(['content' => '[{"columns":[{"elements":[{"type":"text_block"}]}]}]']);
     }
 }

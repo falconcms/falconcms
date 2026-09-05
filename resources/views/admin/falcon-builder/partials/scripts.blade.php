@@ -646,6 +646,36 @@
             const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc', 'prev_next'];
             const isElementPro   = (type) => proElementTypes.includes(type);
             const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
+
+            // An element that only means anything beside another one.
+            //
+            // Previous/Next steps through a sequence of documentation pages, and what
+            // marks a page as one of those is that it carries a Table of Contents. On a
+            // landing page it has no sequence to step through and would render nothing,
+            // which looks exactly like a broken element — so it is offered only where it
+            // can work, and says why where it cannot.
+            //
+            // Declared as a map rather than an if, because the next element with a
+            // companion should be one line here and not a second copy of this reasoning.
+            const elementRequires = { prev_next: 'toc' };
+
+            const pageHasElement = (type) => {
+                let found = false;
+                const walk = (items) => (items || []).forEach(it => {
+                    if (!it || found) return;
+                    if (it.type === type) { found = true; return; }
+                    if (it.columns) it.columns.forEach(c => walk(c.elements));
+                    if (it.elements) walk(it.elements);
+                });
+                walk(layout.value);
+                return found;
+            };
+
+            // The type this one is waiting for, or null when it is free to be used.
+            const elementRequirement = (type) => {
+                const needs = elementRequires[type];
+                return (needs && !pageHasElement(needs)) ? needs : null;
+            };
             if (postCardMode.value || layoutMode.value) {
                 availableElements.push({ type: 'post_content', name: 'Content', icon: 'fa fa-paragraph' });
                 availableElements.push({ type: 'post_meta', name: 'Post Meta', icon: 'fa fa-tags' });
@@ -5109,6 +5139,12 @@
                     showToast('This is a Pro element — upgrade to use it.', 'error');
                     return;
                 }
+                const needs = elementRequirement(type);
+                if (needs) {
+                    showToast('Add a ' + fcElementName(needs) + ' to this page first — '
+                        + fcElementName(type) + ' follows the sequence that one belongs to.', 'error');
+                    return;
+                }
                 if (currentTargetCi.value === null || currentTargetColi.value === null) return;
 
                 const newEl = {
@@ -6146,6 +6182,7 @@
                 sepIsCustom, sepCustomMarkup, sepCustomCss, sepScopeId, sepPickSvgFromMedia, sepPasteSvg,
                 cardPerView, cardPreviewCols, cardPreviewCount,
                 searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements, elementLocked, isElementPro,
+                elementRequirement, pageHasElement,
                 shouldShowGuide,
                 toasts, showToast,
                 showLibraryModal, libraryActiveTab, libraryNewName, isSavingToLibrary, saveAsGlobalChecked, libraryItems, libraryContext,

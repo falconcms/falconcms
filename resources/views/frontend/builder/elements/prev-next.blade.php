@@ -32,7 +32,12 @@
         return ($val === null || $val === '') ? ($preset[$key] ?? '') : $val;
     };
 
-    $pair = PrevNext::resolve($s, $post ?? null);
+    // Only on a page that carries a Table of Contents. That is what marks a page as one
+    // of a sequence — on a landing page there is nothing to step through — and the
+    // builder shows the element as inactive under the same rule, so the two agree.
+    $active = PrevNext::pageHasToc($post ?? null);
+
+    $pair = $active ? PrevNext::resolve($s, $post ?? null) : ['prev' => null, 'next' => null];
     $prev = $pair['prev'];
     $next = $pair['next'];
 

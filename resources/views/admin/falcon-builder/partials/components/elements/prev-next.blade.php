@@ -10,7 +10,21 @@
      class="w-full"
      :style="getCanvasVisibilityStyle(el.settings)">
 
-    <div v-if="fcPnPair(el).prev || fcPnPair(el).next" :style="fcPnGridStyle(el)">
+    {{-- The Table of Contents was removed after this element was added. It is left in
+         place rather than deleted — an author who removes a TOC by accident should get
+         their Previous/Next back by putting it there again, not have to rebuild it — but
+         it is inert, and the page will not render it either. --}}
+    <div v-if="elementRequirement('prev_next')"
+         style="padding:18px;border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc;color:#64748b;font-size:13px;text-align:center;line-height:1.5;">
+        <i class="fa fa-link-slash" style="opacity:.6;"></i>
+        Inactive — this page has no Table of Contents.<br>
+        <span style="font-size:12px;opacity:.85;">
+            Previous / Next steps through the sequence a contents list belongs to. Add one back
+            and this becomes active again; the published page shows nothing until then.
+        </span>
+    </div>
+
+    <div v-else-if="fcPnPair(el).prev || fcPnPair(el).next" :style="fcPnGridStyle(el)">
         <template v-for="side in ['prev', 'next']" :key="side">
             <a v-if="fcPnPair(el)[side]" :style="fcPnLinkStyle(el, side)" @click.prevent>
                 <i v-if="el.settings.showArrows !== false" :style="fcPnArrowStyle(el)"
@@ -31,7 +45,7 @@
         <span style="font-size:12px;opacity:.85;" v-text="fcPnEmptyReason(el)"></span>
     </div>
 
-    <p v-if="fcPnPair(el).prev || fcPnPair(el).next"
+    <p v-if="!elementRequirement('prev_next') && (fcPnPair(el).prev || fcPnPair(el).next)"
        style="margin:6px 2px 0;font-size:11px;color:#94a3b8;line-height:1.4;">
         <i class="fas fa-circle-info" style="font-size:10px;"></i>
         This page's real neighbours — the published page works them out again as it renders.

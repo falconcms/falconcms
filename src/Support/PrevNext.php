@@ -319,6 +319,33 @@ class PrevNext
         return $pair;
     }
 
+    /**
+     * Does this page carry a Table of Contents?
+     *
+     * Previous/Next steps through a sequence of documentation pages, and what marks a
+     * page as one of those is that it has a contents list. On a landing page there is no
+     * sequence, so the element is inert there — and the page has to agree with the
+     * builder about that, or an author sees it greyed out in one and rendered in the
+     * other.
+     *
+     * The content is read as text rather than parsed. It is builder JSON on a saved page
+     * and shortcodes on one that arrived from the editor, this is asked once per render,
+     * and both spellings of the answer are unmistakable. Parsing either format properly
+     * to find out whether a substring is in it would be work for no more certainty.
+     */
+    public static function pageHasToc(?Post $post): bool
+    {
+        $content = (string) ($post->content ?? '');
+
+        if ($content === '') {
+            return false;
+        }
+
+        return str_contains($content, '"type":"toc"')
+            || str_contains($content, '"type": "toc"')
+            || str_contains($content, '[falcon_toc');
+    }
+
     /** A post's own URL, which is what the menu is matched against. */
     public static function urlFor(Post $post): string
     {
