@@ -17,6 +17,7 @@
     */
     use FalconCms\Core\Support\CalloutStyles;
     use FalconCms\Core\Support\InlineMarkup;
+    use FalconCms\Core\Support\Typography;
 
     $s = $el['settings'] ?? [];
 
@@ -60,25 +61,11 @@
 
     $body = InlineMarkup::blocks($s['body'] ?? '');
 
-    $typo = function (string $prefix) use ($s): string {
-        $out = '';
-        foreach ([
-            'family' => 'font-family', 'weight' => 'font-weight', 'size' => 'font-size',
-            'line_height' => 'line-height', 'letter_spacing' => 'letter-spacing',
-            'transform' => 'text-transform',
-        ] as $key => $css) {
-            $val = trim((string) ($s[$prefix.'_'.$key] ?? ''));
-            if ($val === '' || $val === 'inherit' || ($val === 'none' && $css === 'text-transform')) {
-                continue;
-            }
-            if ($css === 'font-size' && is_numeric($val)) {
-                $val .= 'px';
-            }
-            $out .= $css.': '.$val.'; ';
-        }
-
-        return trim($out);
-    };
+    // Typography, from the shared control every other element uses. Empty means
+    // "leave it to the preset", so an element that has never been touched still follows
+    // whichever preset is chosen. The unit rules live in Typography so that every
+    // element applies them the same way.
+    $typo = fn (string $prefix) => Typography::css($s, $prefix);
     $titleTypo = $typo('cal_title');
     $bodyTypo  = $typo('cal_body');
 
@@ -162,48 +149,11 @@
             line-height: 1.65;
             @if($bodyTypo) {{ $bodyTypo }} @endif
         }
-        #{{ $uid }} .fc-cal-body > p { margin: 0 0 .7em; }
-        #{{ $uid }} .fc-cal-body > p:last-child { margin-bottom: 0; }
-        #{{ $uid }} .fc-cal-body ul, #{{ $uid }} .fc-cal-body ol { margin: .2em 0 .7em; padding-left: 1.35em; }
-        #{{ $uid }} .fc-cal-body li { margin: .25em 0; }
-        #{{ $uid }} .fc-cal-body > :last-child { margin-bottom: 0; }
-        #{{ $uid }} .fc-cal-body a { color: var(--fc-cal-accent); }
-        #{{ $uid }} .fc-cal-body code {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-            font-size: .88em;
-            background: rgba(125,135,150,.14);
-            padding: .12em .38em;
-            border-radius: 4px;
-        }
-        #{{ $uid }} .fc-cal-body i { font-style: normal; }
-        #{{ $uid }} .fc-mk-yes { color: #3E7D4F; }
-        #{{ $uid }} .fc-mk-no  { color: #B0392B; }
-
-        {{-- The buttons the shared markup produces, styled from the callout's accent.
-
-             Every one of these is written as `.fc-cal-body a.fc-mk-…` rather than
-             `.fc-mk-…` on its own, because the link rule above matches a button too —
-             a button IS an <a> inside the body — and `.fc-cal-body a` is the more
-             specific of the two whatever order they are written in. Left as a bare
-             class, the label took the accent colour on top of an accent-coloured
-             button and the button came out blank. --}}
-        #{{ $uid }} .fc-cal-body a.fc-mk-btn {
-            display: inline-flex; align-items: center; gap: 7px;
-            margin-top: .35em;
-            padding: .5em .95em; border-radius: 6px;
-            border: 1px solid transparent;
-            font-weight: 600; font-size: .92em; line-height: 1.2;
-            text-decoration: none; white-space: nowrap;
-            transition: filter .15s ease, transform .15s ease, border-color .15s ease;
-        }
-        #{{ $uid }} .fc-cal-body a.fc-mk-btn-primary { background: var(--fc-cal-accent); color: #FFFFFF; }
-        #{{ $uid }} .fc-cal-body a.fc-mk-btn-ghost { background: transparent; color: {{ $bodyColor }}; border-color: {{ $accent }}55; }
-        #{{ $uid }} .fc-cal-body a.fc-mk-btn-soft {
-            background: transparent;
-            background: color-mix(in srgb, var(--fc-cal-accent) 14%, transparent);
-            color: var(--fc-cal-accent);
-        }
-        #{{ $uid }} .fc-cal-body a.fc-mk-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+        {{-- The body's own block styles, from CalloutStyles so the canvas can apply the
+             very same rules — it has to, because the admin's CSS reset strips list
+             markers and paragraph margins from everything and the two previews would
+             otherwise disagree about whether a bullet is a bullet. --}}
+        {!! CalloutStyles::bodyCss('#'.$uid.' .fc-cal-body', $accent, $bodyColor) !!}
 
         @if($collapsible)
         #{{ $uid }} > summary { cursor: pointer; }
@@ -219,8 +169,7 @@
         @endif
 
         @media (prefers-reduced-motion: reduce) {
-            #{{ $uid }} .fc-cal-body a.fc-mk-btn, #{{ $uid }} .fc-cal-chev { transition: none; }
-            #{{ $uid }} .fc-cal-body a.fc-mk-btn:hover { transform: none; }
+            #{{ $uid }} .fc-cal-chev { transition: none; }
         }
     </style>
 

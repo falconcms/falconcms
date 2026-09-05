@@ -413,6 +413,88 @@ class CalloutTest extends TestCase
         );
     }
 
+    /**
+     * A bare number in Letter Spacing has to become a length.
+     *
+     * The control takes free text, so an author types 2 — and `letter-spacing: 2` is not
+     * a length, so the browser throws the declaration away and the field does nothing at
+     * all, on the page and in the canvas alike. Only font size was being given a unit.
+     * Line height must NOT get one: it is a ratio, and a fixed line box stops following
+     * the font size.
+     */
+    public function test_a_bare_letter_spacing_gets_a_unit(): void
+    {
+        $html = $this->render([
+            'body' => 'x',
+            'cal_body_letter_spacing' => '2',
+            'cal_body_line_height' => '1.6',
+            'cal_body_size' => '17',
+        ]);
+
+        $this->assertStringContainsString('letter-spacing: 2px', $html);
+        $this->assertStringContainsString('line-height: 1.6;', $html);
+        $this->assertStringNotContainsString('line-height: 1.6px', $html);
+        $this->assertStringContainsString('font-size: 17px', $html);
+
+        // A value that already carries a unit is left exactly as written.
+        $withUnit = $this->render(['body' => 'x', 'cal_body_letter_spacing' => '0.05em']);
+        $this->assertStringContainsString('letter-spacing: 0.05em', $withUnit);
+    }
+
+    /**
+     * The canvas and the page must style the body's paragraphs and lists from the same
+     * stylesheet.
+     *
+     * They cannot be inline styles — the body is a string of HTML, so there is no
+     * element to bind one to — and the admin runs a CSS reset that strips list markers
+     * and paragraph margins from everything. The canvas showed a bulleted list as plain
+     * packed lines while the page showed it correctly, so the two previews disagreed
+     * about something as basic as whether a bullet was a bullet.
+     */
+    public function test_the_body_stylesheet_is_shared_with_the_canvas(): void
+    {
+        $css = CalloutStyles::bodyCss('#x .fc-cal-body', '#112233', '#445566');
+
+        $this->assertStringContainsString('#x .fc-cal-body ul { list-style-type: disc; }', $css);
+        $this->assertStringContainsString('#x .fc-cal-body a { color: #112233; }', $css);
+        $this->assertStringNotContainsString('{sel}', $css);
+        $this->assertStringNotContainsString('{accent}', $css);
+        $this->assertStringNotContainsString('{text}', $css);
+
+        // The page renders from it...
+        $this->assertStringContainsString('#fc-cal-e1 .fc-cal-body ul { list-style-type: disc; }',
+            $this->render(['body' => '- one
+- two']));
+
+        // ...and the canvas is handed the very same template to fill in.
+        $scripts = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/scripts.blade.php'
+        );
+        $this->assertStringContainsString('CalloutStyles::bodyCssTemplate()', $scripts,
+            'the canvas no longer reads the shared body stylesheet, so the two will drift');
+
+        $canvas = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/components/elements/callout.blade.php'
+        );
+        $this->assertStringContainsString('class="fc-cal-body"', $canvas,
+            'the canvas body has no class for the shared rules to match');
+    }
+
+    /**
+     * A list sits flush with the text above it.
+     *
+     * A callout is a short aside inside a box that is already indented from the page;
+     * indenting again reads as a mistake, and the canvas and the page disagreed about it
+     * because only one of them was styling the list at all.
+     */
+    public function test_a_list_is_not_indented(): void
+    {
+        $css = CalloutStyles::bodyCss('#x .fc-cal-body', '#000', '#111');
+
+        $this->assertMatchesRegularExpression('/ul,[^{]*ol \{[^}]*padding-left: 0;/', $css);
+        $this->assertStringContainsString('list-style-position: inside', $css);
+    }
+
     /** An element with nothing in it renders nothing rather than an empty box. */
     public function test_an_empty_callout_renders_nothing(): void
     {

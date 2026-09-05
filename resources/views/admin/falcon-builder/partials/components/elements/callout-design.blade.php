@@ -128,20 +128,10 @@
 <div class="space-y-5">
     <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Typography</div>
 
-    <div class="grid grid-cols-2 gap-3">
-        <div>
-            <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Title size</label>
-            <input type="number" v-model.number="editingElement.settings.titleSize" min="9" max="42"
-                   :placeholder="fcCalVal(editingElement, 'titleSize')"
-                   class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
-        </div>
-        <div>
-            <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Text size</label>
-            <input type="number" v-model.number="editingElement.settings.bodySize" min="9" max="42"
-                   :placeholder="fcCalVal(editingElement, 'bodySize')"
-                   class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
-        </div>
-    </div>
+    {{-- No size fields of their own here. The two typography blocks below each carry a
+         Font Size, and two controls for one property is one control too many: an author
+         sets one, sees nothing move because the other is still winning, and has no way
+         to tell which is which. The style's own size remains the default. --}}
 
     <div>
         <div class="text-[11px] font-bold text-slate-500 mb-2">Title</div>

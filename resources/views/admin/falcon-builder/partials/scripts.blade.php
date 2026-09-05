@@ -3588,8 +3588,12 @@
             }
 
             // The shared typography control writes {prefix}_family and friends; empty
-            // means "leave it to the preset", so an untouched table still follows
-            // whichever preset is chosen.
+            // means "leave it to the preset", so an untouched element still follows
+            // whichever preset is chosen. Mirrors FalconCms\Core\Support\Typography,
+            // which the front end renders from — including the unit rule, which is per
+            // property and not per field: font size and letter spacing are lengths and
+            // need px when given a bare number, while line height is a ratio and must
+            // not have one, or it stops following the font size.
             function fcTblTypo(el, prefix) {
                 const s = el.settings || {};
                 const map = {
@@ -3604,7 +3608,7 @@
                     v = String(v).trim();
                     if (v === '' || v === 'inherit') continue;
                     if (key === 'transform' && v === 'none') continue;
-                    if (key === 'size' && /^[0-9.]+$/.test(v)) v += 'px';
+                    if ((key === 'size' || key === 'letter_spacing') && /^-?[0-9.]+$/.test(v)) v += 'px';
                     out[map[key]] = v;
                 }
                 return out;
@@ -3871,6 +3875,7 @@
             const FC_TOC_PRESETS = @json(\FalconCms\Core\Support\TocStyles::presets());
             const FC_TOC_PRESET_OPTIONS = @json(\FalconCms\Core\Support\TocStyles::presetOptions());
             const FC_TOC_LEVELS = @json(\FalconCms\Core\Support\TocStyles::LEVELS);
+            const FC_CAL_BODY_CSS = @json(\FalconCms\Core\Support\CalloutStyles::bodyCssTemplate());
 
             // ── Shared inline markup ─────────────────────────────────────────────
             // fcTblCell() above is the mirror of InlineMarkup::render(). It stages its
@@ -3999,6 +4004,25 @@
                 });
             }
 
+            // The body's block styles, from the same template the front end fills in.
+            //
+            // These cannot be inline: the body is a string of HTML, so its paragraphs
+            // and list items are not elements this template can bind a style to. The
+            // canvas needs them more than the page does — the admin's CSS reset strips
+            // list markers and paragraph margins from everything, so a list that reads
+            // correctly on the page came out here as plain lines.
+            function fcCalBodyCss(el) {
+                if (!fcCalBody(el)) return '';
+                return FC_CAL_BODY_CSS
+                    .split('{sel}').join('#' + fcCalScopeId(el) + ' .fc-cal-body')
+                    .split('{accent}').join(fcCalAccent(el))
+                    .split('{text}').join(fcCalBodyColor(el));
+            }
+
+            // A scope for those rules. The canvas has no per-element stylesheet of its
+            // own, so the element is given an id here for one to hang on.
+            const fcCalScopeId = (el) => 'fc-cal-canvas-' + String(el.id || '').replace(/[^A-Za-z0-9_-]/g, '');
+
             function fcCalOuterStyle(el) {
                 const p = fcCalPreset(el);
                 const accent = fcCalAccent(el);
@@ -4108,7 +4132,7 @@
                 const found = [];
 
                 const fromHtml = (html) => {
-                    const re = /<h([2-6])[^>]*>([\s\S]*?)<\/h\1>/gi;
+                    const re = /<h([2-6])[^>]*>([\s\S]*?)<\/h>/gi;
                     let m;
                     while ((m = re.exec(String(html || ''))) !== null) {
                         const text = m[2].replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
@@ -4125,8 +4149,16 @@
                         const level = /^h[1-6]$/.test(tag) ? +tag.substring(1) : 2;
                         const text = String(s.title || '').replace(/<[^>]*>/g, '').trim();
                         if (text && level >= 2) found.push({ level: level, text: text });
-                    } else if (it.type === 'text_block' || it.type === 'special_text' || it.type === 'html') {
-                        fromHtml(s.content || s.html || '');
+                    } else {
+                        // Every other element is searched for heading tags in whatever it
+                        // holds, rather than a fixed list of the types that usually carry
+                        // prose. A heading is just as real inside a Content Box, an Icon
+                        // Box or a Card, and a preview that lists only some of the page's
+                        // headings is worse than one that admits it is a preview.
+                        for (const key in s) {
+                            const v = s[key];
+                            if (typeof v === 'string' && v.indexOf('<h') !== -1) fromHtml(v);
+                        }
                     }
 
                     if (it.columns) it.columns.forEach(c => walk(c.elements));
@@ -5865,7 +5897,7 @@
                 fcTblPresetOptions: FC_TBL_PRESET_OPTIONS, fcTblAlignments: FC_TBL_ALIGNMENTS,
                 fcCalVariantOptions: FC_CAL_VARIANT_OPTIONS, fcCalPresetOptions: FC_CAL_PRESET_OPTIONS,
                 fcTocPresetOptions: FC_TOC_PRESET_OPTIONS, fcTocLevels: FC_TOC_LEVELS,
-                fcCalVal, fcCalTitle, fcCalIcon, fcCalShowIcon, fcCalBody,
+                fcCalVal, fcCalTitle, fcCalIcon, fcCalShowIcon, fcCalBody, fcCalBodyCss, fcCalScopeId,
                 fcCalVariantIcon, fcCalVariantAccent, fcCalColorPreview,
                 fcCalOuterStyle, fcCalHeadStyle, fcCalTitleStyle, fcCalIconStyle, fcCalChevStyle, fcCalBodyStyle,
                 fcTocVal, fcTocTitle, fcTocItems, fcTocScanned, fcTocMarker,

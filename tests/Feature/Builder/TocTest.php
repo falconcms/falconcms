@@ -343,6 +343,48 @@ class TocTest extends TestCase
         $this->assertSame(2, substr_count($twice, 'if (window.__falconToc) return;'));
     }
 
+    /**
+     * The heading search must not stop at the first ancestor that looks like content.
+     *
+     * A table of contents is usually beside the article or in a row above it, so its
+     * nearest matching ancestor very often contains the list and none of the headings.
+     * Taking that one and stopping is how the element renders nothing on exactly the
+     * layout it is most used in, with nothing on the page to say why. The script keeps
+     * walking up until one of the candidates actually holds enough headings.
+     */
+    public function test_the_scope_search_widens_until_it_finds_headings(): void
+    {
+        $script = $this->script($this->render([]));
+
+        $this->assertStringContainsString('function scopeCandidates', $script,
+            'the scope search is gone');
+        $this->assertStringNotContainsString('function findScope', $script,
+            'the old single-answer scope search is back');
+
+        // Every candidate is collected, not just the first that matches.
+        $this->assertMatchesRegularExpression('/for \(var c = 0; c < candidates\.length; c\+\+\)/', $script,
+            'the script no longer tries more than one scope');
+        $this->assertStringContainsString('document.body', $script,
+            'the widest scope is no longer a fallback');
+    }
+
+    /**
+     * An explicit scope is an instruction, not a hint.
+     *
+     * An author who scoped the list to one region meant it, so widening past it when it
+     * turns out to be empty would list headings they had deliberately excluded.
+     */
+    public function test_an_explicit_scope_is_not_widened_past(): void
+    {
+        $script = $this->script($this->render(['scope' => '.entry-content']));
+
+        $this->assertMatchesRegularExpression(
+            '/if \(cfg\.scope\) \{\s*var picked = document\.querySelector\(cfg\.scope\);\s*if \(picked\) return \[picked\];/',
+            $script,
+            'an explicit scope no longer wins outright'
+        );
+    }
+
     /** Sticky, progress and back-to-top each have to reach the page when asked for. */
     public function test_the_advanced_options_reach_the_page(): void
     {
@@ -421,6 +463,14 @@ class TocTest extends TestCase
         $at = strpos($html, '<script>');
 
         return $at === false ? $html : substr($html, 0, $at);
+    }
+
+    /** The script half, which is what the two scope tests are about. */
+    private function script(string $html): string
+    {
+        $at = strpos($html, '<script>');
+
+        return $at === false ? '' : substr($html, $at);
     }
 
     private function nodeBinary(): ?string

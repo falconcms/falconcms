@@ -167,6 +167,87 @@ class CalloutStyles
     }
 
     /**
+     * The body's own block styles, as one template both renderers fill in.
+     *
+     * These cannot be inline styles. The body is rendered from a string of HTML — the
+     * paragraphs and list items are produced by InlineMarkup, not written by hand — so
+     * the only way to reach them is a stylesheet, and the canvas needs the same one the
+     * page gets. It especially needs it: the admin runs a CSS reset that strips list
+     * markers and paragraph margins from everything, so a list that looked right on the
+     * page came out in the canvas as plain lines, and the two previews disagreed about
+     * something as basic as whether a bullet was a bullet.
+     *
+     * Lists sit flush with the text above them rather than indented. A callout is a
+     * short aside two or three lines long, and an indent inside a box that is already
+     * indented from the page reads as a mistake; the marker goes inside the line box so
+     * the left edge stays true.
+     *
+     * The placeholders are filled by str_replace here and by the same replacement in
+     * the canvas, so there is one copy of the rules and no way for them to drift.
+     */
+    public static function bodyCssTemplate(): string
+    {
+        return <<<'CSS'
+{sel} > p { margin: 0 0 .7em; }
+{sel} ul, {sel} ol { margin: .2em 0 .7em; padding-left: 0; list-style-position: inside; }
+{sel} ul { list-style-type: disc; }
+{sel} ol { list-style-type: decimal; }
+{sel} li { margin: .25em 0; }
+{sel} > :last-child { margin-bottom: 0; }
+{sel} a { color: {accent}; }
+{sel} code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .88em;
+    background: rgba(125,135,150,.14);
+    padding: .12em .38em;
+    border-radius: 4px;
+}
+{sel} i { font-style: normal; }
+{sel} .fc-mk-yes { color: #3E7D4F; }
+{sel} .fc-mk-no { color: #B0392B; }
+{sel} a.fc-mk-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin-top: .35em;
+    padding: .5em .95em; border-radius: 6px;
+    border: 1px solid transparent;
+    font-weight: 600; font-size: .92em; line-height: 1.2;
+    text-decoration: none; white-space: nowrap;
+    transition: filter .15s ease, transform .15s ease, border-color .15s ease;
+}
+{sel} a.fc-mk-btn-primary { background: {accent}; color: #FFFFFF; }
+{sel} a.fc-mk-btn-ghost { background: transparent; color: {text}; border-color: {accent}55; }
+{sel} a.fc-mk-btn-soft {
+    background: transparent;
+    background: color-mix(in srgb, {accent} 14%, transparent);
+    color: {accent};
+}
+{sel} a.fc-mk-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+@media (prefers-reduced-motion: reduce) {
+    {sel} a.fc-mk-btn { transition: none; }
+    {sel} a.fc-mk-btn:hover { transform: none; }
+}
+CSS;
+    }
+
+    /**
+     * The template above, filled in for one callout.
+     *
+     * Every button rule is written as `{sel} a.fc-mk-…` rather than as a bare class,
+     * because the link rule above it matches a button too — a button IS an <a> inside
+     * the body — and the descendant selector out-specifies a lone class whichever order
+     * they are written in. Left bare, the label took the accent colour on top of an
+     * accent-coloured button and the button came out blank.
+     */
+    public static function bodyCss(string $selector, string $accent, string $textColor): string
+    {
+        return str_replace(
+            ['{sel}', '{accent}', '{text}'],
+            [$selector, $accent, $textColor],
+            self::bodyCssTemplate()
+        );
+    }
+
+    /**
      * An icon class an author may type, reduced to something that cannot leave the
      * attribute it is written into.
      *

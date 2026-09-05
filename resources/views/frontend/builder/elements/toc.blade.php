@@ -18,6 +18,7 @@
     | box with a heading over it — they simply do not see the element.
     */
     use FalconCms\Core\Support\TocStyles;
+    use FalconCms\Core\Support\Typography;
 
     $s = $el['settings'] ?? [];
 
@@ -66,25 +67,11 @@
     $minHeadings = max(1, (int) ($s['minHeadings'] ?? 2));
     $numbered = $marker === 'decimal';
 
-    $typo = function (string $prefix) use ($s): string {
-        $out = '';
-        foreach ([
-            'family' => 'font-family', 'weight' => 'font-weight', 'size' => 'font-size',
-            'line_height' => 'line-height', 'letter_spacing' => 'letter-spacing',
-            'transform' => 'text-transform',
-        ] as $key => $css) {
-            $val = trim((string) ($s[$prefix.'_'.$key] ?? ''));
-            if ($val === '' || $val === 'inherit' || ($val === 'none' && $css === 'text-transform')) {
-                continue;
-            }
-            if ($css === 'font-size' && is_numeric($val)) {
-                $val .= 'px';
-            }
-            $out .= $css.': '.$val.'; ';
-        }
-
-        return trim($out);
-    };
+    // Typography, from the shared control every other element uses. Empty means
+    // "leave it to the preset", so an element that has never been touched still follows
+    // whichever preset is chosen. The unit rules live in Typography so that every
+    // element applies them the same way.
+    $typo = fn (string $prefix) => Typography::css($s, $prefix);
     $titleTypo = $typo('toc_title');
     $itemTypo  = $typo('toc_item');
 
@@ -280,20 +267,34 @@
         return seen > 0 ? base + '-' + (seen + 1) : base;
     }
 
-    // Where to read headings from. An explicit selector wins; otherwise walk up from
-    // the element to the nearest thing that looks like the page's content, which is
-    // what makes this work on a theme it has never seen.
-    function findScope(nav, cfg) {
+    // Where to read headings from, in the order worth trying.
+    //
+    // An explicit selector is an instruction, so if it matches something that is the
+    // only candidate — an author who scoped the list to one region meant it, and
+    // quietly widening past an empty region would list headings they had excluded on
+    // purpose. A selector matching nothing at all is a typo, and falls through.
+    //
+    // Otherwise the element walks up from itself to the nearest thing that looks like
+    // the page's content. Every step up is kept rather than only the first, because the
+    // nearest match is not always the right one: a table of contents in its own column
+    // beside the article, or in a row above it, has an ancestor that contains the list
+    // and none of the headings. Taking the first and stopping there is how the element
+    // renders nothing on exactly the layout it is most often used in. build() walks
+    // this list until one of them actually holds enough headings.
+    function scopeCandidates(nav, cfg) {
         if (cfg.scope) {
             var picked = document.querySelector(cfg.scope);
-            if (picked) return picked;
+            if (picked) return [picked];
         }
-        var candidates = ['article', 'main', '.falcon-builder-content', '.entry-content', '.post-content', '.content'];
-        for (var i = 0; i < candidates.length; i++) {
-            var found = nav.closest(candidates[i]);
-            if (found) return found;
-        }
-        return document.body;
+
+        var out = [];
+        ['article', 'main', '.falcon-builder-content', '.entry-content', '.post-content', '.content'].forEach(function (sel) {
+            var found = nav.closest(sel);
+            if (found && out.indexOf(found) === -1) out.push(found);
+        });
+        if (document.body && out.indexOf(document.body) === -1) out.push(document.body);
+
+        return out;
     }
 
     function build(nav) {
@@ -303,23 +304,31 @@
         var list = nav.querySelector('[data-fc-toc-list]');
         if (!list) return;
 
-        var scope = findScope(nav, cfg);
         var min = cfg.min || 2, max = cfg.max || 3;
         var sel = [];
         for (var lv = min; lv <= max; lv++) sel.push('h' + lv);
 
-        var headings = Array.prototype.slice.call(scope.querySelectorAll(sel.join(',')));
-
-        // The element's own title is a heading inside the scope on some themes, and a
-        // table of contents that lists itself is a bug the reader sees.
-        headings = headings.filter(function (h) {
-            if (nav.contains(h)) return false;
-            if (h.closest('.falcon-toc')) return false;
-            if (cfg.exclude) { try { if (h.closest(cfg.exclude) || h.matches(cfg.exclude)) return false; } catch (e) {} }
+        // Any table of contents' own entries are headings too on some themes, and one
+        // that lists itself is a bug the reader sees.
+        var usable = function (h) {
+            if (nav.contains(h) || h.closest('.falcon-toc')) return false;
+            if (cfg.exclude) {
+                try { if (h.closest(cfg.exclude) || h.matches(cfg.exclude)) return false; } catch (e) {}
+            }
             return (h.textContent || '').trim() !== '';
-        });
+        };
 
-        if (headings.length < (cfg.minHeadings || 1)) return;
+        var need = cfg.minHeadings || 1;
+        var candidates = scopeCandidates(nav, cfg);
+        var scope = null;
+        var headings = [];
+
+        for (var c = 0; c < candidates.length; c++) {
+            var found = Array.prototype.slice.call(candidates[c].querySelectorAll(sel.join(','))).filter(usable);
+            if (found.length >= need) { scope = candidates[c]; headings = found; break; }
+        }
+
+        if (!scope) return;
 
         var seen = {};
         var items = headings.map(function (h, i) {

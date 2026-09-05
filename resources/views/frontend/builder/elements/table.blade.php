@@ -14,6 +14,7 @@
     | script and no sanitiser has to sit between the editor and the page.
     */
     use FalconCms\Core\Support\TableStyles;
+    use FalconCms\Core\Support\Typography;
 
     $s = $el['settings'] ?? [];
 
@@ -72,27 +73,10 @@
     $btnColor = trim((string) ($s['btnColor'] ?? '')) ?: '#171C23';
 
     // Typography, from the shared control every other element uses. Empty means
-    // "leave it to the preset", so a table that has never been touched still follows
-    // whichever preset is chosen.
-    $typo = function (string $prefix) use ($s): string {
-        $out = '';
-        foreach ([
-            'family' => 'font-family', 'weight' => 'font-weight', 'size' => 'font-size',
-            'line_height' => 'line-height', 'letter_spacing' => 'letter-spacing',
-            'transform' => 'text-transform',
-        ] as $key => $css) {
-            $v = trim((string) ($s[$prefix.'_'.$key] ?? ''));
-            if ($v === '' || $v === 'inherit' || $v === 'none' && $css === 'text-transform') {
-                continue;
-            }
-            if ($css === 'font-size' && is_numeric($v)) {
-                $v .= 'px';
-            }
-            $out .= $css.': '.$v.'; ';
-        }
-
-        return trim($out);
-    };
+    // "leave it to the preset", so an element that has never been touched still follows
+    // whichever preset is chosen. The unit rules live in Typography so that every
+    // element applies them the same way.
+    $typo = fn (string $prefix) => Typography::css($s, $prefix);
     $headTypo = $typo('tbl_head');
     $bodyTypo = $typo('tbl_body');
 
