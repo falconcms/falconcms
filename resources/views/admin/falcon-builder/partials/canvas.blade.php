@@ -1,6 +1,10 @@
 <main class="builder-canvas-area flex flex-col bg-white">
     <div class="canvas-container"
          @click="clearEditingContext"
+         {{-- Right-clicking the bare canvas offers Paste. Without it a page holding
+              nothing yet has no node to right-click, so a container copied from another
+              page had nowhere to go. Nodes inside stop their own contextmenu event. --}}
+         @contextmenu.prevent="openCtxMenu($event, 'canvas')"
          :class="[isPreview ? 'preview-mode' : '', device]"
          :style="canvasStyle">
 

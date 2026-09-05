@@ -1856,12 +1856,46 @@
             const ctxMenu = ref({ show: false, x: 0, y: 0, type: null, ci: null, coli: null, eli: null, ncoli: null, neli: null });
             // localStorage-backed clipboard — initialized synchronously from storage so cross-page paste works
             const _CLIP_KEY = 'lazy_builder_clipboard';
-            const _clipInit = (() => { try { const s = localStorage.getItem(_CLIP_KEY); return s ? JSON.parse(s) : null; } catch(e) { return null; } })();
-            const ctxClipboard = ref(_clipInit); // { type, data }
+
+            // The clipboard is shared by every builder tab through localStorage, so "the
+            // last thing copied" has to mean the last thing copied ANYWHERE. Reading the
+            // store only once at boot -- which is what this used to do -- left a tab that
+            // was already open pasting whatever happened to be in storage the moment it
+            // loaded, however many times you copied something else meanwhile. Its own
+            // copies still worked, because those write the ref directly, which is why
+            // copy-and-paste inside one page always looked fine.
+            const readStoredClip = () => {
+                try {
+                    const raw = localStorage.getItem(_CLIP_KEY);
+                    const v = raw ? JSON.parse(raw) : null;
+                    return (v && v.data) ? v : null;
+                } catch (e) { return null; }
+            };
+
+            const ctxClipboard = ref(readStoredClip()); // { type, data, at }
+
+            /**
+             * Adopt the stored clipboard when it is newer than this tab's own.
+             *
+             * Never the other way round: a copy too big for localStorage lives only in
+             * this tab, and an empty store must not wipe it.
+             */
+            const syncClipboard = () => {
+                const stored = readStoredClip();
+                if (!stored) return;
+                const mine = ctxClipboard.value;
+                if (!mine || !(mine.at > 0) || (stored.at || 0) > mine.at) ctxClipboard.value = stored;
+            };
+
+            // Fires in the OTHER tabs when any builder tab copies something.
+            window.addEventListener('storage', (e) => {
+                if (e.key === _CLIP_KEY) syncClipboard();
+            });
 
             const ctxMenuTitle = computed(() => {
                 const m = ctxMenu.value;
                 if (!m.type) return '';
+                if (m.type === 'canvas') return 'Canvas';
                 if (m.type === 'container') return 'Container';
                 if (m.type === 'column') return 'Column';
                 if (m.type === 'nested-row') return 'Nested Row';
@@ -1882,6 +1916,9 @@
             const openCtxMenu = (e, type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
                 e.preventDefault();
                 e.stopPropagation();
+                // Catch up with anything copied elsewhere since this tab loaded, so the
+                // menu always offers the most recent copy rather than a remembered one.
+                syncClipboard();
                 const menuW = 220, menuH = 360;
                 const x = (e.clientX + menuW > window.innerWidth)  ? e.clientX - menuW : e.clientX;
                 const y = (e.clientY + menuH > window.innerHeight) ? e.clientY - menuH : e.clientY;
@@ -1927,35 +1964,107 @@
                 else if (m.type === 'element' || m.type === 'nested-row') data = cloneObject(layout.value[m.ci].columns[m.coli].elements[m.eli]);
                 else if (m.type === 'nested-column') data = cloneObject(layout.value[m.ci].columns[m.coli].elements[m.eli].columns[m.ncoli]);
                 else if (m.type === 'nested-element') data = cloneObject(layout.value[m.ci].columns[m.coli].elements[m.eli].columns[m.ncoli].elements[m.neli]);
-                ctxClipboard.value = { type: m.type, data };
+                const entry = { type: m.type, data, at: Date.now() };
+                ctxClipboard.value = entry;
                 try {
-                    localStorage.setItem(_CLIP_KEY, JSON.stringify({ type: m.type, data }));
+                    localStorage.setItem(_CLIP_KEY, JSON.stringify(entry));
                     showToast('Copied! Paste available on other pages.', 'success');
                 } catch (e) {
-                    showToast('Copied (cross-page paste unavailable: ' + e.message + ')', 'error');
+                    // Out of storage -- a section carrying inline images will do it. Drop
+                    // whatever is in there rather than leaving an older copy behind, or
+                    // the next paste on another page quietly produces that older item
+                    // instead of the one just copied.
+                    try { localStorage.removeItem(_CLIP_KEY); } catch (_) {}
+                    showToast('Copied — too large to carry to another page, so paste it on this one.', 'error');
                 }
                 closeCtxMenu();
             };
+            // -- Clipboard paste targeting ------------------------------------
+            // What a copied node IS, regardless of where it was right-clicked. A nested
+            // column is still a column; a nested element, and a nested row, are still
+            // elements. Paste used to demand that the clipboard's context type equalled
+            // the destination's, so an element copied from a plain column could not go
+            // into a nested one (nor the reverse), and a container copied on one page
+            // could only be pasted by right-clicking another container on the next.
+            const CLIP_KINDS = {
+                container: 'container',
+                column: 'column', 'nested-column': 'column',
+                element: 'element', 'nested-element': 'element', 'nested-row': 'element',
+            };
+            const clipKind = (t) => CLIP_KINDS[t] || null;
+
+            const _at = (v) => (v !== null && v !== undefined);
+
+            /**
+             * Where the clipboard would land for the context menu currently open:
+             * { list, where } when it can be pasted, { list: null, error } when it cannot.
+             * Driven by what is ON the clipboard, not by what was right-clicked.
+             */
+            const pasteResolve = (m) => {
+                const clip = ctxClipboard.value;
+                if (!clip || !clip.data || !m || !m.type) return { list: null, error: '' };
+                const kind = clipKind(clip.type);
+                if (!kind) return { list: null, error: '' };
+
+                const L = layout.value;
+                const container = _at(m.ci) ? L[m.ci] : null;
+                const column = (container && _at(m.coli)) ? container.columns[m.coli] : null;
+                const rowEl = (column && _at(m.eli)) ? column.elements[m.eli] : null;
+                const inNested = (m.type === 'nested-column' || m.type === 'nested-element');
+                const ncol = (inNested && rowEl && rowEl.columns && _at(m.ncoli)) ? rowEl.columns[m.ncoli] : null;
+
+                // A container always goes on the page itself, so it can be pasted from
+                // anywhere — including the bare canvas of a page that is still empty.
+                if (kind === 'container') return { list: L, where: 'this page' };
+
+                if (kind === 'column') {
+                    if (inNested || m.type === 'nested-row') {
+                        return (rowEl && Array.isArray(rowEl.columns))
+                            ? { list: rowEl.columns, where: 'this nested row' }
+                            : { list: null, error: 'That nested row has no columns to paste into.' };
+                    }
+                    return (container && Array.isArray(container.columns))
+                        ? { list: container.columns, where: 'this container' }
+                        : { list: null, error: 'Right-click a container, column or element to paste a column.' };
+                }
+
+                // kind === 'element'
+                if (inNested) {
+                    if (!ncol || !Array.isArray(ncol.elements)) {
+                        return { list: null, error: 'That nested column is no longer there — copy again.' };
+                    }
+                    // Nested columns render elements, not further nested rows: one would
+                    // save into the layout and then draw as nothing at all.
+                    if (clip.data.type === 'row') {
+                        return { list: null, error: 'A nested row cannot sit inside a nested column. Paste it into a plain column.' };
+                    }
+                    return { list: ncol.elements, where: 'this nested column' };
+                }
+                return (column && Array.isArray(column.elements))
+                    ? { list: column.elements, where: 'this column' }
+                    : { list: null, error: 'Right-click a column or an element to paste an element.' };
+            };
+
+            const canPasteHere = computed(() => !!pasteResolve(ctxMenu.value).list);
+
+            /** Small line under the paste buttons: what lands where, or why it cannot. */
+            const pasteHint = computed(() => {
+                const clip = ctxClipboard.value;
+                if (!clip) return 'Clipboard is empty';
+                const r = pasteResolve(ctxMenu.value);
+                return r.list ? (clipKind(clip.type) + ' \u2192 ' + r.where) : (r.error || '');
+            });
+
             const ctxPaste = (position) => {
-                const m = ctxMenu.value;
-                if (!ctxClipboard.value || ctxClipboard.value.type !== m.type) { closeCtxMenu(); return; }
+                const r = pasteResolve(ctxMenu.value);
+                if (!r.list) {
+                    if (r.error) showToast(r.error, 'error');
+                    closeCtxMenu();
+                    return;
+                }
                 const copy = cloneObject(ctxClipboard.value.data);
                 assignNewIds(copy);
-                if (m.type === 'container') {
-                    position === 'start' ? layout.value.unshift(copy) : layout.value.push(copy);
-                } else if (m.type === 'column') {
-                    const cols = layout.value[m.ci].columns;
-                    position === 'start' ? cols.unshift(copy) : cols.push(copy);
-                } else if (m.type === 'element' || m.type === 'nested-row') {
-                    const els = layout.value[m.ci].columns[m.coli].elements;
-                    position === 'start' ? els.unshift(copy) : els.push(copy);
-                } else if (m.type === 'nested-column') {
-                    const cols = layout.value[m.ci].columns[m.coli].elements[m.eli].columns;
-                    position === 'start' ? cols.unshift(copy) : cols.push(copy);
-                } else if (m.type === 'nested-element') {
-                    const els = layout.value[m.ci].columns[m.coli].elements[m.eli].columns[m.ncoli].elements;
-                    position === 'start' ? els.unshift(copy) : els.push(copy);
-                }
+                position === 'start' ? r.list.unshift(copy) : r.list.push(copy);
                 closeCtxMenu();
             };
 
@@ -6297,6 +6406,7 @@
                 hoveredType, hoveredCi, hoveredColi, hoveredEli, hoveredNcoli, setHover,
                 navDragSrc, navDragOver, navDragStart, navDragEnd, navDragOverHandler, navDrop, navCanDrop,
                 ctxMenu, ctxClipboard, ctxMenuTitle, openCtxMenu, closeCtxMenu, ctxEdit, ctxSave, ctxClone, ctxRemove, ctxCopy, ctxPaste, ctxSaveAsGlobal,
+                canPasteHere, pasteHint, clipKind,
                 globalSections, showGlobalModal, globalModalName, isSavingGlobal, openGlobalModal, saveAsGlobal, unlinkGlobal, insertGlobalSection, deleteGlobalSection,
                 themeBodyFont, themeHeadingFont, themeNavFont, builderFontGroups, builderFonts: BUILDER_FONTS,
                 titleFontVariants, loadBuilderFont,

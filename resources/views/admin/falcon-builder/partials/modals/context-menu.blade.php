@@ -16,6 +16,7 @@
 
         <!-- Actions -->
         <div class="py-1">
+            <template v-if="ctxMenu.type !== 'canvas'">
             <button @click="ctxEdit()"
                     class="w-full px-3 py-2 text-left text-[12.5px] text-white/90 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-2.5">
                 <i class="fa fa-pen w-3.5 text-center text-white/40 text-[11px]"></i> Edit
@@ -57,16 +58,26 @@
                     class="w-full px-3 py-2 text-left text-[12.5px] text-white/90 hover:bg-white/10 hover:text-white transition-colors flex items-center gap-2.5">
                 <i class="fa fa-clipboard w-3.5 text-center text-white/40 text-[11px]"></i> Copy
             </button>
-            <button @click="ctxClipboard && ctxClipboard.type === ctxMenu.type && ctxPaste('start')"
-                    :class="ctxClipboard && ctxClipboard.type === ctxMenu.type ? 'text-white/90 hover:bg-white/10 hover:text-white cursor-pointer' : 'text-white/25 cursor-not-allowed'"
+            </template>
+
+            {{-- Paste is offered wherever the clipboard can actually land: a container
+                 anywhere (so a page with nothing on it yet can still receive one), a
+                 column into any container or nested row, an element into any column,
+                 nested or not. canPasteHere / pasteHint come from pasteResolve(). --}}
+            <button @click="canPasteHere && ctxPaste('start')"
+                    :class="canPasteHere ? 'text-white/90 hover:bg-white/10 hover:text-white cursor-pointer' : 'text-white/25 cursor-not-allowed'"
                     class="w-full px-3 py-2 text-left text-[12.5px] transition-colors flex items-center gap-2.5">
-                <i class="fa fa-arrow-up w-3.5 text-center text-[11px]" :class="ctxClipboard && ctxClipboard.type === ctxMenu.type ? 'text-white/40' : 'text-white/20'"></i> Paste at Start
+                <i class="fa fa-arrow-up w-3.5 text-center text-[11px]" :class="canPasteHere ? 'text-white/40' : 'text-white/20'"></i> Paste at Start
             </button>
-            <button @click="ctxClipboard && ctxClipboard.type === ctxMenu.type && ctxPaste('end')"
-                    :class="ctxClipboard && ctxClipboard.type === ctxMenu.type ? 'text-white/90 hover:bg-white/10 hover:text-white cursor-pointer' : 'text-white/25 cursor-not-allowed'"
+            <button @click="canPasteHere && ctxPaste('end')"
+                    :class="canPasteHere ? 'text-white/90 hover:bg-white/10 hover:text-white cursor-pointer' : 'text-white/25 cursor-not-allowed'"
                     class="w-full px-3 py-2 text-left text-[12.5px] transition-colors flex items-center gap-2.5">
-                <i class="fa fa-arrow-down w-3.5 text-center text-[11px]" :class="ctxClipboard && ctxClipboard.type === ctxMenu.type ? 'text-white/40' : 'text-white/20'"></i> Paste at End
+                <i class="fa fa-arrow-down w-3.5 text-center text-[11px]" :class="canPasteHere ? 'text-white/40' : 'text-white/20'"></i> Paste at End
             </button>
+            <div v-if="pasteHint" class="px-3 pb-1.5 pt-0.5 text-[9.5px] leading-snug"
+                 :class="canPasteHere ? 'text-white/35' : 'text-amber-300/60'">
+                @{{ pasteHint }}
+            </div>
         </div>
     </div>
 </template>
