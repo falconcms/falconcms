@@ -1161,6 +1161,8 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'hl_color', $s['highlightColor'] ?? null);
                 self::attrI($a, 'icon_yes', $s['iconYesColor'] ?? null);
                 self::attrI($a, 'icon_no', $s['iconNoColor'] ?? null);
+                self::attrI($a, 'btn_bg', $s['btnBg'] ?? null);
+                self::attrI($a, 'btn_color', $s['btnColor'] ?? null);
                 self::attrI($a, 'tbl_head_family', $s['tbl_head_family'] ?? null);
                 self::attrI($a, 'tbl_head_weight', $s['tbl_head_weight'] ?? null);
                 self::attrI($a, 'tbl_head_size', $s['tbl_head_size'] ?? null);
@@ -2884,6 +2886,8 @@ class BuilderShortcodeConverter
                     'highlightColor' => $a['hl_color'] ?? null,
                     'iconYesColor' => $a['icon_yes'] ?? null,
                     'iconNoColor' => $a['icon_no'] ?? null,
+                    'btnBg' => $a['btn_bg'] ?? null,
+                    'btnColor' => $a['btn_color'] ?? null,
                     'tbl_head_family' => $a['tbl_head_family'] ?? null,
                     'tbl_head_weight' => $a['tbl_head_weight'] ?? null,
                     'tbl_head_size' => $a['tbl_head_size'] ?? null,

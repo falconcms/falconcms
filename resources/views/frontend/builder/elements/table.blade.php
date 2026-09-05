@@ -64,6 +64,13 @@
     $yesColor = $s['iconYesColor'] ?? '#3E7D4F';
     $noColor  = $s['iconNoColor']  ?? '#B0392B';
 
+    // One colour drives all three button variants: it fills the primary, tints the
+    // soft one and outlines the ghost on hover. Falling back here rather than in the
+    // stylesheet keeps an emptied field — which the reset button writes as '' — from
+    // reaching the page as `background: ;`.
+    $btnBg    = trim((string) ($s['btnBg'] ?? '')) ?: '#E8912B';
+    $btnColor = trim((string) ($s['btnColor'] ?? '')) ?: '#171C23';
+
     // Typography, from the shared control every other element uses. Empty means
     // "leave it to the preset", so a table that has never been touched still follows
     // whichever preset is chosen.
@@ -179,6 +186,33 @@
             border-radius: 4px;
         }
         #{{ $uid }} a { color: #B9720F; }
+
+        {{-- Cell buttons. A pricing table's last row is a row of buttons, so [button …]
+             renders one rather than a bare link. Three variants: filled, outlined, and
+             a tinted one, all built from the single Button colour so a table only has
+             one thing to pick. `color-mix` computes the tint, which means the colour can
+             be given in any CSS form — a browser without it takes the plain background
+             on the line above and the button is still readable. --}}
+        #{{ $uid }} .fc-tbl-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: .5em .95em; border-radius: 6px;
+            border: 1px solid transparent;
+            font-weight: 600; font-size: .92em; line-height: 1.2;
+            text-decoration: none; white-space: nowrap;
+            transition: filter .15s ease, transform .15s ease, border-color .15s ease;
+        }
+        #{{ $uid }} .fc-tbl-btn-primary { background: {{ $btnBg }}; color: {{ $btnColor }}; }
+        #{{ $uid }} .fc-tbl-btn-ghost   { background: transparent; color: {{ $g('textColor') ?: 'inherit' }}; border-color: {{ $g('borderColor') }}; }
+        #{{ $uid }} .fc-tbl-btn-soft    {
+            background: transparent;
+            background: color-mix(in srgb, {{ $btnBg }} 14%, transparent);
+            color: {{ $btnBg }};
+        }
+        #{{ $uid }} .fc-tbl-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+        #{{ $uid }} .fc-tbl-btn-ghost:hover { filter: none; border-color: {{ $btnBg }}; color: {{ $btnBg }}; }
+        @media (prefers-reduced-motion: reduce) {
+            #{{ $uid }} .fc-tbl-btn, #{{ $uid }} .fc-tbl-btn:hover { transition: none; transform: none; }
+        }
         #{{ $uid }} .fc-tbl-yes { color: {{ $yesColor }}; }
         #{{ $uid }} .fc-tbl-no  { color: {{ $noColor }}; }
         #{{ $uid }} td i, #{{ $uid }} th i { font-style: normal; }

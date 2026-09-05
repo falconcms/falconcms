@@ -3476,10 +3476,26 @@
             // fcTblCell() is called straight from the template with only the text, so the
             // two icon colours are staged here by fcTblCellFor() just before it runs.
             let fcTblIconColors = { yes: '', no: '' };
+            // Buttons are staged the same way, and for the same reason.
+            let fcTblBtnColors = { bg: '#E8912B', fg: '#171C23', text: 'inherit', line: '#DEE3E9' };
             function fcTblCellFor(el, text) {
                 const s = el.settings || {};
                 fcTblIconColors = { yes: s.iconYesColor || '', no: s.iconNoColor || '' };
+                fcTblBtnColors = { bg: (s.btnBg || '').trim() || '#E8912B', fg: (s.btnColor || '').trim() || '#171C23',
+                                   text: fcTblVal(el, 'textColor') || 'inherit', line: fcTblVal(el, 'borderColor') || '#DEE3E9' };
                 return fcTblCell(text);
+            }
+
+            // The three button variants, built from one colour the way the front end
+            // builds them: filled, tinted, outlined.
+            function fcTblBtnStyle(variant) {
+                const c = fcTblBtnColors;
+                const base = 'display:inline-flex;align-items:center;gap:7px;padding:.5em .95em;'
+                    + 'border-radius:6px;border:1px solid transparent;font-weight:600;font-size:.92em;'
+                    + 'line-height:1.2;text-decoration:none;white-space:nowrap;';
+                if (variant === 'ghost') return base + 'background:transparent;color:' + c.text + ';border-color:' + c.line + ';';
+                if (variant === 'soft') return base + 'background:color-mix(in srgb,' + c.bg + ' 14%,transparent);color:' + c.bg + ';';
+                return base + 'background:' + c.bg + ';color:' + c.fg + ';';
             }
 
             function fcTblCell(text) {
@@ -3502,9 +3518,18 @@
                         const m = re.exec(input);
                         if (!m || m[0] === '') continue;
 
-                        if (name === 'link') {
-                            const plain = m[2].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
-                            out += '<a href="' + (/^\s*javascript:/i.test(plain) ? '#' : m[2]) + '">' + m[1] + '</a>';
+                        if (name === 'link' || name === 'button') {
+                            // The button rule captures its variant first, so its label
+                            // and href sit one group further along than a link's.
+                            const isBtn = name === 'button';
+                            const label = isBtn ? m[2] : m[1];
+                            const raw = isBtn ? m[3] : m[2];
+                            const plain = raw.replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
+                            const href = /^\s*javascript:/i.test(plain) ? '#' : raw;
+                            // The canvas has no per-element stylesheet, so the variants
+                            // are written out inline exactly as the front end styles them.
+                            out += '<a' + (isBtn ? ' style="' + fcTblBtnStyle(m[1] || 'primary') + '"' : '')
+                                + ' href="' + href + '">' + label + '</a>';
                         } else {
                             let piece = replacement.replace(/\$(\d)/g, (_, d) => m[+d] === undefined ? '' : m[+d]);
                             if (name === 'iconyes') piece = piece.replace('"><', '" style="' + yes + '"><');
@@ -4628,6 +4653,7 @@
                             highlightRows: '', highlightCols: '',
                             highlightBg: '', highlightColor: '',
                             iconYesColor: '', iconNoColor: '',
+                            btnBg: '', btnColor: '',
                             sortable: false, stickyHeader: false, maxHeight: 0,
                             responsive: 'scroll',
                             marginTop: 0, marginTopUnit: 'px',

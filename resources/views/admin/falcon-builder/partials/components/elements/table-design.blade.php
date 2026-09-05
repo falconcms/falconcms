@@ -77,6 +77,40 @@
     @endforeach
 </div>
 
+{{-- ══ BUTTONS ══ --}}
+<div class="space-y-4">
+    <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Cell buttons</div>
+    <p class="text-[11px] text-slate-500 -mt-2">
+        Type <code>[button Buy Pro](https://…)</code> in a cell for a button — which is what a
+        pricing table's last row is. Add a variant for the other two looks:
+        <code>[button:ghost …]</code> outlined, <code>[button:soft …]</code> tinted.
+    </p>
+
+    @foreach([['btnBg', 'Button', '#E8912B'], ['btnColor', 'Button label', '#171C23']] as [$key, $label, $fallback])
+    <div>
+        <div class="flex justify-between items-center mb-2">
+            <label class="text-[11px] font-bold text-slate-500">{{ $label }} color</label>
+            <button @click="editingElement.settings.{{ $key }} = ''" title="Reset"
+                    class="text-slate-300 hover:text-red-500 transition-colors">
+                <i class="fa fa-undo text-[10px]"></i>
+            </button>
+        </div>
+        <div class="flex gap-2 items-center">
+            <div class="checkerboard rounded-full overflow-hidden w-9 h-9 flex-shrink-0 border border-slate-200 shadow-sm cursor-pointer"
+                 @click="openColorPicker($event, editingElement.settings, '{{ $key }}')">
+                <div :style="{ backgroundColor: editingElement.settings.{{ $key }} || '{{ $fallback }}' }" class="w-full h-full"></div>
+            </div>
+            <input type="text" v-model="editingElement.settings.{{ $key }}" placeholder="{{ $fallback }}"
+                   class="flex-1 min-w-0 border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+        </div>
+    </div>
+    @endforeach
+    <p class="text-[11px] text-slate-500 -mt-2">
+        The one colour drives all three: it fills the button, tints the soft one and outlines
+        the ghost on hover.
+    </p>
+</div>
+
 {{-- ══ HIGHLIGHT ══ --}}
 <div class="space-y-4">
     <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Highlight</div>

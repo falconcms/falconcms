@@ -38,6 +38,17 @@ class TableStyles
         return [
             ['code', '`([^`]+)`', '<code>$1</code>'],
 
+            // Buttons, before links and for the same reason links come before the icon
+            // tokens: [button Buy Pro](…) is also a valid link, one whose label happens
+            // to start with the word button, so whichever rule is tried first decides.
+            // A pricing table's last row is a row of buttons, and an author should not
+            // have to leave the table to get one.
+            //
+            // The variant is one of three fixed words or nothing at all, so what lands
+            // in the class attribute can only ever be one of those three.
+            ['button', '\\[(?:button|btn)(?::(primary|ghost|soft))?\\s+([^\\]]+)\\]\\(([^)\\s]+)\\)',
+                '<a class="fc-tbl-btn fc-tbl-btn-primary" href="$3">$2</a>'],
+
             // Links come before the icon tokens on purpose. A link needs the "](" that
             // no icon token has, so trying it first costs nothing — and trying it second
             // meant [check](https://…) became a tick with a stray "(https://…)" after
@@ -163,14 +174,24 @@ class TableStyles
                     continue;
                 }
 
-                if ($name === 'link') {
-                    $href = $m[2];
+                if ($name === 'link' || $name === 'button') {
+                    // The button rule captures its variant first, so its label and href
+                    // sit one group further along than a link's.
+                    $isButton = $name === 'button';
+                    $label = $isButton ? $m[2] : $m[1];
+                    $href = $isButton ? $m[3] : $m[2];
+
                     // Escaping already neutralised quotes and angle brackets; this stops
                     // the one scheme that would still execute.
                     if (preg_match('/^\s*javascript:/i', html_entity_decode($href, ENT_QUOTES, 'UTF-8'))) {
                         $href = '#';
                     }
-                    $out .= '<a href="'.$href.'">'.$m[1].'</a>';
+
+                    $class = $isButton
+                        ? ' class="fc-tbl-btn fc-tbl-btn-'.(($m[1] ?? '') !== '' ? $m[1] : 'primary').'"'
+                        : '';
+
+                    $out .= '<a'.$class.' href="'.$href.'">'.$label.'</a>';
                 } else {
                     $out .= preg_replace_callback(
                         '/\$(\d)/',

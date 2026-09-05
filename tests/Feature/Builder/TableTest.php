@@ -112,6 +112,9 @@ class TableTest extends TestCase
             'mixed `code` with **bold** and [a link](https://x.test/p?q=1)',
             '<script>alert(1)</script>', '[x](javascript:alert(1))',
             'a | b', '100%', 'v2.10.0',
+            '[button Buy Pro](https://x.test/buy)', '[btn:ghost Get Agency](https://x.test/a)',
+            '[button:soft Docs](/docs)', '[button Bad](javascript:alert(1))',
+            '[button Free](/f) and [Pro](/p)',
         ];
 
         $dir = sys_get_temp_dir().'/fc-tbl-'.getmypid();
@@ -138,6 +141,68 @@ class TableTest extends TestCase
                 "PHP and JavaScript disagree on: {$cell}"
             );
         }
+    }
+
+    /**
+     * A pricing table's last row is a row of buttons, so a cell can hold one.
+     *
+     * Three variants, all driven by the one Button colour in the Design tab; the token
+     * without a variant is the filled one, because that is the row's call to action.
+     */
+    public function test_a_cell_can_hold_a_button(): void
+    {
+        $this->assertSame(
+            '<a class="fc-tbl-btn fc-tbl-btn-primary" href="https://x.test/buy">Buy Pro</a>',
+            TableStyles::cell('[button Buy Pro](https://x.test/buy)')
+        );
+
+        foreach (['ghost', 'soft'] as $variant) {
+            $this->assertSame(
+                '<a class="fc-tbl-btn fc-tbl-btn-'.$variant.'" href="/a">Go</a>',
+                TableStyles::cell("[button:{$variant} Go](/a)")
+            );
+        }
+
+        // btn is the short spelling of the same token.
+        $this->assertSame(
+            TableStyles::cell('[button Go](/a)'),
+            TableStyles::cell('[btn Go](/a)')
+        );
+    }
+
+    /**
+     * The button rule is tried before the link rule, which is the only thing that makes
+     * either of them work: [button Buy](…) is a perfectly good link whose label starts
+     * with the word button, so the first rule to match decides which one an author gets.
+     */
+    public function test_a_button_is_not_read_as_a_link(): void
+    {
+        $this->assertStringContainsString('fc-tbl-btn', TableStyles::cell('[button Buy](/b)'));
+
+        // And a link is still a link, including one whose label merely mentions buttons.
+        $this->assertSame('<a href="/b">buttons</a>', TableStyles::cell('[buttons](/b)'));
+        $this->assertSame('<a href="/b">the button</a>', TableStyles::cell('[the button](/b)'));
+    }
+
+    /** A button carries a URL, so it is defused exactly as a link is. */
+    public function test_a_javascript_button_is_defused(): void
+    {
+        $this->assertStringContainsString('href="#"', TableStyles::cell('[button Go](javascript:alert(1))'));
+    }
+
+    /**
+     * The variant is dropped straight into a class attribute, so the pattern allows only
+     * the three words it knows. Anything else is not a button: the token falls through
+     * to the link rule, where it is the label — already escaped, so it is text on the
+     * page rather than markup in the tag.
+     */
+    public function test_a_button_variant_cannot_be_invented(): void
+    {
+        $out = TableStyles::cell('[button:"onmouseover=alert(1) Go](/a)');
+
+        $this->assertStringNotContainsString('fc-tbl-btn', $out);
+        $this->assertStringNotContainsString('"onmouseover', $out);
+        $this->assertSame('<a href="/a">button:&quot;onmouseover=alert(1) Go</a>', $out);
     }
 
     /**
@@ -628,6 +693,40 @@ class TableTest extends TestCase
         $this->assertStringContainsString('text-align: right', $html, 'the column alignment was not applied');
     }
 
+    /**
+     * The rendered page needs the button's stylesheet as well as its markup, and the
+     * chosen colour has to reach all three variants — the fill, the tint and the
+     * outline — because the Design tab only asks for one.
+     */
+    public function test_a_button_reaches_the_page_with_its_colour(): void
+    {
+        $html = $this->render([
+            'rows' => [['Plan', 'Start'], ['Pro', '[button Buy Pro](https://x.test/buy)']],
+            'headerRow' => true,
+            'btnBg' => '#123456',
+            'btnColor' => '#FEDCBA',
+        ]);
+
+        $this->assertStringContainsString('class="fc-tbl-btn fc-tbl-btn-primary"', $html);
+        $this->assertStringContainsString('href="https://x.test/buy"', $html);
+        $this->assertStringContainsString('.fc-tbl-btn-primary { background: #123456; color: #FEDCBA; }', $html);
+        $this->assertStringContainsString('color-mix(in srgb, #123456 14%, transparent)', $html);
+    }
+
+    /** An emptied colour must not reach the page as `background: ;`, which drops the rule. */
+    public function test_an_emptied_button_colour_falls_back(): void
+    {
+        $html = $this->render([
+            'rows' => [['[button Go](/a)']],
+            'headerRow' => false,
+            'btnBg' => '',
+            'btnColor' => '',
+        ]);
+
+        $this->assertStringNotContainsString('background: ;', $html);
+        $this->assertStringContainsString('background: #E8912B', $html);
+    }
+
     /** An element with no rows must render nothing rather than an empty shell. */
     public function test_an_empty_table_renders_nothing(): void
     {
@@ -720,9 +819,14 @@ function cell(text) {
             re.lastIndex = i;
             const m = re.exec(input);
             if (!m || m[0] === '') continue;
-            if (name === 'link') {
-                const plain = m[2].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
-                out += '<a href="' + (/^\s*javascript:/i.test(plain) ? '#' : m[2]) + '">' + m[1] + '</a>';
+            if (name === 'link' || name === 'button') {
+                const isBtn = name === 'button';
+                const label = isBtn ? m[2] : m[1];
+                const raw = isBtn ? m[3] : m[2];
+                const plain = raw.replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
+                const href = /^\s*javascript:/i.test(plain) ? '#' : raw;
+                const cls = isBtn ? ' class="fc-tbl-btn fc-tbl-btn-' + (m[1] || 'primary') + '"' : '';
+                out += '<a' + cls + ' href="' + href + '">' + label + '</a>';
             } else {
                 out += replacement.replace(/\$(\d)/g, (_, d) => m[+d] === undefined ? '' : m[+d]);
             }
