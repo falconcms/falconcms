@@ -23,7 +23,7 @@
                 $isActive = rtrim(request()->url(), '/') === rtrim($item->url, '/');
             @endphp
             <li>
-                <a href="{{ $item->url }}"
+                <a href="{{ falcon_anchor_url($item->url) }}"
                    target="{{ $item->target ?? '_self' }}"
                    class="flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors {{ $isActive ? 'text-primary font-bold bg-primary/5' : 'text-slate-600 hover:text-primary hover:bg-slate-50' }}">
                     @if(!empty($item->icon))
@@ -39,7 +39,7 @@
                         @foreach($children as $child)
                             @php $childActive = rtrim(request()->url(), '/') === rtrim($child->url, '/'); @endphp
                             <li>
-                                <a href="{{ $child->url }}"
+                                <a href="{{ falcon_anchor_url($child->url) }}"
                                    target="{{ $child->target ?? '_self' }}"
                                    class="flex items-center gap-2 text-sm py-1 transition-colors {{ $childActive ? 'text-primary font-bold' : 'text-slate-500 hover:text-primary' }}">
                                     @if(!empty($child->icon))

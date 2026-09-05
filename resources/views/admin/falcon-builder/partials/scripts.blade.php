@@ -4279,6 +4279,9 @@
             function fcTocCss(el) {
                 const sel = '#' + fcTocScopeId(el);
                 const gap = +fcTocVal(el, 'itemGap') || 6;
+                // Empty means no tint, which is the default — the colour and the weight
+                // already say which section is being read.
+                const bg = String((el.settings || {}).activeBg || '').trim();
 
                 return sel + ' .fc-toc-item {'
                     + 'display:flex;gap:7px;align-items:baseline;'
@@ -4290,7 +4293,10 @@
                     + fcTocTypoCss(el, 'toc_item')
                     + '}'
                     + sel + ' .fc-toc-item:hover { color:' + fcTocVal(el, 'hoverColor') + '; }'
-                    + sel + ' .fc-toc-item.is-active { color:' + fcTocVal(el, 'activeColor') + '; font-weight:600; }';
+                    + sel + ' .fc-toc-item.is-active { color:' + fcTocVal(el, 'activeColor') + '; font-weight:600;'
+                    + (bg ? 'background:' + bg + ';border-radius:6px;padding-left:8px;padding-right:8px;'
+                          + 'margin-left:-8px;margin-right:-8px;' : '')
+                    + ' }';
             }
 
             // fcTblTypo returns the camelCase object a :style binding wants; a stylesheet
@@ -5159,7 +5165,7 @@
                             progress: false, backToTop: false, minHeadings: 2,
                             bg: '', borderColor: '', borderWidth: '', radius: '',
                             padY: '', padX: '', titleColor: '', titleSize: '', titleWeight: '',
-                            linkColor: '', activeColor: '', hoverColor: '',
+                            linkColor: '', activeColor: '', hoverColor: '', activeBg: '',
                             fontSize: '', itemGap: '', indent: '', marker: '', guide: '',
                             marginTop: 0, marginTopUnit: 'px',
                             marginBottom: 0, marginBottomUnit: 'px',

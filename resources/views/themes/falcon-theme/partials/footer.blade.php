@@ -74,7 +74,7 @@
                             <nav class="flex flex-col gap-3">
                                 @php $footerMenu = get_lazy_menu('footer'); @endphp
                                 @forelse($footerMenu as $item)
-                                    <a href="{{ $item->url }}" class="text-[14px] opacity-70 hover:opacity-100 transition-colors" style="color: {{ $footerLink }};">{{ $item->title }}</a>
+                                    <a href="{{ falcon_anchor_url($item->url) }}" class="text-[14px] opacity-70 hover:opacity-100 transition-colors" style="color: {{ $footerLink }};">{{ $item->title }}</a>
                                 @empty
                                     <a href="{{ url('/') }}" class="text-[14px] opacity-70 hover:opacity-100 transition-colors" style="color: {{ $footerLink }};">Home</a>
                                 @endforelse

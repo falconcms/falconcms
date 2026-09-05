@@ -18,7 +18,7 @@
                         $itemHoverColor = get_cms_option('theme_menu_hover_color', '#0091ea');
                     @endphp
                     <div class="relative group h-full flex items-center">
-                        <a href="{{ $item->url }}" target="{{ $item->target ?? '_self' }}" class="nav-style {{ $isActive ? 'text-primary' : '' }} hover:text-[{{ $itemHoverColor }}] transition-colors flex items-center gap-1">
+                        <a href="{{ falcon_anchor_url($item->url) }}" target="{{ $item->target ?? '_self' }}" class="nav-style {{ $isActive ? 'text-primary' : '' }} hover:text-[{{ $itemHoverColor }}] transition-colors flex items-center gap-1">
                             @php
                                 $__ic = $item->icon ?? '';
                                 $__io = !empty($item->show_only_icon) && $__ic !== '';
@@ -36,7 +36,7 @@
                                 <ul class="py-2">
                                     @foreach($item->children as $child)
                                         <li class="relative group/sub">
-                                            <a href="{{ $child->url }}" target="{{ $child->target ?? '_self' }}" class="flex items-center justify-between px-5 py-2.5 text-[13px] font-medium hover:bg-slate-50 transition-all"
+                                            <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="flex items-center justify-between px-5 py-2.5 text-[13px] font-medium hover:bg-slate-50 transition-all"
                                                style="color: {{ get_cms_option('theme_dropdown_text_color', '#1d2327') }};">
                                                 @php
                                                     $__cic = $child->icon ?? '';
@@ -141,7 +141,7 @@
                             $__mio = !empty($item->show_only_icon) && $__mic !== '';
                             $__mIconHtml = $__mic !== '' ? '<i class="'.e($__mic).' mr-2"'.($__mio ? ' title="'.e($item->title).'"' : '').'></i>' : '';
                         @endphp
-                        <a href="{{ $item->url }}" target="{{ $item->target ?? '_self' }}" class="text-[15px] font-bold {{ $isActive ? 'text-primary' : 'text-slate-800' }} hover:text-primary block mb-2">{!! $__mIconHtml !!}@if(!$__mio){{ $item->title }}@endif</a>
+                        <a href="{{ falcon_anchor_url($item->url) }}" target="{{ $item->target ?? '_self' }}" class="text-[15px] font-bold {{ $isActive ? 'text-primary' : 'text-slate-800' }} hover:text-primary block mb-2">{!! $__mIconHtml !!}@if(!$__mio){{ $item->title }}@endif</a>
                         @if($item->children->count() > 0)
                             <div class="pl-4 space-y-2 border-l border-slate-100 ml-1">
                                 @foreach($item->children as $child)
@@ -153,7 +153,7 @@
                                         $__mcio = !empty($child->show_only_icon) && $__mcic !== '';
                                         $__mcIconHtml = $__mcic !== '' ? '<i class="'.e($__mcic).' mr-2"'.($__mcio ? ' title="'.e($child->title).'"' : '').'></i>' : '';
                                     @endphp
-                                    <a href="{{ $child->url }}" target="{{ $child->target ?? '_self' }}" class="text-[14px] font-medium {{ $childActive ? 'text-primary' : 'text-slate-600' }} hover:text-primary block">{!! $__mcIconHtml !!}@if(!$__mcio){{ $child->title }}@endif</a>
+                                    <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="text-[14px] font-medium {{ $childActive ? 'text-primary' : 'text-slate-600' }} hover:text-primary block">{!! $__mcIconHtml !!}@if(!$__mcio){{ $child->title }}@endif</a>
                                 @endforeach
                             </div>
                         @endif

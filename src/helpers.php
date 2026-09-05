@@ -778,6 +778,61 @@ if (!function_exists('forget_cms_options_cache')) {
     }
 }
 
+if (!function_exists('falcon_anchor_url')) {
+    /**
+     * Put a slash before the fragment of a link that has one.
+     *
+     * `/pricing#plans` and `/pricing/#plans` reach exactly the same place, so this is
+     * about the address bar rather than the navigation: a reader who clicks a section
+     * link and then copies what is in the bar should get back a URL shaped like the
+     * rest of the site's, and a site that serves its pages with a trailing slash looks
+     * inconsistent the moment an anchor is involved. Search engines and analytics treat
+     * the two spellings as different pages, which is the part that actually costs
+     * something.
+     *
+     * A fragment with nothing before it — the `#plans` a menu item is usually saved as —
+     * is resolved against the page it is being rendered on, which is where it was
+     * already going. So the link behaves identically and only reads better.
+     *
+     * Left alone: anything with no fragment at all, and a bare `#`, which is not a link
+     * to anywhere but the placeholder for an item that has no link.
+     */
+    function falcon_anchor_url(?string $url, ?string $currentPath = null): string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '' || $url === '#' || !str_contains($url, '#')) {
+            return $url;
+        }
+
+        [$before, $fragment] = explode('#', $url, 2);
+
+        // The query belongs after the path, so the slash goes before it, not at the end.
+        $query = '';
+        if (($q = strpos($before, '?')) !== false) {
+            $query = substr($before, $q);
+            $before = substr($before, 0, $q);
+        }
+
+        if ($before === '') {
+            $before = $currentPath ?? (function () {
+                try {
+                    return request()->getPathInfo();
+                } catch (Throwable $e) {
+                    return '/';
+                }
+            })();
+            $before = '/'.ltrim((string) $before, '/');
+        }
+
+        if (!str_ends_with($before, '/')) {
+            $before .= '/';
+        }
+
+        return $before.$query.'#'.$fragment;
+    }
+}
+
 if (!function_exists('falcon_refresh_route_cache')) {
     /**
      * Rebuild the route cache, so a setting that routes are built from takes effect.

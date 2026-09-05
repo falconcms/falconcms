@@ -50,6 +50,10 @@
     $scope   = TocStyles::safeSelector($s['scope'] ?? '');
     $exclude = TocStyles::safeSelector($s['exclude'] ?? '');
 
+    // Empty means no tint at all, which is the default: a colour and a weight already
+    // say which section is being read, and a band on top of them is a choice.
+    $activeBg = trim((string) ($s['activeBg'] ?? ''));
+
     $marker = $g('marker');                    // none | disc | decimal
     $guide  = (bool) $g('guide');
     $bg     = $g('bg');
@@ -92,9 +96,17 @@
         'progress' => $progress,
         'minHeadings' => $minHeadings,
         'numbered' => $numbered,
+        'sticky' => $sticky,
+        'stickyTop' => $stickyTop,
     ];
 @endphp
 
+{{-- Sticky is not written here. A sticky box travels only inside its own parent's box,
+     and every wrapper between this element and its column is exactly as tall as the
+     element itself — so wherever the rule was written in this file there was nowhere to
+     travel and the option did nothing at all. The one thing that can travel is the
+     column, which is short inside a container as tall as the row; that is also what the
+     builder's own column Sticky setting uses. The script applies it there. --}}
 <div class="falcon-toc{{ $visibilityClasses }} {{ $s['cssClass'] ?? '' }}"
      @if($elemId) id="{{ $elemId }}" @endif
      style="width:100%;margin-top:{{ $marginTop }};margin-bottom:{{ $marginBottom }};">
@@ -112,7 +124,6 @@
             border-radius: {{ (int) $g('radius') }}px;
             padding: {{ (int) $g('padY') }}px {{ (int) $g('padX') }}px;
             @if((int) $g('borderWidth') > 0) border: {{ (int) $g('borderWidth') }}px solid {{ $g('borderColor') }}; @endif
-            @if($sticky) position: sticky; top: {{ $stickyTop }}px; @endif
             @if($maxHeight > 0) max-height: {{ $maxHeight }}px; overflow-y: auto; @endif
         }
         #{{ $uid }} > summary::-webkit-details-marker { display: none; }
@@ -177,7 +188,20 @@
         #{{ $uid }} .fc-toc-list a:hover { color: {{ $g('hoverColor') }}; }
         {{-- Written after the hover rule so the section being read still reads as
              active while the pointer is elsewhere in the list. --}}
-        #{{ $uid }} .fc-toc-list a.is-active { color: var(--fc-toc-active); font-weight: 600; }
+        #{{ $uid }} .fc-toc-list a.is-active {
+            color: var(--fc-toc-active);
+            font-weight: 600;
+            @if($activeBg)
+            {{-- The tint runs a little wider than the text so it reads as a band rather
+                 than a highlighter pen, and the negative margin puts the text back where
+                 it was — an entry that shifts sideways as you scroll past it is worse
+                 than no tint at all. --}}
+            background: {{ $activeBg }};
+            border-radius: 6px;
+            padding-left: 8px; padding-right: 8px;
+            margin-left: -8px; margin-right: -8px;
+            @endif
+        }
         @if($guide && $marker === 'none')
         #{{ $uid }} .fc-toc-list ul a.is-active { box-shadow: inset 2px 0 0 var(--fc-toc-active); padding-left: 8px; margin-left: -{{ max(8, (int) $g('indent') - 3) }}px; padding-left: {{ max(8, (int) $g('indent') - 3) }}px; }
         @endif
@@ -373,8 +397,35 @@
 
         nav.setAttribute('data-ready', '');
 
+        applySticky(nav, cfg);
         wireScroll(nav, cfg);
         wireScrollState(nav, items, scope, cfg);
+    }
+
+    // Make the list stay on screen, by sticking the thing that can actually move.
+    //
+    // Not this element and not its wrapper: a sticky box travels inside its own parent's
+    // box, and every wrapper here is exactly as tall as the element, so the rule had
+    // nowhere to apply however it was written. The column is the one that can — it is
+    // short inside a container as tall as the whole row — which is also what the
+    // builder's own column Sticky setting sticks. A column that already has that
+    // setting is left alone rather than being given a second, conflicting offset.
+    function applySticky(nav, cfg) {
+        if (!cfg.sticky) return;
+
+        var wrap = nav.closest('.falcon-toc') || nav;
+        var target = wrap.closest('.lazy-column') || wrap;
+        var cs = window.getComputedStyle(target);
+
+        if (cs.position === 'sticky' || cs.position === '-webkit-sticky') return;
+
+        // A stretched flex item is as tall as the row, and a sticky box the height of
+        // its own container has nowhere to go either.
+        if (cs.alignSelf === 'stretch') target.style.alignSelf = 'flex-start';
+
+        target.style.position = 'sticky';
+        target.style.top = (cfg.stickyTop || 0) + 'px';
+        if (!target.style.zIndex) target.style.zIndex = '2';
     }
 
     // Smooth scrolling with an offset, because a sticky site header would otherwise
@@ -395,8 +446,14 @@
             var y = top ? 0 : target.getBoundingClientRect().top + window.pageYOffset - (cfg.offset || 0);
             window.scrollTo({ top: y < 0 ? 0 : y, behavior: (cfg.smooth && !reduced) ? 'smooth' : 'auto' });
 
+            // The address bar gets the slash before the fragment — /pricing/#plans
+            // rather than /pricing#plans. The same place either way; the difference is
+            // what a reader copies out of the bar, and what analytics counts as one
+            // page. Mirrors falcon_anchor_url(), which does it for menu links in PHP.
             if (!top && window.history && history.replaceState) {
-                history.replaceState(null, '', a.getAttribute('href'));
+                var path = location.pathname;
+                if (path.charAt(path.length - 1) !== '/') path += '/';
+                history.replaceState(null, '', path + location.search + a.getAttribute('href'));
             }
         });
     }

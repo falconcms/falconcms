@@ -548,7 +548,85 @@ class TocTest extends TestCase
         $full = $this->render(['sticky' => true, 'stickyTop' => 40, 'progress' => true, 'backToTop' => true]);
         $this->assertStringContainsString('data-fc-toc-bar', $this->markup($full));
         $this->assertStringContainsString('data-fc-toc-top', $this->markup($full));
-        $this->assertStringContainsString('position: sticky; top: 40px', $full);
+        $this->assertStringNotContainsString('position:sticky', $this->markup($full),
+            'sticky is written into the markup again, where it cannot work');
+    }
+
+    /**
+     * Sticky has to be on the wrapper, not on the box inside it.
+     *
+     * A sticky element only travels inside its own parent's box. The wrapper hugs its
+     * single child exactly, so with the rule on the child there was nowhere to travel
+     * and the list never moved, however tall the column beside it was — the option was
+     * on, the CSS was right, and nothing happened. On the wrapper the parent is the
+     * column, which is as tall as the row.
+     */
+    public function test_sticky_is_applied_to_the_element_that_can_travel(): void
+    {
+        $html = $this->render(['sticky' => true, 'stickyTop' => 40]);
+
+        // Nothing in this file is sticky. Every wrapper here is exactly as tall as the
+        // element inside it, and a sticky box travels only inside its own parent's box —
+        // so wherever the rule was written the option did nothing at all.
+        $this->assertStringNotContainsString('position:sticky', $this->markup($html));
+        $this->assertStringNotContainsString('position: sticky', $this->markup($html));
+
+        // The column is what can move: short, inside a container as tall as the row.
+        $script = $this->script($html);
+        $this->assertStringContainsString("wrap.closest('.lazy-column')", $script,
+            'the script no longer sticks the column, which is the only thing that can travel');
+        $this->assertStringContainsString("target.style.position = 'sticky'", $script);
+
+        // A column with its own Sticky setting keeps its own offset rather than being
+        // given a second, conflicting one.
+        $this->assertStringContainsString("if (cs.position === 'sticky'", $script);
+
+        // The offset has to reach the script, which is the only thing that can apply it.
+        $this->assertSame(1, preg_match('/data-fc-toc="([^"]*)"/', $html, $m));
+        $config = json_decode(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'), true);
+        $this->assertTrue($config['sticky']);
+        $this->assertSame(40, $config['stickyTop']);
+
+        // Off by default, so a list that was never asked to stick does not.
+        $plain = json_decode(html_entity_decode(
+            preg_match('/data-fc-toc="([^"]*)"/', $this->render([]), $p) ? $p[1] : '{}', ENT_QUOTES, 'UTF-8'
+        ), true);
+        $this->assertFalse($plain['sticky']);
+    }
+
+    /**
+     * The section being read can carry a background as well as a colour.
+     *
+     * Empty is the default and means no tint: a colour and a weight already say which
+     * section it is, and a band on top of them is a choice rather than an improvement.
+     */
+    public function test_the_active_section_can_take_a_background(): void
+    {
+        $tinted = $this->render(['activeBg' => '#FFF3E0']);
+        $this->assertMatchesRegularExpression('/a\.is-active \{[^}]*background: #FFF3E0/s', $tinted);
+
+        // It runs wider than the text and is pulled back, so the entry does not shift.
+        $this->assertMatchesRegularExpression('/a\.is-active \{[^}]*margin-left: -8px/s', $tinted);
+
+        $plain = $this->render([]);
+        $this->assertSame(1, preg_match('/a\.is-active \{([^}]*)\}/s', $plain, $m));
+        $this->assertStringNotContainsString('background', $m[1],
+            'an untinted list still paints a background behind the active entry');
+    }
+
+    /**
+     * Clicking a section puts the slash before the fragment in the address bar.
+     *
+     * /pricing/#plans rather than /pricing#plans. The same place either way — this is
+     * about what a reader copies out of the bar, and about analytics and search engines,
+     * which count the two spellings as different pages.
+     */
+    public function test_the_url_carries_a_slash_before_the_fragment(): void
+    {
+        $script = $this->script($this->render([]));
+
+        $this->assertStringContainsString("if (path.charAt(path.length - 1) !== '/') path += '/';", $script);
+        $this->assertStringContainsString("history.replaceState(null, '', path + location.search + a.getAttribute('href'))", $script);
     }
 
     /** Collapsible is <details>, so it works with a keyboard and with find-in-page. */

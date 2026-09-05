@@ -56,7 +56,14 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         echo '<li class="falcon-menu-item ' . $liClass . '"' . $liExtra . '>';
 
         $targetAttr = (!empty($item->target) && $item->target === '_blank') ? ' target="_blank" rel="noopener noreferrer"' : '';
-        echo '<a href="' . ($item->url ?? '#') . '"' . $targetAttr . ' class="falcon-menu-link" style="' . $style . '">';
+        // A menu built for a landing page is mostly section links, and those go through
+        // falcon_anchor_url() so the slash lands before the fragment — /pricing/#plans
+        // rather than /pricing#plans. Same place either way; the difference is what a
+        // reader copies out of the address bar, and what analytics counts as one page.
+        //
+        // Escaped on the way out, which it was not before: the URL comes from the menu
+        // builder, so it is an editor's text going straight into an attribute.
+        echo '<a href="' . e(falcon_anchor_url($item->url ?? '#')) . '"' . $targetAttr . ' class="falcon-menu-link" style="' . $style . '">';
         // Optional icon + "show only icon" support (set via menu builder → Options).
         // Icon position (left/right) and gap come from the Menu element settings.
         $itemIcon = $item->icon ?? '';

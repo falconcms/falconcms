@@ -59,6 +59,7 @@
         ['linkColor', 'Entry'],
         ['hoverColor', 'Entry hover'],
         ['activeColor', 'Section being read'],
+        ['activeBg', 'Section being read — background'],
     ] as [$key, $label])
     <div>
         <div class="flex justify-between items-center mb-2">

@@ -1319,6 +1319,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'title_weight', $s['titleWeight'] ?? null);
                 self::attrI($a, 'link_color', $s['linkColor'] ?? null);
                 self::attrI($a, 'active_color', $s['activeColor'] ?? null);
+                self::attrI($a, 'active_bg', $s['activeBg'] ?? null);
                 self::attrI($a, 'hover_color', $s['hoverColor'] ?? null);
                 self::attrI($a, 'font_size', $s['fontSize'] ?? null);
                 self::attrI($a, 'item_gap', $s['itemGap'] ?? null);
@@ -3137,6 +3138,7 @@ class BuilderShortcodeConverter
                     'titleWeight' => $a['title_weight'] ?? '',
                     'linkColor' => $a['link_color'] ?? '',
                     'activeColor' => $a['active_color'] ?? '',
+                    'activeBg' => $a['active_bg'] ?? '',
                     'hoverColor' => $a['hover_color'] ?? '',
                     'fontSize' => self::numOrBlank($a['font_size'] ?? null),
                     'itemGap' => self::numOrBlank($a['item_gap'] ?? null),
