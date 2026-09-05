@@ -33,7 +33,11 @@
     </label>
 
     <div class="grid grid-cols-2 gap-3">
-        @foreach([['fontSize', 'Text size'], ['itemGap', 'Row spacing'], ['indent', 'Indent'], ['titleSize', 'Title size']] as [$key, $label])
+        {{-- No size fields here. The two typography blocks below each carry a Font Size,
+             and two controls for one property is one too many: an author sets one, sees
+             nothing move because the other is still winning, and cannot tell which is
+             which. The preset's own sizes remain the default. --}}
+        @foreach([['itemGap', 'Row spacing'], ['indent', 'Indent']] as [$key, $label])
         <div>
             <label class="text-[11px] font-bold text-slate-500 block mb-1.5">{{ $label }}</label>
             <input type="number" v-model.number="editingElement.settings.{{ $key }}" min="0" max="60"

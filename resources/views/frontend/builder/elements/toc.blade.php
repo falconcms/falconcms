@@ -246,8 +246,6 @@
     if (window.__falconToc) return;
     window.__falconToc = true;
 
-    var SPY_MARGIN = '-12% 0px -70% 0px';
-
     // The same rule as TocStyles::slug(). If these two disagree the links point at
     // nothing, so PHP's version and this one are checked against each other in TocTest.
     function slug(text) {
@@ -376,8 +374,7 @@
         nav.setAttribute('data-ready', '');
 
         wireScroll(nav, cfg);
-        if (cfg.spy) wireSpy(nav, items, cfg);
-        if (cfg.progress) wireProgress(nav, scope);
+        wireScrollState(nav, items, scope, cfg);
     }
 
     // Smooth scrolling with an offset, because a sticky site header would otherwise
@@ -404,60 +401,80 @@
         });
     }
 
-    // Which section is being read. An IntersectionObserver rather than a scroll
-    // handler: it reports only when something crosses the band, so this costs nothing
-    // while the reader is inside one long section.
-    function wireSpy(nav, items, cfg) {
-        if (!window.IntersectionObserver) return;
-
+    // Which section is being read, and how far through it the reader is.
+    //
+    // Both from one scroll handler, throttled to a frame. This was an
+    // IntersectionObserver watching a band a little way down the viewport, which is the
+    // cheaper design and the wrong one: a heading only counts while it is inside the
+    // band, so the moment a reader clicked a link — which puts that heading at the very
+    // top, above the band — the section they had just jumped to was not the highlighted
+    // one, and at the top of a page the highlight sat on the SECOND heading because the
+    // first was above the band too. Nothing was highlighted at all while the reader was
+    // in the middle of a section longer than the band.
+    //
+    // Position answers the question directly: the current section is the last heading
+    // the reader has scrolled past, which is true whether they got there by scrolling,
+    // by clicking a link, or by loading the page on an anchor. The cost is a loop over
+    // the headings once per frame of scrolling, which for a page with tens of them is
+    // nothing.
+    function wireScrollState(nav, items, scope, cfg) {
         var links = {};
         items.forEach(function (it) {
             var a = nav.querySelector('[data-fc-toc-link="' + (window.CSS && CSS.escape ? CSS.escape(it.id) : it.id) + '"]');
             if (a) links[it.id] = a;
         });
 
-        var visible = [];
-        var observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                var id = entry.target.id;
-                var at = visible.indexOf(id);
-                if (entry.isIntersecting) { if (at === -1) visible.push(id); }
-                else if (at !== -1) { visible.splice(at, 1); }
-            });
+        var bar = cfg.progress ? nav.querySelector('[data-fc-toc-bar]') : null;
+        var spy = !!cfg.spy;
+        if (!spy && !bar) return;
 
-            // The topmost heading in the band, in document order — not the last one the
-            // observer happened to report, which jumps about when several cross at once.
-            var current = null;
-            items.forEach(function (it) { if (current === null && visible.indexOf(it.id) !== -1) current = it.id; });
-            if (!current) return;
-
-            Object.keys(links).forEach(function (id) {
-                links[id].classList.toggle('is-active', id === current);
-            });
-        }, { rootMargin: SPY_MARGIN, threshold: 0 });
-
-        items.forEach(function (it) { observer.observe(it.el); });
-    }
-
-    // How far through the content the reader is — measured against the scanned scope,
-    // not the whole document, so a long footer does not make an article look unfinished.
-    function wireProgress(nav, scope) {
-        var bar = nav.querySelector('[data-fc-toc-bar]');
-        if (!bar) return;
+        // A heading counts as reached once its top is at or above the line the reader
+        // lands on when they click a link, so a click and a scroll agree about where
+        // they are. The few pixels of slack absorb fractional scroll positions.
+        var line = function () { return (cfg.offset || 0) + 8; };
 
         var ticking = false;
+
         var update = function () {
             ticking = false;
-            var box = scope.getBoundingClientRect();
-            var total = box.height - window.innerHeight;
-            var done = total <= 0 ? 1 : (-box.top) / total;
-            bar.style.width = Math.max(0, Math.min(1, done)) * 100 + '%';
+
+            if (spy) {
+                var current = items.length ? items[0].id : null;
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].el.getBoundingClientRect().top <= line()) {
+                        current = items[i].id;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Past the end of the content there is no next section, so the last one
+                // stays lit rather than the list going blank at the foot of the page.
+                for (var id in links) {
+                    if (Object.prototype.hasOwnProperty.call(links, id)) {
+                        links[id].classList.toggle('is-active', id === current);
+                    }
+                }
+            }
+
+            if (bar) {
+                var box = scope.getBoundingClientRect();
+                var total = box.height - window.innerHeight;
+                var done = total <= 0 ? 1 : (-box.top) / total;
+                bar.style.width = Math.max(0, Math.min(1, done)) * 100 + '%';
+            }
         };
 
+        // Throttled with a timer rather than a frame. requestAnimationFrame is the usual
+        // choice and is the better one while the browser is painting — but it does not
+        // run where frames are not produced, which is a background tab, a reader who has
+        // switched away mid-article, and every headless browser this is tested in. A
+        // sixteen-millisecond timer is a frame's worth of throttling that runs wherever
+        // the scroll event itself does, which is the whole point of listening for it.
         var onScroll = function () {
             if (ticking) return;
             ticking = true;
-            window.requestAnimationFrame(update);
+            setTimeout(update, 16);
         };
 
         window.addEventListener('scroll', onScroll, { passive: true });

@@ -4252,24 +4252,60 @@
             // Indentation is drawn rather than nested. See the note in the canvas
             // template: an in-DOM Vue template cannot nest to arbitrary depth without a
             // recursive component, and a table of contents is a flat list of levels.
-            function fcTocItemStyle(el, item, i) {
-                const gap = +fcTocVal(el, 'itemGap') || 6;
+            // Only the indentation stays inline. Everything else — the colour, the size,
+            // the weight — moves into the stylesheet below, because a hover cannot be
+            // written inline at all and an inline colour would beat the hover rule even
+            // if it could. Entry hover was set in the Design tab and did nothing here
+            // while working perfectly on the page.
+            function fcTocItemStyle(el, item) {
                 const indent = +fcTocVal(el, 'indent') || 14;
                 const guide = fcTocVal(el, 'guide') && fcTocMarkerKind(el) === 'none';
-                const style = {
-                    display: 'flex', gap: '7px', alignItems: 'baseline',
-                    color: i === 0 ? fcTocVal(el, 'activeColor') : fcTocVal(el, 'linkColor'),
-                    fontWeight: i === 0 ? '600' : '400',
-                    fontSize: fcTocVal(el, 'fontSize') + 'px',
-                    lineHeight: '1.45',
-                    padding: Math.max(1, Math.round(gap / 2)) + 'px 0',
-                    paddingLeft: (item.depth * indent) + 'px',
-                };
+                const style = { paddingLeft: (item.depth * indent) + 'px' };
+
                 if (guide && item.depth > 0) {
                     style.borderLeft = '1px solid ' + fcTocVal(el, 'borderColor');
                     style.paddingLeft = ((item.depth - 1) * indent + Math.max(8, indent - 3)) + 'px';
                 }
-                return Object.assign(style, fcTblTypo(el, 'toc_item'));
+
+                return style;
+            }
+
+            // A scope for those rules, since the canvas has no per-element stylesheet.
+            const fcTocScopeId = (el) => 'fc-toc-canvas-' + String(el.id || '').replace(/[^A-Za-z0-9_-]/g, '');
+
+            // The rules that cannot be inline. The active one is written after the hover
+            // one so the section being read still reads as active while the pointer is
+            // somewhere else in the list — the same order the front end uses.
+            function fcTocCss(el) {
+                const sel = '#' + fcTocScopeId(el);
+                const gap = +fcTocVal(el, 'itemGap') || 6;
+
+                return sel + ' .fc-toc-item {'
+                    + 'display:flex;gap:7px;align-items:baseline;'
+                    + 'color:' + fcTocVal(el, 'linkColor') + ';'
+                    + 'font-size:' + fcTocVal(el, 'fontSize') + 'px;'
+                    + 'line-height:1.45;'
+                    + 'padding:' + Math.max(1, Math.round(gap / 2)) + 'px 0;'
+                    + 'transition:color .15s ease;'
+                    + fcTocTypoCss(el, 'toc_item')
+                    + '}'
+                    + sel + ' .fc-toc-item:hover { color:' + fcTocVal(el, 'hoverColor') + '; }'
+                    + sel + ' .fc-toc-item.is-active { color:' + fcTocVal(el, 'activeColor') + '; font-weight:600; }';
+            }
+
+            // fcTblTypo returns the camelCase object a :style binding wants; a stylesheet
+            // needs the declarations, so the same values are spelled out here.
+            function fcTocTypoCss(el, prefix) {
+                const map = {
+                    fontFamily: 'font-family', fontWeight: 'font-weight', fontSize: 'font-size',
+                    lineHeight: 'line-height', letterSpacing: 'letter-spacing', textTransform: 'text-transform',
+                };
+                const typo = fcTblTypo(el, prefix);
+                let out = '';
+                for (const key in typo) {
+                    if (map[key]) out += map[key] + ':' + typo[key] + ';';
+                }
+                return out;
             }
 
             const fcTocMarkerKind = (el) => fcTocVal(el, 'marker') || 'none';
@@ -5909,6 +5945,7 @@
                 fcTocVal, fcTocTitle, fcTocItems, fcTocScanned, fcTocMarker,
                 fcTocOuterStyle, fcTocHeadStyle, fcTocTitleStyle, fcTocCountStyle, fcTocChevStyle,
                 fcTocProgressStyle, fcTocProgressBarStyle, fcTocItemStyle, fcTocMarkerStyle, fcTocTopStyle,
+                fcTocScopeId, fcTocCss,
                 fcTblCell, fcTblCellFor, fcTblRows, fcTblHead, fcTblBody, fcTblAlign, fcTblVal,
                 fcTblSpec, fcTblTypo, fcTblHoverCss, fcTblScopeId,
                 fcTblOuterStyle, fcTblScrollStyle, fcTblTableStyle,

@@ -14,7 +14,12 @@
      class="w-full"
      :style="getCanvasVisibilityStyle(el.settings)">
 
-    <div :style="fcTocOuterStyle(el)">
+    {{-- Entry hover cannot be an inline style, so the item rules live in a stylesheet
+         the same way the Table's row hover does. Without it the Design tab's Entry hover
+         colour did nothing in the canvas while working on the page. --}}
+    <component :is="'style'" v-text="fcTocCss(el)"></component>
+
+    <div :id="fcTocScopeId(el)" :style="fcTocOuterStyle(el)">
         <div v-if="fcTocTitle(el)" :style="fcTocHeadStyle(el)">
             <span :style="fcTocTitleStyle(el)">@{{ fcTocTitle(el) }}</span>
             <span :style="fcTocCountStyle(el)">@{{ fcTocItems(el).length }}</span>
@@ -29,7 +34,9 @@
              template can nest a v-for inside a v-for, but not to arbitrary depth without
              a recursive component — and a table of contents is a flat list of headings
              with a level on each, so the level is simply drawn as an indent. --}}
-        <div v-for="(item, i) in fcTocItems(el)" :key="i" :style="fcTocItemStyle(el, item, i)">
+        <div v-for="(item, i) in fcTocItems(el)" :key="i"
+             class="fc-toc-item" :class="{ 'is-active': i === 0 }"
+             :style="fcTocItemStyle(el, item)">
             <span v-if="fcTocMarker(el, item, i)" :style="fcTocMarkerStyle(el)">@{{ fcTocMarker(el, item, i) }}</span>
             <span>@{{ item.text }}</span>
         </div>

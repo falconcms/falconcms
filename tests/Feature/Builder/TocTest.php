@@ -191,6 +191,135 @@ class TocTest extends TestCase
             'the canvas reads only one of the two tag keys, so one element previews flat');
     }
 
+    /**
+     * The section being read is worked out from where the headings are, not from a band.
+     *
+     * This was an IntersectionObserver watching a strip a little way down the viewport,
+     * which is the cheaper design and the wrong one: a heading only counted while it sat
+     * inside the strip. Clicking a link puts that heading at the very top — above the
+     * strip — so the section the reader had just jumped to was not the highlighted one;
+     * at the top of a page the highlight sat on the SECOND heading for the same reason;
+     * and nothing was highlighted at all while the reader was in the middle of a section
+     * longer than the strip. Position answers the question directly and is true however
+     * the reader got there.
+     */
+    public function test_the_spy_is_position_based_rather_than_a_viewport_band(): void
+    {
+        $script = $this->script($this->render([]));
+
+        $this->assertStringContainsString('function wireScrollState', $script,
+            'the scroll-driven state handler is gone');
+        $this->assertStringNotContainsString('new IntersectionObserver', $script,
+            'the spy is back on a viewport band, which loses the section on every jump');
+
+        // The current section is the last heading the reader has scrolled past.
+        $this->assertStringContainsString('getBoundingClientRect().top <= line()', $script);
+
+        // With nothing scrolled past yet, the first section is the one being read.
+        $this->assertStringContainsString('items.length ? items[0].id : null', $script);
+    }
+
+    /**
+     * Entry hover has to reach the canvas, which means it has to be in a stylesheet.
+     *
+     * The canvas paints each entry with an inline style, and a hover cannot be written
+     * inline at all — so the Design tab's Entry hover colour did nothing there while
+     * working perfectly on the published page, which is the exact failure the Table's
+     * row hover had. An inline colour would beat a hover rule even once one existed, so
+     * the colour has to leave the inline style as well; only the indentation stays.
+     */
+    public function test_the_canvas_puts_the_entry_colours_in_a_stylesheet(): void
+    {
+        $node = $this->nodeBinary();
+        if ($node === null) {
+            $this->markTestSkipped('node is not on PATH; cannot run the canvas helpers');
+        }
+
+        $scripts = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/scripts.blade.php'
+        );
+
+        $lifted = [];
+        foreach (['fcTocCss\(el\)', 'fcTocItemStyle\(el, item\)', 'fcTocTypoCss\(el, prefix\)'] as $sig) {
+            $this->assertSame(1, preg_match('/
+            function '.$sig.' \{[\s\S]*?
+            \}
+/', $scripts, $m),
+                "the canvas helper {$sig} is no longer where the test can find it");
+            $lifted[] = $m[0];
+        }
+
+        $dir = sys_get_temp_dir().'/fc-toccanvas-'.getmypid();
+        @mkdir($dir, 0777, true);
+        file_put_contents($dir.'/run.js',
+            'const P = '.json_encode(TocStyles::presets()).';
+'
+            ."function fcTocPreset(e) { return P[(e.settings || {}).preset || 'card'] || P.card; }
+"
+            .'function fcTocVal(e, k) { const s = e.settings || {};'
+            ." return (s[k] !== undefined && s[k] !== null && s[k] !== '') ? s[k] : fcTocPreset(e)[k]; }
+"
+            ."function fcTocMarkerKind(e) { return fcTocVal(e, 'marker') || 'none'; }
+"
+            .'function fcTblTypo() { return {}; }
+'
+            ."const fcTocScopeId = (e) => 'fc-toc-canvas-' + String(e.id || '');
+"
+            .implode('', $lifted)
+            ."const el = { id: 'e1', settings: { preset: 'card', linkColor: '#434E5A',"
+            ." hoverColor: '#CC0000', activeColor: '#00AA00' } };
+"
+            .'process.stdout.write(JSON.stringify({'
+            .' css: fcTocCss(el),'
+            ." itemStyle: fcTocItemStyle(el, { depth: 1, text: 'x' })"
+            .'}));
+'
+        );
+
+        $out = shell_exec(escapeshellarg($node).' '.escapeshellarg($dir.'/run.js').' 2>&1');
+        array_map('unlink', glob($dir.'/*') ?: []);
+        @rmdir($dir);
+
+        $result = json_decode((string) $out, true);
+        $this->assertIsArray($result, 'the canvas helpers did not run:
+'.$out);
+
+        $this->assertStringContainsString('.fc-toc-item:hover { color:#CC0000; }', $result['css'],
+            'the canvas has no hover rule, so Entry hover cannot show there');
+        $this->assertStringContainsString('.fc-toc-item.is-active { color:#00AA00;', $result['css'],
+            'the canvas has no active rule');
+        $this->assertStringContainsString('color:#434E5A', $result['css'],
+            'the entry colour is not in the stylesheet');
+
+        // The active rule is written after the hover rule, so the section being read
+        // still reads as active while the pointer is elsewhere in the list.
+        $this->assertGreaterThan(
+            strpos($result['css'], ':hover'),
+            strpos($result['css'], 'is-active'),
+            'the hover rule is written after the active one and would win over it'
+        );
+
+        // And nothing about colour is left inline, or it would beat both rules.
+        $this->assertArrayNotHasKey('color', $result['itemStyle']);
+        $this->assertArrayHasKey('paddingLeft', $result['itemStyle'],
+            'the per-entry indentation is no longer applied');
+    }
+
+    /** The canvas template has to carry the class and the stylesheet those rules need. */
+    public function test_the_canvas_template_is_wired_for_those_rules(): void
+    {
+        $canvas = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/components/elements/toc.blade.php'
+        );
+
+        $this->assertStringContainsString('v-text="fcTocCss(el)"', $canvas,
+            'the canvas no longer emits the stylesheet');
+        $this->assertStringContainsString('class="fc-toc-item"', $canvas,
+            'the entries do not carry the class the rules target');
+        $this->assertStringContainsString('fcTocScopeId(el)', $canvas,
+            'the rules have nothing to be scoped to');
+    }
+
     // ---- presets ---------------------------------------------------------------
 
     /** A preset short of a value leaves that rule unwritten in the stylesheet. */
