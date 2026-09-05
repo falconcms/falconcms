@@ -141,6 +141,14 @@ class FalconCmsServiceProvider extends ServiceProvider
                 echo view('falcon-cms::components.frontend.rich-text-styles')->render();
             }, 1);
 
+            // Back to top, from Customizer → Performance. On the footer hook for the same
+            // reason as the styles above: every theme that calls the action gets it, and a
+            // theme update cannot drop it. The partial renders nothing at all when the
+            // setting is off, so a site that does not want it pays nothing for it.
+            add_falcon_action('falcon_footer', function () {
+                echo view('falcon-cms::components.frontend.to-top')->render();
+            }, 20);
+
             $settingsScreens = [
                 'general' => ['falcon_settings_form_bottom', '', null],
                 'seo' => ['falcon_seo_settings_form_bottom', '', null],
