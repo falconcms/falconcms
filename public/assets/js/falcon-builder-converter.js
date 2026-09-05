@@ -197,6 +197,29 @@
         }
         return false;
     }
+    /** Extra tab -> Text Animation. Mirrors BuilderShortcodeConverter::attrTextAnim(). */
+    function attrTextAnim(a, s) {
+        a = attrI(a, 'text_anim',           s.textAnim);
+        a = attrI(a, 'text_anim_trigger',   s.textAnimTrigger,   'always');
+        a = attrI(a, 'text_anim_duration',  s.textAnimDuration);
+        a = attrI(a, 'text_anim_delay',     s.textAnimDelay);
+        a = attrI(a, 'text_anim_iteration', s.textAnimIteration, 'infinite');
+        a = attrI(a, 'text_anim_easing',    s.textAnimEasing);
+        a = attrI(a, 'text_anim_color',     s.textAnimColor);
+        return a;
+    }
+    /** The mirror of attrTextAnim(): copy the parsed attrs onto a settings object. */
+    function textAnimSettings(a, into) {
+        into.textAnim          = a.text_anim           || null;
+        into.textAnimTrigger   = a.text_anim_trigger   || 'always';
+        into.textAnimDuration  = a.text_anim_duration  !== undefined ? parseInt(a.text_anim_duration) : null;
+        into.textAnimDelay     = a.text_anim_delay     !== undefined ? parseInt(a.text_anim_delay)    : null;
+        into.textAnimIteration = a.text_anim_iteration || 'infinite';
+        into.textAnimEasing    = a.text_anim_easing    || null;
+        into.textAnimColor     = a.text_anim_color     || null;
+        return into;
+    }
+
     /** Global setting keys every element shares (Extra tab: visibility cond, animation, css). Always serialized. */
     var CE_GLOBAL_KEYS = [
         'cssClass', 'cssId',
@@ -545,6 +568,7 @@
                 a = attrI(a, 'color',           s.titleColor);
                 a = attrI(a, 'separator',       s.separator, 'default');
                 a = attrI(a, 'separator_color', s.separatorColor);
+                a = attrTextAnim(a, s);
                 a = attrI(a, 'use_link',        s.useLink ? 'yes' : null);
                 a = attrI(a, 'link_url',        s.linkUrl);
                 a = attrI(a, 'link_color',      s.linkColor);
@@ -562,6 +586,7 @@
             }
             case 'button': {
                 var a = base;
+                a = attrTextAnim(a, s);
                 a = attrI(a, 'text',       s.text      || 'Button');
                 a = attrI(a, 'url',        s.url       || '#');
                 a = attrI(a, 'target',     s.target,   '_self');
@@ -1160,7 +1185,7 @@
                 }};
 
             case 'title':
-                return { id: a.id || generateId(), type: 'title', settings: {
+                return { id: a.id || generateId(), type: 'title', settings: textAnimSettings(a, {
                     title:          inner.trim(),
                     fontSize:       a.font_size ? parseInt(a.font_size) : null,
                     fontSizeUnit:   a.font_size_unit  || 'px',
@@ -1174,7 +1199,7 @@
                     linkColor:      a.link_color || null,
                     cssClass:       a.css_class  || null,
                     visibility: vis
-                }};
+                })};
 
             case 'text':
                 return { id: a.id || generateId(), type: 'text', settings: {
@@ -1188,7 +1213,7 @@
                 }};
 
             case 'button':
-                return { id: a.id || generateId(), type: 'button', settings: {
+                return { id: a.id || generateId(), type: 'button', settings: textAnimSettings(a, {
                     text:      a.text       || 'Button',
                     url:       a.url        || '#',
                     target:    a.target     || '_self',
@@ -1198,7 +1223,7 @@
                     size:      a.size       || null,
                     cssClass:  a.css_class  || null,
                     visibility: vis
-                }};
+                })};
 
             case 'image':
                 return { id: a.id || generateId(), type: 'image', settings: {

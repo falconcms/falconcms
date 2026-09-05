@@ -1,8 +1,10 @@
 <div v-if="el.type === 'text_block' || el.type === 'special_text'"
      class="element-text-block-wrapper"
-     :class="[el.settings.cssClass || '', 'text-block-container-' + el.id]"
+     :class="[el.settings.cssClass || '', 'text-block-container-' + el.id, textAnimClass(el)]"
      :id="el.settings.cssId || undefined"
+     :key="'tanim-' + (el.settings.textAnim || 'none')"
      :style="[
+         textAnimVars(el),
          {
             width: '100%',
             maxWidth: '100%',
@@ -26,7 +28,7 @@
     <component is="style">
         .text-block-container-@{{ el.id }} .text-block-content {
             text-align: @{{ getResponsiveVal(el.settings, 'textAlign', device) || 'center' }} !important;
-            color: @{{ (el.isHovered && el.settings.hoverColor) ? el.settings.hoverColor : (el.settings.color || '#333333') }} !important;
+            color: @{{ textAnimClips(el) ? 'transparent' : ((el.isHovered && el.settings.hoverColor) ? el.settings.hoverColor : (el.settings.color || '#333333')) }} !important;
             font-family: @{{ el.settings.fontFamily || 'inherit' }} !important;
             font-size: @{{ getUnitVal(el.settings.fontSize || 16, el.settings.fontSizeUnit || 'px') }} !important;
             font-weight: @{{ el.settings.fontWeight || '400' }} !important;

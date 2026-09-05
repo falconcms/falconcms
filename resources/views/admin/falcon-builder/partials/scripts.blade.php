@@ -3708,6 +3708,177 @@
                 return hidden ? { opacity: '0.4', outline: '2px dashed #fbbf24', outlineOffset: '-2px' } : {};
             };
 
+            // -- Text Animation (Extra tab) --------------------------------------
+            // Canvas preview - mirrors FalconCms\Core\Support\TextAnimations::resolveFor()
+            // and the front end's element partials. Neither the mode table nor the
+            // per-element rules are hand-copied: they arrive from the same PHP constants
+            // both renderers read, and the keyframes come from the shared
+            // text-anim-styles partial that styles.blade.php includes, so the canvas
+            // animates exactly like the page.
+            const FC_TANIM_MODES    = @json(\FalconCms\Core\Support\TextAnimations::modes());
+            const FC_TANIM_ELEMENTS = @json(\FalconCms\Core\Support\TextAnimations::elements());
+            const FC_TANIM_GROUPS   = @json(\FalconCms\Core\Support\TextAnimations::groupsByElement());
+            const FC_TANIM_EASINGS  = @json(\FalconCms\Core\Support\TextAnimations::easings());
+
+            /** The selected mode, but only if this element type actually offers it. */
+            const fcTanimMode = (type, settings) => {
+                const mode = settings && typeof settings.textAnim === 'string' ? settings.textAnim : '';
+                if (!mode || !FC_TANIM_MODES[mode] || !FC_TANIM_ELEMENTS[type]) return '';
+                return mode;
+            };
+
+            /** Which node the mode belongs on (mirrors TextAnimations::nodeFor). */
+            const fcTanimNode = (type, mode) => {
+                if (!mode || !FC_TANIM_ELEMENTS[type]) return 'box';
+                return (FC_TANIM_ELEMENTS[type].textNode && FC_TANIM_MODES[mode].paint) ? 'text' : 'box';
+            };
+
+            /** The mode for one node of the element, '' when it belongs on the other one. */
+            const fcTanimModeAt = (el, node) => {
+                if (!el) return '';
+                const mode = fcTanimMode(el.type, el.settings || {});
+                if (!mode) return '';
+                return fcTanimNode(el.type, mode) === (node || 'box') ? mode : '';
+            };
+
+            // A CSS value safe to drop into a style binding, else null (mirrors cssToken()).
+            const fcTanimToken = (v) => {
+                if (typeof v !== 'string') return null;
+                const t = v.trim();
+                if (t === '' || /["'<>;{}]/.test(t)) return null;
+                return t;
+            };
+
+            /** Blend two hex colours (mirrors TextAnimations::mixHex); null unless both parse. */
+            const fcTanimHexRgb = (v) => {
+                let h = String(v === null || v === undefined ? '' : v).trim().replace(/^#/, '');
+                if (/^[0-9a-fA-F]{3}$/.test(h)) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+                if (!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+                return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+            };
+
+            const fcTanimMix = (a, b, weight) => {
+                const ca = fcTanimHexRgb(a), cb = fcTanimHexRgb(b);
+                if (!ca || !cb) return null;
+                const part = (i) => ('0' + Math.round(ca[i] + (cb[i] - ca[i]) * weight).toString(16)).slice(-2);
+                return '#' + part(0) + part(1) + part(2);
+            };
+
+            const fcTanimInt = (v, fallback) => {
+                if (v === null || v === undefined || v === '' || isNaN(Number(v))) return fallback;
+                return Math.max(0, parseInt(v, 10));
+            };
+
+            /** The element's own ink, which the colour modes build their gradient from. */
+            const fcTanimBase = (def, settings) => {
+                if (def.gradient && settings.useGradient) {
+                    const start = fcTanimToken(settings.gradientStartColor);
+                    if (start !== null) return start;
+                }
+                for (let i = 0; i < def.colorKeys.length; i++) {
+                    const c = fcTanimToken(settings[def.colorKeys[i]]);
+                    if (c !== null) return c;
+                }
+                return '#222222';
+            };
+
+            /**
+             * Classes for one node of the element. `node` is 'box' (the element itself,
+             * the default) or 'text' (its inner label); each returns only the mode that
+             * belongs on it, so a Button's fill never gets a glyph-clipping gradient.
+             */
+            const textAnimClass = (el, node) => {
+                if (!el) return '';
+                const s = el.settings || {};
+                const mode = fcTanimModeAt(el, node);
+                if (!mode) return '';
+                const def = FC_TANIM_ELEMENTS[el.type];
+                const out = ['fa-tanim', 'fa-tanim-' + mode];
+                if (def.shrink === 'auto') {
+                    const overflow = s.textOverflow || 'initial';
+                    if (overflow !== 'ellipsis' && overflow !== 'clip') out.push('fa-tanim-ib');
+                }
+                if ((s.textAnimTrigger || 'always') === 'hover') out.push('fa-tanim-hover');
+                return out.join(' ');
+            };
+
+            /** Custom properties for one node of the element, as a Vue style object. */
+            const textAnimVars = (el, node) => {
+                if (!el) return {};
+                const s = el.settings || {};
+                const mode = fcTanimModeAt(el, node);
+                if (!mode) return {};
+                const def = FC_TANIM_MODES[mode];
+
+                let iter = s.textAnimIteration;
+                iter = (iter === 'infinite' || iter === '' || iter === null || iter === undefined)
+                    ? 'infinite' : String(Math.max(1, parseInt(iter, 10) || 1));
+
+                const vars = {
+                    '--fa-tanim-dur': Math.max(50, fcTanimInt(s.textAnimDuration, def.duration)) + 'ms',
+                    '--fa-tanim-delay': fcTanimInt(s.textAnimDelay, 0) + 'ms',
+                    '--fa-tanim-iter': iter,
+                    '--fa-tanim-ease': fcTanimToken(s.textAnimEasing) || def.easing,
+                };
+
+                if (def.accent) {
+                    const base = fcTanimBase(FC_TANIM_ELEMENTS[el.type], s);
+                    const accent = fcTanimToken(s.textAnimColor)
+                        || (mode === 'shine' ? '#ffffff'
+                            : (mode === 'shimmer' ? '#ffd9a0'
+                               : (fcTanimToken(s.gradientEndColor) || '#0091ea')));
+                    vars['--fa-tanim-base'] = base;
+                    vars['--fa-tanim-accent'] = accent;
+                    if (mode === 'shimmer') {
+                        vars['--fa-tanim-mid'] = fcTanimMix(base, accent, 0.55) || accent;
+                    }
+                    if (mode === 'gradient-flow') {
+                        vars['--fa-tanim-g1'] = base;
+                        vars['--fa-tanim-g2'] = accent;
+                        vars['--fa-tanim-g3'] = fcTanimToken(s.gradientEndColor) || base;
+                    }
+                }
+                return vars;
+            };
+
+            /**
+             * True when the mode paints the glyphs with a clipped background. The Text
+             * Block's canvas colour rule carries !important (it has to, to beat the
+             * admin's resets) and would otherwise sit on top of the gradient, so it
+             * yields to transparent while such a mode runs.
+             */
+            const textAnimClips = (el) => {
+                if (!el) return false;
+                const mode = fcTanimMode(el.type, el.settings || {});
+                return !!(mode && FC_TANIM_MODES[mode].clip);
+            };
+
+            /**
+             * True when the element has a mode selected at all, whichever node it lands
+             * on. The Extra tab's sub-fields hang off this, not off textAnimClass(): a
+             * Button set to Shimmer carries no classes on its box (the mode is on the
+             * label), and gating the panel on the box would hide every field below the
+             * picker for exactly the modes that need them most.
+             */
+            const textAnimActive = (el) => !!(el && fcTanimMode(el.type, el.settings || {}));
+
+            /** The picker's groups for the element being edited (excluded modes removed). */
+            const textAnimGroups = (type) => FC_TANIM_GROUPS[type] || {};
+
+            const textAnimSupports = (type) => !!FC_TANIM_ELEMENTS[type];
+
+            /** Placeholder for the Duration field: the mode's own resting speed. */
+            const textAnimDefaultDuration = (el) => {
+                const mode = el ? fcTanimMode(el.type, el.settings || {}) : '';
+                return mode ? String(FC_TANIM_MODES[mode].duration) : '2000';
+            };
+
+            /** True when the selected mode reads --fa-tanim-accent (shows the colour field). */
+            const textAnimUsesAccent = (el) => {
+                const mode = el ? fcTanimMode(el.type, el.settings || {}) : '';
+                return !!(mode && FC_TANIM_MODES[mode].accent);
+            };
+
             // ── Table ────────────────────────────────────────────────────────────
             // Canvas preview — mirrors
             // resources/views/frontend/builder/elements/table.blade.php.
@@ -6362,6 +6533,9 @@
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, canvasScale, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal, googleFontFamily,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
+                textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
+                textAnimDefaultDuration, textAnimUsesAccent,
+                fcTanimModes: FC_TANIM_MODES, fcTanimEasings: FC_TANIM_EASINGS,
                 fcCodeLangOptions: FC_CODE_LANG_OPTIONS, fcCodeThemeOptions: FC_CODE_THEME_OPTIONS,
                 fcTblPresetOptions: FC_TBL_PRESET_OPTIONS, fcTblAlignments: FC_TBL_ALIGNMENTS,
                 fcCalVariantOptions: FC_CAL_VARIANT_OPTIONS, fcCalPresetOptions: FC_CAL_PRESET_OPTIONS,

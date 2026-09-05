@@ -1,5 +1,5 @@
 <div v-if="el.type === 'button'"
-     class="element-button-wrapper w-full"
+     class="element-button-wrapper w-full fa-tanim-host"
      :class="[el.settings.cssClass || '', 'button-container-' + el.id]"
      :id="el.settings.cssId || undefined"
      :style="[
@@ -15,9 +15,11 @@
     
     <a href="javascript:void(0)"
        :id="'btn-preview-' + el.id"
+       :class="textAnimClass(el)"
+       :key="'tanim-' + (el.settings.textAnim || 'none')"
        @mouseenter="el.isHovered = true"
        @mouseleave="el.isHovered = false"
-       :style="{
+       :style="[textAnimVars(el), {
            display: el.settings.buttonSpan ? 'block' : 'inline-block',
            width: el.settings.buttonSpan ? '100%' : 'auto',
            paddingTop: getUnitVal(getResponsiveVal(el.settings, 'paddingTop', device), getResponsiveVal(el.settings, 'paddingTopUnit', device) || 'px'),
@@ -56,9 +58,11 @@
            textDecoration: 'none',
            transition: 'all 0.3s ease',
            textAlign: 'center'
-       }">
+       }]">
         <i v-if="el.settings.icon && el.settings.iconPosition !== 'right'" :class="[el.settings.icon, 'mr-2']"></i>
-        @{{ dynSrcPreview(el.settings) || el.settings.text || 'Click Here' }}
+        <span :class="textAnimClass(el, 'text')"
+              :style="textAnimVars(el, 'text')"
+              :key="'tanim-text-' + (el.settings.textAnim || 'none')">@{{ dynSrcPreview(el.settings) || el.settings.text || 'Click Here' }}</span>
         <i v-if="el.settings.icon && el.settings.iconPosition === 'right'" :class="[el.settings.icon, 'ml-2']"></i>
     </a>
 </div>

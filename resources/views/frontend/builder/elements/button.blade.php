@@ -121,6 +121,24 @@
     $icon = $s['icon'] ?? '';
     $iconPos = $s['iconPosition'] ?? 'left';
 
+    // Looping text animation (Extra tab), split across two nodes. The motion modes ride
+    // the anchor so the whole button moves; the modes that repaint the glyphs ride the
+    // label span instead, because clipping a gradient to the letters on the anchor would
+    // take the button's own fill with it.
+    $textAnim = \FalconCms\Core\Support\TextAnimations::resolveFor('button', $s);
+    if ($textAnim) {
+        foreach ($textAnim['vars'] as $prop => $val) {
+            $btnStyles[$prop] = $val;
+        }
+    }
+    $labelAnim = \FalconCms\Core\Support\TextAnimations::resolveFor('button', $s, 'text');
+    $labelAnimStyle = '';
+    if ($labelAnim) {
+        foreach ($labelAnim['vars'] as $prop => $val) {
+            $labelAnimStyle .= $prop.': '.$val.';';
+        }
+    }
+
     $hoverBgImage = 'none';
     if ($isCustom && !empty($s['bgGradientStartColor'])) {
          if (($s['bgGradientType'] ?? 'linear') === 'radial') {
@@ -145,16 +163,17 @@
     @if($respCss) {!! $respCss !!} @endif
 </style>
 
-<div class="element-button-wrapper button-container-{{ $elemId }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
+<div class="element-button-wrapper fa-tanim-host button-container-{{ $elemId }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
      style="{{ collect($wrapperStyles)->map(fn($v, $k) => "$k: $v")->implode('; ') }}">
     <{{ $linkTag }}
        @if($hasLink) href="{{ $resolvedLinkUrl }}" target="{{ $s['linkTarget'] ?? '_self' }}" @endif
        id="{{ $appliedId }}"
+       @if($textAnim) class="{{ $textAnim['classes'] }}" @endif
        style="{{ collect($btnStyles)->map(fn($v, $k) => "$k: $v")->implode('; ') }}">
         @if($icon && $iconPos !== 'right')
             <i class="{{ $icon }} mr-2"></i>
         @endif
-        {{ $buttonText }}
+        @if($labelAnim)<span class="{{ $labelAnim['classes'] }}" style="{{ $labelAnimStyle }}">{{ $buttonText }}</span>@else{{ $buttonText }}@endif
         @if($icon && $iconPos === 'right')
             <i class="{{ $icon }} ml-2"></i>
         @endif

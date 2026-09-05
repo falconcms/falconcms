@@ -76,10 +76,29 @@
     $elemId = !empty($s['cssId']) ? $s['cssId'] : null;
 
     $hasContent = $title !== '' || trim($body) !== '' || $showIcon;
+
+    // Looping text animation (Extra tab), split across two nodes. The motion modes ride
+    // the card itself (not the outer wrapper, which only carries the element's margins);
+    // the modes that repaint the glyphs ride the title, because clipping a gradient to
+    // the letters on the card would take its background and border with it.
+    $textAnim = \FalconCms\Core\Support\TextAnimations::resolveFor('callout', $s);
+    $textAnimStyle = '';
+    if ($textAnim) {
+        foreach ($textAnim['vars'] as $prop => $val) {
+            $textAnimStyle .= $prop.': '.$val.';';
+        }
+    }
+    $titleAnim = \FalconCms\Core\Support\TextAnimations::resolveFor('callout', $s, 'text');
+    $titleAnimStyle = '';
+    if ($titleAnim) {
+        foreach ($titleAnim['vars'] as $prop => $val) {
+            $titleAnimStyle .= $prop.': '.$val.';';
+        }
+    }
 @endphp
 
 @if($hasContent)
-<div class="falcon-callout{{ $visibilityClasses }} {{ $s['cssClass'] ?? '' }}"
+<div class="falcon-callout fa-tanim-host{{ $visibilityClasses }} {{ $s['cssClass'] ?? '' }}"
      @if($elemId) id="{{ $elemId }}" @endif
      style="width:100%;margin-top:{{ $marginTop }};margin-bottom:{{ $marginBottom }};">
 
@@ -182,7 +201,8 @@
         $tag = $collapsible ? 'details' : 'div';
     @endphp
 
-    <{{ $tag }} id="{{ $uid }}" class="fc-cal fc-cal-{{ $s['variant'] ?? 'note' }}"
+    <{{ $tag }} id="{{ $uid }}" class="fc-cal fc-cal-{{ $s['variant'] ?? 'note' }}{{ $textAnim ? ' '.$textAnim['classes'] : '' }}"
+        @if($textAnimStyle) style="{{ $textAnimStyle }}" @endif
         @if($collapsible && $openByDefault) open @endif
         @if(!$collapsible) role="note" @endif>
 
@@ -190,13 +210,15 @@
             @if($collapsible)
             <summary class="fc-cal-head">
                 @if($showIcon)<i class="fc-cal-icon {{ $icon }}" aria-hidden="true"></i>@endif
-                <span class="fc-cal-title">{{ $title !== '' ? $title : $variant['name'] }}</span>
+                <span class="fc-cal-title{{ $titleAnim ? ' '.$titleAnim['classes'] : '' }}"
+                      @if($titleAnimStyle) style="{{ $titleAnimStyle }}" @endif>{{ $title !== '' ? $title : $variant['name'] }}</span>
                 <i class="fc-cal-chev fas fa-chevron-right" aria-hidden="true"></i>
             </summary>
             @else
             <div class="fc-cal-head">
                 @if($showIcon)<i class="fc-cal-icon {{ $icon }}" aria-hidden="true"></i>@endif
-                @if($title !== '')<p class="fc-cal-title">{{ $title }}</p>@endif
+                @if($title !== '')<p class="fc-cal-title{{ $titleAnim ? ' '.$titleAnim['classes'] : '' }}"
+                    @if($titleAnimStyle) style="{{ $titleAnimStyle }}" @endif>{{ $title }}</p>@endif
             </div>
             @endif
         @endif

@@ -56,6 +56,17 @@
         'text-transform: ' . ($s['textTransform'] ?? 'none'),
     ];
 
+    // Looping text animation (Extra tab). It goes on the wrapper, not the content div:
+    // the wrapper is where this element keeps its colour and font, and the content is
+    // pinned to `color: inherit !important` below — so a colour mode painting the
+    // wrapper reaches every paragraph inside it.
+    $textAnim = \FalconCms\Core\Support\TextAnimations::resolveFor('text_block', $s);
+    if ($textAnim) {
+        foreach ($textAnim['vars'] as $prop => $val) {
+            $wrapperStyles[] = $prop.': '.$val;
+        }
+    }
+
     $contentStyles = [
         'text-align: inherit',
         'margin: 0',
@@ -92,7 +103,7 @@
     @if($respCss) {!! $respCss !!} @endif
 </style>
 
-<div class="element-text-block-wrapper text-block-container-{{ $appliedId }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
+<div class="element-text-block-wrapper text-block-container-{{ $appliedId }} {{ $textAnim ? $textAnim['classes'] : '' }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
      id="{{ $appliedId }}"
      style="{{ implode('; ', $wrapperStyles) }}">
     <div class="text-block-content falcon-rich-text" style="{{ implode('; ', $contentStyles) }}">

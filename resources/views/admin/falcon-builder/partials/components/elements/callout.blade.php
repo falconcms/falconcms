@@ -8,7 +8,7 @@
      bullet into the box needs to see what it becomes, and the text itself is edited in
      the Content tab. --}}
 <div v-if="el.type === 'callout'"
-     class="w-full"
+     class="w-full fa-tanim-host"
      :style="getCanvasVisibilityStyle(el.settings)">
 
     {{-- The body's paragraphs and lists need a stylesheet, not inline styles: they are
@@ -16,10 +16,16 @@
          Same trick the Table uses for its hover rule. --}}
     <component :is="'style'" v-if="fcCalBodyCss(el)" v-text="fcCalBodyCss(el)"></component>
 
-    <div :id="fcCalScopeId(el)" :style="fcCalOuterStyle(el)">
+    <div :id="fcCalScopeId(el)"
+         :class="textAnimClass(el)"
+         :key="'tanim-' + (el.settings.textAnim || 'none')"
+         :style="[fcCalOuterStyle(el), textAnimVars(el)]">
         <div v-if="fcCalTitle(el) || fcCalShowIcon(el)" :style="fcCalHeadStyle(el)">
             <i v-if="fcCalShowIcon(el)" :class="fcCalIcon(el)" :style="fcCalIconStyle(el)"></i>
-            <span v-if="fcCalTitle(el)" :style="fcCalTitleStyle(el)">@{{ fcCalTitle(el) }}</span>
+            <span v-if="fcCalTitle(el)"
+                  :class="textAnimClass(el, 'text')"
+                  :style="[fcCalTitleStyle(el), textAnimVars(el, 'text')]"
+                  :key="'tanim-text-' + (el.settings.textAnim || 'none')">@{{ fcCalTitle(el) }}</span>
             <i v-if="el.settings.collapsible" class="fas fa-chevron-down" :style="fcCalChevStyle(el)"></i>
         </div>
 

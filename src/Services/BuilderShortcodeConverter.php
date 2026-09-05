@@ -122,6 +122,36 @@ class BuilderShortcodeConverter
         'vis_condition', 'vis_date_from', 'vis_date_to',
     ];
 
+    /**
+     * Serialise the Extra tab's Text Animation, shared verbatim by every element that
+     * offers it (see FalconCms\Core\Support\TextAnimations::ELEMENTS). The skipped
+     * defaults match what textAnimSettings() reads back, so a round-trip adds nothing.
+     */
+    private static function attrTextAnim(string &$a, array $s): void
+    {
+        self::attrI($a, 'text_anim', $s['textAnim'] ?? null);
+        self::attrI($a, 'text_anim_trigger', $s['textAnimTrigger'] ?? null, 'always');
+        self::attrI($a, 'text_anim_duration', $s['textAnimDuration'] ?? null);
+        self::attrI($a, 'text_anim_delay', $s['textAnimDelay'] ?? null);
+        self::attrI($a, 'text_anim_iteration', $s['textAnimIteration'] ?? null, 'infinite');
+        self::attrI($a, 'text_anim_easing', $s['textAnimEasing'] ?? null);
+        self::attrI($a, 'text_anim_color', $s['textAnimColor'] ?? null);
+    }
+
+    /** The mirror of attrTextAnim(): merge into an element's parsed settings. */
+    private static function textAnimSettings(array $a): array
+    {
+        return [
+            'textAnim' => $a['text_anim'] ?? null,
+            'textAnimTrigger' => $a['text_anim_trigger'] ?? 'always',
+            'textAnimDuration' => isset($a['text_anim_duration']) ? (int) $a['text_anim_duration'] : null,
+            'textAnimDelay' => isset($a['text_anim_delay']) ? (int) $a['text_anim_delay'] : null,
+            'textAnimIteration' => $a['text_anim_iteration'] ?? 'infinite',
+            'textAnimEasing' => $a['text_anim_easing'] ?? null,
+            'textAnimColor' => $a['text_anim_color'] ?? null,
+        ];
+    }
+
     /** Parse numeric-looking string to int/float, else return as-is (keeps units like "px"). */
     private static function maybeNum($v)
     {
@@ -886,6 +916,8 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'text_stroke_color', $s['textStrokeColor'] ?? null);
                 // Overflow
                 self::attrI($a, 'text_overflow', $s['textOverflow'] ?? null, 'initial');
+                // Text animation (Extra tab) — looping motion on the heading itself
+                self::attrTextAnim($a, $s);
                 // Link
                 self::attrI($a, 'use_link', (!empty($s['useLink']) ? 'yes' : null));
                 self::attrI($a, 'link_url', $s['linkUrl'] ?? null);
@@ -939,6 +971,7 @@ class BuilderShortcodeConverter
 
             case 'button':
                 $a = $base;
+                self::attrTextAnim($a, $s);
                 // Content
                 self::attrI($a, 'text', $s['text'] ?? 'Button');
                 self::attrI($a, 'link_url', $s['linkUrl'] ?? null, '#');
@@ -1266,6 +1299,7 @@ class BuilderShortcodeConverter
 
             case 'callout':
                 $a = $base;
+                self::attrTextAnim($a, $s);
                 self::attrI($a, 'variant', $s['variant'] ?? null, 'note');
                 self::attrI($a, 'preset', $s['preset'] ?? null, 'bar');
                 self::attrKeepEmpty($a, 'title', $s, 'title');
@@ -1732,6 +1766,7 @@ class BuilderShortcodeConverter
             case 'text_block':
             case 'special_text':
                 $a = $base;
+                self::attrTextAnim($a, $s);
                 // Typography
                 self::attrI($a, 'font_family', $s['fontFamily'] ?? null);
                 self::attrI($a, 'font_size', $s['fontSize'] ?? null);
@@ -2710,6 +2745,7 @@ class BuilderShortcodeConverter
                     'cssId' => $a['css_id'] ?? null,
                     'visibility' => $vis,
                 ];
+                $ts += self::textAnimSettings($a);
                 self::addRespProps($ts, $a, [
                     ['textAlign',    'align',         null],
                     ['marginTop',    'margin_top',    'num'],
@@ -2733,6 +2769,7 @@ class BuilderShortcodeConverter
 
             case 'button':
                 $ts = [
+                    ...self::textAnimSettings($a),
                     // Content
                     'text' => $a['text'] ?? 'Button',
                     'linkUrl' => $a['link_url'] ?? $a['url'] ?? '#',
@@ -3156,6 +3193,7 @@ class BuilderShortcodeConverter
                 }
 
                 return ['id' => $a['id'] ?? self::uid(), 'type' => 'callout', 'settings' => [
+                    ...self::textAnimSettings($a),
                     'body' => trim($calBody),
                     'variant' => $a['variant'] ?? 'note',
                     'preset' => $a['preset'] ?? 'bar',
@@ -3490,6 +3528,7 @@ class BuilderShortcodeConverter
             case 'text_block':
             case 'special_text':
                 $ts = [
+                    ...self::textAnimSettings($a),
                     'content' => trim($inner),
                     // Typography
                     'fontFamily' => $a['font_family'] ?? 'inherit',

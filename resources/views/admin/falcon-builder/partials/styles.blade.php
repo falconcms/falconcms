@@ -1063,3 +1063,7 @@
 {{-- The canvas loads Tailwind too, so rich-text elements need the same Preflight repairs the
      front-end gets — otherwise a bulleted list previews flat here and renders bulleted live. --}}
 @include('falcon-cms::components.frontend.rich-text-styles')
+
+{{-- Extra tab → Text Animation. The same stylesheet the published page loads, so the
+     canvas preview is the animation itself rather than an approximation of it. --}}
+@include('falcon-cms::components.frontend.text-anim-styles')

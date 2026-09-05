@@ -1,5 +1,5 @@
 <div v-if="el.type === 'title'"
-     class="element-title-wrapper"
+     class="element-title-wrapper fa-tanim-host"
      :class="[el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"
      :style="[
@@ -39,7 +39,7 @@
             <component :is="el.settings.htmlTag || 'h2'"
                 @mouseenter="el.isTextHovered = true"
                 @mouseleave="el.isTextHovered = false"
-                :style="{
+                :style="[textAnimVars(el), {
                     color: el.settings.useLink ? 'inherit'
                          : (el.settings.useGradient ? 'transparent'
                             : (el.isTextHovered && el.settings.titleHoverColor
@@ -75,8 +75,10 @@
                     margin: '0',
                     transition: 'color 0.3s ease',
                     pointerEvents: 'auto'
-                }"
-                class="main-title" v-html="dynSrcPreview(el.settings) || el.settings.title || 'Your Awesome Title'"></component>
+                }]"
+                :class="['main-title', textAnimClass(el)]"
+                :key="'tanim-' + (el.settings.textAnim || 'none')"
+                v-html="dynSrcPreview(el.settings) || el.settings.title || 'Your Awesome Title'"></component>
         </a>
 
         <!-- Separator -->

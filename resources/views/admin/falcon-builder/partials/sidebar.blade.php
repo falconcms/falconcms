@@ -5608,8 +5608,11 @@
                              </div>
                         </div>
 
-                        <!-- ══ EXTRAS TAB (shared partial) ══ -->
-                        <div v-if="editingContext.tab === 'extras' && editingElement" class="p-5">
+                        <!-- ══ EXTRAS TAB (shared partial + per-element extras) ══ -->
+                        <div v-if="editingContext.tab === 'extras' && editingElement" class="p-5 space-y-5">
+                            <div v-if="textAnimSupports(editingElement.type)" class="pb-5 border-b border-slate-100">
+                                @include('falcon-cms::admin.falcon-builder.partials.components.elements.text-anim-options')
+                            </div>
                             @include('falcon-cms::admin.falcon-builder.partials.components.fields.extra-options')
                         </div>
                     </div>

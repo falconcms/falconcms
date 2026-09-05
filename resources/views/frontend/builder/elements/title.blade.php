@@ -147,6 +147,18 @@
     $titleHoverColor = !$useLink ? ($s['titleHoverColor'] ?? null) : null;
     $titleHoverColor = ($titleHoverColor && trim($titleHoverColor) !== '') ? $titleHoverColor : null;
     $titleElemId = $titleHoverColor ? ('title-h-' . uniqid()) : '';
+
+    // Looping text animation (Extra tab). The classes and custom properties come from
+    // the same table the builder canvas reads, so preview and page cannot disagree.
+    // The keyframes themselves are emitted once per layout by render.blade.php.
+    $textAnim = \FalconCms\Core\Support\TextAnimations::resolveFor('title', $s);
+    $titleAnimClass = '';
+    if ($textAnim) {
+        $titleAnimClass = ' ' . $textAnim['classes'];
+        foreach ($textAnim['vars'] as $prop => $val) {
+            $titleStyles[] = $prop . ': ' . $val;
+        }
+    }
 @endphp
 
 @if($useLink)
@@ -169,7 +181,7 @@
 <style>{!! $respCss !!}</style>
 @endif
 
-<div class="element-title-wrapper {{ $titleRespId }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
+<div class="element-title-wrapper fa-tanim-host {{ $titleRespId }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }}"
      @if(!empty($s['cssId'])) id="{{ $s['cssId'] }}" @endif
      style="{{ implode('; ', $wrapperStyles) }}">
 
@@ -178,7 +190,7 @@
     @endif
 
     {{-- Title supports inline HTML (authored in the builder) — rendered raw like WordPress headings. --}}
-    <{{ $htmlTag }} class="main-title"@if($titleElemId) id="{{ $titleElemId }}"@endif style="{{ implode('; ', $titleStyles) }}">
+    <{{ $htmlTag }} class="main-title{{ $titleAnimClass }}"@if($titleElemId) id="{{ $titleElemId }}"@endif style="{{ implode('; ', $titleStyles) }}">
         {!! $titleText !!}
     </{{ $htmlTag }}>
 
