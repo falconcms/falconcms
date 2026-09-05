@@ -167,13 +167,18 @@ class BuilderShortcodeConverter
      * must not be rewritten. Without that test the round trip turned one cell reading
      * "line one<br>line two" into two rows.
      */
-    private static function unmangleBody(string $body): string
+    private static function unmangleBody(string $body, bool $paragraphs = false): string
     {
         if (!str_contains($body, "\n")) {
             $body = preg_replace('/<br\s*\/?>/i', "\n", $body) ?? $body;
         }
 
-        $body = preg_replace('/<\/p>\s*<p[^>]*>/i', "\n", $body) ?? $body;
+        // What a </p><p> boundary meant before the editor rewrote it depends on the
+        // element. A table's rows are separated by single newlines, so one newline is
+        // the right guess there. A Callout's body is prose, where the boundary was a
+        // blank line — the thing that separates one paragraph from the next — and
+        // collapsing it would run two paragraphs together on every save.
+        $body = preg_replace('/<\/p>\s*<p[^>]*>/i', $paragraphs ? "\n\n" : "\n", $body) ?? $body;
         $body = preg_replace('/<\/?p[^>]*>/i', '', $body) ?? $body;
 
         // These have no other meaning in a body: the editor writes them, nothing else.
@@ -1212,6 +1217,134 @@ class BuilderShortcodeConverter
                 }
 
                 return '[falcon_table '.trim($a).$vis.']'."\n".$markdown."\n".'[/falcon_table]';
+
+            case 'callout':
+                $a = $base;
+                self::attrI($a, 'variant', $s['variant'] ?? null, 'note');
+                self::attrI($a, 'preset', $s['preset'] ?? null, 'bar');
+                self::attrKeepEmpty($a, 'title', $s, 'title');
+                self::attrI($a, 'icon', $s['icon'] ?? null);
+                self::attrI($a, 'icon_style', $s['iconStyle'] ?? null);
+                self::attrI($a, 'accent', $s['accent'] ?? null);
+                self::attrI($a, 'bg', $s['bgColor'] ?? null);
+                self::attrI($a, 'title_color', $s['titleColor'] ?? null);
+                self::attrI($a, 'body_color', $s['bodyColor'] ?? null);
+                self::attrI($a, 'fill', $s['fill'] ?? null);
+                self::attrI($a, 'radius', $s['radius'] ?? null);
+                self::attrI($a, 'pad_y', $s['padY'] ?? null);
+                self::attrI($a, 'pad_x', $s['padX'] ?? null);
+                self::attrI($a, 'gap', $s['gap'] ?? null);
+                self::attrI($a, 'bar', $s['barWidth'] ?? null);
+                self::attrI($a, 'border', $s['borderWidth'] ?? null);
+                self::attrI($a, 'icon_size', $s['iconSize'] ?? null);
+                self::attrI($a, 'title_size', $s['titleSize'] ?? null);
+                self::attrI($a, 'title_weight', $s['titleWeight'] ?? null);
+                self::attrI($a, 'body_size', $s['bodySize'] ?? null);
+                self::attrI($a, 'collapsible', !empty($s['collapsible']) ? 'yes' : null);
+                self::attrI($a, 'open', (($s['openByDefault'] ?? true) === false) ? 'no' : null);
+                self::attrI($a, 'margin_top', $s['marginTop'] ?? null);
+                self::attrI($a, 'margin_top_unit', $s['marginTopUnit'] ?? null, 'px');
+                self::attrI($a, 'margin_bottom', $s['marginBottom'] ?? null);
+                self::attrI($a, 'margin_bottom_unit', $s['marginBottomUnit'] ?? null, 'px');
+                self::attrI($a, 'css_class', $s['cssClass'] ?? null);
+                self::attrI($a, 'css_id', $s['cssId'] ?? null);
+                self::attrI($a, 'cal_title_family', $s['cal_title_family'] ?? null);
+                self::attrI($a, 'cal_title_weight', $s['cal_title_weight'] ?? null);
+                self::attrI($a, 'cal_title_size', $s['cal_title_size'] ?? null);
+                self::attrI($a, 'cal_title_line_height', $s['cal_title_line_height'] ?? null);
+                self::attrI($a, 'cal_title_letter_spacing', $s['cal_title_letter_spacing'] ?? null);
+                self::attrI($a, 'cal_title_transform', $s['cal_title_transform'] ?? null);
+                self::attrI($a, 'cal_body_family', $s['cal_body_family'] ?? null);
+                self::attrI($a, 'cal_body_weight', $s['cal_body_weight'] ?? null);
+                self::attrI($a, 'cal_body_size', $s['cal_body_size'] ?? null);
+                self::attrI($a, 'cal_body_line_height', $s['cal_body_line_height'] ?? null);
+                self::attrI($a, 'cal_body_letter_spacing', $s['cal_body_letter_spacing'] ?? null);
+                self::attrI($a, 'cal_body_transform', $s['cal_body_transform'] ?? null);
+
+                // The text goes in the body, as written. Same reasoning as the Code
+                // Block: a shortcode is a format people open and edit by hand, and the
+                // parser only ever looks for this element's own closing tag, so
+                // newlines, brackets and quotes all survive a raw body. A body holding
+                // that one string falls back to base64 and says so with enc="b64".
+                $calBody = (string) ($s['body'] ?? '');
+                if (trim($calBody) === '') {
+                    return '[falcon_callout '.trim($a).$vis.' /]';
+                }
+
+                if (str_contains($calBody, '[/falcon_callout')) {
+                    self::attrI($a, 'enc', 'b64');
+
+                    return '[falcon_callout '.trim($a).$vis.']'
+                        .base64_encode($calBody)
+                        .'[/falcon_callout]';
+                }
+
+                // < and & go out as entities, exactly as the Code Block sends them. The
+                // body stays readable — only those characters change — but left raw the
+                // classic editor reads a "<" as the start of a tag and swallows
+                // everything after it, taking this element's closing tag with it.
+                return '[falcon_callout '.trim($a).$vis.']'
+                    .str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], $calBody)
+                    .'[/falcon_callout]';
+
+            case 'toc':
+                // No body: the list is the page's own headings, found when the page
+                // renders. Everything here is a setting about which ones count.
+                $a = $base;
+                self::attrI($a, 'preset', $s['preset'] ?? null, 'card');
+                self::attrKeepEmpty($a, 'title', $s, 'title');
+                self::attrI($a, 'min_level', $s['minLevel'] ?? null, 2);
+                self::attrI($a, 'max_level', $s['maxLevel'] ?? null, 3);
+                self::attrI($a, 'scope', $s['scope'] ?? null);
+                self::attrI($a, 'exclude', $s['exclude'] ?? null);
+                self::attrI($a, 'collapsible', !empty($s['collapsible']) ? 'yes' : null);
+                self::attrI($a, 'open', (($s['openByDefault'] ?? true) === false) ? 'no' : null);
+                self::attrI($a, 'sticky', !empty($s['sticky']) ? 'yes' : null);
+                self::attrI($a, 'sticky_top', $s['stickyTop'] ?? null, 24);
+                self::attrI($a, 'max_height', $s['maxHeight'] ?? null, 0);
+                self::attrI($a, 'spy', (($s['scrollSpy'] ?? true) === false) ? 'no' : null);
+                self::attrI($a, 'smooth', (($s['smoothScroll'] ?? true) === false) ? 'no' : null);
+                self::attrI($a, 'offset', $s['scrollOffset'] ?? null, 80);
+                self::attrI($a, 'progress', !empty($s['progress']) ? 'yes' : null);
+                self::attrI($a, 'back_to_top', !empty($s['backToTop']) ? 'yes' : null);
+                self::attrI($a, 'min_headings', $s['minHeadings'] ?? null, 2);
+                self::attrI($a, 'bg', $s['bg'] ?? null);
+                self::attrI($a, 'border_color', $s['borderColor'] ?? null);
+                self::attrI($a, 'border', $s['borderWidth'] ?? null);
+                self::attrI($a, 'radius', $s['radius'] ?? null);
+                self::attrI($a, 'pad_y', $s['padY'] ?? null);
+                self::attrI($a, 'pad_x', $s['padX'] ?? null);
+                self::attrI($a, 'title_color', $s['titleColor'] ?? null);
+                self::attrI($a, 'title_size', $s['titleSize'] ?? null);
+                self::attrI($a, 'title_weight', $s['titleWeight'] ?? null);
+                self::attrI($a, 'link_color', $s['linkColor'] ?? null);
+                self::attrI($a, 'active_color', $s['activeColor'] ?? null);
+                self::attrI($a, 'hover_color', $s['hoverColor'] ?? null);
+                self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+                self::attrI($a, 'item_gap', $s['itemGap'] ?? null);
+                self::attrI($a, 'indent', $s['indent'] ?? null);
+                self::attrI($a, 'marker', $s['marker'] ?? null);
+                self::attrI($a, 'guide', isset($s['guide']) && $s['guide'] !== '' ? (!empty($s['guide']) ? 'yes' : 'no') : null);
+                self::attrI($a, 'margin_top', $s['marginTop'] ?? null);
+                self::attrI($a, 'margin_top_unit', $s['marginTopUnit'] ?? null, 'px');
+                self::attrI($a, 'margin_bottom', $s['marginBottom'] ?? null);
+                self::attrI($a, 'margin_bottom_unit', $s['marginBottomUnit'] ?? null, 'px');
+                self::attrI($a, 'css_class', $s['cssClass'] ?? null);
+                self::attrI($a, 'css_id', $s['cssId'] ?? null);
+                self::attrI($a, 'toc_title_family', $s['toc_title_family'] ?? null);
+                self::attrI($a, 'toc_title_weight', $s['toc_title_weight'] ?? null);
+                self::attrI($a, 'toc_title_size', $s['toc_title_size'] ?? null);
+                self::attrI($a, 'toc_title_line_height', $s['toc_title_line_height'] ?? null);
+                self::attrI($a, 'toc_title_letter_spacing', $s['toc_title_letter_spacing'] ?? null);
+                self::attrI($a, 'toc_title_transform', $s['toc_title_transform'] ?? null);
+                self::attrI($a, 'toc_item_family', $s['toc_item_family'] ?? null);
+                self::attrI($a, 'toc_item_weight', $s['toc_item_weight'] ?? null);
+                self::attrI($a, 'toc_item_size', $s['toc_item_size'] ?? null);
+                self::attrI($a, 'toc_item_line_height', $s['toc_item_line_height'] ?? null);
+                self::attrI($a, 'toc_item_letter_spacing', $s['toc_item_letter_spacing'] ?? null);
+                self::attrI($a, 'toc_item_transform', $s['toc_item_transform'] ?? null);
+
+                return '[falcon_toc '.trim($a).$vis.' /]';
 
             case 'code_block':
                 $a = $base;
@@ -2903,6 +3036,137 @@ class BuilderShortcodeConverter
                     'visibility' => $vis,
                 ]];
 
+            case 'callout':
+                // The body holds the text as written, with < and & as entities. Older
+                // content and any text containing this element's own closing tag is
+                // base64 and says so with enc="b64" — and only then is it decoded. A
+                // short lowercase word is valid base64 too, so decoding a hand-written
+                // body would produce bytes that are not valid UTF-8, and json_encode
+                // would then fail on the whole layout: one hand-typed shortcode would
+                // blank the entire page rather than just its own box. Requiring the
+                // value to re-encode to exactly what was in the body is the check that
+                // separates the two.
+                $calRaw = self::unmangleBody($inner, true);
+                $calTrim = trim($calRaw);
+                $calBody = html_entity_decode($calRaw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+                if ($calTrim !== '' && ($a['enc'] ?? '') === 'b64') {
+                    $calTry = base64_decode($calTrim, true);
+                    if ($calTry !== false && base64_encode($calTry) === $calTrim && mb_check_encoding($calTry, 'UTF-8')) {
+                        $calBody = $calTry;
+                    }
+                } elseif ($calTrim === '') {
+                    $calBody = '';
+                }
+
+                return ['id' => $a['id'] ?? self::uid(), 'type' => 'callout', 'settings' => [
+                    'body' => trim($calBody),
+                    'variant' => $a['variant'] ?? 'note',
+                    'preset' => $a['preset'] ?? 'bar',
+                    // Written whenever the element had one, so a cleared title stays
+                    // cleared: the renderer only falls back to the variant's name for a
+                    // title that was never set, and an absent attribute is exactly that.
+                    'title' => $a['title'] ?? null,
+                    'icon' => $a['icon'] ?? '',
+                    'iconStyle' => $a['icon_style'] ?? '',
+                    'accent' => $a['accent'] ?? '',
+                    'bgColor' => $a['bg'] ?? '',
+                    'titleColor' => $a['title_color'] ?? '',
+                    'bodyColor' => $a['body_color'] ?? '',
+                    'fill' => $a['fill'] ?? '',
+                    'radius' => self::numOrBlank($a['radius'] ?? null),
+                    'padY' => self::numOrBlank($a['pad_y'] ?? null),
+                    'padX' => self::numOrBlank($a['pad_x'] ?? null),
+                    'gap' => self::numOrBlank($a['gap'] ?? null),
+                    'barWidth' => self::numOrBlank($a['bar'] ?? null),
+                    'borderWidth' => self::numOrBlank($a['border'] ?? null),
+                    'iconSize' => self::numOrBlank($a['icon_size'] ?? null),
+                    'titleSize' => self::numOrBlank($a['title_size'] ?? null),
+                    'titleWeight' => $a['title_weight'] ?? '',
+                    'bodySize' => self::numOrBlank($a['body_size'] ?? null),
+                    'collapsible' => ($a['collapsible'] ?? '') === 'yes',
+                    'openByDefault' => ($a['open'] ?? '') !== 'no',
+                    'marginTop' => isset($a['margin_top']) ? self::num($a['margin_top']) : 0,
+                    'marginTopUnit' => $a['margin_top_unit'] ?? 'px',
+                    'marginBottom' => isset($a['margin_bottom']) ? self::num($a['margin_bottom']) : 0,
+                    'marginBottomUnit' => $a['margin_bottom_unit'] ?? 'px',
+                    'cssClass' => $a['css_class'] ?? null,
+                    'cssId' => $a['css_id'] ?? null,
+                    'cal_title_family' => $a['cal_title_family'] ?? null,
+                    'cal_title_weight' => $a['cal_title_weight'] ?? null,
+                    'cal_title_size' => $a['cal_title_size'] ?? null,
+                    'cal_title_line_height' => $a['cal_title_line_height'] ?? null,
+                    'cal_title_letter_spacing' => $a['cal_title_letter_spacing'] ?? null,
+                    'cal_title_transform' => $a['cal_title_transform'] ?? null,
+                    'cal_body_family' => $a['cal_body_family'] ?? null,
+                    'cal_body_weight' => $a['cal_body_weight'] ?? null,
+                    'cal_body_size' => $a['cal_body_size'] ?? null,
+                    'cal_body_line_height' => $a['cal_body_line_height'] ?? null,
+                    'cal_body_letter_spacing' => $a['cal_body_letter_spacing'] ?? null,
+                    'cal_body_transform' => $a['cal_body_transform'] ?? null,
+                    'visibility' => $vis,
+                ]];
+
+            case 'toc':
+                return ['id' => $a['id'] ?? self::uid(), 'type' => 'toc', 'settings' => [
+                    'preset' => $a['preset'] ?? 'card',
+                    'title' => $a['title'] ?? null,
+                    'minLevel' => isset($a['min_level']) ? (int) $a['min_level'] : 2,
+                    'maxLevel' => isset($a['max_level']) ? (int) $a['max_level'] : 3,
+                    'scope' => $a['scope'] ?? '',
+                    'exclude' => $a['exclude'] ?? '',
+                    'collapsible' => ($a['collapsible'] ?? '') === 'yes',
+                    'openByDefault' => ($a['open'] ?? '') !== 'no',
+                    'sticky' => ($a['sticky'] ?? '') === 'yes',
+                    'stickyTop' => isset($a['sticky_top']) ? (int) $a['sticky_top'] : 24,
+                    'maxHeight' => isset($a['max_height']) ? (int) $a['max_height'] : 0,
+                    'scrollSpy' => ($a['spy'] ?? '') !== 'no',
+                    'smoothScroll' => ($a['smooth'] ?? '') !== 'no',
+                    'scrollOffset' => isset($a['offset']) ? (int) $a['offset'] : 80,
+                    'progress' => ($a['progress'] ?? '') === 'yes',
+                    'backToTop' => ($a['back_to_top'] ?? '') === 'yes',
+                    'minHeadings' => isset($a['min_headings']) ? (int) $a['min_headings'] : 2,
+                    'bg' => $a['bg'] ?? '',
+                    'borderColor' => $a['border_color'] ?? '',
+                    'borderWidth' => self::numOrBlank($a['border'] ?? null),
+                    'radius' => self::numOrBlank($a['radius'] ?? null),
+                    'padY' => self::numOrBlank($a['pad_y'] ?? null),
+                    'padX' => self::numOrBlank($a['pad_x'] ?? null),
+                    'titleColor' => $a['title_color'] ?? '',
+                    'titleSize' => self::numOrBlank($a['title_size'] ?? null),
+                    'titleWeight' => $a['title_weight'] ?? '',
+                    'linkColor' => $a['link_color'] ?? '',
+                    'activeColor' => $a['active_color'] ?? '',
+                    'hoverColor' => $a['hover_color'] ?? '',
+                    'fontSize' => self::numOrBlank($a['font_size'] ?? null),
+                    'itemGap' => self::numOrBlank($a['item_gap'] ?? null),
+                    'indent' => self::numOrBlank($a['indent'] ?? null),
+                    'marker' => $a['marker'] ?? '',
+                    // Three states, not two: yes, no, and "follow the preset". A plain
+                    // boolean would turn an untouched element into a permanent "off" the
+                    // first time it was saved, and the preset could never move it again.
+                    'guide' => isset($a['guide']) ? ($a['guide'] === 'yes') : '',
+                    'marginTop' => isset($a['margin_top']) ? self::num($a['margin_top']) : 0,
+                    'marginTopUnit' => $a['margin_top_unit'] ?? 'px',
+                    'marginBottom' => isset($a['margin_bottom']) ? self::num($a['margin_bottom']) : 0,
+                    'marginBottomUnit' => $a['margin_bottom_unit'] ?? 'px',
+                    'cssClass' => $a['css_class'] ?? null,
+                    'cssId' => $a['css_id'] ?? null,
+                    'toc_title_family' => $a['toc_title_family'] ?? null,
+                    'toc_title_weight' => $a['toc_title_weight'] ?? null,
+                    'toc_title_size' => $a['toc_title_size'] ?? null,
+                    'toc_title_line_height' => $a['toc_title_line_height'] ?? null,
+                    'toc_title_letter_spacing' => $a['toc_title_letter_spacing'] ?? null,
+                    'toc_title_transform' => $a['toc_title_transform'] ?? null,
+                    'toc_item_family' => $a['toc_item_family'] ?? null,
+                    'toc_item_weight' => $a['toc_item_weight'] ?? null,
+                    'toc_item_size' => $a['toc_item_size'] ?? null,
+                    'toc_item_line_height' => $a['toc_item_line_height'] ?? null,
+                    'toc_item_letter_spacing' => $a['toc_item_letter_spacing'] ?? null,
+                    'toc_item_transform' => $a['toc_item_transform'] ?? null,
+                    'visibility' => $vis,
+                ]];
+
             case 'code_block':
                 // The body holds the code as written. Older content, and any snippet
                 // that contains this element's own closing tag, is base64 and says so
@@ -4049,13 +4313,65 @@ class BuilderShortcodeConverter
     // Helpers
     // =========================================================================
 
-    /** Append ' key="value"' to a string (used for element inline attrs) */
+    /**
+     * Append ' key="value"' to a string (used for element inline attrs).
+     *
+     * The value's own double quotes become &quot;, because an attribute is delimited by
+     * double quotes and a raw one inside ends it early: a Callout titled Do not use
+     * "force" came back as `Do not use `, with the rest of the shortcode's attributes
+     * read as part of the title. attrs() decodes them again on the way back, so the
+     * round trip is lossless and every element that writes free text through here — a
+     * table caption, a code block's filename, a heading — is fixed by the same change.
+     */
     private static function attrI(string &$str, string $key, $value, $skip = null): void
     {
         if ($value === null || $value === '' || $value === $skip) {
             return;
         }
-        $str .= ' '.$key.'="'.$value.'"';
+        $str .= ' '.$key.'="'.str_replace('"', '&quot;', (string) $value).'"';
+    }
+
+    /**
+     * Append an attribute that must survive being cleared.
+     *
+     * attrI() drops an empty value, which is right for almost everything — an empty
+     * attribute is noise. A title is the exception. The renderer falls back to the
+     * variant's name only for a title that was never set, which is what a freshly
+     * dropped element has, so clearing one has to be told apart from never having
+     * written one. Dropped, every callout an author deliberately untitled grew its
+     * title back the next time the page was saved.
+     */
+    private static function attrKeepEmpty(string &$str, string $key, array $settings, string $settingKey): void
+    {
+        if (!array_key_exists($settingKey, $settings) || $settings[$settingKey] === null) {
+            return;
+        }
+
+        if (trim((string) $settings[$settingKey]) === '') {
+            $str .= ' '.$key.'=""';
+
+            return;
+        }
+
+        self::attrI($str, $key, $settings[$settingKey]);
+    }
+
+    /**
+     * A number an author may also leave empty.
+     *
+     * These fields are three-state: a number, or blank meaning "follow the preset".
+     * Casting blindly would turn blank into 0 — a zero-width border rather than the
+     * preset's — and leaving them as strings would make '6' come back where 6 went in,
+     * which is the kind of difference that shows up as a spurious unsaved-changes
+     * prompt rather than as anything visible.
+     */
+    private static function numOrBlank($value)
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        return self::num($value);
     }
 
     /** Append to attr array (used for section/col attrs) */
@@ -4113,12 +4429,19 @@ class BuilderShortcodeConverter
         }
     }
 
+    /**
+     * Read ' key="value"' pairs back.
+     *
+     * &quot; is decoded here to undo what attrI() writes. Only that one entity: a value
+     * may legitimately contain &amp; or &lt; — a code block's body attributes do — and
+     * decoding those as well would change text nobody asked to change.
+     */
     private static function attrs(string $str): array
     {
         $out = [];
         preg_match_all('/(\w+)\s*=\s*"([^"]*)"/', $str, $m, PREG_SET_ORDER);
         foreach ($m as $pair) {
-            $out[$pair[1]] = $pair[2];
+            $out[$pair[1]] = str_replace('&quot;', '"', $pair[2]);
         }
 
         return $out;

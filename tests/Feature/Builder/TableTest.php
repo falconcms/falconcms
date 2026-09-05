@@ -152,13 +152,13 @@ class TableTest extends TestCase
     public function test_a_cell_can_hold_a_button(): void
     {
         $this->assertSame(
-            '<a class="fc-tbl-btn fc-tbl-btn-primary" href="https://x.test/buy">Buy Pro</a>',
+            '<a class="fc-mk-btn fc-mk-btn-primary" href="https://x.test/buy">Buy Pro</a>',
             TableStyles::cell('[button Buy Pro](https://x.test/buy)')
         );
 
         foreach (['ghost', 'soft'] as $variant) {
             $this->assertSame(
-                '<a class="fc-tbl-btn fc-tbl-btn-'.$variant.'" href="/a">Go</a>',
+                '<a class="fc-mk-btn fc-mk-btn-'.$variant.'" href="/a">Go</a>',
                 TableStyles::cell("[button:{$variant} Go](/a)")
             );
         }
@@ -177,7 +177,7 @@ class TableTest extends TestCase
      */
     public function test_a_button_is_not_read_as_a_link(): void
     {
-        $this->assertStringContainsString('fc-tbl-btn', TableStyles::cell('[button Buy](/b)'));
+        $this->assertStringContainsString('fc-mk-btn', TableStyles::cell('[button Buy](/b)'));
 
         // And a link is still a link, including one whose label merely mentions buttons.
         $this->assertSame('<a href="/b">buttons</a>', TableStyles::cell('[buttons](/b)'));
@@ -200,7 +200,7 @@ class TableTest extends TestCase
     {
         $out = TableStyles::cell('[button:"onmouseover=alert(1) Go](/a)');
 
-        $this->assertStringNotContainsString('fc-tbl-btn', $out);
+        $this->assertStringNotContainsString('fc-mk-btn', $out);
         $this->assertStringNotContainsString('"onmouseover', $out);
         $this->assertSame('<a href="/a">button:&quot;onmouseover=alert(1) Go</a>', $out);
     }
@@ -212,10 +212,10 @@ class TableTest extends TestCase
     public function test_cells_can_carry_icons(): void
     {
         foreach (['[check]', '[yes]', '[tick]'] as $token) {
-            $this->assertSame('<i class="fas fa-check fc-tbl-yes"></i>', TableStyles::cell($token));
+            $this->assertSame('<i class="fas fa-check fc-mk-yes"></i>', TableStyles::cell($token));
         }
         foreach (['[cross]', '[no]', '[x]'] as $token) {
-            $this->assertSame('<i class="fas fa-times fc-tbl-no"></i>', TableStyles::cell($token));
+            $this->assertSame('<i class="fas fa-times fc-mk-no"></i>', TableStyles::cell($token));
         }
         $this->assertSame('<i class="fas fa-star"></i>', TableStyles::cell('[icon fas fa-star]'));
     }
@@ -707,9 +707,9 @@ class TableTest extends TestCase
             'btnColor' => '#FEDCBA',
         ]);
 
-        $this->assertStringContainsString('class="fc-tbl-btn fc-tbl-btn-primary"', $html);
+        $this->assertStringContainsString('class="fc-mk-btn fc-mk-btn-primary"', $html);
         $this->assertStringContainsString('href="https://x.test/buy"', $html);
-        $this->assertStringContainsString('.fc-tbl-btn-primary { background: #123456; color: #FEDCBA; }', $html);
+        $this->assertStringContainsString('.fc-mk-btn-primary { background: #123456; color: #FEDCBA; }', $html);
         $this->assertStringContainsString('color-mix(in srgb, #123456 14%, transparent)', $html);
     }
 
@@ -825,7 +825,7 @@ function cell(text) {
                 const raw = isBtn ? m[3] : m[2];
                 const plain = raw.replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
                 const href = /^\s*javascript:/i.test(plain) ? '#' : raw;
-                const cls = isBtn ? ' class="fc-tbl-btn fc-tbl-btn-' + (m[1] || 'primary') + '"' : '';
+                const cls = isBtn ? ' class="fc-mk-btn fc-mk-btn-' + (m[1] || 'primary') + '"' : '';
                 out += '<a' + cls + ' href="' + href + '">' + label + '</a>';
             } else {
                 out += replacement.replace(/\$(\d)/g, (_, d) => m[+d] === undefined ? '' : m[+d]);

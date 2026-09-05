@@ -193,7 +193,7 @@
              one thing to pick. `color-mix` computes the tint, which means the colour can
              be given in any CSS form — a browser without it takes the plain background
              on the line above and the button is still readable. --}}
-        #{{ $uid }} .fc-tbl-btn {
+        #{{ $uid }} .fc-mk-btn {
             display: inline-flex; align-items: center; gap: 7px;
             padding: .5em .95em; border-radius: 6px;
             border: 1px solid transparent;
@@ -201,20 +201,20 @@
             text-decoration: none; white-space: nowrap;
             transition: filter .15s ease, transform .15s ease, border-color .15s ease;
         }
-        #{{ $uid }} .fc-tbl-btn-primary { background: {{ $btnBg }}; color: {{ $btnColor }}; }
-        #{{ $uid }} .fc-tbl-btn-ghost   { background: transparent; color: {{ $g('textColor') ?: 'inherit' }}; border-color: {{ $g('borderColor') }}; }
-        #{{ $uid }} .fc-tbl-btn-soft    {
+        #{{ $uid }} .fc-mk-btn-primary { background: {{ $btnBg }}; color: {{ $btnColor }}; }
+        #{{ $uid }} .fc-mk-btn-ghost   { background: transparent; color: {{ $g('textColor') ?: 'inherit' }}; border-color: {{ $g('borderColor') }}; }
+        #{{ $uid }} .fc-mk-btn-soft    {
             background: transparent;
             background: color-mix(in srgb, {{ $btnBg }} 14%, transparent);
             color: {{ $btnBg }};
         }
-        #{{ $uid }} .fc-tbl-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
-        #{{ $uid }} .fc-tbl-btn-ghost:hover { filter: none; border-color: {{ $btnBg }}; color: {{ $btnBg }}; }
+        #{{ $uid }} .fc-mk-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+        #{{ $uid }} .fc-mk-btn-ghost:hover { filter: none; border-color: {{ $btnBg }}; color: {{ $btnBg }}; }
         @media (prefers-reduced-motion: reduce) {
-            #{{ $uid }} .fc-tbl-btn, #{{ $uid }} .fc-tbl-btn:hover { transition: none; transform: none; }
+            #{{ $uid }} .fc-mk-btn, #{{ $uid }} .fc-mk-btn:hover { transition: none; transform: none; }
         }
-        #{{ $uid }} .fc-tbl-yes { color: {{ $yesColor }}; }
-        #{{ $uid }} .fc-tbl-no  { color: {{ $noColor }}; }
+        #{{ $uid }} .fc-mk-yes { color: {{ $yesColor }}; }
+        #{{ $uid }} .fc-mk-no  { color: {{ $noColor }}; }
         #{{ $uid }} td i, #{{ $uid }} th i { font-style: normal; }
 
         {{-- Highlighted rows and columns. These come after the stripe and hover rules

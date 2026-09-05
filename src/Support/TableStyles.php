@@ -25,50 +25,15 @@ class TableStyles
     public const ALIGNMENTS = ['left', 'center', 'right'];
 
     /**
-     * Inline markup, applied in order. Each rule is [name, pattern, replacement],
-     * with the pattern written without delimiters or flags so both engines compile it.
-     *
-     * Order matters: code spans come first so that `**not bold**` inside backticks
-     * stays literal.
+     * The cell markup, which is the shared inline markup — the Table was simply the
+     * first element to need it. Kept as a method here because the canvas reads it
+     * under this name and a cell is what the Table calls the field it applies to.
      *
      * @return array<int, array{0: string, 1: string, 2: string}>
      */
     public static function inlineRules(): array
     {
-        return [
-            ['code', '`([^`]+)`', '<code>$1</code>'],
-
-            // Buttons, before links and for the same reason links come before the icon
-            // tokens: [button Buy Pro](…) is also a valid link, one whose label happens
-            // to start with the word button, so whichever rule is tried first decides.
-            // A pricing table's last row is a row of buttons, and an author should not
-            // have to leave the table to get one.
-            //
-            // The variant is one of three fixed words or nothing at all, so what lands
-            // in the class attribute can only ever be one of those three.
-            ['button', '\\[(?:button|btn)(?::(primary|ghost|soft))?\\s+([^\\]]+)\\]\\(([^)\\s]+)\\)',
-                '<a class="fc-tbl-btn fc-tbl-btn-primary" href="$3">$2</a>'],
-
-            // Links come before the icon tokens on purpose. A link needs the "](" that
-            // no icon token has, so trying it first costs nothing — and trying it second
-            // meant [check](https://…) became a tick with a stray "(https://…)" after
-            // it, rather than a link whose label happens to be the word check.
-            ['link', '\\[([^\\]]+)\\]\\(([^)\\s]+)\\)', '<a href="$2">$1</a>'],
-
-            // Icons. A comparison or pricing table is mostly ticks and crosses, and an
-            // author should not have to leave the cell to get one, so the two common
-            // ones have their own token and anything else takes a Font Awesome class.
-            // The class is limited to letters, digits, spaces, dashes and underscores —
-            // there is no way to close the attribute and open another.
-            ['iconyes', '\\[(?:check|yes|tick)\\]', '<i class="fas fa-check fc-tbl-yes"></i>'],
-            ['iconno', '\\[(?:cross|no|x)\\]', '<i class="fas fa-times fc-tbl-no"></i>'],
-            ['icon', '\\[icon\\s+([A-Za-z0-9 _-]+)\\]', '<i class="$1"></i>'],
-            ['bold', '\\*\\*([^*]+)\\*\\*', '<strong>$1</strong>'],
-            ['italic', '\\*([^*]+)\\*', '<em>$1</em>'],
-            // Matched in its escaped form: cell() escapes before the rules run, so a
-            // typed <br> has already become &lt;br&gt; by the time this is tried.
-            ['break', '&lt;br\\s*/?&gt;', '<br>'],
-        ];
+        return InlineMarkup::rules();
     }
 
     /**
@@ -144,89 +109,13 @@ class TableStyles
     }
 
     /**
-     * Render one cell: escape everything, then apply the inline markup.
+     * Render one cell: the shared inline markup, escaping first.
      *
-     * Escaping first is what makes this safe — by the time the rules run there is no
-     * markup left in the text for them to complete, so the only tags in the result are
-     * the ones they added themselves.
+     * @see InlineMarkup::render()
      */
     public static function cell(?string $text): string
     {
-        $in = htmlspecialchars((string) $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $rules = self::inlineRules();
-
-        $out = '';
-        $len = strlen($in);
-        $i = 0;
-
-        // A single left-to-right scan, first matching rule wins, and what a rule
-        // produces is never scanned again.
-        //
-        // Running the rules one after another over the whole string instead — the
-        // obvious way — let the bold rule reach inside a code span the code rule had
-        // already produced, so `**not bold**` came out bold. In Markdown backticks win,
-        // and an author showing literal asterisks in a cell has no other way to do it.
-        while ($i < $len) {
-            $matched = false;
-
-            foreach ($rules as [$name, $pattern, $replacement]) {
-                if (preg_match(self::compile($pattern), $in, $m, 0, $i) !== 1 || $m[0] === '') {
-                    continue;
-                }
-
-                if ($name === 'link' || $name === 'button') {
-                    // The button rule captures its variant first, so its label and href
-                    // sit one group further along than a link's.
-                    $isButton = $name === 'button';
-                    $label = $isButton ? $m[2] : $m[1];
-                    $href = $isButton ? $m[3] : $m[2];
-
-                    // Escaping already neutralised quotes and angle brackets; this stops
-                    // the one scheme that would still execute.
-                    if (preg_match('/^\s*javascript:/i', html_entity_decode($href, ENT_QUOTES, 'UTF-8'))) {
-                        $href = '#';
-                    }
-
-                    $class = $isButton
-                        ? ' class="fc-tbl-btn fc-tbl-btn-'.(($m[1] ?? '') !== '' ? $m[1] : 'primary').'"'
-                        : '';
-
-                    $out .= '<a'.$class.' href="'.$href.'">'.$label.'</a>';
-                } else {
-                    $out .= preg_replace_callback(
-                        '/\$(\d)/',
-                        static fn (array $g) => $m[(int) $g[1]] ?? '',
-                        $replacement
-                    ) ?? $replacement;
-                }
-
-                $i += strlen($m[0]);
-                $matched = true;
-                break;
-            }
-
-            if (!$matched) {
-                $out .= $in[$i];
-                $i++;
-            }
-        }
-
-        return $out;
-    }
-
-    /**
-     * Wrap a shared pattern for PCRE.
-     *
-     * The rules are written without delimiters because the canvas compiles the same
-     * strings as JavaScript RegExps, which have none. One of them contains a literal
-     * "/" — the self-closing slash in a <br/> — so the slash is escaped here rather
-     * than in the rule; escaping it in the rule would reach the canvas as a stray
-     * backslash. TableTest asserts no rule ships a pre-escaped slash, which would
-     * double up here.
-     */
-    private static function compile(string $pattern): string
-    {
-        return '/'.str_replace('/', '\\/', $pattern).'/A';
+        return InlineMarkup::render($text);
     }
 
     /**
