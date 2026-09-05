@@ -186,23 +186,30 @@ class MenuElementTest extends TestCase
     {
         $template = $this->template();
 
-        $this->assertStringContainsString('PHP_URL_PATH', $template,
-            'the current item is still matched by comparing whole URLs');
+        // The comparison itself moved into falcon_same_page(), because Previous/Next has
+        // to answer the same question — where is this page in that menu — and two copies
+        // of it would drift into two different answers on one page. SamePageTest covers
+        // what it does; this only checks the menu is still asking it.
+        $this->assertStringContainsString('falcon_same_page(', $template,
+            'the menu no longer uses the shared page comparison');
         $this->assertStringNotContainsString(
             "\$isActive = (rtrim(\$currentUrl, '/') == rtrim(\$item->url, '/'));",
             $template,
             'the whole-URL comparison is back'
         );
+
+        // And the behaviour it relies on, so this test fails if the helper regresses too.
+        $this->assertTrue(falcon_same_page('/docs', 'https://example.test/docs/'));
+        $this->assertFalse(falcon_same_page('/docs/install', 'https://example.test/docs'));
     }
 
     /** A bare anchor is not a page, and a link to another site is not the page you are on. */
     public function test_anchors_and_external_links_are_never_the_current_item(): void
     {
-        $template = $this->template();
-
-        $this->assertStringContainsString("'#'", $template, 'anchors are not excluded');
-        $this->assertStringContainsString('PHP_URL_HOST', $template,
-            'a link to another host would be treated as the current page');
+        $this->assertFalse(falcon_same_page('#', 'https://example.test/docs'),
+            'a bare anchor was treated as the current page');
+        $this->assertFalse(falcon_same_page('https://elsewhere.test/docs', 'https://example.test/docs'),
+            'a link to another host was treated as the current page');
     }
 
     // ---- rendering with data an old menu could actually have --------------------

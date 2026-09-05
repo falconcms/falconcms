@@ -13,6 +13,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $title
+ * @property string $slug
+ * @property string $type
+ * @property string $status
+ * @property string|null $lang_code
+ * @property int|null $menu_order
+ * @property Carbon|null $published_at
+ */
 class Post extends Model
 {
     use HasFactory, SoftDeletes;

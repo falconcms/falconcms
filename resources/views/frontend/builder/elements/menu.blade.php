@@ -32,19 +32,10 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         //
         // Comparing paths is what was meant. An absolute link to a different host is left
         // alone: that is a link off the site, not the page you are on.
-        $isActive = false;
-        $itemUrl = trim((string) ($item->url ?? ''));
-
-        if ($itemUrl !== '' && $itemUrl !== '#') {
-            $itemHost = parse_url($itemUrl, PHP_URL_HOST);
-            $currentHost = parse_url($currentUrl, PHP_URL_HOST);
-
-            if ($itemHost === null || $itemHost === false || strcasecmp((string) $itemHost, (string) $currentHost) === 0) {
-                $itemPath = rtrim((string) (parse_url($itemUrl, PHP_URL_PATH) ?: '/'), '/');
-                $currentPath = rtrim((string) (parse_url($currentUrl, PHP_URL_PATH) ?: '/'), '/');
-                $isActive = ($itemPath === $currentPath);
-            }
-        }
+        // The comparison itself now lives in falcon_same_page(), because Previous/Next
+        // has to answer exactly the same question — where is this page in that menu —
+        // and two copies of it would drift into two different answers on one page.
+        $isActive = falcon_same_page($item->url ?? '', $currentUrl);
 
         // Mega menu: only for desktop top-level items
         $hasMegaMenu = !$isMobile && !$isSubmenu

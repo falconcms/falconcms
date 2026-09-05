@@ -160,7 +160,7 @@
                   box and pushed a nested row ~24px down inside its column — the parent column's
                   background then showed as a band above it, with all padding set to 0.
                   A flex container does not render whitespace-only text runs at all. --}}
-             :style="(el.type === 'row' || el.type === 'section_separator' || el.type === 'code_block' || el.type === 'table' || el.type === 'callout' || el.type === 'toc' || el.type === 'heading') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : (column.settings.contentLayout === 'row' ? { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0', width: 'auto', minWidth: '0' } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' }))"
+             :style="(el.type === 'row' || el.type === 'section_separator' || el.type === 'code_block' || el.type === 'table' || el.type === 'callout' || el.type === 'toc' || el.type === 'heading' || el.type === 'prev_next') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : (column.settings.contentLayout === 'row' ? { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0', width: 'auto', minWidth: '0' } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' }))"
              @dragover="onDragOver($event, 'element', ci, coli, eli)"
              @drop="onDrop($event, 'element', ci, coli, eli)">
 
@@ -184,6 +184,7 @@
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.table')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.callout')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.toc')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.prev-next')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.html')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.icon-box')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.content-box')
@@ -201,7 +202,7 @@
 
             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
             @php
-            $builtInTypes = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','code_block','table','callout','toc','row']";
+            $builtInTypes = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','code_block','table','callout','toc','prev_next','row']";
             @endphp
             <div v-if="customElements[el.type] !== undefined && !{!! $builtInTypes !!}.includes(el.type)"
                  :style="[{ width: '100%' }, getCustomElementRender(el).wrapperStyle, getCanvasVisibilityStyle(el.settings)]"
@@ -245,7 +246,7 @@
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                              @click.stop="setEditingContext('element', ci, coli, eli)">
                             <i class="fa fa-pen text-[10px]"></i>
-                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit @{{ {heading:'Heading',title:'Title',text:'Text',image:'Image',button:'Button',video:'Video',spacer:'Spacer',section_separator:'Section Separator',code_block:'Code Block',table:'Table',callout:'Callout',toc:'Table of Contents',html:'HTML',icon_box:'Icon Box',content_box:'Content Box',text_block:'Text Block',menu:'Menu',card:'Card',row:'Nested Row',post_grid:'Post Grid',post_content:'Post Content',star_rating:'Star Rating',gallery:'Gallery',special_text:'Special Text',accordion:'Accordion',tabs:'Tabs'}[el.type] || 'Element' }}</div>
+                            <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit @{{ fcElementName(el.type) }}</div>
                         </div>
                         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
                              @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)">

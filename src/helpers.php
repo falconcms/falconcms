@@ -778,6 +778,48 @@ if (!function_exists('forget_cms_options_cache')) {
     }
 }
 
+if (!function_exists('falcon_same_page')) {
+    /**
+     * Do two URLs point at the same page?
+     *
+     * Comparing them as whole strings almost never says yes. What an editor pastes into
+     * a menu is whatever they had on the clipboard — absolute one day, relative the
+     * next, with or without a trailing slash or a fragment — while the page being
+     * rendered always knows its own, fully qualified. "/docs" is not
+     * "https://example.com/docs/", so the Home item was never marked active on the home
+     * page and a Previous/Next list could never find where it was.
+     *
+     * Paths are what was meant. A link to another host is a link off the site, so it is
+     * never the page you are on however its path reads.
+     */
+    function falcon_same_page(?string $a, ?string $b): bool
+    {
+        $a = trim((string) $a);
+        $b = trim((string) $b);
+
+        if ($a === '' || $b === '' || $a === '#') {
+            return false;
+        }
+
+        $hostA = parse_url($a, PHP_URL_HOST);
+        $hostB = parse_url($b, PHP_URL_HOST);
+
+        // Only compared when both sides name a host. One of them being relative means it
+        // is on this site, which is the same thing the other one is saying.
+        if ($hostA && $hostB && strcasecmp((string) $hostA, (string) $hostB) !== 0) {
+            return false;
+        }
+
+        $path = static function (string $url): string {
+            $p = (string) (parse_url($url, PHP_URL_PATH) ?: '/');
+
+            return rtrim($p, '/') === '' ? '/' : rtrim($p, '/');
+        };
+
+        return $path($a) === $path($b);
+    }
+}
+
 if (!function_exists('falcon_anchor_url')) {
     /**
      * Put a slash before the fragment of a link that has one.

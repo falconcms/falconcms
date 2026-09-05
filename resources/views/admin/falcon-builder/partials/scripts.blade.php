@@ -604,6 +604,7 @@
                 { type: 'table', name: 'Table', icon: 'fa fa-table' },
                 { type: 'callout', name: 'Callout', icon: 'fa fa-circle-info' },
                 { type: 'toc', name: 'Table of Contents', icon: 'fa fa-list-ol' },
+                { type: 'prev_next', name: 'Previous / Next', icon: 'fa fa-left-right' },
                 { type: 'icon_list', name: 'Item List', icon: 'fa fa-list-check' },
                 { type: 'video', name: 'Video', icon: 'fa fa-play-circle' },
                 { type: 'icon_box', name: 'Icon Box', icon: 'fa fa-star-half-alt' },
@@ -619,7 +620,30 @@
             ];
             // Advanced elements — available only with a builder_pro license. The palette shows
             // them with a lock badge; adding one without a license shows an upgrade prompt.
-            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc'];
+            // What to call an element type, in one place.
+            //
+            // Five places used to work this out for themselves — the navigator, the
+            // nested navigator, the panel heading, the canvas tooltip, the undo history —
+            // each with its own hand-written exception for text_block, and each therefore
+            // showing "Toc" and "Prev Next" the moment an element arrived with a name the
+            // type does not spell. The palette already carries the real name of every
+            // element it offers, so that is what this reads; the handful of types that
+            // are not in the palette are named below.
+            const FC_ELEMENT_NAMES = {
+                text_block: 'Text Block', special_text: 'Text Block', text: 'Text',
+                heading: 'Heading', button: 'Button', image: 'Image', menu: 'Menu',
+                post_grid: 'Post Grid', post_content: 'Post Content', post_meta: 'Post Meta',
+                product_meta: 'Product Meta', social_icons: 'Social Icons',
+                advanced_search: 'Search', row: 'Nested Row',
+            };
+            const fcElementName = (type) => {
+                if (!type) return 'Element';
+                if (FC_ELEMENT_NAMES[type]) return FC_ELEMENT_NAMES[type];
+                const known = availableElements.find(e => e.type === type);
+                return known ? known.name : String(type).replace(/_/g, ' ');
+            };
+
+            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc', 'prev_next'];
             const isElementPro   = (type) => proElementTypes.includes(type);
             const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
             if (postCardMode.value || layoutMode.value) {
@@ -1712,12 +1736,12 @@
                 if (m.type === 'element') {
                     const el = layout.value[m.ci]?.columns[m.coli]?.elements[m.eli];
                     if (!el) return 'Element';
-                    return (el.type === 'text_block' || el.type === 'special_text') ? 'Text Block' : el.type.replace(/_/g, ' ');
+                    return fcElementName(el.type);
                 }
                 if (m.type === 'nested-element') {
                     const el = layout.value[m.ci]?.columns[m.coli]?.elements[m.eli]?.columns[m.ncoli]?.elements[m.neli];
                     if (!el) return 'Element';
-                    return (el.type === 'text_block' || el.type === 'special_text') ? 'Text Block' : el.type.replace(/_/g, ' ');
+                    return fcElementName(el.type);
                 }
                 return m.type;
             });
@@ -4331,6 +4355,138 @@
                 fontSize: Math.max(11, (+fcTocVal(el, 'fontSize') || 14) - 1.5) + 'px',
             });
 
+
+            // ── Previous / Next ──────────────────────────────────────────────────
+            // Canvas preview — mirrors
+            //   resources/views/frontend/builder/elements/prev-next.blade.php
+            //
+            // The links are not worked out here. Which page comes before this one is a
+            // question about menus and database rows, and the canvas has neither — so
+            // PrevNext::previewFor() answers it on the server for every source the
+            // author might switch to, and hands the answers over. Switching menu or
+            // order in the panel picks a different answer out of the same object, which
+            // means the preview is the page rather than a picture of what it might look
+            // like, and there is no second copy of the ordering to drift.
+            const FC_PN_PRESETS = @json(\FalconCms\Core\Support\PrevNext::presets());
+            const FC_PN_PRESET_OPTIONS = @json(\FalconCms\Core\Support\PrevNext::presetOptions());
+            const FC_PN_PREVIEW = @json(\FalconCms\Core\Support\PrevNext::previewFor($post ?? null));
+
+            function fcPnPreset(el) {
+                const key = (el.settings || {}).preset || 'cards';
+                return FC_PN_PRESETS[key] || FC_PN_PRESETS['cards'];
+            }
+
+            function fcPnVal(el, key) {
+                const s = el.settings || {};
+                return s[key] !== undefined && s[key] !== null && s[key] !== ''
+                    ? s[key] : fcPnPreset(el)[key];
+            }
+
+            // Mirrors PrevNext::resolve(), but only the choosing — the answers themselves
+            // came from the server.
+            function fcPnPair(el) {
+                const s = el.settings || {};
+                const source = s.source || 'menu';
+                let pair = { prev: null, next: null };
+
+                if (source === 'menu' && s.menuId) {
+                    pair = (FC_PN_PREVIEW.menus || {})[String(s.menuId)] || pair;
+                } else if (source === 'type') {
+                    const key = (s.orderBy || 'menu_order') + ':' + (s.orderDir || 'asc');
+                    pair = (FC_PN_PREVIEW.types || {})[key] || pair;
+                }
+
+                pair = { prev: pair.prev, next: pair.next };
+
+                ['prev', 'next'].forEach(side => {
+                    const url = String(s[side + 'Url'] || '').trim();
+                    const title = String(s[side + 'Title'] || '').trim();
+                    if (url) {
+                        pair[side] = { title: title || url, url: url };
+                    } else if (title && pair[side]) {
+                        pair[side] = { title: title, url: pair[side].url };
+                    }
+                });
+
+                return pair;
+            }
+
+            const fcPnLabel = (el, side) => {
+                const s = el.settings || {};
+                const key = side + 'Label';
+                return s[key] === undefined ? (side === 'prev' ? 'Previous' : 'Next') : String(s[key] || '').trim();
+            };
+
+            const fcPnGridStyle = (el) => ({
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: fcPnVal(el, 'gap') + 'px',
+                alignItems: 'stretch',
+            });
+
+            function fcPnLinkStyle(el, side) {
+                const style = {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: fcPnVal(el, 'padY') + 'px ' + fcPnVal(el, 'padX') + 'px',
+                    background: fcPnVal(el, 'bg'),
+                    borderRadius: (fcPnVal(el, 'radius') || 0) + 'px',
+                    textDecoration: 'none',
+                    // A lone Next keeps the right-hand column, where a reader looks for it.
+                    gridColumn: (side === 'next' && !fcPnPair(el).prev) ? '2' : 'auto',
+                    flexDirection: side === 'next' ? 'row-reverse' : 'row',
+                    textAlign: side === 'next' ? 'right' : 'left',
+                };
+                if (+fcPnVal(el, 'borderWidth') > 0) {
+                    style.border = fcPnVal(el, 'borderWidth') + 'px solid ' + fcPnVal(el, 'borderColor');
+                }
+                return style;
+            }
+
+            const fcPnArrowStyle = (el) => ({
+                flex: '0 0 auto', color: fcPnVal(el, 'arrowColor'),
+                fontSize: '14px', lineHeight: '1', fontStyle: 'normal',
+            });
+
+            function fcPnLabelStyle(el) {
+                return Object.assign({
+                    display: 'block',
+                    color: fcPnVal(el, 'labelColor'),
+                    fontSize: fcPnVal(el, 'labelSize') + 'px',
+                    fontWeight: '600',
+                    letterSpacing: '.04em',
+                    textTransform: 'uppercase',
+                    marginBottom: '3px',
+                }, fcTblTypo(el, 'pn_label'));
+            }
+
+            function fcPnTitleStyle(el) {
+                return Object.assign({
+                    display: 'block',
+                    color: fcPnVal(el, 'titleColor'),
+                    fontSize: fcPnVal(el, 'titleSize') + 'px',
+                    fontWeight: fcPnVal(el, 'titleWeight'),
+                    lineHeight: '1.35',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                }, fcTblTypo(el, 'pn_title'));
+            }
+
+            // Why the element is showing nothing, in the one place an author can act on
+            // it. Empty is a legitimate answer — the page is not in the sequence — and
+            // without saying so the canvas would look identical to a broken element.
+            function fcPnEmptyReason(el) {
+                const s = el.settings || {};
+                const source = s.source || 'menu';
+
+                if (source === 'manual') return 'Set a link for either side in the Content tab.';
+                if (source === 'menu' && !s.menuId) return 'Choose the menu that holds this page in the Content tab.';
+                if (source === 'menu') return 'This page is not in that menu, so it has no neighbours in it.';
+                return 'No other published pages of this type to step through.';
+            }
+
             // ── Code Block ───────────────────────────────────────────────────────
             // Canvas preview — mirrors
             // resources/views/frontend/builder/elements/code-block.blade.php.
@@ -5154,6 +5310,23 @@
                             cssClass: '', cssId: '',
                             visibility: { mobile: true, tablet: true, desktop: true },
                         } : {}),
+                        ...(type === 'prev_next' ? {
+                            preset: 'cards',
+                            source: 'menu', menuId: '',
+                            orderBy: 'menu_order', orderDir: 'asc',
+                            prevLabel: 'Previous', nextLabel: 'Next',
+                            showTitles: true, showArrows: true,
+                            prevUrl: '', prevTitle: '', nextUrl: '', nextTitle: '',
+                            bg: '', borderColor: '', borderWidth: '', radius: '',
+                            padY: '', padX: '', gap: '',
+                            labelColor: '', labelSize: '',
+                            titleColor: '', titleSize: '', titleWeight: '',
+                            arrowColor: '', hoverBorder: '',
+                            marginTop: 0, marginTopUnit: 'px',
+                            marginBottom: 0, marginBottomUnit: 'px',
+                            cssClass: '', cssId: '',
+                            visibility: { mobile: true, tablet: true, desktop: true },
+                        } : {}),
                         ...(type === 'toc' ? {
                             preset: 'card',
                             title: 'On this page',
@@ -5945,6 +6118,7 @@
                 fcTblPresetOptions: FC_TBL_PRESET_OPTIONS, fcTblAlignments: FC_TBL_ALIGNMENTS,
                 fcCalVariantOptions: FC_CAL_VARIANT_OPTIONS, fcCalPresetOptions: FC_CAL_PRESET_OPTIONS,
                 fcTocPresetOptions: FC_TOC_PRESET_OPTIONS, fcTocLevels: FC_TOC_LEVELS,
+                fcPnPresetOptions: FC_PN_PRESET_OPTIONS,
                 fcCalVal, fcCalTitle, fcCalIcon, fcCalShowIcon, fcCalBody, fcCalBodyCss, fcCalScopeId,
                 fcCalVariantIcon, fcCalVariantAccent, fcCalColorPreview,
                 fcCalOuterStyle, fcCalHeadStyle, fcCalTitleStyle, fcCalIconStyle, fcCalChevStyle, fcCalBodyStyle,
@@ -5952,6 +6126,9 @@
                 fcTocOuterStyle, fcTocHeadStyle, fcTocTitleStyle, fcTocCountStyle, fcTocChevStyle,
                 fcTocProgressStyle, fcTocProgressBarStyle, fcTocItemStyle, fcTocMarkerStyle, fcTocTopStyle,
                 fcTocScopeId, fcTocCss,
+                fcElementName,
+                fcPnVal, fcPnPair, fcPnLabel, fcPnEmptyReason,
+                fcPnGridStyle, fcPnLinkStyle, fcPnArrowStyle, fcPnLabelStyle, fcPnTitleStyle,
                 fcTblCell, fcTblCellFor, fcTblRows, fcTblHead, fcTblBody, fcTblAlign, fcTblVal,
                 fcTblSpec, fcTblTypo, fcTblHoverCss, fcTblScopeId,
                 fcTblOuterStyle, fcTblScrollStyle, fcTblTableStyle,

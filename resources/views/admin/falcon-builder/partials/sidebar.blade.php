@@ -90,7 +90,7 @@
                                  @dragend="navDragEnd()"
                                  @click="setEditingContext('element', ci, coli, eli)">
                                 <i :class="el.icon" class="text-[11px] text-slate-400 w-4 text-center"></i>
-                                <span class="text-[14px] text-slate-600 flex-1 capitalize">@{{ (el.type === 'text_block' || el.type === 'special_text') ? 'Text Block' : el.type.replace(/_/g, ' ') }}</span>
+                                <span class="text-[14px] text-slate-600 flex-1 capitalize">@{{ fcElementName(el.type) }}</span>
                                 <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                     <i @click.stop @mousedown.stop class="fa fa-grip-vertical text-[9px] text-slate-300 hover:text-slate-500 cursor-grab" title="Drag to reorder"></i>
                                     <i @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Below"></i>
@@ -152,7 +152,7 @@
                                              @dragend="navDragEnd()"
                                              @click="setEditingContext('element', ci, coli, eli, ncoli, neli)">
                                             <i :class="nel.icon" class="text-[10px] text-slate-400 w-4 text-center"></i>
-                                            <span class="text-[14px] text-slate-600 flex-1 capitalize">@{{ (nel.type === 'text_block' || nel.type === 'special_text') ? 'Text Block' : nel.type.replace(/_/g, ' ') }}</span>
+                                            <span class="text-[14px] text-slate-600 flex-1 capitalize">@{{ fcElementName(nel.type) }}</span>
                                             <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                                 <i @click.stop @mousedown.stop class="fa fa-grip-vertical text-[9px] text-slate-300 hover:text-slate-500 cursor-grab" title="Drag to reorder"></i>
                                                 <i @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli, neli + 1)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Below"></i>
@@ -260,7 +260,7 @@
                                 <i :class="editingElement?.icon || 'fa fa-cube'" class="text-sm"></i>
                             </div>
                             <div>
-                                <h3 class="text-[11px] font-black uppercase tracking-widest text-slate-800">@{{ editingElement?.name || ( (editingElement?.type === 'text_block' || editingElement?.type === 'special_text') ? 'Text Block' : (editingElement?.type || 'Element').replace(/_/g, ' ') ) }} Settings</h3>
+                                <h3 class="text-[11px] font-black uppercase tracking-widest text-slate-800">@{{ editingElement?.name || fcElementName(editingElement?.type) }} Settings</h3>
                                 <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Edit Content & Design</p>
                             </div>
                         </div>
@@ -1323,6 +1323,11 @@
                             <!-- ══ TABLE ELEMENT ══ -->
                             <div v-else-if="editingElement?.type === 'table'" class="space-y-8">
                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.table-content')
+                            </div>
+
+                            <!-- ══ PREVIOUS / NEXT ELEMENT ══ -->
+                            <div v-else-if="editingElement?.type === 'prev_next'" class="space-y-8">
+                                @include('falcon-cms::admin.falcon-builder.partials.components.elements.prev-next-content')
                             </div>
 
                             <!-- ══ CALLOUT ELEMENT ══ -->
@@ -3640,6 +3645,11 @@
                              <!-- Design Settings for Heading -->
                              <div v-else-if="editingElement?.type === 'heading'" class="space-y-6 pb-10">
                                  @include('falcon-cms::admin.falcon-builder.partials.components.elements.heading-design')
+                             </div>
+
+                             <!-- Design Settings for Previous / Next -->
+                             <div v-else-if="editingElement?.type === 'prev_next'" class="space-y-6 pb-10">
+                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.prev-next-design')
                              </div>
 
                              <!-- Design Settings for Callout -->

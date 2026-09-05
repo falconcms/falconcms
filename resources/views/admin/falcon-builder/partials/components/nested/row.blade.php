@@ -257,7 +257,7 @@
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
                      ]"
-                     :style="(nestedEl.type === 'row' || nestedEl.type === 'section_separator' || nestedEl.type === 'code_block' || nestedEl.type === 'table' || nestedEl.type === 'callout' || nestedEl.type === 'toc' || nestedEl.type === 'heading') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
+                     :style="(nestedEl.type === 'row' || nestedEl.type === 'section_separator' || nestedEl.type === 'code_block' || nestedEl.type === 'table' || nestedEl.type === 'callout' || nestedEl.type === 'toc' || nestedEl.type === 'heading' || nestedEl.type === 'prev_next') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
                      @dragover="onDragOver($event, 'element', ci, coli, eli, ncoli, nestedEli)"
                      @drop="onDrop($event, 'element', ci, coli, eli, ncoli, nestedEli)">
                         <div v-if="elementLocked(nestedEl.type)" class="absolute top-1 right-1 z-30 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm pointer-events-none" title="Pro element — upgrade to edit or move">
@@ -282,6 +282,7 @@
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.table')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.callout')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.toc')
+                            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.prev-next')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.html')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.icon-box')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.content-box')
@@ -297,7 +298,7 @@
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.ticker')
                             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
                             @php
-                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','code_block','table','callout','toc','row']";
+                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','code_block','table','callout','toc','prev_next','row']";
                             @endphp
                             <div v-if="customElements[el.type] !== undefined && !{!! $builtInTypesNested !!}.includes(el.type)"
                                  :style="[{ width: '100%' }, getCustomElementRender(el).wrapperStyle, getCanvasVisibilityStyle(el.settings)]"
