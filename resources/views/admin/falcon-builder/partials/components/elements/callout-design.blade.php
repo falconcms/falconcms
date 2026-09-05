@@ -32,22 +32,20 @@
         </select>
     </div>
 
-    <div>
-        <div class="flex justify-between items-center mb-1.5">
-            <label class="text-[11px] font-bold text-slate-500">Icon class</label>
-            <button @click="editingElement.settings.icon = ''" title="Back to the type's own icon"
-                    class="text-slate-300 hover:text-red-500 transition-colors">
-                <i class="fa fa-undo text-[10px]"></i>
-            </button>
-        </div>
-        <input type="text" v-model="editingElement.settings.icon"
-               :placeholder="fcCalVariantIcon(editingElement.settings.variant || 'note')"
-               class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
-        <p class="text-[11px] text-slate-500 mt-1.5">
-            Empty uses the icon that belongs to the type. Any icon set the site loads works —
-            <code>fas fa-rocket</code>, <code>bi bi-gear</code>.
-        </p>
-    </div>
+    {{-- The builder's own icon picker, the same one the Icon Box and the Section
+         Separator use, rather than a box to type a class name into. An author who knows
+         the class already has nothing to gain from typing it, and one who does not had
+         no way to find out what was available.
+
+         Empty is still meaningful here and stays reachable through the picker's Clear:
+         it means the icon that belongs to the chosen type, which is why the preview is
+         told to show that icon rather than the generic star. --}}
+    @include('falcon-cms::admin.falcon-builder.partials.components.fields.icon', [
+        'key' => 'icon',
+        'label' => 'Icon',
+        'fallback' => "fcCalVariantIcon(editingElement.settings.variant || 'note')",
+        'emptyLabel' => "'Uses the ' + (fcCalVariantOptions[editingElement.settings.variant || 'note'] || 'Note') + ' icon'",
+    ])
 
     <div>
         <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Icon size</label>

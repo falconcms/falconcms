@@ -1,8 +1,17 @@
 {{-- Reusable Icon picker (Font Awesome search + Solid/Regular/Brands + grid + preview).
-     Vars: $key (setting key), $label (optional), $target (optional JS object path) --}}
+     Vars: $key (setting key), $label (optional), $target (optional JS object path),
+           $fallback / $emptyLabel (optional JS expressions for what an empty field
+           actually renders, and what to call it).
+
+     $fallback exists because "empty" does not mean the same thing everywhere. On most
+     elements an unset icon is simply no icon, and the star below stands in for one. On
+     the Callout it means the icon that belongs to the chosen type — so a preview showing
+     a star there would be telling the author something untrue about their own page. --}}
 @php
-    $target = $target ?? 'editingElement.settings';
-    $label  = $label  ?? 'Icon';
+    $target   = $target   ?? 'editingElement.settings';
+    $label    = $label    ?? 'Icon';
+    $fallback   = $fallback   ?? "'fas fa-star'";
+    $emptyLabel = $emptyLabel ?? "'No icon selected'";
 @endphp
 <div>
     <label class="text-[12px] font-bold text-[#333] block mb-2">{{ $label }}</label>
@@ -40,10 +49,10 @@
         <div class="p-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="w-7 h-7 bg-white rounded border border-slate-200 flex items-center justify-center text-[#0091ea]">
-                    <i :class="{{ $target }}.{{ $key }} || 'fas fa-star'"></i>
+                    <i :class="{{ $target }}.{{ $key }} || {!! $fallback !!}"></i>
                 </div>
                 <span class="text-[10px] text-slate-500 font-medium truncate max-w-[120px]"
-                      v-text="{{ $target }}.{{ $key }} || 'No icon selected'"></span>
+                      v-text="{{ $target }}.{{ $key }} || {!! $emptyLabel !!}"></span>
             </div>
             <button v-if="{{ $target }}.{{ $key }}" @click="{{ $target }}.{{ $key }} = ''"
                     class="text-[10px] text-red-400 hover:text-red-500 font-bold uppercase">Clear</button>

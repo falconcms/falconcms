@@ -100,6 +100,32 @@ class CalloutTest extends TestCase
         $this->assertSame('icon:star_2', CalloutStyles::safeIcon('icon:star_2'));
     }
 
+    /**
+     * The Design tab offers the builder's icon picker, not a box to type a class into.
+     *
+     * An author who already knows the class gains nothing from typing it, and one who
+     * does not had no way to find out what was available — the field was a text input
+     * whose only documentation was a placeholder. The picker is the same shared partial
+     * the Icon Box and the Section Separator use, so it lists every icon set the site
+     * has loaded rather than only the ones someone remembered to mention.
+     */
+    public function test_the_design_tab_uses_the_shared_icon_picker(): void
+    {
+        $panel = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/components/elements/callout-design.blade.php'
+        );
+
+        $this->assertStringContainsString('partials.components.fields.icon', $panel,
+            'the Callout no longer uses the shared icon picker');
+        $this->assertDoesNotMatchRegularExpression('/v-model="editingElement\.settings\.icon"/', $panel,
+            'the free-text icon class field is back alongside the picker');
+
+        // Empty still means the variant's own icon, so the picker's preview is told to
+        // show that rather than the generic star it shows everywhere else.
+        $this->assertStringContainsString('fcCalVariantIcon(', $panel,
+            'the picker would preview an empty field as a star, which is not what renders');
+    }
+
     // ---- body formatting -------------------------------------------------------
 
     /** The body is content, not markup: nothing an author types may become live HTML. */
