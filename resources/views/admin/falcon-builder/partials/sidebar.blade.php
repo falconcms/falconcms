@@ -878,8 +878,27 @@
                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                 </div>
 
-                                <!-- Link URL -->
+                                <!-- Lightbox -->
                                 <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">Image Lightbox</label>
+                                        <div class="flex bg-slate-50 border border-slate-100 rounded p-1 w-fit">
+                                            <button @click="editingElement.settings.lightbox = true"
+                                                    :class="editingElement.settings.lightbox ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                                                    class="px-4 py-1.5 text-[11px] font-black uppercase rounded transition-all">Yes</button>
+                                            <button @click="editingElement.settings.lightbox = false"
+                                                    :class="!editingElement.settings.lightbox ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                                                    class="px-4 py-1.5 text-[11px] font-black uppercase rounded transition-all">No</button>
+                                        </div>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500">
+                                        Clicking the image opens it full size over the page. A link would want the same
+                                        click, so the Link URL below is put away while this is on — and ignored on the
+                                        page, so an image that already had one does not quietly keep following it.
+                                    </p>
+                                </div>
+                                <!-- Link URL -->
+                                <div v-if="!editingElement.settings.lightbox">
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Link URL</label>
                                         <button @click.stop="openDynSrcMenu(editingElement.settings, 'link_dynamic_source', 'link', $event)"
@@ -908,7 +927,7 @@
                                 </div>
 
                                 <!-- Link Target -->
-                                <div v-if="editingElement.settings.linkUrl || editingElement.settings.link_dynamic_source">
+                                <div v-if="!editingElement.settings.lightbox && (editingElement.settings.linkUrl || editingElement.settings.link_dynamic_source)">
                                     <div class="flex justify-between items-center mb-3">
                                         <label class="text-[12px] font-bold text-[#333]">Link Target</label>
                                     </div>

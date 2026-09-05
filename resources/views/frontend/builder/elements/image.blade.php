@@ -28,6 +28,17 @@
         ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null, falcon_dynamic_config($s, 'link')) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
         : ($s['linkUrl'] ?? '');
     $target   = $s['linkTarget'] ?? '_self';
+
+    // The lightbox takes the click, so a link would be a second thing wanting it. The
+    // panel hides the URL field while this is on; ignoring the value here as well is what
+    // makes that promise true for an element that already had one saved.
+    $lightbox = !empty($s['lightbox']);
+    if ($lightbox) {
+        $linkUrl = '';
+    }
+    // $elemId is already unique per render and already prefixed, so it doubles as the
+    // lightbox's id rather than growing a second "img-" in front of itself.
+    $lightboxId = $elemId;
     $hoverType  = $s['hoverType'] ?? 'none';
     $hoverClass = ($hoverType !== 'none') ? 'hover-' . $hoverType : '';
 
@@ -102,7 +113,17 @@
 <div class="element-image image-wrap-{{ $elemId }} {{ $hoverClass }} {{ $visibilityClasses }}"
      style="{{ $wrapperStyle }}">
     @if($url)
-        @if($linkUrl)
+        @if($lightbox)
+            {{-- The wrapper carries the trigger rather than the <img>, so the whole box —
+                 including the letterboxing an aspect ratio adds — is clickable, which is
+                 what a reader aims at. --}}
+            <div style="{{ $elemStyle }}font-size:0;line-height:0;cursor:zoom-in;"
+                 data-lz-gallery="{{ $lightboxId }}" data-lz-gallery-idx="0"
+                 data-lz-gallery-url="{{ $url }}" data-lz-gallery-cap="{{ $alt }}"
+                 aria-label="{{ $alt !== '' ? $alt.' — view larger' : 'View larger' }}">
+                <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $hasRatio ? $imgStyle : 'max-width:100%;height:auto;' }}">
+            </div>
+        @elseif($linkUrl)
             <a href="{{ $linkUrl }}" target="{{ $target }}" style="{{ $elemStyle }}text-decoration:none;">
                 <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $imgStyle }}">
             </a>
@@ -119,3 +140,9 @@
         </div>
     @endif
 </div>
+
+@if($lightbox && $url)
+    {{-- Shared with the Gallery, so there is one lightbox on the site rather than two
+         that drift. No arrows: a single image has nowhere to go. --}}
+    @include('falcon-cms::components.frontend.lightbox', ['id' => $lightboxId, 'nav' => false])
+@endif

@@ -28,6 +28,16 @@
             borderColor: el.settings.borderColor || 'transparent'
          }">
         
+        {{-- The lightbox cannot be demonstrated here — the canvas is an editor, and a
+             full-screen overlay in it would be in the way rather than useful — so the
+             setting is shown instead. Without it the Yes/No in the panel changes nothing
+             an author can see, which reads as a switch that does not work. --}}
+        <span v-if="el.settings.lightbox && el.settings.url"
+              class="absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/55 text-white text-[9px] font-bold uppercase tracking-wide pointer-events-none"
+              title="Clicking this image opens it full size on the published page">
+            <i class="fa fa-expand text-[8px]"></i> Lightbox
+        </span>
+
          <img v-if="el.settings.url && !['feature_image','author_avatar','logo'].includes(el.settings.dynamic_source)"
              :src="el.settings.url"
              :alt="el.settings.alt || ''"

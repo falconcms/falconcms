@@ -1102,6 +1102,7 @@ class BuilderShortcodeConverter
                 self::attrI($a, 'border_left', $s['borderSizeLeft'] ?? null);
                 self::attrI($a, 'border_color', $s['borderColor'] ?? null);
                 // Hover
+                self::attrI($a, 'lightbox', !empty($s['lightbox']) ? 'yes' : null);
                 self::attrI($a, 'hover_type', $s['hoverType'] ?? null);
                 self::attrI($a, 'aspect_ratio', $s['aspectRatio'] ?? null);
                 self::attrI($a, 'focus_x', $s['focusX'] ?? null, 50);
@@ -2878,6 +2879,7 @@ class BuilderShortcodeConverter
                     'borderSizeBottom' => isset($a['border_bottom']) ? (int) $a['border_bottom'] : null,
                     'borderSizeLeft' => isset($a['border_left']) ? (int) $a['border_left'] : null,
                     'borderColor' => $a['border_color'] ?? null,
+                    'lightbox' => ($a['lightbox'] ?? '') === 'yes',
                     // Hover
                     'hoverType' => $a['hover_type'] ?? 'none',
                     'aspectRatio' => $a['aspect_ratio'] ?? 'none',

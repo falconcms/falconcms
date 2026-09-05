@@ -5226,7 +5226,7 @@
                             bgGradientStartPosition: 0, bgGradientEndPosition: 100,
                             dynamic_source: '', link_dynamic_source: '',
                         } : {}),
-                        ...(type === 'image' ? { url: '', alt: '', linkUrl: '', linkTarget: '_self', dynamic_source: '', link_dynamic_source: '', aspectRatio: 'none', focusX: 50, focusY: 50 } : {}),
+                        ...(type === 'image' ? { url: '', alt: '', lightbox: false, linkUrl: '', linkTarget: '_self', dynamic_source: '', link_dynamic_source: '', aspectRatio: 'none', focusX: 50, focusY: 50 } : {}),
                         ...(type === 'icon_list' ? {
                             items: [
                                 { id: Date.now() + '_1', icon: 'fa fa-check', iconColor: '', text: 'List item one',   link: '', linkTarget: '_self' },
