@@ -5,7 +5,123 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.5 <Badge type="tip" text="Latest" /> {#v2-6-5}
+## v2.6.6 <Badge type="tip" text="Latest" /> {#v2-6-6}
+
+**Released: 2026-09-06**
+
+### Added
+
+- **Callout element** <Badge type="warning" text="Pro" />. The boxed aside that documentation
+  runs on — note, tip, success, warning, danger and four more — in nine variants and six
+  presets, from a plain accent bar to a solid header. It can be made collapsible, and when it
+  is it uses a real `<details>`: it opens with the keyboard, and a browser's find-in-page opens
+  it to show a match rather than reporting nothing. The body takes the same small markup the
+  Table's cells do, so a callout can hold a bulleted list, `` `code` ``, a link or a button, and
+  it holds text rather than HTML, so one can never carry a script.
+
+- **Table of Contents element** <Badge type="warning" text="Pro" />. It reads the headings out
+  of the page itself, so nothing has to be listed by hand and nothing goes stale when a section
+  is renamed. Choose which levels to include, five presets, optional numbering, collapse by
+  default, and a sticky mode that follows the reader down the page. The entry for the section
+  being read is highlighted as it scrolls, and can carry its own background colour.
+
+  Anchors are built from the heading text, including scripts whose letters carry combining
+  marks — Bengali headings get real anchors rather than a string of dashes.
+
+- **Previous / Next element** <Badge type="warning" text="Pro" />. Links to the pages either
+  side of this one, ordered by a navigation menu or by date, with either side overridable by
+  hand. It stays inactive on a page that has no Table of Contents, because "previous" and
+  "next" only mean something inside a sequence a reader is actually following.
+
+- **A button in a table cell.** `[button Buy now](/pricing)`, with `:primary`, `:ghost` and
+  `:soft` variants — the missing half of a pricing or comparison table, which otherwise ends
+  in a row of plain links.
+
+- **Image Lightbox**, in the Image element's General tab. The image opens full size on click,
+  using the Gallery's lightbox rather than a second one. Turning it on puts the Link URL field
+  away, and the page ignores any URL already saved there — an image that quietly went on
+  navigating would look like the lightbox was broken.
+
+- **Back to Top button**, in Customizer → Performance. On by default, with twelve settings:
+  how far down the page it appears, which corner, size, corner radius, three icons, its own
+  colours, an optional reading-progress ring and an option to hide it on phones. Turning it off
+  sends nothing to the page at all — no markup, no stylesheet, no script.
+
+- **Text Animation**, in the Extra tab of the Title, Text Block, Button and Callout. Sixteen
+  looping animations in three groups — motion, emphasis, and light and colour — with the speed,
+  delay, repeat count, easing and accent colour all adjustable, and a default speed per
+  animation rather than one speed for all of them. It is distinct from the Scroll Entrance
+  Animation beside it, which plays once on arrival; the two can be used together.
+
+- **Drag anywhere in the navigator.** The tree lets a node be moved across branches now — an
+  element from one column to another, a column into a different container, an element in or out
+  of a nested column. A drop that would do nothing, or that would put a node inside itself, is
+  refused rather than silently ignored.
+
+- **Paste wherever the clipboard can land.** What a copied node *is* now decides where it can
+  go, rather than where it happened to be right-clicked. An element copied from a plain column
+  goes into a nested one and back; a container can be pasted onto the bare canvas of a page
+  that has nothing on it yet. The menu says what will land where, or why it cannot.
+
+### Changed
+
+- **Email verification is off on a new install.** A fresh install can be logged into straight
+  away instead of waiting on a verification email from a site that has not been given a mail
+  server yet. Turning it on afterwards works as it always did; existing sites are untouched.
+
+### Fixed
+
+- **Letter spacing did nothing, anywhere.** A bare number reached the stylesheet as
+  `letter-spacing: 2`, which is not a length, so the declaration was dropped — the control had
+  never worked on any element, the Table included since v2.6.4. Units for the shared typography
+  controls now live in one place, so line height keeps being unitless while sizes and spacing
+  get their `px`.
+
+- **A quotation mark in any text setting truncated it.** A caption reading `He said "hi"` was
+  cut off at the first quote when saved. This was in the shortcode converter itself, so it
+  affected every element with a text field, not one of them.
+
+- **The Gallery and Image lightboxes did not cover the screen.** A `position: fixed` overlay is
+  only fixed to the viewport while no ancestor has a transform, a filter or a `will-change` —
+  any of those makes that ancestor the containing block instead. The builder's own entrance
+  animations set one on a wrapper around every animated element, so an image inside one opened
+  into an overlay the size of its own column: the backdrop covered a corner of the page and the
+  picture spilled out of it. Measured on a real page, 593px wide inside a 1200px window.
+
+- **Maintenance mode did not hide the site.** The check for who may still see it asked for a
+  permission that is not a staff signal, and on a site whose subscriber role holds it, that was
+  everyone. It asks whether the visitor is an administrator now, and admins browsing the site
+  are shown a bar telling them maintenance mode is on, so it cannot be left running unnoticed.
+
+- **The Heading element's settings panel was empty.** Both tabs. It now has the content and
+  design settings every other element has, and can be set to full width.
+
+- **Anchor links now keep the trailing slash**, so a link to a section reads `/page/#section`
+  rather than `/page#section`. This covers every place a menu is drawn — the builder's Menu
+  element, the navigation widget, and the theme's header, dropdowns and footer.
+
+- **The Table of Contents entry being read is tracked by position** rather than by an
+  intersection band, which highlighted the second heading at the top of a page, never followed
+  a click, and went blank in the middle of a long section. Its sticky mode works now too: it is
+  applied to the column rather than to the element, which cannot travel outside its own box.
+
+- **Callout lists render the same in the editor and on the page.** The admin's stylesheet
+  strips list markers and paragraph margins from everything, so bullets previewed flat and then
+  arrived bulleted. Both renderers now load the same rules.
+
+- **The Callout's icon is chosen from the icon picker** rather than typed in as a class name.
+
+### Internal
+
+- Eleven new test files, and 147 more tests than v2.6.5 — 718 in all. Among them, the builder's
+  inline script is now parsed by node on every run, and the parts of it that decide where a drag
+  or a paste can land are lifted out and run against a real layout, which is coverage nothing in
+  the suite had before: PHPStan does not read Blade templates, so none of that code was seen by
+  anything until now.
+
+---
+
+## v2.6.5 {#v2-6-5}
 
 **Released: 2026-09-04**
 
