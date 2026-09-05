@@ -63,7 +63,7 @@ class RegisterController extends Controller
             ?: Role::where('slug', 'subscriber')->first();
 
         // Site setting (Settings → Membership): require email verification before login?
-        $requireVerification = get_cms_option('require_email_verification', '1') === '1';
+        $requireVerification = falcon_email_verification_required();
 
         $user = User::create([
             'name' => $request->name,

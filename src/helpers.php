@@ -778,6 +778,29 @@ if (!function_exists('forget_cms_options_cache')) {
     }
 }
 
+if (!function_exists('falcon_email_verification_required')) {
+    /**
+     * Must a user confirm their email address before they can sign in?
+     *
+     * Settings → Membership. The answer was read in four places — both controllers that
+     * act on it and the settings screen that draws the checkbox — each spelling out the
+     * default for itself, which is three chances for them to disagree about what an
+     * unconfigured site does. A screen showing the box ticked while the login screen
+     * lets everyone through is not a difference anyone would go looking for.
+     *
+     * The default is on, and stays on, for a site that has never chosen. Turning it off
+     * under a running site would let anyone who had registered and never confirmed sign
+     * in the next time it was updated, which is not a change to make on a site owner's
+     * behalf. A NEW install writes '0' explicitly instead — see falcon:install — so the
+     * person who just created it can sign in without going looking for a mail server,
+     * and the setting is theirs to turn on whenever they want it.
+     */
+    function falcon_email_verification_required(): bool
+    {
+        return get_cms_option('require_email_verification', '1') === '1';
+    }
+}
+
 if (!function_exists('falcon_same_page')) {
     /**
      * Do two URLs point at the same page?

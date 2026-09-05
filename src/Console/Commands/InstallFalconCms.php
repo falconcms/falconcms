@@ -79,6 +79,16 @@ class InstallFalconCms extends Command
             'login_theme' => 'modern',
             'registration_theme' => 'modern',
             'active_theme' => 'falcon-theme',
+            // Off on a new site, and written out rather than left to the fallback.
+            //
+            // A site five minutes old has no mail server configured, so requiring people
+            // to confirm an address means nobody can get in — including whoever just
+            // installed it. Settings → Membership turns it on the moment the site can
+            // actually send the mail, and from then on it applies to everyone who signs
+            // up. Written explicitly because the fallback stays ON for sites that
+            // already exist: turning verification off under a running site would let
+            // anyone who had registered and never confirmed sign in after an update.
+            'require_email_verification' => '0',
         ];
 
         foreach ($options as $key => $value) {
@@ -132,6 +142,12 @@ class InstallFalconCms extends Command
             'email' => $email,
             'password' => Hash::make($password),
             'role_id' => $adminRole->id,
+            // Verified on creation. This account was typed in at the console by whoever
+            // owns the site — there is nobody to confirm it to — and leaving it unverified
+            // is how a site locks its own administrator out the first time verification is
+            // switched on, with the reset mail going through the mail server they were
+            // trying to configure.
+            'email_verified_at' => $user->email_verified_at ?? now(),
         ])->save();
 
         // 10. Auto-create E-commerce pages
