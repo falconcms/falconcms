@@ -5,7 +5,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.8 <Badge type="tip" text="Latest" /> {#v2-6-8}
+## v2.6.9 <Badge type="tip" text="Latest" /> {#v2-6-9}
+
+**Released: 2026-09-06**
+
+### Fixed
+
+- **Analytics counted one person as many.** Every card is fed from one row per page
+  view, and four of them counted rows where they meant people: Visitors by Country,
+  Top Countries, Active Pages, and the Live Visitors list — which showed the latest
+  eight rows, so somebody reading eight pages filled it on their own and read as
+  eight separate visitors from eight places.
+
+  Those four now count distinct visitors. Nothing was slightly off: each figure was
+  multiplied by however much each person happened to read, which is precisely the
+  number a site owner uses to judge whether anything is working. Unique Visitors,
+  New vs Returning and the live "active now" count were already right.
+
+  Visits stay a count of page views, because that is a different and equally real
+  question — Top Pages, Recent Visits and the traffic graph are unchanged.
+
+- **A settings change could appear not to save at all.** When the shared settings
+  cache cannot be invalidated, the write lands in the database but every later
+  request keeps reading the old value, so the setting silently reverts on the next
+  page load — and starts working an hour later when the cache expires on its own.
+  That failure was being swallowed. It is now logged, naming the usual cause: a
+  cache file left owned by another user, which is what happens the moment anyone
+  runs `php artisan` as **root** over SSH on a site that runs as `www-data`.
+
+  If settings seem not to stick, check `storage/framework/cache` ownership — and
+  prefer running artisan as the web user.
+
+- **The real-time analytics feed could not run on SQLite**, because its per-minute
+  grouping used a MySQL-only date function while the rest of the page had already
+  been written for both.
+
+---
+
+## v2.6.8 {#v2-6-8}
 
 **Released: 2026-09-06**
 

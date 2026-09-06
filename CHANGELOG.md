@@ -7,6 +7,20 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.9] — 2026-09-06
+
+### Fixed
+
+- **Analytics counted one person as many.** Visitors by Country, Top Countries, Active
+  Pages and the Live Visitors list counted page-view rows where they meant people, so
+  one person reading eight pages read as eight visitors. They now count distinct
+  visitors; visit/page-view figures are unchanged.
+- **A settings change could appear not to save.** A failure to invalidate the shared
+  settings cache was swallowed, so the write landed in the database while every later
+  request kept serving the old value until the cache expired. It is now logged, naming
+  the usual cause — a cache file owned by another user after running artisan as root.
+- **The real-time analytics feed could not run on SQLite** (MySQL-only date function).
+
 ## [2.6.8] — 2026-09-06
 
 ### Fixed

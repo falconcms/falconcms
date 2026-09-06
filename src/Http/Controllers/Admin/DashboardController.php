@@ -1175,14 +1175,19 @@ class DashboardController extends Controller
             ->groupBy('ref')->orderByDesc('count')->limit(8)->get();
 
         // ── Top countries (geo-resolved; null until geo lookup completes) ─────
-        $topCountries = Analytics::select('country', DB::raw('count(*) as count'))
+        // Visitors per country, for the same reason as the map below it — the two sit
+        // side by side and disagreeing about what a "country total" means is worse than
+        // either answer on its own.
+        $topCountries = Analytics::select('country', DB::raw('COUNT(DISTINCT ip_address) as count'))
             ->where('created_at', '>=', $start)
             ->whereNotNull('country')->where('country', '!=', '')
             ->groupBy('country')->orderByDesc('count')->limit(8)->get()
             ->map(fn ($r) => ['label' => $r->country, 'count' => (int) $r->count])->values();
 
-        // Visitors grouped by ISO-2 country code, for the world map widget
-        $visitorsByCountry = Analytics::select('country_code', DB::raw('MAX(country) as country'), DB::raw('count(*) as visitors'))
+        // Visitors grouped by ISO-2 country code, for the world map widget.
+        // COUNT(DISTINCT ip_address), not COUNT(*): one person reading six pages is one
+        // visitor, and counting rows made every figure on this card six times too big.
+        $visitorsByCountry = Analytics::select('country_code', DB::raw('MAX(country) as country'), DB::raw('COUNT(DISTINCT ip_address) as visitors'))
             ->where('created_at', '>=', $start)
             ->whereNotNull('country_code')->where('country_code', '!=', '')
             ->groupBy('country_code')->orderByDesc('visitors')->get()
@@ -1425,27 +1430,42 @@ class DashboardController extends Controller
 
         $active = Analytics::where('created_at', '>=', $since5)->distinct()->count('ip_address');
 
-        // Per-minute visit counts for the last 30 minutes, zero-filled.
+        // Per-minute visit counts for the last 30 minutes, zero-filled. Spelled for the
+        // driver in use, like the daily series above — DATE_FORMAT is MySQL-only and made
+        // this endpoint the one part of the page that could not run on SQLite.
+        $minuteBucket = DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m-%d %H:%M', created_at)"
+            : "DATE_FORMAT(created_at, '%Y-%m-%d %H:%i')";
         $perMin = Analytics::where('created_at', '>=', $since30)
-            ->select(DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') as m"), DB::raw('count(*) as c'))
+            ->select(DB::raw("{$minuteBucket} as m"), DB::raw('count(*) as c'))
             ->groupBy('m')->pluck('c', 'm');
         $minutes = [];
         for ($i = 29; $i >= 0; $i--) {
             $minutes[] = (int) ($perMin[now()->subMinutes($i)->format('Y-m-d H:i')] ?? 0);
         }
 
+        // "where visitors are now" — so, visitors per page, not page views. Someone
+        // refreshing a page was otherwise counted again on every refresh.
         $activePages = Analytics::where('created_at', '>=', $since5)
-            ->select('url', DB::raw('count(*) as count'))
+            ->select('url', DB::raw('COUNT(DISTINCT ip_address) as count'))
             ->groupBy('url')->orderByDesc('count')->limit(6)->get()
             ->map(fn ($r) => ['path' => falcon_visit_page($r->url), 'count' => (int) $r->count]);
 
-        $recent = Analytics::latest()->limit(8)->get()->map(fn ($v) => [
-            'path' => Str::limit(falcon_visit_page($v->url), 40),
-            'country' => $v->country,
-            'code' => $v->country_code ? strtolower($v->country_code) : null,
-            'device' => $v->device_type,
-            'ago' => $v->created_at ? Carbon::parse($v->created_at)->diffForHumans(null, true).' ago' : '',
-        ]);
+        // One entry per visitor, showing what they last did. This read the latest eight
+        // ROWS, so a single person moving through eight pages filled the whole "Live
+        // Visitors" list and read as eight people. Ordered newest first, so keeping the
+        // first row per IP keeps each visitor's most recent activity.
+        $recent = Analytics::latest()->limit(300)->get()
+            ->unique('ip_address')
+            ->take(8)
+            ->values()
+            ->map(fn ($v) => [
+                'path' => Str::limit(falcon_visit_page($v->url), 40),
+                'country' => $v->country,
+                'code' => $v->country_code ? strtolower($v->country_code) : null,
+                'device' => $v->device_type,
+                'ago' => $v->created_at ? Carbon::parse($v->created_at)->diffForHumans(null, true).' ago' : '',
+            ]);
 
         return response()->json([
             'active' => $active,

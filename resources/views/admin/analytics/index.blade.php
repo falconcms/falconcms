@@ -212,7 +212,7 @@
                                 <img src="https://flagcdn.com/20x15/{{ strtolower($c['code']) }}.png" width="20" height="15" style="border-radius:2px;flex-shrink:0" alt="{{ $c['code'] }}" onerror="this.style.display='none'">
                                 <span class="text-[13px] font-medium text-[#1d2327] truncate">{{ $c['name'] }}</span>
                             </div>
-                            <div class="text-[13px] font-bold text-[#1d2327] flex-shrink-0">{{ number_format($c['visitors']) }} <span class="text-[10px] font-normal text-[#646970]">visits</span></div>
+                            <div class="text-[13px] font-bold text-[#1d2327] flex-shrink-0">{{ number_format($c["visitors"]) }} <span class="text-[10px] font-normal text-[#646970]">visitors</span></div>
                         </div>
                         @empty
                         <div class="py-6 text-center text-[13px] text-[#646970]">No geo data yet — visitor countries appear once IPs are resolved.</div>

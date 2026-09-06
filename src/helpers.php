@@ -765,13 +765,38 @@ if (!function_exists('forget_cms_options_cache')) {
     /**
      * Invalidate the CMS options cache. Call after ANY direct write to the
      * cms_settings table so cached settings never go stale.
+     *
+     * If the shared cache cannot be invalidated, say so. Swallowing that failure
+     * produced the worst class of bug this CMS has had: the write lands in the
+     * database, every later request keeps reading the old value out of cache, and
+     * the setting simply appears not to save — until the entry expires an hour
+     * later and it starts working on its own. The usual cause is a cache file left
+     * owned by another user, which happens the moment anyone runs `php artisan`
+     * as root over SSH while the site itself runs as www-data.
      */
     function forget_cms_options_cache(): void
     {
         try {
-            Cache::forget('falcon:cms_options');
+            $forgotten = Cache::forget('falcon:cms_options');
+
+            if ($forgotten === false && Cache::has('falcon:cms_options')) {
+                throw new RuntimeException('Cache::forget() reported failure and the entry is still present.');
+            }
         } catch (Throwable $e) {
+            try {
+                Log::warning(
+                    'FalconCMS: could not clear the settings cache, so saved settings may keep reading '
+                    .'their old values until it expires. This is usually a cache file owned by another '
+                    .'user — check the ownership of storage/framework/cache (it must be writable by the '
+                    .'user the site runs as). Cause: '.$e->getMessage()
+                );
+            } catch (Throwable $ignored) {
+                // Logging must never be the thing that breaks a settings save.
+            }
         }
+
+        // The per-request store is cleared either way, so the request doing the
+        // write always sees its own change even when the shared cache is stuck.
         $store = &_falcon_cms_options_store();
         $store['loaded'] = false;
         $store['data'] = [];
