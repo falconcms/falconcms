@@ -1446,14 +1446,19 @@ class DashboardController extends Controller
         $since30 = now()->subMinutes(30);
         $host = request()->getSchemeAndHttpHost();
 
-        // Per-minute visit counts for the last 30 minutes, zero-filled. Spelled for the
-        // driver in use, like the daily series above — DATE_FORMAT is MySQL-only and made
-        // this endpoint the one part of the page that could not run on SQLite.
+        // Visitors per minute for the last 30 minutes, zero-filled. Distinct visitors,
+        // like every other figure on this page: counting rows made one person opening
+        // four pages within a minute draw a bar four times too tall, which is the last
+        // place the page still turned one reader into several.
+        //
+        // Spelled for the driver in use, like the daily series above — DATE_FORMAT is
+        // MySQL-only and made this endpoint the one part of the page that could not run
+        // on SQLite.
         $minuteBucket = DB::connection()->getDriverName() === 'sqlite'
             ? "strftime('%Y-%m-%d %H:%M', created_at)"
             : "DATE_FORMAT(created_at, '%Y-%m-%d %H:%i')";
         $perMin = Analytics::where('created_at', '>=', $since30)
-            ->select(DB::raw("{$minuteBucket} as m"), DB::raw('count(*) as c'))
+            ->select(DB::raw("{$minuteBucket} as m"), DB::raw('COUNT(DISTINCT ip_address) as c'))
             ->groupBy('m')->pluck('c', 'm');
         $minutes = [];
         for ($i = 29; $i >= 0; $i--) {

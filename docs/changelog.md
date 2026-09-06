@@ -5,7 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.11 <Badge type="tip" text="Latest" /> {#v2-6-11}
+## v2.6.12 <Badge type="tip" text="Latest" /> {#v2-6-12}
+
+**Released: 2026-09-06**
+
+### Fixed
+
+- **The per-minute graph in the Real-Time panel counted page views.** It was the last
+  figure on the analytics page still counting rows, so one person opening four pages
+  inside a minute drew a bar four times too tall — beside a counter that correctly said
+  one visitor.
+
+  It counts distinct visitors per minute now, like everything else on the page, and the
+  caption says **Visitors per minute** rather than Visits.
+
+---
+
+## v2.6.11 {#v2-6-11}
 
 **Released: 2026-09-06**
 

@@ -132,6 +132,30 @@ class AnalyticsVisitorCountingTest extends TestCase
         );
     }
 
+    /**
+     * The per-minute sparkline beside the real-time counter. It counted rows, so one
+     * person opening four pages inside a minute drew a bar four times too tall — the
+     * last place on the page that still turned one reader into several.
+     */
+    public function test_the_per_minute_graph_counts_people(): void
+    {
+        $minute = Carbon::now('UTC')->subMinutes(3)->startOfMinute();
+
+        foreach (['/a', '/b', '/c', '/d'] as $path) {
+            $this->pageView('203.0.113.9', $path, 'Bangladesh', 'BD', $minute->toDateTimeString());
+        }
+        $this->pageView('198.51.100.4', '/a', 'India', 'IN', $minute->toDateTimeString());
+
+        $this->withProLicensed();
+        $json = $this->actingAs($this->administrator())->getJson('/admin/analytics/realtime')->assertOk()->json();
+
+        $this->assertSame(
+            2,
+            max($json['minutes']),
+            'that minute held two people, not the five pages they opened between them'
+        );
+    }
+
     /** The real-time feed lists people, not page views. */
     public function test_the_live_feed_shows_each_visitor_once(): void
     {

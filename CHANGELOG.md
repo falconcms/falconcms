@@ -7,6 +7,15 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.12] — 2026-09-06
+
+### Fixed
+
+- **The Real-Time per-minute graph counted page views**, the last figure on the analytics
+  page still counting rows: one person opening four pages in a minute drew a bar four
+  times too tall. It counts distinct visitors per minute now, and is labelled
+  "Visitors per minute".
+
 ## [2.6.11] — 2026-09-06
 
 ### Changed

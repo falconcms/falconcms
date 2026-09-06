@@ -74,7 +74,7 @@
                     </div>
                 </div>
                 <div class="flex-1 min-w-[220px]">
-                    <div class="text-[11px] text-[#646970] mb-1 text-right">Visits per minute · last 30 minutes</div>
+                    <div class="text-[11px] text-[#646970] mb-1 text-right">Visitors per minute · last 30 minutes</div>
                     <div style="height:56px"><canvas id="rt-spark"></canvas></div>
                 </div>
             </div>
