@@ -5,7 +5,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.7 <Badge type="tip" text="Latest" /> {#v2-6-7}
+## v2.6.8 <Badge type="tip" text="Latest" /> {#v2-6-8}
+
+**Released: 2026-09-06**
+
+### Fixed
+
+- **A site with an active plugin returned 500 on every front-end page after updating to
+  v2.6.7.** Plugins moved into `resources/views/plugins` in that release, and a security
+  check that only allows a view under `resources/views` to render if it sits in `themes/`
+  or `vendor/` had not been told about the new location — so the first plugin view a page
+  rendered aborted the request mid-layout.
+
+  It never showed up in development because that check quietly disables itself on a site
+  with no `resources/views/vendor` directory: `realpath()` returns `false` for a directory
+  that is not there, and PHP compares that `false` against `''`, which every path starts
+  with. A site that has published views — which is any site that has been updated — had the
+  check switched on and went down. Plugin views are now allowed explicitly, and the tests
+  around it create that directory so this cannot pass unnoticed again.
+
+- **Turning a layout slot off did nothing, and came back on after a reload.** In Falcon
+  Builder → Sections, the switch for a slot with no section assigned to it reported success
+  and drew itself off, but there was nothing to store, so the next page load showed it on
+  again. The endpoint could not tell "nothing is assigned here" from "it is now off" —
+  both were the same `false`. It now says which, so the switch stays honest, and a slot
+  that has a section assigned toggles and persists as it always should have.
+
+---
+
+## v2.6.7 {#v2-6-7}
 
 **Released: 2026-09-06**
 

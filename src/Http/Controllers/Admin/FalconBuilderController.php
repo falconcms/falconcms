@@ -131,13 +131,21 @@ class FalconBuilderController extends Controller
     }
 
     /** Flip the active (on/off) state of one layout's slot — independent of other layouts. */
-    private function setSlotActive(string $layout, string $slot, ?bool $active = null): bool
+    /**
+     * Flip (or set) a slot's on/off state.
+     *
+     * Returns the new state, or NULL when there was nothing to flip — an empty slot, or a
+     * layout/slot pair that does not exist. That case used to come back as `false`, which
+     * the caller could not tell apart from "it is now inactive": the UI reported success and
+     * switched off, nothing was written, and the next page load showed it on again.
+     */
+    private function setSlotActive(string $layout, string $slot, ?bool $active = null): ?bool
     {
         if ($layout === 'global') {
             $a = $this->globalAssignments();
             $entry = self::assignEntry($a[$slot] ?? null);
             if (!$entry) {
-                return false;
+                return null;
             }
             $entry['active'] = $active ?? !$entry['active'];
             $a[$slot] = $entry;
@@ -147,7 +155,7 @@ class FalconBuilderController extends Controller
             return $entry['active'];
         }
 
-        $newState = false;
+        $newState = null;
         $layouts = $this->customLayouts();
         foreach ($layouts as &$l) {
             if (($l['id'] ?? null) === $layout && is_array($l['assignments'] ?? null)) {
@@ -160,6 +168,13 @@ class FalconBuilderController extends Controller
             }
         }
         unset($l);
+
+        // Only write when something actually changed — saving an untouched array was a
+        // pointless write that also made "nothing matched" look like a successful toggle.
+        if ($newState === null) {
+            return null;
+        }
+
         $this->saveCustomLayouts($layouts);
 
         return $newState;
@@ -717,6 +732,19 @@ class FalconBuilderController extends Controller
 
         $active = $this->setSlotActive($data['layout'], $data['slot']);
         $label = self::SLOTS[$data['slot']]['label'];
+
+        // Nothing assigned to this slot (or no such layout): say so instead of reporting a
+        // toggle that was never stored, which left the switch off until the page reloaded.
+        if ($active === null) {
+            $message = 'Assign a section to '.$label.' first — there is nothing to turn on or off yet.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['ok' => false, 'message' => $message]);
+            }
+
+            return back()->with('error', $message);
+        }
+
         $message = $label.($active ? ' activated for this layout.' : ' deactivated for this layout.');
 
         if ($request->expectsJson() || $request->ajax()) {

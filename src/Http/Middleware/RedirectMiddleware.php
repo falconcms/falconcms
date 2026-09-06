@@ -37,13 +37,22 @@ class RedirectMiddleware
             $rootViewsPath = realpath(resource_path('views'));
             $vendorPath = realpath(resource_path('views/vendor'));
 
+            // Plugins live in resources/views/plugins since v2.6.7, so a plugin's own
+            // views now sit inside resources/views and have to be allowed here — without
+            // this, rendering any plugin view on the front-end aborts the request.
+            // Guarded against realpath() returning false for a site that has no plugins
+            // directory: str_starts_with($path, false) compares against '' and matches
+            // everything, which would turn this whole check off.
+            $pluginsPath = realpath(resource_path('views/plugins'));
+
             // If the view is inside resources/views
             if ($viewPath && str_starts_with($viewPath, $rootViewsPath)) {
                 $isInTheme = str_starts_with($viewPath, $themesPath);
                 $isInVendor = str_starts_with($viewPath, $vendorPath);
+                $isInPlugin = $pluginsPath !== false && str_starts_with($viewPath, $pluginsPath);
 
-                // Block if it's NOT in theme and NOT in vendor
-                if (!$isInTheme && !$isInVendor) {
+                // Block if it's NOT in theme, NOT in vendor and NOT a plugin's own view
+                if (!$isInTheme && !$isInVendor && !$isInPlugin) {
                     abort(404, 'Security Restriction: View file must be inside the themes directory.');
                 }
             }

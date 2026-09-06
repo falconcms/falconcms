@@ -7,6 +7,20 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.8] — 2026-09-06
+
+### Fixed
+
+- **Front-end 500 on any site with an active plugin, after updating to v2.6.7.** Plugins
+  moved into `resources/views/plugins`, and the check that restricts which views under
+  `resources/views` may render had not been told about it. It only fires where
+  `resources/views/vendor` exists — `realpath()` returns `false` without it and PHP compares
+  that against `''`, which matches everything — so development never saw it and updated
+  sites did.
+- **A layout slot with no section assigned reported a successful on/off toggle** in Falcon
+  Builder → Sections and reverted on reload, because "nothing assigned" and "now inactive"
+  were the same return value.
+
 ## [2.6.7] — 2026-09-06
 
 ### Security
