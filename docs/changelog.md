@@ -5,7 +5,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.10 <Badge type="tip" text="Latest" /> {#v2-6-10}
+## v2.6.11 <Badge type="tip" text="Latest" /> {#v2-6-11}
+
+**Released: 2026-09-06**
+
+### Changed
+
+- **Analytics counts people, everywhere.** One visitor is one visitor, however many pages
+  they open. That rule now holds across the whole page rather than in the few places it
+  already did.
+
+  Visitors, Visitors Today, Visitors This Month, the period-over-period change, Top
+  Pages, Top Referrers, Traffic Channels, Traffic Sources and the Browser / Device /
+  Operating System breakdowns all counted rows — one row per page view — so somebody
+  reading four pages arrived as four. All of them count distinct visitors now, by IP
+  address, which is the basis Unique Visitors always used.
+
+  **Page views have not been thrown away**, because "how much was read" is a real
+  question: the second tile is now **Page Views**, and the traffic graph still plots page
+  views against visitors. It previously repeated the Unique Visitors figure, which became
+  a duplicate of the headline once that started counting people.
+
+  Tiles are named for what they hold — Visitors, Page Views, Visitors Today, Visitors
+  This Month — so no figure claims to be people while counting pages.
+
+  Which pages, referrers and sources appear is unchanged. Only the multiplied people are
+  gone.
+
+---
+
+## v2.6.10 {#v2-6-10}
 
 **Released: 2026-09-06**
 

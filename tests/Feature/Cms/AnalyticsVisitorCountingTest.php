@@ -69,7 +69,18 @@ class AnalyticsVisitorCountingTest extends TestCase
         $response->assertOk();
 
         $this->assertSame(1, $response->viewData('uniqueVisitors'), 'unique visitors');
-        $this->assertSame(6, $response->viewData('totalVisits'), 'visits stay a page-view count');
+        $this->assertSame(1, $response->viewData('totalVisits'), 'the headline figure is people');
+        $this->assertSame(1, $response->viewData('today'), 'visitors today');
+        $this->assertSame(1, $response->viewData('thisMonth'), 'visitors this month');
+        $this->assertSame(6, $response->viewData('pageViews'), 'page views are still counted, and labelled as such');
+
+        // Every breakdown answers "how many people", so all of them say one.
+        $this->assertSame(1, (int) collect($response->viewData('browsers'))->firstWhere('label', 'Chrome')['count'], 'browsers');
+        $this->assertSame(1, (int) collect($response->viewData('devices'))->firstWhere('label', 'desktop')['count'], 'devices');
+        $this->assertSame(1, (int) collect($response->viewData('osDist'))->firstWhere('label', 'Windows')['count'], 'operating systems');
+        $this->assertSame(1, (int) collect($response->viewData('channels'))->firstWhere('label', 'Direct')['count'], 'traffic channels');
+        $this->assertSame(1, (int) collect($response->viewData('trafficSources'))->firstWhere('label', 'Direct')['count'], 'traffic sources');
+        $this->assertSame(1, (int) $response->viewData('topPages')->first()->count, 'top pages counts people per page');
 
         $byCountry = collect($response->viewData('visitorsByCountry'));
         $this->assertSame(1, (int) $byCountry->firstWhere('code', 'BD')['visitors'], 'visitors by country');

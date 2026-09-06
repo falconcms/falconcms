@@ -117,10 +117,11 @@
                     <div class="classic-stat-icon bg-[#2271b1]"><span class="material-symbols-outlined text-[24px]">visibility</span></div>
                     <div>
                         <div class="classic-stat-value">{{ number_format($totalVisits) }}</div>
-                        <div class="classic-stat-label">Total Visits</div>
+                        <div class="classic-stat-label">Visitors</div>
                         <div class="text-[11px] font-semibold mt-0.5 {{ $visitsChange >= 0 ? 'text-[#46b450]' : 'text-[#d63638]' }}">
                             <span class="material-symbols-outlined text-[12px] align-middle">{{ $visitsChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
                             {{ $visitsChange >= 0 ? '+' : '' }}{{ $visitsChange }}% vs prev. {{ $rangeLabels[$range] }}
+                            <span class="text-[#646970] font-normal">· by IP address</span>
                         </div>
                     </div>
                 </div>
@@ -129,9 +130,9 @@
                 <div class="classic-stat-box">
                     <div class="classic-stat-icon bg-[#46b450]"><span class="material-symbols-outlined text-[24px]">group</span></div>
                     <div>
-                        <div class="classic-stat-value">{{ number_format($uniqueVisitors) }}</div>
-                        <div class="classic-stat-label">Unique Visitors</div>
-                        <div class="text-[11px] text-[#646970] mt-0.5">by IP address</div>
+                        <div class="classic-stat-value">{{ number_format($pageViews) }}</div>
+                        <div class="classic-stat-label">Page Views</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">pages opened by those visitors</div>
                     </div>
                 </div>
             </div>
@@ -140,7 +141,7 @@
                     <div class="classic-stat-icon bg-[#dba617]"><span class="material-symbols-outlined text-[24px]">today</span></div>
                     <div>
                         <div class="classic-stat-value">{{ number_format($today) }}</div>
-                        <div class="classic-stat-label">Visits Today</div>
+                        <div class="classic-stat-label">Visitors Today</div>
                     </div>
                 </div>
             </div>
@@ -149,7 +150,7 @@
                     <div class="classic-stat-icon bg-[#826eb4]"><span class="material-symbols-outlined text-[24px]">calendar_month</span></div>
                     <div>
                         <div class="classic-stat-value">{{ number_format($thisMonth) }}</div>
-                        <div class="classic-stat-label">This Month</div>
+                        <div class="classic-stat-label">Visitors This Month</div>
                     </div>
                 </div>
             </div>
@@ -428,7 +429,7 @@
             data: {
                 labels: @json($labels),
                 datasets: [
-                    { label: 'Visits', data: @json($visitsSeries), borderColor: '#2271b1', backgroundColor: 'rgba(34,113,177,.06)', fill: true, tension: .4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
+                    { label: 'Page Views', data: @json($visitsSeries), borderColor: '#2271b1', backgroundColor: 'rgba(34,113,177,.06)', fill: true, tension: .4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
                     { label: 'Unique Visitors', data: @json($uniqueSeries), borderColor: '#46b450', backgroundColor: 'transparent', fill: false, tension: .4, borderWidth: 2, borderDash: [5,5], pointRadius: 0, pointHoverRadius: 4 }
                 ]
             },

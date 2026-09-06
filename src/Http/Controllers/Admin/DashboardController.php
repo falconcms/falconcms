@@ -1130,12 +1130,22 @@ class DashboardController extends Controller
             : sprintf('DATE(created_at + INTERVAL %d SECOND)', $tzShift);
 
         // ── KPIs (with % change vs the previous equal period) ─────────────────
-        $totalVisits = Analytics::where('created_at', '>=', $start)->count();
+        //
+        // Every headline figure here answers "how many people", and one person reading
+        // four pages is one person. These all counted rows, so each visitor was counted
+        // once per page they opened and every tile on the page read several times too
+        // high. They count distinct IP addresses now — the same basis the Unique
+        // Visitors figure has always used.
+        //
+        // Page views remain available and are simply labelled as what they are, since
+        // "how much was read" is a real and separate question.
         $uniqueVisitors = Analytics::where('created_at', '>=', $start)->distinct()->count('ip_address');
-        $prevVisits = Analytics::whereBetween('created_at', [$prevStart, $prevEnd])->count();
+        $totalVisits = $uniqueVisitors;
+        $pageViews = Analytics::where('created_at', '>=', $start)->count();
+        $prevVisits = Analytics::whereBetween('created_at', [$prevStart, $prevEnd])->distinct()->count('ip_address');
         $visitsChange = $prevVisits > 0 ? round((($totalVisits - $prevVisits) / $prevVisits) * 100, 1) : ($totalVisits > 0 ? 100 : 0);
-        $today = Analytics::where('created_at', '>=', cms_now()->startOfDay()->utc())->count();
-        $thisMonth = Analytics::where('created_at', '>=', cms_now()->startOfMonth()->utc())->count();
+        $today = Analytics::where('created_at', '>=', cms_now()->startOfDay()->utc())->distinct()->count('ip_address');
+        $thisMonth = Analytics::where('created_at', '>=', cms_now()->startOfMonth()->utc())->distinct()->count('ip_address');
 
         // ── Daily series (visits + unique), zero-filled across the range ──────
         $daily = Analytics::where('created_at', '>=', $start)
@@ -1154,8 +1164,10 @@ class DashboardController extends Controller
         // ── Distributions (browser / device / os) ────────────────────────────
         // Exclude bot/crawler rows left in legacy data so the charts show humans only
         // (new bot visits are already filtered at tracking time).
+        // Distinct visitors per value, so a browser share is a share of people rather
+        // than a share of pages read.
         $dist = function (string $col) use ($start) {
-            return Analytics::select($col, DB::raw('count(*) as count'))
+            return Analytics::select($col, DB::raw('COUNT(DISTINCT ip_address) as count'))
                 ->where('created_at', '>=', $start)
                 ->whereNotIn($col, ['bot', 'Bot / Crawler'])
                 ->groupBy($col)->orderByDesc('count')->get()
@@ -1166,11 +1178,11 @@ class DashboardController extends Controller
         $osDist = $dist('os');
 
         // ── Top pages & referrers (empty referrer = Direct) ──────────────────
-        $topPages = Analytics::select('url', DB::raw('count(*) as count'))
+        $topPages = Analytics::select('url', DB::raw('COUNT(DISTINCT ip_address) as count'))
             ->where('created_at', '>=', $start)
             ->groupBy('url')->orderByDesc('count')->limit(8)->get();
 
-        $topReferrers = Analytics::select(DB::raw("COALESCE(NULLIF(referrer, ''), 'Direct') as ref"), DB::raw('count(*) as count'))
+        $topReferrers = Analytics::select(DB::raw("COALESCE(NULLIF(referrer, ''), 'Direct') as ref"), DB::raw('COUNT(DISTINCT ip_address) as count'))
             ->where('created_at', '>=', $start)
             ->groupBy('ref')->orderByDesc('count')->limit(8)->get();
 
@@ -1262,11 +1274,15 @@ class DashboardController extends Controller
 
             return 'Referral';
         };
-        $channelCounts = [];
-        foreach (Analytics::select('referrer', DB::raw('count(*) as count'))->where('created_at', '>=', $start)->groupBy('referrer')->get() as $rr) {
-            $ch = $channelOf($rr->referrer);
-            $channelCounts[$ch] = ($channelCounts[$ch] ?? 0) + (int) $rr->count;
+        // Distinct (referrer, visitor) pairs, then one set of visitors per channel — the
+        // channel is worked out in PHP, so the de-duplication has to happen here too.
+        // Summing per-referrer row counts made this a page-view chart wearing a
+        // people-shaped label.
+        $channelIps = [];
+        foreach (Analytics::select('referrer', 'ip_address')->where('created_at', '>=', $start)->distinct()->get() as $rr) {
+            $channelIps[$channelOf($rr->referrer)][(string) $rr->ip_address] = true;
         }
+        $channelCounts = array_map('count', $channelIps);
         arsort($channelCounts);
         $channels = collect($channelCounts)->map(fn ($v, $k) => ['label' => $k, 'count' => $v])->values();
 
@@ -1301,21 +1317,21 @@ class DashboardController extends Controller
 
             return [$h, $h]; // any other site — show its domain
         };
-        $sourceCounts = [];
-        foreach (Analytics::select('referrer', DB::raw('count(*) as count'))->where('created_at', '>=', $start)->groupBy('referrer')->get() as $rr) {
+        $sourceIps = [];
+        foreach (Analytics::select('referrer', 'ip_address')->where('created_at', '>=', $start)->distinct()->get() as $rr) {
             [$label, $domain] = $sourceOf($rr->referrer);
-            if (!isset($sourceCounts[$label])) {
-                $sourceCounts[$label] = ['label' => $label, 'count' => 0, 'domain' => $domain];
-            }
-            $sourceCounts[$label]['count'] += (int) $rr->count;
+            $sourceIps[$label]['domain'] = $domain;
+            $sourceIps[$label]['ips'][(string) $rr->ip_address] = true;
         }
-        $trafficSources = collect($sourceCounts)->sortByDesc('count')->take(12)->values();
+        $trafficSources = collect($sourceIps)
+            ->map(fn ($v, $label) => ['label' => $label, 'count' => count($v['ips']), 'domain' => $v['domain']])
+            ->sortByDesc('count')->take(12)->values();
 
         // ── Recent visits ─────────────────────────────────────────────────────
         $recent = Analytics::latest()->limit(12)->get();
 
         return view('falcon-cms::admin.analytics.index', compact(
-            'range', 'totalVisits', 'uniqueVisitors', 'visitsChange', 'today', 'thisMonth',
+            'range', 'totalVisits', 'uniqueVisitors', 'pageViews', 'visitsChange', 'today', 'thisMonth',
             'labels', 'visitsSeries', 'uniqueSeries',
             'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'topCountries', 'recent',
             'activeNow', 'newVisitors', 'returningVisitors', 'sessions', 'bounceRate', 'pagesPerSession', 'channels',
@@ -1339,8 +1355,10 @@ class DashboardController extends Controller
             $visitsSeries[] = $v;
             $uniqueSeries[] = (int) round($v * 0.66);
         }
-        $totalVisits = array_sum($visitsSeries);
+        // Mirrors the live figures: the headline is people, page views sit beside it.
+        $pageViews = array_sum($visitsSeries);
         $uniqueVisitors = array_sum($uniqueSeries);
+        $totalVisits = $uniqueVisitors;
         $pct = fn ($n) => (int) round($uniqueVisitors * $n);
 
         $arr = fn (array $rows) => collect($rows)->map(fn ($r) => ['label' => $r[0], 'count' => $r[1]])->values();
@@ -1364,9 +1382,9 @@ class DashboardController extends Controller
 
         return [
             'range' => $range,
-            'totalVisits' => $totalVisits, 'uniqueVisitors' => $uniqueVisitors,
+            'totalVisits' => $totalVisits, 'uniqueVisitors' => $uniqueVisitors, 'pageViews' => $pageViews,
             'visitsChange' => 14.2, 'today' => end($visitsSeries) ?: 0,
-            'thisMonth' => (int) round($totalVisits * (30 / max(1, $range))),
+            'thisMonth' => (int) round($uniqueVisitors * (30 / max(1, $range))),
             'labels' => $labels, 'visitsSeries' => $visitsSeries, 'uniqueSeries' => $uniqueSeries,
             'browsers' => $arr([['Chrome', $pct(0.62)], ['Safari', $pct(0.19)], ['Firefox', $pct(0.09)], ['Edge', $pct(0.07)], ['Opera', $pct(0.03)]]),
             'devices' => $arr([['Desktop', $pct(0.57)], ['Mobile', $pct(0.37)], ['Tablet', $pct(0.06)]]),

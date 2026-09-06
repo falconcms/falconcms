@@ -7,6 +7,16 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.11] — 2026-09-06
+
+### Changed
+
+- **Every analytics figure counts people, not page views.** Visitors, Visitors Today,
+  Visitors This Month, the period change, Top Pages, Top Referrers, Traffic Channels,
+  Traffic Sources and the Browser / Device / OS breakdowns counted one row per page view,
+  so one person reading four pages counted as four. All now count distinct visitors by IP.
+  Page views remain, as their own clearly-named tile and as a series on the traffic graph.
+
 ## [2.6.10] — 2026-09-06
 
 ### Fixed

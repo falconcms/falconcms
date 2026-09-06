@@ -477,7 +477,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Analytics\:\:\$count\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 2
 			path: src/Http/Controllers/Admin/DashboardController.php
 
 		-
@@ -507,7 +507,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Analytics\:\:\$ip_address\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 4
 			path: src/Http/Controllers/Admin/DashboardController.php
 
 		-

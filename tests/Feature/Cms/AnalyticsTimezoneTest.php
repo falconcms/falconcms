@@ -60,11 +60,15 @@ class AnalyticsTimezoneTest extends TestCase
         // 01:00 local is 19:00 UTC on the previous date — the row a server-timezone
         // count drops off today. 23:00 local lands on the same UTC date, so it was
         // never in question. Both are today where the site lives.
-        $this->visitAt($localToday->copy()->addHours(1)->utc()->toDateTimeString());
-        $this->visitAt($localToday->copy()->addHours(23)->utc()->toDateTimeString());
+        //
+        // Separate visitors on purpose: this figure counts people, so two visits from
+        // one address would be one either way and the day-boundary question — the whole
+        // point of this test — would stop being asked.
+        $this->visitAt($localToday->copy()->addHours(1)->utc()->toDateTimeString(), '203.0.113.9');
+        $this->visitAt($localToday->copy()->addHours(23)->utc()->toDateTimeString(), '203.0.113.10');
 
         // The hour before local midnight belongs to yesterday and must not be counted.
-        $this->visitAt($localToday->copy()->subHour()->utc()->toDateTimeString());
+        $this->visitAt($localToday->copy()->subHour()->utc()->toDateTimeString(), '203.0.113.11');
 
         $response = $this->analytics();
         $response->assertOk();
