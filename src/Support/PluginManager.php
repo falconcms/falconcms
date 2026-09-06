@@ -13,7 +13,7 @@ use Throwable;
  * Discovers, loads and manages drop-in plugins — the functional counterpart to
  * the theme system.
  *
- * A plugin is a folder in the app's plugins/ directory containing a plugin.json
+ * A plugin is a folder in resources/views/plugins containing a plugin.json
  * manifest and (optionally) a plugin.php bootstrap, a PSR-4 src/, a
  * ServiceProvider, routes/, database/migrations/ and resources/views/. Only
  * plugins marked active in the `plugins` table are loaded.
@@ -39,7 +39,44 @@ class PluginManager
 
     public function __construct(?string $path = null)
     {
-        $this->path = $path ?: base_path('plugins');
+        $this->path = $path ?: static::defaultPath();
+    }
+
+    /**
+     * Where plugins live: resources/views/plugins, alongside resources/views/themes.
+     *
+     * Installs created before plugins moved under resources/views keep a
+     * root-level plugins/ directory. That one stays in use until its plugins have
+     * actually been relocated (falcon:update does this) — deliberately keyed on
+     * "does it hold plugins", not "does it exist", so an empty new directory can
+     * never hide plugins that are still sitting in the old one.
+     */
+    public static function defaultPath(): string
+    {
+        $path = resource_path('views'.DIRECTORY_SEPARATOR.'plugins');
+        $legacy = base_path('plugins');
+
+        if ($legacy !== $path && !static::holdsPlugins($path) && static::holdsPlugins($legacy)) {
+            return $legacy;
+        }
+
+        return $path;
+    }
+
+    /** True when a directory contains at least one folder with a plugin.json. */
+    protected static function holdsPlugins(string $dir): bool
+    {
+        if (!is_dir($dir)) {
+            return false;
+        }
+
+        foreach (glob($dir.'/*', GLOB_ONLYDIR) ?: [] as $candidate) {
+            if (is_file($candidate.'/plugin.json')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Absolute path to the plugins directory, or a specific plugin folder. */

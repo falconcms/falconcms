@@ -15,10 +15,13 @@ class WishlistController extends Controller
     public function toggle(Request $request)
     {
         if (!auth()->check()) {
+            // Shoppers sign in on the storefront account page, never the admin login —
+            // handing that address to every anonymous visitor would undo the point of
+            // moving it off a guessable path in the first place.
             return response()->json([
                 'success' => false,
                 'requires_login' => true,
-                'login_url' => route('admin.login'),
+                'login_url' => get_lazy_account_url(),
                 'message' => 'Please log in to use your wishlist.',
             ], 200);
         }
@@ -50,9 +53,13 @@ class WishlistController extends Controller
     public function index()
     {
         if (!auth()->check()) {
-            session()->put('url.intended', url()->current());
+            // redirect_to brings them back here once they have signed in; the account page
+            // passes it through and ShopFrontendController::safeRedirectUrl() vets it, so
+            // it cannot be pointed off-site.
+            $account = get_lazy_account_url();
+            $account .= (str_contains($account, '?') ? '&' : '?').'redirect_to='.urlencode(url()->current());
 
-            return redirect()->route('admin.login')->with('error', 'Please log in to view your wishlist.');
+            return redirect($account)->with('error', 'Please log in to view your wishlist.');
         }
 
         $productIds = Wishlist::where('user_id', auth()->id())->latest()->pluck('product_id')->all();
@@ -76,7 +83,7 @@ class WishlistController extends Controller
     public function remove(Request $request)
     {
         if (!auth()->check()) {
-            return redirect()->route('admin.login');
+            return redirect(get_lazy_account_url());
         }
         $request->validate(['product_id' => 'required|integer']);
         Wishlist::where('user_id', auth()->id())->where('product_id', (int) $request->product_id)->delete();

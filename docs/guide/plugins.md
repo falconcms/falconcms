@@ -36,10 +36,17 @@ Three ways, all equivalent:
 
 1. **Drag & drop** — Plugins → Add New, drop the `.zip`, click **Install Now**.
 2. **From URL** — Plugins → Add New, paste a direct `.zip` link, click **Install**.
-3. **Drop-in** — copy the plugin folder into your app's `plugins/` directory.
+3. **Drop-in** — copy the plugin folder into your app's `resources/views/plugins/` directory.
 
 Installing only puts the files in place. **Activate** it to switch it on — that's
 when its migrations run and its code starts loading.
+
+::: tip Coming from an older install?
+Plugins used to live in a `plugins/` directory at the project root. `php artisan
+falcon:update` moves them into `resources/views/plugins` for you, keeping every
+plugin's active/inactive state and data. Until that runs, the old location keeps
+working — nothing breaks if you update the package without it.
+:::
 
 ### Updating
 
@@ -84,7 +91,7 @@ a theme. Only install plugins from sources you trust.
 php artisan make:plugin "SEO Booster"
 ```
 
-This creates `plugins/seo-booster/` with a manifest, a bootstrap file and a
+This creates `resources/views/plugins/seo-booster/` with a manifest, a bootstrap file and a
 lifecycle class ready to fill in.
 
 ### Folder structure
@@ -93,7 +100,7 @@ Only `plugin.json` is required. Everything else is picked up by convention if
 present — you rarely need to write a ServiceProvider.
 
 ```
-plugins/seo-booster/
+resources/views/plugins/seo-booster/
 ├── plugin.json                 # manifest (required)
 ├── plugin.php                  # bootstrap — hooks, menus, settings
 ├── src/                        # PSR-4 classes (namespace from the manifest)

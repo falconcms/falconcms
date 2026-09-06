@@ -13,8 +13,8 @@
             <nav class="hidden lg:flex items-center gap-8 h-full lb-desktop-nav">
                 @php $menuItems = get_lazy_menu('header'); @endphp
                 @foreach($menuItems as $item)
-                    @php 
-                        $isActive = (url()->current() == $item->url) || (request()->is(ltrim(parse_url($item->url, PHP_URL_PATH), '/')));
+                    @php
+                        $isActive = falcon_menu_is_active($item->url);
                         $itemHoverColor = get_cms_option('theme_menu_hover_color', '#0091ea');
                     @endphp
                     <div class="relative group h-full flex items-center">
@@ -132,8 +132,8 @@
         <div class="flex-grow overflow-y-auto p-6">
             <nav class="space-y-4">
                 @foreach($menuItems as $item)
-                    @php 
-                        $isActive = (url()->current() == $item->url) || (request()->is(ltrim(parse_url($item->url, PHP_URL_PATH), '/')));
+                    @php
+                        $isActive = falcon_menu_is_active($item->url);
                     @endphp
                     <div>
                         @php
@@ -145,8 +145,8 @@
                         @if($item->children->count() > 0)
                             <div class="pl-4 space-y-2 border-l border-slate-100 ml-1">
                                 @foreach($item->children as $child)
-                                    @php 
-                                        $childActive = (url()->current() == $child->url) || (request()->is(ltrim(parse_url($child->url, PHP_URL_PATH), '/')));
+                                    @php
+                                        $childActive = falcon_menu_is_active($child->url);
                                     @endphp
                                     @php
                                         $__mcic = $child->icon ?? '';

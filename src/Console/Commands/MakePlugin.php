@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Console\Commands;
 
+use FalconCms\Core\Support\PluginManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -14,7 +15,7 @@ class MakePlugin extends Command
 {
     protected $signature = 'make:plugin {name : Plugin display name}';
 
-    protected $description = 'Scaffold a new plugin in the plugins/ directory';
+    protected $description = 'Scaffold a new plugin in the resources/views/plugins directory';
 
     public function handle(): int
     {
@@ -26,7 +27,10 @@ class MakePlugin extends Command
             return self::FAILURE;
         }
 
-        $dir = base_path('plugins/'.$slug);
+        // Resolve through the manager so scaffolding always lands wherever the
+        // loader actually looks (resources/views/plugins, or a legacy install's
+        // root-level plugins/).
+        $dir = app(PluginManager::class)->path($slug);
         if (File::isDirectory($dir)) {
             $this->error("Plugin '{$slug}' already exists at {$dir}.");
 

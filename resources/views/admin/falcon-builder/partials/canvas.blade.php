@@ -67,6 +67,14 @@
             </template>
         </div>
 
+        {{-- Nested editing is modal: while a nested row is open, this sheet covers the whole
+             canvas and swallows every click, so no other section, column or element can be
+             touched. The open row lifts itself above it (z-[950] on its wrapper), so the work
+             inside — and the Finished tick — stay reachable. It says nothing when clicked:
+             the rest of the canvas is dimmed and blurred, which already reads as "not now". --}}
+        <div v-if="nestedLockActive" class="absolute inset-0 z-[900]"
+             @click.stop @contextmenu.prevent.stop></div>
+
         {{-- Read-only FOOTER preview --}}
         @if(!empty($frameFooterUrl ?? null))
         <div v-if="!isPreview" class="builder-frame builder-frame-footer">

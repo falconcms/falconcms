@@ -5,7 +5,84 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.6 <Badge type="tip" text="Latest" /> {#v2-6-6}
+## v2.6.7 <Badge type="tip" text="Latest" /> {#v2-6-7}
+
+**Released: 2026-09-06**
+
+### Security
+
+- **`/admin` no longer gives away the login page.** The login URL can be moved off a
+  guessable path in Settings, but any anonymous request to `/admin` was answered with a
+  redirect to wherever it had been moved to — and `/admin/login` redirected there too.
+  The one address an attacker is guaranteed to try was handing over the one address the
+  setting exists to hide. To a visitor without a session the admin now simply returns 404.
+
+  A signed-in administrator sees no change. The trade-off is that a session which expires
+  mid-edit now ends in a 404 rather than the login form, so keep the login URL somewhere
+  you can find it.
+
+- **The wishlist no longer leaks the admin login URL either.** Its "please log in" reply
+  carried `route('admin.login')` — in JSON, to every anonymous visitor who clicked the
+  heart. Shoppers sign in on the storefront account page, so that is where the wishlist
+  now points, and it passes `redirect_to` so they come back to their wishlist afterwards
+  instead of being stranded on the account page.
+
+### Added
+
+- **A warning before you lose unsaved work.** Close the tab or navigate away with changes
+  you have not saved and the browser asks first. It covers the page builder, where it
+  follows the same state the Save button does, and every admin screen — post, page,
+  product, settings — through the shared layout.
+
+  Deliberately quiet: only POST forms count, so typing in a search box never triggers it;
+  only real typing counts, not values scripts set while the page loads; submitting clears
+  it; and rich-text editors are asked directly whether they are dirty, since they type
+  inside their own frame where those events never reach.
+
+- **Nested columns are edited in place, and closed when you are done.** A nested row now
+  draws closed, with the same edit/add panel a container or column carries sitting on it.
+  The pencil opens it; a Finished tick closes it again. While it is open the rest of the
+  canvas dims and stops responding, so a click meant for the nested column cannot land in
+  the section behind it, and no new container or column can be started on top of half
+  finished work. Save arms when you finish, not on every keystroke inside.
+
+  Closing puts the editing chrome away, never the design: a row with content in it keeps
+  showing that content, and only an empty one falls back to a placeholder bar. Preview
+  mode ignores all of it and draws the real page.
+
+### Fixed
+
+- **The Card element ignored its Layout setting on the canvas.** Grid, List, Masonry and
+  Carousel all render through a stylesheet the element emits, and the builder sanitises
+  the preview HTML before inserting it — which dropped that stylesheet on the floor. Every
+  layout therefore looked identical while the front-end rendered them correctly. The CSS
+  is now lifted out before sanitising and mounted as the preview's own stylesheet, so the
+  canvas changes the moment you switch layout.
+
+- **The Falcon Slider element showed nothing once a slider was chosen.** Same cause, one
+  step further: the live preview is an `<iframe>`, and the sanitiser removes those
+  outright, so the canvas was left with an empty box. The preview frame is now rendered as
+  a real element rather than passed through as markup.
+
+- **A menu item that is only an anchor broke the header on PHP 8.1+.** `#section` has no
+  path for `parse_url()` to return, and the result went straight into `ltrim()` — a
+  deprecation notice on every page with such an item. Along the way the active-state check
+  learned three things it had never known: the Home item now highlights on the home page,
+  a menu URL written with a trailing slash matches the page it points at, and a link to
+  another site can no longer light up as the current page.
+
+### Changed
+
+- **Plugins live in `resources/views/plugins`**, alongside themes, instead of a `plugins/`
+  directory at the project root. `php artisan falcon:update` moves an existing install
+  across — keeping each plugin's active state, data and migrations — and until it runs the
+  old location keeps working, so updating the package on its own breaks nothing. Nothing
+  at the destination is ever overwritten: a name that already exists there is left alone
+  and reported.
+
+---
+
+## v2.6.6 {#v2-6-6}
 
 **Released: 2026-09-06**
 

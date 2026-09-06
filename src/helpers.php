@@ -898,6 +898,50 @@ if (!function_exists('falcon_anchor_url')) {
     }
 }
 
+if (!function_exists('falcon_menu_is_active')) {
+    /**
+     * Is this menu item's URL the page currently being viewed?
+     *
+     * Menu URLs are saved in every shape a person might type: "/about", "/about/",
+     * a full "https://site.test/about", a bare "/" for Home, an anchor-only
+     * "#plans", or a link off to another site. This normalises them all down to a
+     * path and compares that against the request.
+     *
+     *  - Trailing slashes do not matter: "/about/" matches /about.
+     *  - "/" matches the home page (which the request reports as "/", not "").
+     *  - An item with no path of its own — "#plans", or a bare host — never
+     *    matches, since it does not point at a page.
+     *  - A link to another host never matches, so an external "https://x.test/"
+     *    cannot light up on our own home page.
+     */
+    function falcon_menu_is_active(?string $url): bool
+    {
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return false;
+        }
+
+        if (url()->current() === $url) {
+            return true;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+        if ($host && strcasecmp($host, request()->getHost()) !== 0) {
+            return false;
+        }
+
+        // parse_url() gives null for "#plans" and for a bare host; both mean
+        // "no page of its own", which is different from the home page's "/".
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        if ($path === '') {
+            return false;
+        }
+
+        return request()->is(trim($path, '/') ?: '/');
+    }
+}
+
 if (!function_exists('falcon_refresh_route_cache')) {
     /**
      * Rebuild the route cache, so a setting that routes are built from takes effect.

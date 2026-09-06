@@ -35,8 +35,14 @@ class AdminMiddleware
         }
 
         // 3. Ensure Authenticated
+        //
+        // 404, not a redirect to the login page. The login URL is deliberately moved off
+        // a guessable path (Settings → Login URL); bouncing every anonymous hit on /admin
+        // straight to it handed that address to anyone who typed the obvious guess, which
+        // defeated the whole point of moving it. To someone without a session, the admin
+        // now simply does not exist.
         if (!auth()->check()) {
-            return redirect()->route('admin.login')->with('error', 'Please login to access the admin panel.');
+            abort(404);
         }
 
         $user = auth()->user()->fresh();

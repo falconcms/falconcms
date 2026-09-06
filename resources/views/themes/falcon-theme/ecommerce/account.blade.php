@@ -36,7 +36,7 @@
                 </a>
                 <form action="{{ route('shop.account.logout') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
+                    <input type="hidden" name="redirect_to" value="{{ request()->query('redirect_to') ?: url()->current() }}">
                     <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:border-primary hover:text-primary transition">
                         <i data-lucide="log-out" class="w-4 h-4"></i> Log out
                     </button>
@@ -593,7 +593,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
                 <form action="{{ route('shop.account.login') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="redirect_to" value="{{ url()->current() }}">
+                    <input type="hidden" name="redirect_to" value="{{ request()->query('redirect_to') ?: url()->current() }}">
                     <div style="display:flex;flex-direction:column;gap:1.1rem">
                         <div class="acc-lf-wrap">
                             <input type="email" id="acc_email" name="account_email"

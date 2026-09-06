@@ -270,6 +270,26 @@
         opacity: 0;
         transition: opacity 0.2s;
     }
+    /* While nested columns are open for editing, everything that is not that row
+       fades back, so the row you are working in is the only sharp thing on the canvas.
+       Applied per sibling level (see nestedDim* in scripts) because opacity on a parent
+       would take the open row down with it. */
+    .falcon-nested-dim {
+        opacity: 0.32;
+        filter: blur(1.5px) grayscale(0.35);
+        transition: opacity 0.25s ease, filter 0.25s ease;
+        user-select: none;
+        /* Not just faded — unreachable. The canvas lock sheet sits at z-900 while the
+           builder's own toolbars live at z-1000..1500, so they would pop up over it on
+           hover; killing pointer events on the dimmed subtree stops that at the source. */
+        pointer-events: none !important;
+    }
+    /* The descendants too: toolbars inside re-enable pointer events on themselves
+       (`pointer-events-auto`), which would otherwise punch back through. */
+    .falcon-nested-dim * {
+        pointer-events: none !important;
+    }
+
     .column-left-panel {
         position: absolute;
         left: 0;

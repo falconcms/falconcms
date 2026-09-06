@@ -261,6 +261,58 @@
     })();
     </script>
 
+    {{-- Unsaved-changes guard.
+         Anywhere in the admin — post, page, product, settings — edit something and try to
+         close the tab or navigate away without saving, and the browser asks first.
+
+         Deliberately narrow, so it warns about real work and nothing else:
+           · only POST forms count; GET forms are searches and filters
+           · only actual user input marks it dirty, not values JS sets on load
+           · submitting (or opting out with data-no-unsaved-guard) clears it
+           · TinyMCE types inside its own iframe, where these events never reach, so its
+             editors are asked directly whether they are dirty
+         Screens that save over fetch() can clear it themselves with falconMarkSaved(). --}}
+    <script>
+    (function () {
+        var touched = false, leaving = false;
+
+        function guarded(el) {
+            var form = el && el.closest ? el.closest('form') : null;
+            if (!form || form.hasAttribute('data-no-unsaved-guard')) return null;
+            return (form.method || '').toLowerCase() === 'post' ? form : null;
+        }
+
+        document.addEventListener('input',  function (e) { if (guarded(e.target)) touched = true; }, true);
+        document.addEventListener('change', function (e) { if (guarded(e.target)) touched = true; }, true);
+        // Any submit is an intentional departure — the page is about to be replaced.
+        document.addEventListener('submit', function () { leaving = true; }, true);
+
+        function editorDirty() {
+            try {
+                return !!(window.tinymce && tinymce.editors && tinymce.editors.some(function (ed) {
+                    return ed.isDirty && ed.isDirty();
+                }));
+            } catch (err) { return false; }
+        }
+
+        window.falconMarkSaved = function () {
+            touched = false;
+            try {
+                if (window.tinymce && tinymce.editors) tinymce.editors.forEach(function (ed) { ed.setDirty && ed.setDirty(false); });
+            } catch (err) {}
+        };
+        window.falconHasUnsavedChanges = function () { return !leaving && (touched || editorDirty()); };
+
+        window.addEventListener('beforeunload', function (e) {
+            if (!window.falconHasUnsavedChanges()) return;
+            // Browsers show their own wording; returnValue just has to be set.
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        });
+    })();
+    </script>
+
     @stack('scripts')
     {!! do_falcon_action('falcon_admin_footer') !!}
 </body>

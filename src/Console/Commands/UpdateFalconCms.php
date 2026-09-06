@@ -5,6 +5,7 @@ namespace FalconCms\Core\Console\Commands;
 use App\Models\User;
 use FalconCms\Core\Console\Concerns\ReconcilesMigrations;
 use FalconCms\Core\Models\Post;
+use FalconCms\Core\Support\PluginManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +21,12 @@ class UpdateFalconCms extends Command
     public function handle()
     {
         $this->info('--- Starting Falcon CMS Update ---');
+
+        // 0. Move a legacy root-level plugins/ directory under resources/views,
+        //    next to themes. Runs before migrations so a plugin that ships new
+        //    migrations in this release still gets them in this same run.
+        $this->info('Step 0: Checking plugins location...');
+        $this->relocatePlugins();
 
         // 1. Run Migrations (reconcile already-existing tables first so migrate never fails
         //    with "table already exists" on a partial / pre-existing database).
@@ -85,6 +92,111 @@ class UpdateFalconCms extends Command
         $this->info('---------------------------------------');
         $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
+    }
+
+    /**
+     * Relocate plugins from the pre-2.3 root-level plugins/ directory into
+     * resources/views/plugins.
+     *
+     * Safe to run on every update: it is a no-op once there is nothing left at
+     * the old location. Nothing at the destination is ever overwritten — a slug
+     * that already exists there is left where it is and reported, so no
+     * customer's plugin can be silently replaced.
+     */
+    protected function relocatePlugins(): void
+    {
+        $legacy = base_path('plugins');
+        $target = resource_path('views'.DIRECTORY_SEPARATOR.'plugins');
+
+        if (!is_dir($legacy) || realpath($legacy) === realpath($target)) {
+            $this->line('  Plugins already live in resources/views/plugins — nothing to move.');
+
+            return;
+        }
+
+        // A junction/symlink is a dev setup pointing at a checkout elsewhere;
+        // moving it would drag someone's source tree around. Leave it alone.
+        if (is_link(rtrim($legacy, DIRECTORY_SEPARATOR))) {
+            $this->warn('  plugins/ is a symlink — left in place. Move it by hand if you want it under resources/views.');
+
+            return;
+        }
+
+        $candidates = array_filter(
+            glob($legacy.'/*', GLOB_ONLYDIR) ?: [],
+            fn ($dir) => is_file($dir.'/plugin.json')
+        );
+
+        if (!$candidates) {
+            $this->line('  No plugins found in the old plugins/ directory — nothing to move.');
+
+            return;
+        }
+
+        File::ensureDirectoryExists($target);
+
+        $moved = [];
+        $skipped = [];
+
+        foreach ($candidates as $dir) {
+            $slug = basename($dir);
+            $dest = $target.DIRECTORY_SEPARATOR.$slug;
+
+            if (file_exists($dest)) {
+                $skipped[] = $slug;
+
+                continue;
+            }
+
+            try {
+                File::moveDirectory($dir, $dest);
+                $moved[] = $slug;
+            } catch (\Throwable $e) {
+                $skipped[] = $slug;
+                Log::warning("Falcon update: could not relocate plugin '{$slug}': ".$e->getMessage());
+            }
+        }
+
+        // Only remove the old directory once it is genuinely empty — never delete
+        // anything the customer may have left in there.
+        if (!$skipped && File::isEmptyDirectory($legacy)) {
+            @rmdir($legacy);
+        }
+
+        if ($moved) {
+            $this->info('  Moved to resources/views/plugins: '.implode(', ', $moved));
+            $this->registerRelocatedMigrations($target);
+        }
+
+        if ($skipped) {
+            $this->warn('  Left in plugins/ (already present at the new location, or not movable): '.implode(', ', $skipped));
+        }
+    }
+
+    /**
+     * Point the migrator at the active plugins' new migration directories.
+     *
+     * The service provider registered those paths at boot, before the move, so
+     * without this the plugin migrations in this release would be skipped until
+     * the next command ran.
+     */
+    protected function registerRelocatedMigrations(string $target): void
+    {
+        try {
+            $migrator = $this->laravel['migrator'];
+
+            foreach ((new PluginManager($target))->all() as $data) {
+                if (empty($data['active'])) {
+                    continue;
+                }
+                $migrations = $data['dir'].DIRECTORY_SEPARATOR.'database'.DIRECTORY_SEPARATOR.'migrations';
+                if (is_dir($migrations)) {
+                    $migrator->path($migrations);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Falcon update: could not re-register relocated plugin migrations: '.$e->getMessage());
+        }
     }
 
     protected function syncFooterDefaults()

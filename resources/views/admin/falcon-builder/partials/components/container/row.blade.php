@@ -9,6 +9,7 @@
 @else
 <div class="container-row relative group/cont"
      :class="[
+        nestedDimContainer(ci) ? 'falcon-nested-dim' : '',
         (!isPreview && editingCi === ci) ? 'container-active' : '',
         isDragging && dragCi === ci && !isColumnDrag ? 'dragging-no-transition' : 'transition-all',
         dragTarget === 'container-' + ci + '-null-null-null-null' && dragPosition === 'top' ? 'border-t-4 border-t-blue-500' : '',
@@ -99,7 +100,7 @@
 
     @if(!$pcMode)
     <!-- Container Toolbar -->
-    <div class="container-right-panel transition-opacity" v-if="!isPreview"
+    <div class="container-right-panel transition-opacity" v-if="!isPreview && !nestedLockActive"
          :class="(editingCi === ci || (isDragging && dragCi === ci)) ? 'opacity-100' : 'opacity-0'">
         <div class="panel-inner shadow-xl group/panel">
             <div class="flex items-center overflow-hidden max-w-0 opacity-0 group-hover/panel:max-w-[200px] group-hover/panel:opacity-100 group-hover/panel:overflow-visible transition-all duration-300">

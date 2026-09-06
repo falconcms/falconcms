@@ -1,4 +1,11 @@
 <div v-if="el.type === 'row'" class="nested-row-outer-wrapper w-full shrink-0 relative rounded-lg group/nrow transition-colors hover:bg-slate-50/20"
+     {{-- While the nested columns are open for editing, outline the row so it reads as
+          the surface you are working inside, and lift it above the canvas lock sheet so
+          this row alone stays clickable. Canvas-only, like the open state itself. --}}
+     {{-- No background here on purpose: the lock sheet is transparent, so z-index alone
+          is enough to keep this row on top, and painting one would hide whatever the
+          parent column has behind it. --}}
+     :class="(!isPreview && isNestedRowOpen(el, ci, coli, eli)) ? 'ring-1 ring-[#2271b1]/50 rounded-md z-[950]' : ''"
      {{-- flex-basis is the MAIN size, and .column-inner is a column-direction flex box, so a
           flat `basis-full` here meant "be as tall as the whole column" — the nested row then
           stretched past its own content and the container background showed through above and
@@ -26,7 +33,7 @@
                 </div>
                 <!-- Add (Opens Modal) -->
                 <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool"
-                     @click.stop="openElementModal(ci, coli, 'nested', false, eli)">
+                     @click.stop="setNestedRowOpen(el, ci, coli, eli, true); openElementModal(ci, coli, 'nested', false, eli)">
                     <i class="fa fa-plus text-white text-[10px]"></i>
                     <div class="falcon-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Nested</div>
                 </div>
@@ -56,8 +63,21 @@
         </div>
     </div>
 
-    <div :style="containerInnerStyle(el)" class="w-full relative">
-        <div v-for="(ncol, ncoli) in el.columns" 
+    {{-- Closed and still empty: a slim placeholder bar, since there is nothing to show.
+         Once the row has content it draws that content instead (below) — closing is only
+         about putting the editing chrome away, never about hiding the design. --}}
+    <div v-if="!isPreview && !isNestedRowOpen(el, ci, coli, eli) && !nestedRowHasContent(el)"
+         class="nested-row-closed w-full rounded-md border border-dashed border-[#ff9800]/50 bg-[#ff9800]/[0.05] hover:bg-[#ff9800]/[0.10] hover:border-[#ff9800]/80 cursor-pointer transition-colors"
+         style="min-height:46px"
+         @click.stop="setNestedRowOpen(el, ci, coli, eli, true)"></div>
+
+    {{-- The nested columns themselves. While the row is closed this still renders —
+         the design stays on screen — but pointer-events:none makes it inert, so no
+         hover chrome appears, nothing inside can be clicked, dragged or dropped on,
+         and the click surface + panel below own the interaction instead. --}}
+    <div v-else :style="containerInnerStyle(el)" class="w-full relative"
+         :class="(!isPreview && !isNestedRowOpen(el, ci, coli, eli)) ? 'pointer-events-none' : ''">
+        <div v-for="(ncol, ncoli) in el.columns"
              class="column-outer relative"
              :class="['ncol-' + ncol.id, getVisibilityClasses(ncol.settings)]"
              :style="columnOuterStyle(el, ncol, el.columns.length)">
@@ -85,7 +105,7 @@
                  @drop="onDrop($event, 'nested-column', ci, coli, eli, ncoli)">
 
                 <!-- Nested Column Toolbar (Horizontal Top-Left, Premium Orange) -->
-                <div class="absolute top-0 left-0 transition-opacity z-[1000] hover:z-[1100] p-1" v-if="!isPreview"
+                <div class="absolute top-0 left-0 transition-opacity z-[1000] hover:z-[1100] p-1" v-if="nestedChrome(el, ci, coli, eli)"
                      :class="(hoveredType === 'nested-column' && hoveredCi === ci && hoveredColi === coli && hoveredEli === eli && hoveredNcoli === ncoli) ? 'opacity-100' : 'opacity-0'">
                     <div class="bg-[#ff9800] flex items-center rounded shadow-xl h-7 px-1 pointer-events-auto group/ncbar overflow-hidden hover:overflow-visible max-w-[60px] hover:max-w-[280px] transition-all duration-300 ease-in-out">
 
@@ -136,7 +156,7 @@
                 </div>
 
                 <!-- Overlays -->
-                <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-0">
+                <div v-if="nestedChrome(el, ci, coli, eli)" class="absolute inset-0 pointer-events-none z-0">
                     <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
                          :style="{ height: (ncol.settings.marginTop || 0) + 'px', top: '-' + (ncol.settings.marginTop || 0) + 'px' }"
                          :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli && dragType === 'marginTop')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
@@ -180,7 +200,7 @@
                 </div>
 
                 <!-- Nested Column Handles -->
-                <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-[1500] transition-opacity"
+                <div v-if="nestedChrome(el, ci, coli, eli)" class="absolute inset-0 pointer-events-none z-[1500] transition-opacity"
                      :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                     
                     <div class="absolute top-0.5 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-0.5 items-start">
@@ -241,7 +261,7 @@
                     </div>
                 </div>
 
-                <div v-if="!isPreview && ncol.elements.length === 0" class="text-center w-full flex flex-col items-center py-10">
+                <div v-if="nestedChrome(el, ci, coli, eli) && ncol.elements.length === 0" class="text-center w-full flex flex-col items-center py-10">
                     <button @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli)" class="w-8 h-8 bg-[#ff9800] text-white rounded shadow-lg flex items-center justify-center hover:scale-110 transition-all relative group/nadd pointer-events-auto">
                         <i class="fa fa-plus text-base pointer-events-none"></i>
                         <div class="falcon-tooltip-v2 !bottom-auto !top-full !mt-2 opacity-0 group-hover/nadd:opacity-100">Add Element</div>
@@ -319,6 +339,8 @@
                                         </div>
                                         <p v-if="!it.rows.length" class="text-[10px] text-slate-300 italic">No rows</p>
                                     </div>
+                                    <iframe v-else-if="it.kind === 'iframe'" :src="it.src" title="Live preview" scrolling="no"
+                                            style="width:100%;height:360px;border:0;display:block;background:#0f172a;overflow:hidden;pointer-events:none;"></iframe>
                                     <div v-else-if="it.value" :style="it.style" :class="it.hoverClass" v-safe-html="it.value"></div>
                                 </template>
                                 <p v-if="!getCustomElementRender(el).items.length" class="text-[12px] font-semibold text-slate-400 text-center py-2"
@@ -327,7 +349,7 @@
                         </template>
 
                         <!-- Nested Element Toolbar (Center, Compact & Expandable) -->
-                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover/nel:opacity-100 transition-all duration-200 z-[1010] hover:z-[1100] pointer-events-none" v-if="!isPreview">
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover/nel:opacity-100 transition-all duration-200 z-[1010] hover:z-[1100] pointer-events-none" v-if="nestedChrome(el, ci, coli, eli)">
                             <div class="flex items-center bg-[#9c27b0] text-white rounded shadow-xl h-7 px-1 pointer-events-auto group/netbar overflow-hidden hover:overflow-visible max-w-[60px] hover:max-w-[250px] transition-all duration-300 ease-in-out">
                                 
                                 <!-- Always Visible Part: Edit & Add -->
@@ -371,6 +393,59 @@
                         </div>
                     </div>
             </div>
+        </div>
+    </div>
+
+    {{-- Closed: the whole area opens the row on click, and the panel rides on top. --}}
+    <div v-if="!isPreview && !isNestedRowOpen(el, ci, coli, eli)"
+         class="absolute inset-0 z-[999] cursor-pointer"
+         @click.stop="setNestedRowOpen(el, ci, coli, eli, true)"></div>
+
+    <template v-if="!isPreview && !isNestedRowOpen(el, ci, coli, eli)">
+        {{-- Centred edit/add panel — the same .panel-inner/.panel-btn pieces a container
+             or column uses, in the nested toolbar's orange rather than .panel-inner's
+             blue (set inline, so the container and column panels keep their own colour).
+             Pencil opens the columns; hovering the panel expands it to the rest. --}}
+        <div class="absolute inset-0 flex items-center justify-center z-[1000] pointer-events-none">
+            <div class="panel-inner shadow-xl group/npanel pointer-events-auto hover:z-[1100]" style="background:#ff9800">
+                <div class="panel-btn" @click.stop="setNestedRowOpen(el, ci, coli, eli, true)">
+                    <i class="fa fa-pen"></i><div class="falcon-tooltip">Open Nested Columns</div>
+                </div>
+                {{-- This panel stands where the column's own blue + used to be, so it keeps
+                     that button's job: add an element to the PARENT column, alongside the
+                     nested row — not into the nested row itself. --}}
+                <div class="panel-btn" @click.stop="openElementModal(ci, coli, 'design')">
+                    <i class="fa fa-plus-square"></i><div class="falcon-tooltip">Add Element</div>
+                </div>
+
+                <div class="flex items-center overflow-hidden max-w-0 opacity-0 group-hover/npanel:max-w-[220px] group-hover/npanel:opacity-100 group-hover/npanel:overflow-visible transition-all duration-300">
+                    <div class="panel-btn" @click.stop="duplicateNestedRow(ci, coli, eli)"><i class="fa fa-copy"></i><div class="falcon-tooltip">Duplicate</div></div>
+                    <div class="panel-btn" @click.stop="column.elements.splice(eli, 1)"><i class="fa fa-trash-alt"></i><div class="falcon-tooltip">Delete</div></div>
+                    <div class="panel-btn cursor-move" draggable="true" @dragstart="onDragStart($event, 'element', ci, coli, eli)" @dragend="onDragEnd"><i class="fa fa-arrows-alt"></i><div class="falcon-tooltip">Drag</div></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    {{-- Open state: Finished / Edit / Close, sitting on the bottom edge like the
+         nested-column bar in Avada. Finished and Close both just collapse it again —
+         nothing here touches the row's content or its settings. --}}
+    <div v-if="!isPreview && isNestedRowOpen(el, ci, coli, eli)"
+         class="absolute left-1/2 -translate-x-1/2 -bottom-3 z-[1060] flex items-center bg-[#2271b1] text-white rounded shadow-xl h-7 px-1">
+        <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/nfin"
+             @click.stop="setNestedRowOpen(el, ci, coli, eli, false)">
+            <i class="fa fa-check text-[10px]"></i>
+            <div class="falcon-tooltip-v2 opacity-0 group-hover/nfin:opacity-100 z-[100] whitespace-nowrap">Finished</div>
+        </div>
+        <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/nfed"
+             @click.stop="setEditingContext('nested-row', ci, coli, eli)">
+            <i class="fa fa-pen text-[10px]"></i>
+            <div class="falcon-tooltip-v2 opacity-0 group-hover/nfed:opacity-100 z-[100] whitespace-nowrap">Edit Row</div>
+        </div>
+        <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/nfcl"
+             @click.stop="setNestedRowOpen(el, ci, coli, eli, false)">
+            <i class="fa fa-times text-[10px]"></i>
+            <div class="falcon-tooltip-v2 opacity-0 group-hover/nfcl:opacity-100 z-[100] whitespace-nowrap">Close</div>
         </div>
     </div>
 </div>

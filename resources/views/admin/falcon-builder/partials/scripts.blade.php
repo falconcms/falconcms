@@ -444,6 +444,107 @@
                 hoveredNcoli.value = ncoli;
             };
 
+            // ── Nested columns: open / closed on the canvas ──────────────────────
+            // A nested row draws as a slim closed bar until it is opened for editing,
+            // and the Finished tick closes it again. This is canvas-only state kept in
+            // its own map — it is never written into el.settings, so the saved layout,
+            // the shortcode round-trip and the front-end are all untouched by it.
+            // Preview mode ignores it entirely and always draws the real thing.
+            const openNestedRows = reactive({});
+            const nestedRowKey = (el, ci, coli, eli) =>
+                (el && el.id) ? ('id:' + el.id) : ('at:' + ci + '-' + coli + '-' + eli);
+            const isNestedRowOpen = (el, ci, coli, eli) => !!openNestedRows[nestedRowKey(el, ci, coli, eli)];
+            const setNestedRowOpen = (el, ci, coli, eli, open) => {
+                const key = nestedRowKey(el, ci, coli, eli);
+                if (open) openNestedRows[key] = true;
+                else {
+                    delete openNestedRows[key];
+                    // Finishing is what commits the work done inside a nested row: while the
+                    // row was open the Save button was deliberately held back (see the dirty
+                    // watcher), so settle it here against the layout as it now stands.
+                    // Comparing with the last saved layout rather than just forcing the flag
+                    // on keeps Save dark for a row that was only opened and closed again.
+                    if (_trackLayoutDirty) isDirty.value = (serializedLayout.value !== lastSavedLayout);
+                }
+            };
+
+            // ── While a nested row is open, the rest of the page is off limits ──────
+            // Working inside nested columns is modal: until the Finished tick is pressed,
+            // nothing outside that row can be selected, added to or deleted, and no new
+            // container or column can be created. Finishing releases it.
+            const openNestedRowAt = computed(() => {
+                const L = layout.value || [];
+                for (let ci = 0; ci < L.length; ci++) {
+                    const cols = L[ci].columns || [];
+                    for (let coli = 0; coli < cols.length; coli++) {
+                        const els = cols[coli].elements || [];
+                        for (let eli = 0; eli < els.length; eli++) {
+                            const el = els[eli];
+                            if (el && el.type === 'row' && isNestedRowOpen(el, ci, coli, eli)) return { ci, coli, eli };
+                        }
+                    }
+                }
+                return null;
+            });
+
+            const nestedLockActive = computed(() => !isPreview.value && openNestedRowAt.value !== null);
+
+            /** True when the open nested row makes this target off limits. */
+            const nestedLocked = (ci = null, coli = null, eli = null) => {
+                const open = nestedLockActive.value ? openNestedRowAt.value : null;
+                if (!open) return false;
+                // The open row itself and everything inside it stay editable.
+                return !(ci === open.ci && coli === open.coli && eli === open.eli);
+            };
+
+            /** Same, used as an early-return guard. Silent on purpose: the rest of the
+             *  canvas is visibly dimmed while the row is open, so a toast on every stray
+             *  click would only be noise. */
+            const nestedLockBlocks = (ci = null, coli = null, eli = null) => nestedLocked(ci, coli, eli);
+
+            // How the dimming is spread. opacity/blur on an ancestor would fade the open
+            // row along with everything else, so each level fades only its *siblings*:
+            // other containers whole, then the other columns of the row's container, then
+            // the other elements of the row's column. What is left sharp is the row.
+            const nestedDimContainer = (ci) =>
+                nestedLockActive.value && ci !== openNestedRowAt.value.ci;
+            const nestedDimColumn = (ci, coli) =>
+                nestedLockActive.value && ci === openNestedRowAt.value.ci && coli !== openNestedRowAt.value.coli;
+            const nestedDimElement = (ci, coli, eli) =>
+                nestedLockActive.value && ci === openNestedRowAt.value.ci
+                && coli === openNestedRowAt.value.coli && eli !== openNestedRowAt.value.eli;
+
+            // Is the thing currently being edited inside a nested row that is open?
+            // Work in there is held back from the Save button until the Finished tick;
+            // everything else — the parent column included — keeps enabling Save at once.
+            const editingInsideOpenNestedRow = () => {
+                const ctx = editingContext.value;
+                if (!ctx || ctx.ncoli === null || ctx.ncoli === undefined) return false;
+                if (ctx.ci === null || ctx.coli === null || ctx.eli === null) return false;
+                const row = layout.value?.[ctx.ci]?.columns?.[ctx.coli]?.elements?.[ctx.eli];
+                return !!(row && row.type === 'row' && isNestedRowOpen(row, ctx.ci, ctx.coli, ctx.eli));
+            };
+
+            // A closed nested row still draws its content — it just draws it inert, with
+            // none of the editing chrome (column toolbars, padding/margin handles, guides,
+            // the empty-column add button). This is the flag those pieces hang off.
+            const nestedChrome = (el, ci, coli, eli) => !isPreview.value && isNestedRowOpen(el, ci, coli, eli);
+            // True once anything has been placed in the row, which is what decides between
+            // showing that content closed and showing the slim empty placeholder bar.
+            const nestedRowHasContent = (el) =>
+                !!(el && Array.isArray(el.columns) && el.columns.some(c => (c.elements || []).length > 0));
+
+            // Targeting anything INSIDE a nested row — adding an element to a nested
+            // column, editing one, picking it from the context menu — opens that row, so
+            // what you just acted on is on screen instead of hidden behind a closed bar.
+            // Only opening is automatic; closing stays the explicit Finished tick.
+            watch(editingContext, (ctx) => {
+                if (!ctx || ctx.ncoli === null || ctx.ncoli === undefined) return;
+                if (ctx.ci === null || ctx.coli === null || ctx.eli === null) return;
+                const row = layout.value?.[ctx.ci]?.columns?.[ctx.coli]?.elements?.[ctx.eli];
+                if (row && row.type === 'row') setNestedRowOpen(row, ctx.ci, ctx.coli, ctx.eli, true);
+            });
+
             const showColumnModal = ref(false);
             const columnModalTarget = ref(null);
 
@@ -923,16 +1024,18 @@
                     // same-origin iframe (the canvas inserts HTML with v-html, which won't
                     // run the slider runtime <script>, so an iframe is the only way to get
                     // a real, animating preview here).
-                    let html;
+                    //
+                    // The iframe is handed over as its own item kind, NOT as an HTML string:
+                    // items fall through to v-safe-html, and DOMPurify drops <iframe>
+                    // outright — which is why choosing a slider used to leave the canvas
+                    // blank. The plain hint card below survives sanitising, so it stays HTML.
                     if (s.sliderId) {
                         const src = '{{ url('admin/falcon-slider') }}/' + encodeURIComponent(s.sliderId) + '/preview';
-                        html = '<iframe src="' + src + '" title="Falcon Slider preview" scrolling="no" '
-                            + 'style="width:100%;height:360px;border:0;display:block;background:#0f172a;overflow:hidden;"></iframe>';
-                    } else {
-                        html = '<div style="padding:26px 20px;text-align:center;border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc;font-size:14px;color:#64748b;">'
-                            + '<div style="font-size:26px;margin-bottom:8px;">🖼️</div>Falcon Slider — '
-                            + '<span style="color:#94a3b8;">choose a slider in General → Slider</span></div>';
+                        return { wrapperStyle: { width: '100%' }, wrapperHoverClass: '', items: [{ kind: 'iframe', src }], hoverCss: '' };
                     }
+                    const html = '<div style="padding:26px 20px;text-align:center;border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc;font-size:14px;color:#64748b;">'
+                        + '<div style="font-size:26px;margin-bottom:8px;">🖼️</div>Falcon Slider — '
+                        + '<span style="color:#94a3b8;">choose a slider in General → Slider</span></div>';
                     return { wrapperStyle: { width: '100%' }, wrapperHoverClass: '', items: [{ kind: 'html', value: html, style: { width: '100%' }, hoverClass: '' }], hoverCss: '' };
                 }
 
@@ -1328,9 +1431,12 @@
             });
 
             watch(serializedLayout, (newVal) => {
-                if (_trackLayoutDirty) {
-                    isDirty.value = (newVal !== lastSavedLayout);
-                }
+                if (!_trackLayoutDirty) return;
+                // Editing inside an open nested row does not arm Save on its own — the
+                // Finished tick does, and it recomputes this same comparison. Everywhere
+                // else, including the parent column, still arms Save the moment it changes.
+                if (editingInsideOpenNestedRow()) return;
+                isDirty.value = (newVal !== lastSavedLayout);
             });
 
             watch(layout, () => {
@@ -1419,6 +1525,7 @@
             const columnModalType = ref('new'); // 'new' or 'edit'
 
             const clearEditingContext = () => {
+                if (nestedLockActive.value) return;
                 editingContext.value = { type: null, ci: null, coli: null, eli: null, ncoli: null, neli: null, tab: 'content' };
                 editingCi.value = null;
                 activeColi.value = null;
@@ -1496,6 +1603,8 @@
             };
 
             const setEditingContext = (type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
+                // Nested editing is modal: nothing outside the open row can be selected.
+                if (nestedLockBlocks(ci, coli, eli)) return;
                 if ((type === 'element' || type === 'nested-element') && lockedElementAt(type, ci, coli, eli, ncoli, neli)) {
                     showToast('This is a Pro element — upgrade to Pro to edit it.', 'error');
                     return;
@@ -1916,6 +2025,7 @@
             const openCtxMenu = (e, type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (nestedLockBlocks(ci, coli, eli)) return;
                 // Catch up with anything copied elsewhere since this tab loaded, so the
                 // menu always offers the most recent copy rather than a remembered one.
                 syncClipboard();
@@ -3563,6 +3673,8 @@
             const columnModalActiveTab = ref('columns');
 
             const openColumnModal = (index = null, type = 'new') => {
+                // No new containers or columns while a nested row is still open.
+                if (nestedLockActive.value) return;
                 columnModalTarget.value = index;
                 columnModalType.value   = type;
                 columnModalActiveTab.value = 'columns';
@@ -3627,6 +3739,7 @@
             };
 
             const openElementModal = (ci, coli = null, defaultTab = 'elements', restricted = false, eli = null, ncoli = null, neli = null, allowedTabs = ['elements', 'nested']) => {
+                if (nestedLockBlocks(ci, coli, eli)) return;
                 // Map 'design' tab from old templates to 'elements'
                 if (defaultTab === 'design') defaultTab = 'elements';
 
@@ -6143,6 +6256,36 @@
                 });
             };
 
+            // The preview markup is injected through v-safe-html, and DOMPurify drops <style>
+            // elements outright — which silently threw away the whole grid/list/masonry/carousel
+            // stylesheet the card element renders, so switching Layout never changed the canvas.
+            // Split the CSS off before sanitising and mount it ourselves, one <style> per element.
+            const _cardPreviewStyleNodes = {};
+
+            const splitCardPreviewCss = (raw) => {
+                let css = '';
+                const html = String(raw || '').replace(
+                    /<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi,
+                    (_m, inner) => { css += inner + '\n'; return ''; }
+                );
+                return { html, css };
+            };
+
+            const applyCardPreviewCss = (elId, css) => {
+                let node = _cardPreviewStyleNodes[elId];
+                if (!css) {
+                    if (node) { node.remove(); delete _cardPreviewStyleNodes[elId]; }
+                    return;
+                }
+                if (!node) {
+                    node = document.createElement('style');
+                    node.setAttribute('data-card-preview-css', elId);
+                    document.head.appendChild(node);
+                    _cardPreviewStyleNodes[elId] = node;
+                }
+                if (node.textContent !== css) node.textContent = css;
+            };
+
             const fetchCardPreview = async (el) => {
                 if (!el || el.type !== 'card') return;
                 const elId = el.id;
@@ -6154,9 +6297,12 @@
                         body: JSON.stringify({ settings: el.settings, device: device.value })
                     });
                     const data = await res.json();
-                    cardPreviewCache[elId] = { loading: false, html: data.success ? data.html : '' };
+                    const parts = data.success ? splitCardPreviewCss(data.html) : { html: '', css: '' };
+                    applyCardPreviewCss(elId, parts.css);
+                    cardPreviewCache[elId] = { loading: false, html: parts.html };
                     if (data.success) nextTick(() => execCardPreviewScripts(elId));
                 } catch(e) {
+                    applyCardPreviewCss(elId, '');
                     cardPreviewCache[elId] = { loading: false, html: '' };
                 }
             };
@@ -6520,6 +6666,20 @@
             watch(isPreview, () => nextTick(updateCanvasScale));
             // ── End desktop canvas zoom-to-fit ───────────────────────────────────
 
+            // Closing the tab with layout work that was never saved asks first. isDirty is
+            // already the exact "differs from what is on the server" flag the Save button
+            // runs on, so the warning appears in precisely the cases Save is available —
+            // including work inside a nested row once its Finished tick has been pressed.
+            onMounted(() => {
+                window.addEventListener('beforeunload', (e) => {
+                    if (!isDirty.value) return;
+                    // Browsers show their own wording; returnValue just has to be set.
+                    e.preventDefault();
+                    e.returnValue = '';
+                    return '';
+                });
+            });
+
             return {
                 layout, isPreview, isSaving, isDirty, activeTab, activePanelTab, activeColPanelTab, device, activeResponsiveMenu, availableElements,
                 activeCi, editingCi, activeColi, activeColCi, editingContext,
@@ -6578,6 +6738,7 @@
                 libraryTabs, libraryCurrentItems, libraryActiveTabLabel, libraryTabIcon, libraryCanSave,
                 openLibraryModal, saveToLibrary, insertFromLibrary, insertGlobalFromLibrary, deleteFromLibrary,
                 hoveredType, hoveredCi, hoveredColi, hoveredEli, hoveredNcoli, setHover,
+                isNestedRowOpen, setNestedRowOpen, nestedChrome, nestedRowHasContent, nestedLockActive, nestedLocked, nestedDimContainer, nestedDimColumn, nestedDimElement,
                 navDragSrc, navDragOver, navDragStart, navDragEnd, navDragOverHandler, navDrop, navCanDrop,
                 ctxMenu, ctxClipboard, ctxMenuTitle, openCtxMenu, closeCtxMenu, ctxEdit, ctxSave, ctxClone, ctxRemove, ctxCopy, ctxPaste, ctxSaveAsGlobal,
                 canPasteHere, pasteHint, clipKind,

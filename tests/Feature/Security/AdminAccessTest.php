@@ -34,9 +34,25 @@ class AdminAccessTest extends TestCase
 
     // ---- getting through the door ----------------------------------------------
 
-    public function test_a_guest_is_sent_to_the_login_screen(): void
+    public function test_a_guest_gets_a_404_and_is_never_told_where_the_login_screen_is(): void
     {
-        $this->get('/admin')->assertRedirect(route('admin.login'));
+        // The login URL is configurable precisely so it is not guessable. Redirecting an
+        // anonymous hit on /admin to it — as this did until v2.6.7 — handed that address
+        // to anyone who typed the obvious guess. To a guest the admin does not exist.
+        foreach (['/admin', '/admin/posts', '/admin/settings', '/admin/login', '/admin/register'] as $path) {
+            $response = $this->get($path);
+
+            $response->assertNotFound();
+            $this->assertNull(
+                $response->headers->get('Location'),
+                $path.' must not redirect a guest anywhere, least of all the login page'
+            );
+        }
+    }
+
+    public function test_the_real_login_url_still_serves_the_login_screen(): void
+    {
+        $this->get(route('admin.login'))->assertOk();
     }
 
     public function test_an_administrator_reaches_the_dashboard(): void

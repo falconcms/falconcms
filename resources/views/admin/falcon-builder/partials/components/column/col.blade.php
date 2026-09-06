@@ -1,7 +1,7 @@
 <!-- Columns Loop -->
 <div v-for="(column, coli) in container.columns" :key="column.id"
      class="column-outer relative"
-     :class="['col-' + column.id, getVisibilityClasses(column.settings), isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '']"
+     :class="['col-' + column.id, getVisibilityClasses(column.settings), isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '', nestedDimColumn(ci, coli) ? 'falcon-nested-dim' : '']"
      :style="columnOuterStyle(container, column, container.columns.length)">
 
     <component :is="'style'" v-if="(!column.settings.bgType || column.settings.bgType === 'color') && getResponsiveVal(column.settings, 'bgHoverColor', device)"
@@ -28,7 +28,7 @@
          @drop="onDrop($event, 'column', ci, coli)">
 
         <!-- Column Toolbar (Top Left) -->
-        <div class="column-left-panel transition-opacity" v-if="!isPreview"
+        <div class="column-left-panel transition-opacity" v-if="!isPreview && !nestedLockActive"
              :class="(activeColi === coli && activeColCi === ci) ? 'opacity-100' : 'opacity-0 group-hover/col:opacity-100'">
             <div class="panel-inner shadow-xl group/panel">
                 <div class="panel-btn" @click.stop="setEditingContext('column', ci, coli)">
@@ -133,8 +133,11 @@
             </div>
         </div>
 
-        <!-- Add Element Button: ABSOLUTE CENTER if only nested rows or empty -->
-        <div v-if="!isPreview && !column.elements.some(el => el.type !== 'row')" 
+        {{-- Add Element Button: ABSOLUTE CENTER while the column is still empty.
+             A column holding a nested row is no longer "empty" for this purpose — the
+             button sat dead centre and landed on top of the nested row's own closed bar
+             and panel. That row carries its own edit/add panel, so this one steps aside. --}}
+        <div v-if="!isPreview && column.elements.length === 0"
              class="absolute inset-0 flex items-center justify-center z-10 transition-opacity pointer-events-none opacity-100">
             <button @click.stop="openElementModal(ci, coli, 'design')" 
                     class="w-8 h-8 bg-[#2271b1] text-white rounded shadow-lg flex items-center justify-center hover:scale-110 transition-all relative group/coladdbtn pointer-events-auto">
@@ -150,6 +153,7 @@
              @click.stop="setEditingContext('element', ci, coli, eli)"
              @contextmenu.prevent.stop="openCtxMenu($event, 'element', ci, coli, eli)"
              :class="[
+                nestedDimElement(ci, coli, eli) ? 'falcon-nested-dim' : '',
                 (column.settings.contentLayout === 'row' && el.type !== 'row') ? '' : (getResponsiveVal(column.settings, 'contentAlignH', device) && getResponsiveVal(column.settings, 'contentAlignH', device) !== 'stretch' && el.type !== 'title' && el.type !== 'breadcrumb' && el.type !== 'menu' && el.type !== 'text_block' && el.type !== 'special_text' && el.type !== 'button' && el.type !== 'image' && el.type !== 'card' && el.type !== 'spacer' && el.type !== 'html' && el.type !== 'icon_box' && el.type !== 'content_box' && el.type !== 'icon_list' && el.type !== 'accordion' && el.type !== 'tabs' && el.type !== 'video' && el.type !== 'counter' && el.type !== 'star_rating' && el.type !== 'gallery' && el.type !== 'post_meta' && el.type !== 'product_meta' && el.type !== 'post_content' && el.type !== 'post_grid' && el.type !== 'ticker' && !Object.keys(customElements).includes(el.type) ? '' : 'w-full'),
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
@@ -229,6 +233,12 @@
                         </div>
                         <p v-if="!it.rows.length" class="text-[11px] text-slate-300 italic">No rows</p>
                     </div>
+                    {{-- live preview frame (Falcon Slider) — a real element, since an
+                         <iframe> pushed through v-safe-html is stripped by DOMPurify.
+                         The height below is only a starting box: the preview page inside
+                         resizes its own frame, so this style stays static and unbound. --}}
+                    <iframe v-else-if="it.kind === 'iframe'" :src="it.src" title="Live preview" scrolling="no"
+                            style="width:100%;height:360px;border:0;display:block;background:#0f172a;overflow:hidden;pointer-events:none;"></iframe>
                     {{-- text / textarea / wysiwyg --}}
                     <div v-else-if="it.value" :style="it.style" :class="it.hoverClass" v-safe-html="it.value"></div>
                 </template>
@@ -238,7 +248,7 @@
             </div>
 
             <!-- Element Toolbar (Top-Center, Compact & Expandable) -->
-            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover/el:opacity-100 transition-all duration-200 z-[1010] hover:z-[1100] pointer-events-none" v-if="!isPreview && el.type !== 'row'">
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover/el:opacity-100 transition-all duration-200 z-[1010] hover:z-[1100] pointer-events-none" v-if="!isPreview && !nestedLockActive && el.type !== 'row'">
                 <div class="flex items-center bg-[#9c27b0] text-white rounded shadow-xl h-7 px-1 pointer-events-auto group/etbar overflow-hidden hover:overflow-visible max-w-[60px] hover:max-w-[250px] transition-all duration-300 ease-in-out">
                     
                     <!-- Always Visible Part: Edit & Add -->

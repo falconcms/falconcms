@@ -90,13 +90,12 @@ Route::middleware(['web', SecurityHeadersMiddleware::class])->group(function () 
     // Frontend magic email check (AJAX, rate-limited)
     Route::post('magic-email-check', [ShopFrontendController::class, 'checkMagicEmail'])->name('shop.magic.email.check')->middleware('throttle:30,1');
 
-    // Redirect standard admin/login and admin/register to custom slugs
-    Route::get('admin/login', function () use ($login_slug) {
-        return redirect($login_slug);
-    });
-    Route::get('admin/register', function () use ($register_slug) {
-        return redirect($register_slug);
-    });
+    // The stock /admin/login and /admin/register paths are dead ends on purpose.
+    // They used to redirect to the custom slugs, which meant the one thing an attacker
+    // is guaranteed to try also told them where the real login page had been moved to.
+    // Anyone who belongs here knows the address; everyone else gets a 404.
+    Route::get('admin/login', fn () => abort(404));
+    Route::get('admin/register', fn () => abort(404));
 });
 
 // 2. Authenticated Admin Routes
