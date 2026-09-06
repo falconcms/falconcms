@@ -105,6 +105,43 @@ Elements can be dragged within a column or between columns.
 
 ---
 
+## Nested Columns
+
+A column can hold a **nested row** — a row of columns inside a column — for layouts a single
+grid cannot express: a sidebar card split in two, a feature block with its own inner columns.
+Add one from a column's toolbar (**Add Nested**).
+
+### Open, work, finish
+
+A nested row is drawn **closed**: it shows its content, with a small orange panel sitting on
+it carrying a pencil and a **+**. Nothing inside can be clicked while it is closed, so a
+stray click meant for the page cannot land in it.
+
+| Control | What it does |
+|---|---|
+| ✏️ **pencil** | Opens the nested columns for editing |
+| ➕ **plus** | Adds an element to the **parent** column, beside the nested row |
+| hover the panel | Expands it to Duplicate, Delete and Drag |
+
+While it is open you work inside it exactly as in any column — add elements, edit them,
+drag them. Everything outside dims and stops responding, and no new container or column can
+be started, so half-finished nested work cannot be left behind by a click elsewhere.
+
+Finish with the **✓ tick** on the bar at the bottom of the row (**✕** does the same). That
+closes it, releases the rest of the canvas, and is the point at which **Save** becomes
+available for the work you just did inside.
+
+::: tip
+Editing inside a nested row does not arm the Save button on its own — the Finished tick
+does. Everywhere else in the builder, Save still arms the moment you change anything.
+Press ✓ before you leave the page.
+:::
+
+An empty nested row shows a placeholder bar instead of content, and the **Preview** toggle
+ignores all of this and draws the real page.
+
+---
+
 ## Responsive Preview
 
 Use the device buttons at the top of the builder to preview your layout on:
@@ -118,7 +155,10 @@ The canvas resizes and shows how the layout looks on each device.
 
 ## Saving & Publishing
 
-- **Autosave** runs every 30 seconds — your work is never lost
+- **Autosave** runs every 30 seconds
+- Closing the tab with unsaved changes now asks you first — in the builder and on every
+  admin screen. Note that work inside an open nested row is not counted as unsaved until
+  you press its ✓ tick, so finish nested rows before you leave
 - Click **Save Draft** to save without publishing
 - Click **Publish / Update** to make changes live
 - View **Revisions** to restore any previous version

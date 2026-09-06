@@ -34,6 +34,15 @@ Navigate to **Admin → Settings → General**.
 
 ::: warning Security
 Change `login_url` from the default to make your login page harder to find by bots.
+
+From **v2.6.7** that setting actually holds: `/admin`, `/admin/login` and every other admin
+path answer a visitor without a session with a **404**, rather than redirecting to wherever
+you moved the login page. Guessing the obvious address no longer reveals the real one.
+
+Two things follow from that. Keep the login URL somewhere you can find it — there is no
+longer a path that leads you back to it. And a session that expires while you are working
+ends in a 404 on the next click instead of the login form; sign in again at your login URL
+and carry on.
 :::
 
 ## SEO Settings

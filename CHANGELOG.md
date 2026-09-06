@@ -4,6 +4,115 @@ All notable changes to FalconCMS are recorded here.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+Full release notes, with the reasoning behind each change, live at
+<https://falconcms.github.io/falconcms/changelog>.
+
+## [2.6.7] — 2026-09-06
+
+### Security
+
+- **`/admin` no longer gives away the login page.** The login URL is configurable so it is
+  not guessable, but an anonymous request to `/admin` was answered with a redirect to
+  wherever it had been moved — and `/admin/login` redirected there too. A guest now gets a
+  404. Signed-in administrators are unaffected; a session that expires mid-edit now ends in
+  a 404 rather than the login form.
+- **The wishlist no longer leaks the admin login URL.** Its "please log in" reply carried
+  `route('admin.login')` in JSON to every anonymous visitor. Shoppers sign in on the
+  storefront account page, so it points there and passes `redirect_to` so they return to
+  their wishlist.
+
+### Added
+
+- **A warning before you lose unsaved work.** Closing the tab or navigating away with
+  unsaved changes asks first — in the page builder, and on every admin screen through the
+  shared layout. Only POST forms count, only real typing counts, submitting clears it, and
+  rich-text editors are asked directly since they type inside their own frame.
+- **Nested columns are edited in place.** A nested row draws closed with an edit/add panel
+  on it; the pencil opens it and a Finished tick closes it. While open, the rest of the
+  canvas dims and stops responding, and Save arms when you finish rather than on every
+  keystroke inside. Closing hides the editing chrome, never the content.
+
+### Fixed
+
+- **The Card element ignored its Layout setting on the canvas.** Grid, List, Masonry and
+  Carousel render through a stylesheet the element emits, and the builder's sanitiser
+  dropped it — so every layout looked identical while the front-end was correct.
+- **The Falcon Slider element showed nothing once a slider was chosen** — the same
+  sanitiser removing the preview `<iframe>`.
+- **An anchor-only menu item (`#section`) raised an `ltrim(null)` deprecation** on every
+  page under PHP 8.1+. Active-state matching also learned that Home matches the home page,
+  that a trailing slash still matches, and that a link to another host never does.
+
+### Changed
+
+- **Plugins live in `resources/views/plugins`**, alongside themes, instead of a root-level
+  `plugins/`. `php artisan falcon:update` relocates an existing install — keeping active
+  state, data and migrations — and the old location keeps working until it runs.
+
+## [2.6.6] — 2026-09-06
+
+### Added
+
+- Callout, Table of Contents and Previous / Next elements (Pro); buttons inside table
+  cells; Image Lightbox; Back to Top; Text Animation; drag anywhere in the navigator;
+  paste wherever the clipboard can land.
+
+### Changed
+
+- Email verification is off on a new install.
+
+### Fixed
+
+- Letter spacing did nothing anywhere; a quotation mark in any text setting truncated it;
+  Gallery and Image lightboxes did not cover the screen; maintenance mode did not hide the
+  site; the Heading element's settings panel was empty; anchor links keep their trailing
+  slash; Callout list rendering and icon picking.
+
+## [2.6.5] — 2026-09-04
+
+### Fixed
+
+- The page builder returned a 500 on servers with `short_open_tag` enabled.
+
+## [2.6.4] — 2026-09-04
+
+### Added
+
+- Table element, Code Block element, and a Head HTML setting.
+
+### Fixed
+
+- DOMPurify was missing from the package; changing the login or registration URL did
+  nothing on a live site.
+
+## [2.6.3] — 2026-09-04
+
+### Fixed
+
+- The sitemap returned a 500 on any server with `short_open_tag` enabled.
+
+## [2.6.2] — 2026-09-03
+
+### Fixed
+
+- The sitemap returned a 500 for the whole site when it met a post with no timestamps.
+
+## [2.6.1] — 2026-09-01
+
+### Added
+
+- Section Separator element, custom SVG shapes, and SVG uploads as a site decision.
+
+### Fixed
+
+- The builder canvas added height a published page never had.
+
+## [2.6.0] — 2026-08-28
+
+### Changed
+
+- Requirements are now Laravel 13+ and PHP 8.3+.
+
 ## [2.5.0] — 2026-08-28
 
 ### Added
