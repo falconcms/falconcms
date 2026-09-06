@@ -95,6 +95,32 @@ class AnalyticsVisitorCountingTest extends TestCase
         $this->assertSame(2, (int) $byCountry['IN']['visitors']);
     }
 
+    /**
+     * The exact shape of the reported fault: the panel said "1 active user right now"
+     * while the table under it listed six pages with one user each, because the one
+     * person who had read six pages was placed on all six at once.
+     */
+    public function test_one_person_browsing_appears_on_one_page_not_every_page(): void
+    {
+        foreach (['/about', '/account', '/blog', '/contact', '/product'] as $path) {
+            $this->pageView('203.0.113.9', $path);
+        }
+        // Their newest view — this is where they actually are.
+        $this->pageView('203.0.113.9', '/pricing', 'Bangladesh', 'BD', Carbon::now('UTC')->toDateTimeString());
+
+        $this->withProLicensed();
+        $json = $this->actingAs($this->administrator())->getJson('/admin/analytics/realtime')->assertOk()->json();
+
+        $this->assertSame(1, $json['active']);
+        $this->assertCount(1, $json['activePages'], 'one person is on one page');
+        $this->assertSame('/pricing', $json['activePages'][0]['path'], 'the page they are on now');
+        $this->assertSame(
+            $json['active'],
+            collect($json['activePages'])->sum('count'),
+            'the table must add up to the number beside the dot'
+        );
+    }
+
     /** The real-time feed lists people, not page views. */
     public function test_the_live_feed_shows_each_visitor_once(): void
     {
@@ -112,10 +138,11 @@ class AnalyticsVisitorCountingTest extends TestCase
         $this->assertSame(2, $json['active'], 'two people are active, not five page views');
         $this->assertCount(2, $json['recent'], 'the live list is one row per visitor');
 
-        // Active Pages answers "where visitors are now". The home page is the only one
-        // two different people opened, so it leads with 2 — not with the four views the
-        // first person alone generated across the site.
-        $top = collect($json['activePages'])->first();
-        $this->assertSame(2, (int) $top['count'], 'the busiest page has two people on it, not four views');
+        // Active Pages answers "where visitors are now": the first person has moved on to
+        // their latest page and the second is on the home page, so it is one each — and
+        // the column adds up to the two people, not to the five views between them.
+        $pages = collect($json['activePages']);
+        $this->assertSame(2, $pages->sum('count'), 'the table adds up to the people, not the views');
+        $this->assertTrue($pages->every(fn ($p) => (int) $p['count'] === 1), 'each person is on one page');
     }
 }

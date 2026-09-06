@@ -5,7 +5,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.9 <Badge type="tip" text="Latest" /> {#v2-6-9}
+## v2.6.10 <Badge type="tip" text="Latest" /> {#v2-6-10}
+
+**Released: 2026-09-06**
+
+### Fixed
+
+- **The Real-Time panel put one visitor on every page they had read.** It said "1 active
+  user right now" while the table beneath it listed six pages with one user each — the
+  same person, placed on all six at once, reading as six people.
+
+  A visitor is in one place at a time, so the panel is now built from one row per
+  visitor: their most recent page view. Each person is counted once, on the page they
+  are actually on, and the headline count and the table are derived from the same rows
+  — so the column always adds up to the number beside the dot. Which pages are listed
+  is unchanged; only the double-counted people are gone.
+
+  This completes what v2.6.9 started: that release stopped a page being counted twice
+  for one person, but still listed that person on every page they had passed through.
+
+- **`created_at` on analytics rows compared as text, not as a moment**, because the model
+  disables timestamps and never cast it. Anything filtering those rows in PHP rather than
+  SQL was comparing strings.
+
+---
+
+## v2.6.9 {#v2-6-9}
 
 **Released: 2026-09-06**
 

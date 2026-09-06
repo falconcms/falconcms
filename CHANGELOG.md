@@ -7,6 +7,17 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.10] — 2026-09-06
+
+### Fixed
+
+- **The Real-Time panel placed one visitor on every page they had read**, so it showed
+  "1 active user" above a table of six pages with one user each. The panel is now built
+  from one row per visitor — their latest page view — so each person is counted once, on
+  the page they are on, and the table always adds up to the headline count.
+- **Analytics `created_at` was not cast to a date**, so PHP-side comparisons compared
+  strings rather than moments.
+
 ## [2.6.9] — 2026-09-06
 
 ### Fixed

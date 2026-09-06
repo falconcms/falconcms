@@ -1428,8 +1428,6 @@ class DashboardController extends Controller
         $since30 = now()->subMinutes(30);
         $host = request()->getSchemeAndHttpHost();
 
-        $active = Analytics::where('created_at', '>=', $since5)->distinct()->count('ip_address');
-
         // Per-minute visit counts for the last 30 minutes, zero-filled. Spelled for the
         // driver in use, like the daily series above — DATE_FORMAT is MySQL-only and made
         // this endpoint the one part of the page that could not run on SQLite.
@@ -1444,21 +1442,35 @@ class DashboardController extends Controller
             $minutes[] = (int) ($perMin[now()->subMinutes($i)->format('Y-m-d H:i')] ?? 0);
         }
 
-        // "where visitors are now" — so, visitors per page, not page views. Someone
-        // refreshing a page was otherwise counted again on every refresh.
-        $activePages = Analytics::where('created_at', '>=', $since5)
-            ->select('url', DB::raw('COUNT(DISTINCT ip_address) as count'))
-            ->groupBy('url')->orderByDesc('count')->limit(6)->get()
-            ->map(fn ($r) => ['path' => falcon_visit_page($r->url), 'count' => (int) $r->count]);
-
-        // One entry per visitor, showing what they last did. This read the latest eight
-        // ROWS, so a single person moving through eight pages filled the whole "Live
-        // Visitors" list and read as eight people. Ordered newest first, so keeping the
-        // first row per IP keeps each visitor's most recent activity.
-        $recent = Analytics::latest()->limit(300)->get()
+        // Everything in this panel is built from one row per visitor — their most recent
+        // page view inside the window — because a person is in exactly one place at a
+        // time. Grouping the raw rows instead put whoever had just read six pages on all
+        // six of them at once, so a single reader filled "Active Pages" and the column
+        // added up to six where the counter beside it said one.
+        //
+        // Newest first, so keeping the first row per IP keeps each visitor's latest
+        // activity. The limit is a safety bound on a busy site, not a page size.
+        $liveRows = Analytics::where('created_at', '>=', $since30)
+            ->latest()->limit(2000)
+            ->get(['ip_address', 'url', 'country', 'country_code', 'device_type', 'created_at'])
             ->unique('ip_address')
+            ->values();
+
+        // Both the headline count and the table come from the same rows, so the number
+        // beside the dot can never disagree with the column under it.
+        $activeVisitors = $liveRows->filter(fn ($v) => $v->created_at >= $since5);
+        $active = $activeVisitors->count();
+
+        // Where visitors are NOW: each of them counted once, on the page they are on.
+        $activePages = $activeVisitors
+            ->groupBy('url')
+            ->map(fn ($rows, $url) => ['path' => falcon_visit_page($url), 'count' => $rows->count()])
+            ->sortByDesc('count')
+            ->take(6)
+            ->values();
+
+        $recent = $liveRows
             ->take(8)
-            ->values()
             ->map(fn ($v) => [
                 'path' => Str::limit(falcon_visit_page($v->url), 40),
                 'country' => $v->country,
