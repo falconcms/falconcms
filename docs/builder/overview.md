@@ -122,36 +122,98 @@ Hover over any container or column to reveal its toolbar:
 
 ---
 
-## All 22 Built-in Elements
+## All Built-in Elements
 
-Eleven elements are part of the free core. The rest are marked <Badge type="warning" text="Pro" /> and need a [Pro licence](/guide/pro) — the palette shows them with a lock badge and prompts to upgrade.
+The element picker offers **27 elements** on any page, plus **3 more** that only appear where
+they have something to bind to (see below). Eight are part of the free core; the rest are
+marked <Badge type="warning" text="Pro" /> and need a [Pro licence](/guide/pro) — the picker
+shows those with a lock badge and prompts to upgrade rather than hiding them.
 
-| Element | Category | What it does |
-|---|---|---|
-| **Heading** | Text | H1–H6 title with full typography control |
-| **Title** | Text | Dynamic post/page title — auto-filled from content |
-| **Text Block** | Text | Rich text paragraph (WYSIWYG editor) |
-| **Text** | Text | Single-line text with dynamic source support |
-| **Ticker** <Badge type="warning" text="Pro" /> | Text | Horizontally scrolling announcement ticker |
-| **Image** | Media | Single image — static or dynamic (Feature Image, Logo, Author Avatar) |
-| **Gallery** <Badge type="warning" text="Pro" /> | Media | Image grid, masonry, or slider with lightbox |
-| **Video** | Media | YouTube, Vimeo, or self-hosted video |
-| **Counter** <Badge type="warning" text="Pro" /> | Interactive | Animated number that counts up on scroll |
-| **Accordion** <Badge type="warning" text="Pro" /> | Interactive | Collapsible FAQ / content sections |
-| **Tabs** <Badge type="warning" text="Pro" /> | Interactive | Tabbed content panels |
-| **Button** | Layout | CTA button — solid, outline, or ghost style |
-| **Card** <Badge type="warning" text="Pro" /> | Layout | Image + title + description + button |
-| **Spacer** | Layout | Vertical spacing — different per device |
-| **Icon Box** <Badge type="warning" text="Pro" /> | Layout | Icon + title + description, icon above or left |
-| **Icon List** <Badge type="warning" text="Pro" /> | Layout | Styled list with FontAwesome icons |
-| **Post Grid** | Dynamic | Query and display posts in a responsive grid |
-| **Post Content** | Dynamic | Renders the current post's full content body |
-| **Post Meta** | Dynamic | Author, date, category, tags for the current post |
-| **Star Rating** <Badge type="warning" text="Pro" /> | Dynamic | Static star display (0–5 stars) |
-| **Menu** <Badge type="warning" text="Pro" /> | Navigation | Render a navigation menu — used in header builder |
-| **HTML** <Badge type="warning" text="Pro" /> | Advanced | Raw HTML / embed code block |
+Names below are exactly what the picker calls them, so what you read here is what you look for.
 
-> **Custom elements** can be registered via the hook API — see [Hooks Reference](/api/hooks).
+### Text & content
+
+| Element | What it does |
+|---|---|
+| **Text Block** | Rich text, edited in place with the WYSIWYG editor |
+| **Title** | The current post or page title, filled in from the content |
+| **Table** <Badge type="warning" text="Pro" /> | Data table written in a compact markup, with buttons and links inside cells |
+| **Callout** <Badge type="warning" text="Pro" /> | Boxed aside — note, tip, warning, danger and more, optionally collapsible |
+| **Code Block** <Badge type="warning" text="Pro" /> | Syntax-highlighted code with a copy button and optional typing reveal |
+| **Ticker** <Badge type="warning" text="Pro" /> | Horizontally scrolling announcement strip |
+
+### Media
+
+| Element | What it does |
+|---|---|
+| **Image** | One image, static or from a dynamic source (featured image, logo, author avatar) |
+| **Video** | YouTube, Vimeo or self-hosted |
+| **Gallery** <Badge type="warning" text="Pro" /> | Grid, masonry or slider, with a lightbox |
+
+### Layout & structure
+
+| Element | What it does |
+|---|---|
+| **Button** | Call to action — solid, outline or ghost |
+| **Spacer** | Vertical space, set per device |
+| **Section Separator** | Shape divider between sections — waves, tilts, curves, or your own SVG |
+| **Icon Box** <Badge type="warning" text="Pro" /> | Icon with a title and description, icon above or beside |
+| **Content Box** <Badge type="warning" text="Pro" /> | Repeatable content blocks in a row or grid |
+| **Item List** <Badge type="warning" text="Pro" /> | Styled list with an icon on each row |
+| **Card** <Badge type="warning" text="Pro" /> | Posts drawn with a Post Card design, as a grid, list, masonry or carousel |
+
+### Interactive
+
+| Element | What it does |
+|---|---|
+| **Accordion** <Badge type="warning" text="Pro" /> | Collapsible sections — FAQs and the like |
+| **Tabs** <Badge type="warning" text="Pro" /> | Tabbed panels |
+| **Counter** <Badge type="warning" text="Pro" /> | Number that counts up when it scrolls into view |
+| **Star Rating** <Badge type="warning" text="Pro" /> | Star display, 0–5 |
+
+### Navigation
+
+| Element | What it does |
+|---|---|
+| **Social Icons** | Links to your profiles, as icon chips |
+| **Menu** <Badge type="warning" text="Pro" /> | A navigation menu — what the header is usually built from |
+| **Bread Crumb** <Badge type="warning" text="Pro" /> | Trail back to the home page |
+| **Table of Contents** <Badge type="warning" text="Pro" /> | Built from the page's own headings, with scroll tracking and an optional sticky mode |
+| **Previous / Next** <Badge type="warning" text="Pro" /> | Links to the pages either side of this one |
+| **Advanced Search** <Badge type="warning" text="Pro" /> | Search field with filters |
+
+### Advanced
+
+| Element | What it does |
+|---|---|
+| **HTML Block** <Badge type="warning" text="Pro" /> | Raw HTML or an embed |
+
+::: tip Previous / Next needs a Table of Contents
+It steps through a sequence, and a Table of Contents is what marks a page as part of one. On a
+page without one it would render nothing, so the picker offers it only where it can work and
+says why where it cannot.
+:::
+
+### Only where they have something to bind to
+
+These three appear in the **Post Card builder** and in **Layout Sections**, where a current
+post exists for them to read. They are not offered on an ordinary page, where they would have
+nothing to show.
+
+| Element | What it does |
+|---|---|
+| **Content** | The current post's content body |
+| **Post Meta** | Author, date, categories and tags for the current post |
+| **Product Meta** | Price, SKU and stock — renders when the current post is a product |
+
+::: info Older layouts
+A page saved by an earlier version may still contain a `heading`, `text`, `special_text` or
+`post_grid` element. Those keep rendering exactly as they did, but they are no longer offered
+in the picker — Title, Text Block and Card cover what they did.
+:::
+
+> **Custom elements** — a plugin or theme can add its own to this same picker through the
+> `falcon_builder_elements` filter. See the [Hooks Reference](/api/hooks).
 
 ---
 
