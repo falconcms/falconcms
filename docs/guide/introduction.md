@@ -39,7 +39,8 @@ composer require falconcms/falconcms
 php artisan falcon:install
 ```
 
-That's it. Visit `/admin` to access your dashboard.
+That's it. The installer prints your login URL when it finishes — `/falcon-admin` on a
+fresh install, not `/admin`, which returns 404 to anyone who is not signed in.
 
 ::: tip Default credentials
 After installation, use the credentials shown in your terminal output to log in.

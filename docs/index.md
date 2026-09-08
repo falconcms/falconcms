@@ -157,7 +157,7 @@ composer require falconcms/falconcms
 php artisan falcon:install
 ```
 
-The installer runs the migrations, publishes assets and the default theme, creates the storage symlink, and creates your admin user. Then visit `/admin` — your credentials are printed in the terminal.
+The installer runs the migrations, publishes assets and the default theme, creates the storage symlink, and creates your admin user. It then prints your login URL — `/falcon-admin` on a fresh install — along with your credentials.
 
 [Read the Installation Guide](/guide/installation)
 

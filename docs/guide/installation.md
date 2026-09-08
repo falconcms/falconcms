@@ -41,13 +41,21 @@ Your admin credentials will be displayed in the terminal after installation.
 
 ## Access the Dashboard
 
-Open your browser and go to:
+`falcon:install` prints the login URL when it finishes. On a fresh install it is:
 
 ```
-http://your-app.test/admin
+http://your-app.test/falcon-admin
 ```
 
 Log in with the credentials shown after `falcon:install`.
+
+::: warning Not /admin
+`/admin` is the dashboard itself, and from **v2.6.7** it answers a visitor without a
+session with a **404** rather than redirecting to the login page — otherwise the one
+address everybody guesses would hand out the address you moved the login page to.
+
+So open the login URL, not `/admin`. You can change it in **Settings → Change login url**;
+keep it somewhere you can find, because nothing links back to it.
 
 ---
 
