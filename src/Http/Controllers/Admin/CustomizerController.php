@@ -440,19 +440,17 @@ class CustomizerController extends Controller
                 'title' => 'Menu',
                 'icon' => 'menu',
                 'fields' => [
-                    'theme_menu_font_size' => [
-                        'type' => 'text',
-                        'label' => 'Navigation Font Size',
-                        'desc' => 'Font size for main navigation links.',
-                        'default' => '13px',
-                        'placeholder' => '13px',
-                    ],
-                    'theme_menu_font_weight' => [
-                        'type' => 'select',
-                        'label' => 'Navigation Font Weight',
-                        'desc' => 'Font weight for main navigation links.',
-                        'default' => '600',
-                        'options' => ['400' => 'Normal (400)', '500' => 'Medium (500)', '600' => 'Semi Bold (600)', '700' => 'Bold (700)'],
+                    // The navigation FONT lives in Typography → Navigation, which owns family,
+                    // size, weight, line height, spacing, transform and case in one control and
+                    // is what the theme actually renders from. This section used to offer its own
+                    // Font Size and Font Weight as well; they were written to the database and
+                    // then never read, so anyone who reached for them was adjusting nothing. Two
+                    // controls for one property is the defect, so the pair that did not work is
+                    // gone rather than made to fight the pair that does.
+                    'hr_menu_font' => [
+                        'type' => 'info',
+                        'label' => 'Navigation Font',
+                        'desc' => 'Font family, size and weight for menu links are set in <strong>Typography → Navigation</strong>.',
                     ],
                     'theme_menu_color' => [
                         'type' => 'color',

@@ -7,6 +7,31 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.14] — 2026-09-08
+
+### Fixed
+
+- **The Customizer's Menu settings did not reach the theme header.** Navigation Text Color
+  was emitted only once a Navigation typography had also been saved, so on most sites it had
+  no rule at all; Menu Item Padding could not do anything because the navigation carried a
+  fixed 32px gap; and the mobile menu was painted with hard-coded classes, so every one of
+  these settings stopped at the desktop breakpoint. The whole section is now stated outright
+  and applies to the desktop navigation and the mobile menu alike. Defaults are unchanged and
+  match what was already on screen, so a site that never opened these controls looks the same.
+- **Navigation Font Size and Navigation Font Weight are gone from Menu.** They were written
+  to the database and then read by nothing. Typography → Navigation already owns the
+  navigation font — family, size, weight, line height, spacing and case — and does work; two
+  controls for one property was the defect, so the pair that never worked was removed rather
+  than made to fight the pair that does.
+- **A layout slot switch asks for a state instead of a flip.** The endpoint used to invert
+  whatever was stored, which is only correct while the page's idea of the current state is
+  exactly right. A double-click, a request the browser retried, or a tab opened before the
+  slot changed elsewhere sent a second flip and landed on the opposite value — read as
+  "I switched it on, reloaded, and it was off". The switch now sends the state it wants and
+  that state is stored, so repeating the request cannot change the answer.
+- **Falcon Builder → Sections could fail with `Undefined variable $errors`**, taking the
+  whole page down with a 500 instead of drawing the layouts.
+
 ## [2.6.13] — 2026-09-07
 
 ### Fixed

@@ -33,7 +33,7 @@
                 <p>{{ session('success') }}</p>
             </div>
         @endif
-        @if($errors->any())
+        @if(isset($errors) && $errors->any())
             <div class="bg-white border-l-4 border-[#d63638] p-3 mb-4 shadow-[0_1px_1px_rgba(0,0,0,0.04)] text-[13px] text-[#1d2327]">
                 @foreach($errors->all() as $e)<p>{{ $e }}</p>@endforeach
             </div>
@@ -293,7 +293,7 @@
             fetch(URL_SLOT_TOGGLE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                body: JSON.stringify({ layout: lid, slot: slot }),
+                body: JSON.stringify({ layout: lid, slot: slot, active: want }),
             }).then(r => r.json()).then(d => {
                 checkbox.disabled = false;
                 if (!d.ok) { checkbox.checked = !want; toast(d.message || 'Could not update.', 'error'); return; }

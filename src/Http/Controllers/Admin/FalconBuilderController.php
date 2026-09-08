@@ -720,6 +720,16 @@ class FalconBuilderController extends Controller
      * Toggle a single layout-slot on/off. This is stored PER LAYOUT, so turning a
      * slot off in the Global Layout never affects a custom layout that happens to
      * use the same section (and vice-versa).
+     *
+     * The switch sends the state it is asking for ("active"), and that state is what gets
+     * stored. It used to send nothing and the server flipped whatever was on disk, which
+     * is only correct while the page's idea of the current state is exactly right. It is
+     * not always: a double-click, a request the browser retried, or a click in a tab that
+     * was opened before the slot was changed elsewhere all produce a second flip, and a
+     * flip landing on the wrong side reads as "I switched it on, reloaded, and it is off".
+     * Storing an absolute state makes the request idempotent, so none of those can invert
+     * it. A client that sends no state still gets the old flip, so nothing that already
+     * calls this endpoint breaks.
      */
     public function toggleSlot(Request $request)
     {
@@ -728,9 +738,11 @@ class FalconBuilderController extends Controller
         $data = $request->validate([
             'layout' => 'required|string|max:64',
             'slot' => 'required|in:'.implode(',', array_keys(self::SLOTS)),
+            'active' => 'sometimes|boolean',
         ]);
 
-        $active = $this->setSlotActive($data['layout'], $data['slot']);
+        $want = array_key_exists('active', $data) ? $request->boolean('active') : null;
+        $active = $this->setSlotActive($data['layout'], $data['slot'], $want);
         $label = self::SLOTS[$data['slot']]['label'];
 
         // Nothing assigned to this slot (or no such layout): say so instead of reporting a
