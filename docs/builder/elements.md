@@ -2,25 +2,17 @@
 
 Elements marked <Badge type="warning" text="Pro" /> need a [Pro licence](/guide/pro). The builder shows them in the palette with a lock badge and prompts to upgrade when you add one. Every other element is part of the free core.
 
-Elements are the content blocks inside columns. Falcon Builder ships with **22 built-in element types**.
+Elements are the content blocks inside columns.
+
+The complete, current list — with what each one does and which need Pro — is in
+[Builder Overview → All Built-in Elements](/builder/overview#all-built-in-elements). This page
+covers the settings behind them.
 
 ![The settings panel for an Icon Box element](/screenshots/builder-element-settings.webp)
 
 *Selecting an element opens its settings in the sidebar — here an Icon Box, with the icon picker, layout and alignment.*
 
 ## Text Elements
-
-### Heading
-A title or subtitle block (H1–H6).
-
-**Settings:**
-- Text content
-- Tag (H1–H6)
-- Font size, weight, line height
-- Letter spacing
-- Text alignment (left, center, right)
-- Color
-- CSS Class / CSS ID
 
 ### Title
 A dynamic post/page title element — automatically pulls the current content's title. Useful in templates, header builder, and single post layouts.
@@ -38,14 +30,6 @@ A rich-text paragraph block with a WYSIWYG editor.
 - Font size, line height
 - Text alignment
 - Color
-
-### Text
-A simple single-line text element with dynamic source support.
-
-**Settings:**
-- Text content or dynamic source (post title, site name, etc.)
-- Font size, weight, color
-- Text alignment
 
 ### Ticker <Badge type="warning" text="Pro" />
 A horizontally scrolling text marquee — great for announcements or news tickers.
@@ -150,10 +134,21 @@ A call-to-action button.
 - Style: solid / outline / ghost
 - Colors: background, text, border
 - Hover: background, text, border
+- **Hover Border** <Badge type="tip" text="2.7.0" /> — width per edge and colour, sitting
+  directly under the border they change. Leave a field empty to keep the border's own value
+  on hover; `0` is a real answer and means "no border on that edge while hovered".
+- **Hover Animation** <Badge type="tip" text="2.7.0" /> — *Lift Up*, *Sink Down*, *Grow*,
+  *Shrink*, *Glow* or *Pulse*. Readers whose system asks for reduced motion get none of them.
 - Border radius
 - Padding
 - Icon (FontAwesome class + position)
 - Full width toggle
+
+::: tip Alignment and Full Width
+With **Full Width (Span)** off, *Alignment* places the button within its row. With it on the
+button already fills the row, so *Alignment* moves the label inside the button instead.
+Set per device, like the other responsive controls.
+:::
 
 ### Card <Badge type="warning" text="Pro" />
 A content card with image, title, description, and optional button.
@@ -183,7 +178,7 @@ An icon paired with a title and description.
 - Link
 - Layout: icon above / icon left
 
-### Icon List <Badge type="warning" text="Pro" />
+### Item List <Badge type="warning" text="Pro" />
 A styled list with icons.
 
 **Settings:**
@@ -195,20 +190,6 @@ A styled list with icons.
 ---
 
 ## Post & Dynamic Elements
-
-### Post Grid
-Dynamically display posts in a grid.
-
-**Settings:**
-- Post type (post / page / product / CPT)
-- Limit (number of posts)
-- Category filter
-- Tag filter
-- Order by (date, title, random)
-- Order (ASC / DESC)
-- Columns (1–4)
-- Show: thumbnail, title, excerpt, date, author, read more button
-- Pagination on/off
 
 ### Post Content
 Renders the full content of the current post — used in single post/page templates.
@@ -233,7 +214,7 @@ Display a static star rating.
 
 ## Advanced Elements
 
-### HTML <Badge type="warning" text="Pro" />
+### HTML Block <Badge type="warning" text="Pro" />
 A raw HTML block — paste any embed code or custom markup.
 
 **Settings:**
@@ -245,7 +226,13 @@ Render a navigation menu inline inside the builder canvas — primarily used in 
 **Settings:**
 - Select menu (by location or slug)
 - Layout: horizontal / vertical
+- Item padding, spacing, border radius
+- Colours and hover colours for text, background and border
 - Mega menu support
+
+The hover colours and border also describe the **current** item — the page being viewed, or
+on a landing page the section being read. See
+[One-page menus](/guide/menus#one-page-menus).
 
 ---
 
@@ -291,3 +278,24 @@ Many text fields support dynamic tokens — they're replaced at render time:
 | `{author_name}` | Post author's name |
 
 **Example:** Set a Heading text to `Welcome back, {author_name}!` for a personalized greeting.
+
+---
+
+## Older layouts
+
+A page saved by an earlier version may still contain one of these. They keep rendering exactly
+as they did, but they are no longer offered in the element picker — **Title**, **Text Block**
+and **Card** cover what they did.
+
+### Heading *(legacy)*
+A title or subtitle block (H1–H6). Settings: text, tag, font size / weight / line height,
+letter spacing, alignment, colour, CSS class and ID.
+
+### Text *(legacy)*
+A single-line text element with dynamic source support. Settings: text or dynamic source
+(post title, site name, …), font size / weight / colour, alignment.
+
+### Post Grid *(legacy)*
+Posts in a grid. Settings: post type, limit, category and tag filters, order by and direction,
+columns, which parts to show (thumbnail, title, excerpt, date, author, read-more) and
+pagination.

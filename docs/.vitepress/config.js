@@ -101,6 +101,7 @@ export default defineConfig({
             { text: 'Media Library', link: '/guide/media' },
             { text: 'Forms', link: '/guide/forms' },
             { text: 'Multi-language', link: '/guide/multilang' },
+            { text: 'Analytics', link: '/guide/analytics' },
           ]
         },
         {

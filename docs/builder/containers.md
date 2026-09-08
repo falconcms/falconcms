@@ -83,17 +83,29 @@ Click the column toolbar:
 - CSS Class, CSS ID
 - Custom CSS
 
+### Column Width
+
+**Design → Width** offers the usual fractions — `1/6` through `1/1`, plus `Auto`.
+
+For anything they cannot express, click **Use Custom Width** <Badge type="tip" text="2.7.0" />
+and set the width on the slider or in the box beside it. The presets disappear while a custom
+width is in force, because the two are the same setting and only one of them can be: whichever
+you set last is the column's width. **Back to preset widths** returns to the closest fraction.
+
 ### Responsive Column Widths
 
-Each column can have different widths per device:
+Each column can have different widths per device — presets and custom widths alike:
 
 | Device | Example |
 |---|---|
 | Desktop | 1/3 (33%) |
-| Tablet | 1/2 (50%) |
+| Tablet | 45% (custom) |
 | Mobile | 1/1 (100%) |
 
+Use the device switch at the top-right of the Width panel to choose which one you are setting.
 This makes your layout naturally stack on mobile.
+
+Nested columns have the same control, in the same place.
 
 ---
 

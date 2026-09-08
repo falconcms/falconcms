@@ -27,6 +27,27 @@ From the menu editor, add items from the panels on the left:
 
 Drag items to reorder. Drag items to the right (indent) to make them sub-items.
 
+### One-page (landing page) menus <Badge type="tip" text="2.7.0" /> {#one-page-menus}
+
+For a landing page, add **Custom URL** items pointing at sections of the same page — give the
+section a CSS ID in the builder (say `pricing`) and set the menu item's URL to `#pricing`.
+
+Those items behave as a set:
+
+- Clicking one scrolls smoothly to its section and stops just below a sticky header, rather
+  than jumping and hiding the heading underneath it.
+- As the reader scrolls, the item whose section is at the top of the viewport is marked as
+  current — including when they scroll there without clicking anything.
+- A **Home** item pointing at the page itself is marked at the top of the page and steps
+  aside once a section is reached, so only one item is ever marked.
+
+Nothing needs enabling; it applies to the theme header and to the Layout builder's Menu
+element alike. Links to other pages are untouched.
+
+::: warning A space after the `#`
+`# pricing` is not a valid link and no browser will follow it. Save it as `#pricing`.
+:::
+
 ## Reading Menus in Templates
 
 ```php
