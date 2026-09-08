@@ -7,6 +7,22 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.15] — 2026-09-08
+
+### Fixed
+
+- **Navigation Font Size and Navigation Font Weight work.** v2.6.14 removed them, on the
+  grounds that Typography → Navigation already owned the navigation font. That took away two
+  controls people were using instead of repairing them. Both are back and now applied, taking
+  precedence over Typography → Navigation, which keeps the family, line height, letter
+  spacing and case.
+- **Dropdown Text Color reaches the mobile menu's sub-items**, which were painted with a
+  fixed grey. The desktop dropdowns already carried it.
+
+Every field in Customizer → Menu was then checked in a browser against the rendered page —
+text colour, hover colour, font size, font weight, item padding and both dropdown colours,
+on the desktop navigation and the mobile menu, resting, hovered and on the current page.
+
 ## [2.6.14] — 2026-09-08
 
 ### Fixed

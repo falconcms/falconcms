@@ -291,10 +291,20 @@
            third and come last, in that order, so the current page keeps its primary
            colour and hovering still wins over it — exactly the order Tailwind produced. */
         @php
-            $menuColor     = get_cms_option('theme_menu_color', '#1d2327');
-            $menuHover     = get_cms_option('theme_menu_hover_color', '#0091ea');
-            $menuItemPad   = get_cms_option('theme_menu_item_padding', '15px');
+            $menuColor      = get_cms_option('theme_menu_color', '#1d2327');
+            $menuHover      = get_cms_option('theme_menu_hover_color', '#0091ea');
+            $menuItemPad    = get_cms_option('theme_menu_item_padding', '15px');
+            $menuFontSize   = get_cms_option('theme_menu_font_size', '13px');
+            $menuFontWeight = get_cms_option('theme_menu_font_weight', '600');
+            $dropdownText   = get_cms_option('theme_dropdown_text_color', '#1d2327');
         @endphp
+        /* Font size and weight: the desktop navigation only. The mobile drawer is a different
+           object at a different scale — pushing a 13px menu size into it shrinks a list built
+           to be tapped — so it follows the colours below and keeps its own sizing. */
+        .lb-desktop-nav .nav-style {
+            font-size: {{ $menuFontSize }};
+            font-weight: {{ $menuFontWeight }};
+        }
         /* The gap goes to the items themselves so Menu Item Padding drives the spacing.
            At its 15px default they sit 30px apart, which is where the gap already had them. */
         .lb-desktop-nav { gap: 0 !important; }
@@ -303,7 +313,10 @@
             padding-right: {{ $menuItemPad }};
         }
         .lb-desktop-nav .nav-style,
-        .lb-mobile-menu nav a { color: {{ $menuColor }}; }
+        .lb-mobile-menu nav > div > a { color: {{ $menuColor }}; }
+        /* Dropdown Text Color reaches the mobile sub-items too; on desktop the dropdown
+           panels carry it as an inline style already. */
+        .lb-mobile-menu nav > div > div > a { color: {{ $dropdownText }}; }
         .lb-desktop-nav .nav-style.text-primary,
         .lb-mobile-menu nav a.text-primary { color: var(--primary); }
         .lb-desktop-nav .nav-style:hover,

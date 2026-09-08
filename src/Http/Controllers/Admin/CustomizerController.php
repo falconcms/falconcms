@@ -440,17 +440,29 @@ class CustomizerController extends Controller
                 'title' => 'Menu',
                 'icon' => 'menu',
                 'fields' => [
-                    // The navigation FONT lives in Typography → Navigation, which owns family,
-                    // size, weight, line height, spacing, transform and case in one control and
-                    // is what the theme actually renders from. This section used to offer its own
-                    // Font Size and Font Weight as well; they were written to the database and
-                    // then never read, so anyone who reached for them was adjusting nothing. Two
-                    // controls for one property is the defect, so the pair that did not work is
-                    // gone rather than made to fight the pair that does.
+                    // Every field here is applied by the theme's own header (a Layout builder
+                    // header replaces that header entirely, and the Customizer says so). These
+                    // two were stored and then read by nothing at all; they now take precedence
+                    // over Typography → Navigation, which still owns the family, line height,
+                    // spacing and case for menu links.
                     'hr_menu_font' => [
                         'type' => 'info',
                         'label' => 'Navigation Font',
-                        'desc' => 'Font family, size and weight for menu links are set in <strong>Typography → Navigation</strong>.',
+                        'desc' => 'Font family, line height and letter spacing for menu links come from <strong>Typography → Navigation</strong>. The size and weight below override it.',
+                    ],
+                    'theme_menu_font_size' => [
+                        'type' => 'text',
+                        'label' => 'Navigation Font Size',
+                        'desc' => 'Font size for main navigation links.',
+                        'default' => '13px',
+                        'placeholder' => '13px',
+                    ],
+                    'theme_menu_font_weight' => [
+                        'type' => 'select',
+                        'label' => 'Navigation Font Weight',
+                        'desc' => 'Font weight for main navigation links.',
+                        'default' => '600',
+                        'options' => ['400' => 'Normal (400)', '500' => 'Medium (500)', '600' => 'Semi Bold (600)', '700' => 'Bold (700)'],
                     ],
                     'theme_menu_color' => [
                         'type' => 'color',
