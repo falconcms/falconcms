@@ -294,17 +294,14 @@
             $menuColor      = get_cms_option('theme_menu_color', '#1d2327');
             $menuHover      = get_cms_option('theme_menu_hover_color', '#0091ea');
             $menuItemPad    = get_cms_option('theme_menu_item_padding', '15px');
-            $menuFontSize   = get_cms_option('theme_menu_font_size', '13px');
-            $menuFontWeight = get_cms_option('theme_menu_font_weight', '600');
             $dropdownText   = get_cms_option('theme_dropdown_text_color', '#1d2327');
         @endphp
-        /* Font size and weight: the desktop navigation only. The mobile drawer is a different
-           object at a different scale — pushing a 13px menu size into it shrinks a list built
-           to be tapped — so it follows the colours below and keeps its own sizing. */
-        .lb-desktop-nav .nav-style {
-            font-size: {{ $menuFontSize }};
-            font-weight: {{ $menuFontWeight }};
-        }
+        /* Nothing here touches the navigation FONT. Typography → Navigation sets it, through
+           the `body nav, .nav-style` rule written just above; a font-size here would have to
+           out-specify that rule, and would then silence it — which is exactly what a Navigation
+           Font Size in the Menu section did before it was removed. Colour and spacing below are
+           properties that rule does not own, so they can be stated without taking anything away. */
+
         /* The gap goes to the items themselves so Menu Item Padding drives the spacing.
            At its 15px default they sit 30px apart, which is where the gap already had them. */
         .lb-desktop-nav { gap: 0 !important; }

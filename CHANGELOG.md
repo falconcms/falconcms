@@ -7,6 +7,20 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.16] — 2026-09-08
+
+### Fixed
+
+- **Changing the navigation font under Typography → Navigation had stopped working.**
+  v2.6.15 gave the Menu section its own Navigation Font Size and Font Weight; to have any
+  effect those had to out-specify the typography rule, and doing so silenced it, so the
+  Typography control quietly did nothing. Both Menu fields are gone again and Typography →
+  Navigation is once more the single place the navigation font is set — family, size,
+  weight, line height, spacing and case.
+
+  Menu keeps the properties typography does not own: text colour, hover colour, item
+  padding and the two dropdown colours. Those are unchanged and still apply.
+
 ## [2.6.15] — 2026-09-08
 
 ### Fixed
