@@ -39,10 +39,14 @@ From **v2.6.7** that setting actually holds: `/admin`, `/admin/login` and every 
 path answer a visitor without a session with a **404**, rather than redirecting to wherever
 you moved the login page. Guessing the obvious address no longer reveals the real one.
 
-Two things follow from that. Keep the login URL somewhere you can find it — there is no
-longer a path that leads you back to it. And a session that expires while you are working
-ends in a 404 on the next click instead of the login form; sign in again at your login URL
-and carry on.
+A browser that has signed in here before is the exception: from **v2.6.13** it is sent to
+the login page rather than the 404, so a session that ends while you are working, or an old
+bookmark, does not look like a broken site. That marker is an ordinary encrypted cookie, so
+it cannot be forged, and it only changes what is *shown* — it never signs anyone in. A
+browser that has never signed in still gets the 404.
+
+It is still worth keeping the login URL somewhere you can find it: on a new machine, or
+after clearing cookies, nothing links back to it.
 :::
 
 ## SEO Settings

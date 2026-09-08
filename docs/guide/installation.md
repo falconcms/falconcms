@@ -54,8 +54,11 @@ Log in with the credentials shown after `falcon:install`.
 session with a **404** rather than redirecting to the login page — otherwise the one
 address everybody guesses would hand out the address you moved the login page to.
 
-So open the login URL, not `/admin`. You can change it in **Settings → Change login url**;
-keep it somewhere you can find, because nothing links back to it.
+So open the login URL, not `/admin`. You can change it in **Settings → Change login url**.
+
+Once you have signed in on a browser, that browser is remembered: if your session later
+ends and you open `/admin` or an old bookmark, it takes you to the login page instead of
+the 404. A browser that has never signed in still sees nothing.
 
 ---
 

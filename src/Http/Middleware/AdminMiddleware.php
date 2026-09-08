@@ -8,11 +8,31 @@ use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AdminMiddleware
 {
+    /**
+     * Marks a browser that has completed a sign-in here.
+     *
+     * Set on login (see {@see self::rememberBrowser()}), never cleared on logout: after
+     * signing out on purpose, the next visit to /admin should still reach the login page
+     * rather than a 404. It records nothing about who signed in.
+     */
+    public const RETURNING_COOKIE = 'falcon_admin_seen';
+
+    /**
+     * Remember that this browser has signed in, so a later visit with no session is sent
+     * to the login page instead of a 404. One year, because the whole point is to still
+     * help long after the session that created it has gone.
+     */
+    public static function rememberBrowser(): void
+    {
+        Cookie::queue(Cookie::make(self::RETURNING_COOKIE, '1', 60 * 24 * 365));
+    }
+
     public function handle(Request $request, Closure $next)
     {
         // 1. Check IP Block
@@ -41,8 +61,23 @@ class AdminMiddleware
         // straight to it handed that address to anyone who typed the obvious guess, which
         // defeated the whole point of moving it. To someone without a session, the admin
         // now simply does not exist.
+        //
+        // Except for a browser that has signed in here before. A session lasts hours, the
+        // work in a builder tab lasts longer, and an admin whose session lapsed — or who
+        // opened an old bookmark — met a bare 404 that reads exactly like a broken site,
+        // with nothing anywhere pointing back to a login page they may not have written
+        // down. That browser already knows the address, so sending it there tells it
+        // nothing it did not have, while a stranger still gets a 404.
+        //
+        // The marker is a Laravel cookie, so it is encrypted and signed with APP_KEY:
+        // it cannot be forged from outside, and a wrong or absent one simply is not there.
         if (!auth()->check()) {
-            abort(404);
+            if (!$request->cookie(self::RETURNING_COOKIE)) {
+                abort(404);
+            }
+
+            return redirect()->route('admin.login')
+                ->with('error', 'Your session has ended. Please sign in again.');
         }
 
         $user = auth()->user()->fresh();

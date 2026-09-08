@@ -7,6 +7,19 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.6.13] — 2026-09-07
+
+### Fixed
+
+- **A browser that has signed in before no longer meets the /admin 404.** The 404 added in
+  v2.6.7 keeps the login URL from being guessed, but it also met the site's own admin after
+  a session lapsed, where it reads as a broken site. Such a browser is now sent to the login
+  page; one that has never signed in still gets the 404. The marker is an encrypted Laravel
+  cookie, cannot be forged, and never signs anyone in.
+- **The install guide, introduction and home page told new users to visit `/admin`** after
+  installing, which has answered 404 since v2.6.7. They now name the login URL the installer
+  prints.
+
 ## [2.6.12] — 2026-09-06
 
 ### Fixed

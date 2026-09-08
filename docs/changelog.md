@@ -5,7 +5,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.12 <Badge type="tip" text="Latest" /> {#v2-6-12}
+## v2.6.13 <Badge type="tip" text="Latest" /> {#v2-6-13}
+
+**Released: 2026-09-07**
+
+### Fixed
+
+- **A browser that has signed in before is no longer met by the 404.** Since v2.6.7 `/admin`
+  answers a visitor without a session with a 404, so that guessing the obvious path cannot
+  reveal where the login page was moved to. That is right for a stranger and wrong for the
+  site's own administrator: sessions last hours, work in a builder tab lasts longer, and
+  nothing on the site links back to a login page they may never have written down. A bare
+  404 at that moment reads as a broken site rather than "sign in again".
+
+  A browser that has completed a sign-in here is now sent to the login page instead, with
+  *Your session has ended. Please sign in again.* It already knows the address, so it learns
+  nothing it did not have; a browser that has never signed in still gets the 404.
+
+  The marker is an ordinary Laravel cookie — encrypted and signed with `APP_KEY`, so it
+  cannot be produced by anyone without the key — and it only changes what an unauthenticated
+  visitor is *shown*. It never signs anyone in.
+
+  On a shared computer it does mean the next person to open `/admin` reaches the login page.
+  Signing out does not remove it, on purpose: after signing out deliberately, the next visit
+  should still find the way back in.
+
+- **Three pages sent new installs to the wrong address.** The installation guide, the
+  introduction and the home page all still said to visit `/admin` after installing — which,
+  since v2.6.7, answers 404 and looks exactly like a failed installation. They now name the
+  login URL the installer prints (`/falcon-admin` on a fresh install).
+
+---
+
+## v2.6.12 {#v2-6-12}
 
 **Released: 2026-09-06**
 

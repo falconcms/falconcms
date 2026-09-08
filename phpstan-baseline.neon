@@ -2911,6 +2911,12 @@ parameters:
 			path: tests/Feature/Security/PrivilegeEscalationTest.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Feature/Security/ReturningAdminTest.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active_sale_price\.$#'
 			identifier: property.notFound
 			count: 1

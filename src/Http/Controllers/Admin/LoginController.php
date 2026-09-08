@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use App\Models\User;
+use FalconCms\Core\Http\Middleware\AdminMiddleware;
 use FalconCms\Core\Mail\MagicLoginMail;
 use FalconCms\Core\Mail\PasswordResetMail;
 use FalconCms\Core\Models\BlockedIp;
@@ -155,6 +156,8 @@ class LoginController extends Controller
                     }
                 }
             }
+
+            AdminMiddleware::rememberBrowser();
 
             return redirect()->intended(route('admin.dashboard.index'));
         }
@@ -380,6 +383,8 @@ class LoginController extends Controller
 
         $user->update(['login_attempts' => 0, 'blocked_until' => null, 'last_failed_login_ip' => null]);
         BlockedIp::where('ip_address', $request->ip())->delete();
+
+        AdminMiddleware::rememberBrowser();
 
         return redirect()->intended(route('admin.dashboard.index'));
     }
