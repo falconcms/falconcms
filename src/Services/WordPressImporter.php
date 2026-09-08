@@ -9,6 +9,7 @@ use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\ProductData;
 use FalconCms\Core\Models\Tag;
 use FalconCms\Core\Models\TaxonomyTerm;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -487,6 +488,76 @@ class WordPressImporter
         return true;
     }
 
+    /**
+     * Create or update one layout section, without tripping over what is already there.
+     *
+     * `posts` is unique on (slug, type, lang_code). The lookup this replaces asked only for
+     * slug + type and went through the soft-delete scope, which gets both halves of that key
+     * wrong:
+     *
+     *  · A section that had been deleted was invisible to the lookup but still occupied its
+     *    row and its place in the index, so the import went on to INSERT the same key and the
+     *    database refused — the SQL error people saw when importing layouts into a site that
+     *    had ever trashed a header or footer. Such a row is restored and reused instead.
+     *  · Ignoring lang_code meant a section of the same name in another language matched, and
+     *    the import quietly overwrote it. The full key is matched now, so each language keeps
+     *    its own.
+     *
+     * If the slug is genuinely taken by something else of this type and language, the section
+     * is created under a free one rather than failing: an import that lands with a suffixed
+     * slug is worth far more than an import that stops.
+     */
+    private function upsertLayoutSection(array $sec, string $type, string $slug, string $lang, $userId): Post
+    {
+        $existing = Post::withoutGlobalScopes()
+            ->where('type', $type)
+            ->where('slug', $slug)
+            ->where('lang_code', $lang)
+            ->first();
+
+        if ($existing) {
+            if (!empty($existing->deleted_at)) {
+                $existing->deleted_at = null;
+            }
+            $existing->fill([
+                'title' => $sec['title'] ?? $existing->title,
+                'status' => $sec['status'] ?? 'published',
+                'content' => $sec['content'] ?? $existing->content,
+            ])->save();
+
+            return $existing;
+        }
+
+        $attributes = [
+            'title' => $sec['title'] ?: ucfirst(str_replace('falcon_', '', $type)),
+            'slug' => $slug,
+            'type' => $type,
+            'status' => $sec['status'] ?? 'published',
+            'content' => $sec['content'] ?? '',
+            'editor_type' => 'builder',
+            'user_id' => $userId,
+            'lang_code' => $lang,
+        ];
+
+        try {
+            return Post::create($attributes);
+        } catch (UniqueConstraintViolationException $e) {
+            // Something occupies this key that the lookup above could not see. Rather than
+            // guess at what, take the next free slug.
+            $base = $slug;
+            for ($i = 2; $i <= 50; $i++) {
+                $candidate = $base.'-'.$i;
+                $taken = Post::withoutGlobalScopes()
+                    ->where('type', $type)->where('slug', $candidate)->where('lang_code', $lang)->exists();
+                if (!$taken) {
+                    return Post::create(['slug' => $candidate] + $attributes);
+                }
+            }
+
+            throw $e;
+        }
+    }
+
     private function optionArrayLocal(string $key): array
     {
         $raw = get_cms_option($key, null);
@@ -512,25 +583,18 @@ class WordPressImporter
             }
             $type = $sec['type'];
             $slug = $sec['slug'] ?: (Str::slug($sec['title'] ?? $type) ?: $type);
-            $post = Post::where('type', $type)->where('slug', $slug)->first();
-            if ($post) {
-                $post->update([
-                    'title' => $sec['title'] ?? $post->title,
-                    'status' => $sec['status'] ?? 'published',
-                    'content' => $sec['content'] ?? $post->content,
-                ]);
-            } else {
-                $post = Post::create([
-                    'title' => $sec['title'] ?: ucfirst(str_replace('falcon_', '', $type)),
-                    'slug' => $slug,
-                    'type' => $type,
-                    'status' => $sec['status'] ?? 'published',
-                    'content' => $sec['content'] ?? '',
-                    'editor_type' => 'builder',
-                    'user_id' => $userId,
-                    'lang_code' => $lang,
-                ]);
+
+            try {
+                $post = $this->upsertLayoutSection($sec, $type, $slug, $lang, $userId);
+            } catch (\Throwable $e) {
+                // One unimportable section must not take the whole import with it: the
+                // layouts that do not mention it still apply, and the assignment that
+                // pointed here is dropped by the remap below rather than left dangling.
+                report($e);
+
+                continue;
             }
+
             $idMap[(string) $oldId] = $post->id;
         }
 

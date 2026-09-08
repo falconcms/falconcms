@@ -3060,6 +3060,72 @@
                 }
             };
 
+            /**
+             * Column width: the preset row, and the custom width underneath it.
+             *
+             * A custom width is not a separate setting — it is the same `basis` the preset
+             * buttons write, holding a value none of them offers. That keeps one source of
+             * truth: everything downstream (the canvas, the front end, the responsive
+             * per-device rules, the sidebar label) already reads `basis` and needs no idea
+             * that a person moved a slider rather than clicking 1/4.
+             *
+             * It follows from that model that the two cannot both apply — whichever was set
+             * last is simply what `basis` says — so the panel shows one or the other rather
+             * than asking the reader to work out which wins.
+             *
+             * Per device, like the presets: `basis` on desktop, `basis_tablet` /
+             * `basis_mobile` elsewhere, written through updateBasis().
+             */
+            const COLUMN_WIDTH_PRESETS = ['16.66%', '20%', '25%', '33.33%', '40%', '50%', '60%', '66.66%', '75%', '80%', '83.33%', '100%', 'auto'];
+
+            /** The width in force for one device, with the same fallback the presets use. */
+            const columnBasisFor = (col, dev) => {
+                if (!col) return '';
+                const raw = dev === 'desktop' ? col.basis : (col['basis_' + dev] ?? col.basis);
+
+                return raw === null || raw === undefined ? '' : String(raw);
+            };
+
+            /** Is this column on a width the preset buttons cannot express? */
+            const isCustomBasis = (col, dev) => {
+                const basis = columnBasisFor(col, dev);
+
+                return basis !== '' && !COLUMN_WIDTH_PRESETS.includes(basis);
+            };
+
+            /** The current width as a plain number, for the slider and its box. */
+            const customWidthValue = (col, dev) => {
+                const n = parseFloat(columnBasisFor(col, dev));
+
+                return Number.isFinite(n) ? Math.round(n * 100) / 100 : 50;
+            };
+
+            const setCustomWidth = (value) => {
+                const n = Number(value);
+                if (!Number.isFinite(n)) return;
+
+                updateBasis(Math.min(100, Math.max(1, n)) + '%');
+            };
+
+            /**
+             * Going back to the presets picks the closest one rather than closing the slider
+             * on a width no button matches — which would leave the row with nothing selected
+             * and no way to tell what the column is actually set to.
+             */
+            const nearestWidthPreset = (col, dev) => {
+                const n = customWidthValue(col, dev);
+
+                return COLUMN_WIDTH_PRESETS
+                    .filter((p) => p !== 'auto')
+                    .reduce((best, p) => Math.abs(parseFloat(p) - n) < Math.abs(parseFloat(best) - n) ? p : best, '100%');
+            };
+
+            // Opened by the "Use Custom Width" link. Only governs a slider that has not been
+            // used yet — once a custom width is set, isCustomBasis() keeps it on screen — so
+            // it is reset when the panel turns to another column or another device.
+            const showCustomWidth = ref(false);
+            watch([editingColumn, device], () => { showCustomWidth.value = false; });
+
             const applyButtonSize = (size) => {
                 if (!editingElement.value) return;
                 const config = {
@@ -3364,7 +3430,10 @@
                     borderBottomWidth: (s.borderSizeBottom || 0) + 'px',
                     borderLeftWidth: (s.borderSizeLeft || 0) + 'px',
                     borderStyle: 'solid',
-                    borderColor: s.borderColor || '#000000',
+                    /* Through hexToRgba, the way the column above it and the front end both
+                       draw a border: the hex alone showed a section's border solid on the
+                       canvas whatever opacity was stored with it. */
+                    borderColor: hexToRgba(getResponsiveVal(s, 'borderColor', dev) || s.borderColor || '#000000', getResponsiveVal(s, 'borderColorOpacity', dev) ?? s.borderColorOpacity),
                     borderTopLeftRadius: getUnitVal(s.borderRadiusTopLeft, s.borderRadiusTopLeftUnit) || '0px',
                     borderTopRightRadius: getUnitVal(s.borderRadiusTopRight, s.borderRadiusTopRightUnit) || '0px',
                     borderBottomRightRadius: getUnitVal(s.borderRadiusBottomRight, s.borderRadiusBottomRightUnit) || '0px',
@@ -3913,6 +3982,56 @@
                 }
                 if ((s.textAnimTrigger || 'always') === 'hover') out.push('fa-tanim-hover');
                 return out.join(' ');
+            };
+
+            /**
+             * The Button's Hover Animation, as a Vue style object for the canvas.
+             *
+             * The same set the front end draws, so what the editor hovers is what a reader
+             * will. Resting values are stated as well as hovered ones — the button carries a
+             * transition, and a property that only appears on hover has nothing to move from.
+             */
+            const FC_BTN_HOVER_ANIM = {
+                lift:   { rest: { transform: 'translateY(0)' },  hover: { transform: 'translateY(-4px)', boxShadow: '0 10px 20px rgba(0,0,0,0.18)' } },
+                sink:   { rest: { transform: 'translateY(0)' },  hover: { transform: 'translateY(3px)',  boxShadow: '0 2px 6px rgba(0,0,0,0.14)' } },
+                grow:   { rest: { transform: 'scale(1)' },       hover: { transform: 'scale(1.06)' } },
+                shrink: { rest: { transform: 'scale(1)' },       hover: { transform: 'scale(0.94)' } },
+                glow:   { rest: { boxShadow: '0 0 0 rgba(0,0,0,0)' }, hover: { boxShadow: '0 0 18px 2px currentColor' } },
+                pulse:  { rest: { transform: 'scale(1)' },       hover: { transform: 'scale(1.05)' } },
+            };
+            /**
+             * A number setting, with blank treated as "not set".
+             *
+             * The panel's number inputs are plain v-model, so clearing one stores an empty
+             * string rather than null — and `?? default` does not catch that. It reached
+             * getUnitVal() as '', which answers undefined, so the property was dropped and a
+             * menu item with its padding cleared lost the padding entirely on the canvas
+             * while the site still drew the default. That is the whole reason the same menu
+             * looked like a thin band here and a proper box there.
+             *
+             * frontend/builder/elements/menu.blade.php applies the identical rule.
+             */
+            const falconNum = (value, fallback) => (value === null || value === undefined || value === '') ? fallback : value;
+
+            /**
+             * One edge's border width for the Button, hovered or resting.
+             *
+             * Hover Border Size is per edge and every field is optional, so a blank one keeps
+             * the border's own width. 0 is not blank — it means "no border on this edge while
+             * hovered" — which is why this tests for '' and null rather than falsiness.
+             */
+            const falconBtnHoverBorder = (el, side) => {
+                const s = (el && el.settings) || {};
+                const rest = s['borderSize' + side] ?? 0;
+                if (!el.isHovered) return rest;
+                const hov = s['hoverBorderSize' + side];
+                return (hov === '' || hov === null || hov === undefined) ? rest : hov;
+            };
+
+            const falconButtonHoverAnim = (el) => {
+                const def = FC_BTN_HOVER_ANIM[(el && el.settings && el.settings.hoverAnimation) || 'none'];
+                if (!def) return {};
+                return el.isHovered ? { ...def.rest, ...def.hover } : { ...def.rest };
             };
 
             /** Custom properties for one node of the element, as a Vue style object. */
@@ -5720,6 +5839,11 @@
                             bgGradientHoverStartColor: '#1a5a96', bgGradientHoverEndColor: '#135e96',
                             bgGradientType: 'linear', bgGradientAngle: 180,
                             bgGradientStartPosition: 0, bgGradientEndPosition: 100,
+                            // Empty keeps the border colour on hover; 'none' is no motion.
+                            // Both are the "leave it alone" answer, so a new button looks
+                            // exactly like one made before these existed.
+                            hoverBorderColor: '', hoverAnimation: 'none',
+                            hoverBorderSizeTop: '', hoverBorderSizeRight: '', hoverBorderSizeBottom: '', hoverBorderSizeLeft: '',
                             dynamic_source: '', link_dynamic_source: '',
                         } : {}),
                         ...(type === 'image' ? { url: '', alt: '', lightbox: false, linkUrl: '', linkTarget: '_self', dynamic_source: '', link_dynamic_source: '', aspectRatio: 'none', focusX: 50, focusY: 50 } : {}),
@@ -6692,7 +6816,9 @@
                 isDragging, isColumnDrag, dragType, dragSource, dragCi, dragColi, dragEli, dragNcoli, startDrag,
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, canvasScale, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal, googleFontFamily,
+                isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
+                falconButtonHoverAnim, falconBtnHoverBorder, falconNum,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,
                 fcTanimModes: FC_TANIM_MODES, fcTanimEasings: FC_TANIM_EASINGS,

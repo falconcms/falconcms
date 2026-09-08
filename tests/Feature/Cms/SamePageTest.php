@@ -73,4 +73,38 @@ class SamePageTest extends TestCase
         $this->assertFalse(falcon_same_page(null, 'https://example.test/docs'));
         $this->assertFalse(falcon_same_page('/docs', ''));
     }
+
+    /**
+     * An anchor or a query with no path is a place on the page you are already reading.
+     * These used to read as the site root, so on the home page every custom menu item
+     * saved as "#pricing" lit up at once — the whole menu looked current.
+     */
+    public function test_an_item_with_only_an_anchor_or_query_is_not_a_page(): void
+    {
+        foreach (['#pricing', '#top', '?tab=2', '?s=laravel'] as $item) {
+            $this->assertFalse(
+                falcon_same_page($item, 'https://example.test'),
+                "{$item} must not match the home page"
+            );
+            $this->assertFalse(
+                falcon_same_page($item, 'https://example.test/docs'),
+                "{$item} must not match an inner page"
+            );
+        }
+    }
+
+    /** A bare host has no path written down, but it is the home page all the same. */
+    public function test_a_bare_host_is_the_home_page(): void
+    {
+        $this->assertTrue(falcon_same_page('https://example.test', 'https://example.test/'));
+        $this->assertFalse(falcon_same_page('https://example.test', 'https://example.test/docs'));
+    }
+
+    /** A path typed without its leading slash is the same page as one with it. */
+    public function test_a_path_without_a_leading_slash(): void
+    {
+        $this->assertTrue(falcon_same_page('docs', 'https://example.test/docs'));
+        $this->assertTrue(falcon_same_page('docs/install', '/docs/install'));
+        $this->assertFalse(falcon_same_page('docs', '/documentation'));
+    }
 }

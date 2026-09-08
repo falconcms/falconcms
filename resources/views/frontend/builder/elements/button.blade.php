@@ -58,29 +58,49 @@
         ['prop' => 'paddingBottom', 'unitProp' => 'paddingBottomUnit', 'sel' => "#{$appliedId}"],
         ['prop' => 'paddingLeft',   'unitProp' => 'paddingLeftUnit',   'sel' => "#{$appliedId}"],
     ]);
-    // textAlign → justify-content requires value transformation so handled separately
+    // Full Width (Span) decides what Alignment means, so it is read once and named.
+    $isSpan = (bool) ($s['buttonSpan'] ?? false);
+    $align  = $s['textAlign'] ?? 'center';
+
+    // textAlign needs its value transformed, so it is written here rather than through
+    // falcon_elem_resp_css(). Which property it lands on follows the desktop rule above:
+    // the label inside a full-width button, the button within its row otherwise.
     foreach ([
         ['tablet', "@media(min-width:{$bpSm1}px) and (max-width:{$bpMed}px)"],
         ['mobile', "@media(max-width:{$bpSm}px)"],
     ] as [$rDev, $rMq]) {
         $rAlign = $getRespVal('textAlign', $rDev);
         if ($rAlign !== null) {
-            $jc = $rAlign === 'left' ? 'flex-start' : ($rAlign === 'right' ? 'flex-end' : 'center');
-            $respCss .= "{$rMq}{.button-container-{$elemId}{justify-content:{$jc}!important}}";
+            if ($isSpan) {
+                $respCss .= "{$rMq}{#{$appliedId}{text-align:{$rAlign}!important}}";
+            } else {
+                $jc = $rAlign === 'left' ? 'flex-start' : ($rAlign === 'right' ? 'flex-end' : 'center');
+                $respCss .= "{$rMq}{.button-container-{$elemId}{justify-content:{$jc}!important}}";
+            }
         }
     }
 
     $wrapperStyles = [
         'display' => 'flex',
         'width' => '100%',
-        'justify-content' => $s['textAlign'] === 'left' ? 'flex-start' : ($s['textAlign'] === 'right' ? 'flex-end' : 'center'),
+        // Defaulted, not assumed: a button saved before this setting existed has no textAlign
+        // at all, and reading it raised a warning on every render of such a button.
+        //
+        // Alignment means two different things depending on Full Width (Span). A button that
+        // is only as wide as its label is placed by moving it within the row, which is this
+        // justify-content. A full-width button already fills the row, so there is nowhere to
+        // move it to and the setting looked broken — there, Alignment moves the label inside
+        // the button instead (text-align, set below).
+        'justify-content' => $isSpan
+            ? 'center'
+            : ($align === 'left' ? 'flex-start' : ($align === 'right' ? 'flex-end' : 'center')),
         'margin-top' => getUnitVal($s['marginTop'] ?? 10, $s['marginTopUnit'] ?? 'px'),
         'margin-bottom' => getUnitVal($s['marginBottom'] ?? 10, $s['marginBottomUnit'] ?? 'px'),
     ];
 
     $btnStyles = [
-        'display' => ($s['buttonSpan'] ?? false) ? 'block' : 'inline-block',
-        'width' => ($s['buttonSpan'] ?? false) ? '100%' : 'auto',
+        'display' => $isSpan ? 'block' : 'inline-block',
+        'width' => $isSpan ? '100%' : 'auto',
         'padding-top' => getUnitVal($s['paddingTop'] ?? 12, $s['paddingTopUnit'] ?? 'px'),
         'padding-bottom' => getUnitVal($s['paddingBottom'] ?? 12, $s['paddingBottomUnit'] ?? 'px'),
         'padding-left' => getUnitVal($s['paddingLeft'] ?? 30, $s['paddingLeftUnit'] ?? 'px'),
@@ -110,7 +130,10 @@
         'text-decoration' => 'none',
         'transition' => 'all 0.3s ease',
         'cursor' => $hasLink ? 'pointer' : 'default',
-        'text-align' => 'center',
+        // See the note on justify-content above: on a full-width button this is what
+        // Alignment moves. On a button sized to its label there is nothing to move, and
+        // centring the label is what it has always done.
+        'text-align' => $isSpan ? $align : 'center',
     ];
 
     $isCustom = ($s['buttonStyle'] ?? 'default') === 'custom';
@@ -139,6 +162,58 @@
         }
     }
 
+    // Hover Border. Every part is optional and an empty one means "keep what the border
+    // already has" — which is what a button saved before these controls existed says for all
+    // of them, so nothing changes under such a button.
+    $hoverBorderColor = !empty($s['hoverBorderColor'])
+        ? $hexToRgba($s['hoverBorderColor'], $s['hoverBorderColorOpacity'] ?? null)
+        : null;
+
+    $hoverBorderCss = '';
+    foreach (['Top' => 'top', 'Right' => 'right', 'Bottom' => 'bottom', 'Left' => 'left'] as $sideKey => $side) {
+        $w = $s['hoverBorderSize'.$sideKey] ?? '';
+        // 0 is a real answer — "no border on this edge when hovered" — so only an unset or
+        // blank field falls through to the resting width.
+        if ($w === '' || $w === null) {
+            continue;
+        }
+        $hoverBorderCss .= "border-{$side}-width: ".getUnitVal($w, 'px').' !important; ';
+    }
+
+    // Hover Animation. The button already carries `transition: all .3s ease`, so each of
+    // these only has to state the resting and hovered ends. Motion is skipped for readers
+    // who have asked their system for less of it.
+    $hoverAnimations = [
+        'lift' => ['rest' => 'transform:translateY(0)', 'hover' => 'transform:translateY(-4px); box-shadow:0 10px 20px rgba(0,0,0,0.18)'],
+        'sink' => ['rest' => 'transform:translateY(0)', 'hover' => 'transform:translateY(3px); box-shadow:0 2px 6px rgba(0,0,0,0.14)'],
+        'grow' => ['rest' => 'transform:scale(1)', 'hover' => 'transform:scale(1.06)'],
+        'shrink' => ['rest' => 'transform:scale(1)', 'hover' => 'transform:scale(0.94)'],
+        'glow' => ['rest' => 'box-shadow:0 0 0 rgba(0,0,0,0)', 'hover' => 'box-shadow:0 0 18px 2px currentColor'],
+        'pulse' => ['rest' => '', 'hover' => 'animation:falcon-btn-pulse 0.9s ease-in-out infinite'],
+    ];
+    $hoverAnim = $hoverAnimations[$s['hoverAnimation'] ?? 'none'] ?? null;
+
+    // The resting half is an inline style on the button, and an inline style beats a
+    // stylesheet rule however the two are ordered — so a plain `transform` in the :hover
+    // block lost to it and the button never moved, while the box-shadow beside it (which
+    // has no inline counterpart) worked. Marked important, like every other hover
+    // declaration in this block.
+    $hoverAnimCss = '';
+    if ($hoverAnim) {
+        foreach (array_filter(array_map('trim', explode(';', $hoverAnim['hover']))) as $decl) {
+            $hoverAnimCss .= $decl.' !important; ';
+        }
+    }
+
+    if ($hoverAnim && $hoverAnim['rest'] !== '') {
+        foreach (explode(';', $hoverAnim['rest']) as $decl) {
+            if (str_contains($decl, ':')) {
+                [$prop, $val] = explode(':', $decl, 2);
+                $btnStyles[trim($prop)] = trim($val);
+            }
+        }
+    }
+
     $hoverBgImage = 'none';
     if ($isCustom && !empty($s['bgGradientStartColor'])) {
          if (($s['bgGradientType'] ?? 'linear') === 'radial') {
@@ -159,7 +234,18 @@
             background-image: none !important;
         @endif
         color: {{ $hoverColor }} !important;
+        @if($hoverBorderColor) border-color: {{ $hoverBorderColor }} !important; @endif
+        @if($hoverBorderCss) {!! $hoverBorderCss !!} @endif
+        @if($hoverAnimCss) {!! $hoverAnimCss !!} @endif
     }
+    @if(($s['hoverAnimation'] ?? 'none') === 'pulse')
+    @keyframes falcon-btn-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    @endif
+    @if($hoverAnim)
+    @media (prefers-reduced-motion: reduce) {
+        #{{ $appliedId }}, #{{ $appliedId }}:hover { transform: none !important; animation: none !important; }
+    }
+    @endif
     @if($respCss) {!! $respCss !!} @endif
 </style>
 

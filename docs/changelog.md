@@ -5,7 +5,142 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.6.13 <Badge type="tip" text="Latest" /> {#v2-6-13}
+## v2.7.0 <Badge type="tip" text="Latest" /> {#v2-7-0}
+
+**Released: 2026-09-08**
+
+### Added
+
+- **Custom column widths.** *Column* and *Nested Column* → **Design** → **Use Custom Width**
+  opens a slider for any width the preset fractions cannot express. The presets and the
+  slider are the same setting, so only one is shown at a time, and going back picks the
+  nearest preset rather than leaving the row with nothing selected. Per device, like the
+  presets — a column can be 1/3 on desktop and 45% on mobile.
+
+- **A Today range on Analytics, and it is now the default.** The question that page is opened
+  to answer is almost always "what is happening now"; a week's total is the wrong shape for
+  it. The other ranges are unchanged and still one click away.
+
+- **Landing-page menus follow the reader.** A menu built from `#pricing`-style links now
+  marks the item whose section is at the top of the viewport, scrolls smoothly when one is
+  clicked, and stops short of a sticky header instead of leaving the heading underneath it.
+  Both the theme header and the Layout builder's Menu element.
+
+- **Hover Border and Hover Animation on the Button element.** The border gains a hover width
+  per edge and a hover colour, kept directly under the border they change — blank keeps the
+  resting value, and `0` is a real answer. The animation offers Lift Up, Sink Down, Grow,
+  Shrink, Glow and Pulse, and none of them for a reader whose system asks for reduced motion.
+
+### Changed
+
+- **Analytics counts a visitor once a day, and again the next day.** Counting distinct
+  addresses across a whole range had fixed one fault and introduced its opposite: someone who
+  came back on ten different days was still one address, so a month looked no busier than a
+  day. Every figure now counts distinct (address, day) pairs, so the cards agree with each
+  other. Over **Today** it is the same number it always was — which is why this only ever
+  showed on the longer ranges.
+
+  Longer ranges will therefore read higher than before on the same data. That is the
+  correction, not a new fault.
+
+- **New vs Returning is answered across the range.** The old query only asked whether an
+  address had been seen *before the range began*, so a reader who first arrived on Monday and
+  came back every day counted as new all week. Their first day is new, the rest are returns,
+  and the two still add up to the headline.
+
+- **Active Pages lists every page the people here now have read**, not only the page each of
+  them is on at this instant. Each row counts people, so re-reading a page never counts
+  twice.
+
+- **Alignment on a full-width Button moves its label.** A Full Width button already fills its
+  row, so there was nowhere for Alignment to move it and the control looked broken. It now
+  sets the text alignment inside the button. A button sized to its label is still placed
+  within the row exactly as before.
+
+### Fixed
+
+- **Importing layouts failed with a database error** on any site that had ever deleted a
+  header or footer. `posts` is unique on (slug, type, lang_code), but the import matched only
+  slug and type and did so through the soft-delete scope — so a section in the bin was
+  invisible to the check while still holding its key, and the insert was refused. The full
+  key is matched now, a section in the bin is restored and reused, and a section that still
+  cannot be placed is reported and skipped rather than taking the whole import down.
+
+- **Every custom link in a menu was marked as the current page.** An item saved as `#pricing`
+  has no path of its own, and reading that as `/` made all of them match on the home page.
+  The theme header and the builder's Menu element also answered the question separately and
+  disagreed with each other; they now share one answer.
+
+- **The unsaved-changes warning appeared when you pressed Save.** Most of the admin saves by
+  calling `form.submit()` from script, which fires no submit event — so the guard never saw
+  the save and asked *Leave site?* at the exact moment the work was being written. It still
+  warns when a tab with unsaved edits is closed, which is all it was ever for.
+
+- **A Button's border could be invisible.** Border Color was the only colour field in the
+  panel that hid its opacity, so a border stored at 4% read as `#aaa` and drew nothing — and
+  the canvas ignored opacity altogether, showing a solid border for one the site would not
+  draw. Section borders had the same fault on the canvas.
+
+- **Menu hover settings describe the current item too** — border and border colour, as text
+  and background already did.
+
+- **The builder canvas and the site now draw a menu identically.** Five properties were
+  computed differently on each side, a cleared number field was handled differently, the
+  canvas link inherited the `line-height: 0` the editor puts on every element wrapper, and
+  the editor's own padding and dashed border pushed the menu 5px in from where the site
+  draws it.
+
+---
+
+## v2.6.16 {#v2-6-16}
+
+**Released: 2026-09-08**
+
+### Fixed
+
+- **Changing the navigation font under Typography → Navigation had stopped working.** v2.6.15
+  gave the Menu section its own Navigation Font Size and Font Weight; to have any effect
+  those had to out-specify the typography rule, and doing so silenced it. Both Menu fields
+  are gone again and **Typography → Navigation** is once more the single place the navigation
+  font is set. Menu keeps what typography does not own: text colour, hover colour, item
+  padding and the dropdown colours.
+
+---
+
+## v2.6.15 {#v2-6-15}
+
+**Released: 2026-09-08**
+
+### Fixed
+
+- **Navigation Font Size and Font Weight work.** v2.6.14 removed them instead of repairing
+  them; both are back and applied. *(Superseded by v2.6.16, which moved the navigation font
+  to Typography → Navigation for good.)*
+- **Dropdown Text Color reaches the mobile menu's sub-items**, which were painted a fixed grey.
+
+---
+
+## v2.6.14 {#v2-6-14}
+
+**Released: 2026-09-08**
+
+### Fixed
+
+- **The Customizer's Menu settings did not reach the theme header.** Navigation Text Color was
+  emitted only once a Navigation typography had also been saved, so on most sites it had no
+  rule at all; Menu Item Padding could not do anything because the navigation carried a fixed
+  32px gap; and the mobile menu was painted with hard-coded classes, so every one of these
+  settings stopped at the desktop breakpoint. Defaults are unchanged, so a site that never
+  opened these controls looks the same.
+- **A layout slot switch asks for a state instead of a flip.** A double-click, a retried
+  request or a tab opened before the slot changed elsewhere could land on the opposite value —
+  read as "I switched it on, reloaded, and it was off".
+- **Falcon Builder → Sections could fail with `Undefined variable $errors`**, taking the whole
+  page down with a 500.
+
+---
+
+## v2.6.13 {#v2-6-13}
 
 **Released: 2026-09-07**
 

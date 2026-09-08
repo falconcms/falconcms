@@ -858,13 +858,34 @@ if (!function_exists('falcon_same_page')) {
             return false;
         }
 
+        // A URL with no path at all means one of two opposite things, and reading both as
+        // "/" is what marked every custom menu item active at once: an item saved as
+        // "#pricing" or "?tab=2" collapsed to the site root, so on the home page it matched.
+        // Those are a fragment or a query on the page you are already on, not a page of
+        // their own. A bare host — "https://example.test" — really is the site root.
+        // '' is returned for the first case and never matches anything, including itself.
         $path = static function (string $url): string {
-            $p = (string) (parse_url($url, PHP_URL_PATH) ?: '/');
+            $p = (string) parse_url($url, PHP_URL_PATH);
+
+            if ($p === '') {
+                return parse_url($url, PHP_URL_HOST) || parse_url($url, PHP_URL_SCHEME) ? '/' : '';
+            }
+
+            // "about" and "/about" name the same page; only one of them is what the editor
+            // happened to type.
+            $p = '/'.ltrim($p, '/');
 
             return rtrim($p, '/') === '' ? '/' : rtrim($p, '/');
         };
 
-        return $path($a) === $path($b);
+        $pathA = $path($a);
+        $pathB = $path($b);
+
+        if ($pathA === '' || $pathB === '') {
+            return false;
+        }
+
+        return $pathA === $pathB;
     }
 }
 
@@ -934,36 +955,24 @@ if (!function_exists('falcon_menu_is_active')) {
      *
      *  - Trailing slashes do not matter: "/about/" matches /about.
      *  - "/" matches the home page (which the request reports as "/", not "").
-     *  - An item with no path of its own — "#plans", or a bare host — never
-     *    matches, since it does not point at a page.
+     *  - An anchor- or query-only item — "#plans", "?tab=2" — never matches: it is a
+     *    place on the page you are already reading, not a page.
+     *  - A bare host — "https://site.test" — is the home page, and matches there.
      *  - A link to another host never matches, so an external "https://x.test/"
      *    cannot light up on our own home page.
+     *
+     * The comparison itself is {@see falcon_same_page()}, which the Layout builder's Menu
+     * element also uses. They answered this question separately once and disagreed about
+     * anchor-only items, so the same menu highlighted differently depending on whether the
+     * header came from the theme or from the builder.
      */
     function falcon_menu_is_active(?string $url): bool
     {
-        $url = trim((string) $url);
-
-        if ($url === '') {
+        try {
+            return falcon_same_page($url, url()->current());
+        } catch (Throwable $e) {
             return false;
         }
-
-        if (url()->current() === $url) {
-            return true;
-        }
-
-        $host = parse_url($url, PHP_URL_HOST);
-        if ($host && strcasecmp($host, request()->getHost()) !== 0) {
-            return false;
-        }
-
-        // parse_url() gives null for "#plans" and for a bare host; both mean
-        // "no page of its own", which is different from the home page's "/".
-        $path = (string) parse_url($url, PHP_URL_PATH);
-        if ($path === '') {
-            return false;
-        }
-
-        return request()->is(trim($path, '/') ?: '/');
     }
 }
 

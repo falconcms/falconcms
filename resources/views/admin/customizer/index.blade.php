@@ -878,6 +878,10 @@ function customizerApp(initialSection) {
                 });
                 const data = await res.json();
                 this.showToast(data.message || 'Saved.', data.success ? 'success' : 'error');
+                // This screen saves without leaving the page, so the unsaved-changes guard
+                // in the admin layout has no submit to learn from and would still warn on
+                // close after a successful save.
+                if (data.success && window.falconMarkSaved) window.falconMarkSaved();
             } catch {
                 this.showToast('Error saving settings. Please try again.', 'error');
             } finally {

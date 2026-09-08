@@ -1,3 +1,18 @@
+{{-- Canvas preview of the Button.
+
+     Note for anyone editing the :style bindings below: keep comments OUT of the attribute.
+     A /* ... */ inside one is still inside an HTML attribute value, so a double quote in it
+     closes the attribute early and Vue then fails to compile the whole template — a blank
+     builder, not a broken button.
+
+     Two rules worth knowing, both matching frontend/builder/elements/button.blade.php:
+      - Alignment. A full-width (span) button already fills its row, so Alignment moves the
+        label inside it (textAlign); otherwise it moves the button within the row
+        (justifyContent on the wrapper).
+      - Borders. Widths come from falconBtnHoverBorder(), which falls back per edge to the
+        resting width unless a hover width is set (0 counts as set). Colours go through
+        hexToRgba so a border stored at a low opacity looks here exactly as it will on the
+        site. --}}
 <div v-if="el.type === 'button'"
      class="element-button-wrapper w-full fa-tanim-host"
      :class="[el.settings.cssClass || '', 'button-container-' + el.id]"
@@ -6,7 +21,8 @@
          {
             display: 'flex',
             width: '100%',
-            justifyContent: (getResponsiveVal(el.settings, 'textAlign', device) || 'center') === 'left' ? 'flex-start' : ((getResponsiveVal(el.settings, 'textAlign', device) || 'center') === 'right' ? 'flex-end' : 'center'),
+            justifyContent: el.settings.buttonSpan ? 'center'
+                : ((getResponsiveVal(el.settings, 'textAlign', device) || 'center') === 'left' ? 'flex-start' : ((getResponsiveVal(el.settings, 'textAlign', device) || 'center') === 'right' ? 'flex-end' : 'center')),
             marginTop: getUnitVal(getResponsiveVal(el.settings, 'marginTop', device) ?? 10, getResponsiveVal(el.settings, 'marginTopUnit', device) || 'px'),
             marginBottom: getUnitVal(getResponsiveVal(el.settings, 'marginBottom', device) ?? 10, getResponsiveVal(el.settings, 'marginBottomUnit', device) || 'px')
          },
@@ -43,12 +59,15 @@
                 : 'none',
            color: el.isHovered ? hexToRgba(el.settings.hoverColor || '#ffffff', el.settings.hoverColorOpacity) : hexToRgba((el.settings.buttonStyle === 'custom' ? (el.settings.customTextColor || el.settings.color) : el.settings.color) || '#ffffff', el.settings.buttonStyle === 'custom' ? (el.settings.customTextColorOpacity ?? el.settings.colorOpacity) : el.settings.colorOpacity),
            borderRadius: getUnitVal(el.settings.borderRadius ?? 5, 'px'),
-           borderTopWidth: getUnitVal(el.settings.borderSizeTop ?? 0, 'px'),
-           borderRightWidth: getUnitVal(el.settings.borderSizeRight ?? 0, 'px'),
-           borderBottomWidth: getUnitVal(el.settings.borderSizeBottom ?? 0, 'px'),
-           borderLeftWidth: getUnitVal(el.settings.borderSizeLeft ?? 0, 'px'),
+           borderTopWidth: getUnitVal(falconBtnHoverBorder(el, 'Top'), 'px'),
+           borderRightWidth: getUnitVal(falconBtnHoverBorder(el, 'Right'), 'px'),
+           borderBottomWidth: getUnitVal(falconBtnHoverBorder(el, 'Bottom'), 'px'),
+           borderLeftWidth: getUnitVal(falconBtnHoverBorder(el, 'Left'), 'px'),
            borderStyle: 'solid',
-           borderColor: el.settings.borderColor || '#000000',
+           borderColor: (el.isHovered && el.settings.hoverBorderColor)
+                ? hexToRgba(el.settings.hoverBorderColor, el.settings.hoverBorderColorOpacity)
+                : hexToRgba(el.settings.borderColor || '#000000', el.settings.borderColorOpacity),
+           ...falconButtonHoverAnim(el),
            fontFamily: el.settings.fontFamily || 'inherit',
            fontSize: el.settings.fontSize ? (/[a-zA-Z%]/.test(String(el.settings.fontSize)) ? String(el.settings.fontSize) : String(el.settings.fontSize) + (el.settings.fontSizeUnit || 'px')) : '16px',
            fontWeight: el.settings.fontWeight || '600',
@@ -57,7 +76,7 @@
            textTransform: el.settings.textTransform || 'none',
            textDecoration: 'none',
            transition: 'all 0.3s ease',
-           textAlign: 'center'
+           textAlign: el.settings.buttonSpan ? (getResponsiveVal(el.settings, 'textAlign', device) || 'center') : 'center'
        }]">
         <i v-if="el.settings.icon && el.settings.iconPosition !== 'right'" :class="[el.settings.icon, 'mr-2']"></i>
         <span :class="textAnimClass(el, 'text')"

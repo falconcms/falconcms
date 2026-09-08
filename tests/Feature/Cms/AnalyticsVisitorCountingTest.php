@@ -107,28 +107,37 @@ class AnalyticsVisitorCountingTest extends TestCase
     }
 
     /**
-     * The exact shape of the reported fault: the panel said "1 active user right now"
-     * while the table under it listed six pages with one user each, because the one
-     * person who had read six pages was placed on all six at once.
+     * Active Pages lists the pages the people who are here now have read.
+     *
+     * It used to list only the single page each of them was on at that instant. That was
+     * the fix for a real fault — one reader had been counted on all six pages at once, so
+     * the table said six where the counter said one — but it answered a narrower question
+     * than the card is for. Both halves matter, so both are asserted here: every page the
+     * visitor opened is listed, and no row ever counts one person more than once.
      */
-    public function test_one_person_browsing_appears_on_one_page_not_every_page(): void
+    public function test_active_pages_lists_every_page_the_visitor_has_read(): void
     {
-        foreach (['/about', '/account', '/blog', '/contact', '/product'] as $path) {
+        foreach (['/about', '/account', '/blog'] as $path) {
             $this->pageView('203.0.113.9', $path);
         }
-        // Their newest view — this is where they actually are.
+        // Read twice — the same person on the same page is still one visitor there.
+        $this->pageView('203.0.113.9', '/about');
         $this->pageView('203.0.113.9', '/pricing', 'Bangladesh', 'BD', Carbon::now('UTC')->toDateTimeString());
 
         $this->withProLicensed();
         $json = $this->actingAs($this->administrator())->getJson('/admin/analytics/realtime')->assertOk()->json();
 
-        $this->assertSame(1, $json['active']);
-        $this->assertCount(1, $json['activePages'], 'one person is on one page');
-        $this->assertSame('/pricing', $json['activePages'][0]['path'], 'the page they are on now');
-        $this->assertSame(
-            $json['active'],
-            collect($json['activePages'])->sum('count'),
-            'the table must add up to the number beside the dot'
+        $this->assertSame(1, $json['active'], 'it is one person however many pages they read');
+
+        $pages = collect($json['activePages']);
+        $this->assertEqualsCanonicalizing(
+            ['/about', '/account', '/blog', '/pricing'],
+            $pages->pluck('path')->all(),
+            'every page they opened should be listed'
+        );
+        $this->assertTrue(
+            $pages->every(fn ($p) => (int) $p['count'] === 1),
+            'each row counts people, so one reader is 1 on each page — never 2 for reading it twice'
         );
     }
 
@@ -173,11 +182,19 @@ class AnalyticsVisitorCountingTest extends TestCase
         $this->assertSame(2, $json['active'], 'two people are active, not five page views');
         $this->assertCount(2, $json['recent'], 'the live list is one row per visitor');
 
-        // Active Pages answers "where visitors are now": the first person has moved on to
-        // their latest page and the second is on the home page, so it is one each — and
-        // the column adds up to the two people, not to the five views between them.
-        $pages = collect($json['activePages']);
-        $this->assertSame(2, $pages->sum('count'), 'the table adds up to the people, not the views');
-        $this->assertTrue($pages->every(fn ($p) => (int) $p['count'] === 1), 'each person is on one page');
+        // Active Pages lists what those two people have read. The home page is the only
+        // one both of them opened, so it is the only row counting two.
+        $pages = collect($json['activePages'])->keyBy('path');
+        $this->assertCount(4, $pages, 'four distinct pages were read between them');
+        $this->assertSame(
+            1,
+            $pages->where('count', 2)->count(),
+            'the home page is the only one both of them opened, so it is the only row of two'
+        );
+        $this->assertSame(1, (int) $pages['/about']['count'], 'only one of them read this');
+        $this->assertTrue(
+            $pages->every(fn ($p) => (int) $p['count'] <= $json['active']),
+            'no page can hold more people than are active'
+        );
     }
 }

@@ -44,11 +44,12 @@ class AnalyticsTimezoneTest extends TestCase
         ]);
     }
 
-    private function analytics()
+    private function analytics(array $query = [])
     {
         $this->withProLicensed();
 
-        return $this->actingAs($this->administrator())->get('/admin/analytics');
+        return $this->actingAs($this->administrator())
+            ->get('/admin/analytics'.($query ? '?'.http_build_query($query) : ''));
     }
 
     public function test_an_evening_visit_counts_on_the_local_day_not_the_servers(): void
@@ -111,8 +112,11 @@ class AnalyticsTimezoneTest extends TestCase
         $this->assertSame(2, end($series), 'Both belong to the local day the chart labels as today.');
     }
 
-    public function test_the_range_opens_on_seven_days(): void
+    public function test_the_range_opens_on_today(): void
     {
-        $this->assertSame(7, $this->analytics()->viewData('range'));
+        // The page is opened to see what is happening now, so Today is what it opens on.
+        // The longer ranges are still there and still answer to ?range=.
+        $this->assertSame(1, $this->analytics()->viewData('range'));
+        $this->assertSame(30, $this->analytics(['range' => 30])->viewData('range'));
     }
 }

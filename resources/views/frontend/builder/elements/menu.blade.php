@@ -124,7 +124,10 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         'slide-up'   => 'translateY(10px)',
         default      => 'translateY(0px)',
     };
-    $elId = $el['id'];
+    // Every id in this template's CSS and JS is built from this one, so an element saved
+    // without an id would otherwise emit selectors like ".menu- ." that match everything or
+    // nothing, on top of a warning per render.
+    $elId = $el['id'] ?? ('menu-'.substr(md5(json_encode($el['settings'] ?? [])), 0, 8));
     
     // Visibility
     $v = $s['visibility'] ?? ['mobile' => true, 'tablet' => true, 'desktop' => true];
@@ -211,7 +214,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             $style .= "font-family: $ff !important;";
         }
         
-        $fontSize = $s[$fsKey] ?? $defaultSize;
+        $fontSize = (($s[$fsKey] ?? null) === null || ($s[$fsKey] ?? null) === '') ? $defaultSize : $s[$fsKey];
         $style .= "font-size: " . $fontSize . (is_numeric($fontSize) ? 'px' : '') . " !important;";
         
         $fontWeight = $s[$fwKey] ?? '400';
@@ -230,9 +233,18 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     // dead, and *with* !important the inline declaration outranks every stylesheet rule
     // including :hover, so the hover colour dies instead. As a rule beside :hover both work,
     // because :hover is the more specific selector.
+    // A number field the editor has cleared is stored as an empty string, not as null, so
+    // `?? default` lets it straight through — and "padding: px 15px" is not a value, so the
+    // browser drops the whole declaration and the item loses its padding altogether. Blank
+    // means "use the default", the same as never having been set. The canvas applies the
+    // same rule, which is what keeps the two pictures identical.
+    $num = static function ($value, $default) {
+        return ($value === null || $value === '') ? $default : $value;
+    };
+
     $mainLinkStyle = $getTypographyStyle('', '16px');
-    $mainLinkStyle .= ' padding: ' . ($s['itemPaddingTop'] ?? 10) . 'px ' . ($s['itemPaddingRight'] ?? 15) . 'px ' . ($s['itemPaddingBottom'] ?? 10) . 'px ' . ($s['itemPaddingLeft'] ?? 15) . 'px;';
-    $mainLinkStyle .= ' border-radius: ' . ($s['itemBorderRadius'] ?? 0) . 'px;';
+    $mainLinkStyle .= ' padding: ' . $num($s['itemPaddingTop'] ?? null, 10) . 'px ' . $num($s['itemPaddingRight'] ?? null, 15) . 'px ' . $num($s['itemPaddingBottom'] ?? null, 10) . 'px ' . $num($s['itemPaddingLeft'] ?? null, 15) . 'px;';
+    $mainLinkStyle .= ' border-radius: ' . $num($s['itemBorderRadius'] ?? null, 0) . 'px;';
     
     // Normal Borders
     $bt = $s['itemBorderSizeTop'] ?? 0; $br = $s['itemBorderSizeRight'] ?? 0; $bb = $s['itemBorderSizeBottom'] ?? 0; $bl = $s['itemBorderSizeLeft'] ?? 0;
@@ -282,7 +294,11 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             $isDistributing = $layout === 'horizontal' && in_array($s['justification'] ?? 'flex-start', ['space-between', 'space-around', 'space-evenly']);
         @endphp
         <nav class="lazy-desktop-nav" style="display: {{ $isMobileView ? 'none' : 'flex' }}; width: 100%; align-items: {{ $s['alignItems'] ?? 'center' }}; justify-content: {{ $s['justification'] ?? 'flex-start' }}; min-height: {{ ($s['minHeight'] ?? '') !== '' ? $s['minHeight'].'px' : '60px' }};">
-            <ul class="lazy-menu-list" style="display: flex; width: 100%; flex-direction: {{ $layout === 'horizontal' ? 'row' : 'column' }}; align-items: {{ $s['alignItems'] ?? 'center' }}; justify-content: {{ $s['justification'] ?? 'flex-start' }}; gap: {{ $layout === 'horizontal' ? (in_array($s['justification'] ?? '', ['space-between', 'space-around', 'space-evenly']) ? '0' : ($s['itemSpacing'] ?? 25) . 'px') : ($s['itemSpacing'] ?? 10) . 'px' }};">
+            {{-- data-falcon-scrollspy: on a landing page, section links are marked as the
+                 reader scrolls past them. The class is the one this element already styles
+                 (.falcon-menu-link.active) — deliberately NOT the li's .active, which the
+                 mobile menu uses to mean "this submenu is open". --}}
+            <ul class="lazy-menu-list" data-falcon-scrollspy="active" style="display: flex; width: 100%; flex-direction: {{ $layout === 'horizontal' ? 'row' : 'column' }}; align-items: {{ $s['alignItems'] ?? 'center' }}; justify-content: {{ $s['justification'] ?? 'flex-start' }}; gap: {{ $layout === 'horizontal' ? (in_array($s['justification'] ?? '', ['space-between', 'space-around', 'space-evenly']) ? '0' : ($s['itemSpacing'] ?? 25) . 'px') : ($s['itemSpacing'] ?? 10) . 'px' }};">
                 @php renderLazyMenuItemsResponsive($menuItems, $grouped, $mainLinkStyle, $subLinkStyle, false, $elId, $s, $megaMenuLayouts); @endphp
             </ul>
 
@@ -344,7 +360,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
                         <button class="lazy-sidebar-close" style="background: none; border: none; cursor: pointer; font-size: 20px; color: {{ $s['mobileMenuTextColor'] ?? '#333' }};">&times;</button>
                     </div>
                 @endif
-                <ul class="lazy-mobile-list">
+                <ul class="lazy-mobile-list" data-falcon-scrollspy="active">
                     @php renderLazyMenuItemsResponsive($menuItems, $grouped, $mobileLinkStyle, $mobileLinkStyle, true, $elId, $s, $megaMenuLayouts); @endphp
                 </ul>
             </nav>
@@ -367,7 +383,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         flex-direction: {{ $layout === 'horizontal' ? 'row' : 'column' }};
         align-items: {{ $s['alignItems'] ?? 'center' }};
         justify-content: {{ $s['justification'] ?? 'flex-start' }};
-        gap: {{ $layout === 'horizontal' ? (in_array($s['justification'] ?? '', ['space-between', 'space-around', 'space-evenly']) ? '0' : ($s['itemSpacing'] ?? 25) . 'px') : ($s['itemSpacing'] ?? 10) . 'px' }};
+        gap: {{ $layout === 'horizontal' ? (in_array($s['justification'] ?? '', ['space-between', 'space-around', 'space-evenly']) ? '0' : $num($s['itemSpacing'] ?? null, 25) . 'px') : $num($s['itemSpacing'] ?? null, 10) . 'px' }};
     }
     .menu-{{ $elId }} .falcon-menu-item { position: relative; }
     .menu-{{ $elId }} .lazy-mega-panel {
@@ -401,6 +417,13 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     .menu-{{ $elId }} .falcon-menu-link.active {
         color: {{ ($s['itemColorActive'] ?? '') ?: ($s['itemColorHover'] ?? '#0091ea') }} !important;
         background-color: {{ ($s['itemBgColorActive'] ?? '') ?: ($s['itemBgColorHover'] ?? 'transparent') }} !important;
+        {{-- The border belongs here for the same reason the two colours do. Leaving it out
+             was the whole difference between an underline that appears when you point at an
+             item and one that stays on the item you are actually on: Item Border (Hover) and
+             Border Color (Hover) drew on hover and then vanished the moment the item became
+             current. Every hover setting this panel offers now describes the active state
+             too — colour, background and border alike. --}}
+        {{ $hoverBorderStyle }}
     }
     {{-- The pointer still wins over the active state while it is actually there, so the
          menu keeps responding to a hover on top of the current page too. --}}
@@ -408,6 +431,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     .menu-{{ $elId }} .falcon-menu-link.active:hover {
         color: {{ $s['itemColorHover'] ?? '#0091ea' }} !important;
         background-color: {{ $s['itemBgColorHover'] ?? 'transparent' }} !important;
+        {{ $hoverBorderStyle }}
     }
     
     /* Arrow Styling & Visibility */
@@ -797,3 +821,5 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         })();
     })();
 </script>
+
+@include('falcon-cms::components.frontend.menu-scrollspy')

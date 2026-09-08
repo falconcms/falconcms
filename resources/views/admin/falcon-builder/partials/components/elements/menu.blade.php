@@ -83,8 +83,14 @@
         ">
     </component>
 
-    <nav class="lazy-menu-nav w-full border border-dashed border-transparent hover:border-slate-200 transition-all rounded relative"
-         :class="{'p-1': (el.settings.mobileCollapseBreakpoint === 'none' || ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) < ({mobile:1,tablet:2,desktop:3}[device]||1)), 'p-0': (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1))}"
+    {{-- The editor's own affordance on this element is an outline, not a border, and it adds
+         no padding. Both used to: a 4px p-1 and a 1px dashed border sat between the menu and
+         the edge of its element, so every item was drawn 5px away from where the front end
+         draws it — the gap above and below the highlighted item that the canvas showed and
+         the site did not. An outline is painted outside the box and takes up no space, so
+         the hover affordance survives without moving anything. --}}
+    <nav class="lazy-menu-nav w-full p-0 transition-all rounded relative
+                hover:outline hover:outline-1 hover:outline-dashed hover:outline-slate-200"
          @vue:mounted="(v) => { const n=v.el; if(!n) return; const r=n.closest('.container-row'); if(!r) return; const W=n.ownerDocument&&n.ownerDocument.defaultView; const _c=()=>{ if(el.settings.mobileMenuExpandMode!=='full-width-absolute') return; let l=0,e=n; while(e&&e!==r){l+=e.offsetLeft;e=e.offsetParent;} const nl=-l,nr=-(r.offsetWidth-l-n.offsetWidth); if(el._fwaLeft!==nl||el._fwaRight!==nr){el._fwaLeft=nl;el._fwaRight=nr;} }; _c(); if(W&&W.ResizeObserver&&!n._fwaObs){n._fwaObs=new W.ResizeObserver(_c);n._fwaObs.observe(r);} }"
          @vue:before-unmount="(v) => { if(v.el&&v.el._fwaObs){v.el._fwaObs.disconnect();delete v.el._fwaObs;} }"
          @vue:updated="(v) => { const n=v.el; if(!n||el.settings.mobileMenuExpandMode!=='full-width-absolute') return; const r=n.closest('.container-row'); if(!r) return; if(!n._fwaObs){ const W=n.ownerDocument&&n.ownerDocument.defaultView; if(W&&W.ResizeObserver){ const _c=()=>{ if(el.settings.mobileMenuExpandMode!=='full-width-absolute') return; let l=0,e=n;while(e&&e!==r){l+=e.offsetLeft;e=e.offsetParent;} const nl=-l,nr=-(r.offsetWidth-l-n.offsetWidth); if(el._fwaLeft!==nl||el._fwaRight!==nr){el._fwaLeft=nl;el._fwaRight=nr;} }; n._fwaObs=new W.ResizeObserver(_c); n._fwaObs.observe(r); } } let l=0,e=n; while(e&&e!==r){l+=e.offsetLeft;e=e.offsetParent;} const nl=-l,nr=-(r.offsetWidth-l-n.offsetWidth); if(el._fwaLeft!==nl||el._fwaRight!==nr){el._fwaLeft=nl;el._fwaRight=nr;} }"
@@ -137,7 +143,7 @@
                 flexDirection: (el.settings.mobileCollapseBreakpoint !== 'none' && ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) >= ({mobile:1,tablet:2,desktop:3}[device]||1)) ? 'column' : (el.settings.layout === 'vertical' ? 'column' : 'row'),
                 justifyContent: el.settings.justification || 'flex-start',
                 alignItems: el.settings.alignItems || 'center',
-                gap: ((el.settings.mobileCollapseBreakpoint === 'none' || ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) < ({mobile:1,tablet:2,desktop:3}[device]||1)) && el.settings.layout !== 'vertical') ? (['space-between', 'space-around', 'space-evenly'].includes(el.settings.justification) ? '0' : getUnitVal(el.settings.itemSpacing ?? 25, 'px')) : getUnitVal(el.settings.itemSpacing ?? 10, 'px'),
+                gap: ((el.settings.mobileCollapseBreakpoint === 'none' || ({mobile:1,tablet:2,desktop:3}[el.settings.mobileCollapseBreakpoint||'tablet']||2) < ({mobile:1,tablet:2,desktop:3}[device]||1)) && el.settings.layout !== 'vertical') ? (['space-between', 'space-around', 'space-evenly'].includes(el.settings.justification) ? '0' : getUnitVal(falconNum(el.settings.itemSpacing, 25), 'px')) : getUnitVal(falconNum(el.settings.itemSpacing, 10), 'px'),
                 listStyle: 'none',
                 width: '100%',
                 '--submenu-space': (el.settings.submenuSpace || 10) + 'px',
@@ -164,6 +170,30 @@
                 <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">@{{ el.settings.mobileMenuTriggerText || 'Menu' }}</span>
                 <i class="fa fa-times text-slate-300"></i>
             </li>
+            {{-- The desktop link's style below is kept deliberately in step with the one the
+                 front end writes in frontend/builder/elements/menu.blade.php. Five properties
+                 used to disagree, which is why the same menu looked tighter and smaller here
+                 than on the site: the default font size is 16px there and was 14 here; a
+                 numeric letter-spacing needs its px or the browser drops the declaration; the
+                 link is sized by its own padding and text, while height:100% stretched it to
+                 the tallest item in the row; alignItems is a setting for the LIST, not for the
+                 link, which is always centred; and the 8px gap between a label and its arrow
+                 was missing. Change one side and change the other.
+
+                 One of them is not obvious. The canvas puts line-height:0 on the wrapper
+                 around every element, deliberately, so that whitespace between the element
+                 partials cannot form a line box and push things down. A menu link asking for
+                 line-height "inherit" therefore inherited that 0 and its text box collapsed
+                 to the glyphs — the item came out around 12px shorter than the same item on
+                 the site, which has no such wrapper and inherits the 1.5 that Tailwind's base sets on
+                 every front-end page — hence that number rather than "normal". Short
+                 enough that a logo beside it became the tallest thing in the header, and the
+                 highlight no longer filled the bar: the gap above and below it that the
+                 canvas showed and the front end did not.
+
+                 Comments belong here rather than inside the :style binding — that is an HTML
+                 attribute value, and a quote in it ends the attribute and blanks the whole
+                 builder. tests/Feature/Builder/BuilderTemplateSyntaxTest enforces this. --}}
             <template v-if="el.settings.menuId && falconMenuData[el.settings.menuId]">
                 
                 <!-- Main Level -->
@@ -197,11 +227,11 @@
                               "border-bottom: " + (el.settings.mobileSeparatorEnabled === "no" ? "none" : ("1px solid " + (el.settings.mobileMenuSeparatorColor || "rgba(0,0,0,0.05)"))) + " !important; text-decoration: none !important;") : {
                                color: el._hoveredIdx === idx ? (el.settings.itemColorHover || "#2271b1") : (el.settings.itemColor || "#333"),
                                backgroundColor: el._hoveredIdx === idx ? (el.settings.itemBgColorHover || "transparent") : (el.settings.itemBgColor || "transparent"),
-                               paddingTop: getUnitVal(el.settings.itemPaddingTop ?? 10, "px"),
-                               paddingRight: getUnitVal(el.settings.itemPaddingRight ?? 15, "px"),
-                               paddingBottom: getUnitVal(el.settings.itemPaddingBottom ?? 10, "px"),
-                               paddingLeft: getUnitVal(el.settings.itemPaddingLeft ?? 15, "px"),
-                               borderRadius: getUnitVal(el.settings.itemBorderRadius || 0, "px"),
+                               paddingTop: getUnitVal(falconNum(el.settings.itemPaddingTop, 10), "px"),
+                               paddingRight: getUnitVal(falconNum(el.settings.itemPaddingRight, 15), "px"),
+                               paddingBottom: getUnitVal(falconNum(el.settings.itemPaddingBottom, 10), "px"),
+                               paddingLeft: getUnitVal(falconNum(el.settings.itemPaddingLeft, 15), "px"),
+                               borderRadius: getUnitVal(falconNum(el.settings.itemBorderRadius, 0), "px"),
                                borderStyle: "solid",
                                borderTopWidth: getUnitVal(el._hoveredIdx === idx ? (el.settings.itemBorderSizeTopHover ?? el.settings.itemBorderSizeTop ?? 0) : (el.settings.itemBorderSizeTop ?? 0), "px"),
                                borderRightWidth: getUnitVal(el._hoveredIdx === idx ? (el.settings.itemBorderSizeRightHover ?? el.settings.itemBorderSizeRight ?? 0) : (el.settings.itemBorderSizeRight ?? 0), "px"),
@@ -209,16 +239,16 @@
                                borderLeftWidth: getUnitVal(el._hoveredIdx === idx ? (el.settings.itemBorderSizeLeftHover ?? el.settings.itemBorderSizeLeft ?? 0) : (el.settings.itemBorderSizeLeft ?? 0), "px"),
                                borderColor: el._hoveredIdx === idx ? (el.settings.itemBorderColorHover || el.settings.itemBorderColor || "transparent") : (el.settings.itemBorderColor || "transparent"),
                                fontFamily: (el.settings.fontFamily && el.settings.fontFamily !== "inherit") ? el.settings.fontFamily : (themeNavFont || "inherit"),
-                               fontSize: getUnitVal(el.settings.fontSize || 14, "px"),
+                               fontSize: getUnitVal(falconNum(el.settings.fontSize, 16), "px"),
                                fontWeight: el.settings.fontWeight || "400",
-                               lineHeight: el.settings.lineHeight || "inherit",
-                               letterSpacing: el.settings.letterSpacing || "normal",
+                               lineHeight: falconNum(el.settings.lineHeight, 1.5),
+                               letterSpacing: (el.settings.letterSpacing === "" || el.settings.letterSpacing === undefined || el.settings.letterSpacing === null) ? "normal" : getUnitVal(el.settings.letterSpacing, "px"),
                                textTransform: el.settings.textTransform || "none",
                                textDecoration: "none",
                                display: "flex",
-                               height: "100%",
-                               alignItems: el.settings.alignItems || "center",
+                               alignItems: "center",
                                justifyContent: "space-between",
+                               gap: "8px",
                                transition: "all " + (el.settings.itemTransition || 0.3) + "s ease-in-out"
                            }'>
                         <span :style="{ display: 'inline-flex', alignItems: 'center', gap: ((parseInt(el.settings.menuIconGap) >= 0 ? parseInt(el.settings.menuIconGap) : 6) + 'px'), flexDirection: (el.settings.menuIconPosition === 'right' ? 'row-reverse' : 'row') }">
@@ -319,7 +349,7 @@
                                     fontSize: getUnitVal(el.settings.submenuFontSize || 14, "px"),
                                     fontWeight: el.settings.submenuFontWeight || "400",
                                     letterSpacing: el.settings.submenuLetterSpacing || "normal",
-                                    lineHeight: el.settings.submenuLineHeight || "inherit",
+                                    lineHeight: falconNum(el.settings.submenuLineHeight, 1.5),
                                     textTransform: el.settings.submenuTextTransform || "none",
                                     textAlign: el.settings.submenuTextAlign || "left",
                                     display: "flex",
@@ -431,7 +461,7 @@
                                              fontSize: getUnitVal(el.settings.submenuFontSize || 14, "px"),
                                              fontWeight: el.settings.submenuFontWeight || "400",
                                              letterSpacing: el.settings.submenuLetterSpacing || "normal",
-                                             lineHeight: el.settings.submenuLineHeight || "inherit",
+                                             lineHeight: falconNum(el.settings.submenuLineHeight, 1.5),
                                              textTransform: el.settings.submenuTextTransform || "none",
                                              textAlign: el.settings.submenuTextAlign || "left",
                                              display: "flex",

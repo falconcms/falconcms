@@ -284,8 +284,31 @@
 
         document.addEventListener('input',  function (e) { if (guarded(e.target)) touched = true; }, true);
         document.addEventListener('change', function (e) { if (guarded(e.target)) touched = true; }, true);
+
         // Any submit is an intentional departure — the page is about to be replaced.
-        document.addEventListener('submit', function () { leaving = true; }, true);
+        document.addEventListener('submit', function (e) {
+            leaving = true;
+            // Unless something further along cancels it: client-side validation, or a
+            // confirm dialog the user says no to. Then nobody left and the guard is needed
+            // again. Checked after the other handlers have had their turn.
+            window.setTimeout(function () { if (e.defaultPrevented) leaving = false; }, 0);
+        }, true);
+
+        // A form submitted from script — form.submit() — fires no submit event at all. That
+        // is a rule of the DOM rather than a quirk, and most of this admin saves that way
+        // (Menus, Settings, the ACPT screens, the bulk actions on every list). The guard
+        // therefore never saw the save, and asked "Leave site?" at the exact moment the work
+        // was being written — the opposite of what it is for. Patched here, once, so it
+        // holds for every such call including any written later; requestSubmit() already
+        // fires the event and needs nothing.
+        try {
+            var nativeSubmit = HTMLFormElement.prototype.submit;
+            HTMLFormElement.prototype.submit = function () {
+                leaving = true;
+
+                return nativeSubmit.apply(this, arguments);
+            };
+        } catch (err) { /* a browser that will not allow the patch keeps the old behaviour */ }
 
         function editorDirty() {
             try {

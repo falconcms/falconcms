@@ -14,7 +14,9 @@
 
     @php
         $palette = ['#2271b1','#46b450','#dba617','#d63638','#826eb4','#00a0d2','#e1701a','#7ad03a','#888'];
-        $rangeLabels = [7=>'7 days', 30=>'30 days', 90=>'90 days', 365=>'1 year'];
+        $rangeLabels = [1=>'Today', 7=>'7 days', 30=>'30 days', 90=>'90 days', 365=>'1 year'];
+        // "vs prev. Today" is not a sentence; the day before is what Today is compared with.
+        $rangeCompare = [1=>'yesterday'] + $rangeLabels;
     @endphp
 
     <div class="p-4 sm:p-6 bg-[#f0f0f1] min-h-screen {{ ($analyticsLocked ?? false) ? 'relative overflow-hidden' : '' }}">
@@ -82,11 +84,11 @@
             {{-- Two live tables with clear column headers --}}
             <div class="grid grid-cols-1 lg:grid-cols-2">
                 <div class="lg:border-r border-[#f0f0f1]">
-                    <div class="px-4 pt-4 pb-1 text-[13px] font-bold text-[#1d2327]">Active Pages <span class="text-[11px] text-[#9ca3af] font-normal">— where visitors are now</span></div>
+                    <div class="px-4 pt-4 pb-1 text-[13px] font-bold text-[#1d2327]">Active Pages <span class="text-[11px] text-[#9ca3af] font-normal">— pages the people here now have read</span></div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-[12px] text-left">
                             <thead class="rt-table-head text-[#646970] border-y border-[#f0f0f1] bg-[#fafafa]">
-                                <tr><th>Page</th><th class="text-right">Active Users</th></tr>
+                                <tr><th>Page</th><th class="text-right">Visitors</th></tr>
                             </thead>
                             <tbody id="rt-pages">
                                 <tr><td colspan="2" class="text-center text-[#646970]">—</td></tr>
@@ -120,8 +122,8 @@
                         <div class="classic-stat-label">Visitors</div>
                         <div class="text-[11px] font-semibold mt-0.5 {{ $visitsChange >= 0 ? 'text-[#46b450]' : 'text-[#d63638]' }}">
                             <span class="material-symbols-outlined text-[12px] align-middle">{{ $visitsChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
-                            {{ $visitsChange >= 0 ? '+' : '' }}{{ $visitsChange }}% vs prev. {{ $rangeLabels[$range] }}
-                            <span class="text-[#646970] font-normal">· by IP address</span>
+                            {{ $visitsChange >= 0 ? '+' : '' }}{{ $visitsChange }}% vs {{ $range == 1 ? 'yesterday' : 'prev. '.$rangeCompare[$range] }}
+                            <span class="text-[#646970] font-normal">· one per address per day</span>
                         </div>
                     </div>
                 </div>
@@ -142,6 +144,7 @@
                     <div>
                         <div class="classic-stat-value">{{ number_format($today) }}</div>
                         <div class="classic-stat-label">Visitors Today</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">counted once however often they return</div>
                     </div>
                 </div>
             </div>
@@ -265,7 +268,7 @@
         <div class="classic-card">
             <div class="classic-card-header">
                 <span class="classic-card-title">Traffic Overview</span>
-                <span class="text-[12px] text-[#646970]">Last {{ $rangeLabels[$range] }}</span>
+                <span class="text-[12px] text-[#646970]">{{ $range == 1 ? 'Today' : 'Last '.$rangeLabels[$range] }}</span>
             </div>
             <div class="p-4" style="height:320px">
                 <canvas id="trafficChart"></canvas>

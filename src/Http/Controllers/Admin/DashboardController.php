@@ -1096,9 +1096,12 @@ class DashboardController extends Controller
         }
 
         // ── Date range (dynamic) ──────────────────────────────────────────────
-        $range = (int) request()->query('range', 7);
-        if (!in_array($range, [7, 30, 90, 365], true)) {
-            $range = 7;
+        // Today first, and the default: the question people open this page to answer is
+        // almost always "what is happening now", and a week's total is the wrong shape for
+        // it. The longer ranges are all still one click away.
+        $range = (int) request()->query('range', 1);
+        if (!in_array($range, [1, 7, 30, 90, 365], true)) {
+            $range = 1;
         }
 
         // Locked preview: without Pro (analytics), show believable SAMPLE data behind an
@@ -1125,9 +1128,29 @@ class DashboardController extends Controller
         // Same shift, spelled for the driver in use. MySQL/MariaDB is what the CMS
         // supports and what production runs; SQLite is spelled out too so this query
         // does not become the one thing that cannot run on it.
-        $localDate = DB::connection()->getDriverName() === 'sqlite'
+        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
+
+        $localDate = $isSqlite
             ? sprintf("DATE(datetime(created_at, '%+d seconds'))", $tzShift)
             : sprintf('DATE(created_at + INTERVAL %d SECOND)', $tzShift);
+
+        // What counts as one visitor, once.
+        //
+        // Someone who reads six pages this afternoon is one person, and counting their
+        // rows made every figure here six times too high — that much was already fixed by
+        // counting distinct IP addresses. But over a longer range that swung the other
+        // way: a reader who came back on ten different days was still just one address,
+        // so a month looked no busier than a day.
+        //
+        // A visitor is therefore counted once per day and again the next day: distinct
+        // (address, local day) pairs. Over Today it is exactly the distinct-address count
+        // it always was; over a month it says how many visits by people there were, which
+        // is what the number is read as. Days are the site's own (Settings → General), so
+        // the boundary is local midnight rather than the server's.
+        $visitorKey = $isSqlite
+            ? "(ip_address || '|' || {$localDate})"
+            : "CONCAT(ip_address, '|', {$localDate})";
+        $countVisitors = "COUNT(DISTINCT {$visitorKey})";
 
         // ── KPIs (with % change vs the previous equal period) ─────────────────
         //
@@ -1139,13 +1162,17 @@ class DashboardController extends Controller
         //
         // Page views remain available and are simply labelled as what they are, since
         // "how much was read" is a real and separate question.
-        $uniqueVisitors = Analytics::where('created_at', '>=', $start)->distinct()->count('ip_address');
+        $visitorsSince = fn ($from) => (int) Analytics::where('created_at', '>=', $from)
+            ->selectRaw("{$countVisitors} as c")->value('c');
+
+        $uniqueVisitors = $visitorsSince($start);
         $totalVisits = $uniqueVisitors;
         $pageViews = Analytics::where('created_at', '>=', $start)->count();
-        $prevVisits = Analytics::whereBetween('created_at', [$prevStart, $prevEnd])->distinct()->count('ip_address');
+        $prevVisits = (int) Analytics::whereBetween('created_at', [$prevStart, $prevEnd])
+            ->selectRaw("{$countVisitors} as c")->value('c');
         $visitsChange = $prevVisits > 0 ? round((($totalVisits - $prevVisits) / $prevVisits) * 100, 1) : ($totalVisits > 0 ? 100 : 0);
-        $today = Analytics::where('created_at', '>=', cms_now()->startOfDay()->utc())->distinct()->count('ip_address');
-        $thisMonth = Analytics::where('created_at', '>=', cms_now()->startOfMonth()->utc())->distinct()->count('ip_address');
+        $today = $visitorsSince(cms_now()->startOfDay()->utc());
+        $thisMonth = $visitorsSince(cms_now()->startOfMonth()->utc());
 
         // ── Daily series (visits + unique), zero-filled across the range ──────
         $daily = Analytics::where('created_at', '>=', $start)
@@ -1166,8 +1193,8 @@ class DashboardController extends Controller
         // (new bot visits are already filtered at tracking time).
         // Distinct visitors per value, so a browser share is a share of people rather
         // than a share of pages read.
-        $dist = function (string $col) use ($start) {
-            return Analytics::select($col, DB::raw('COUNT(DISTINCT ip_address) as count'))
+        $dist = function (string $col) use ($start, $countVisitors) {
+            return Analytics::select($col, DB::raw("{$countVisitors} as count"))
                 ->where('created_at', '>=', $start)
                 ->whereNotIn($col, ['bot', 'Bot / Crawler'])
                 ->groupBy($col)->orderByDesc('count')->get()
@@ -1178,11 +1205,11 @@ class DashboardController extends Controller
         $osDist = $dist('os');
 
         // ── Top pages & referrers (empty referrer = Direct) ──────────────────
-        $topPages = Analytics::select('url', DB::raw('COUNT(DISTINCT ip_address) as count'))
+        $topPages = Analytics::select('url', DB::raw("{$countVisitors} as count"))
             ->where('created_at', '>=', $start)
             ->groupBy('url')->orderByDesc('count')->limit(8)->get();
 
-        $topReferrers = Analytics::select(DB::raw("COALESCE(NULLIF(referrer, ''), 'Direct') as ref"), DB::raw('COUNT(DISTINCT ip_address) as count'))
+        $topReferrers = Analytics::select(DB::raw("COALESCE(NULLIF(referrer, ''), 'Direct') as ref"), DB::raw("{$countVisitors} as count"))
             ->where('created_at', '>=', $start)
             ->groupBy('ref')->orderByDesc('count')->limit(8)->get();
 
@@ -1190,7 +1217,7 @@ class DashboardController extends Controller
         // Visitors per country, for the same reason as the map below it — the two sit
         // side by side and disagreeing about what a "country total" means is worse than
         // either answer on its own.
-        $topCountries = Analytics::select('country', DB::raw('COUNT(DISTINCT ip_address) as count'))
+        $topCountries = Analytics::select('country', DB::raw("{$countVisitors} as count"))
             ->where('created_at', '>=', $start)
             ->whereNotNull('country')->where('country', '!=', '')
             ->groupBy('country')->orderByDesc('count')->limit(8)->get()
@@ -1199,7 +1226,7 @@ class DashboardController extends Controller
         // Visitors grouped by ISO-2 country code, for the world map widget.
         // COUNT(DISTINCT ip_address), not COUNT(*): one person reading six pages is one
         // visitor, and counting rows made every figure on this card six times too big.
-        $visitorsByCountry = Analytics::select('country_code', DB::raw('MAX(country) as country'), DB::raw('COUNT(DISTINCT ip_address) as visitors'))
+        $visitorsByCountry = Analytics::select('country_code', DB::raw('MAX(country) as country'), DB::raw("{$countVisitors} as visitors"))
             ->where('created_at', '>=', $start)
             ->whereNotNull('country_code')->where('country_code', '!=', '')
             ->groupBy('country_code')->orderByDesc('visitors')->get()
@@ -1209,10 +1236,30 @@ class DashboardController extends Controller
         // ── Engagement: real-time, new vs returning, sessions, bounce ─────────
         $activeNow = Analytics::where('created_at', '>=', now()->subMinutes(5))->distinct()->count('ip_address');
 
-        $returningVisitors = Analytics::where('created_at', '>=', $start)
-            ->whereIn('ip_address', function ($q) use ($start) {
-                $q->select('ip_address')->from('cms_analytics')->where('created_at', '<', $start);
-            })->distinct()->count('ip_address');
+        // New vs returning, on the same "once per day" basis as the totals above.
+        //
+        // A visitor-day is returning when that address has been here on an earlier day —
+        // including earlier days inside the range, which the old query could not see: it
+        // only asked whether the address existed before the range began, so someone who
+        // first arrived on Monday and came back every day of a 7-day range counted as new
+        // all week. Their Monday is new and the rest are returns, which is what the pair
+        // of numbers is meant to say. The two still add up to the headline.
+        $firstSeen = Analytics::selectRaw('ip_address, MIN(created_at) as first_at')
+            ->whereIn('ip_address', Analytics::where('created_at', '>=', $start)->select('ip_address'))
+            ->groupBy('ip_address')->pluck('first_at', 'ip_address');
+
+        $returningVisitors = 0;
+        $seenPairs = Analytics::select('ip_address', DB::raw("{$localDate} as d"))
+            ->where('created_at', '>=', $start)->distinct()->toBase()->get();
+        foreach ($seenPairs as $pair) {
+            $first = $firstSeen[$pair->ip_address] ?? null;
+            // Their first-ever visit read as a local day. Shifted by the same number of
+            // seconds the SQL above uses, so the two agree on which day a row belongs to.
+            $firstDay = $first ? Carbon::parse($first, 'UTC')->addSeconds($tzShift)->toDateString() : null;
+            if ($firstDay !== null && $firstDay < $pair->d) {
+                $returningVisitors++;
+            }
+        }
         $newVisitors = max(0, $uniqueVisitors - $returningVisitors);
 
         // Sessions & bounce via a 30-minute inactivity window (gaps-and-islands in PHP).
@@ -1279,8 +1326,8 @@ class DashboardController extends Controller
         // Summing per-referrer row counts made this a page-view chart wearing a
         // people-shaped label.
         $channelIps = [];
-        foreach (Analytics::select('referrer', 'ip_address')->where('created_at', '>=', $start)->distinct()->get() as $rr) {
-            $channelIps[$channelOf($rr->referrer)][(string) $rr->ip_address] = true;
+        foreach (Analytics::select('referrer', 'ip_address', DB::raw("{$localDate} as d"))->where('created_at', '>=', $start)->distinct()->toBase()->get() as $rr) {
+            $channelIps[$channelOf($rr->referrer)][$rr->ip_address.'|'.$rr->d] = true;
         }
         $channelCounts = array_map('count', $channelIps);
         arsort($channelCounts);
@@ -1318,10 +1365,10 @@ class DashboardController extends Controller
             return [$h, $h]; // any other site — show its domain
         };
         $sourceIps = [];
-        foreach (Analytics::select('referrer', 'ip_address')->where('created_at', '>=', $start)->distinct()->get() as $rr) {
+        foreach (Analytics::select('referrer', 'ip_address', DB::raw("{$localDate} as d"))->where('created_at', '>=', $start)->distinct()->toBase()->get() as $rr) {
             [$label, $domain] = $sourceOf($rr->referrer);
             $sourceIps[$label]['domain'] = $domain;
-            $sourceIps[$label]['ips'][(string) $rr->ip_address] = true;
+            $sourceIps[$label]['ips'][$rr->ip_address.'|'.$rr->d] = true;
         }
         $trafficSources = collect($sourceIps)
             ->map(fn ($v, $label) => ['label' => $label, 'count' => count($v['ips']), 'domain' => $v['domain']])
@@ -1484,13 +1531,32 @@ class DashboardController extends Controller
         $activeVisitors = $liveRows->filter(fn ($v) => $v->created_at >= $since5);
         $active = $activeVisitors->count();
 
-        // Where visitors are NOW: each of them counted once, on the page they are on.
-        $activePages = $activeVisitors
-            ->groupBy('url')
-            ->map(fn ($rows, $url) => ['path' => falcon_visit_page($url), 'count' => $rows->count()])
-            ->sortByDesc('count')
-            ->take(6)
-            ->values();
+        // Which pages the people who are here now have been reading.
+        //
+        // This used to list only the one page each of them is on at this instant, which
+        // answers a narrower question than the card is useful for: someone who has just
+        // read three pages tells you far more than the single URL they happen to be on.
+        // So every page an active visitor has opened in the window is listed, and each
+        // row counts PEOPLE, not views — a visitor appears once per page they read, and
+        // never twice on the same one however often they reloaded it.
+        //
+        // The column therefore adds up to more than the "active now" figure beside it,
+        // which is correct: it is a count of pages read, not of people.
+        $activeIps = $activeVisitors->pluck('ip_address')->unique()->all();
+        $activePages = collect();
+        if ($activeIps) {
+            $activePages = Analytics::where('created_at', '>=', $since30)
+                ->whereIn('ip_address', $activeIps)
+                ->get(['ip_address', 'url'])
+                ->groupBy('url')
+                ->map(fn ($rows, $url) => [
+                    'path' => falcon_visit_page($url),
+                    'count' => $rows->pluck('ip_address')->unique()->count(),
+                ])
+                ->sortByDesc('count')
+                ->take(8)
+                ->values();
+        }
 
         $recent = $liveRows
             ->take(8)

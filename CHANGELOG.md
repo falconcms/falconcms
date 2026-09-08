@@ -7,6 +7,75 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.7.0] — 2026-09-08
+
+### Added
+
+- **Custom column widths.** Column and Nested Column → Design → *Use Custom Width* opens a
+  slider for any width the preset fractions cannot express. Presets and the slider are the
+  same setting, so only one is shown at a time; going back picks the nearest preset rather
+  than leaving the row with nothing selected. Per device, like the presets — a column can be
+  1/3 on desktop and 45% on mobile.
+- **A Today range on Analytics, and it is the default.** The question the page is opened to
+  answer is almost always "what is happening now". The other ranges are unchanged and still
+  one click away.
+- **Landing-page menus mark the section you are reading.** A menu of `#pricing`-style links
+  now highlights the item whose section is at the top of the viewport, scrolls smoothly to a
+  section when one is clicked, and stops short of a sticky header instead of hiding the
+  heading underneath it. Works in the theme header and the Layout builder's Menu element.
+- **Hover Border on the Button element** — width per edge and colour, kept directly under the
+  border it changes. Blank keeps the resting value, and 0 is a real answer.
+- **Hover Animation on the Button element** — Lift Up, Sink Down, Grow, Shrink, Glow or
+  Pulse, and none of them for a reader whose system asks for reduced motion.
+
+### Changed
+
+- **Analytics counts a visitor once a day, and again the next day.** Counting distinct
+  addresses across a whole range had fixed one fault and introduced its opposite: somebody
+  who came back on ten different days was still a single address, so a month looked no busier
+  than a day. Every figure on the page now counts distinct (address, day) pairs, so the cards
+  agree with each other; over Today it is the same number it always was.
+- **New vs Returning is answered over the range, not only before it.** The old query asked
+  whether an address existed before the range began, so a reader who first arrived on Monday
+  and came back daily counted as new all week. Their first day is new, the rest are returns,
+  and the two still add up to the headline.
+- **Analytics → Active Pages lists every page the people here now have read**, not only the
+  one page each of them is on at this instant. Each row counts people, so re-reading a page
+  never counts twice.
+- **Alignment on a full-width Button moves its label.** A button set to Full Width already
+  fills its row, so there was nowhere for Alignment to move it and the setting looked broken.
+  It now sets the text alignment inside the button; a button sized to its label is placed
+  within the row exactly as before.
+
+### Fixed
+
+- **Importing layouts failed with a database error** on any site that had ever deleted a
+  header or footer. `posts` is unique on (slug, type, lang_code) but the import matched only
+  slug and type, and through the soft-delete scope — so a section in the bin was invisible to
+  the check while still holding its key, and the insert was refused. The full key is matched
+  now, a section in the bin is restored and reused, and a section that still cannot be placed
+  is reported and skipped instead of taking the whole import down.
+- **Every custom link in a menu was marked as the current page.** An item saved as `#pricing`
+  has no path of its own, and reading it as "/" made all of them match on the home page. The
+  theme header and the builder's Menu element also answered this question separately and
+  disagreed; they now share one answer.
+- **The unsaved-changes warning appeared when saving.** Most of the admin saves by calling
+  `form.submit()` from script, which fires no submit event, so the guard never saw the save
+  and asked "Leave site?" at the moment the work was being written. It still warns when a tab
+  with unsaved edits is closed — which is all it was ever for.
+- **A Button's border did not show.** The Border Color field was the only colour field in the
+  panel that hid its opacity, so a border stored at 4% read as `#aaa` and drew nothing; and
+  the canvas ignored opacity entirely, showing a solid border for one the site would not
+  draw. Section borders had the same fault on the canvas.
+- **Menu hover settings now describe the current item too** — border and border colour as
+  well as text and background, which was already the case.
+- **The builder canvas and the site draw a menu the same.** Five properties were computed
+  differently (default font size, a numeric letter-spacing missing its unit, a stretched
+  link height, an alignment that belongs to the list, and a missing gap), a cleared number
+  field was handled differently on each side, the canvas link inherited the `line-height: 0`
+  that the editor puts on every element wrapper, and the editor's own padding and dashed
+  border pushed the menu 5px in from where the site draws it.
+
 ## [2.6.16] — 2026-09-08
 
 ### Fixed

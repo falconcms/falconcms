@@ -10,7 +10,9 @@
             </div>
 
             <!-- Desktop Navigation -->
-            <nav class="hidden lg:flex items-center gap-8 h-full lb-desktop-nav">
+            {{-- data-falcon-scrollspy: on a landing page, section links are marked as the
+                 reader scrolls past them. See components/frontend/menu-scrollspy. --}}
+            <nav class="hidden lg:flex items-center gap-8 h-full lb-desktop-nav" data-falcon-scrollspy="text-primary">
                 @php $menuItems = get_lazy_menu('header'); @endphp
                 @foreach($menuItems as $item)
                     @php
@@ -130,7 +132,7 @@
             {!! lazy_mobile_lang_switcher() !!}
         </div>
         <div class="flex-grow overflow-y-auto p-6">
-            <nav class="space-y-4">
+            <nav class="space-y-4" data-falcon-scrollspy="text-primary">
                 @foreach($menuItems as $item)
                     @php
                         $isActive = falcon_menu_is_active($item->url);
@@ -163,3 +165,5 @@
         </div>
     </div>
 </div>
+
+@include('falcon-cms::components.frontend.menu-scrollspy')

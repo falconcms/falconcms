@@ -440,17 +440,50 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-5 gap-1 mb-3">
+                {{-- Presets and the custom slider are the same setting — `basis` — so only one
+                     of them is on screen at a time. Picking a preset writes it and closes the
+                     slider; the slider writes a width no preset offers, and stays open for as
+                     long as the column is on one. Both write per device, so a column can be
+                     1/3 on desktop and a custom 45% on mobile. --}}
+                <div v-show="!showCustomWidth && !isCustomBasis(editingColumn, device)" class="grid grid-cols-5 gap-1 mb-3">
                     <button v-for="w in ['16.66%', '20%', '25%', '33.33%', '40%', '50%', '60%', '66.66%', '75%', '80%', '83.33%', '100%', 'auto']"
-                            @click="updateBasis(w)"
+                            @click="updateBasis(w); showCustomWidth = false"
                             :class="(device === 'desktop' ? editingColumn.basis : (editingColumn['basis_' + device] || editingColumn.basis)) === w ? 'bg-[#2271b1] text-white' : 'bg-slate-50 text-slate-400 border-slate-100'"
                             class="py-1.5 border rounded text-[9px] font-bold transition-all hover:border-[#0091ea]">
                         @{{ formatBasisToFraction(w) }}
                     </button>
                 </div>
-                <button class="text-[11px] text-[#0091ea] font-bold flex items-center gap-1.5 hover:underline">
+
+                <button v-if="!showCustomWidth && !isCustomBasis(editingColumn, device)"
+                        @click="showCustomWidth = true"
+                        class="text-[11px] text-[#0091ea] font-bold flex items-center gap-1.5 hover:underline">
                     <i class="fa fa-pen text-[9px]"></i> Use Custom Width
                 </button>
+
+                <div v-else>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Custom Width</label>
+                        <span class="text-[10px] font-bold text-[#0091ea]">@{{ customWidthValue(editingColumn, device) }}%</span>
+                    </div>
+                    <input type="range" min="1" max="100" step="0.5"
+                           :value="customWidthValue(editingColumn, device)"
+                           @input="setCustomWidth($event.target.value)"
+                           class="w-full accent-[#0091ea]">
+                    <div class="flex items-center gap-2 mt-2">
+                        <input type="number" min="1" max="100" step="0.5"
+                               :value="customWidthValue(editingColumn, device)"
+                               @input="setCustomWidth($event.target.value)"
+                               class="w-20 border border-slate-200 rounded px-2 py-1.5 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
+                        <span class="text-[11px] text-slate-400">%</span>
+                        <button @click="updateBasis(nearestWidthPreset(editingColumn, device)); showCustomWidth = false"
+                                class="ml-auto text-[11px] text-slate-400 hover:text-[#0091ea] hover:underline">
+                            Back to preset widths
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-slate-400 mt-1.5">
+                        Applies to <span class="font-bold">@{{ device }}</span> only — switch device above to set another.
+                    </p>
+                </div>
             </div>
 
             <!-- Layout Logic -->

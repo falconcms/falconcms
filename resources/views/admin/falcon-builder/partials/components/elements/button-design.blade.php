@@ -173,8 +173,25 @@
                      @click="openColorPicker($event, editingElement.settings, 'hoverColor', 'hoverColorOpacity')">
                     <div :style="{ backgroundColor: hexToRgba(editingElement.settings.hoverColor, editingElement.settings.hoverColorOpacity) }" class="w-full h-full rounded-full"></div>
                 </div>
-                <input type="text" v-model="editingElement.settings.hoverColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                <input type="text" :value="falconColorDisplay(editingElement.settings, 'hoverColor', 'hoverColorOpacity')"
+                       @input="falconColorInput(editingElement.settings, 'hoverColor', 'hoverColorOpacity', $event.target.value)"
+                       class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
             </div>
+        </div>
+
+        <!-- Hover Animation -->
+        <div>
+            <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1.5">Hover Animation</label>
+            <select v-model="editingElement.settings.hoverAnimation"
+                    class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] bg-white">
+                <option value="none">None</option>
+                <option value="lift">Lift Up</option>
+                <option value="sink">Sink Down</option>
+                <option value="grow">Grow</option>
+                <option value="shrink">Shrink</option>
+                <option value="glow">Glow</option>
+                <option value="pulse">Pulse</option>
+            </select>
         </div>
 
         <!-- Default BG Hover (Solid) -->
@@ -453,8 +470,62 @@
                  @click="openColorPicker($event, editingElement.settings, 'borderColor', 'borderColorOpacity')">
                 <div :style="{ backgroundColor: hexToRgba(editingElement.settings.borderColor, editingElement.settings.borderColorOpacity) }" class="w-full h-full rounded-full"></div>
             </div>
-            <input type="text" v-model="editingElement.settings.borderColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+            {{-- Every other colour field in this panel shows the hex AND its opacity, because
+                 the two are stored separately and only the pair says what will be drawn. This
+                 one showed the hex alone, so an opacity left at, say, 0.04 by the picker was
+                 invisible state: the field read "#aaa", the border was set on all four sides,
+                 and nothing rendered. Same control as the rest now. --}}
+            <input type="text" :value="falconColorDisplay(editingElement.settings, 'borderColor', 'borderColorOpacity')"
+                   @input="falconColorInput(editingElement.settings, 'borderColor', 'borderColorOpacity', $event.target.value)"
+                   class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
         </div>
+    </div>
+
+    <!-- Hover Border. Kept directly under the border it changes, so the resting and hovered
+         states of one edge are read together instead of from opposite ends of the panel.
+         Both halves are optional: a blank size keeps the border's own width on hover, a blank
+         colour keeps its colour. Only offered once there is a border to change. -->
+    <div v-if="editingElement.settings.borderSizeTop || editingElement.settings.borderSizeRight || editingElement.settings.borderSizeBottom || editingElement.settings.borderSizeLeft"
+         class="pt-4 border-t border-slate-50">
+        <div class="flex justify-between items-center mb-3">
+            <label class="text-[12px] font-bold text-[#333] uppercase">Hover Border</label>
+            <button @click="editingElement.settings.hoverBorderSizeTop = ''; editingElement.settings.hoverBorderSizeRight = ''; editingElement.settings.hoverBorderSizeBottom = ''; editingElement.settings.hoverBorderSizeLeft = ''; clearColorField(editingElement.settings, 'hoverBorderColor', 'hoverBorderColorOpacity')"
+                    title="Reset" class="text-slate-300 hover:text-red-500 transition-colors">
+                <i class="fa fa-undo text-[10px]"></i>
+            </button>
+        </div>
+
+        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1.5">Hover Border Size</label>
+        <div class="grid grid-cols-4 gap-2">
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Top</label>
+                <input type="number" min="0" v-model="editingElement.settings.hoverBorderSizeTop" :placeholder="editingElement.settings.borderSizeTop || 0" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+            </div>
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Right</label>
+                <input type="number" min="0" v-model="editingElement.settings.hoverBorderSizeRight" :placeholder="editingElement.settings.borderSizeRight || 0" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+            </div>
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Bottom</label>
+                <input type="number" min="0" v-model="editingElement.settings.hoverBorderSizeBottom" :placeholder="editingElement.settings.borderSizeBottom || 0" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+            </div>
+            <div>
+                <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Left</label>
+                <input type="number" min="0" v-model="editingElement.settings.hoverBorderSizeLeft" :placeholder="editingElement.settings.borderSizeLeft || 0" class="w-full border border-slate-200 rounded py-2 text-center text-[12px]">
+            </div>
+        </div>
+
+        <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1.5 mt-4">Hover Border Color</label>
+        <div class="flex gap-2 items-center">
+            <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                 @click="openColorPicker($event, editingElement.settings, 'hoverBorderColor', 'hoverBorderColorOpacity')">
+                <div :style="{ backgroundColor: hexToRgba(editingElement.settings.hoverBorderColor, editingElement.settings.hoverBorderColorOpacity) }" class="w-full h-full rounded-full"></div>
+            </div>
+            <input type="text" :value="falconColorDisplay(editingElement.settings, 'hoverBorderColor', 'hoverBorderColorOpacity')"
+                   @input="falconColorInput(editingElement.settings, 'hoverBorderColor', 'hoverBorderColorOpacity', $event.target.value)"
+                   class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+        </div>
+        <p class="text-[9px] text-slate-400 mt-1">Leave a field empty to keep the border's own size or colour on hover.</p>
     </div>
 
     <!-- Border Radius -->
