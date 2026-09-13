@@ -697,6 +697,42 @@ class PostController extends Controller
         return view('falcon-cms::admin.posts.create', compact('post', 'type', 'pages', 'supports', 'assignedTaxonomies', 'fieldGroups', 'postType', 'overriddenTaxonomies'));
     }
 
+    /**
+     * A variable product carries no price of its own — each variation is priced — but
+     * shop_products.price is NOT NULL, and the shop lists and sorts on it. So the parent takes
+     * the cheapest variation's price, which is also the "from" figure a shopper expects to see.
+     *
+     * Without this, saving a variable product died on the insert with a null price.
+     */
+    private function priceFromVariations(array $productData, Request $request): array
+    {
+        if (($productData['type'] ?? 'simple') !== 'variable') {
+            return $productData;
+        }
+
+        $prices = [];
+        $sales = [];
+        foreach ((array) $request->input('variations', []) as $variation) {
+            if (isset($variation['price']) && $variation['price'] !== '') {
+                $prices[] = (float) $variation['price'];
+            }
+            if (isset($variation['sale_price']) && $variation['sale_price'] !== '') {
+                $sales[] = (float) $variation['sale_price'];
+            }
+        }
+
+        $productData['price'] = $prices ? min($prices) : 0;
+        $productData['sale_price'] = $sales ? min($sales) : null;
+
+        // The cheapest sale price can belong to a dearer variation, which would read as a
+        // discount on the "from" price that nobody actually offers.
+        if ($productData['sale_price'] !== null && $productData['sale_price'] >= $productData['price']) {
+            $productData['sale_price'] = null;
+        }
+
+        return $productData;
+    }
+
     public function store(Request $request)
     {
         $type = $request->input('type', 'post');
@@ -866,6 +902,7 @@ class PostController extends Controller
         $postData = falcon_normalize_publish($postData);
 
         if ($type === 'product') {
+            $productData = $this->priceFromVariations($productData, $request);
             $productData = apply_falcon_filters('falcon_admin_before_save_product', $productData, null, $request);
         }
 
@@ -883,6 +920,10 @@ class PostController extends Controller
                         'price' => $vData['price'] ?? null,
                         'sale_price' => $vData['sale_price'] ?? null,
                         'sku' => $vData['sku'] ?? null,
+                        'weight' => $vData['weight'] ?? null,
+                        'length' => $vData['length'] ?? null,
+                        'width' => $vData['width'] ?? null,
+                        'height' => $vData['height'] ?? null,
                         'stock_status' => $vData['stock_status'] ?? 'instock',
                         'stock_quantity' => $vData['stock_quantity'] ?? 0,
                         'manage_stock' => ($vData['stock_quantity'] ?? 0) > 0,
@@ -1458,6 +1499,7 @@ class PostController extends Controller
         $postData = falcon_normalize_publish($postData);
 
         if ($post->type === 'product') {
+            $productData = $this->priceFromVariations($productData, $request);
             $productData = apply_falcon_filters('falcon_admin_before_save_product', $productData, $post, $request);
         }
 
@@ -1563,14 +1605,7 @@ class PostController extends Controller
 
         // Automatic Redirection Logic
         if ($oldSlug !== $post->slug) {
-            $newUrl = '/'.ltrim($prefix.$post->slug, '/');
-
-            if ($oldUrl !== $newUrl) {
-                Redirect::updateOrCreate(
-                    ['old_url' => $oldUrl],
-                    ['new_url' => $newUrl, 'status_code' => 301]
-                );
-            }
+            Redirect::recordMove($oldUrl, '/'.ltrim($prefix.$post->slug, '/'));
         }
 
         // Sync Built-in Categories

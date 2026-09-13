@@ -1560,6 +1560,10 @@
                         const selector = `#rich-editor-${elId}-${key}`;
                         tinymce.remove(selector);
                         tinymce.init({
+                            // Keep media URLs exactly as the library gives them. TinyMCE would otherwise rewrite
+                            // them relative to the editor's own address, which breaks the moment the same
+                            // content is opened from a URL at a different depth.
+                            convert_urls: false, relative_urls: false, remove_script_host: false,
                             selector: selector,
                             menubar: false,
                             height: 350,

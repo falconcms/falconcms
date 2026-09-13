@@ -216,6 +216,10 @@
                 // (only tinymce.min.js is shipped locally) — same as the Falcon Builder.
                 tinymce.baseURL = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';
                 tinymce.init({
+                    // Keep media URLs exactly as the library gives them. TinyMCE would otherwise rewrite
+                    // them relative to the editor's own address, which breaks the moment the same
+                    // content is opened from a URL at a different depth.
+                    convert_urls: false, relative_urls: false, remove_script_host: false,
                     selector: '.fms-wysiwyg', menubar: false, height: 320, branding: false, license_key: 'gpl',
                     plugins: 'lists link code table wordcount preview fullscreen',
                     toolbar: 'blocks | bold italic underline strikethrough | bullist numlist | alignleft aligncenter alignright | link table | code fullscreen',

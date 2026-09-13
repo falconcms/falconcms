@@ -131,6 +131,7 @@ class PageController extends Controller
             'parent_id' => 'nullable|exists:posts,id',
             'menu_order' => 'nullable|integer',
             'template' => 'nullable|string',
+            'slug' => 'nullable|string|max:255',
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
             'editor_type' => 'nullable|string|in:rich,builder',
@@ -146,7 +147,8 @@ class PageController extends Controller
             $lang = app()->getLocale();
         }
         $validated['lang_code'] = $lang;
-        $validated['slug'] = $this->generateUniqueSlug($validated['title'], 0, $validated['lang_code']);
+        $slugSource = !empty($validated['slug']) ? $validated['slug'] : $validated['title'];
+        $validated['slug'] = $this->generateUniqueSlug($slugSource, 0, $validated['lang_code']);
         $validated['user_id'] = auth()->id();
 
         if ($request->hasFile('featured_image')) {
@@ -408,15 +410,7 @@ class PageController extends Controller
 
         // Automatic Redirection Logic
         if ($oldSlug !== $page->slug) {
-            $oldUrl = '/'.ltrim($oldSlug, '/');
-            $newUrl = '/'.ltrim($page->slug, '/');
-
-            if ($oldUrl !== $newUrl) {
-                Redirect::updateOrCreate(
-                    ['old_url' => $oldUrl],
-                    ['new_url' => $newUrl, 'status_code' => 301]
-                );
-            }
+            Redirect::recordMove('/'.ltrim($oldSlug, '/'), '/'.ltrim($page->slug, '/'));
         }
 
         // Update Custom Fields

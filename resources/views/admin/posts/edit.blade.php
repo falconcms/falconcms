@@ -5,6 +5,19 @@
         <a href="{{ route('admin.posts.create', ['type' => $post->type]) }}" class="wp-btn-secondary px-2 py-0.5 text-[12px] bg-white hover:bg-[#f6f7f7] border-[#2271b1] text-[#2271b1] leading-normal">Add New</a>
     </div>
 
+    {{-- Without this, a refused save looks like a button that did nothing: the form comes back
+         filled in, nothing is saved, and the reason is only in the session. --}}
+    @if($errors->any())
+        <div class="bg-[#fff] border-l-4 border-[#d63638] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
+            <p class="font-bold mb-2">Error: Please check the following fields:</p>
+            <ul class="list-disc list-inside text-[#d63638] space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     @if(session('success'))
         <div class="bg-[#fff] border-l-4 border-[#00a32a] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px] flex justify-between items-center">
             <p>{{ session('success') }}</p>
@@ -641,6 +654,10 @@
     <script>if(window.tinymce) tinymce.baseURL='https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3';</script>
     <script>
         tinymce.init({
+            // Keep media URLs exactly as the library gives them. TinyMCE would otherwise rewrite
+            // them relative to the editor's own address, which breaks the moment the same
+            // content is opened from a URL at a different depth.
+            convert_urls: false, relative_urls: false, remove_script_host: false,
             selector: '#wp-editor',
             menubar: false,
             height: 450,
@@ -1133,7 +1150,20 @@
             }
             
             // Product Specific Validation
-            if (isValid && postType === 'product') {
+            //
+            // Only a simple product has a price of its own. A variable product prices each
+            // variation, and its Regular Price field is hidden — so demanding one here refused
+            // every variable product, with the complaint pointing at a field nobody could see.
+            const productTypeInput = document.querySelector('[name="product_type"]');
+            const productType = productTypeInput ? productTypeInput.value : 'simple';
+
+            if (isValid && postType === 'product' && productType === 'variable'
+                && !document.querySelector('[name^="variations["][name$="[price]"]')) {
+                isValid = false;
+                window.showToast('Add at least one variation before saving a variable product.', 'error');
+            }
+
+            if (isValid && postType === 'product' && productType !== 'variable') {
                 const priceInput = document.getElementById('regular_price');
                 const salePriceInput = document.getElementById('sale_price');
                 

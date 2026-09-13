@@ -642,6 +642,9 @@
                  x-data="{ 
                     shippingZones: {{ json_encode(get_shop_option('shop_shipping_zones', [])) }}
                  }">
+                {{-- Always posted, so removing every zone still reaches the server as "none left"
+                     rather than as no zones field at all, which read as "leave them alone". --}}
+                <input type="hidden" name="shipping_zones_submitted" value="1">
                 <table class="w-full border-separate border-spacing-y-6">
                     <!-- Global Shipping -->
                     <tr><td colspan="2"><h3 class="text-[16px] font-semibold text-[#1d2327] mb-2">Global Shipping</h3></td></tr>
@@ -886,6 +889,8 @@
                  x-data="{ 
                     taxRates: {{ json_encode(get_shop_option('shop_tax_rates', [])) }}
                  }">
+                {{-- Same as the zones above: an empty list has to be sent as an empty list. --}}
+                <input type="hidden" name="tax_rates_submitted" value="1">
                 <table class="w-full border-separate border-spacing-y-6">
                     <!-- Tax Enable -->
                     <tr>
@@ -1070,21 +1075,21 @@
                     <tr><td colspan="2"><h3 class="text-[16px] font-semibold text-[#1d2327] mt-6 mb-2">Advanced Coupon Management</h3></td></tr>
                     <tr>
                         <td colspan="2">
-                            <div class="space-y-6">
+                            <div class="space-y-3">
                                 <template x-for="(coupon, index) in coupons" :key="index">
                                     <div class="border border-[#c3c4c7] rounded bg-white shadow-sm relative group" x-init="coupon.collapsed = (typeof coupon.collapsed !== 'undefined') ? (coupon.collapsed === 'true' || coupon.collapsed === true) : true">
                                         <input type="hidden" :name="'coupons['+index+'][collapsed]'" x-model="coupon.collapsed">
                                         <!-- Card Header / Coupon Code -->
-                                        <div class="bg-white px-6 py-5 border-b border-[#c3c4c7] flex justify-between items-center rounded-t cursor-pointer hover:bg-gray-50/80 transition-all duration-300 group/header" @click="coupon.collapsed = !coupon.collapsed">
-                                            <div class="flex items-center gap-5 flex-1 mr-10">
-                                                <div class="flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-300" 
+                                        <div class="bg-white px-4 py-2.5 border-b border-[#c3c4c7] flex justify-between items-center rounded-t cursor-pointer hover:bg-gray-50/80 transition-all duration-300 group/header" @click="coupon.collapsed = !coupon.collapsed">
+                                            <div class="flex items-center gap-3 flex-1 mr-6">
+                                                <div class="flex items-center justify-center w-7 h-7 rounded-full border transition-all duration-300" 
                                                      :class="coupon.collapsed ? 'bg-gray-50 border-gray-200 text-gray-400' : 'bg-blue-50 border-blue-100 text-blue-600 shadow-sm shadow-blue-100'">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-500" :class="coupon.collapsed ? '' : 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform duration-500" :class="coupon.collapsed ? '' : 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                                                     </svg>
                                                 </div>
-                                                <div class="flex-1">
-                                                    <div class="flex items-center gap-3 mb-1">
+                                                <div class="flex-1 flex items-center gap-3 flex-wrap">
+                                                    <div class="flex items-center gap-2">
                                                         <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-bold uppercase tracking-wider border border-blue-100">Coupon</span>
                                                         <template x-if="coupon.expiry">
                                                             <div class="flex gap-2">
@@ -1098,7 +1103,7 @@
                                                         </template>
                                                     </div>
                                                     <div class="flex items-center gap-3">
-                                                        <span class="text-[18px] font-black uppercase tracking-[0.15em] transition-colors duration-300" 
+                                                        <span class="text-[14px] font-black uppercase tracking-[0.12em] transition-colors duration-300" 
                                                               :class="coupon.collapsed ? (coupon.expiry && coupon.expiry < new Date().toISOString().split('T')[0] ? 'text-red-400' : 'text-gray-700') : 'text-blue-600'"
                                                               x-text="coupon.code || 'UNNAMED_COUPON'"></span>
                                                         <template x-if="!coupon.code">
@@ -1108,8 +1113,8 @@
                                                 </div>
                                             </div>
                                             <div class="flex items-center gap-3" @click.stop>
-                                                <button type="button" @click="coupons.splice(index, 1)" class="group/del text-gray-300 hover:text-red-500 p-2.5 rounded-full transition-all hover:bg-red-50">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform group-hover/del:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <button type="button" @click="coupons.splice(index, 1)" class="group/del text-gray-300 hover:text-red-500 p-1.5 rounded-full transition-all hover:bg-red-50">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover/del:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
                                                 </button>

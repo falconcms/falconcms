@@ -267,4 +267,65 @@ class ShopSettingsTest extends TestCase
         $this->assertNull($this->option('shop_coupons'));
         $this->assertNull($this->option('shop_coupons_submitted'));
     }
+    // ---- shipping zones and tax rates ------------------------------------------
+
+    /**
+     * The zone list is a repeater, and a repeater with nothing left in it posts no fields at
+     * all. Read as "no change", that made the last zone undeletable: remove it, save, and it
+     * was back on the next page load. The hidden marker is what separates an empty list from
+     * a form that never carried one.
+     */
+    public function test_removing_every_shipping_zone_saves_an_empty_list(): void
+    {
+        $this->save([
+            'shipping_zones_submitted' => '1',
+            'shipping_zones' => [['name' => 'Domestic', 'countries' => ['Bangladesh'], 'cost' => '3', 'type' => 'order']],
+        ]);
+        forget_cms_options_cache();
+        $this->assertCount(1, (array) get_shop_option('shop_shipping_zones', []));
+
+        $this->save(['shipping_zones_submitted' => '1']); // every zone removed
+
+        forget_cms_options_cache();
+        $this->assertSame([], (array) get_shop_option('shop_shipping_zones', []), 'the last zone came back');
+    }
+
+    /** The same for tax rates, which are built the same way. */
+    public function test_removing_every_tax_rate_saves_an_empty_list(): void
+    {
+        $this->save([
+            'tax_rates_submitted' => '1',
+            'tax_rates' => [['country' => 'Bangladesh', 'rate' => '10', 'name' => 'VAT', 'shipping' => '0']],
+        ]);
+        forget_cms_options_cache();
+        $this->assertCount(1, (array) get_shop_option('shop_tax_rates', []));
+
+        $this->save(['tax_rates_submitted' => '1']);
+
+        forget_cms_options_cache();
+        $this->assertSame([], (array) get_shop_option('shop_tax_rates', []), 'the last tax rate came back');
+    }
+
+    /** A save from another tab carries no marker, so the zones must survive it untouched. */
+    public function test_a_save_from_another_tab_leaves_the_zones_alone(): void
+    {
+        $this->save([
+            'shipping_zones_submitted' => '1',
+            'shipping_zones' => [['name' => 'Domestic', 'countries' => ['Bangladesh'], 'cost' => '3', 'type' => 'order']],
+        ]);
+
+        $this->save(['currency' => 'BDT']); // no marker
+
+        forget_cms_options_cache();
+        $this->assertCount(1, (array) get_shop_option('shop_shipping_zones', []), 'another tab wiped the zones');
+    }
+
+    /** The markers themselves are bookkeeping and must not become settings of their own. */
+    public function test_the_submit_markers_are_not_stored_as_options(): void
+    {
+        $this->save(['shipping_zones_submitted' => '1', 'tax_rates_submitted' => '1']);
+
+        $this->assertNull($this->option('shop_shipping_zones_submitted'));
+        $this->assertNull($this->option('shop_tax_rates_submitted'));
+    }
 }

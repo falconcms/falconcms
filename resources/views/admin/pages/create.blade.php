@@ -309,6 +309,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize TinyMCE
             tinymce.init({
+                // Keep media URLs exactly as the library gives them. TinyMCE would otherwise rewrite
+                // them relative to the editor's own address, which breaks the moment the same
+                // content is opened from a URL at a different depth.
+                convert_urls: false, relative_urls: false, remove_script_host: false,
                 selector: '#wp-editor',
                 menubar: false, height: 450,
                 plugins: ['lists', 'link', 'image', 'preview', 'code', 'fullscreen', 'media', 'table', 'wordcount'],

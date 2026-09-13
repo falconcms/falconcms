@@ -530,8 +530,27 @@ class ShopController extends Controller
             $this->saveCoupons((array) $request->input('coupons', []));
         }
 
-        // 3. Save everything else
-        $skip = array_merge(['_token', 'active_tab', 'coupons', 'coupons_submitted'], array_keys($toggles));
+        // 3. The other two repeaters — shipping zones and tax rates — are plain options, but an
+        //    empty list posts no inputs at all, so the generic loop below never saw it and the
+        //    last zone (or the last rate) could not be deleted: it came straight back on reload.
+        //    Their own hidden markers say "this list was submitted", the way coupons do.
+        foreach (['shipping_zones' => 'shop_shipping_zones', 'tax_rates' => 'shop_tax_rates'] as $reqKey => $optKey) {
+            // The list itself is enough when there is one; the marker is what makes an empty
+            // list mean "none left" instead of "this form carried no zones".
+            if (!$request->has($reqKey) && !$request->has($reqKey.'_submitted')) {
+                continue;
+            }
+            update_shop_option($optKey, (array) $request->input($reqKey, []));
+            DB::table('cms_settings')->where('key', 'like', $optKey.'_%')->delete();
+        }
+
+        // 4. Save everything else
+        $skip = array_merge([
+            '_token', 'active_tab',
+            'coupons', 'coupons_submitted',
+            'shipping_zones', 'shipping_zones_submitted',
+            'tax_rates', 'tax_rates_submitted',
+        ], array_keys($toggles));
         foreach ($request->except($skip) as $key => $value) {
             $optKey = 'shop_'.$key;
             if (falcon_is_protected_option($optKey) || falcon_is_protected_option($key)) {
