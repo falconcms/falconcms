@@ -166,8 +166,10 @@
                             No icon matches &ldquo;<span x-text="iconQuery"></span>&rdquo;.
                         </div>
 
-                        <div x-show="matchCount > visibleIcons.length" class="pt-3 text-center">
-                            <button type="button" @click="iconLimit += 400" class="text-[12px] text-[#2271b1] hover:underline">
+                        <div x-show="matchCount > visibleIcons.length" class="pt-4 text-center">
+                            <button type="button" @click="iconLimit += 400"
+                                    class="inline-flex items-center gap-1 bg-white hover:bg-[#f0f6fc] text-[#2271b1] border border-[#2271b1] px-3 py-[5px] text-[13px] rounded-[3px] shadow-[0_1px_0_rgba(0,0,0,0.04)] transition-colors">
+                                <span class="material-symbols-outlined text-[16px] leading-none">expand_more</span>
                                 Show more (<span x-text="(matchCount - visibleIcons.length).toLocaleString()"></span> left)
                             </button>
                         </div>
