@@ -21,9 +21,13 @@ class Sidebar extends Component
     {
         $this->activeMenu = $activeMenu;
 
+        // `id` breaks ties. Two menus sharing an `order` used to come back in whatever order
+        // the database felt like, so a post type that collided with Shop appeared above it on
+        // one page load and below it on the next.
         $this->menuGroups = Menu::with('children')
             ->whereNull('parent_id')
             ->orderBy('order')
+            ->orderBy('id')
             ->get()
             ->groupBy('group');
 

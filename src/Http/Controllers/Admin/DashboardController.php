@@ -1174,19 +1174,17 @@ class DashboardController extends Controller
         $today = $visitorsSince(cms_now()->startOfDay()->utc());
         $thisMonth = $visitorsSince(cms_now()->startOfMonth()->utc());
 
-        // ── Daily series (visits + unique), zero-filled across the range ──────
-        $daily = Analytics::where('created_at', '>=', $start)
-            ->select(DB::raw("{$localDate} as d"), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
-            ->groupBy('d')->orderBy('d')->get()->keyBy('d');
+        // ── Traffic series: by the hour for Today, by the day for anything longer ──
+        //
+        // A one-day range produced exactly one data point, and a line drawn through a single
+        // point with no point markers is nothing at all — which is why Today, the default
+        // range, showed an empty chart however busy the site was. A day's shape is hourly
+        // anyway: "Today" now plots midnight to midnight in the site's own timezone.
+        [$labels, $visitsSeries, $uniqueSeries] = $range === 1
+            ? $this->hourlySeries($start, $tzShift, $isSqlite)
+            : $this->dailySeries($start, $localDate, $range);
 
-        $labels = $visitsSeries = $uniqueSeries = [];
-        for ($i = $range - 1; $i >= 0; $i--) {
-            $day = cms_now()->subDays($i);
-            $key = $day->toDateString();
-            $labels[] = $day->format('M j');
-            $visitsSeries[] = (int) ($daily[$key]->visits ?? 0);
-            $uniqueSeries[] = (int) ($daily[$key]->uniques ?? 0);
-        }
+        $seriesUnit = $range === 1 ? 'hour' : 'day';
 
         // ── Distributions (browser / device / os) ────────────────────────────
         // Exclude bot/crawler rows left in legacy data so the charts show humans only
@@ -1379,11 +1377,66 @@ class DashboardController extends Controller
 
         return view('falcon-cms::admin.analytics.index', compact(
             'range', 'totalVisits', 'uniqueVisitors', 'pageViews', 'visitsChange', 'today', 'thisMonth',
-            'labels', 'visitsSeries', 'uniqueSeries',
+            'labels', 'visitsSeries', 'uniqueSeries', 'seriesUnit',
             'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'topCountries', 'recent',
             'activeNow', 'newVisitors', 'returningVisitors', 'sessions', 'bounceRate', 'pagesPerSession', 'channels',
             'visitorsByCountry', 'trafficSources'
         ) + ['analyticsLocked' => false]);
+    }
+
+    /**
+     * One point per day across the range, zero-filled so a quiet day is a zero rather than a
+     * missing step. Returns [labels, page views, unique visitors].
+     */
+    private function dailySeries($start, string $localDate, int $range): array
+    {
+        $daily = Analytics::where('created_at', '>=', $start)
+            ->select(DB::raw("{$localDate} as d"), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
+            ->groupBy('d')->orderBy('d')->get()->keyBy('d');
+
+        $labels = $visits = $uniques = [];
+        for ($i = $range - 1; $i >= 0; $i--) {
+            $day = cms_now()->subDays($i);
+            $key = $day->toDateString();
+            $labels[] = $day->format('M j');
+            $visits[] = (int) ($daily[$key]->visits ?? 0);
+            $uniques[] = (int) ($daily[$key]->uniques ?? 0);
+        }
+
+        return [$labels, $visits, $uniques];
+    }
+
+    /**
+     * Today, one point per hour, midnight to midnight in the site's own timezone.
+     *
+     * The axis covers the whole day so the shape of it is readable at 9am as well as at 11pm,
+     * but hours that have not happened yet are null rather than zero: the line stops at the
+     * current hour instead of dropping to the floor and implying the traffic died.
+     */
+    private function hourlySeries($start, int $tzShift, bool $isSqlite): array
+    {
+        $localHour = $isSqlite
+            ? sprintf("strftime('%%Y-%%m-%%d %%H', datetime(created_at, '%+d seconds'))", $tzShift)
+            : sprintf("DATE_FORMAT(created_at + INTERVAL %d SECOND, '%%Y-%%m-%%d %%H')", $tzShift);
+
+        $rows = Analytics::where('created_at', '>=', $start)
+            ->select(DB::raw("{$localHour} as h"), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
+            ->groupBy('h')->orderBy('h')->get()->keyBy('h');
+
+        $labels = $visits = $uniques = [];
+        $currentHour = (int) cms_now()->format('G');
+        $cursor = cms_now()->startOfDay();
+
+        for ($hour = 0; $hour < 24; $hour++) {
+            $key = $cursor->format('Y-m-d H');
+            $labels[] = $cursor->format('g A');
+            $future = $hour > $currentHour;
+            $visits[] = $future ? null : (int) ($rows[$key]->visits ?? 0);
+            $uniques[] = $future ? null : (int) ($rows[$key]->uniques ?? 0);
+            $cursor = $cursor->copy()->addHour();
+        }
+
+        return [$labels, $visits, $uniques];
     }
 
     /**
@@ -1392,8 +1445,26 @@ class DashboardController extends Controller
      */
     private function sampleAnalyticsData(int $range): array
     {
+        // Today is hourly here too, for the same reason the live chart is: a preview that
+        // draws nothing on the default range advertises a broken feature.
         $labels = $visitsSeries = $uniqueSeries = [];
-        for ($i = $range - 1; $i >= 0; $i--) {
+        if ($range === 1) {
+            $currentHour = (int) cms_now()->format('G');
+            $cursor = cms_now()->startOfDay();
+            for ($hour = 0; $hour < 24; $hour++) {
+                $labels[] = $cursor->format('g A');
+                if ($hour > $currentHour) {
+                    $visitsSeries[] = null;
+                    $uniqueSeries[] = null;
+                } else {
+                    // A plausible day: quiet overnight, busiest late morning and early evening.
+                    $v = (int) max(3, round(26 + 20 * sin(($hour - 4) / 24 * M_PI * 2) + 9 * sin(($hour - 9) / 6.0) + mt_rand(-5, 7)));
+                    $visitsSeries[] = $v;
+                    $uniqueSeries[] = (int) round($v * 0.66);
+                }
+            }
+        }
+        for ($i = $range - 1; $i >= 0 && $range > 1; $i--) {
             // Same day labels as the live chart, so the preview does not shift a
             // day against the real page once Pro is active.
             $day = cms_now()->subDays($i);
@@ -1428,9 +1499,13 @@ class DashboardController extends Controller
         ]);
 
         return [
-            'range' => $range,
+            'range' => $range, 'seriesUnit' => $range === 1 ? 'hour' : 'day',
             'totalVisits' => $totalVisits, 'uniqueVisitors' => $uniqueVisitors, 'pageViews' => $pageViews,
-            'visitsChange' => 14.2, 'today' => end($visitsSeries) ?: 0,
+            // Over Today the series IS today, so the tile is its total; over a longer range
+            // today is the last point. Reading `end()` in both cases returned the final hour
+            // of an hourly series — or a null one, once the day still had hours left in it.
+            'visitsChange' => 14.2,
+            'today' => $range === 1 ? $uniqueVisitors : (int) (end($uniqueSeries) ?: 0),
             'thisMonth' => (int) round($uniqueVisitors * (30 / max(1, $range))),
             'labels' => $labels, 'visitsSeries' => $visitsSeries, 'uniqueSeries' => $uniqueSeries,
             'browsers' => $arr([['Chrome', $pct(0.62)], ['Safari', $pct(0.19)], ['Firefox', $pct(0.09)], ['Edge', $pct(0.07)], ['Opera', $pct(0.03)]]),

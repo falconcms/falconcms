@@ -5,6 +5,7 @@ namespace FalconCms\Core\Database\Seeders;
 use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Permission;
 use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Support\MenuPlacement;
 use Illuminate\Database\Seeder;
 
 class MenuSeeder extends Seeder
@@ -206,14 +207,15 @@ class MenuSeeder extends Seeder
             ['title' => 'Email Templates', 'route' => 'admin.settings.email-templates', 'order' => 7],
         ]);
 
-        // 14. Products
+        // 14. Products — directly beneath Shop (55). The two are one block: Products is the
+        // Shop's own post type, and MenuPlacement keeps anything else from landing between them.
         $productMenu = Menu::create([
             'title' => 'Products',
             'route' => 'admin.posts.index',
             'params' => json_encode(['type' => 'product']),
             'icon' => 'inventory_2',
             'group' => 'Main',
-            'order' => 55,
+            'order' => 56,
         ]);
         $productMenu->children()->createMany([
             ['title' => 'All Products',  'route' => 'admin.posts.index', 'params' => json_encode(['type' => 'product']), 'order' => 1],
@@ -229,9 +231,8 @@ class MenuSeeder extends Seeder
             'params' => null,
             'icon' => 'storefront',
             'group' => 'Main',
-            // Immediately after Products (55). Custom post types are numbered from 60 up
-            // (see AcptCptController), so nothing can settle between the two.
-            'order' => 56,
+            // Head of the locked Shop → Products block; Products follows at 56.
+            'order' => 55,
         ]);
         $ecommerceMenu->children()->createMany([
             ['title' => 'Overview',         'route' => 'admin.shop.overview',      'order' => 0],
@@ -251,14 +252,17 @@ class MenuSeeder extends Seeder
                 ['name' => 'Manage '.$cpt->name, 'description' => 'Access '.$cpt->name.' section in sidebar']
             );
             $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
+            // Appended below everything already seeded — never an order derived from the id,
+            // which is how post types used to land inside the Shop → Products block.
             $cptParent = Menu::create([
                 'title' => $cpt->name,
                 'route' => '/admin/posts?type='.$cpt->slug,
                 'icon' => $cpt->icon ?: $defaultIcon,
                 'group' => 'Main',
-                'order' => 50 + $cpt->id,
+                'order' => MenuPlacement::nextOrder('Main'),
                 'permission' => $permSlug,
             ]);
+            MenuPlacement::placeAfter($cptParent, $cpt->menu_after);
             Menu::create(['parent_id' => $cptParent->id, 'title' => "All {$cpt->name}", 'route' => '/admin/posts?type='.$cpt->slug, 'order' => 1]);
             Menu::create(['parent_id' => $cptParent->id, 'title' => 'Add New', 'route' => '/admin/posts/create?type='.$cpt->slug, 'order' => 2]);
         }

@@ -5,6 +5,8 @@ namespace FalconCms\Core\Http\Controllers\Admin;
 use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\NavigationMenuItem;
 use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Support\MaterialIcons;
+use FalconCms\Core\Support\MenuPlacement;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +15,9 @@ use Illuminate\Support\Str;
 
 class AcptCptController extends Controller
 {
+    /** Shown for a post type that never picked an icon. */
+    private const DEFAULT_ICON = 'description';
+
     public function index(Request $request)
     {
         // Auto-fix missing columns if migration failed
@@ -149,46 +154,98 @@ class AcptCptController extends Controller
         return redirect()->back();
     }
 
-    protected function syncCptMenus($postType)
+    /**
+     * Create or refresh a custom post type's sidebar rows — the parent item plus its
+     * "All …" and "Add New" children.
+     *
+     * Every path that touches these rows comes through here: creating, importing, editing,
+     * duplicating, re-activating, and the repair pass on the index page. Six near-copies, two
+     * of which computed `order` as `40 + id` while the rest used `60 + id`, is precisely what
+     * kept wedging a post type between Shop and Products. Position is now MenuPlacement's job
+     * and is decided by the neighbour the user picked, never by an id.
+     *
+     * @param  string|null  $oldTitle  the menu's title before a rename, so an edit moves the row
+     *                                 that already exists instead of orphaning it
+     * @param  bool  $place  re-apply the post type's chosen position. Off by default: the repair
+     *                       pass must not shuffle a sidebar the user has already arranged.
+     */
+    protected function syncCptMenus($postType, ?string $oldTitle = null, bool $place = false)
     {
-        // Same band as the other two creation paths: above Shop (56), never between it
-        // and Products (55).
-        $order = 60 + $postType->id;
-        $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
+        $listRoute = '/admin/posts?type='.$postType->slug;
+        $createRoute = '/admin/posts/create?type='.$postType->slug;
+        $icon = $postType->icon ?: self::DEFAULT_ICON;
 
-        $parentMenu = Menu::firstOrCreate(
-            ['title' => $postType->name, 'parent_id' => null],
-            [
-                'route' => '/admin/posts?type='.$postType->slug,
-                'icon' => $postType->icon ?: $defaultIcon,
+        $parentMenu = $this->findCptMenu($postType, $oldTitle);
+
+        if (!$parentMenu) {
+            // Born at the bottom of the group, so it can never appear inside a locked block
+            // even for the instant before it is placed.
+            $parentMenu = Menu::create([
+                'title' => $postType->name,
+                'route' => $listRoute,
+                'icon' => $icon,
                 'group' => 'Main',
-                'order' => $order,
-            ]
-        );
+                'order' => MenuPlacement::nextOrder('Main'),
+            ]);
+            $place = true;
+        } else {
+            $parentMenu->update(['title' => $postType->name, 'route' => $listRoute, 'icon' => $icon]);
+        }
 
-        Menu::firstOrCreate(
-            ['parent_id' => $parentMenu->id, 'title' => 'All '.$postType->name],
-            ['route' => '/admin/posts?type='.$postType->slug, 'order' => 1]
-        );
+        // Matched on shape rather than title: "All Courses" becomes "All Programmes" on a
+        // rename, so looking the child up by its current title would create a duplicate.
+        $allChild = Menu::where('parent_id', $parentMenu->id)->where('title', 'like', 'All %')->first();
+        $allChild
+            ? $allChild->update(['title' => 'All '.$postType->name, 'route' => $listRoute])
+            : Menu::create(['parent_id' => $parentMenu->id, 'title' => 'All '.$postType->name, 'route' => $listRoute, 'order' => 1]);
 
-        Menu::firstOrCreate(
-            ['parent_id' => $parentMenu->id, 'title' => 'Add New'],
-            ['route' => '/admin/posts/create?type='.$postType->slug, 'order' => 2]
-        );
+        $addChild = Menu::where('parent_id', $parentMenu->id)->where('title', 'Add New')->first();
+        $addChild
+            ? $addChild->update(['route' => $createRoute])
+            : Menu::create(['parent_id' => $parentMenu->id, 'title' => 'Add New', 'route' => $createRoute, 'order' => 2]);
+
+        if ($place) {
+            MenuPlacement::placeAfter($parentMenu, $postType->menu_after);
+        }
+
+        return $parentMenu;
     }
 
-    protected function removeCptMenus($postType)
+    /**
+     * A post type's existing top-level menu row.
+     *
+     * Route first, because it is the one thing that stays put through a rename; the title is
+     * only a fallback for rows created before the route was written that way.
+     */
+    protected function findCptMenu($postType, ?string $oldTitle = null)
     {
-        $parentMenu = Menu::where('title', $postType->name)->whereNull('parent_id')->first();
+        return Menu::whereNull('parent_id')->where('route', '/admin/posts?type='.$postType->slug)->first()
+            ?: Menu::whereNull('parent_id')->where('title', $oldTitle ?: $postType->name)->first();
+    }
+
+    protected function removeCptMenus($postType, ?string $oldTitle = null)
+    {
+        $parentMenu = $this->findCptMenu($postType, $oldTitle);
         if ($parentMenu) {
             Menu::where('parent_id', $parentMenu->id)->delete();
             $parentMenu->delete();
         }
     }
 
+    /** The sidebar menus a post type can be positioned after, plus the icon set, for the form. */
+    protected function formOptions($postType = null): array
+    {
+        return [
+            'menuAnchors' => MenuPlacement::anchorOptions(
+                $postType ? optional($this->findCptMenu($postType))->id : null
+            ),
+            'iconNames' => MaterialIcons::ordered(),
+        ];
+    }
+
     public function create()
     {
-        return view('falcon-cms::admin.acpt.cpt.create');
+        return view('falcon-cms::admin.acpt.cpt.create', $this->formOptions());
     }
 
     public function store(Request $request)
@@ -219,6 +276,7 @@ class AcptCptController extends Controller
             'singular_label' => 'required|string|max:255',
             'post_type_key' => 'required|string|max:20|unique:post_types,slug',
             'supports' => 'nullable|array',
+            'menu_after' => 'nullable|integer|exists:menus,id',
         ]);
 
         $supports = $request->input('supports', ['title']); // fallback to title if empty
@@ -232,36 +290,12 @@ class AcptCptController extends Controller
             'is_builtin' => false,
             'is_active' => true,
             'show_in_menu' => $request->has('show_in_menu'),
+            'menu_after' => $request->input('menu_after') ?: null,
             'is_public' => (bool) $request->input('is_public', 1),
         ]);
 
         if ($postType->is_active) {
-            // Numbered from 60 up: Products (55) and Shop (56) must stay adjacent, so the
-            // custom post types start above them rather than in the gap between.
-            $order = 60 + $postType->id;
-            $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
-
-            $parentMenu = Menu::create([
-                'title' => $request->plural_label,
-                'route' => '/admin/posts?type='.$request->post_type_key,
-                'icon' => $postType->icon ?: $defaultIcon,
-                'group' => 'Main',
-                'order' => $order,
-            ]);
-
-            Menu::create([
-                'parent_id' => $parentMenu->id,
-                'title' => 'All '.$request->plural_label,
-                'route' => '/admin/posts?type='.$request->post_type_key,
-                'order' => 1,
-            ]);
-
-            Menu::create([
-                'parent_id' => $parentMenu->id,
-                'title' => 'Add New',
-                'route' => '/admin/posts/create?type='.$request->post_type_key,
-                'order' => 2,
-            ]);
+            $this->syncCptMenus($postType, null, true);
         }
 
         return redirect()->route('admin.acpt.cpt.index')->with('success', 'Custom Post Type created successfully!');
@@ -302,6 +336,8 @@ class AcptCptController extends Controller
             'show_in_menu' => (bool) ($d['show_in_menu'] ?? true),
             'is_public' => (bool) ($d['is_public'] ?? true),
         ];
+        // Sidebar position is not exported: it names a menu row by id, and the same id means
+        // something else on the site importing it. An imported type lands at the bottom.
 
         // Idempotent: update an existing (non-builtin) post type with the same slug
         // rather than creating a duplicate. Built-in types are never overwritten.
@@ -316,27 +352,12 @@ class AcptCptController extends Controller
             }
             $pt = PostType::create(array_merge($attrs, ['slug' => $slug, 'is_builtin' => false]));
             if ($pt->is_active && $pt->show_in_menu) {
-                $this->buildCptMenu($pt);
+                $this->syncCptMenus($pt, null, true);
             }
             $verb = 'imported';
         }
 
         return redirect()->route('admin.acpt.cpt.index')->with('success', "Custom Post Type {$verb} successfully.");
-    }
-
-    /** Create the admin sidebar menu (parent + All/Add New) for a CPT — mirrors store(). */
-    private function buildCptMenu(PostType $pt): void
-    {
-        $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
-        $parentMenu = Menu::create([
-            'title' => $pt->name,
-            'route' => '/admin/posts?type='.$pt->slug,
-            'icon' => $pt->icon ?: $defaultIcon,
-            'group' => 'Main',
-            'order' => 60 + $pt->id,
-        ]);
-        Menu::create(['parent_id' => $parentMenu->id, 'title' => 'All '.$pt->name, 'route' => '/admin/posts?type='.$pt->slug, 'order' => 1]);
-        Menu::create(['parent_id' => $parentMenu->id, 'title' => 'Add New', 'route' => '/admin/posts/create?type='.$pt->slug, 'order' => 2]);
     }
 
     /** Return $value or $value-1, -2… so it is unique in the given table column. */
@@ -356,7 +377,7 @@ class AcptCptController extends Controller
     {
         $postType = PostType::findOrFail($id);
 
-        return view('falcon-cms::admin.acpt.cpt.edit', compact('postType'));
+        return view('falcon-cms::admin.acpt.cpt.edit', compact('postType') + $this->formOptions($postType));
     }
 
     public function update(Request $request, $id)
@@ -368,11 +389,13 @@ class AcptCptController extends Controller
             'singular_label' => 'required|string|max:255',
             'post_type_key' => 'required|string|max:20|unique:post_types,slug,'.$postType->id,
             'supports' => 'nullable|array',
+            'menu_after' => 'nullable|integer|exists:menus,id',
         ]);
 
         $supports = $request->input('supports', ['title']);
-        $oldSlug = $postType->slug;
         $oldPlural = $postType->name;
+        $oldMenuAfter = $postType->menu_after;
+        $newMenuAfter = $request->input('menu_after') ?: null;
 
         $postType->update([
             'name' => $request->plural_label,
@@ -381,6 +404,7 @@ class AcptCptController extends Controller
             'supports' => $supports,
             'icon' => $request->input('icon'),
             'show_in_menu' => $request->has('show_in_menu'),
+            'menu_after' => $newMenuAfter,
             'is_public' => $request->input('is_public') == '1' ? true : false,
         ]);
 
@@ -392,44 +416,11 @@ class AcptCptController extends Controller
         }
 
         if ($postType->is_active) {
-            $parentMenu = Menu::where('title', $oldPlural)->whereNull('parent_id')->first();
-            if (!$parentMenu) {
-                // Create if didn't exist
-                $order = 40 + $postType->id;
-                $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
-                $parentMenu = Menu::create([
-                    'title' => $request->plural_label,
-                    'route' => '/admin/posts?type='.$request->post_type_key,
-                    'icon' => $postType->icon ?: $defaultIcon,
-                    'group' => 'Main',
-                    'order' => $order,
-                ]);
-                Menu::create(['parent_id' => $parentMenu->id, 'title' => 'All '.$request->plural_label, 'route' => '/admin/posts?type='.$request->post_type_key, 'order' => 1]);
-                Menu::create(['parent_id' => $parentMenu->id, 'title' => 'Add New', 'route' => '/admin/posts/create?type='.$request->post_type_key, 'order' => 2]);
-            } else {
-                // Update existing
-                $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
-                $parentMenu->update([
-                    'title' => $request->plural_label,
-                    'route' => '/admin/posts?type='.$request->post_type_key,
-                    'icon' => $postType->icon ?: $defaultIcon,
-                ]);
-                $allMenu = Menu::where('parent_id', $parentMenu->id)->where('title', 'like', 'All %')->first();
-                if ($allMenu) {
-                    $allMenu->update(['title' => 'All '.$request->plural_label, 'route' => '/admin/posts?type='.$request->post_type_key]);
-                }
-                $addNewMenu = Menu::where('parent_id', $parentMenu->id)->where('title', 'Add New')->first();
-                if ($addNewMenu) {
-                    $addNewMenu->update(['route' => '/admin/posts/create?type='.$request->post_type_key]);
-                }
-            }
+            // Only re-position when the choice actually changed, so saving an unrelated edit
+            // leaves a sidebar the user has since rearranged exactly where it is.
+            $this->syncCptMenus($postType, $oldPlural, (int) $oldMenuAfter !== (int) $newMenuAfter);
         } else {
-            // Remove menu if is_active is false
-            $parentMenu = Menu::where('title', $oldPlural)->whereNull('parent_id')->first();
-            if ($parentMenu) {
-                Menu::where('parent_id', $parentMenu->id)->delete();
-                $parentMenu->delete();
-            }
+            $this->removeCptMenus($postType, $oldPlural);
         }
 
         return redirect()->route('admin.acpt.cpt.index')->with('success', 'Custom Post Type updated successfully!');
@@ -457,16 +448,12 @@ class AcptCptController extends Controller
         $newPostType->save();
 
         if ($newPostType->is_active) {
-            $order = 40 + $newPostType->id;
-            $parentMenu = Menu::create([
-                'title' => $newPostType->name,
-                'route' => '/admin/posts?type='.$newPostType->slug,
-                'icon' => '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>',
-                'group' => 'Main',
-                'order' => $order,
-            ]);
-            Menu::create(['parent_id' => $parentMenu->id, 'title' => 'All '.$newPostType->name, 'route' => '/admin/posts?type='.$newPostType->slug, 'order' => 1]);
-            Menu::create(['parent_id' => $parentMenu->id, 'title' => 'Add New', 'route' => '/admin/posts/create?type='.$newPostType->slug, 'order' => 2]);
+            // A copy belongs next to what it was copied from, so it is placed after the
+            // original rather than inheriting the original's own anchor (which would have
+            // slotted the copy in above it).
+            $newPostType->menu_after = optional($this->findCptMenu($postType))->id;
+            $newPostType->save();
+            $this->syncCptMenus($newPostType, null, true);
         }
 
         return redirect()->route('admin.acpt.cpt.index')->with('success', 'Custom Post Type duplicated!');
@@ -479,25 +466,10 @@ class AcptCptController extends Controller
         $postType->save();
 
         if (!$postType->is_active) {
-            $parentMenu = Menu::where('title', $postType->name)->whereNull('parent_id')->first();
-            if ($parentMenu) {
-                Menu::where('parent_id', $parentMenu->id)->delete();
-                $parentMenu->delete();
-            }
+            $this->removeCptMenus($postType);
         } else {
-            $order = 40 + $postType->id;
-            // Ensure no duplicate parent config already
-            if (Menu::where('title', $postType->name)->whereNull('parent_id')->doesntExist()) {
-                $parentMenu = Menu::create([
-                    'title' => $postType->name,
-                    'route' => '/admin/posts?type='.$postType->slug,
-                    'icon' => '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>',
-                    'group' => 'Main',
-                    'order' => $order,
-                ]);
-                Menu::create(['parent_id' => $parentMenu->id, 'title' => 'All '.$postType->name, 'route' => '/admin/posts?type='.$postType->slug, 'order' => 1]);
-                Menu::create(['parent_id' => $parentMenu->id, 'title' => 'Add New', 'route' => '/admin/posts/create?type='.$postType->slug, 'order' => 2]);
-            }
+            // Re-activating restores the position it had before it was switched off.
+            $this->syncCptMenus($postType, null, true);
         }
 
         $msg = $postType->is_active ? 'Activated' : 'Deactivated';

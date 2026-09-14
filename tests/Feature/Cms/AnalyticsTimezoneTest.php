@@ -100,16 +100,60 @@ class AnalyticsTimezoneTest extends TestCase
 
         $localToday = Carbon::now('Asia/Dhaka')->startOfDay();
 
-        // Two visits in the local evening, which fall on the previous UTC date.
+        // Two visits in the small hours of the local morning, which fall on the previous
+        // UTC date — a server-timezone chart would draw them on yesterday.
         $this->visitAt($localToday->copy()->addHours(1)->utc()->toDateTimeString(), '203.0.113.1');
         $this->visitAt($localToday->copy()->addHours(2)->utc()->toDateTimeString(), '203.0.113.2');
 
-        $response = $this->analytics();
+        $response = $this->analytics(['range' => 7]);
         $response->assertOk();
 
         // The chart runs oldest → newest, so today is the last column.
         $series = $response->viewData('visitsSeries');
         $this->assertSame(2, end($series), 'Both belong to the local day the chart labels as today.');
+    }
+
+    public function test_today_is_charted_hour_by_hour_in_the_local_timezone(): void
+    {
+        // Today used to be a single data point, and a line drawn through one point with no
+        // markers is nothing — the default range rendered an empty card however busy the
+        // site was. Today is plotted by the hour now, in the site's own timezone.
+        $this->setCmsOptions(['timezone' => 'Asia/Dhaka']);
+
+        $localToday = Carbon::now('Asia/Dhaka')->startOfDay();
+        $this->visitAt($localToday->copy()->addHours(1)->utc()->toDateTimeString(), '203.0.113.1');
+        $this->visitAt($localToday->copy()->addHours(2)->utc()->toDateTimeString(), '203.0.113.2');
+        $this->visitAt($localToday->copy()->addHours(2)->addMinutes(30)->utc()->toDateTimeString(), '203.0.113.3');
+
+        // Pinned to local noon: run for real between midnight and 3am and the visits above
+        // would be in the future, which is a property of the clock and not of the code.
+        Carbon::setTestNow($localToday->copy()->addHours(12)->utc());
+
+        $response = $this->analytics();
+        $response->assertOk();
+
+        $this->assertSame('hour', $response->viewData('seriesUnit'));
+
+        $labels = $response->viewData('labels');
+        $this->assertCount(24, $labels, 'The axis covers the whole local day, midnight to midnight.');
+        $this->assertSame('12 AM', $labels[0]);
+        $this->assertSame('11 PM', $labels[23]);
+
+        // 01:00 and 02:00 LOCAL, even though both rows are stored on yesterday's UTC date.
+        $series = $response->viewData('visitsSeries');
+        $this->assertSame(0, $series[0]);
+        $this->assertSame(1, $series[1]);
+        $this->assertSame(2, $series[2]);
+
+        // Hours that have not happened yet are null, so the line stops at the current hour
+        // instead of dropping to the floor and implying the traffic died.
+        foreach ($series as $hour => $value) {
+            $hour > 12
+                ? $this->assertNull($value, "Hour {$hour} has not happened yet.")
+                : $this->assertIsInt($value, "Hour {$hour} has passed and must have a figure.");
+        }
+
+        Carbon::setTestNow();
     }
 
     public function test_the_range_opens_on_today(): void

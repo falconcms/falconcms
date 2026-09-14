@@ -1,46 +1,10 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Menu\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Menu\>\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: database/migrations/2026_06_04_000002_reconcile_namespaced_menu_permissions.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Analytics\:\:\$user_agent\.$#'
 			identifier: property.notFound
 			count: 3
 			path: database/migrations/2026_06_05_000002_reparse_analytics_user_agents.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$icon\.$#'
-			identifier: property.notFound
-			count: 1
-			path: database/seeders/MenuSeeder.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 4
-			path: database/seeders/MenuSeeder.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 4
-			path: database/seeders/MenuSeeder.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Menu\:\:\$permission\.$#'
-			identifier: property.notFound
-			count: 1
-			path: database/seeders/SystemSyncSeeder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permission\.$#'
-			identifier: property.notFound
-			count: 1
-			path: database/seeders/SystemSyncSeeder.php
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$items\.$#'
@@ -71,96 +35,6 @@ parameters:
 			identifier: empty.variable
 			count: 1
 			path: src/FalconCmsServiceProvider.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$icon\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 4
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$is_builtin\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$show_in_menu\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 4
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$icon\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 5
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$is_public\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 8
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$show_in_menu\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$singular_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 8
-			path: src/Http/Controllers/Admin/AcptCptController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\PostType\>\:\:\$supports\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/AcptCptController.php
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\CustomTaxonomy\:\:\$is_active\.$#'
@@ -220,18 +94,6 @@ parameters:
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\CustomTaxonomy\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\CustomTaxonomy\>\:\:\$slug\.$#'
 			identifier: property.notFound
 			count: 2
-			path: src/Http/Controllers/Admin/AcptTaxonomyController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Menu\:\:\$route\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/AcptTaxonomyController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
 			path: src/Http/Controllers/Admin/AcptTaxonomyController.php
 
 		-
@@ -793,24 +655,6 @@ parameters:
 			path: src/Http/Controllers/Admin/MenuManagementController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/MenuManagementController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$singular_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/MenuManagementController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 5
-			path: src/Http/Controllers/Admin/MenuManagementController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasPermission\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -1105,24 +949,6 @@ parameters:
 			path: src/Http/Controllers/Admin/PostController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$is_builtin\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/PostTypeController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Http/Controllers/Admin/PostTypeController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Http/Controllers/Admin/PostTypeController.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\ProductCategory\:\:\$description\.$#'
 			identifier: property.notFound
 			count: 2
@@ -1261,18 +1087,6 @@ parameters:
 			path: src/Http/Controllers/Admin/ReviewController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Menu\:\:\$permission\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/RoleController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Menu\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/RoleController.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Role\:\:\$permissions\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1282,18 +1096,6 @@ parameters:
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Role\:\:\$slug\.$#'
 			identifier: property.notFound
 			count: 2
-			path: src/Http/Controllers/Admin/RoleController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$permission\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/RoleController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
 			path: src/Http/Controllers/Admin/RoleController.php
 
 		-
@@ -1507,12 +1309,6 @@ parameters:
 			path: src/Http/Controllers/Admin/UserController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/WidgetController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasPermission\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -1576,30 +1372,6 @@ parameters:
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$featured_image\.$#'
 			identifier: property.notFound
 			count: 1
-			path: src/Http/Controllers/FrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$is_active\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/FrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$is_public\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/FrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/FrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 2
 			path: src/Http/Controllers/FrontendController.php
 
 		-
@@ -1913,12 +1685,6 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 1
 			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/SitemapController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$blocked_until\.$#'
@@ -2539,18 +2305,6 @@ parameters:
 			path: src/Support/ExportManager.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ExportManager.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Support/ExportManager.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\ProductData\:\:\$attributes_data\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2687,18 +2441,6 @@ parameters:
 			identifier: property.protected
 			count: 1
 			path: src/Support/ExportManager.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Menu\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Menu\>\:\:\$title\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/View/Components/Admin/Sidebar.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\PostType\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/View/Components/Admin/Sidebar.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Menu\>\:\:\$children\.$#'

@@ -268,7 +268,7 @@
         <div class="classic-card">
             <div class="classic-card-header">
                 <span class="classic-card-title">Traffic Overview</span>
-                <span class="text-[12px] text-[#646970]">{{ $range == 1 ? 'Today' : 'Last '.$rangeLabels[$range] }}</span>
+                <span class="text-[12px] text-[#646970]">{{ $range == 1 ? 'Today, by the hour' : 'Last '.$rangeLabels[$range].', by the day' }}</span>
             </div>
             <div class="p-4" style="height:320px">
                 <canvas id="trafficChart"></canvas>
@@ -427,21 +427,35 @@
     <script>
         const palette = @json($palette);
 
+        // A line needs two points to be a line. With one — which is what an hourly series has
+        // just after midnight, and what the whole day range used to have — nothing was drawn
+        // and the card looked broken, so a short series shows its markers instead.
+        const trafficPoint = data => (data.filter(v => v !== null && v !== undefined).length <= 2 ? 3.5 : 0);
+        const trafficViews = @json($visitsSeries), trafficUniques = @json($uniqueSeries);
+        const trafficUnit = @json($seriesUnit ?? 'day');
+
         new Chart(document.getElementById('trafficChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: @json($labels),
                 datasets: [
-                    { label: 'Page Views', data: @json($visitsSeries), borderColor: '#2271b1', backgroundColor: 'rgba(34,113,177,.06)', fill: true, tension: .4, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4 },
-                    { label: 'Unique Visitors', data: @json($uniqueSeries), borderColor: '#46b450', backgroundColor: 'transparent', fill: false, tension: .4, borderWidth: 2, borderDash: [5,5], pointRadius: 0, pointHoverRadius: 4 }
+                    { label: 'Page Views', data: trafficViews, borderColor: '#2271b1', backgroundColor: 'rgba(34,113,177,.06)', fill: true, tension: .4, borderWidth: 2, pointRadius: trafficPoint(trafficViews), pointHoverRadius: 4 },
+                    { label: 'Unique Visitors', data: trafficUniques, borderColor: '#46b450', backgroundColor: 'transparent', fill: false, tension: .4, borderWidth: 2, borderDash: [5,5], pointRadius: trafficPoint(trafficUniques), pointHoverRadius: 4 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                    // Hours still to come are null, and Chart.js would otherwise list them in
+                    // the tooltip as empty rows on hover.
+                    tooltip: { filter: item => item.parsed.y !== null }
+                },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: '#f0f0f1' }, ticks: { font: { size: 10 }, precision: 0 } },
-                    x: { grid: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: 12, autoSkip: true } }
+                    // An hourly chart has a fixed 0–23 axis, so a quiet day still reads as a
+                    // day rather than resizing itself around one visit.
+                    y: { beginAtZero: true, suggestedMax: trafficUnit === 'hour' ? 4 : undefined, grid: { color: '#f0f0f1' }, ticks: { font: { size: 10 }, precision: 0 } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 }, maxTicksLimit: trafficUnit === 'hour' ? 8 : 12, autoSkip: true } }
                 }
             }
         });
