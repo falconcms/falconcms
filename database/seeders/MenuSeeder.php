@@ -10,6 +10,9 @@ use Illuminate\Database\Seeder;
 
 class MenuSeeder extends Seeder
 {
+    /** Sidebar section for Shop and its Products, drawn under its own heading. */
+    public const ECOMMERCE_GROUP = 'eCommerce';
+
     public function run(): void
     {
         Menu::truncate();
@@ -207,14 +210,15 @@ class MenuSeeder extends Seeder
             ['title' => 'Email Templates', 'route' => 'admin.settings.email-templates', 'order' => 7],
         ]);
 
-        // 14. Products — directly beneath Shop (55). The two are one block: Products is the
-        // Shop's own post type, and MenuPlacement keeps anything else from landing between them.
+        // 14. Products — the second half of the eCommerce section, directly beneath Shop (55).
+        // The two are one block: Products is the Shop's own post type, and MenuPlacement keeps
+        // anything else from landing between them.
         $productMenu = Menu::create([
             'title' => 'Products',
             'route' => 'admin.posts.index',
             'params' => json_encode(['type' => 'product']),
             'icon' => 'inventory_2',
-            'group' => 'Main',
+            'group' => self::ECOMMERCE_GROUP,
             'order' => 56,
         ]);
         $productMenu->children()->createMany([
@@ -224,13 +228,16 @@ class MenuSeeder extends Seeder
             ['title' => 'Tags',       'route' => 'admin.product-tags.index', 'params' => null, 'order' => 4],
         ]);
 
-        // 15. eCommerce Menu
+        // 15. Shop — heads its own sidebar section, the way ACPT heads "Advanced". Selling is a
+        // job of its own: a site that does not sell anything reads the section heading and skips
+        // both items, and a site that does gets them together under a label rather than as two
+        // more entries in a long unlabelled list.
         $ecommerceMenu = Menu::create([
             'title' => 'Shop',
             'route' => 'admin.shop.orders.index',
             'params' => null,
             'icon' => 'storefront',
-            'group' => 'Main',
+            'group' => self::ECOMMERCE_GROUP,
             // Head of the locked Shop → Products block; Products follows at 56.
             'order' => 55,
         ]);

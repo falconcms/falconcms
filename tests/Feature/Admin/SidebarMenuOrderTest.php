@@ -50,10 +50,26 @@ class SidebarMenuOrderTest extends TestCase
         ]);
     }
 
-    /** Top-level Main menu titles, in the order the sidebar draws them. */
+    /**
+     * Top-level menu titles in the order the sidebar actually draws them — every group, laid
+     * end to end, exactly as the Sidebar component groups and renders them. Checking one group
+     * in isolation would miss an item that changed sections.
+     */
     private function sidebarOrder(): array
     {
-        return Menu::whereNull('parent_id')->where('group', 'Main')
+        return Menu::whereNull('parent_id')
+            ->orderBy('order')->orderBy('id')
+            ->get()
+            ->groupBy('group')
+            ->flatten()
+            ->pluck('title')
+            ->all();
+    }
+
+    /** Top-level titles within one sidebar section. */
+    private function sectionOrder(string $group): array
+    {
+        return Menu::whereNull('parent_id')->where('group', $group)
             ->orderBy('order')->orderBy('id')
             ->pluck('title')->all();
     }
@@ -91,12 +107,31 @@ class SidebarMenuOrderTest extends TestCase
         $this->assertPairIntact('A freshly seeded sidebar already has the pair together');
     }
 
+    public function test_shop_and_products_have_a_section_of_their_own(): void
+    {
+        // Selling is a job of its own, so it gets a heading of its own — the way ACPT heads
+        // "Advanced" — rather than two more entries in a long unlabelled list.
+        $this->assertSame(['Shop', 'Products'], $this->sectionOrder(MenuSeeder::ECOMMERCE_GROUP));
+
+        $titles = $this->sidebarOrder();
+        $this->assertLessThan(
+            array_search('Shop', $titles, true),
+            array_search('Comments', $titles, true),
+            'The eCommerce section is drawn after the main items.'
+        );
+        $this->assertLessThan(
+            array_search('ACPT', $titles, true),
+            array_search('Products', $titles, true),
+            '…and before Advanced.'
+        );
+    }
+
     public function test_a_new_post_type_lands_at_the_bottom_by_default(): void
     {
         $this->createPostType()->assertRedirect();
 
-        $titles = $this->sidebarOrder();
-        $this->assertSame('Courses', end($titles), 'A post type with no chosen position goes to the bottom.');
+        $main = $this->sectionOrder('Main');
+        $this->assertSame('Courses', end($main), 'A post type with no chosen position goes to the bottom.');
         $this->assertPairIntact('Appending to the bottom leaves the pair alone');
     }
 
@@ -186,17 +221,32 @@ class SidebarMenuOrderTest extends TestCase
 
         $this->assertPairIntact('Three post types anchored to Shop still leave the pair intact');
 
-        $orders = Menu::whereNull('parent_id')->where('group', 'Main')->pluck('order')->all();
-        $this->assertSame(count($orders), count(array_unique($orders)), 'No two top-level menus share an order.');
+        foreach (Menu::whereNull('parent_id')->get()->groupBy('group') as $group => $menus) {
+            $orders = $menus->pluck('order')->all();
+            $this->assertSame(
+                count($orders),
+                count(array_unique($orders)),
+                "Two menus in \"{$group}\" share an order, so the sidebar can draw them either way round."
+            );
+        }
     }
 
     public function test_products_is_not_offered_as_a_position_of_its_own(): void
     {
         // "After Products" is not a distinct place to be: it is inside the Shop block, which
-        // is exactly what must not be offered.
-        $labels = MenuPlacement::anchorOptions()->values()->all();
+        // is exactly what must not be offered. Labels carry the section, so they are matched
+        // on their menu title rather than compared whole.
+        $titles = MenuPlacement::anchorOptions()
+            ->map(fn ($label) => explode(' — ', $label)[0])
+            ->values()->all();
 
-        $this->assertContains('Shop', $labels);
-        $this->assertNotContains('Products', $labels);
+        $this->assertContains('Shop', $titles);
+        $this->assertNotContains('Products', $titles);
+
+        $this->assertContains(
+            'Shop — '.MenuSeeder::ECOMMERCE_GROUP,
+            MenuPlacement::anchorOptions()->values()->all(),
+            'An anchor outside the main section says which section it is in.'
+        );
     }
 }

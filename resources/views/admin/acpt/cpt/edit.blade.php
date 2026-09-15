@@ -111,12 +111,12 @@
                         </div>
                         <div class="w-full max-w-[400px]">
                             <select name="menu_after" class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-2 rounded-[3px] text-[13px] bg-white">
-                                <option value="">Bottom of the menu</option>
+                                <option value="">Bottom of the main section</option>
                                 @foreach($menuAnchors as $anchorId => $anchorLabel)
                                     <option value="{{ $anchorId }}" @selected(old('menu_after', $postType->menu_after) == $anchorId)>Show after &ldquo;{{ $anchorLabel }}&rdquo;</option>
                                 @endforeach
                             </select>
-                            <p class="text-[12px] text-[#646970] mt-1">It appears directly below the menu you pick. Shop and Products always stay together, so choosing Shop places this under them both.</p>
+                            <p class="text-[12px] text-[#646970] mt-1">It appears directly below the menu you pick, joining that menu&rsquo;s section. Shop and Products always stay together, so choosing Shop places this under them both.</p>
                         </div>
                     </div>
 
