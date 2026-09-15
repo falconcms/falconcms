@@ -2021,7 +2021,10 @@ if (!function_exists('get_falcon_posts')) {
         if ($args['orderby'] === 'rand') {
             $query->inRandomOrder();
         } else {
-            $safeOrderby = in_array($args['orderby'], ['created_at', 'updated_at', 'title', 'views', 'menu_order', 'id'])
+            // published_at belongs here: it is the date the admin shows and the one a theme
+            // means by "latest". Left out, orderby => 'published_at' silently became created_at,
+            // so back-dated and scheduled posts came out in the wrong order with no error.
+            $safeOrderby = in_array($args['orderby'], ['created_at', 'updated_at', 'published_at', 'title', 'views', 'menu_order', 'id'])
                 ? $args['orderby'] : 'created_at';
             $query->orderBy($safeOrderby, $args['order']);
         }
