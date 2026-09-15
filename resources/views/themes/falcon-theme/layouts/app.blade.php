@@ -410,7 +410,7 @@
             @php
                 $megaItemBorder = get_cms_option('theme_mega_menu_item_border', 'none');
                 $megaBorderColor = get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8');
-                $megaAccentColor = get_cms_option('theme_mega_menu_link_hover_color', '#0091ea');
+                $megaBorderHover = get_cms_option('theme_mega_menu_item_border_hover_color', '#0091ea');
             @endphp
             @if($megaItemBorder === 'bottom')
             /* Under EVERY link, including the last one in a column. Exempting the last was
@@ -420,6 +420,10 @@
                all. The control says "under each item"; it now is. */
             .falcon-mega-panel .falcon-mega-link {
                 border-bottom: 1px solid {{ $megaBorderColor }};
+                transition: color .15s ease, border-color .15s ease;
+            }
+            .falcon-mega-panel .falcon-mega-link:hover {
+                border-bottom-color: {{ $megaBorderHover }};
             }
 
             @elseif($megaItemBorder === 'dashed')
@@ -427,6 +431,10 @@
                structure, which suits a panel that is mostly whitespace. */
             .falcon-mega-panel .falcon-mega-link {
                 border-bottom: 1px dashed {{ $megaBorderColor }};
+                transition: color .15s ease, border-color .15s ease;
+            }
+            .falcon-mega-panel .falcon-mega-link:hover {
+                border-bottom-color: {{ $megaBorderHover }};
             }
 
             @elseif($megaItemBorder === 'heading')
@@ -439,6 +447,11 @@
             .falcon-mega-panel .falcon-mega-col > .falcon-mega-list:first-child > li:first-child > .falcon-mega-link {
                 padding-bottom: 9px;
                 border-bottom: 1px solid {{ $megaBorderColor }};
+                transition: color .15s ease, border-color .15s ease;
+            }
+            .falcon-mega-panel .falcon-mega-heading:hover,
+            .falcon-mega-panel .falcon-mega-col > .falcon-mega-list:first-child > li:first-child > .falcon-mega-link:hover {
+                border-bottom-color: {{ $megaBorderHover }};
             }
 
             @elseif($megaItemBorder === 'columns')
@@ -454,6 +467,11 @@
             .falcon-mega-panel .falcon-mega-col:first-child {
                 padding-left: 0;
                 border-left: 0;
+            }
+            /* The item a vertical rule belongs to is the column it opens, so that is what
+               lights it up. */
+            .falcon-mega-panel .falcon-mega-col:hover {
+                border-left-color: {{ $megaBorderHover }};
             }
 
             @elseif(in_array($megaItemBorder, ['grid', 'all'], true))
@@ -492,6 +510,11 @@
             .falcon-mega-panel .falcon-mega-list > li:last-child > .falcon-mega-link {
                 border-bottom: 0;
             }
+            /* A cell lights up its own bottom edge. The last one in a column has none — the
+               column's edge closes it — so it is the one cell that does not. */
+            .falcon-mega-panel .falcon-mega-link:hover {
+                border-bottom-color: {{ $megaBorderHover }};
+            }
 
             @elseif($megaItemBorder === 'hover_underline')
             /* Drawn transparent at rest rather than added on hover, so the line appearing does
@@ -501,7 +524,7 @@
                 transition: color .15s ease, border-color .15s ease;
             }
             .falcon-mega-panel .falcon-mega-link:hover {
-                border-bottom-color: {{ $megaAccentColor }};
+                border-bottom-color: {{ $megaBorderHover }};
             }
 
             @elseif($megaItemBorder === 'hover_accent')
@@ -513,7 +536,7 @@
                 transition: color .15s ease, border-color .15s ease;
             }
             .falcon-mega-panel .falcon-mega-link:hover {
-                border-left-color: {{ $megaAccentColor }};
+                border-left-color: {{ $megaBorderHover }};
             }
             @endif
         }

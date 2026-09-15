@@ -295,27 +295,40 @@ class MegaMenuTest extends TestCase
         }
     }
 
-    public function test_the_hover_styles_draw_in_a_colour_that_is_visible_by_default(): void
+    public function test_every_border_style_lights_up_on_hover(): void
     {
-        // They follow the link hover colour rather than the Item Border Color. A hover reveal in
-        // the default border grey would be all but invisible — which is exactly how the last
-        // silent border bug presented.
+        // Item Border Hover Color has to mean something for all of them. A colour control that
+        // moves nothing for five of the eight styles is the same trap as a style that draws
+        // nothing at all: it reads as broken rather than as not applicable.
         $source = $this->layoutSource();
+        $start = strpos($source, "@if(\$megaItemBorder === 'bottom')");
+        $chain = substr($source, $start, strpos($source, '@endif', $start) - $start);
 
-        foreach (['hover_underline', 'hover_accent'] as $key) {
+        foreach (array_keys($this->itemBorderOptions()) as $key) {
+            if ($key === 'none') {
+                continue;
+            }
+
             preg_match(
-                '/@elseif\(\$megaItemBorder === \''.$key.'\'\)((?:(?!@elseif)(?!@endif).)*)/s',
-                $source,
+                '/@(?:else)?if\([^)]*\''.preg_quote($key, '/').'\'[^)]*\)((?:(?!@elseif)(?!@endif).)*)/s',
+                $chain,
                 $branch
             );
-            $this->assertStringContainsString('$megaAccentColor', $branch[1] ?? '',
-                "\"{$key}\" does not use the hover colour");
+            $body = $branch[1] ?? '';
+
+            $this->assertStringContainsString(':hover', $body,
+                "\"{$key}\" has no hover rule, so Item Border Hover Color does nothing for it");
+            $this->assertStringContainsString('$megaBorderHover', $body,
+                "\"{$key}\" hovers in some colour other than the one the setting names");
         }
 
+        // Its own setting, rather than the link hover colour borrowed from next door.
         $this->assertStringContainsString(
-            "\$megaAccentColor = get_cms_option('theme_mega_menu_link_hover_color'",
+            "\$megaBorderHover = get_cms_option('theme_mega_menu_item_border_hover_color', '#0091ea')",
             $source
         );
+        $this->assertStringNotContainsString('$megaAccentColor', $source,
+            'the borrowed link hover colour is still referenced somewhere');
     }
 
     public function test_a_sub_item_without_children_is_still_a_link_the_border_can_reach(): void
@@ -436,6 +449,7 @@ class MegaMenuTest extends TestCase
             'theme_mega_menu_link_hover_color' => 'color',
             'theme_mega_menu_item_border' => 'select',
             'theme_mega_menu_item_border_color' => 'color',
+            'theme_mega_menu_item_border_hover_color' => 'color',
         ] as $key => $type) {
             $this->assertArrayHasKey($key, $fields, "{$key} is missing from the Menu section");
             $this->assertSame($type, $fields[$key]['type'], "{$key} is the wrong kind of control");

@@ -542,9 +542,9 @@ class CustomizerController extends Controller
                     'theme_mega_menu_item_border' => [
                         'type' => 'select',
                         'label' => 'Item Border',
-                        'desc' => 'How the panel is divided up. The first six draw in the Item Border Color below; '
-                            .'the two hover styles draw in the Mega Menu Link Hover Color, so they are visible '
-                            .'without setting anything else.',
+                        'desc' => 'How the panel is divided up. Every style draws in the Item Border Color at rest '
+                            .'and takes the Item Border Hover Color while its item is hovered; the last two draw '
+                            .'nothing until then.',
                         'depends' => 'theme_mega_menu_enabled',
                         'default' => 'none',
                         'options' => [
@@ -561,9 +561,17 @@ class CustomizerController extends Controller
                     'theme_mega_menu_item_border_color' => [
                         'type' => 'color',
                         'label' => 'Item Border Color',
-                        'desc' => 'Used by every style except the two hover ones, which follow the link hover colour.',
+                        'desc' => 'The colour a border is drawn in at rest.',
                         'depends' => 'theme_mega_menu_enabled',
                         'default' => '#e8e8e8',
+                    ],
+                    'theme_mega_menu_item_border_hover_color' => [
+                        'type' => 'color',
+                        'label' => 'Item Border Hover Color',
+                        'desc' => 'The colour it changes to while its item is hovered. The two hover styles are '
+                            .'invisible at rest and draw only in this colour.',
+                        'depends' => 'theme_mega_menu_enabled',
+                        'default' => '#0091ea',
                     ],
                 ],
             ],
