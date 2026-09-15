@@ -412,12 +412,42 @@
             .falcon-mega-panel .falcon-mega-link {
                 border-bottom: 1px solid {{ get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8') }};
             }
-            @elseif($megaItemBorder === 'all')
+            @elseif(in_array($megaItemBorder, ['grid', 'all'], true))
+            /* Table grid.
+               ('all' is the name this setting had while it drew a separate rounded box per
+               link; it is read here so a panel saved under the old name keeps working.)
+
+               Two neighbouring cells are divided by ONE line, the way a table is — not by two
+               borders with a space between them. Each cell draws only its bottom edge and each
+               column only its right edge, so a shared edge is drawn exactly once; the grid
+               itself supplies the top and left, which closes the outside.
+
+               The last link in a column deliberately drops its bottom border here, because the
+               column's own bottom edge already closes it — unlike the "line under each item"
+               setting, where nothing else would draw that line and exempting it meant a
+               one-link column showed nothing at all. */
+            @php $megaBorderColor = get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8'); @endphp
+            .falcon-mega-panel .falcon-mega-grid {
+                gap: 0;
+                border-top: 1px solid {{ $megaBorderColor }};
+                border-left: 1px solid {{ $megaBorderColor }};
+            }
+            /* Grid items stretch, so every column ends on the same line however many links it
+               holds — a short one simply finishes with an empty cell, as a table would. */
+            .falcon-mega-panel .falcon-mega-col {
+                display: flex;
+                flex-direction: column;
+                border-right: 1px solid {{ $megaBorderColor }};
+                border-bottom: 1px solid {{ $megaBorderColor }};
+            }
+            .falcon-mega-panel .falcon-mega-heading,
             .falcon-mega-panel .falcon-mega-link {
-                border: 1px solid {{ get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8') }};
-                border-radius: 4px;
-                padding: 7px 10px;
-                margin-bottom: 6px;
+                margin: 0;
+                padding: 11px 14px;
+                border-bottom: 1px solid {{ $megaBorderColor }};
+            }
+            .falcon-mega-panel .falcon-mega-list > li:last-child > .falcon-mega-link {
+                border-bottom: 0;
             }
             @endif
         }

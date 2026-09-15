@@ -542,13 +542,13 @@ class CustomizerController extends Controller
                     'theme_mega_menu_item_border' => [
                         'type' => 'select',
                         'label' => 'Item Border',
-                        'desc' => 'A rule between the links in a column, a box around each one, or neither.',
+                        'desc' => 'A rule under each link, a full table grid, or neither.',
                         'depends' => 'theme_mega_menu_enabled',
                         'default' => 'none',
                         'options' => [
                             'none' => 'None',
                             'bottom' => 'Line under each item',
-                            'all' => 'Box around each item',
+                            'grid' => 'Table grid',
                         ],
                     ],
                     'theme_mega_menu_item_border_color' => [

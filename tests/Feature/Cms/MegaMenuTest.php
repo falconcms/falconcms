@@ -216,6 +216,45 @@ class MegaMenuTest extends TestCase
         );
     }
 
+    public function test_the_table_grid_draws_one_shared_line_between_neighbours(): void
+    {
+        // Not a box per link: two touching cells must be divided by a single line, the way a
+        // table is, rather than by two borders with a space between them. Each cell therefore
+        // draws only its bottom edge and each column only its right edge, and the grid closes
+        // the outside with a top and a left.
+        $source = $this->layoutSource();
+
+        $this->assertMatchesRegularExpression(
+            "/\['grid', 'all'\], true\)\).*?falcon-mega-grid \{\s*gap: 0;\s*border-top:.*?border-left:/s",
+            $source,
+            'the table grid no longer closes its own top and left edge'
+        );
+        $this->assertMatchesRegularExpression(
+            "/\['grid', 'all'\], true\)\).*?falcon-mega-col \{.*?border-right:.*?border-bottom:/s",
+            $source,
+            'columns no longer draw the vertical rule between them'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            "/\['grid', 'all'\], true\)\).*?border-radius|\['grid', 'all'\], true\)\).*?margin-bottom: 6px/s",
+            $source,
+            'the old rounded-box-per-link styling is back'
+        );
+    }
+
+    public function test_the_item_border_choices_are_none_a_line_or_a_table_grid(): void
+    {
+        $sections = new ReflectionMethod(CustomizerController::class, 'sections');
+        $sections->setAccessible(true);
+        $options = $sections->invoke(app(CustomizerController::class))['menu']['fields']['theme_mega_menu_item_border']['options'];
+
+        $this->assertSame(['none', 'bottom', 'grid'], array_keys($options));
+        $this->assertSame('Table grid', $options['grid']);
+
+        // The value this setting used to carry is still understood by the layout, so a panel
+        // saved before the rename does not silently lose its borders.
+        $this->assertStringContainsString("['grid', 'all']", $this->layoutSource());
+    }
+
     public function test_a_sub_item_without_children_is_still_a_link_the_border_can_reach(): void
     {
         // The shape the bug above hid in: three sub-items, no third level, so each column is a
