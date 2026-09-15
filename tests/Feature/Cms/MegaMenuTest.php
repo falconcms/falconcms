@@ -194,6 +194,54 @@ class MegaMenuTest extends TestCase
         $this->assertStringNotContainsString('falcon-mega-panel', $mobile, 'the panel itself stays on desktop');
     }
 
+    // ── item border ──────────────────────────────────────────────────────────────
+
+    public function test_a_line_under_each_item_is_drawn_under_every_link(): void
+    {
+        // It was exempting the last link in a column, which read as tidier typography and was
+        // a bug: a sub-item with no children of its own is a column holding ONE link, so in the
+        // commonest menu — a top-level item with a flat list of sub-items — every link was the
+        // last one and the setting drew nothing whatsoever.
+        $source = $this->layoutSource();
+
+        $this->assertMatchesRegularExpression(
+            "/megaItemBorder === 'bottom'\).*?falcon-mega-link \{\s*border-bottom:/s",
+            $source,
+            'the "line under each item" setting no longer writes a border-bottom'
+        );
+        $this->assertStringNotContainsString(
+            'li:last-child > .falcon-mega-link { border-bottom: 0; }',
+            $source,
+            'the last link in a column is exempt again, so a one-link column shows no line'
+        );
+    }
+
+    public function test_a_sub_item_without_children_is_still_a_link_the_border_can_reach(): void
+    {
+        // The shape the bug above hid in: three sub-items, no third level, so each column is a
+        // single link. They have to be real .falcon-mega-link elements for any item styling to
+        // apply to them at all.
+        $menu = NavigationMenu::create(['name' => 'Header', 'slug' => 'header-'.uniqid(), 'is_header' => true]);
+        $parent = NavigationMenuItem::create([
+            'navigation_menu_id' => $menu->id, 'title' => 'Catalogue', 'url' => '/catalogue',
+            'type' => 'custom', 'order' => 0, 'mega_enabled' => true, 'mega_columns' => 3,
+        ]);
+        foreach (['One', 'Two', 'Three'] as $i => $t) {
+            NavigationMenuItem::create([
+                'navigation_menu_id' => $menu->id, 'parent_id' => $parent->id,
+                'title' => $t, 'url' => '/'.strtolower($t), 'type' => 'custom', 'order' => $i,
+            ]);
+        }
+        forget_nav_menu_cache();
+        $this->setCmsOptions(['theme_mega_menu_enabled' => '1']);
+
+        $html = $this->header();
+
+        $this->assertSame(3, substr_count($html, 'falcon-mega-link'));
+        $this->assertStringNotContainsString('falcon-mega-heading', $html,
+            'nothing here has children of its own, so no column should claim a heading');
+    }
+
     // ── saving ───────────────────────────────────────────────────────────────────
 
     public function test_the_saved_columns_and_width_are_clamped_to_what_can_be_rendered(): void

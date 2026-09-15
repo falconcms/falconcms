@@ -404,11 +404,14 @@
 
             @php $megaItemBorder = get_cms_option('theme_mega_menu_item_border', 'none'); @endphp
             @if($megaItemBorder === 'bottom')
+            /* Under EVERY link, including the last one in a column. Exempting the last was
+               tidier typography and a bug: a sub-item with no children of its own is a column
+               holding a single link, so in the commonest menu — a top-level item with a flat
+               list of sub-items — every link was the last one and the setting drew nothing at
+               all. The control says "under each item"; it now is. */
             .falcon-mega-panel .falcon-mega-link {
                 border-bottom: 1px solid {{ get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8') }};
             }
-            /* The rule belongs BETWEEN the links, so the column does not end on one. */
-            .falcon-mega-list > li:last-child > .falcon-mega-link { border-bottom: 0; }
             @elseif($megaItemBorder === 'all')
             .falcon-mega-panel .falcon-mega-link {
                 border: 1px solid {{ get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8') }};
