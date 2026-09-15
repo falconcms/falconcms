@@ -396,6 +396,24 @@ class MegaMenuTest extends TestCase
         );
     }
 
+    public function test_the_mega_badge_reports_what_is_in_effect_not_what_was_saved(): void
+    {
+        // `mega_enabled` is deliberately kept when the Customizer switch is turned off, so that
+        // switching it back on restores the panel. While it is off the header draws an ordinary
+        // dropdown, and the row went on showing a MEGA badge that nothing backed.
+        $source = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/menus/index.blade.php'
+        );
+
+        $this->assertStringContainsString('${miItemHasMega(item) ?', $source,
+            'the badge is decided inline again rather than by one rule');
+        $this->assertMatchesRegularExpression(
+            '/function miItemHasMega\(item\) \{.*?NATIVE_MEGA_ON\s*\?\s*\(!!item\.mega_enabled && miItemHasChildren\(item\)\)\s*:\s*!!item\.mega_menu_id;/s',
+            $source,
+            'the badge no longer follows the switch: off it should mean a builder design, on the header\'s own panel'
+        );
+    }
+
     // ── the Customizer controls ──────────────────────────────────────────────────
 
     public function test_the_customizer_offers_the_switch_and_its_options(): void

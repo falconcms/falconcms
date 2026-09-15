@@ -655,6 +655,19 @@
         return i > -1 && !!items[i + 1] && (items[i + 1].depth || 0) > (item.depth || 0);
     }
 
+    /* Whether the MEGA badge belongs on this row.
+       It reports what is in effect NOW, not what was saved at some point. `mega_enabled` is
+       kept when the Customizer switch is turned off, so that switching it back on restores the
+       panel — but while it is off the header draws an ordinary dropdown, and a badge claiming
+       otherwise is simply wrong. Off, the only mega menu an item can have is a Layout-builder
+       design; on, it is the header's own, which needs sub-items to lay out. */
+    function miItemHasMega(item) {
+        if ((item.depth || 0) !== 0) return false;
+        return NATIVE_MEGA_ON
+            ? (!!item.mega_enabled && miItemHasChildren(item))
+            : !!item.mega_menu_id;
+    }
+
     function miRenderMegaSection(item) {
         const useNative = NATIVE_MEGA_ON;
         const layoutBlock = document.getElementById('mi-mega-layout-block');
@@ -865,7 +878,7 @@
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;">
                         <span style="font-size:11px;color:#8c8f94;">${item.source_label ? esc(item.source_label) : typeLabel(item.type)}</span>
-                        ${(item.mega_menu_id || item.mega_enabled) ? `<span style="font-size:10px;background:#eaf3fb;color:#2271b1;border:1px solid #c3d9ef;border-radius:3px;padding:1px 5px;font-weight:700;">MEGA</span>` : ''}
+                        ${miItemHasMega(item) ? `<span style="font-size:10px;background:#eaf3fb;color:#2271b1;border:1px solid #c3d9ef;border-radius:3px;padding:1px 5px;font-weight:700;">MEGA</span>` : ''}
                         ${canOutdent ? `<button type="button" class="indent-btn" onclick="outdent('${esc(item.id)}')" title="Outdent">←</button>` : ''}
                         ${canIndent  ? `<button type="button" class="indent-btn" onclick="indent('${esc(item.id)}')"  title="Indent">→</button>` : ''}
                         <button type="button" onclick="toggleSettings('${esc(item.id)}')" style="color:#646970;border:none;background:none;cursor:pointer;padding:2px;">
