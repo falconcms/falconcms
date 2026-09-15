@@ -272,7 +272,7 @@
         <div class="bg-white p-20 text-center border border-[#eee] rounded-sm">
             <h2 class="text-[24px] font-bold text-[#2c3338] mb-4">Your cart is empty</h2>
             <p class="text-[#777] mb-8">Add products to your cart before checking out.</p>
-            <a href="{{ get_lazy_shop_url() }}" class="inline-block bg-[#1363df] text-white px-8 py-3 rounded-sm font-bold hover:bg-[#005ba6] transition-colors uppercase">Return to shop</a>
+            <a href="{{ get_falcon_shop_url() }}" class="inline-block bg-[#1363df] text-white px-8 py-3 rounded-sm font-bold hover:bg-[#005ba6] transition-colors uppercase">Return to shop</a>
         </div>
         @endif
     </div>

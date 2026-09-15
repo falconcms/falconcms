@@ -293,6 +293,9 @@ class FalconCmsServiceProvider extends ServiceProvider
     {
         require_once __DIR__.'/helpers.php';
         require_once __DIR__.'/ecommerce_helpers.php';
+        // The pre-rename lazy_* names, forwarding to their falcon_* replacements. Loaded after
+        // both helper files, because every alias in it calls one of them.
+        require_once __DIR__.'/helpers_legacy.php';
         require_once __DIR__.'/admin-menu.php';
         require_once __DIR__.'/settings-fields.php';
         $this->mergeConfigFrom(__DIR__.'/../config/falcon-options.php', 'falcon-options');

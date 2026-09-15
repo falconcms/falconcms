@@ -84,7 +84,7 @@
                         <a href="{{ $tabBase }}?tab=orders" class="inline-block bg-primary text-white px-6 py-2.5 rounded-sm font-bold hover:bg-primary-hover transition uppercase text-sm">View all orders</a>
                     @else
                         <p class="text-body mb-5">You haven't placed any orders yet.</p>
-                        <a href="{{ get_lazy_shop_url() }}" class="inline-block bg-primary text-white px-6 py-2.5 rounded-sm font-bold hover:bg-primary-hover transition uppercase text-sm">Start shopping</a>
+                        <a href="{{ get_falcon_shop_url() }}" class="inline-block bg-primary text-white px-6 py-2.5 rounded-sm font-bold hover:bg-primary-hover transition uppercase text-sm">Start shopping</a>
                     @endif
                 </div>
             @else

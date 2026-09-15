@@ -55,7 +55,7 @@
                         <strong class="text-[#646970] mr-1">Permalink:</strong>
                         <span id="permalink-view">
                             @php
-                                $isHomePage   = is_lazy_homepage($page);
+                                $isHomePage   = is_falcon_homepage($page);
                                 $fullUrl      = $isHomePage ? url('/') : get_falcon_permalink($page);
                                 $displayBase  = $isHomePage ? url('/') : str_replace($page->slug, '', get_falcon_permalink($page));
                             @endphp

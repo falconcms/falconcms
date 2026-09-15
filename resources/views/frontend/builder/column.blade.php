@@ -693,7 +693,7 @@
                     @elseif($__customDef && $__elShow)
                         @php
                             // Resolve dynamic-source fields into final values for both template + generic renderer
-                            $el['settings'] = lazy_apply_custom_dynamic($el['settings'] ?? [], $post ?? null);
+                            $el['settings'] = falcon_apply_custom_dynamic($el['settings'] ?? [], $post ?? null);
 
                             $__tpl        = !empty($__customDef['template'])
                                          && \Illuminate\Support\Facades\View::exists($__customDef['template'])

@@ -285,7 +285,7 @@ class PageController extends Controller
         if (!isset($entries[$from])) {
             $from = $to;
         }
-        $diff = lazy_revision_diff($entries[$from]['content'] ?? '', $entries[$to]['content'] ?? '');
+        $diff = falcon_revision_diff($entries[$from]['content'] ?? '', $entries[$to]['content'] ?? '');
 
         return view('falcon-cms::admin.pages.revisions', compact('page', 'entries', 'from', 'to', 'diff'));
     }

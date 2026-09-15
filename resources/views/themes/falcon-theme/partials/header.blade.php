@@ -14,7 +14,7 @@
                  reader scrolls past them. See components/frontend/menu-scrollspy. --}}
             <nav class="hidden lg:flex items-center gap-8 h-full lb-desktop-nav" data-falcon-scrollspy="text-primary">
                 @php
-                    $menuItems = get_lazy_menu('header');
+                    $menuItems = get_falcon_menu('header');
                     // Customizer → Menu → Mega Menu. Off, every branch below behaves exactly as
                     // it did: ordinary dropdowns, and a mega menu is something you build in the
                     // Layout builder. This is the theme header only; the builder's own Menu
@@ -182,7 +182,7 @@
         <!-- Mobile Language Switcher -->
         <div class="p-6 border-b border-slate-100 lg:hidden">
             <p class="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">Select Language</p>
-            {!! lazy_mobile_lang_switcher() !!}
+            {!! falcon_mobile_lang_switcher() !!}
         </div>
         <div class="flex-grow overflow-y-auto p-6">
             <nav class="space-y-4" data-falcon-scrollspy="text-primary">

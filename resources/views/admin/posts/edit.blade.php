@@ -57,11 +57,11 @@
                     @enderror
                     
                     @if(!isset($postType) || $postType->is_public)
-                    <div id="permalink-container" data-is-home="{{ is_lazy_homepage($post) ? '1' : '0' }}" class="mt-2 text-[13px] flex items-center font-medium">
+                    <div id="permalink-container" data-is-home="{{ is_falcon_homepage($post) ? '1' : '0' }}" class="mt-2 text-[13px] flex items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
                             @php 
-                                $isHome = is_lazy_homepage($post);
+                                $isHome = is_falcon_homepage($post);
                                 $fullUrl = get_falcon_permalink($post);
                                 
                                 $defaultLang = \Illuminate\Support\Facades\DB::table('cms_languages')->where('is_default', true)->value('code') ?: 'en';

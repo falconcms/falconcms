@@ -9,9 +9,9 @@
                 $currentPost = view()->shared('current_post');
                 $postType = $currentPost ? $currentPost->type : 'post';
             }
-            $categories = get_lazy_categories('category', $postType);
+            $categories = get_falcon_categories('category', $postType);
             $showCount  = ($widget->settings['show_count'] ?? '1') === '1';
-            $catInfo    = get_lazy_category_taxonomy($postType);
+            $catInfo    = get_falcon_category_taxonomy($postType);
         @endphp
         @foreach($categories as $cat)
             <li>

@@ -27,7 +27,7 @@
         <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">Explore our collection of dummy posts created with FalconCMS. You can easily manage these from your admin dashboard.</p>
     </div>
     
-    <?php //the_lazy_loop(['post_type' => 'dramas', 'limit' => 15]); ?>
+    <?php //the_falcon_loop(['post_type' => 'dramas', 'limit' => 15]); ?>
 
 
     <div class="row">

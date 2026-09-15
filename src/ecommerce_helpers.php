@@ -30,8 +30,8 @@ if (!function_exists('update_shop_option')) {
     }
 }
 
-if (!function_exists('is_lazy_shop_page')) {
-    function is_lazy_shop_page($post)
+if (!function_exists('is_falcon_shop_page')) {
+    function is_falcon_shop_page($post)
     {
         if (!$post) {
             return false;
@@ -60,8 +60,8 @@ if (!function_exists('is_falcon_cart_page')) {
     }
 }
 
-if (!function_exists('is_lazy_checkout_page')) {
-    function is_lazy_checkout_page($post)
+if (!function_exists('is_falcon_checkout_page')) {
+    function is_falcon_checkout_page($post)
     {
         if (!$post) {
             return false;
@@ -75,8 +75,8 @@ if (!function_exists('is_lazy_checkout_page')) {
     }
 }
 
-if (!function_exists('is_lazy_account_page')) {
-    function is_lazy_account_page($post)
+if (!function_exists('is_falcon_account_page')) {
+    function is_falcon_account_page($post)
     {
         if (!$post) {
             return false;
@@ -90,8 +90,8 @@ if (!function_exists('is_lazy_account_page')) {
     }
 }
 
-if (!function_exists('get_lazy_account_url')) {
-    function get_lazy_account_url()
+if (!function_exists('get_falcon_account_url')) {
+    function get_falcon_account_url()
     {
         $id = (int) get_shop_option('shop_account_page_id');
         if ($id) {

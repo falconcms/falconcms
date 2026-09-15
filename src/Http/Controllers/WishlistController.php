@@ -21,7 +21,7 @@ class WishlistController extends Controller
             return response()->json([
                 'success' => false,
                 'requires_login' => true,
-                'login_url' => get_lazy_account_url(),
+                'login_url' => get_falcon_account_url(),
                 'message' => 'Please log in to use your wishlist.',
             ], 200);
         }
@@ -56,7 +56,7 @@ class WishlistController extends Controller
             // redirect_to brings them back here once they have signed in; the account page
             // passes it through and ShopFrontendController::safeRedirectUrl() vets it, so
             // it cannot be pointed off-site.
-            $account = get_lazy_account_url();
+            $account = get_falcon_account_url();
             $account .= (str_contains($account, '?') ? '&' : '?').'redirect_to='.urlencode(url()->current());
 
             return redirect($account)->with('error', 'Please log in to view your wishlist.');
@@ -83,7 +83,7 @@ class WishlistController extends Controller
     public function remove(Request $request)
     {
         if (!auth()->check()) {
-            return redirect(get_lazy_account_url());
+            return redirect(get_falcon_account_url());
         }
         $request->validate(['product_id' => 'required|integer']);
         Wishlist::where('user_id', auth()->id())->where('product_id', (int) $request->product_id)->delete();

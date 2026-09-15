@@ -9,7 +9,7 @@
 
     @if($isBuilder)
         <div class="falcon-content-wrapper">
-            {!! get_lazy_content($post->content) !!}
+            {!! get_falcon_post_content($post->content) !!}
         </div>
     @else
         {{-- Page title + breadcrumb are provided solely by the Customizer Title Bar (Appearance → Customize → Title Bar). --}}
@@ -18,7 +18,7 @@
             <div class="container-custom">
                 <div class="prose prose-lg prose-slate max-w-none">
                     <div class="falcon-content-wrapper falcon-rich-text">
-                        {!! do_lazy_shortcode(falcon_sanitize_html((string) $post->content)) !!}
+                        {!! do_falcon_shortcode(falcon_sanitize_html((string) $post->content)) !!}
                     </div>
                 </div>
             </div>

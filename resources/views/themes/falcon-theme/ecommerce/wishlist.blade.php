@@ -11,7 +11,7 @@
                 <h1 class="text-3xl font-bold text-heading">My Wishlist</h1>
                 <p class="text-body mt-1">{{ $products->count() }} item{{ $products->count() === 1 ? '' : 's' }} saved.</p>
             </div>
-            <a href="{{ get_lazy_shop_url() }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:border-primary hover:text-primary transition">
+            <a href="{{ get_falcon_shop_url() }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:border-primary hover:text-primary transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Continue shopping
             </a>
         </div>
@@ -22,7 +22,7 @@
                     <i data-lucide="heart" class="w-8 h-8 text-slate-300"></i>
                 </div>
                 <p class="text-body mb-5">Your wishlist is empty. Save products you love to find them here later.</p>
-                <a href="{{ get_lazy_shop_url() }}" class="inline-block bg-primary text-white px-6 py-2.5 rounded-sm font-bold hover:bg-primary-hover transition uppercase text-sm">Browse products</a>
+                <a href="{{ get_falcon_shop_url() }}" class="inline-block bg-primary text-white px-6 py-2.5 rounded-sm font-bold hover:bg-primary-hover transition uppercase text-sm">Browse products</a>
             </div>
         @else
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

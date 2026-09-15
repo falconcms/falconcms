@@ -64,7 +64,7 @@
                     <td>
                         @php $selectedTz = $settings['timezone'] ?? config('app.timezone') ?? 'UTC'; @endphp
                         <select name="timezone" id="timezone" class="wp-input w-[400px] h-8 py-0 shadow-sm mb-1">
-                            @foreach(lazy_timezone_list() as $region => $zones)
+                            @foreach(falcon_timezone_list() as $region => $zones)
                                 <optgroup label="{{ $region }}">
                                     @foreach($zones as $tzId => $tzLabel)
                                         <option value="{{ $tzId }}" {{ $selectedTz === $tzId ? 'selected' : '' }}>{{ $tzLabel }}</option>

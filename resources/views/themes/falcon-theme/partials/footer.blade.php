@@ -35,7 +35,7 @@
         <div class="grid {{ $gridClass }} gap-12 mb-16">
             @for($i = 1; $i <= $footerColumns; $i++)
                 <div class="col-span-1 footer-column">
-                    @php $widgetContent = render_lazy_widgets("footer-{$i}"); @endphp
+                    @php $widgetContent = render_falcon_widgets("footer-{$i}"); @endphp
                     @if($widgetContent)
                         {!! $widgetContent !!}
                     @else
@@ -72,7 +72,7 @@
                         @elseif($i == 2)
                             <h4 class="font-bold mb-6" style="color: inherit;">Quick Links</h4>
                             <nav class="flex flex-col gap-3">
-                                @php $footerMenu = get_lazy_menu('footer'); @endphp
+                                @php $footerMenu = get_falcon_menu('footer'); @endphp
                                 @forelse($footerMenu as $item)
                                     <a href="{{ falcon_anchor_url($item->url) }}" class="text-[14px] opacity-70 hover:opacity-100 transition-colors" style="color: {{ $footerLink }};">{{ $item->title }}</a>
                                 @empty

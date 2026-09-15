@@ -107,11 +107,11 @@
                             <a href="{{ $item->trashed() ? '#' : route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $item->title }}</a>
                             @if($item->status === 'draft' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif 
                             @if($item->status === 'scheduled' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif
-                            @if(is_lazy_homepage($item)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
-                            @if(is_lazy_shop_page($item)) <span class="font-normal text-[#646970]"> — Shop Page</span> @endif
+                            @if(is_falcon_homepage($item)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
+                            @if(is_falcon_shop_page($item)) <span class="font-normal text-[#646970]"> — Shop Page</span> @endif
                             @if(is_falcon_cart_page($item)) <span class="font-normal text-[#646970]"> — Cart Page</span> @endif
-                            @if(is_lazy_checkout_page($item)) <span class="font-normal text-[#646970]"> — Checkout Page</span> @endif
-                            @if(is_lazy_account_page($item)) <span class="font-normal text-[#646970]"> — Account Page</span> @endif
+                            @if(is_falcon_checkout_page($item)) <span class="font-normal text-[#646970]"> — Checkout Page</span> @endif
+                            @if(is_falcon_account_page($item)) <span class="font-normal text-[#646970]"> — Account Page</span> @endif
                             @if($item->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif
                         </strong>
                         <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">

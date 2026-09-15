@@ -52,7 +52,7 @@
 
     {{-- Pagination --}}
     <div class="mt-12 flex justify-center">
-        {!! the_lazy_pagination($postItems) !!}
+        {!! the_falcon_pagination($postItems) !!}
     </div>
 </body>
 </html>

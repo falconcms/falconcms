@@ -145,7 +145,7 @@
                             <a href="{{ $post->trashed() ? '#' : route('admin.posts.edit', $post) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $post->title }}</a>
                             @if($post->status === 'draft' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif 
                             @if($post->status === 'scheduled' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif
-                            @if(is_lazy_homepage($post)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
+                            @if(is_falcon_homepage($post)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
                             @if($post->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif
                         </strong>
                         <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">

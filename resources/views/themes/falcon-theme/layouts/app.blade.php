@@ -58,7 +58,7 @@
         $__collectFonts = function ($content) use (&$fontsToLoad) {
             if (empty($content)) return;
             $layout = is_string($content) ? json_decode($content, true) : $content;
-            if (is_array($layout)) $fontsToLoad = array_merge($fontsToLoad, get_lazy_builder_fonts($layout));
+            if (is_array($layout)) $fontsToLoad = array_merge($fontsToLoad, get_falcon_builder_fonts($layout));
         };
         if (isset($post) && !empty($post->content)) {
             $isBuilder = $post->editor_type === 'builder' || (is_string($post->content) && (str_starts_with($post->content, '[') || str_starts_with($post->content, '{')));

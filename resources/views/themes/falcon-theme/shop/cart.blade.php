@@ -19,7 +19,7 @@
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">Your cart is currently empty.</h2>
                 <p class="text-gray-500 mb-8">Before you proceed to checkout you must add some products to your shopping cart.</p>
-                <a href="{{ get_lazy_shop_url() }}" class="inline-block bg-primary text-white px-8 py-3 rounded-sm font-bold hover:opacity-90 transition-all uppercase text-sm">Return to shop</a>
+                <a href="{{ get_falcon_shop_url() }}" class="inline-block bg-primary text-white px-8 py-3 rounded-sm font-bold hover:opacity-90 transition-all uppercase text-sm">Return to shop</a>
             </div>
         @else
             <form action="{{ route('shop.cart.update') }}" method="POST">
@@ -129,7 +129,7 @@
                             </tr>
                         </tbody>
                     </table>
-                    <a href="{{ get_lazy_checkout_url() }}" class="block w-full bg-primary text-white text-center py-4 font-bold rounded-sm hover:opacity-90 transition-all uppercase shadow-md shadow-primary/20">Proceed to checkout</a>
+                    <a href="{{ get_falcon_checkout_url() }}" class="block w-full bg-primary text-white text-center py-4 font-bold rounded-sm hover:opacity-90 transition-all uppercase shadow-md shadow-primary/20">Proceed to checkout</a>
                 </div>
             </div>
         @endif

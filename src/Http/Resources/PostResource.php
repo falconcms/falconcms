@@ -15,7 +15,7 @@ class PostResource extends JsonResource
             'id' => $this->id,
             'title' => $translation ? $translation->title : $this->title,
             'slug' => $translation && $translation->slug ? $translation->slug : $this->slug,
-            'content' => $translation ? $translation->content : ($this->editor_type === 'builder' ? get_lazy_content($this->content) : $this->content),
+            'content' => $translation ? $translation->content : ($this->editor_type === 'builder' ? get_falcon_post_content($this->content) : $this->content),
             'excerpt' => $translation && $translation->excerpt ? $translation->excerpt : get_falcon_excerpt($this, 160),
             'featured_image' => $this->featured_image ? url('storage/'.$this->featured_image) : null,
             'status' => $this->status,

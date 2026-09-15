@@ -16,8 +16,8 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         $style = ($isMobile || $isSubmenu) ? $subStyle : $mainStyle;
 
         // Lazy Special Menu widgets (Cart / Search / Wishlist) — dynamic, render & skip the normal item.
-        if (function_exists('lazy_is_special_menu_item') && lazy_is_special_menu_item($item->type ?? '')) {
-            echo lazy_render_special_menu_item($item, $style, $isMobile, $elId);
+        if (function_exists('falcon_is_special_menu_item') && falcon_is_special_menu_item($item->type ?? '')) {
+            echo falcon_render_special_menu_item($item, $style, $isMobile, $elId);
             continue;
         }
 

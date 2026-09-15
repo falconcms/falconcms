@@ -303,9 +303,9 @@ class MakeTheme extends Command
                 $isBuilder = $post->editor_type === 'builder'
                     || (is_string($post->content) && (str_starts_with($post->content, '[') || str_starts_with($post->content, '{')));
             @endphp
-            {{-- get_lazy_content renders Falcon Builder content, or plain content for classic pages. --}}
+            {{-- get_falcon_post_content renders Falcon Builder content, or plain content for classic pages. --}}
             <article class="max-w-none @if(!$isBuilder) falcon-rich-text @endif">
-                {!! get_lazy_content($post->content) !!}
+                {!! get_falcon_post_content($post->content) !!}
             </article>
         @endsection
         BLADE;
@@ -326,7 +326,7 @@ class MakeTheme extends Command
             <article class="max-w-none">
                 <h1 class="text-3xl font-bold mb-6">{{ $post->title }}</h1>
                 <div class="@if(!$isBuilder) falcon-rich-text @endif">
-                    {!! get_lazy_content($post->content) !!}
+                    {!! get_falcon_post_content($post->content) !!}
                 </div>
             </article>
         @endsection

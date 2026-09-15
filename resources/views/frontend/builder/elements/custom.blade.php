@@ -1,7 +1,7 @@
 @php
     // Generic auto-renderer for custom elements WITHOUT their own `template`.
     // Mirrors the builder canvas convention 1:1 (prefix relations + hover).
-    $r = lazy_custom_element_render($el, $customDef);
+    $r = falcon_custom_element_render($el, $customDef);
 @endphp
 
 {{-- Outer visibility/class/id handled by master wrapper in column.blade.php --}}

@@ -33,13 +33,13 @@
         @endif
 
         <div class="falcon-content-wrapper">
-            {!! get_lazy_content($post->content) !!}
+            {!! get_falcon_post_content($post->content) !!}
         </div>
 
         {{-- Categories, tags, share, related and comments at the bottom (outside the builder layout) --}}
         <div class="container-custom py-16">
             @php
-                $builderCatInfo = get_lazy_category_taxonomy($post->type);
+                $builderCatInfo = get_falcon_category_taxonomy($post->type);
                 $isProduct   = $post->type === 'product';
                 $tagRoute    = $isProduct ? 'frontend.product_tag' : 'frontend.tag';
                 $postTagsCt  = $isProduct ? ($post->productTags ?? collect()) : ($post->tags ?? collect());
@@ -92,7 +92,7 @@
         </div>
     @else
         <!-- Main Content Area -->
-        @php $sidebarContent = render_lazy_widgets('primary-sidebar'); @endphp
+        @php $sidebarContent = render_falcon_widgets('primary-sidebar'); @endphp
         <div class="py-16 bg-white">
             <div class="container-custom">
                 <div class="{{ $sidebarContent ? 'flex flex-col lg:flex-row gap-16 lb-with-sidebar' : '' }}">
@@ -117,7 +117,7 @@
                                 @endif
                                 @if($sCats)
                                 @php
-                                    $postCatInfo = get_lazy_category_taxonomy($post->type);
+                                    $postCatInfo = get_falcon_category_taxonomy($post->type);
                                     if ($postCatInfo['type'] === 'product') {
                                         $firstCat   = $post->productCategories->first() ?? null;
                                         $firstCatUrl = $firstCat ? route('frontend.product_category', $firstCat->getFullSlugPath()) : null;
@@ -153,7 +153,7 @@
 
                         <div class="falcon-content-wrapper">
                             @php
-                                $rawContent = do_lazy_shortcode(falcon_sanitize_html((string) $post->content));
+                                $rawContent = do_falcon_shortcode(falcon_sanitize_html((string) $post->content));
                                 $filteredContent = apply_falcon_filters('falcon_the_content', $rawContent, $post);
                             @endphp
 

@@ -12,7 +12,7 @@
 
      Deliberately NOT @once-guarded. On the front end this is emitted by
      frontend/builder/render.blade.php, and a page renders that more than once --
-     _lazy_layout_post_context() pre-renders the post's content to build
+     _falcon_layout_post_context() pre-renders the post's content to build
      $postContent/$postExcerpt, and that throwaway pass would consume a @once guard and
      leave the visible element carrying the classes with no keyframes behind them.
      render.blade.php only includes this when the layout actually animates something,

@@ -1266,7 +1266,7 @@ class PostController extends Controller
             $from = $to;
         }
 
-        $diff = lazy_revision_diff($entries[$from]['content'] ?? '', $entries[$to]['content'] ?? '');
+        $diff = falcon_revision_diff($entries[$from]['content'] ?? '', $entries[$to]['content'] ?? '');
 
         return view('falcon-cms::admin.posts.revisions', compact('post', 'entries', 'from', 'to', 'diff'));
     }

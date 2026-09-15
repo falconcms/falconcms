@@ -243,17 +243,17 @@ if (!function_exists('falcon_sanitize_html')) {
     }
 }
 
-if (!function_exists('lazy_sanitize_builder_json')) {
+if (!function_exists('falcon_sanitize_builder_json')) {
     /**
      * Recursively walks every node of a decoded builder layout array and applies
      * falcon_sanitize_html() to every string value. Numbers, booleans, and null are
      * passed through unchanged. Call this on the decoded `layout` array before
      * json_encode-ing it to the database.
      */
-    function lazy_sanitize_builder_json(mixed $node): mixed
+    function falcon_sanitize_builder_json(mixed $node): mixed
     {
         if (is_array($node)) {
-            return array_map('lazy_sanitize_builder_json', $node);
+            return array_map('falcon_sanitize_builder_json', $node);
         }
         if (is_string($node)) {
             return falcon_sanitize_html($node);
@@ -303,8 +303,8 @@ if (!function_exists('falcon_cms_installed_version')) {
     }
 }
 
-if (!function_exists('lazy_check_update')) {
-    function lazy_check_update(bool $force = false): array
+if (!function_exists('falcon_check_update')) {
+    function falcon_check_update(bool $force = false): array
     {
         $cacheKey = 'falcon_cms_update_check';
         if (!$force && cache()->has($cacheKey)) {
@@ -641,7 +641,7 @@ if (!function_exists('falcon_pro_check_update')) {
     /**
      * Check whether a newer falconcms/pro release is available. The Pro package lives in
      * a private repo (no Packagist), so the latest version is published as a small public
-     * manifest (config falcon-options.pro_version_url). Mirrors lazy_check_update().
+     * manifest (config falcon-options.pro_version_url). Mirrors falcon_check_update().
      *
      * @return array{installed:?string,latest:?string,has_update:bool,installed_pro:bool,url:?string,min_cms:?string,checked_at:string}
      */
@@ -1051,14 +1051,14 @@ if (!function_exists('cms_date')) {
     }
 }
 
-if (!function_exists('lazy_timezone_list')) {
+if (!function_exists('falcon_timezone_list')) {
     /**
      * All PHP timezones grouped by region, each labelled with its CURRENT UTC offset
      * (e.g. "(UTC+06:00) Asia/Dhaka"). Offsets are computed live, so DST/changes stay correct.
      *
      * @return array<string, array<string,string>> region => [identifier => label]
      */
-    function lazy_timezone_list(): array
+    function falcon_timezone_list(): array
     {
         $groups = [];
         foreach (timezone_identifiers_list() as $tz) {
@@ -1204,8 +1204,8 @@ if (!function_exists('get_post_custom_fields')) {
     }
 }
 
-if (!function_exists('get_lazy_content')) {
-    function get_lazy_content($content)
+if (!function_exists('get_falcon_post_content')) {
+    function get_falcon_post_content($content)
     {
         if (empty($content)) {
             return '';
@@ -1222,22 +1222,22 @@ if (!function_exists('get_lazy_content')) {
                 // Classic / non-builder HTML: strip <script>, on* handlers and
                 // javascript: URLs before output (builder layouts are already
                 // sanitised per-element by the builder renderer).
-                return do_lazy_shortcode(falcon_sanitize_html((string) $content));
+                return do_falcon_shortcode(falcon_sanitize_html((string) $content));
             }
 
             $data = ['layout' => $layout];
             // Expose current post context so dynamic sources (feature image, author, etc.) —
             // including dynamic backgrounds on containers/columns — resolve to the viewed post.
-            // Guard against recursion: _lazy_layout_post_context() computes $postContent by
-            // calling get_lazy_content($post->content) again, so only add the context at the
+            // Guard against recursion: _falcon_layout_post_context() computes $postContent by
+            // calling get_falcon_post_content($post->content) again, so only add the context at the
             // top level — otherwise a post whose content is rendered while it is the current
             // post (e.g. the Home page inside a footer section) loops forever.
             static $ctxDepth = 0;
             $cp = view()->getShared()['current_post'] ?? null;
-            if ($cp && $ctxDepth === 0 && function_exists('_lazy_layout_post_context')) {
+            if ($cp && $ctxDepth === 0 && function_exists('_falcon_layout_post_context')) {
                 $ctxDepth++;
                 try {
-                    $data += _lazy_layout_post_context($cp);
+                    $data += _falcon_layout_post_context($cp);
                 } finally {
                     $ctxDepth--;
                 }
@@ -1245,17 +1245,17 @@ if (!function_exists('get_lazy_content')) {
 
             $rendered = view('falcon-cms::frontend.builder.render', $data)->render();
 
-            return do_lazy_shortcode($rendered);
+            return do_falcon_shortcode($rendered);
         } catch (Exception $e) {
             Log::error('Falcon Builder Error: '.$e->getMessage());
 
-            return do_lazy_shortcode(falcon_sanitize_html((string) $content));
+            return do_falcon_shortcode(falcon_sanitize_html((string) $content));
         }
     }
 }
 
-if (!function_exists('_lazy_hex_to_rgba')) {
-    function _lazy_hex_to_rgba(string $hex, float $opacity = 1): string
+if (!function_exists('_falcon_hex_to_rgba')) {
+    function _falcon_hex_to_rgba(string $hex, float $opacity = 1): string
     {
         if (empty($hex) || $hex === 'transparent') {
             return 'transparent';
@@ -1273,8 +1273,8 @@ if (!function_exists('_lazy_hex_to_rgba')) {
     }
 }
 
-if (!function_exists('_lazy_parse_builder_layout')) {
-    function _lazy_parse_builder_layout(string $raw): ?array
+if (!function_exists('_falcon_parse_builder_layout')) {
+    function _falcon_parse_builder_layout(string $raw): ?array
     {
         try {
             if (BuilderShortcodeConverter::isBuilderShortcode($raw)) {
@@ -1289,8 +1289,8 @@ if (!function_exists('_lazy_parse_builder_layout')) {
     }
 }
 
-if (!function_exists('_lazy_render_layout')) {
-    function _lazy_render_layout(array $layout): string
+if (!function_exists('_falcon_render_layout')) {
+    function _falcon_render_layout(array $layout): string
     {
         $data = ['layout' => $layout];
 
@@ -1300,12 +1300,12 @@ if (!function_exists('_lazy_render_layout')) {
         // the post-card renderer provides.
         $cp = view()->getShared()['current_post'] ?? null;
         if ($cp) {
-            $data += _lazy_layout_post_context($cp);
+            $data += _falcon_layout_post_context($cp);
         }
 
         $rendered = view('falcon-cms::frontend.builder.render', $data)->render();
 
-        return do_lazy_shortcode($rendered);
+        return do_falcon_shortcode($rendered);
     }
 }
 
@@ -1326,9 +1326,9 @@ if (!function_exists('falcon_html_to_text')) {
     }
 }
 
-if (!function_exists('_lazy_layout_post_context')) {
+if (!function_exists('_falcon_layout_post_context')) {
     /** Post-context variables consumed by the Post elements (mirrors the card renderer). */
-    function _lazy_layout_post_context($post): array
+    function _falcon_layout_post_context($post): array
     {
         if (!$post) {
             return [];
@@ -1340,7 +1340,7 @@ if (!function_exists('_lazy_layout_post_context')) {
         }
 
         // Full, rendered content for the Content element (builder JSON → HTML, or classic).
-        $fullContent = function_exists('get_lazy_content') ? get_lazy_content($post->content ?? '') : (string) ($post->content ?? '');
+        $fullContent = function_exists('get_falcon_post_content') ? get_falcon_post_content($post->content ?? '') : (string) ($post->content ?? '');
         $plain = trim(strip_tags($fullContent));
         $excerpt = $post->excerpt ?? (mb_strlen($plain) > 160 ? mb_substr($plain, 0, 160).'…' : $plain);
 
@@ -1359,14 +1359,14 @@ if (!function_exists('_lazy_layout_post_context')) {
     }
 }
 
-if (!function_exists('_lazy_build_sticky_wrapper')) {
+if (!function_exists('_falcon_build_sticky_wrapper')) {
     /**
      * Build a sticky wrapper element around $content.
      * $settings is the settings array of the first sticky container/column.
      * $wrapperClass is the CSS class on the wrapper (e.g. falcon-builder-header).
      * $tag is the HTML tag (header|footer|div).
      */
-    function _lazy_build_sticky_wrapper(string $content, array $settings, string $wrapperClass, string $tag): string
+    function _falcon_build_sticky_wrapper(string $content, array $settings, string $wrapperClass, string $tag): string
     {
         $offset = (int) ($settings['stickyOffset'] ?? 0);
         $zIndex = (int) ($settings['stickyZIndex'] ?? 100);
@@ -1401,7 +1401,7 @@ if (!function_exists('_lazy_build_sticky_wrapper')) {
         $css .= $mediaCss;
 
         if (!empty($bgColor)) {
-            $rgba = _lazy_hex_to_rgba($bgColor, $bgOpacity);
+            $rgba = _falcon_hex_to_rgba($bgColor, $bgOpacity);
             $css .= ".{$wrapperClass}{transition:background-color 0.3s ease;}";
             $css .= ".lazy-sticky-active.{$wrapperClass}{background-color:{$rgba}!important;}";
         }
@@ -1414,7 +1414,7 @@ if (!function_exists('_lazy_build_sticky_wrapper')) {
     }
 }
 
-if (!function_exists('_lazy_builder_render_wrapper')) {
+if (!function_exists('_falcon_builder_render_wrapper')) {
     /**
      * Render header/footer builder content with correct sticky handling.
      *
@@ -1422,12 +1422,12 @@ if (!function_exists('_lazy_builder_render_wrapper')) {
      * inside the sticky wrapper. Containers before it render in a plain div so
      * they scroll away normally (e.g. a top-bar above a sticky nav).
      */
-    function _lazy_builder_render_wrapper(string $raw, string $tag, string $wrapperClass): string
+    function _falcon_builder_render_wrapper(string $raw, string $tag, string $wrapperClass): string
     {
-        $layout = _lazy_parse_builder_layout($raw);
+        $layout = _falcon_parse_builder_layout($raw);
 
         if (!is_array($layout) || empty($layout)) {
-            $content = get_lazy_content($raw);
+            $content = get_falcon_post_content($raw);
             $style = $tag === 'header' ? ' style="width:100%;"' : '';
 
             return "<{$tag} class=\"{$wrapperClass}\"{$style}>{$content}</{$tag}>";
@@ -1458,7 +1458,7 @@ if (!function_exists('_lazy_builder_render_wrapper')) {
             $style = $tag === 'header' ? ' style="width:100%;"' : '';
 
             return "<{$tag} class=\"{$wrapperClass}\"{$style}>"
-                 ._lazy_render_layout($layout)
+                 ._falcon_render_layout($layout)
                  ."</{$tag}>";
         }
 
@@ -1466,13 +1466,13 @@ if (!function_exists('_lazy_builder_render_wrapper')) {
         $html = '';
         if ($stickyIndex > 0) {
             $html .= '<div class="'.$wrapperClass.'-above" style="width:100%;">'
-                   ._lazy_render_layout(array_slice($layout, 0, $stickyIndex))
+                   ._falcon_render_layout(array_slice($layout, 0, $stickyIndex))
                    .'</div>';
         }
 
         // Render sticky containers inside the sticky wrapper
-        $stickyContent = _lazy_render_layout(array_slice($layout, $stickyIndex));
-        $html .= _lazy_build_sticky_wrapper($stickyContent, $stickySettings, $wrapperClass, $tag);
+        $stickyContent = _falcon_render_layout(array_slice($layout, $stickyIndex));
+        $html .= _falcon_build_sticky_wrapper($stickyContent, $stickySettings, $wrapperClass, $tag);
 
         return $html;
     }
@@ -1790,7 +1790,7 @@ if (!function_exists('get_falcon_header')) {
     {
         $header = falcon_layout_assigned_section('header', 'falcon_header');
         if ($header) {
-            return _lazy_builder_render_wrapper($header->content ?? '', 'header', 'falcon-builder-header');
+            return _falcon_builder_render_wrapper($header->content ?? '', 'header', 'falcon-builder-header');
         }
 
         return null;
@@ -1802,7 +1802,7 @@ if (!function_exists('get_falcon_footer')) {
     {
         $footer = falcon_layout_assigned_section('footer', 'falcon_footer');
         if ($footer) {
-            return _lazy_builder_render_wrapper($footer->content ?? '', 'footer', 'falcon-builder-footer');
+            return _falcon_builder_render_wrapper($footer->content ?? '', 'footer', 'falcon-builder-footer');
         }
 
         return null;
@@ -1814,7 +1814,7 @@ if (!function_exists('get_falcon_page_title_bar')) {
     {
         $ptb = falcon_layout_assigned_section('page_title_bar', 'falcon_ptb');
         if ($ptb) {
-            return _lazy_builder_render_wrapper($ptb->content ?? '', 'div', 'falcon-builder-ptb');
+            return _falcon_builder_render_wrapper($ptb->content ?? '', 'div', 'falcon-builder-ptb');
         }
 
         return null;
@@ -1826,7 +1826,7 @@ if (!function_exists('get_falcon_content')) {
     {
         $content = falcon_layout_assigned_section('content', 'falcon_content');
         if ($content) {
-            return _lazy_builder_render_wrapper($content->content ?? '', 'div', 'falcon-builder-content');
+            return _falcon_builder_render_wrapper($content->content ?? '', 'div', 'falcon-builder-content');
         }
 
         return null;
@@ -1895,10 +1895,10 @@ if (!function_exists('falcon_visit_page')) {
     }
 }
 
-if (!function_exists('the_lazy_content')) {
-    function the_lazy_content($content)
+if (!function_exists('the_falcon_post_content')) {
+    function the_falcon_post_content($content)
     {
-        echo get_lazy_content($content);
+        echo get_falcon_post_content($content);
     }
 }
 
@@ -2037,8 +2037,8 @@ if (!function_exists('get_falcon_posts')) {
     }
 }
 
-if (!function_exists('the_lazy_pagination')) {
-    function the_lazy_pagination($items, $view = null)
+if (!function_exists('the_falcon_pagination')) {
+    function the_falcon_pagination($items, $view = null)
     {
         if (!($items instanceof LengthAwarePaginator)) {
             return '';
@@ -2048,8 +2048,8 @@ if (!function_exists('the_lazy_pagination')) {
     }
 }
 
-if (!function_exists('the_lazy_loop')) {
-    function the_lazy_loop($args = [], $view = 'falcon-cms::frontend.loop')
+if (!function_exists('the_falcon_loop')) {
+    function the_falcon_loop($args = [], $view = 'falcon-cms::frontend.loop')
     {
         $posts = get_falcon_posts($args);
         echo view($view, ['posts' => $posts])->render();
@@ -2114,8 +2114,8 @@ if (!function_exists('get_falcon_excerpt')) {
     }
 }
 
-if (!function_exists('get_lazy_post')) {
-    function get_lazy_post($slugOrId)
+if (!function_exists('get_falcon_post')) {
+    function get_falcon_post($slugOrId)
     {
         if (is_numeric($slugOrId)) {
             return Post::find($slugOrId);
@@ -2125,12 +2125,12 @@ if (!function_exists('get_lazy_post')) {
     }
 }
 
-if (!function_exists('get_lazy_category_taxonomy')) {
+if (!function_exists('get_falcon_category_taxonomy')) {
     /**
      * Returns ['type' => 'native'|'product'|'acpt', 'taxonomy_slug' => string|null]
      * for the category taxonomy of a given post type.
      */
-    function get_lazy_category_taxonomy($postType)
+    function get_falcon_category_taxonomy($postType)
     {
         if (!$postType || $postType === 'post') {
             return ['type' => 'native', 'taxonomy_slug' => null];
@@ -2153,11 +2153,11 @@ if (!function_exists('get_lazy_category_taxonomy')) {
     }
 }
 
-if (!function_exists('get_lazy_categories')) {
-    function get_lazy_categories($taxonomy = 'category', $postType = null)
+if (!function_exists('get_falcon_categories')) {
+    function get_falcon_categories($taxonomy = 'category', $postType = null)
     {
         if ($taxonomy === 'category') {
-            $info = get_lazy_category_taxonomy($postType);
+            $info = get_falcon_category_taxonomy($postType);
             if ($info['type'] === 'native') {
                 return Category::withCount(['posts' => fn ($r) => $r->where('status', 'published')])
                     ->orderBy('name')->get();
@@ -2210,8 +2210,8 @@ if (!function_exists('forget_nav_menu_cache')) {
     }
 }
 
-if (!function_exists('get_lazy_menu')) {
-    function get_lazy_menu($slugOrLocation)
+if (!function_exists('get_falcon_menu')) {
+    function get_falcon_menu($slugOrLocation)
     {
         // Nav menus resolve on every frontend page (header + footer) and each fans
         // out into many queries (per-item post/term lookups + permalinks). Cache the
@@ -2225,10 +2225,10 @@ if (!function_exists('get_lazy_menu')) {
             $tree = Cache::remember(
                 $key,
                 now()->addMinutes(10),
-                fn () => _falcon_menu_items_to_array(_falcon_resolve_lazy_menu($slugOrLocation))
+                fn () => _falcon_menu_items_to_array(_falcon_resolve_menu($slugOrLocation))
             );
         } catch (Throwable $e) {
-            $tree = _falcon_menu_items_to_array(_falcon_resolve_lazy_menu($slugOrLocation));
+            $tree = _falcon_menu_items_to_array(_falcon_resolve_menu($slugOrLocation));
         }
 
         return _falcon_menu_array_to_objects($tree);
@@ -2280,8 +2280,8 @@ if (!function_exists('_falcon_menu_array_to_objects')) {
     }
 }
 
-if (!function_exists('_falcon_resolve_lazy_menu')) {
-    function _falcon_resolve_lazy_menu($slugOrLocation)
+if (!function_exists('_falcon_resolve_menu')) {
+    function _falcon_resolve_menu($slugOrLocation)
     {
         $query = NavigationMenu::query();
 
@@ -2385,8 +2385,8 @@ if (!function_exists('this_process_items')) {
     }
 }
 
-if (!function_exists('is_lazy_homepage')) {
-    function is_lazy_homepage($post)
+if (!function_exists('is_falcon_homepage')) {
+    function is_falcon_homepage($post)
     {
         if (!$post) {
             return false;
@@ -2437,7 +2437,7 @@ if (!function_exists('get_falcon_permalink')) {
         $postLang = is_array($post) ? ($post['lang_code'] ?? 'en') : ($post->lang_code ?? 'en');
 
         // Homepage logic
-        if (!is_array($post) && is_lazy_homepage($post)) {
+        if (!is_array($post) && is_falcon_homepage($post)) {
             $homePageId = get_cms_option('home_page_id');
             // ... (rest of homepage logic)
         }
@@ -2450,7 +2450,7 @@ if (!function_exists('get_falcon_permalink')) {
         $langPrefix = ($postLang === $defaultLang) ? '' : '/'.$postLang;
 
         // Homepage check again for safety
-        if (!is_array($post) && is_lazy_homepage($post)) {
+        if (!is_array($post) && is_falcon_homepage($post)) {
             if ($postLang === $defaultLang) {
                 return url('/');
             }
@@ -2704,8 +2704,8 @@ if (!function_exists('falcon_log_activity')) {
     }
 }
 
-if (!function_exists('render_lazy_widgets')) {
-    function render_lazy_widgets($area)
+if (!function_exists('render_falcon_widgets')) {
+    function render_falcon_widgets($area)
     {
         $currentLocale = app()->getLocale();
         $query = Widget::forArea($area);
@@ -2740,7 +2740,7 @@ if (!function_exists('render_lazy_widgets')) {
                 if ($widget->type === 'custom_html') {
                     $content = $widget->settings['content'] ?? '';
                     // Process Shortcodes if any system exists (placeholder for now)
-                    $content = do_lazy_shortcode($content);
+                    $content = do_falcon_shortcode($content);
 
                     $output .= '<div class="widget mb-12">';
                     if ($widget->title) {
@@ -2855,8 +2855,8 @@ if (!function_exists('falcon_safe_url')) {
     }
 }
 
-if (!function_exists('lazy_render_product_field')) {
-    function lazy_render_product_field(array $field): string
+if (!function_exists('falcon_render_product_field')) {
+    function falcon_render_product_field(array $field): string
     {
         $type = $field['type'] ?? 'text';
         $name = $field['name'] ?? '';
@@ -2975,7 +2975,7 @@ if (!function_exists('falcon_render_product_fields')) {
     function falcon_render_product_fields(array $fields): void
     {
         foreach ($fields as $field) {
-            echo lazy_render_product_field($field);
+            echo falcon_render_product_field($field);
         }
     }
 }
@@ -3543,12 +3543,12 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
     }
 }
 
-if (!function_exists('lazy_apply_custom_dynamic')) {
+if (!function_exists('falcon_apply_custom_dynamic')) {
     /**
      * Replace any `{key}_dynamic` setting with the resolved value into `{key}`,
      * so both custom templates and the generic renderer receive final values.
      */
-    function lazy_apply_custom_dynamic(array $settings, $post = null): array
+    function falcon_apply_custom_dynamic(array $settings, $post = null): array
     {
         $config = falcon_dynamic_config($settings);
         foreach ($settings as $k => $v) {
@@ -3562,21 +3562,21 @@ if (!function_exists('lazy_apply_custom_dynamic')) {
     }
 }
 
-if (!function_exists('lazy_resolve_tokens')) {
-    function lazy_resolve_tokens(string $value, $post = null): string
+if (!function_exists('falcon_resolve_tokens')) {
+    function falcon_resolve_tokens(string $value, $post = null): string
     {
         if (strpos($value, '{lazy:') === false) {
             return $value;
         }
 
         return preg_replace_callback('/\{lazy:([^}]+)\}/', function ($m) use ($post) {
-            return lazy_resolve_token($m[1], $post);
+            return falcon_resolve_token($m[1], $post);
         }, $value);
     }
 }
 
-if (!function_exists('lazy_resolve_token')) {
-    function lazy_resolve_token(string $token, $post = null): string
+if (!function_exists('falcon_resolve_token')) {
+    function falcon_resolve_token(string $token, $post = null): string
     {
         if ($post === null) {
             try {
@@ -3659,7 +3659,7 @@ if (!function_exists('falcon_resolve_tokens_in_settings')) {
     {
         foreach ($settings as $k => &$v) {
             if (is_string($v) && strpos($v, '{lazy:') !== false) {
-                $v = lazy_resolve_tokens($v, $post);
+                $v = falcon_resolve_tokens($v, $post);
             } elseif (is_array($v)) {
                 $v = falcon_resolve_tokens_in_settings($v, $post);
             }
@@ -3669,7 +3669,7 @@ if (!function_exists('falcon_resolve_tokens_in_settings')) {
     }
 }
 
-if (!function_exists('lazy_custom_element_render')) {
+if (!function_exists('falcon_custom_element_render')) {
     /**
      * Build the convention-based render data for a custom element — the PHP mirror of the
      * builder canvas (getCustomElementRender). Used by the generic frontend renderer so the
@@ -3678,7 +3678,7 @@ if (!function_exists('lazy_custom_element_render')) {
      * Returns: ['wrapperStyle' => string, 'wrapperHoverClass' => string,
      *           'hoverCss' => string, 'items' => [ {kind,key,value,style,hoverClass, url?,target?, rows?,subFields?} ]]
      */
-    function lazy_custom_element_render(array $el, array $customDef): array
+    function falcon_custom_element_render(array $el, array $customDef): array
     {
         $s = $el['settings'] ?? [];
         $elId = $el['id'] ?? uniqid('ce');
@@ -3940,12 +3940,12 @@ if (!function_exists('lazy_custom_element_render')) {
     }
 }
 
-if (!function_exists('lazy_revision_diff')) {
+if (!function_exists('falcon_revision_diff')) {
     /**
      * Produce an HTML line-level diff between two content versions (for the revisions compare page).
      * Builder JSON is converted to readable shortcodes first. Uses an LCS line diff — no external deps.
      */
-    function lazy_revision_diff(string $old, string $new): string
+    function falcon_revision_diff(string $old, string $new): string
     {
         $prep = function ($s) {
             $s = (string) $s;
@@ -4040,8 +4040,8 @@ if (!function_exists('remove_falcon_filter')) {
     }
 }
 
-if (!function_exists('lazy_lang_switcher')) {
-    function lazy_lang_switcher($showFlags = true)
+if (!function_exists('falcon_lang_switcher')) {
+    function falcon_lang_switcher($showFlags = true)
     {
         try {
             if (!Schema::hasTable('cms_languages')) {
@@ -4210,8 +4210,8 @@ if (!function_exists('falcon_lang_dropdown')) {
     }
 }
 
-if (!function_exists('lazy_mobile_lang_switcher')) {
-    function lazy_mobile_lang_switcher()
+if (!function_exists('falcon_mobile_lang_switcher')) {
+    function falcon_mobile_lang_switcher()
     {
         try {
             if (!Schema::hasTable('cms_languages')) {
@@ -4302,8 +4302,8 @@ if (!function_exists('the_falcon_lang_dropdown')) {
     }
 }
 
-if (!function_exists('lazy_search_form')) {
-    function lazy_search_form($placeholder = 'Search...')
+if (!function_exists('falcon_search_form')) {
+    function falcon_search_form($placeholder = 'Search...')
     {
         $url = route('frontend.search');
         $output = '<form action="'.$url.'" method="GET" class="relative lazy-search-form">';
@@ -4315,15 +4315,15 @@ if (!function_exists('lazy_search_form')) {
     }
 }
 
-if (!function_exists('the_lazy_search_form')) {
-    function the_lazy_search_form($placeholder = 'Search...')
+if (!function_exists('the_falcon_search_form')) {
+    function the_falcon_search_form($placeholder = 'Search...')
     {
-        echo lazy_search_form($placeholder);
+        echo falcon_search_form($placeholder);
     }
 }
 
-if (!function_exists('render_lazy_form')) {
-    function render_lazy_form($slug)
+if (!function_exists('render_falcon_form')) {
+    function render_falcon_form($slug)
     {
         try {
             $form = Form::where('slug', $slug)->where('status', true)->first();
@@ -4389,8 +4389,8 @@ if (!function_exists('falcon_do_shortcodes')) {
     }
 }
 
-if (!function_exists('do_lazy_shortcode')) {
-    function do_lazy_shortcode($content)
+if (!function_exists('do_falcon_shortcode')) {
+    function do_falcon_shortcode($content)
     {
         if (empty($content)) {
             return $content;
@@ -4401,13 +4401,13 @@ if (!function_exists('do_lazy_shortcode')) {
         $content = preg_replace_callback(
             '/\[falcon_form\s+slug=(?:&quot;|["\'])([^"\'&\[\]]+)(?:&quot;|["\'])\s*\]/',
             function ($matches) {
-                return render_lazy_form($matches[1]);
+                return render_falcon_form($matches[1]);
             },
             $content
         );
 
         $shortcodes = [
-            '[falcon_search]' => lazy_search_form(),
+            '[falcon_search]' => falcon_search_form(),
             '[falcon_lang_dropdown]' => falcon_lang_dropdown(),
         ];
         $content = str_replace(array_keys($shortcodes), array_values($shortcodes), $content);
@@ -4463,8 +4463,8 @@ if (!function_exists('falcon_translate')) {
     }
 }
 
-if (!function_exists('get_lazy_shop_url')) {
-    function get_lazy_shop_url()
+if (!function_exists('get_falcon_shop_url')) {
+    function get_falcon_shop_url()
     {
         $pageId = get_shop_option('shop_shop_page_id');
         if ($pageId) {
@@ -4493,8 +4493,8 @@ if (!function_exists('get_falcon_cart_url')) {
     }
 }
 
-if (!function_exists('get_lazy_checkout_url')) {
-    function get_lazy_checkout_url()
+if (!function_exists('get_falcon_checkout_url')) {
+    function get_falcon_checkout_url()
     {
         $pageId = get_shop_option('shop_checkout_page_id');
         if ($pageId) {
@@ -6885,7 +6885,7 @@ if (!function_exists('falcon_shipping_carriers')) {
      * Shipping carriers for order tracking, grouped (Local / International).
      * Each value is a tracking-URL template with a {tracking} placeholder ('' = use universal fallback).
      */
-    function lazy_shipping_carriers(): array
+    function falcon_shipping_carriers(): array
     {
         return [
             'Local (Bangladesh)' => [
@@ -6943,8 +6943,8 @@ if (!function_exists('falcon_wishlist_product_ids')) {
     }
 }
 
-if (!function_exists('lazy_in_wishlist')) {
-    function lazy_in_wishlist($productId): bool
+if (!function_exists('falcon_in_wishlist')) {
+    function falcon_in_wishlist($productId): bool
     {
         return in_array((int) $productId, falcon_wishlist_product_ids(), true);
     }
@@ -7386,15 +7386,15 @@ if (!function_exists('get_falcon_image_url')) {
 
 }
 
-if (!function_exists('lazy_is_special_menu_item')) {
+if (!function_exists('falcon_is_special_menu_item')) {
     /** True when a menu item is one of the Lazy Special Menu widgets. */
-    function lazy_is_special_menu_item($type): bool
+    function falcon_is_special_menu_item($type): bool
     {
         return in_array($type, ['special_cart', 'special_search', 'special_wishlist'], true);
     }
 }
 
-if (!function_exists('lazy_render_special_menu_item')) {
+if (!function_exists('falcon_render_special_menu_item')) {
     /**
      * Render a Lazy Special Menu widget (Cart / Search / Wishlist) inside a navigation menu.
      * Returns a full <li>…</li> string. Reuses existing helpers + the global mini-cart drawer.
@@ -7402,7 +7402,7 @@ if (!function_exists('lazy_render_special_menu_item')) {
      * @param  object  $item  navigation_menu_items row (stdClass)
      * @param  string  $style  inline link style inherited from the menu element
      */
-    function lazy_render_special_menu_item($item, string $style = '', bool $isMobile = false, $elId = ''): string
+    function falcon_render_special_menu_item($item, string $style = '', bool $isMobile = false, $elId = ''): string
     {
         $type = $item->type ?? '';
         $label = $item->title ?? '';
@@ -7541,7 +7541,7 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
     return $elements;
 });
 
-if (!function_exists('get_lazy_builder_fonts')) {
+if (!function_exists('get_falcon_builder_fonts')) {
     /**
      * Every font family a builder layout uses, so the page can load them.
      *
@@ -7554,7 +7554,7 @@ if (!function_exists('get_lazy_builder_fonts')) {
      * The walk is fully recursive over ALL nested arrays (not just columns/elements), so a
      * layout stored inside a setting — a post-card or mega-menu layout — is covered too.
      */
-    function get_lazy_builder_fonts($layout, &$fonts = [])
+    function get_falcon_builder_fonts($layout, &$fonts = [])
     {
         if (!is_array($layout)) {
             return array_values(array_unique($fonts));
@@ -7562,7 +7562,7 @@ if (!function_exists('get_lazy_builder_fonts')) {
 
         foreach ($layout as $key => $value) {
             if (is_array($value)) {
-                get_lazy_builder_fonts($value, $fonts);
+                get_falcon_builder_fonts($value, $fonts);
 
                 continue;
             }
@@ -8017,8 +8017,8 @@ if (!function_exists('falcon_social_platforms')) {
 
 // Returns a readable foreground (#111111 / #ffffff) for a given background hex — used so
 // brand-coloured boxes keep their icon legible (e.g. white icon on Snapchat yellow → dark).
-if (!function_exists('lazy_contrast_color')) {
-    function lazy_contrast_color($hex): string
+if (!function_exists('falcon_contrast_color')) {
+    function falcon_contrast_color($hex): string
     {
         $hex = ltrim((string) $hex, '#');
         if (strlen($hex) === 3) {

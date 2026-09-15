@@ -258,7 +258,7 @@ class DashboardController extends Controller
         // Refresh update cache silently (only when expired, max once per 6h)
         if (!cache()->has('falcon_cms_update_check')) {
             try {
-                lazy_check_update();
+                falcon_check_update();
             } catch (\Exception $e) {
             }
         }
@@ -295,7 +295,7 @@ class DashboardController extends Controller
 
     public function updateCheck()
     {
-        $update = lazy_check_update(force: true);
+        $update = falcon_check_update(force: true);
         // Pro update status (private package → checked via a public version manifest).
         $proUpdate = function_exists('falcon_pro_check_update') ? falcon_pro_check_update(true) : ['installed_pro' => false];
         // Features are perpetual; the Pro UPDATE button is gated by the licence's update
@@ -334,7 +334,7 @@ class DashboardController extends Controller
         // and would never reach 2.x (the update would silently do nothing).
         $composerBin = $this->findComposer();
         if ($composerBin) {
-            $check = function_exists('lazy_check_update') ? lazy_check_update(true) : [];
+            $check = function_exists('falcon_check_update') ? falcon_check_update(true) : [];
             $latest = $check['latest'] ?? null;
 
             if ($latest && preg_match('/^\d+\.\d+\.\d+$/', $latest)) {

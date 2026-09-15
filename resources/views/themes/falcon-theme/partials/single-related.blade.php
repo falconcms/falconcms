@@ -2,7 +2,7 @@
 @if(get_cms_option('theme_single_show_related', '1') === '1')
 @php
     try {
-        $relCatInfo = get_lazy_category_taxonomy($post->type);
+        $relCatInfo = get_falcon_category_taxonomy($post->type);
         $relQ = \FalconCms\Core\Models\Post::where('type', $post->type)
             ->where('status', 'published')
             ->where('id', '!=', $post->id)

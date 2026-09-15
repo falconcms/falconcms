@@ -57,7 +57,7 @@
 </script>
 
 {{-- Extra tab → Text Animation. Emitted here, next to the entrance-animation CSS above,
-     rather than from the elements themselves: _lazy_layout_post_context() pre-renders a
+     rather than from the elements themselves: _falcon_layout_post_context() pre-renders a
      post's content to build $postContent/$postExcerpt, and that throwaway pass would eat an
      @once guard placed further in, leaving the visible element with the classes but no
      keyframes. Gated on the layout so a page that animates nothing carries none of it. --}}

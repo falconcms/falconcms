@@ -215,7 +215,7 @@
                 </div>
 
                 {{-- Categories --}}
-                @php $categories = get_lazy_categories(); @endphp
+                @php $categories = get_falcon_categories(); @endphp
                 @if($categories->count() > 0)
                 <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                     <h4 class="text-[13px] font-black uppercase tracking-widest text-heading mb-4">Categories</h4>

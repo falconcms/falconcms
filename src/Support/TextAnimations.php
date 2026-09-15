@@ -212,7 +212,7 @@ class TextAnimations
      *
      * The stylesheet is emitted from frontend/builder/render.blade.php rather than
      * from the elements themselves, and cannot be @once-guarded:
-     * _lazy_layout_post_context() pre-renders a post's content to build
+     * _falcon_layout_post_context() pre-renders a post's content to build
      * $postContent/$postExcerpt, and that throwaway pass would otherwise consume the
      * guard and leave the visible render with the classes but no keyframes. So the
      * emitter asks this instead — the CSS ships only for a layout that uses it.

@@ -168,7 +168,7 @@
                             <label class="block text-[11px] text-[#646970] mb-1">Carrier</label>
                             <select name="tracking_carrier" id="trk-carrier" class="wp-input w-full mb-3 text-[13px]">
                                 <option value="">— Select carrier —</option>
-                                @foreach(lazy_shipping_carriers() as $group => $carriers)
+                                @foreach(falcon_shipping_carriers() as $group => $carriers)
                                     <optgroup label="{{ $group }}">
                                         @foreach($carriers as $name => $tpl)
                                             <option value="{{ $name }}" data-url="{{ $tpl }}" {{ $order->tracking_carrier === $name ? 'selected' : '' }}>{{ $name }}</option>

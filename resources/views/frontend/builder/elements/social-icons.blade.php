@@ -37,7 +37,7 @@
     // Resolve the base fg/bg for a given platform brand colour.
     $resolve = function(string $brand) use ($colorType, $boxed, $cIcon, $cBg) {
         if ($colorType === 'brand') {
-            return $boxed ? ['fg' => lazy_contrast_color($brand), 'bg' => $brand]
+            return $boxed ? ['fg' => falcon_contrast_color($brand), 'bg' => $brand]
                           : ['fg' => $brand, 'bg' => 'transparent'];
         }
         if ($colorType === 'custom') {

@@ -229,7 +229,7 @@
                     @unless($post->is_in_stock ?? true)
                         @include('falcon-cms::themes.falcon-theme.partials.wishlist-button', ['product' => $post])
                     @endunless
-                    <span class="text-[13px] text-gray-500">{{ lazy_in_wishlist($post->id) ? 'Saved to your wishlist' : 'Add to your wishlist to buy later' }}</span>
+                    <span class="text-[13px] text-gray-500">{{ falcon_in_wishlist($post->id) ? 'Saved to your wishlist' : 'Add to your wishlist to buy later' }}</span>
                 </div>
 
                 <?php do_falcon_action('falcon_simple_before_product_meta', $post); ?>

@@ -1,4 +1,4 @@
-@php $wlPid = $product->id ?? ($productId ?? 0); $wlActive = lazy_in_wishlist($wlPid); @endphp
+@php $wlPid = $product->id ?? ($productId ?? 0); $wlActive = falcon_in_wishlist($wlPid); @endphp
 <button type="button"
         class="lazy-wishlist-btn{{ $wlActive ? ' is-active' : '' }}"
         data-product-id="{{ $wlPid }}"
