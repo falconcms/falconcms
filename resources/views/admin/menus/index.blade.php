@@ -624,12 +624,14 @@
         miLastIconQuery = null;
         renderIconGrid('');
 
-        // Mega menu section: only show for top-level (depth=0) items
+        // Mega menu section: a top-level item that actually has sub-items. Either kind of mega
+        // menu is a way of presenting those sub-items, so an item with none is offered neither
+        // and its options read exactly like a sub-item's.
         const mmSection = document.getElementById('mi-mega-menu-section');
         if (mmSection) {
-            const isTopLevel = (item.depth || 0) === 0;
-            mmSection.style.display = isTopLevel ? '' : 'none';
-            if (isTopLevel) miRenderMegaSection(item);
+            const show = (item.depth || 0) === 0 && miItemHasChildren(item);
+            mmSection.style.display = show ? '' : 'none';
+            if (show) miRenderMegaSection(item);
         }
 
         document.getElementById('mi-options-modal').style.display = 'flex';
@@ -638,21 +640,23 @@
     /* ──────────────────────────────────
        Which mega menu this item gets.
 
-       The theme header can build a mega menu out of an item's own sub-items, but only when
-       the Customizer switch is on and only if the item HAS sub-items — a panel with nothing
-       to put in its columns is not an option worth offering. Whenever that is not the case
-       the item falls back to the Layout-builder design picker, which is what this screen has
-       always shown. Exactly one of the two is ever visible.
+       The caller has already established that this is a top-level item with sub-items, which
+       is the only shape either kind applies to. All that is left is which one: the Customizer
+       switch decides, and exactly one of the two is ever visible. On, the theme header lays
+       the sub-items out itself; off, the item points at a Layout-builder design, which is what
+       this screen has always shown.
     ────────────────────────────────── */
     const NATIVE_MEGA_ON = @json($nativeMega);
 
+    /* The list is flat with a depth on each row, so an item has children when the row after it
+       is deeper than it is. */
     function miItemHasChildren(item) {
         const i = items.indexOf(item);
         return i > -1 && !!items[i + 1] && (items[i + 1].depth || 0) > (item.depth || 0);
     }
 
     function miRenderMegaSection(item) {
-        const useNative = NATIVE_MEGA_ON && miItemHasChildren(item);
+        const useNative = NATIVE_MEGA_ON;
         const layoutBlock = document.getElementById('mi-mega-layout-block');
         const nativeBlock = document.getElementById('mi-mega-native-block');
         if (layoutBlock) layoutBlock.style.display = useNative ? 'none' : '';

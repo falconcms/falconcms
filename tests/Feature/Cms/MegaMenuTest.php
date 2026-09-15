@@ -310,6 +310,29 @@ class MegaMenuTest extends TestCase
         $this->assertTrue((bool) $saved->mega_enabled);
     }
 
+    // ── which mega menu the Menus screen offers ──────────────────────────────────
+
+    public function test_the_mega_section_is_offered_only_to_a_top_level_item_with_sub_items(): void
+    {
+        // Either kind of mega menu is a way of presenting an item's sub-items, so an item with
+        // none is offered neither — its options read exactly like a sub-item's. Which of the
+        // two is then shown is the Customizer switch's decision alone.
+        $source = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/menus/index.blade.php'
+        );
+
+        $this->assertStringContainsString(
+            'const show = (item.depth || 0) === 0 && miItemHasChildren(item);',
+            $source,
+            'the mega section is no longer gated on being top-level AND having sub-items'
+        );
+        $this->assertStringContainsString(
+            'const useNative = NATIVE_MEGA_ON;',
+            $source,
+            'the choice between the two kinds is no longer the Customizer switch alone'
+        );
+    }
+
     // ── the Customizer controls ──────────────────────────────────────────────────
 
     public function test_the_customizer_offers_the_switch_and_its_options(): void
