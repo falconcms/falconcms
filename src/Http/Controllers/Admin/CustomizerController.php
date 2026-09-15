@@ -542,18 +542,26 @@ class CustomizerController extends Controller
                     'theme_mega_menu_item_border' => [
                         'type' => 'select',
                         'label' => 'Item Border',
-                        'desc' => 'A rule under each link, a full table grid, or neither.',
+                        'desc' => 'How the panel is divided up. The first six draw in the Item Border Color below; '
+                            .'the two hover styles draw in the Mega Menu Link Hover Color, so they are visible '
+                            .'without setting anything else.',
                         'depends' => 'theme_mega_menu_enabled',
                         'default' => 'none',
                         'options' => [
                             'none' => 'None',
                             'bottom' => 'Line under each item',
+                            'dashed' => 'Dashed line under each item',
+                            'heading' => 'Line under each column heading',
+                            'columns' => 'Line between columns',
                             'grid' => 'Table grid',
+                            'hover_underline' => 'Underline on hover',
+                            'hover_accent' => 'Accent bar on hover',
                         ],
                     ],
                     'theme_mega_menu_item_border_color' => [
                         'type' => 'color',
                         'label' => 'Item Border Color',
+                        'desc' => 'Used by every style except the two hover ones, which follow the link hover colour.',
                         'depends' => 'theme_mega_menu_enabled',
                         'default' => '#e8e8e8',
                     ],

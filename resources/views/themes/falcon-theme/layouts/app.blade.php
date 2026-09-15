@@ -402,7 +402,16 @@
                 color: {{ get_cms_option('theme_mega_menu_link_hover_color', '#0091ea') }};
             }
 
-            @php $megaItemBorder = get_cms_option('theme_mega_menu_item_border', 'none'); @endphp
+            {{-- Item Border. Every choice in the Customizer's dropdown has a branch here, and
+                 every branch draws something on a default menu — a style that quietly does
+                 nothing reads as a broken setting. Structural lines take the Item Border Color;
+                 the two hover reveals take the link hover colour, which is already a deliberate,
+                 strong colour, so they are visible without configuring anything. --}}
+            @php
+                $megaItemBorder = get_cms_option('theme_mega_menu_item_border', 'none');
+                $megaBorderColor = get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8');
+                $megaAccentColor = get_cms_option('theme_mega_menu_link_hover_color', '#0091ea');
+            @endphp
             @if($megaItemBorder === 'bottom')
             /* Under EVERY link, including the last one in a column. Exempting the last was
                tidier typography and a bug: a sub-item with no children of its own is a column
@@ -410,8 +419,43 @@
                list of sub-items — every link was the last one and the setting drew nothing at
                all. The control says "under each item"; it now is. */
             .falcon-mega-panel .falcon-mega-link {
-                border-bottom: 1px solid {{ get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8') }};
+                border-bottom: 1px solid {{ $megaBorderColor }};
             }
+
+            @elseif($megaItemBorder === 'dashed')
+            /* The same rule, drawn softer. A dashed line reads as a separator rather than as
+               structure, which suits a panel that is mostly whitespace. */
+            .falcon-mega-panel .falcon-mega-link {
+                border-bottom: 1px dashed {{ $megaBorderColor }};
+            }
+
+            @elseif($megaItemBorder === 'heading')
+            /* A rule under each column heading and nothing else — the classic newspaper mega
+               menu. The second selector is what keeps it honest: a sub-item with no children
+               of its own has no heading to underline, so in a flat menu this would otherwise
+               draw nothing at all. Such a column has its list as its FIRST child, so its
+               opening link takes the rule instead. */
+            .falcon-mega-panel .falcon-mega-heading,
+            .falcon-mega-panel .falcon-mega-col > .falcon-mega-list:first-child > li:first-child > .falcon-mega-link {
+                padding-bottom: 9px;
+                border-bottom: 1px solid {{ $megaBorderColor }};
+            }
+
+            @elseif($megaItemBorder === 'columns')
+            /* Vertical rules only. The gap becomes padding on either side of the rule so the
+               text keeps its distance from it; a panel whose items wrap onto a second row will
+               show a rule at the start of that row, which is the one case this cannot see. */
+            .falcon-mega-panel .falcon-mega-grid { column-gap: 0; }
+            .falcon-mega-panel .falcon-mega-col {
+                padding-left: 20px;
+                padding-right: 20px;
+                border-left: 1px solid {{ $megaBorderColor }};
+            }
+            .falcon-mega-panel .falcon-mega-col:first-child {
+                padding-left: 0;
+                border-left: 0;
+            }
+
             @elseif(in_array($megaItemBorder, ['grid', 'all'], true))
             /* Table grid.
                ('all' is the name this setting had while it drew a separate rounded box per
@@ -426,7 +470,6 @@
                column's own bottom edge already closes it — unlike the "line under each item"
                setting, where nothing else would draw that line and exempting it meant a
                one-link column showed nothing at all. */
-            @php $megaBorderColor = get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8'); @endphp
             .falcon-mega-panel .falcon-mega-grid {
                 gap: 0;
                 border-top: 1px solid {{ $megaBorderColor }};
@@ -448,6 +491,29 @@
             }
             .falcon-mega-panel .falcon-mega-list > li:last-child > .falcon-mega-link {
                 border-bottom: 0;
+            }
+
+            @elseif($megaItemBorder === 'hover_underline')
+            /* Drawn transparent at rest rather than added on hover, so the line appearing does
+               not nudge everything under it down by a pixel. */
+            .falcon-mega-panel .falcon-mega-link {
+                border-bottom: 1px solid transparent;
+                transition: color .15s ease, border-color .15s ease;
+            }
+            .falcon-mega-panel .falcon-mega-link:hover {
+                border-bottom-color: {{ $megaAccentColor }};
+            }
+
+            @elseif($megaItemBorder === 'hover_accent')
+            /* A bar that fills in beside the link being pointed at. Reserved the same way, and
+               the indent is permanent so the text does not jump sideways either. */
+            .falcon-mega-panel .falcon-mega-link {
+                padding-left: 12px;
+                border-left: 2px solid transparent;
+                transition: color .15s ease, border-color .15s ease;
+            }
+            .falcon-mega-panel .falcon-mega-link:hover {
+                border-left-color: {{ $megaAccentColor }};
             }
             @endif
         }

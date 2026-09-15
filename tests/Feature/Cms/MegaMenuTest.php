@@ -241,18 +241,81 @@ class MegaMenuTest extends TestCase
         );
     }
 
-    public function test_the_item_border_choices_are_none_a_line_or_a_table_grid(): void
+    /** @return array<string, string> */
+    private function itemBorderOptions(): array
     {
         $sections = new ReflectionMethod(CustomizerController::class, 'sections');
         $sections->setAccessible(true);
-        $options = $sections->invoke(app(CustomizerController::class))['menu']['fields']['theme_mega_menu_item_border']['options'];
 
-        $this->assertSame(['none', 'bottom', 'grid'], array_keys($options));
+        return $sections->invoke(app(CustomizerController::class))['menu']['fields']['theme_mega_menu_item_border']['options'];
+    }
+
+    public function test_the_item_border_offers_a_choice_of_styles(): void
+    {
+        $options = $this->itemBorderOptions();
+
+        $this->assertSame([
+            'none', 'bottom', 'dashed', 'heading', 'columns', 'grid', 'hover_underline', 'hover_accent',
+        ], array_keys($options));
         $this->assertSame('Table grid', $options['grid']);
+        $this->assertSame('None', $options['none'], 'the do-nothing choice must stay first and plainly named');
 
         // The value this setting used to carry is still understood by the layout, so a panel
         // saved before the rename does not silently lose its borders.
         $this->assertStringContainsString("['grid', 'all']", $this->layoutSource());
+    }
+
+    public function test_every_border_style_actually_draws_something(): void
+    {
+        // The whole point of this test is the failure this setting has already had once: a
+        // choice that is offered in the dropdown, writes no rule the browser can act on, and so
+        // reads as a broken control. Every option except None must reach a branch that draws.
+        $source = $this->layoutSource();
+        $start = strpos($source, "@if(\$megaItemBorder === 'bottom')");
+        $this->assertNotFalse($start, 'the item-border chain is gone');
+        $chain = substr($source, $start, strpos($source, '@endif', $start) - $start);
+
+        foreach (array_keys($this->itemBorderOptions()) as $key) {
+            if ($key === 'none') {
+                $this->assertStringNotContainsString("'none'", $chain, 'None must draw nothing at all');
+
+                continue;
+            }
+
+            // The branch this option selects, up to the next one.
+            $matched = preg_match(
+                '/@(?:else)?if\([^)]*\''.preg_quote($key, '/').'\'[^)]*\)((?:(?!@elseif)(?!@endif).)*)/s',
+                $chain,
+                $branch
+            );
+
+            $this->assertSame(1, $matched, "\"{$key}\" is offered in the dropdown but the layout has no branch for it");
+            $this->assertStringContainsString('border', $branch[1],
+                "\"{$key}\" has a branch but it writes no border, so choosing it would appear to do nothing");
+        }
+    }
+
+    public function test_the_hover_styles_draw_in_a_colour_that_is_visible_by_default(): void
+    {
+        // They follow the link hover colour rather than the Item Border Color. A hover reveal in
+        // the default border grey would be all but invisible — which is exactly how the last
+        // silent border bug presented.
+        $source = $this->layoutSource();
+
+        foreach (['hover_underline', 'hover_accent'] as $key) {
+            preg_match(
+                '/@elseif\(\$megaItemBorder === \''.$key.'\'\)((?:(?!@elseif)(?!@endif).)*)/s',
+                $source,
+                $branch
+            );
+            $this->assertStringContainsString('$megaAccentColor', $branch[1] ?? '',
+                "\"{$key}\" does not use the hover colour");
+        }
+
+        $this->assertStringContainsString(
+            "\$megaAccentColor = get_cms_option('theme_mega_menu_link_hover_color'",
+            $source
+        );
     }
 
     public function test_a_sub_item_without_children_is_still_a_link_the_border_can_reach(): void
