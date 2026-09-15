@@ -39,19 +39,64 @@ class FrontendController extends Controller
             return $packageView;
         }
 
-        // 3. Fallback to Lazy Theme (Package)
+        // 3. A child theme's own folder holds only what it overrides; everything else is the
+        //    parent's. Without this step a child fell straight through to falcon-theme, so
+        //    activating one silently threw away the parent it was made from.
+        $parentTheme = $this->parentThemeOf($activeTheme);
+        if ($parentTheme) {
+            $parentAppView = "themes.{$parentTheme}.{$view}";
+            if (view()->exists($parentAppView)) {
+                return $parentAppView;
+            }
+            $parentPackageView = "falcon-cms::themes.{$parentTheme}.{$view}";
+            if (view()->exists($parentPackageView)) {
+                return $parentPackageView;
+            }
+        }
+
+        // 4. Fallback to Lazy Theme (Package)
         $falconView = "falcon-cms::themes.falcon-theme.{$view}";
         if (view()->exists($falconView)) {
             return $falconView;
         }
 
-        // 4. If still not found and we have a fallback, try resolving the fallback
+        // 5. If still not found and we have a fallback, try resolving the fallback
         if ($fallback && $fallback !== $view) {
             return $this->resolveThemeView($fallback);
         }
 
         // Final desperation: Return the falconView name anyway, but it might still fail if even the base doesn't exist
         return $falconView;
+    }
+
+    /**
+     * The parent named in a theme's theme.json, if it declares one.
+     *
+     * Read from the app copy first and the packaged copy second, the same order the service
+     * provider uses when it loads the theme.
+     */
+    protected function parentThemeOf(string $theme): ?string
+    {
+        static $cache = [];
+        if (array_key_exists($theme, $cache)) {
+            return $cache[$theme];
+        }
+
+        $candidates = [
+            resource_path("views/themes/{$theme}/theme.json"),
+            __DIR__."/../../../resources/views/themes/{$theme}/theme.json",
+        ];
+        foreach ($candidates as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+            $json = json_decode((string) file_get_contents($path), true);
+            $parent = is_array($json) ? ($json['parent'] ?? null) : null;
+
+            return $cache[$theme] = ($parent && $parent !== $theme) ? (string) $parent : null;
+        }
+
+        return $cache[$theme] = null;
     }
 
     public function index($locale = null)
