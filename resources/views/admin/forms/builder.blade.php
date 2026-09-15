@@ -62,9 +62,18 @@
         {{-- CENTER: Drop Zone --}}
         <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
             <div class="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 shrink-0">
-                <div>
-                    <h1 class="text-base font-black text-gray-900">{{ $form->title }}</h1>
-                    <p class="text-xs text-gray-400">Drag fields to reorder · Click to edit</p>
+                {{-- The name was set once, on the create screen, and there was no way back to it.
+                     It is the heading itself now: click it and type. It saves with everything
+                     else, so renaming is not a separate errand. --}}
+                <div class="min-w-0">
+                    <label for="form-title" class="sr-only">Form name</label>
+                    <div class="group flex items-center gap-1.5">
+                        <input type="text" id="form-title" value="{{ $form->title }}" maxlength="255" required
+                               placeholder="Untitled form" aria-describedby="form-title-hint"
+                               class="text-base font-black text-gray-900 bg-transparent border border-transparent rounded-md -ml-1.5 px-1.5 py-0.5 w-[26ch] max-w-full hover:border-gray-200 hover:bg-gray-50 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none transition-colors">
+                        <span class="material-symbols-outlined text-[15px] text-gray-300 group-hover:text-gray-400 pointer-events-none">edit</span>
+                    </div>
+                    <p id="form-title-hint" class="text-xs text-gray-400 px-0.5">Click the name to rename · Drag fields to reorder</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <a href="{{ route('admin.forms.index') }}" class="text-sm text-gray-500 hover:text-gray-700">← All Forms</a>
@@ -235,6 +244,7 @@
                             <span class="material-symbols-outlined text-[15px]">content_copy</span>
                         </button>
                     </div>
+                    <p class="text-[11px] text-gray-400 mt-1.5">Stays the same when you rename the form, so the pages it is already on keep working.</p>
                 </div>
             </div>
         </div>
@@ -579,6 +589,19 @@
     async function saveForm() {
         syncFieldOrder();
         const btn = document.getElementById('save-btn');
+        const titleEl = document.getElementById('form-title');
+        const title = titleEl.value.trim();
+
+        // A form with no name is a row you cannot tell apart in the list, so the rename has
+        // to be refused rather than saved empty.
+        if (!title) {
+            titleEl.classList.add('border-red-400', 'bg-red-50');
+            titleEl.focus();
+            window.showToast?.('Give the form a name before saving.', 'error');
+            return;
+        }
+        titleEl.classList.remove('border-red-400', 'bg-red-50');
+
         const orig = btn.innerHTML;
         btn.textContent = 'Saving...';
         btn.disabled = true;
@@ -609,8 +632,11 @@
         await fetch('{{ route("admin.forms.save", $form->id) }}', {
             method: 'POST',
             headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN':'{{ csrf_token() }}' },
-            body: JSON.stringify({ fields, settings })
+            body: JSON.stringify({ title, fields, settings })
         });
+
+        // The tab and the browser history entry carry the old name until they are told.
+        document.title = document.title.replace(/^Form Builder - .*$/, 'Form Builder - ' + title);
 
         btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span> Saved!';
         btn.classList.replace('bg-blue-600','bg-green-600');

@@ -31,7 +31,10 @@ class FormController extends Controller
 
         $form = Form::create([
             'title' => $request->title,
-            'slug' => Str::slug($request->title),
+            // Deduplicated, the way an import already does it. Two forms both called "Contact
+            // Form" used to get the same slug, and since the slug is what `[falcon_form slug="…"]`
+            // resolves, one of the two would render the other one's fields.
+            'slug' => $this->uniqueFormSlug($request->title),
             'status' => true,
             'lang_code' => app()->getLocale(),
         ]);
@@ -49,12 +52,38 @@ class FormController extends Controller
     public function saveBuilder(Request $request, $id)
     {
         $form = Form::findOrFail($id);
-        $form->update([
+
+        $request->validate(['title' => 'sometimes|required|string|max:255']);
+
+        $changes = [
             'fields' => $request->input('fields'),
             'settings' => $request->input('settings'),
-        ]);
+        ];
 
-        return response()->json(['success' => true, 'message' => 'Form saved successfully.']);
+        // The name was fixed at creation and there was no way to change it. It is editable in
+        // the builder header now, and it saves with everything else.
+        //
+        // The slug deliberately does NOT follow it. The slug is the form's address — it is what
+        // every `[falcon_form slug="…"]` already embedded in a page points at — so renaming
+        // "Contact Form" to "Get in Touch" would otherwise silently empty every page it is on.
+        $title = trim((string) $request->input('title', ''));
+        $renamed = $request->has('title') && $title !== '' && $title !== $form->title;
+        if ($renamed) {
+            $was = $form->title;
+            $changes['title'] = $title;
+        }
+
+        $form->update($changes);
+
+        if ($renamed && function_exists('falcon_log_activity')) {
+            falcon_log_activity('updated', "Renamed form: {$was} → {$title}", $form);
+        }
+
+        return response()->json([
+            'success' => true,
+            'title' => $form->title,
+            'message' => 'Form saved successfully.',
+        ]);
     }
 
     /** Download a form (structure + settings, no submissions) as a portable .json file. */
