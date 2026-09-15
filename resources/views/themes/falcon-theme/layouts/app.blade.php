@@ -41,11 +41,16 @@
         $bodyTypo = json_decode(get_cms_option('theme_typography_body'), true) ?: ['family' => 'Inter', 'variant' => '400', 'size' => '15px'];
         $h1Typo = json_decode(get_cms_option('theme_typography_h1'), true);
         $navTypo = json_decode(get_cms_option('theme_typography_nav'), true);
-        
+        $megaMenuOn = get_cms_option('theme_mega_menu_enabled', '0') === '1';
+        $megaTypo = $megaMenuOn ? (json_decode(get_cms_option('theme_mega_menu_typo', ''), true) ?: []) : [];
+
         // Collect fonts to load
         $fontsToLoad = [$bodyTypo['family'] ?? 'Inter'];
         if (isset($h1Typo['family'])) $fontsToLoad[] = $h1Typo['family'];
         if (isset($navTypo['family'])) $fontsToLoad[] = $navTypo['family'];
+        // Without this the mega menu would fall back to the body font and the Customizer's
+        // Mega Menu Typography would look like it had done nothing.
+        if (isset($megaTypo['family'])) $fontsToLoad[] = $megaTypo['family'];
         
         // Add builder fonts from everything this page renders: its own content AND the
         // assigned header/footer sections. Collecting only $post->content meant a font
@@ -318,6 +323,102 @@
         .lb-mobile-menu nav a.text-primary { color: var(--primary); }
         .lb-desktop-nav .nav-style:hover,
         .lb-mobile-menu nav a:hover { color: {{ $menuHover }}; }
+
+        @if($megaMenuOn)
+        /* ── Header → Mega Menu ───────────────────────────────────────────────────────
+           Written only while the Customizer switch is on, so a site that does not use
+           mega menus ships none of this.
+
+           The panel is positioned against .main-header rather than against the menu item
+           (the item drops its `relative` for exactly this reason), which is what lets it
+           be wider than the item — full-bleed, site width, or a width you name. All three
+           are centred the same way, so a panel can never hang off the right edge of the
+           window the way an item-anchored one would for the last item in the bar.
+
+           Inside a media query because a mega menu is a desktop idea: below the breakpoint
+           the desktop nav is display:none anyway, and the same links are reached through
+           the mobile drawer, which lists them as an ordinary nested menu. */
+        @media (min-width: 1024px) {
+            .falcon-mega-panel {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                margin-left: auto;
+                margin-right: auto;
+                z-index: 50;
+                padding: 28px 32px;
+                background: {{ get_cms_option('theme_mega_menu_bg', '#ffffff') }};
+                box-shadow: 0 18px 40px rgba(15, 23, 42, .12);
+                transform: translateY(8px);
+                transition: opacity .2s ease, visibility .2s ease, transform .2s ease;
+            }
+            .group:hover > .falcon-mega-panel { transform: translateY(0); }
+
+            /* Full width is the header's own width; the other two are narrower and centred.
+               A custom width never outgrows the window, whatever was typed. */
+            .falcon-mega-panel.falcon-mega-site   { max-width: var(--site-width); }
+            .falcon-mega-panel.falcon-mega-custom { max-width: min(var(--falcon-mega-width, 720px), calc(100vw - 32px)); }
+
+            .falcon-mega-grid {
+                display: grid;
+                grid-template-columns: repeat(var(--falcon-mega-cols, 3), minmax(0, 1fr));
+                gap: 24px 36px;
+            }
+            .falcon-mega-col { min-width: 0; }
+
+            .falcon-mega-panel .falcon-mega-heading {
+                display: block;
+                margin-bottom: 10px;
+                color: {{ get_cms_option('theme_mega_menu_heading_color', '#1d2327') }};
+                @if(!empty($megaTypo['family'])) font-family: '{{ $megaTypo['family'] }}', sans-serif; @endif
+                font-size: {{ $megaTypo['size'] ?? '14px' }};
+                /* One step heavier than the links, and never lighter than semibold — a heading
+                   set in the same weight as the list under it stops reading as a heading. */
+                font-weight: {{ max(600, (int) ($megaTypo['variant'] ?? 400) + 200) }};
+                @if(!empty($megaTypo['letter_spacing'])) letter-spacing: {{ $megaTypo['letter_spacing'] }}; @endif
+                @if(!empty($megaTypo['text_transform'])) text-transform: {{ $megaTypo['text_transform'] }}; @endif
+                text-decoration: none;
+            }
+            .falcon-mega-list { list-style: none; margin: 0; padding: 0; }
+
+            .falcon-mega-panel .falcon-mega-link {
+                display: block;
+                padding: 7px 0;
+                color: {{ get_cms_option('theme_mega_menu_link_color', '#50575e') }};
+                @if(!empty($megaTypo['family'])) font-family: '{{ $megaTypo['family'] }}', sans-serif; @endif
+                font-size: {{ $megaTypo['size'] ?? '14px' }};
+                font-weight: {{ $megaTypo['variant'] ?? '400' }};
+                line-height: {{ $megaTypo['line_height'] ?? '1.6' }};
+                @if(!empty($megaTypo['letter_spacing'])) letter-spacing: {{ $megaTypo['letter_spacing'] }}; @endif
+                @if(!empty($megaTypo['text_transform'])) text-transform: {{ $megaTypo['text_transform'] }}; @endif
+                @if(!empty($megaTypo['font_style'])) font-style: {{ $megaTypo['font_style'] }}; @endif
+                text-decoration: {{ $megaTypo['text_decoration'] ?? 'none' }};
+                transition: color .15s ease;
+            }
+            .falcon-mega-panel .falcon-mega-link i { margin-right: 8px; }
+            .falcon-mega-panel .falcon-mega-heading i { margin-right: 8px; }
+            .falcon-mega-panel .falcon-mega-link:hover {
+                color: {{ get_cms_option('theme_mega_menu_link_hover_color', '#0091ea') }};
+            }
+
+            @php $megaItemBorder = get_cms_option('theme_mega_menu_item_border', 'none'); @endphp
+            @if($megaItemBorder === 'bottom')
+            .falcon-mega-panel .falcon-mega-link {
+                border-bottom: 1px solid {{ get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8') }};
+            }
+            /* The rule belongs BETWEEN the links, so the column does not end on one. */
+            .falcon-mega-list > li:last-child > .falcon-mega-link { border-bottom: 0; }
+            @elseif($megaItemBorder === 'all')
+            .falcon-mega-panel .falcon-mega-link {
+                border: 1px solid {{ get_cms_option('theme_mega_menu_item_border_color', '#e8e8e8') }};
+                border-radius: 4px;
+                padding: 7px 10px;
+                margin-bottom: 6px;
+            }
+            @endif
+        }
+        @endif
 
         /* Astra-style Header Customization */
         .main-header {

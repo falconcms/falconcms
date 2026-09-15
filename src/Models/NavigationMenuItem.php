@@ -20,7 +20,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $icon
  * @property bool|null $show_only_icon
  * @property int|null $order
- * @property int|null $mega_menu_id
+ * @property int|null $mega_menu_id a Layout-builder mega-menu design, rendered by the builder's Menu element
+ * @property bool|null $mega_enabled the theme header's own column mega menu (Customizer → Menu)
+ * @property int|null $mega_columns 1–6; null means the theme's default
+ * @property string|null $mega_width full | site | custom
+ * @property string|null $mega_custom_width
  * @property-read Collection<int, NavigationMenuItem> $children
  * @property-read NavigationMenuItem|null $parent
  * @property-read NavigationMenu|null $menu
@@ -31,6 +35,12 @@ class NavigationMenuItem extends Model
         'navigation_menu_id', 'parent_id', 'title', 'url', 'type',
         'object_id', 'target', 'classes', 'icon', 'show_only_icon',
         'order', 'mega_menu_id',
+        'mega_enabled', 'mega_columns', 'mega_width', 'mega_custom_width',
+    ];
+
+    protected $casts = [
+        'show_only_icon' => 'boolean',
+        'mega_enabled' => 'boolean',
     ];
 
     public function menu(): BelongsTo

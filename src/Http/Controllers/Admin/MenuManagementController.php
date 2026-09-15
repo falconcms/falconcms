@@ -149,6 +149,13 @@ class MenuManagementController extends Controller
                     'show_only_icon' => (bool) ($item->show_only_icon ?? false),
                     'target' => $item->target ?? '_self',
                     'mega_menu_id' => $item->mega_menu_id ?? null,
+                    // The theme header's own mega menu. Separate from mega_menu_id, which
+                    // names a Layout-builder design; these four describe a panel the header
+                    // builds from this item's own sub-items.
+                    'mega_enabled' => (bool) ($item->mega_enabled ?? false),
+                    'mega_columns' => (int) ($item->mega_columns ?: 3),
+                    'mega_width' => $item->mega_width ?: 'site',
+                    'mega_custom_width' => $item->mega_custom_width ?? '',
                     'depth' => $depth,
                     'orphaned' => $orphaned || $isTrashed || $isInactiveTax,
                     'is_draft' => $isDraft,
@@ -258,6 +265,14 @@ class MenuManagementController extends Controller
                 'show_only_icon' => !empty($item['show_only_icon']),
                 'target' => $item['target'] ?? '_self',
                 'mega_menu_id' => $item['mega_menu_id'] ?? null,
+                'mega_enabled' => !empty($item['mega_enabled']),
+                // Clamped rather than trusted: the column count drives a CSS grid, and a
+                // hand-edited 0 or 40 would produce a panel nobody could read.
+                'mega_columns' => min(6, max(1, (int) ($item['mega_columns'] ?? 3))),
+                'mega_width' => in_array($item['mega_width'] ?? '', ['full', 'site', 'custom'], true)
+                    ? $item['mega_width']
+                    : 'site',
+                'mega_custom_width' => $item['mega_custom_width'] ?? null,
                 'order' => $index,
             ]);
 

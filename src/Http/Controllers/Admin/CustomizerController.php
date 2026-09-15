@@ -486,6 +486,77 @@ class CustomizerController extends Controller
                         'default' => '15px',
                         'placeholder' => '15px',
                     ],
+
+                    // ── Mega Menu ────────────────────────────────────────────────────
+                    // Off by default, and off means nothing changes: the header keeps its
+                    // ordinary dropdowns and a mega menu is still something you design in
+                    // the Layout builder and assign to an item. Turning it on lets the
+                    // theme header build one itself out of the sub-items already in the
+                    // menu — which is why the per-item controls only appear in the Menu
+                    // builder while this is on.
+                    'theme_mega_menu_section' => [
+                        'type' => 'heading',
+                        'label' => 'Mega Menu',
+                    ],
+                    'theme_mega_menu_enabled' => [
+                        'type' => 'toggle',
+                        'label' => 'Mega Menu',
+                        'desc' => 'Let a top-level item open its sub-items as a multi-column panel instead of a dropdown. '
+                            .'Switch it on per item under <strong>Appearance → Menus → item options</strong>. '
+                            .'Desktop only, and only for the theme\'s own header — a Layout-builder header is unaffected.',
+                        'default' => '0',
+                    ],
+                    'theme_mega_menu_typo' => [
+                        'type' => 'typography',
+                        'label' => 'Mega Menu Typography',
+                        'desc' => 'Font for the links inside the panel. Column headings use the same family, one step heavier.',
+                        'depends' => 'theme_mega_menu_enabled',
+                        'default' => ['family' => 'Inter', 'variant' => '400', 'size' => '14px', 'line_height' => '1.6', 'letter_spacing' => '0px', 'text_transform' => 'none', 'text_decoration' => 'none', 'font_style' => 'normal'],
+                    ],
+                    'theme_mega_menu_bg' => [
+                        'type' => 'color',
+                        'label' => 'Mega Menu Background',
+                        'desc' => 'Background colour of the panel.',
+                        'depends' => 'theme_mega_menu_enabled',
+                        'default' => '#ffffff',
+                    ],
+                    'theme_mega_menu_heading_color' => [
+                        'type' => 'color',
+                        'label' => 'Column Heading Color',
+                        'desc' => 'A sub-item that has children of its own becomes that column\'s heading.',
+                        'depends' => 'theme_mega_menu_enabled',
+                        'default' => '#1d2327',
+                    ],
+                    'theme_mega_menu_link_color' => [
+                        'type' => 'color',
+                        'label' => 'Mega Menu Link Color',
+                        'depends' => 'theme_mega_menu_enabled',
+                        'default' => '#50575e',
+                    ],
+                    'theme_mega_menu_link_hover_color' => [
+                        'type' => 'color',
+                        'label' => 'Mega Menu Link Hover Color',
+                        'depends' => 'theme_mega_menu_enabled',
+                        'default' => '#0091ea',
+                    ],
+                    'theme_mega_menu_item_border' => [
+                        'type' => 'select',
+                        'label' => 'Item Border',
+                        'desc' => 'A rule between the links in a column, a box around each one, or neither.',
+                        'depends' => 'theme_mega_menu_enabled',
+                        'default' => 'none',
+                        'options' => [
+                            'none' => 'None',
+                            'bottom' => 'Line under each item',
+                            'all' => 'Box around each item',
+                        ],
+                    ],
+                    'theme_mega_menu_item_border_color' => [
+                        'type' => 'color',
+                        'label' => 'Item Border Color',
+                        'depends' => 'theme_mega_menu_enabled',
+                        'default' => '#e8e8e8',
+                    ],
                 ],
             ],
             'footer' => [

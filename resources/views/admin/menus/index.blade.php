@@ -374,6 +374,11 @@
     {{-- Menu item Options modal: icon picker + show-only-icon toggle + mega menu --}}
     @php
         $megaMenusList = json_decode(get_cms_option('lazy_mega_menus', '[]'), true) ?: [];
+        // Customizer → Menu → Mega Menu. Off (the default) means this screen behaves exactly
+        // as it always has: a top-level item points at a Layout-builder mega-menu design.
+        // On, an item that HAS sub-items gets the theme header's own column mega menu instead,
+        // built from those sub-items — so the two never offer themselves for the same item.
+        $nativeMega = get_cms_option('theme_mega_menu_enabled', '0') === '1';
     @endphp
     <div id="mi-options-modal" style="display:none;position:fixed;inset:0;z-index:100000;align-items:center;justify-content:center;padding:20px;">
         <div onclick="closeItemOptions()" style="position:absolute;inset:0;background:rgba(0,0,0,.5);"></div>
@@ -390,18 +395,64 @@
                         <strong style="font-size:13px;color:#1d2327;">Mega Menu</strong>
                         <span style="font-size:11px;color:#646970;font-style:italic;">Desktop only</span>
                     </div>
-                    <p style="font-size:12px;color:#646970;margin-bottom:10px;">Assign a mega menu layout to this top-level item. It replaces the standard dropdown on desktop.</p>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <select id="mi-mega-menu-select" onchange="setItemMegaMenu(this.value)"
-                                style="flex:1;height:34px;border:1px solid #c3c4c7;border-radius:4px;padding:0 10px;font-size:13px;color:#1d2327;background:#fff;">
-                            <option value="">— None —</option>
-                            @foreach($megaMenusList as $mm)
-                            <option value="{{ $mm['id'] }}">{{ $mm['name'] }}</option>
-                            @endforeach
-                        </select>
-                        <a id="mi-mega-menu-edit-link" href="#" target="_blank" style="display:none;font-size:12px;color:#2271b1;white-space:nowrap;text-decoration:none;">
-                            <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">open_in_new</span> Edit Layout
-                        </a>
+
+                    {{-- Layout-builder mega menu. Hidden for an item the theme header can lay
+                         out itself (Customizer switch on AND the item has sub-items), so the
+                         two kinds are never offered for the same item at the same time. --}}
+                    <div id="mi-mega-layout-block">
+                        <p style="font-size:12px;color:#646970;margin-bottom:10px;">Assign a mega menu layout to this top-level item. It replaces the standard dropdown on desktop.</p>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <select id="mi-mega-menu-select" onchange="setItemMegaMenu(this.value)"
+                                    style="flex:1;height:34px;border:1px solid #c3c4c7;border-radius:4px;padding:0 10px;font-size:13px;color:#1d2327;background:#fff;">
+                                <option value="">— None —</option>
+                                @foreach($megaMenusList as $mm)
+                                <option value="{{ $mm['id'] }}">{{ $mm['name'] }}</option>
+                                @endforeach
+                            </select>
+                            <a id="mi-mega-menu-edit-link" href="#" target="_blank" style="display:none;font-size:12px;color:#2271b1;white-space:nowrap;text-decoration:none;">
+                                <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">open_in_new</span> Edit Layout
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- The theme header's own mega menu: this item's sub-items, in columns. --}}
+                    <div id="mi-mega-native-block" style="display:none;">
+                        <p style="font-size:12px;color:#646970;margin-bottom:10px;">Show this item&rsquo;s sub-items as a multi-column panel instead of a dropdown. Applies to the theme&rsquo;s own header on desktop.</p>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1d2327;cursor:pointer;">
+                            <input type="checkbox" id="mi-mega-enabled" onchange="setItemMegaEnabled(this.checked)" style="width:16px;height:16px;">
+                            <strong>Enable mega menu</strong>
+                        </label>
+
+                        <div id="mi-mega-native-options" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;">
+                            <div style="margin-bottom:12px;">
+                                <label for="mi-mega-columns" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:#1d2327;margin-bottom:4px;">Columns</label>
+                                <select id="mi-mega-columns" onchange="setItemMegaField('mega_columns', parseInt(this.value, 10))"
+                                        style="width:100%;height:34px;border:1px solid #c3c4c7;border-radius:4px;padding:0 10px;font-size:13px;background:#fff;">
+                                    @for($c = 1; $c <= 6; $c++)
+                                        <option value="{{ $c }}">{{ $c }} {{ $c === 1 ? 'column' : 'columns' }}</option>
+                                    @endfor
+                                </select>
+                                <p style="font-size:11px;color:#646970;margin-top:4px;">Sub-items fill the columns in order and wrap onto a new row.</p>
+                            </div>
+
+                            <div>
+                                <label for="mi-mega-width" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:#1d2327;margin-bottom:4px;">Panel Width</label>
+                                <select id="mi-mega-width" onchange="setItemMegaWidth(this.value)"
+                                        style="width:100%;height:34px;border:1px solid #c3c4c7;border-radius:4px;padding:0 10px;font-size:13px;background:#fff;">
+                                    <option value="full">Full width</option>
+                                    <option value="site">Site width</option>
+                                    <option value="custom">Custom width</option>
+                                </select>
+                            </div>
+
+                            <div id="mi-mega-custom-width-row" style="display:none;margin-top:12px;">
+                                <label for="mi-mega-custom-width" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:#1d2327;margin-bottom:4px;">Custom Width</label>
+                                <input type="text" id="mi-mega-custom-width" placeholder="720px"
+                                       oninput="setItemMegaField('mega_custom_width', this.value)"
+                                       class="wp-input" style="width:100%;height:34px;font-size:13px;">
+                                <p style="font-size:11px;color:#646970;margin-top:4px;">Any CSS length &mdash; <code>720px</code>, <code>60rem</code>. The panel is centred under the header and never grows past the window.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;font-size:13px;color:#1d2327;">
@@ -491,6 +542,10 @@
                 object_id: cb.dataset.oid || null,
                 source_label: cb.dataset.source || null,
                 mega_menu_id: null,
+                mega_enabled: false,
+                mega_columns: 3,
+                mega_width: 'site',
+                mega_custom_width: '',
                 depth: 0
             });
             cb.checked = false;
@@ -574,14 +629,82 @@
         if (mmSection) {
             const isTopLevel = (item.depth || 0) === 0;
             mmSection.style.display = isTopLevel ? '' : 'none';
-            if (isTopLevel) {
-                const sel = document.getElementById('mi-mega-menu-select');
-                if (sel) sel.value = item.mega_menu_id || '';
-                miUpdateMegaMenuEditLink(item.mega_menu_id || '');
-            }
+            if (isTopLevel) miRenderMegaSection(item);
         }
 
         document.getElementById('mi-options-modal').style.display = 'flex';
+    }
+
+    /* ──────────────────────────────────
+       Which mega menu this item gets.
+
+       The theme header can build a mega menu out of an item's own sub-items, but only when
+       the Customizer switch is on and only if the item HAS sub-items — a panel with nothing
+       to put in its columns is not an option worth offering. Whenever that is not the case
+       the item falls back to the Layout-builder design picker, which is what this screen has
+       always shown. Exactly one of the two is ever visible.
+    ────────────────────────────────── */
+    const NATIVE_MEGA_ON = @json($nativeMega);
+
+    function miItemHasChildren(item) {
+        const i = items.indexOf(item);
+        return i > -1 && !!items[i + 1] && (items[i + 1].depth || 0) > (item.depth || 0);
+    }
+
+    function miRenderMegaSection(item) {
+        const useNative = NATIVE_MEGA_ON && miItemHasChildren(item);
+        const layoutBlock = document.getElementById('mi-mega-layout-block');
+        const nativeBlock = document.getElementById('mi-mega-native-block');
+        if (layoutBlock) layoutBlock.style.display = useNative ? 'none' : '';
+        if (nativeBlock) nativeBlock.style.display = useNative ? '' : 'none';
+
+        if (!useNative) {
+            const sel = document.getElementById('mi-mega-menu-select');
+            if (sel) sel.value = item.mega_menu_id || '';
+            miUpdateMegaMenuEditLink(item.mega_menu_id || '');
+            return;
+        }
+
+        document.getElementById('mi-mega-enabled').checked = !!item.mega_enabled;
+        document.getElementById('mi-mega-columns').value = String(item.mega_columns || 3);
+        document.getElementById('mi-mega-width').value = item.mega_width || 'site';
+        document.getElementById('mi-mega-custom-width').value = item.mega_custom_width || '';
+        miToggleMegaOptions(!!item.mega_enabled);
+        miToggleMegaCustomWidth(item.mega_width || 'site');
+    }
+
+    function miToggleMegaOptions(on) {
+        document.getElementById('mi-mega-native-options').style.display = on ? '' : 'none';
+    }
+
+    function miToggleMegaCustomWidth(width) {
+        document.getElementById('mi-mega-custom-width-row').style.display = width === 'custom' ? '' : 'none';
+    }
+
+    function setItemMegaEnabled(checked) {
+        if (!miOptionsItemId) return;
+        updateField(miOptionsItemId, 'mega_enabled', !!checked);
+        // Turning this on gives the item a panel of its own, so a Layout-builder design
+        // assigned earlier would be a second answer to the same question. Drop it.
+        if (checked) {
+            updateField(miOptionsItemId, 'mega_menu_id', null);
+            const item = items.find(i => i.id === miOptionsItemId);
+            if (item) {
+                if (!item.mega_columns) updateField(miOptionsItemId, 'mega_columns', 3);
+                if (!item.mega_width) updateField(miOptionsItemId, 'mega_width', 'site');
+            }
+        }
+        miToggleMegaOptions(!!checked);
+    }
+
+    function setItemMegaField(field, value) {
+        if (!miOptionsItemId) return;
+        updateField(miOptionsItemId, field, value);
+    }
+
+    function setItemMegaWidth(width) {
+        setItemMegaField('mega_width', width);
+        miToggleMegaCustomWidth(width);
     }
 
     function closeItemOptions() {
@@ -738,7 +861,7 @@
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;">
                         <span style="font-size:11px;color:#8c8f94;">${item.source_label ? esc(item.source_label) : typeLabel(item.type)}</span>
-                        ${item.mega_menu_id ? `<span style="font-size:10px;background:#eaf3fb;color:#2271b1;border:1px solid #c3d9ef;border-radius:3px;padding:1px 5px;font-weight:700;">MEGA</span>` : ''}
+                        ${(item.mega_menu_id || item.mega_enabled) ? `<span style="font-size:10px;background:#eaf3fb;color:#2271b1;border:1px solid #c3d9ef;border-radius:3px;padding:1px 5px;font-weight:700;">MEGA</span>` : ''}
                         ${canOutdent ? `<button type="button" class="indent-btn" onclick="outdent('${esc(item.id)}')" title="Outdent">←</button>` : ''}
                         ${canIndent  ? `<button type="button" class="indent-btn" onclick="indent('${esc(item.id)}')"  title="Indent">→</button>` : ''}
                         <button type="button" onclick="toggleSettings('${esc(item.id)}')" style="color:#646970;border:none;background:none;cursor:pointer;padding:2px;">
@@ -818,7 +941,7 @@
         const stack = []; // stack of {depth, children}
 
         flat.forEach(item => {
-            const node = { id: item.id, title: item.title, url: item.url, type: item.type, object_id: item.object_id || null, icon: item.icon || '', show_only_icon: !!item.show_only_icon, target: item.target || '_self', mega_menu_id: item.mega_menu_id || null, children: [] };
+            const node = { id: item.id, title: item.title, url: item.url, type: item.type, object_id: item.object_id || null, icon: item.icon || '', show_only_icon: !!item.show_only_icon, target: item.target || '_self', mega_menu_id: item.mega_menu_id || null, mega_enabled: !!item.mega_enabled, mega_columns: item.mega_columns || 3, mega_width: item.mega_width || 'site', mega_custom_width: item.mega_custom_width || '', children: [] };
             const depth = item.depth || 0;
 
             if (depth === 0) {

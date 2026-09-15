@@ -13,13 +13,31 @@
             {{-- data-falcon-scrollspy: on a landing page, section links are marked as the
                  reader scrolls past them. See components/frontend/menu-scrollspy. --}}
             <nav class="hidden lg:flex items-center gap-8 h-full lb-desktop-nav" data-falcon-scrollspy="text-primary">
-                @php $menuItems = get_lazy_menu('header'); @endphp
+                @php
+                    $menuItems = get_lazy_menu('header');
+                    // Customizer → Menu → Mega Menu. Off, every branch below behaves exactly as
+                    // it did: ordinary dropdowns, and a mega menu is something you build in the
+                    // Layout builder. This is the theme header only; the builder's own Menu
+                    // element is untouched either way.
+                    $megaOn = get_cms_option('theme_mega_menu_enabled', '0') === '1';
+                @endphp
                 @foreach($menuItems as $item)
                     @php
                         $isActive = falcon_menu_is_active($item->url);
                         $itemHoverColor = get_cms_option('theme_menu_hover_color', '#0091ea');
+
+                        // A panel needs sub-items to put in its columns, so an item without any
+                        // keeps its plain link however the switches are set.
+                        $isMega = $megaOn && !empty($item->mega_enabled) && $item->children->count() > 0;
+                        $megaCols = max(1, min(6, (int) ($item->mega_columns ?: 3)));
+                        $megaWidth = in_array($item->mega_width ?? '', ['full', 'site', 'custom'], true) ? $item->mega_width : 'site';
+                        $megaCustom = trim((string) ($item->mega_custom_width ?? '')) ?: '720px';
                     @endphp
-                    <div class="relative group h-full flex items-center">
+                    {{-- A mega panel is measured against the header, not against this item — that
+                         is what lets it be full- or site-width — so the item must not become the
+                         positioning context for it. `group` is unaffected by that, and the panel
+                         stays a DOM child, so hovering it still counts as hovering the item. --}}
+                    <div class="{{ $isMega ? '' : 'relative' }} group h-full flex items-center">
                         <a href="{{ falcon_anchor_url($item->url) }}" target="{{ $item->target ?? '_self' }}" class="nav-style {{ $isActive ? 'text-primary' : '' }} hover:text-[{{ $itemHoverColor }}] transition-colors flex items-center gap-1">
                             @php
                                 $__ic = $item->icon ?? '';
@@ -32,7 +50,42 @@
                             @endif
                         </a>
                         
-                        @if($item->children->count() > 0)
+                        @if($isMega)
+                            {{-- Mega panel: every sub-item becomes a column. One that has children
+                                 of its own heads its column and lists them; one that does not is a
+                                 link standing alone. Columns fill in order and wrap. --}}
+                            <div class="falcon-mega-panel falcon-mega-{{ $megaWidth }} opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+                                 style="--falcon-mega-cols: {{ $megaCols }};@if($megaWidth === 'custom') --falcon-mega-width: {{ $megaCustom }};@endif">
+                                <div class="falcon-mega-grid">
+                                    @foreach($item->children as $child)
+                                        <div class="falcon-mega-col">
+                                            @if($child->children->count() > 0)
+                                                <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="falcon-mega-heading">
+                                                    @if(!empty($child->icon))<i class="{{ $child->icon }}"></i>@endif{{ $child->title }}
+                                                </a>
+                                                <ul class="falcon-mega-list">
+                                                    @foreach($child->children as $grandChild)
+                                                        <li>
+                                                            <a href="{{ falcon_anchor_url($grandChild->url) }}" target="{{ $grandChild->target ?? '_self' }}" class="falcon-mega-link">
+                                                                @if(!empty($grandChild->icon))<i class="{{ $grandChild->icon }}"></i>@endif{{ $grandChild->title }}
+                                                            </a>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
+                                            @else
+                                                <ul class="falcon-mega-list">
+                                                    <li>
+                                                        <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="falcon-mega-link">
+                                                            @if(!empty($child->icon))<i class="{{ $child->icon }}"></i>@endif{{ $child->title }}
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @elseif($item->children->count() > 0)
                             <div class="absolute top-full left-0 w-56 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50"
                                  style="background-color: {{ get_cms_option('theme_dropdown_bg', '#ffffff') }}; border: 1px solid var(--border-color);">
                                 <ul class="py-2">
@@ -156,6 +209,24 @@
                                         $__mcIconHtml = $__mcic !== '' ? '<i class="'.e($__mcic).' mr-2"'.($__mcio ? ' title="'.e($child->title).'"' : '').'></i>' : '';
                                     @endphp
                                     <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="text-[14px] font-medium {{ $childActive ? 'text-primary' : 'text-slate-600' }} hover:text-primary block">{!! $__mcIconHtml !!}@if(!$__mcio){{ $child->title }}@endif</a>
+                                    {{-- Third level. The mobile list stopped at two, which was
+                                         survivable while the desktop dropdown was the only place
+                                         these appeared — a mega menu is built out of exactly this
+                                         level, so leaving it out would hide those links from every
+                                         phone. Desktop mega menus stay desktop-only; the links
+                                         themselves have to be reachable everywhere. --}}
+                                    @if($child->children->count() > 0)
+                                        <div class="pl-4 space-y-2 border-l border-slate-100 ml-1 mt-2 mb-1">
+                                            @foreach($child->children as $grandChild)
+                                                @php
+                                                    $__mgic = $grandChild->icon ?? '';
+                                                    $__mgio = !empty($grandChild->show_only_icon) && $__mgic !== '';
+                                                    $__mgIconHtml = $__mgic !== '' ? '<i class="'.e($__mgic).' mr-2"'.($__mgio ? ' title="'.e($grandChild->title).'"' : '').'></i>' : '';
+                                                @endphp
+                                                <a href="{{ falcon_anchor_url($grandChild->url) }}" target="{{ $grandChild->target ?? '_self' }}" class="text-[13px] {{ falcon_menu_is_active($grandChild->url) ? 'text-primary' : 'text-slate-500' }} hover:text-primary block">{!! $__mgIconHtml !!}@if(!$__mgio){{ $grandChild->title }}@endif</a>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 @endforeach
                             </div>
                         @endif
