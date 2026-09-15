@@ -5,7 +5,89 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.0 <Badge type="tip" text="Latest" /> {#v2-7-0}
+## v2.7.1 <Badge type="tip" text="Latest" /> {#v2-7-1}
+
+**Released: 2026-09-15**
+
+### Added
+
+- **A custom post type can choose where it sits in the sidebar.** *ACPT* → *Post Types* →
+  **Advanced Configuration** → **Menu Position** lists every menu in the dashboard; the type
+  appears directly below the one you pick, joining that menu's section. The choice is
+  remembered, so re-saving the type does not quietly send it back to the bottom.
+
+- **The icon picker offers every icon the dashboard can draw.** The Icons tab had 36
+  hard-coded pictures. It now has all 4,237 icons the bundled icon font can actually render —
+  read out of the font itself, so nothing in the grid can come out as an empty box — with a
+  search box over the whole set. A post type saved with a custom SVG keeps it until someone
+  picks something else.
+
+- **Forms can be renamed.** The name was set once, on the create screen, and there was no way
+  back to it, so a form called "test" stayed that way. The builder's heading is the field now:
+  click it and type, and it saves with the rest of the form. The shortcode's `slug` deliberately
+  does **not** follow the name — it is what every `[falcon_form slug="…"]` already on a page
+  points at, so a rename leaves those pages working.
+
+### Changed
+
+- **Shop and Products have a sidebar section of their own,** headed *eCommerce*, the way ACPT
+  heads *Advanced*. Selling is a job of its own: a site that sells nothing reads the heading and
+  skips both items.
+
+### Fixed
+
+- **Products sits under Shop again, and this time it stays there.** A custom post type kept
+  wedging itself between the two. The position of a post type's menu was computed from its
+  database id — `40 + id` on three code paths, `60 + id` on three others — so a type with the
+  wrong id landed on the same number as Shop, and the sidebar drew the tie in whichever order
+  the database felt like. Nothing derives a position from an id any more: a menu is inserted
+  after a neighbour that is actually there, which keeps every position unique, and Shop and
+  Products are treated as one block that cannot be opened. Existing sites are repaired on
+  update.
+
+- **Analytics drew an empty chart on Today.** Today is the default range, a single day is a
+  single data point, and a line through one point with no markers is nothing at all — so the
+  Traffic Overview card was blank however busy the site was. Today is plotted by the hour now,
+  midnight to midnight in the site's own timezone, with the hours that have not happened yet
+  left out so the line stops at the current hour instead of dropping to the floor.
+
+- **Two forms with the same name no longer share a shortcode.** The slug was made from the
+  title without checking for a collision, so a second "Contact Form" got the same slug as the
+  first and `[falcon_form slug="contact-form"]` rendered whichever of the two the query
+  happened to return first.
+
+- **The post and product editors said nothing when a save was refused.** A failed validation
+  redirects back with the reasons in the session, but neither editor printed them: the form came
+  back filled in, nothing was saved, and the only clue was that the page had reloaded. A
+  150-character SKU went nowhere and said nothing. Both now show the list the page editor
+  already did.
+
+- **A variable product could not be published at all.** The editor demanded a Regular Price for
+  every product, and a variable product hides that field — each variation is priced — so Publish
+  refused and pointed at a control nobody could see. Past that, the insert threw a 500 after the
+  post row had already been written, leaving a product with no shop data priced at zero on the
+  storefront. The parent now takes the cheapest variation's price, which is the figure the
+  archive sorts and filters on, and the sale price follows only a discount on that variation. An
+  empty variable product now says what is missing.
+
+- **Per-variation weight and dimensions were lost when creating a product.** `store()` dropped
+  what `update()` kept, so a measurement typed while creating had to be typed again later.
+
+- **The last shipping zone and the last tax rate could not be deleted.** Both are repeaters, and
+  a repeater with nothing left in it posts no fields at all; the save read that as "this form
+  carried no zones" and kept the old ones. They now carry the same marker coupons already had,
+  so an empty list arrives as an empty list.
+
+- **Media URLs were rewritten relative to the editor's own address,** which broke the moment the
+  same content was viewed anywhere else. The editors keep the URLs the library hands them.
+
+- **A closed coupon took as much height as an open form row** — a 40px circle, a badge stacked
+  above an 18px code, six units of air between cards. It is one line of information, so it now
+  takes one line.
+
+---
+
+## v2.7.0 {#v2-7-0}
 
 **Released: 2026-09-08**
 
