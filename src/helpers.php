@@ -2226,7 +2226,10 @@ if (!function_exists('get_falcon_menu')) {
         // through every cache store reliably), then hydrate to stdClass on the way
         // out so the theme keeps its object property access unchanged.
         try {
-            $key = 'falcon:nav_menu:'.falcon_nav_menu_version().':'.$slugOrLocation.':'.app()->getLocale();
+            // The bases are in the key because term URLs are derived from them now, and a
+            // settings change is not a menu edit — nothing would have bumped the version.
+            $key = 'falcon:nav_menu:'.falcon_nav_menu_version().':'.$slugOrLocation.':'.app()->getLocale()
+                .':'.falcon_taxonomy_base('category').':'.falcon_taxonomy_base('tag');
             $tree = Cache::remember(
                 $key,
                 now()->addMinutes(10),
@@ -2374,6 +2377,22 @@ if (!function_exists('this_process_items')) {
                             }
                         }
                         $item->url = get_falcon_permalink($post);
+                    }
+                }
+
+                // A term item is worked out the same way, and used not to be: the address
+                // saved with the item was served forever, so renaming the term's slug — or
+                // changing the archive base — left the menu pointing at the old one. The
+                // link still arrived, because a rename leaves a redirect, but it arrived the
+                // long way round and never matched the page it was on, so the item never
+                // showed as current. Only rewritten when the term is actually found; a stored
+                // URL is better than a guess.
+                if ($item->type === 'category' && $item->object_id) {
+                    $term = TaxonomyTerm::find($item->object_id);
+                    if ($term) {
+                        $item->url = get_falcon_term_link($term->slug, $term->taxonomy_slug);
+                    } elseif ($category = Category::find($item->object_id)) {
+                        $item->url = get_falcon_term_link($category);
                     }
                 }
 
