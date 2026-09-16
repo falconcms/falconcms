@@ -46,11 +46,21 @@
                         <div class="flex items-center gap-3 text-[13px]">
                             <span class="font-medium">Post Type</span>
                             <span class="text-[#646970]">is equal to</span>
+                            {{-- Post and page are rows in post_types like everything else, so
+                                 listing them again by hand showed each of them twice, once as
+                                 "Post" and once as "Posts". Only fall back to the hard-coded
+                                 pair if the table has not been seeded yet. --}}
+                            @php
+                                $ruleTypes = $postTypes->pluck('name', 'slug');
+                                foreach (['post' => 'Posts', 'page' => 'Pages'] as $slug => $label) {
+                                    if (! $ruleTypes->has($slug)) {
+                                        $ruleTypes->put($slug, $label);
+                                    }
+                                }
+                            @endphp
                             <select name="rules[post_type]" class="wp-input h-8 py-0 text-[13px]">
-                                <option value="post">Post</option>
-                                <option value="page">Page</option>
-                                @foreach($postTypes as $type)
-                                    <option value="{{ $type->slug }}">{{ $type->name }}</option>
+                                @foreach($ruleTypes as $slug => $label)
+                                    <option value="{{ $slug }}">{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>

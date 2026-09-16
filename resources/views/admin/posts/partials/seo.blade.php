@@ -34,7 +34,25 @@
                 <p class="text-[11px] font-bold text-[#646970] uppercase mb-2">Search Preview</p>
                 <div class="space-y-1">
                     <div id="preview-title" class="text-[18px] text-[#1a0dab] hover:underline cursor-pointer truncate">{{ $seoTitle }}</div>
-                    <div id="preview-url" class="text-[14px] text-[#006621] truncate">{{ url($post->slug ?? '') }}</div>
+                    {{-- The slug on its own is not the address: a post sits under its type's
+                         base and a translation under its language prefix, so a custom post type
+                         previewed here as /the-slug was never where the page actually lives.
+                         The permalink helper is what the rest of the screen uses. --}}
+                    {{-- The slug on its own is not the address: a custom post type sits under
+                         its own base and a translation under its language prefix, so a recipe
+                         previewed here as /the-slug was never where the page lives. Built the
+                         same way the Permalink line above it is, so the two screens agree. --}}
+                    @php
+                        $previewSlug = $post->slug ?? '';
+                        $previewType = $post->type ?? 'post';
+                        $previewLang = $post->lang_code ?? falcon_default_language();
+                        $previewPrefix = $previewLang === falcon_default_language() ? '' : $previewLang.'/';
+                        if ($previewType !== 'post' && $previewType !== 'page') {
+                            $previewPrefix .= $previewType.'/';
+                        }
+                        $previewUrl = $previewSlug ? rtrim(url('/'), '/').'/'.$previewPrefix.$previewSlug : url('/');
+                    @endphp
+                    <div id="preview-url" class="text-[14px] text-[#006621] truncate">{{ $previewUrl }}</div>
                     <div id="preview-desc" class="text-[13px] text-[#4d5156] line-clamp-2">{{ $seo['description'] ?? 'Please provide a meta description...' }}</div>
                 </div>
             </div>
