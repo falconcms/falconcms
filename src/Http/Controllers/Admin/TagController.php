@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
+use FalconCms\Core\Models\Redirect;
 use FalconCms\Core\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -72,6 +73,7 @@ class TagController extends Controller
 
     public function update(Request $request, Tag $tag)
     {
+        $oldSlug = $tag->slug;
         $baseSlug = $request->slug ?: $request->name;
         $request->merge(['slug' => Tag::generateUniqueSlug($baseSlug, $tag->id)]);
 
@@ -83,6 +85,14 @@ class TagController extends Controller
         ]);
 
         $tag->update($validated);
+
+        // Same as a category: renaming a tag moves its archive, so leave a redirect behind.
+        if ($oldSlug !== $tag->slug) {
+            Redirect::recordMove(
+                '/'.falcon_taxonomy_base('tag').'/'.$oldSlug,
+                '/'.falcon_taxonomy_base('tag').'/'.$tag->slug
+            );
+        }
 
         // Multilingual Copy Logic
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {

@@ -61,18 +61,26 @@ class RedirectMiddleware
         return $next($request);
     }
 
-    /** Whether the redirects table exists (cached per request; tolerates DB errors). */
+    /**
+     * Whether the redirects table exists (asked once per request; tolerates DB errors).
+     *
+     * A property, not a function-level static. A static outlives the request — it outlives the
+     * whole process — so the first answer was the only answer: a site that had not migrated
+     * yet cached "no table" and stopped serving redirects entirely until the workers were
+     * restarted, and under a persistent runtime that is never.
+     */
+    protected ?bool $tableExists = null;
+
     protected function redirectsTableExists(): bool
     {
-        static $exists = null;
-        if ($exists === null) {
+        if ($this->tableExists === null) {
             try {
-                $exists = Schema::hasTable('cms_redirects');
+                $this->tableExists = Schema::hasTable('cms_redirects');
             } catch (\Throwable $e) {
-                $exists = false;
+                $this->tableExists = false;
             }
         }
 
-        return $exists;
+        return $this->tableExists;
     }
 }

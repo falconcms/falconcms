@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Category;
+use FalconCms\Core\Models\Redirect;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -142,6 +143,7 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
+        $oldSlug = $category->slug;
         $baseSlug = $request->slug ?: $request->name;
         $request->merge(['slug' => Category::generateUniqueSlug($baseSlug, $category->id)]);
 
@@ -174,6 +176,15 @@ class CategoryController extends Controller
         ]);
 
         $category->update($validated);
+
+        // A renamed term is a moved address. Pages have always left a redirect behind; terms
+        // did not, so every link and every indexed archive under the old slug simply 404'd.
+        if ($oldSlug !== $category->slug) {
+            Redirect::recordMove(
+                '/'.falcon_taxonomy_base('category').'/'.$oldSlug,
+                '/'.falcon_taxonomy_base('category').'/'.$category->slug
+            );
+        }
 
         // Multilingual Copy Logic
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
