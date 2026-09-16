@@ -799,6 +799,27 @@ class DashboardController extends Controller
             $data[$box] = $request->has($box) ? '1' : '0';
         }
 
+        // A taxonomy base that changes leaves every address already linked to or indexed under
+        // the old word pointing at nothing. Remember what it was: the route file turns that
+        // into a permanent redirect to the new one. Read *before* the write below, and only
+        // when the base actually moved, so saving the page twice does not lose the old word.
+        foreach (['category', 'tag', 'product_category', 'product_tag'] as $taxonomy) {
+            if (!array_key_exists($taxonomy.'_base', $data)) {
+                continue;
+            }
+            $was = falcon_taxonomy_base($taxonomy);
+            $data[$taxonomy.'_base'] = trim(strtolower((string) $data[$taxonomy.'_base']), '/');
+            DB::table('cms_settings')->updateOrInsert(
+                ['key' => $taxonomy.'_base'],
+                ['value' => $data[$taxonomy.'_base'], 'updated_at' => now()]
+            );
+            forget_cms_options_cache();
+
+            if (falcon_taxonomy_base($taxonomy) !== $was) {
+                $data[$taxonomy.'_base_previous'] = $was;
+            }
+        }
+
         foreach ($data as $key => $value) {
             if (falcon_is_protected_option($key)) {
                 continue;
@@ -814,6 +835,11 @@ class DashboardController extends Controller
         }
 
         forget_cms_options_cache();
+
+        // The archives are routes, so their addresses are baked into a cached route file.
+        if (app()->routesAreCached()) {
+            Artisan::call('route:cache');
+        }
 
         return redirect()->back()->with('success', 'SEO Settings updated successfully!');
     }

@@ -3194,6 +3194,109 @@ if (!function_exists('falcon_dynamic_config')) {
     }
 }
 
+if (!function_exists('falcon_taxonomy_base')) {
+    /**
+     * The first segment of a taxonomy archive's address — /category/food, /tag/quick-meals.
+     *
+     * The bases used to be written into the route file, so a site that wanted /topic/food or
+     * /post-category/food had no way to say so. They are settings now, and the routes are
+     * built from them at boot.
+     *
+     * A base is sanitised on the way out rather than only on the way in, because these routes
+     * are registered before anything else runs: a bad value saved by hand in the database
+     * would otherwise take the whole front end down rather than one page. Anything that is
+     * not a plain slug, and anything that would swallow a reserved path, falls back to the
+     * default the CMS shipped with.
+     */
+    function falcon_taxonomy_base(string $taxonomy): string
+    {
+        $defaults = [
+            'category' => 'category',
+            'tag' => 'tag',
+            'product_category' => 'product-category',
+            'product_tag' => 'product-tag',
+        ];
+        $key = str_replace('-', '_', $taxonomy);
+        $default = $defaults[$key] ?? $taxonomy;
+
+        $base = (string) get_cms_option($key.'_base', $default);
+        $base = trim(strtolower($base), " \t\n\r\0\x0B/");
+
+        // One segment, slug characters only. A base with a slash in it would need a route
+        // pattern this one does not have, and an empty one would claim every URL on the site.
+        if ($base === '' || !preg_match('/^[a-z0-9][a-z0-9\-_]*$/', $base)) {
+            return $default;
+        }
+
+        // Paths the CMS already answers on. Handing one of them to a taxonomy would shadow it.
+        $reserved = [
+            'admin', 'falcon-admin', 'api', 'search', 'author', 'lang', 'storage',
+            'sitemap', 'sitemap.xml', 'robots.txt', 'feed', 'comment', 'form-submit',
+        ];
+        $reserved[] = strtolower(trim((string) get_cms_option('login_url', 'super-lazy-admin'), '/'));
+        $reserved[] = strtolower(trim((string) get_cms_option('register_url', 'super-lazy-register'), '/'));
+        if (in_array($base, array_filter($reserved), true)) {
+            return $default;
+        }
+
+        // Two taxonomies cannot share a base: whichever route registered first would win every
+        // request, and the other archive would quietly serve the wrong terms.
+        foreach ($defaults as $other => $otherDefault) {
+            if ($other === $key) {
+                continue;
+            }
+            $taken = trim(strtolower((string) get_cms_option($other.'_base', $otherDefault)), '/');
+            if ($base === $taken && $base !== $default) {
+                return $default;
+            }
+        }
+
+        return $base;
+    }
+}
+
+if (!function_exists('get_falcon_term_link')) {
+    /**
+     * The address of a term's archive.
+     *
+     * Themes used to build these by hand, which meant every theme hard-coded the base and none
+     * of them followed the setting. Hand it a term from falcon_post_terms() — or a plain slug —
+     * and it returns the URL the routes are actually serving, language prefix included.
+     */
+    function get_falcon_term_link($term, string $taxonomy = 'category'): string
+    {
+        $slug = is_string($term) ? $term : (is_array($term) ? ($term['slug'] ?? '') : ($term->slug ?? ''));
+        if ($slug === '') {
+            return '#';
+        }
+
+        $names = [
+            'category' => 'frontend.category',
+            'categories' => 'frontend.category',
+            'tag' => 'frontend.tag',
+            'tags' => 'frontend.tag',
+            'product_category' => 'frontend.product_category',
+            'product-category' => 'frontend.product_category',
+            'product_tag' => 'frontend.product_tag',
+            'product-tag' => 'frontend.product_tag',
+        ];
+        $route = $names[strtolower($taxonomy)] ?? null;
+
+        // An ACPT taxonomy has no route of its own; its terms are served by the category
+        // archive, which falls through to taxonomy_terms when no category matches the slug.
+        if (!$route) {
+            $route = 'frontend.category';
+        }
+
+        $locale = app()->getLocale();
+        if ($locale !== falcon_default_language() && Route::has($route.'.locale')) {
+            return route($route.'.locale', ['locale' => $locale, 'slug' => $slug]);
+        }
+
+        return Route::has($route) ? route($route, $slug) : url('/'.$slug);
+    }
+}
+
 if (!function_exists('falcon_post_terms')) {
     /**
      * Terms a post holds in one taxonomy, by taxonomy slug.

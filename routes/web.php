@@ -524,29 +524,49 @@ Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddl
     }
 
     $localePattern = implode('|', $supportedLocales);
+
+    // The first segment of each taxonomy archive is a setting, so a site can serve
+    // /post-category/food instead of /category/food. The route *names* never change, which is
+    // what lets breadcrumbs, the sitemap, the widgets and every theme follow the setting
+    // without knowing it exists.
+    $taxonomyBases = [
+        'category' => falcon_taxonomy_base('category'),
+        'tag' => falcon_taxonomy_base('tag'),
+        'product_category' => falcon_taxonomy_base('product_category'),
+        'product_tag' => falcon_taxonomy_base('product_tag'),
+    ];
+
     if ($isMultiLang && !empty($localePattern)) {
         Route::get('/{locale}', [FrontendController::class, 'index'])
             ->where('locale', $localePattern);
 
-        Route::get('/{locale}/category/{slug}', [FrontendController::class, 'archive'])
-            ->where('locale', $localePattern)->where('slug', '.*')->name('frontend.category.locale');
-
-        Route::get('/{locale}/tag/{slug}', [FrontendController::class, 'archive'])
-            ->where('locale', $localePattern)->where('slug', '.*')->name('frontend.tag.locale');
-
-        Route::get('/{locale}/product-category/{slug}', [FrontendController::class, 'archive'])
-            ->where('locale', $localePattern)->where('slug', '.*')->name('frontend.product_category.locale');
-        Route::get('/{locale}/product-tag/{slug}', [FrontendController::class, 'archive'])
-            ->where('locale', $localePattern)->where('slug', '.*')->name('frontend.product_tag.locale');
+        foreach ($taxonomyBases as $taxonomy => $base) {
+            Route::get('/{locale}/'.$base.'/{slug}', [FrontendController::class, 'archive'])
+                ->where('locale', $localePattern)->where('slug', '.*')
+                ->name('frontend.'.$taxonomy.'.locale');
+        }
 
         Route::get('/{locale}/search', [FrontendController::class, 'search'])
             ->where('locale', $localePattern);
     }
 
-    Route::get('/category/{slug}', [FrontendController::class, 'archive'])->name('frontend.category')->where('slug', '.*');
-    Route::get('/tag/{slug}', [FrontendController::class, 'archive'])->name('frontend.tag')->where('slug', '.*');
-    Route::get('/product-category/{slug}', [FrontendController::class, 'archive'])->name('frontend.product_category')->where('slug', '.*');
-    Route::get('/product-tag/{slug}', [FrontendController::class, 'archive'])->name('frontend.product_tag')->where('slug', '.*');
+    foreach ($taxonomyBases as $taxonomy => $base) {
+        Route::get('/'.$base.'/{slug}', [FrontendController::class, 'archive'])
+            ->name('frontend.'.$taxonomy)->where('slug', '.*');
+    }
+
+    // Changing a base would otherwise break every address already linked to or indexed under
+    // the old one. The settings screen records what the base was; that path stays answerable
+    // and moves visitors on permanently.
+    foreach ($taxonomyBases as $taxonomy => $base) {
+        $previous = trim((string) get_cms_option($taxonomy.'_base_previous', ''), '/');
+        if ($previous === '' || $previous === $base || !preg_match('/^[a-z0-9][a-z0-9\-_]*$/', $previous)) {
+            continue;
+        }
+        Route::get('/'.$previous.'/{slug}', function ($slug) use ($taxonomy) {
+            return redirect()->route('frontend.'.$taxonomy, $slug, 301);
+        })->where('slug', '.*')->name('frontend.'.$taxonomy.'.previous');
+    }
     Route::get('/author/{id}', [FrontendController::class, 'authorArchive'])->name('frontend.author')->where('id', '[0-9]+');
     Route::get('/search', [FrontendController::class, 'search'])->name('frontend.search');
     Route::get('/search/live', [FrontendController::class, 'liveSearch'])->name('frontend.search.live');

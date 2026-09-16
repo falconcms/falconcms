@@ -17,6 +17,45 @@
             {!! do_falcon_action('falcon_seo_settings_form_top') !!}
 
             <div class="space-y-8">
+                {{-- Permalinks: the first segment of each taxonomy archive --}}
+                <div class="wp-metabox">
+                    <div class="wp-metabox-header"><span>Permalinks</span></div>
+                    <div class="wp-metabox-content p-4 space-y-4">
+                        <p class="text-[13px] text-[#646970]">
+                            The word in front of a term's address. Leave one blank to keep the default.
+                            Old addresses are not thrown away &mdash; whatever a base was before you
+                            changed it keeps working and redirects here permanently.
+                        </p>
+
+                        @php
+                            $permalinkBases = [
+                                ['key' => 'category_base', 'label' => 'Category base', 'default' => 'category', 'example' => 'nutrition'],
+                                ['key' => 'tag_base', 'label' => 'Tag base', 'default' => 'tag', 'example' => 'quick-meals'],
+                                ['key' => 'product_category_base', 'label' => 'Product category base', 'default' => 'product-category', 'example' => 'jackets'],
+                                ['key' => 'product_tag_base', 'label' => 'Product tag base', 'default' => 'product-tag', 'example' => 'waterproof'],
+                            ];
+                        @endphp
+
+                        @foreach($permalinkBases as $base)
+                            @php $value = $settings[$base['key']] ?? ''; @endphp
+                            <div>
+                                <label class="block text-[14px] font-semibold text-[#1d2327] mb-1">{{ $base['label'] }}</label>
+                                <div class="flex items-center gap-1 text-[13px] text-[#646970]">
+                                    <span>{{ rtrim(url('/'), '/') }}/</span>
+                                    <input type="text" name="{{ $base['key'] }}" value="{{ $value }}"
+                                           placeholder="{{ $base['default'] }}"
+                                           class="wp-input h-8 w-56 text-[13px]">
+                                    <span>/{{ $base['example'] }}</span>
+                                </div>
+                                <p class="text-[12px] text-[#646970] mt-1">
+                                    Letters, numbers and dashes, one segment. Anything else, or a word the
+                                    CMS already answers on, falls back to <code>{{ $base['default'] }}</code>.
+                                </p>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
                 {{-- Robots.txt --}}
                 <div class="wp-metabox">
                     <div class="wp-metabox-header"><span>Robots.txt Content</span></div>
