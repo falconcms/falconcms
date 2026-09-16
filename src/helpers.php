@@ -2030,7 +2030,12 @@ if (!function_exists('get_falcon_posts')) {
         }
 
         if ($args['paginate']) {
-            return $query->paginate($args['limit'], ['*'], $args['page_name'] ?? 'page');
+            // withQueryString, because page two has to be the same list as page one. Without
+            // it every other parameter — a search term, a filter, a sort — is dropped from the
+            // page links, so the reader silently lands on the unfiltered list. The archive
+            // controller has always done this; a theme paginating its own loop did not.
+            return $query->paginate($args['limit'], ['*'], $args['page_name'] ?? 'page')
+                ->withQueryString();
         }
 
         return $query->limit($args['limit'])->offset((int) $args['offset'])->get();
