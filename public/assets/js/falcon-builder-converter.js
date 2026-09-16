@@ -901,7 +901,7 @@
                 return '[falcon_gallery ' + a.trim() + vis + ' /]';
             }
             default: {
-                // Custom element: registered via lazy_builder_elements
+                // Custom element: registered via falcon_builder_elements
                 var _cdefs = (typeof window !== 'undefined' && window.falconCustomElements) ? window.falconCustomElements : {};
                 var _cdef  = _cdefs[type] || (Object.values(_cdefs).find(function(e) { return e.type === type; }) || null);
                 if (_cdef) {
@@ -1070,7 +1070,7 @@
             if (elem) results.push({ pos: m.index, elem: elem });
         }
 
-        // Also match custom element shortcode tags registered via lazy_builder_elements
+        // Also match custom element shortcode tags registered via falcon_builder_elements
         var _cdefs = (typeof window !== 'undefined' && window.falconCustomElements) ? window.falconCustomElements : {};
         Object.values(_cdefs).forEach(function(def) {
             var tag = def.shortcode || def.type;

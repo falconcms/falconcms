@@ -420,7 +420,7 @@ class FalconCmsServiceProvider extends ServiceProvider
         $finalOptions = apply_falcon_filters('cms_theme_options', $baseOptions);
         if (isset($finalOptions['hooks'])) {
             foreach ($finalOptions['hooks'] as $key => $hookData) {
-                $filterTag = 'lazy_'.str_replace('-', '_', $key).'_fields';
+                $filterTag = 'falcon_'.str_replace('-', '_', $key).'_fields';
                 $finalOptions['hooks'][$key]['fields'] = apply_falcon_filters($filterTag, $finalOptions['hooks'][$key]['fields'] ?? []);
             }
         }

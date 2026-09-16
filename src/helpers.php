@@ -2999,7 +2999,7 @@ if (!function_exists('falcon_render_item_custom_fields')) {
             $customFields = $meta['custom_fields'] ?? [];
         }
 
-        $customFields = apply_falcon_filters('lazy_item_custom_fields_display', $customFields, $item, $context);
+        $customFields = apply_falcon_filters('falcon_item_custom_fields_display', $customFields, $item, $context);
 
         if (empty($customFields)) {
             return '';
@@ -7121,7 +7121,7 @@ if (!function_exists('falcon_default_customer_address')) {
 if (!function_exists('falcon_get_checkout_fields')) {
     /**
      * Returns the sorted field array for 'billing' or 'shipping'.
-     * Applies the falcon_billing_fields / lazy_shipping_fields filter so developers
+     * Applies the falcon_billing_fields / falcon_shipping_fields filter so developers
      * can add, remove, or reorder fields from functions.php.
      *
      * Field keys:
@@ -7193,7 +7193,7 @@ if (!function_exists('falcon_get_checkout_fields')) {
             }
         }
 
-        $fields = apply_falcon_filters("lazy_{$section}_fields", $fields);
+        $fields = apply_falcon_filters("falcon_{$section}_fields", $fields);
         usort($fields, fn ($a, $b) => ($a['priority'] ?? 10) <=> ($b['priority'] ?? 10));
 
         return $fields;

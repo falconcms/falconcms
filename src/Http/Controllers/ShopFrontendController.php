@@ -133,11 +133,16 @@ class ShopFrontendController extends Controller
 
         $cartKey = $variationId ? "{$productId}_{$variationId}" : $productId;
 
-        // Collect custom fields prefixed with lazy_custom_
+        // Collect custom fields the theme put on the add-to-cart form. The prefix is
+        // falcon_custom_ now; lazy_custom_ is still accepted, because it is written into
+        // themes that are already out there and a silently ignored field is a lost order.
         $customFields = [];
         foreach ($request->all() as $k => $v) {
-            if (str_starts_with($k, 'lazy_custom_')) {
-                $customFields[substr($k, 12)] = $v;
+            foreach (['falcon_custom_', 'lazy_custom_'] as $prefix) {
+                if (str_starts_with($k, $prefix)) {
+                    $customFields[substr($k, strlen($prefix))] = $v;
+                    break;
+                }
             }
         }
         $customFields = apply_falcon_filters('falcon_cart_item_custom_fields', $customFields, $product, $variation);
@@ -732,7 +737,7 @@ class ShopFrontendController extends Controller
             'shipping_country' => 'Shipping Country',
         ];
 
-        // Collect extra fields registered via falcon_billing_fields / lazy_shipping_fields hooks
+        // Collect extra fields registered via falcon_billing_fields / falcon_shipping_fields hooks
         $allHookFields = array_merge(falcon_get_checkout_fields('billing'), falcon_get_checkout_fields('shipping'));
         $standardNames = falcon_standard_checkout_field_names();
 

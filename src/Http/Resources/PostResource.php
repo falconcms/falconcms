@@ -43,6 +43,6 @@ class PostResource extends JsonResource
             'custom_fields' => get_post_custom_fields($this->resource),
         ];
 
-        return apply_falcon_filters('lazy_api_post_data', $data, $this->resource);
+        return apply_falcon_filters('falcon_api_post_data', $data, $this->resource);
     }
 }

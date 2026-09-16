@@ -234,7 +234,7 @@
                 </p>
             </div>
             <div class="invoice-details">
-                <h2>{{ apply_falcon_filters('lazy_invoice_title', 'Invoice', $order) }}</h2>
+                <h2>{{ apply_falcon_filters('falcon_invoice_title', 'Invoice', $order) }}</h2>
                 <p>#{{ $order->order_number ?: $order->id }}</p>
                 <p>Date: {{ cms_date($order->created_at, 'M d, Y') }}</p>
                 <span class="inv-badge {{ $badgeClass }}">{{ $badgeText }}</span>
