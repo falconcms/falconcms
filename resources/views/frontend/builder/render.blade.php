@@ -66,7 +66,7 @@
 @endif
 
 @php
-    $rawGlobal = get_cms_option('lazy_global_sections', null);
+    $rawGlobal = get_cms_option('falcon_global_sections', get_cms_option('lazy_global_sections', null));
     $globalSectionsMap = [];
     if ($rawGlobal) {
         $decoded = json_decode($rawGlobal, true);

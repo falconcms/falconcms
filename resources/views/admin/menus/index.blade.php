@@ -373,7 +373,7 @@
 
     {{-- Menu item Options modal: icon picker + show-only-icon toggle + mega menu --}}
     @php
-        $megaMenusList = json_decode(get_cms_option('lazy_mega_menus', '[]'), true) ?: [];
+        $megaMenusList = json_decode(get_cms_option('falcon_mega_menus', get_cms_option('lazy_mega_menus', '[]')), true) ?: [];
         // Customizer → Menu → Mega Menu. Off (the default) means this screen behaves exactly
         // as it always has: a top-level item points at a Layout-builder mega-menu design.
         // On, an item that HAS sub-items gets the theme header's own column mega menu instead,

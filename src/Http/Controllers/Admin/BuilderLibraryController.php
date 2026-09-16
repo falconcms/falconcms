@@ -8,15 +8,42 @@ use Illuminate\Support\Str;
 
 class BuilderLibraryController extends Controller
 {
-    const OPTION_KEY = 'lazy_builder_library';
+    const OPTION_KEY = 'falcon_builder_library';
 
-    const GLOBAL_SECTIONS_KEY = 'lazy_global_sections';
+    const GLOBAL_SECTIONS_KEY = 'falcon_global_sections';
 
-    const MEGA_MENUS_KEY = 'lazy_mega_menus';
+    const MEGA_MENUS_KEY = 'falcon_mega_menus';
+
+    /**
+     * What these settings were called before the rename.
+     *
+     * A migration moves the rows across, but a site can be running this code before its
+     * migrations have run — composer pulls the package down first. Reading falls back to the
+     * old key so a saved library, a set of global sections or a mega menu never disappears
+     * during that window. Writing only ever uses the new key.
+     */
+    const LEGACY_KEYS = [
+        self::OPTION_KEY => 'lazy_builder_library',
+        self::GLOBAL_SECTIONS_KEY => 'lazy_global_sections',
+        self::MEGA_MENUS_KEY => 'lazy_mega_menus',
+    ];
+
+    /** Read a setting by its current name, falling back to the name it used to have. */
+    private static function option(string $key, $default = null)
+    {
+        $value = get_cms_option($key, null);
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        $legacy = self::LEGACY_KEYS[$key] ?? null;
+
+        return $legacy ? get_cms_option($legacy, $default) : $default;
+    }
 
     private function getLibrary(): array
     {
-        $raw = get_cms_option(self::OPTION_KEY, null);
+        $raw = self::option(self::OPTION_KEY);
         if ($raw) {
             $decoded = json_decode($raw, true);
             if (is_array($decoded)) {
@@ -47,7 +74,7 @@ class BuilderLibraryController extends Controller
 
     private function getMegaMenus(): array
     {
-        $raw = get_cms_option(self::MEGA_MENUS_KEY, null);
+        $raw = self::option(self::MEGA_MENUS_KEY);
         if ($raw) {
             $decoded = json_decode($raw, true);
             if (is_array($decoded)) {
@@ -399,7 +426,7 @@ class BuilderLibraryController extends Controller
 
     private function getGlobalSections(): array
     {
-        $raw = get_cms_option(self::GLOBAL_SECTIONS_KEY, null);
+        $raw = self::option(self::GLOBAL_SECTIONS_KEY);
         if ($raw) {
             $decoded = json_decode($raw, true);
             if (is_array($decoded)) {

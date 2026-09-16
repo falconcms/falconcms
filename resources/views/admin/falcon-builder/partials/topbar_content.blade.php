@@ -23,7 +23,7 @@
         <div class="topbar-icon" title="Clear All" @click="layout = []">
             <i class="fa fa-trash text-sm text-red-400"></i>
         </div>
-        <div v-if="ctxClipboard" @click="ctxClipboard = null; try { localStorage.removeItem('lazy_builder_clipboard') } catch(e){}"
+        <div v-if="ctxClipboard" @click="ctxClipboard = null; try { localStorage.removeItem('falcon_builder_clipboard') } catch(e){}"
              class="flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-300 text-[10px] rounded cursor-pointer hover:bg-red-500/20 hover:text-red-300 transition-colors"
              title="Clipboard has copied item — click to clear">
             <i class="fa fa-clipboard text-[10px]"></i>

@@ -1968,7 +1968,16 @@
             // Canvas Right-Click Context Menu
             const ctxMenu = ref({ show: false, x: 0, y: 0, type: null, ci: null, coli: null, eli: null, ncoli: null, neli: null });
             // localStorage-backed clipboard — initialized synchronously from storage so cross-page paste works
-            const _CLIP_KEY = 'lazy_builder_clipboard';
+            const _CLIP_KEY = 'falcon_builder_clipboard';
+            // Carry across anything copied before the key was renamed, once, so a block
+            // copied in the previous tab does not vanish on update.
+            try {
+                const _legacyClip = localStorage.getItem('lazy_builder_clipboard');
+                if (_legacyClip && !localStorage.getItem(_CLIP_KEY)) {
+                    localStorage.setItem(_CLIP_KEY, _legacyClip);
+                }
+                localStorage.removeItem('lazy_builder_clipboard');
+            } catch (e) { /* private mode — the clipboard is per-page then, which is fine */ }
 
             // The clipboard is shared by every builder tab through localStorage, so "the
             // last thing copied" has to mean the last thing copied ANYWHERE. Reading the

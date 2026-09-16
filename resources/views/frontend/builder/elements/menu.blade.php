@@ -187,7 +187,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     // Mega Menu Layouts
     $megaMenuLayouts = [];
     try {
-        $__allMM = json_decode(get_cms_option('lazy_mega_menus', '[]'), true) ?: [];
+        $__allMM = json_decode(get_cms_option('falcon_mega_menus', get_cms_option('lazy_mega_menus', '[]')), true) ?: [];
         foreach ($__allMM as $__mm) {
             if (!empty($__mm['id'])) $megaMenuLayouts[$__mm['id']] = $__mm;
         }
