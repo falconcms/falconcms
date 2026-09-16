@@ -29,8 +29,12 @@
                         // A panel needs sub-items to put in its columns, so an item without any
                         // keeps its plain link however the switches are set.
                         $isMega = $megaOn && !empty($item->mega_enabled) && $item->children->count() > 0;
-                        $megaCols = max(1, min(6, (int) ($item->mega_columns ?: 3)));
-                        $megaWidth = in_array($item->mega_width ?? '', ['full', 'site', 'custom'], true) ? $item->mega_width : 'site';
+                        // ?? as well as ?: — a menu row saved before the mega columns existed
+                        // has no such property at all, and reading it threw rather than
+                        // defaulting, taking the whole header down with it.
+                        $megaCols = max(1, min(6, (int) (($item->mega_columns ?? null) ?: 3)));
+                        $megaWidthSaved = $item->mega_width ?? '';
+                        $megaWidth = in_array($megaWidthSaved, ['full', 'site', 'custom'], true) ? $megaWidthSaved : 'site';
                         $megaCustom = trim((string) ($item->mega_custom_width ?? '')) ?: '720px';
                     @endphp
                     {{-- A mega panel is measured against the header, not against this item — that
