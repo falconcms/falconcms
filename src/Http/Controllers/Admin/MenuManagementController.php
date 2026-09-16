@@ -183,6 +183,30 @@ class MenuManagementController extends Controller
         return view('falcon-cms::admin.menus.index', compact('menus', 'menu', 'pages', 'posts', 'categories', 'menuItemsJson', 'cptData', 'taxonomyData', 'productCategories'));
     }
 
+    /**
+     * A slug no other menu is using.
+     *
+     * The column is unique and the slug came straight out of Str::slug($name), so naming a
+     * second menu the same as an existing one — "Main Menu" twice, or one that had been
+     * deleted and remade — threw a duplicate-key error and handed the user a stack trace
+     * instead of a menu. Categories, tags and posts have all counted up for years; menus
+     * never did.
+     */
+    protected static function uniqueMenuSlug(string $name, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($name) ?: 'menu';
+        $slug = $base;
+        $n = 1;
+
+        while (NavigationMenu::where('slug', $slug)
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $slug = $base.'-'.++$n;
+        }
+
+        return $slug;
+    }
+
     public function store(Request $request)
     {
         $request->validate(['name' => 'required|string|max:255']);
@@ -199,7 +223,7 @@ class MenuManagementController extends Controller
 
         $menu = NavigationMenu::create([
             'name' => $request->name,
-            'slug' => Str::slug($request->name),
+            'slug' => static::uniqueMenuSlug($request->name),
             'is_header' => $isHeader,
             'is_footer' => $isFooter,
         ]);
@@ -301,7 +325,7 @@ class MenuManagementController extends Controller
         // (only one menu can hold each, and duplicating shouldn't steal it).
         $newMenu = NavigationMenu::create([
             'name' => $menu->name.' (Copy)',
-            'slug' => Str::slug($menu->name).'-copy-'.Str::lower(Str::random(5)),
+            'slug' => static::uniqueMenuSlug($menu->name.' copy'),
             'is_header' => false,
             'is_footer' => false,
         ]);
