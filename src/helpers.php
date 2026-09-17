@@ -3384,8 +3384,12 @@ if (!function_exists('falcon_post_terms')) {
 if (!function_exists('falcon_term_archive_url')) {
     /**
      * Public archive URL for a term. Custom taxonomies have no route of their own — the
-     * /category/{slug} and /product-category/{slug} archives fall back to a taxonomy_terms
-     * lookup — so a custom taxonomy is routed through the prefix matching its post type.
+     * category and product-category archives fall back to a taxonomy_terms lookup — so a
+     * custom taxonomy is routed through the archive matching its post type.
+     *
+     * The first segment is a setting, so it is read rather than assumed. Hard-coding
+     * "category" here sent every term link through the previous-base 301 on any site that
+     * had changed it, which still arrived but never matched the archive it landed on.
      */
     function falcon_term_archive_url($term, string $taxonomySlug, string $postType = 'post'): string
     {
@@ -3394,18 +3398,18 @@ if (!function_exists('falcon_term_archive_url')) {
             return '';
         }
 
-        $prefixes = [
+        $taxonomies = [
             'category' => 'category',        'categories' => 'category',
             'tag' => 'tag',             'tags' => 'tag',
-            'product-category' => 'product-category', 'product_category' => 'product-category',
-            'product-categories' => 'product-category', 'product_categories' => 'product-category',
-            'product-tag' => 'product-tag',     'product_tag' => 'product-tag',
-            'product-tags' => 'product-tag',     'product_tags' => 'product-tag',
+            'product-category' => 'product_category', 'product_category' => 'product_category',
+            'product-categories' => 'product_category', 'product_categories' => 'product_category',
+            'product-tag' => 'product_tag',     'product_tag' => 'product_tag',
+            'product-tags' => 'product_tag',     'product_tags' => 'product_tag',
         ];
-        $prefix = $prefixes[$taxonomySlug]
-            ?? ($postType === 'product' ? 'product-category' : 'category');
+        $taxonomy = $taxonomies[$taxonomySlug]
+            ?? ($postType === 'product' ? 'product_category' : 'category');
 
-        return url('/'.$prefix.'/'.$slug);
+        return url('/'.falcon_taxonomy_base($taxonomy).'/'.$slug);
     }
 }
 
