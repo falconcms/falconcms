@@ -1,6 +1,9 @@
 <x-falcon-cms::layouts.admin title="Custom Post Types">
     <x-falcon-cms::admin.delete-modal />
-    <div class="max-w-[1200px] mx-auto pb-12 mt-2">
+    {{-- No width cap: this list fills the admin content area the way Field Groups does.
+         A table of post types reads better wide — the columns had been squeezed into
+         1200px on screens with room to spare. --}}
+    <div class="pb-12 mt-2">
         <div class="flex items-center mb-4">
             <h1 class="text-[22px] font-normal text-[#1d2327] mr-3">Custom Post Types</h1>
             <a href="{{ route('admin.acpt.cpt.create') ?? '#' }}" class="wp-btn-outline font-normal px-2.5 py-0.5 border-[#2271b1]">Add New</a>
