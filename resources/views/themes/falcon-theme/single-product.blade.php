@@ -451,7 +451,16 @@
             // Related-product cards use the global addToCart() from the mini-cart drawer.
 
             // AJAX Add to Cart (main product)
-            document.getElementById('add-to-cart-form').addEventListener('submit', function(e) {
+            //
+            // The form is only rendered when the product can be bought: an out-of-stock
+            // product shows a disabled button instead and there is no form to bind to.
+            // Binding regardless threw, and because this is one script block the throw took
+            // the description tabs and the review form down with it — on exactly the pages
+            // where a shopper is most likely to go looking for them. The variable-product
+            // template has always guarded this; this one had not.
+            const addToCartForm = document.getElementById('add-to-cart-form');
+            if (addToCartForm) {
+            addToCartForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const form = this;
                 const btn = document.getElementById('add-to-cart-btn');
@@ -503,6 +512,7 @@
                     });
                 });
             });
+            }
 
             // Auto-open reviews tab if there is a success message
             @if(session('success'))
@@ -535,8 +545,11 @@
                 document.getElementById('rating-value').value = '5';
             }
 
-            // AJAX Review Submission
-            document.getElementById('review-form').addEventListener('submit', function(e) {
+            // AJAX Review Submission. Guarded for the same reason: the form is not rendered
+            // when reviews are switched off for the shop.
+            const reviewForm = document.getElementById('review-form');
+            if (reviewForm) {
+            reviewForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const form = this;
                 const btn = document.getElementById('review-submit-btn');
@@ -594,6 +607,7 @@
                     });
                 });
             });
+            }
         </script>
 
         {{-- Upsells first: a better version of what the shopper is already looking at is a
