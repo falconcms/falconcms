@@ -5,7 +5,126 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.1 <Badge type="tip" text="Latest" /> {#v2-7-1}
+## v2.7.2 <Badge type="tip" text="Latest" /> {#v2-7-2}
+
+**Released: 2026-09-20**
+
+::: tip For theme and plugin developers
+The helper functions and hook tags that still said `lazy_` are now `falcon_`, and the stored
+settings keyed under the old name have moved with them. **Nothing you have written stops
+working**: every old helper name remains as a forward, every renamed hook fires for callbacks
+registered under either name, and a value saved under an old key is still read. Old
+`[lazy_*]` builder shortcodes still render. The new names are what the documentation teaches
+from here; the old ones are kept for code already in the wild.
+:::
+
+### Added
+
+- **A mega menu the theme header builds itself.** *Customizer → Menu → Mega Menu* turns on a
+  per-item checkbox under *Appearance → Menus*: a top-level item with sub-items can show them
+  as a multi-column panel instead of a dropdown, with a column count up to six and a panel
+  width of full, site, or one you name. Eight item-border styles — a rule under each item, a
+  dashed one, a rule under each column heading, vertical rules between columns, a full table
+  grid, and two that reveal on hover — each with its own colour at rest and on hover. Desktop
+  only, and only for the theme's own header; the Layout builder is unaffected, and with the
+  switch off nothing changes at all.
+
+- **A custom post type can choose where it sits in the sidebar.** *ACPT → Post Types →
+  Advanced Configuration → Menu Position* lists every menu in the dashboard; the type appears
+  directly below the one you pick and the choice is remembered.
+
+- **The icon picker offers every icon the dashboard can draw** — all 4,237 in the bundled
+  icon font, read out of the font itself so nothing renders as an empty box, with a search box
+  over the whole set.
+
+- **Forms can be renamed.** The builder's heading is the field: click it and type. The
+  shortcode's `slug` deliberately does not follow, so pages the form is already on keep working.
+
+- **A child theme inherits its parent's templates.** `make:theme --child` said it did and it
+  did not — a child holding no copy of a template fell through to the default theme rather than
+  to the parent it was made from.
+
+- **The taxonomy archive bases are settings.** `/category/…` and `/tag/…` were written into the
+  route file; they are on *SEO Settings → Permalinks* now, so a site can serve `/topics/food`
+  without editing the package and losing it on the next update.
+
+- **The loop can order by `published_at`,** and its paginator keeps the rest of the query
+  string — a reader who searched and then turned the page no longer lands on the unfiltered list.
+
+- **Renaming a term leaves a redirect behind,** the way renaming a page always has. A category
+  slug is an address; editing it used to 404 every link to the old one.
+
+- **Menus registered by a plugin or theme appear in Users → Roles.** `falcon_add_menu_page()`
+  could put an entry in the sidebar that no administrator could grant to anybody, because the
+  capability existed only in the package's source. They are listed now, under the same groups
+  the sidebar uses. Two keys opt out: `'public' => true` for something every signed-in user
+  should reach, and `'show_in_roles' => false` for a capability granted elsewhere. A menu
+  registered without a capability gets one of its own rather than borrowing the dashboard's.
+
+### Changed
+
+- **Shop and Products have a sidebar section of their own,** headed *eCommerce*, the way ACPT
+  heads *Advanced*.
+
+- **A subscriber holds the Dashboard and its Overview, and nothing else.** The role was seeded
+  with `manage_users`, which drew a Users entry in the sidebar of everyone who had just
+  registered — and every page behind it answered 403. The customer role is narrowed the same
+  way. A role an administrator has edited is left exactly as they set it.
+
+- **The Post Types and Taxonomies lists use the full width,** like Field Groups beside them.
+
+### Fixed
+
+- **One unguarded mega-menu property took the whole header down.** Every property but
+  `mega_columns` was read defensively; a menu row saved before that column existed threw, and
+  the header is on every page, so the site 500'd rather than one menu rendering plainly.
+
+- **Static page caching could serve one visitor's basket to another.** The cache keys a
+  finished page on its URL alone, `/cart` and `/checkout` sat inside that route group, and every
+  page's header carries a basket count. Silent, because every response was a valid 200.
+
+- **Products sits under Shop again, and this time it stays there.** A post type's menu position
+  was computed from its database id — `40 + id` on three code paths and `60 + id` on three
+  others — so a type with the wrong id collided with Shop and the sidebar drew the tie in
+  whichever order the database felt like. Nothing derives a position from an id any more.
+
+- **Analytics drew an empty chart on Today,** its default range: a single day is a single data
+  point, and a line through one point with no markers is nothing at all. Today is plotted by the
+  hour now, in the site's own timezone.
+
+- **An options page, its menu and its guard now name the same permission.**
+  `falcon_add_options_page()` gave its menu `manage_settings` while the middleware guarded the
+  page with `manage_options_<slug>` and the Roles screen listed neither — so a role holding
+  Settings saw the menu and got a 403 from clicking it.
+
+- **Role grants made under the old permission spelling are carried across.** Two rules derived
+  a menu's slug and disagreed about every child menu, so a permission could be granted that
+  nothing ever checked. The migration only ever adds, never removes, and declines the handful of
+  old names that two menus shared rather than guessing which was meant.
+
+- **A term link follows the configured archive base,** instead of the one written into the
+  helper — which, on a site that had changed a base, sent every link the long way round through
+  a redirect.
+
+- **A menu item pointing at a category points at where that category lives now.** The address
+  was stored the day it was added; renaming the category left the menu on the old one.
+
+- **Two menus may share a name.** The slug was built straight from the name, so naming a second
+  menu after an existing one put a duplicate-key stack trace on the screen.
+
+- **Two forms with the same name no longer share a shortcode.** The slug was made from the title
+  without checking for a collision.
+
+- **Product page scripts survive an out-of-stock product.** The inline script bound a handler to
+  an add-to-cart form that is not rendered when a product cannot be bought, and the throw took
+  the description tabs down with it.
+
+- **Two admin screens misdescribed a custom post type** — the field-group location rule listed
+  Post and Pages twice, once hard-coded and once from the table.
+
+---
+
+## v2.7.1 {#v2-7-1}
 
 **Released: 2026-09-15**
 
