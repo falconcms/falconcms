@@ -5,8 +5,9 @@ namespace FalconCms\Core\Database\Seeders;
 use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Permission;
 use FalconCms\Core\Models\Role;
+use FalconCms\Core\Support\AdminMenu;
+use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class SystemSyncSeeder extends Seeder
 {
@@ -75,6 +76,24 @@ class SystemSyncSeeder extends Seeder
             }
         }
 
+        // 4b. Permissions for menus a plugin or theme registered in code. Without a row the
+        // Roles screen still lists the checkbox, but nothing holds it until someone saves —
+        // creating them here means a package's menu is grantable as soon as it is installed.
+        try {
+            foreach (app(AdminMenu::class)->permissionTree() as $items) {
+                foreach ($items as $item) {
+                    foreach (array_merge([$item], $item['children']) as $entry) {
+                        Permission::firstOrCreate(
+                            ['slug' => $entry['slug']],
+                            ['name' => ucwords(str_replace(['_', '-'], ' ', $entry['slug']))]
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Seeding runs on boot here; a package throwing must not stop the site coming up.
+        }
+
         // 5. Gather ALL permissions (Now fully populated)
         $allPermissionIds = Permission::pluck('id')->toArray();
         $allPermissionSlugs = Permission::pluck('slug')->toArray();
@@ -83,16 +102,19 @@ class SystemSyncSeeder extends Seeder
         $roleAssignments = [
             'super-admin' => 'all',
             'administrator' => 'all',
-            'editor' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments', 'manage_analytics'],
-            'author' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
-            'contributor' => ['access_dashboard', 'manage_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
-            'subscriber' => ['access_dashboard', 'manage_users', 'access_your_profile'],
-            'customer' => ['access_dashboard', 'manage_users', 'access_your_profile'],
+            'editor' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments', 'manage_analytics'],
+            'author' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments'],
+            'contributor' => ['access_dashboard', 'manage_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments'],
+            // Dashboard and its Overview, and nothing else. A subscriber was given
+            // manage_users, which put a Users entry in their sidebar that led to a 403 —
+            // the menu said they could manage users and every page behind it disagreed.
+            'subscriber' => ['access_dashboard', 'access_overview_dashboard'],
+            'customer' => ['access_dashboard', 'manage_users', 'access_your_profile_users'],
             'user' => [
                 'access_dashboard',
                 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts',
                 'manage_pages', 'access_all_pages_pages', 'access_add_new_pages',
-                'manage_media', 'access_library', 'access_add_new_media',
+                'manage_media', 'access_library_media', 'access_add_new_media',
                 'access_comments', 'manage_analytics',
                 'manage_tools', 'access_languages_tools',
             ],
@@ -116,36 +138,10 @@ class SystemSyncSeeder extends Seeder
 
     protected function generatePermissionSlug($menu, $parent = null)
     {
-        if ($menu->permission) {
-            return $menu->permission;
-        }
-
-        $title = strtolower($menu->title);
-        if ($title === 'dashboard') {
-            return 'access_dashboard';
-        }
-        if ($title === 'posts') {
-            return 'manage_posts';
-        }
-        if ($title === 'pages') {
-            return 'manage_pages';
-        }
-        if ($title === 'media') {
-            return 'manage_media';
-        }
-        if ($title === 'users') {
-            return 'manage_users';
-        }
-        if ($title === 'settings') {
-            return 'manage_settings';
-        }
-
-        $slug = Str::slug($menu->title, '_');
-
-        if ($parent && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
-            $slug .= '_'.Str::slug($parent->title, '_');
-        }
-
-        return 'access_'.$slug;
+        // The same resolver the sidebar and the Roles screen use, rather than a second copy of
+        // the rules. The copy that used to live here namespaced only a handful of child titles
+        // by their parent, so it created access_overview while the sidebar asked for
+        // access_overview_dashboard — a permission you could grant that nothing ever checked.
+        return (new Sidebar)->getPermission($menu);
     }
 }

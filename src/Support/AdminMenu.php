@@ -4,6 +4,7 @@ namespace FalconCms\Core\Support;
 
 use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * Runtime admin sidebar menu registry — the WordPress `add_menu_page()` analogue.
@@ -40,11 +41,19 @@ class AdminMenu
      *   'slug'        required, unique id                    [menu_slug]
      *   'menu_title'  label shown in the sidebar             [menu_title]  (falls back to 'title')
      *   'route'       named route, URL, or '#'               [ callback ]
-     *   'capability'  RBAC permission required to see it     [capability]  (default: access_dashboard)
+     *   'capability'  RBAC permission required to see it     [capability]  (default: access_<slug>)
      *   'icon'        material-symbol name or raw <svg>      [icon_url]
      *   'position'    sort order within its group            [position]    (default 100)
      *   'group'       sidebar section label                                (default 'Extend'; 'Main' = no label)
      *   'params'      route params                            (default [])
+     *   'public'      true = every signed-in user sees it     (default false)
+     *   'show_in_roles' false = keep the capability, but leave it out of Users → Roles
+     *
+     * Unless it says otherwise a menu appears in Users → Roles as a checkbox under its group,
+     * so an administrator can grant it per role without the package doing anything further.
+     * Two ways out: `'public' => true` for something everyone should reach, which is not listed
+     * because there is nothing to grant; and `'show_in_roles' => false` for a menu whose
+     * capability is granted somewhere else and would only be confusing twice over.
      */
     public function addMenuPage(array $args): void
     {
@@ -117,7 +126,7 @@ class AdminMenu
         return collect($this->pages)
             ->map(function (array $page) {
                 $children = collect($this->submenus[$page['slug']] ?? [])
-                    ->map(fn (array $child) => $this->toItem($child))
+                    ->map(fn (array $child) => $this->toItem($child, null, $page['slug']))
                     ->sortBy('order')
                     ->values();
 
@@ -140,21 +149,77 @@ class AdminMenu
         }
     }
 
-    /** Normalise a registration array into a sidebar item object (children as a Collection). */
-    protected function toItem(array $a, ?Collection $children = null): object
+    /**
+     * Every registered menu that belongs in Users → Roles, shaped the way that screen wants
+     * it: `group => [['title', 'slug', 'children' => [['title', 'slug'], …]], …]`.
+     *
+     * Registered menus used to be invisible there, so a plugin could add a sidebar entry that
+     * no administrator could grant to anyone — the capability existed only in the plugin's own
+     * source. Now the Roles screen asks for them the same way it asks the menus table.
+     *
+     * @return array<string,array<int,array{title:string,slug:string,children:array}>>
+     */
+    public function permissionTree(): array
     {
+        $tree = [];
+
+        foreach ($this->grouped() as $group => $items) {
+            foreach ($items as $item) {
+                if ($item->public || !$item->show_in_roles) {
+                    continue;
+                }
+
+                $children = [];
+                foreach ($item->children as $child) {
+                    if ($child->public || !$child->show_in_roles) {
+                        continue;
+                    }
+                    $children[] = ['title' => $child->title, 'slug' => $child->permission];
+                }
+
+                $tree[$group][] = [
+                    'title' => $item->title,
+                    'slug' => $item->permission,
+                    'children' => $children,
+                ];
+            }
+        }
+
+        return $tree;
+    }
+
+    /** Normalise a registration array into a sidebar item object (children as a Collection). */
+    protected function toItem(array $a, ?Collection $children = null, ?string $parentSlug = null): object
+    {
+        $title = $a['menu_title'] ?? $a['title'] ?? 'Menu';
+
         return (object) [
-            'title' => $a['menu_title'] ?? $a['title'] ?? 'Menu',
+            'title' => $title,
             'route' => $a['route'] ?? '#',
             'icon' => $a['icon'] ?? '',
-            // The sidebar's getPermission() returns this verbatim when set, so an
-            // explicit permission short-circuits any title-based derivation.
-            'permission' => $a['capability'] ?? $a['permission'] ?? 'access_dashboard',
+            // The sidebar's getPermission() returns this verbatim when set, so an explicit
+            // capability short-circuits any title-based derivation.
+            //
+            // Without one the fallback is a permission of this menu's own rather than
+            // access_dashboard, which is what it used to be: that meant every package menu was
+            // held by whoever could see the dashboard, could not be granted or withheld
+            // separately, and would have been meaningless as a checkbox in Roles.
+            'permission' => $a['capability'] ?? $a['permission'] ?? $this->derivedPermission($a, $title, $parentSlug),
             'params' => $a['params'] ?? [],
             'parent_id' => null,
             'order' => $a['position'] ?? $a['order'] ?? 100,
             'group' => $a['group'] ?? 'Extend',
+            'public' => (bool) ($a['public'] ?? false),
+            'show_in_roles' => (bool) ($a['show_in_roles'] ?? true),
             'children' => $children ?? collect(),
         ];
+    }
+
+    /** `access_<slug>` for a page, `access_<parent>_<title>` for a submenu item. */
+    protected function derivedPermission(array $a, string $title, ?string $parentSlug): string
+    {
+        $own = $a['slug'] ?? $title;
+
+        return 'access_'.Str::slug($parentSlug ? $parentSlug.' '.$title : $own, '_');
     }
 }

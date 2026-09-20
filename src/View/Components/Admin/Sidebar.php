@@ -481,10 +481,37 @@ class Sidebar extends Component
         return 'access_'.$slug;
     }
 
+    /**
+     * Whether this user may see this menu item — the one rule the sidebar asks, rather than
+     * `$isAdmin || hasPermission(getPermission($x))` repeated at every level of the tree.
+     *
+     * It exists because a package can register a menu as `'public' => true`, meaning every
+     * signed-in user reaches it and there is nothing to grant. Spelling that out beside each
+     * of the six permission checks would have been six chances to forget one.
+     */
+    public function canSee($menu): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $isPublic = is_array($menu) ? ($menu['public'] ?? false) : ($menu->public ?? false);
+        if ($isPublic) {
+            return true;
+        }
+
+        return $user->hasPermission($this->getPermission($menu));
+    }
+
     public function render()
     {
         return view('falcon-cms::components.admin.sidebar', [
             'getPermission' => [$this, 'getPermission'],
+            'canSee' => [$this, 'canSee'],
             'resolveRoute' => [$this, 'resolveRoute'],
         ]);
     }

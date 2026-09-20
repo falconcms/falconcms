@@ -5,6 +5,7 @@ namespace FalconCms\Core\Http\Controllers\Admin;
 use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Permission;
 use FalconCms\Core\Models\Role;
+use FalconCms\Core\Support\AdminMenu;
 use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -130,6 +131,23 @@ class RoleController extends Controller
 
                 $dynamicPermissions[$groupName][] = $item;
             }
+        }
+
+        // 2b. Menus a plugin or theme registered in code (falcon_add_menu_page).
+        //
+        // These were missing entirely, so a package could put an entry in the sidebar that no
+        // administrator could grant to anybody: the capability existed only in the package's
+        // own source and this screen never offered it. They merge into the same groups the
+        // sidebar puts them in, so the two screens read alike. A menu registered as `public`,
+        // or with `show_in_roles => false`, opts itself out.
+        try {
+            foreach (app(AdminMenu::class)->permissionTree() as $groupName => $items) {
+                foreach ($items as $item) {
+                    $dynamicPermissions[$groupName][] = $item;
+                }
+            }
+        } catch (\Throwable $e) {
+            // A package throwing while registering must not take the Roles screen down with it.
         }
 
         // 3. Add Custom Options Pages from config

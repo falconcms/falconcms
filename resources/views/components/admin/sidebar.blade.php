@@ -11,11 +11,12 @@
                 // Multiple-roles aware: admin if ANY of the user's roles is admin/super-admin.
                 $isAdmin = $user ? $user->isAdmin() : false;
                 
-                $visibleMenus = $menus->filter(function($menu) use ($getPermission, $isAdmin, $user) {
-                    if ($isAdmin) return true;
-                    if ($user->hasPermission($getPermission($menu))) return true;
+                // canSee() carries the whole rule — administrator, a menu a package marked
+                // public, or the permission this item resolves to.
+                $visibleMenus = $menus->filter(function($menu) use ($canSee) {
+                    if ($canSee($menu)) return true;
                     foreach($menu->children as $child) {
-                        if ($user->hasPermission($getPermission($child))) return true;
+                        if ($canSee($child)) return true;
                     }
                     return false;
                 });
@@ -30,9 +31,9 @@
                                     $hasChildren = $menu->children->isNotEmpty();
                                     $href = $resolveRoute($menu);
                                     if ($hasChildren) {
-                                        $hasParentPermission = $isAdmin || auth()->user()->hasPermission($getPermission($menu));
+                                        $hasParentPermission = $canSee($menu);
                                         foreach($menu->children as $child) {
-                                            if ($isAdmin || auth()->user()->hasPermission($getPermission($child))) {
+                                            if ($canSee($child)) {
                                                 if (!$hasParentPermission || $menu->route === $child->route || !$menu->route || $menu->route === '#') {
                                                     $href = $resolveRoute($child);
                                                 }
@@ -43,7 +44,7 @@
                                     $isActive = \FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($href);
                                     if (!$isActive && $hasChildren) {
                                         foreach($menu->children as $child) {
-                                            if ($isAdmin || auth()->user()->hasPermission($getPermission($child))) {
+                                            if ($canSee($child)) {
                                                 if (\FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($resolveRoute($child))) {
                                                     $isActive = true;
                                                     break;
@@ -96,7 +97,7 @@
                                             <ul class="py-1">
                                                 @foreach($menu->children as $child)
                                                     @php
-                                                        if (!$isAdmin && !auth()->user()->hasPermission($getPermission($child))) continue;
+                                                        if (!$canSee($child)) continue;
                                                         $childHref = $resolveRoute($child);
                                                         $isChildActive = \FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($childHref, true);
                                                     @endphp
@@ -125,7 +126,7 @@
                                             <div class="absolute -left-[6px] top-[10px] w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#2c3338]"></div>
                                             <ul class="py-1">
                                                 @foreach($menu->children as $child)
-                                                    @php if (!$isAdmin && !auth()->user()->hasPermission($getPermission($child))) continue; @endphp
+                                                    @php if (!$canSee($child)) continue; @endphp
                                                     <li>
                                                         <a href="{{ $resolveRoute($child) }}" class="block px-3 py-[6px] transition text-[13px] hover:text-[#72aee6] text-[#c3c4c7]">
                                                             {{ $child->title }}
