@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Tests\Feature\Cms;
 
+use FalconCms\Core\Http\Controllers\FrontendController;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -57,7 +58,7 @@ class ChildThemeTemplateTest extends TestCase
     /** Resolve a view name the way the frontend controller does. */
     private function resolve(string $view): string
     {
-        $controller = new \FalconCms\Core\Http\Controllers\FrontendController;
+        $controller = new FrontendController;
         $method = (new \ReflectionClass($controller))->getMethod('resolveThemeView');
         $method->setAccessible(true);
 

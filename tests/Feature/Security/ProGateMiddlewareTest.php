@@ -5,7 +5,6 @@ namespace FalconCms\Core\Tests\Feature\Security;
 use FalconCms\Core\Http\Middleware\EnsurePro;
 use FalconCms\Core\Http\Middleware\EnsureProEditable;
 use FalconCms\Core\Tests\TestCase;
-use Illuminate\Support\Facades\Route;
 
 /**
  * The two gates that actually withhold a paid feature.

@@ -6,7 +6,6 @@ use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\NavigationMenu;
 use FalconCms\Core\Models\NavigationMenuItem;
 use FalconCms\Core\Tests\TestCase;
-use Illuminate\Support\Facades\DB;
 
 /**
  * A category in a menu points at where that category lives now.

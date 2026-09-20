@@ -22,7 +22,9 @@ class HookContractTest extends TestCase
     public function test_an_action_runs_its_callback(): void
     {
         $ran = 0;
-        add_falcon_action('fct_plain', function () use (&$ran) { $ran++; });
+        add_falcon_action('fct_plain', function () use (&$ran) {
+            $ran++;
+        });
 
         do_falcon_action('fct_plain');
 
@@ -39,9 +41,15 @@ class HookContractTest extends TestCase
     public function test_actions_run_lowest_priority_first_whatever_order_they_were_added(): void
     {
         $order = [];
-        add_falcon_action('fct_order', function () use (&$order) { $order[] = 'default'; });
-        add_falcon_action('fct_order', function () use (&$order) { $order[] = 'late'; }, 20);
-        add_falcon_action('fct_order', function () use (&$order) { $order[] = 'early'; }, 5);
+        add_falcon_action('fct_order', function () use (&$order) {
+            $order[] = 'default';
+        });
+        add_falcon_action('fct_order', function () use (&$order) {
+            $order[] = 'late';
+        }, 20);
+        add_falcon_action('fct_order', function () use (&$order) {
+            $order[] = 'early';
+        }, 5);
 
         do_falcon_action('fct_order');
 
@@ -51,8 +59,12 @@ class HookContractTest extends TestCase
     public function test_two_callbacks_at_the_same_priority_run_in_the_order_they_were_added(): void
     {
         $order = [];
-        add_falcon_action('fct_same', function () use (&$order) { $order[] = 'first'; }, 10);
-        add_falcon_action('fct_same', function () use (&$order) { $order[] = 'second'; }, 10);
+        add_falcon_action('fct_same', function () use (&$order) {
+            $order[] = 'first';
+        }, 10);
+        add_falcon_action('fct_same', function () use (&$order) {
+            $order[] = 'second';
+        }, 10);
 
         do_falcon_action('fct_same');
 
@@ -62,7 +74,9 @@ class HookContractTest extends TestCase
     public function test_an_action_hands_over_every_argument_it_was_fired_with(): void
     {
         $seen = null;
-        add_falcon_action('fct_args', function (...$args) use (&$seen) { $seen = $args; });
+        add_falcon_action('fct_args', function (...$args) use (&$seen) {
+            $seen = $args;
+        });
 
         do_falcon_action('fct_args', 'a post', 42, ['deep' => true]);
 
@@ -104,7 +118,9 @@ class HookContractTest extends TestCase
     {
         // Not a nicety — this is the single commonest mistake writing a filter, and the
         // behaviour a theme has to be able to reason about when it happens.
-        add_falcon_filter('fct_forgot', function ($value) { $value.'!'; });
+        add_falcon_filter('fct_forgot', function ($value) {
+            $value.'!';
+        });
 
         $this->assertNull(apply_falcon_filters('fct_forgot', 'a value'));
     }
@@ -154,17 +170,23 @@ class HookContractTest extends TestCase
 
     public function test_an_identical_closure_is_not_the_same_closure(): void
     {
-        add_falcon_action('fct_closure', function () { echo 'hi'; }, 10);
+        add_falcon_action('fct_closure', function () {
+            echo 'hi';
+        }, 10);
 
         // Character for character the same, and it will not match: the registry compares
         // with ===, and === on two closures asks whether they are one object.
-        $this->assertFalse(remove_falcon_action('fct_closure', function () { echo 'hi'; }, 10));
+        $this->assertFalse(remove_falcon_action('fct_closure', function () {
+            echo 'hi';
+        }, 10));
         $this->assertTrue(has_falcon_action('fct_closure'));
     }
 
     public function test_a_closure_kept_in_a_variable_comes_off(): void
     {
-        $callback = function () { echo 'hi'; };
+        $callback = function () {
+            echo 'hi';
+        };
         add_falcon_action('fct_kept', $callback, 10);
 
         $this->assertTrue(remove_falcon_action('fct_kept', $callback, 10));
@@ -174,9 +196,13 @@ class HookContractTest extends TestCase
     public function test_removing_one_of_two_leaves_the_other_running(): void
     {
         $order = [];
-        $doomed = function () use (&$order) { $order[] = 'doomed'; };
+        $doomed = function () use (&$order) {
+            $order[] = 'doomed';
+        };
         add_falcon_action('fct_two', $doomed, 10);
-        add_falcon_action('fct_two', function () use (&$order) { $order[] = 'survivor'; }, 10);
+        add_falcon_action('fct_two', function () use (&$order) {
+            $order[] = 'survivor';
+        }, 10);
 
         remove_falcon_action('fct_two', $doomed, 10);
         do_falcon_action('fct_two');
@@ -215,7 +241,9 @@ class HookContractTest extends TestCase
     public function test_an_action_and_a_filter_may_share_a_tag_without_meeting(): void
     {
         $ranAction = false;
-        add_falcon_action('fct_shared', function () use (&$ranAction) { $ranAction = true; });
+        add_falcon_action('fct_shared', function () use (&$ranAction) {
+            $ranAction = true;
+        });
         add_falcon_filter('fct_shared', fn ($v) => $v.' filtered');
 
         $this->assertSame('v filtered', apply_falcon_filters('fct_shared', 'v'));

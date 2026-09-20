@@ -4,6 +4,7 @@ namespace FalconCms\Core\Tests\Feature\Security;
 
 use FalconCms\Core\Support\SvgSanitizer;
 use FalconCms\Core\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * What survives an SVG on its way into the media library.
@@ -58,7 +59,7 @@ class SvgSanitizerTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('executableElements')]
+    #[DataProvider('executableElements')]
     public function test_every_executable_element_is_removed(string $element): void
     {
         $out = SvgSanitizer::clean(
@@ -83,7 +84,7 @@ class SvgSanitizerTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('eventHandlers')]
+    #[DataProvider('eventHandlers')]
     public function test_inline_event_handlers_are_removed(string $svg): void
     {
         $out = SvgSanitizer::clean($svg);

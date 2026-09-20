@@ -45,7 +45,9 @@ class RenamedHookTest extends TestCase
     public function test_actions_alias_the_same_way(): void
     {
         $ran = 0;
-        add_falcon_action('lazy_invoice_title', function () use (&$ran) { $ran++; });
+        add_falcon_action('lazy_invoice_title', function () use (&$ran) {
+            $ran++;
+        });
 
         do_falcon_action('falcon_invoice_title');
         do_falcon_action('lazy_invoice_title');

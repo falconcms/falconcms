@@ -15,7 +15,6 @@
  * taken by the layout-section helper, which takes no arguments, so the content renderer became
  * get_falcon_post_content() instead.
  */
-
 if (!function_exists('do_lazy_shortcode')) {
     /** @deprecated Use do_falcon_shortcode(). */
     function do_lazy_shortcode(...$args)

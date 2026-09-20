@@ -5,6 +5,7 @@ namespace FalconCms\Core\Tests\Feature\Shop;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * A product page renders, whether or not the product can be bought.
@@ -91,7 +92,7 @@ class ProductPageRendersTest extends TestCase
     /**
      * @param  array<string, mixed>  $shop
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('stockStates')]
+    #[DataProvider('stockStates')]
     public function test_nothing_binds_to_an_element_that_may_not_exist(array $shop): void
     {
         $html = $this->productHtml($shop);

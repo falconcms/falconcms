@@ -7,6 +7,7 @@ use FalconCms\Core\Core\HookManager;
 use FalconCms\Core\FalconCmsServiceProvider;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Tests\Doubles\LicensedGateway;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -70,7 +71,7 @@ abstract class TestCase extends Orchestra
         //
         // Nothing about the application changes; this only puts the two steps back in the
         // order a real request does them, so what the tests exercise is what ships.
-        $app->make(\Illuminate\Contracts\Http\Kernel::class);
+        $app->make(Kernel::class);
 
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
 

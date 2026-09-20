@@ -43,7 +43,9 @@ class HookFiringTest extends TestCase
     private function watch(array $tags): void
     {
         foreach ($tags as $tag) {
-            add_falcon_action($tag, function () use ($tag) { $this->fired[$tag] = true; }, 1);
+            add_falcon_action($tag, function () use ($tag) {
+                $this->fired[$tag] = true;
+            }, 1);
             add_falcon_filter($tag, function ($value) use ($tag) {
                 $this->fired[$tag] = true;
 

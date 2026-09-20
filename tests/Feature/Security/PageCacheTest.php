@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Tests\Feature\Security;
 
+use App\Models\User;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
 
@@ -69,7 +70,7 @@ class PageCacheTest extends TestCase
         $this->enableStaticCaching();
         $this->get('/')->assertHeader('X-Lazy-Cache', 'MISS');
 
-        $this->actingAs(\App\Models\User::create([
+        $this->actingAs(User::create([
             'name' => 'Reader', 'email' => 'reader@example.test', 'password' => bcrypt('x'),
         ]));
 
