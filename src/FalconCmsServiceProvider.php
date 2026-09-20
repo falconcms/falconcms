@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core;
 
+use FalconCms\Core\Console\Commands\CancelHeldOrders;
 use FalconCms\Core\Console\Commands\ExpireSalePrices;
 use FalconCms\Core\Console\Commands\FalconList;
 use FalconCms\Core\Console\Commands\InstallFalconCms;
@@ -178,6 +179,13 @@ class FalconCmsServiceProvider extends ServiceProvider
             UpdateFalconCms::class,
             PublishScheduledPosts::class,
             ExpireSalePrices::class,
+            // Written for Shop → Settings → "Hold stock (minutes)" and never registered, so
+            // the setting has silently done nothing: unpaid orders were never cancelled and
+            // the stock they reserved never went back on the shelf. Registered here so it
+            // runs; deliberately NOT added to the schedule below, because the first
+            // unattended run on an existing shop would cancel its whole backlog of old
+            // pending orders at once. A site that wants it automated schedules it itself.
+            CancelHeldOrders::class,
             ReindexProductAttributes::class,
             PruneAnalytics::class,
             PruneActivityLogs::class,
