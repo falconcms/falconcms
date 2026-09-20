@@ -58,6 +58,20 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
+        // Build the HTTP kernel before the package provider boots.
+        //
+        // The kernel's constructor copies its own middleware groups onto the router,
+        // overwriting whatever is already there. A web request builds the kernel first and
+        // the provider's pushMiddlewareToGroup('web', ...) calls then add to it — but
+        // Testbench builds it lazily, on the first request, which is after the provider has
+        // booted. The pushes were therefore thrown away, and every test here ran against a
+        // 'web' group missing the four middleware the CMS adds to it: RedirectMiddleware,
+        // TrackVisits, LocalizationMiddleware, BuilderShortcodeMiddleware and PersistCart.
+        //
+        // Nothing about the application changes; this only puts the two steps back in the
+        // order a real request does them, so what the tests exercise is what ships.
+        $app->make(\Illuminate\Contracts\Http\Kernel::class);
+
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
 
         $app['config']->set('database.default', 'testing');
