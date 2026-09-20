@@ -5,7 +5,45 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.2 <Badge type="tip" text="Latest" /> {#v2-7-2}
+## v2.7.3 <Badge type="tip" text="Latest" /> {#v2-7-3}
+
+**Released: 2026-09-20**
+
+### Fixed
+
+- **Updating from the dashboard could refuse to start, and staying that way was the CMS's own
+  doing.** Running `falcon:update` from a shell — on a Docker host, usually as root — left
+  `vendor/falconcms/falconcms` owned by root. The site kept serving, because reading is all it
+  needs, and the damage only showed at the *next* update, whose pre-flight check correctly
+  stopped rather than let Composer half-replace the package. It told you to `chown` the files,
+  you did, and the next update from the command line undid it again. The command now hands
+  ownership back to the user the site runs as — worked out from the owner of
+  `public/index.php`, not a guessed name — and only when it is actually running as root.
+
+- **A page a plugin's menu points at could not be opened by anyone but an administrator.** The
+  middleware works out which menu owns the path being requested and checks that menu's
+  permission, but it looked in the menus table alone — and a menu registered with
+  `falcon_add_menu_page()` is not in it. So the menu appeared in the sidebar, its permission
+  could be ticked in Roles, and opening it still answered 403. Registered menus and their
+  submenus are matched now, and one declared `'public' => true` opens for any signed-in user.
+
+- **Clicking Shop went to Orders instead of Overview.** A migration corrected that route in
+  June and the seeder put it back on the next update, because it truncates the menus table and
+  rebuilds it every time — so the fix was undone by every `falcon:update` for three months.
+
+- **Two columns were written and silently dropped.** Eloquent discards a value for a column
+  outside `$fillable` without a word. `menus.params` carries the `type=product` that is the
+  only thing telling *Products → All Products* apart from *Posts*; seeding kept it by accident,
+  so sites looked right while any other code path lost it. `cms_forms.lang_code` was passed on
+  every form create and saved as nothing.
+
+### Changed
+
+- Nothing in the public API. This release is corrections to 2.7.2.
+
+---
+
+## v2.7.2 {#v2-7-2}
 
 **Released: 2026-09-20**
 
