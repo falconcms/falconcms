@@ -6,6 +6,7 @@ use Closure;
 use FalconCms\Core\Models\BlockedIp;
 use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Post;
+use FalconCms\Core\Support\AdminMenu;
 use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
@@ -128,7 +129,21 @@ class AdminMiddleware
         if (Str::startsWith($path, 'admin/options/')) {
             $slug = Str::after($path, 'admin/options/');
 
-            return $user->hasPermission('manage_options_'.$slug);
+            // A page registered with its own capability is judged by that one, so the menu a
+            // package asked for and the page behind it cannot disagree. Everything else keeps
+            // the manage_options_<slug> this has always demanded.
+            $required = 'manage_options_'.$slug;
+            try {
+                $page = app(AdminMenu::class)->optionsPage($slug);
+                if (!empty($page['capability'])) {
+                    $required = $page['capability'];
+                }
+            } catch (\Throwable $e) {
+                // Fall back to the conventional slug rather than letting a broken package
+                // registration decide who gets in.
+            }
+
+            return $user->hasPermission($required);
         }
 
         // ── Dynamic, menu-driven access control ──────────────────────────────────

@@ -97,7 +97,13 @@ class AdminMenu
             'menu_title' => $args['menu_title'] ?? $args['title'] ?? 'Settings',
             'route' => 'admin.options.show',
             'params' => ['slug' => $args['slug']],
-            'capability' => $args['capability'] ?? 'manage_settings',
+            // The permission AdminMiddleware already demands for this page, rather than
+            // manage_settings. Three rules used to disagree about one screen: the sidebar
+            // showed it to anyone who could reach Settings, the middleware asked for
+            // manage_options_<slug>, and the Roles screen offered neither — so a user with
+            // Settings saw the menu and got a 403 from it, and nobody could be granted the
+            // permission that would have worked. One spelling now, in all three places.
+            'capability' => $args['capability'] ?? 'manage_options_'.$args['slug'],
             'icon' => $args['icon'] ?? 'tune',
             'group' => $args['group'] ?? 'Extend',
             'position' => $args['position'] ?? 100,

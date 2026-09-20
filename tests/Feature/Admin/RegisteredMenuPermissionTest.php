@@ -129,6 +129,50 @@ class RegisteredMenuPermissionTest extends TestCase
         $this->assertGreaterThan(1, count($slugs), 'the database-driven menus have gone missing');
     }
 
+    // ── an options page ──────────────────────────────────────────────────────────
+
+    public function test_an_options_page_is_listed_and_the_page_behind_it_agrees(): void
+    {
+        // Three rules used to disagree about one screen. falcon_add_options_page() gave its
+        // menu `manage_settings`, AdminMiddleware guarded the page with manage_options_<slug>,
+        // and the Roles screen offered neither — so a user with Settings saw the menu in the
+        // sidebar and got a 403 from clicking it, and the permission that would have worked
+        // could not be granted to anybody.
+        $registry = $this->registry();
+        $registry->addOptionsPage([
+            'slug' => 'recipe_box',
+            'menu_title' => 'Recipe Box',
+            'title' => 'Recipe Box Settings',
+            'group' => 'Main',
+            'fields' => [['name' => 'recipe_note', 'label' => 'Note', 'type' => 'text']],
+        ]);
+
+        $menu = $registry->grouped()->flatten(1)->firstWhere('title', 'Recipe Box');
+
+        $this->assertSame('manage_options_recipe_box', $menu->permission,
+            'the menu is gated by something other than what guards the page');
+        $this->assertContains('manage_options_recipe_box', $this->offeredSlugs(),
+            'the options page still cannot be granted from Roles');
+        $this->assertNotSame('manage_settings', $menu->permission,
+            'ticking this would hand over the whole Settings section');
+    }
+
+    public function test_an_options_page_may_still_name_its_own_capability(): void
+    {
+        $registry = $this->registry();
+        $registry->addOptionsPage([
+            'slug' => 'billing',
+            'menu_title' => 'Billing',
+            'capability' => 'manage_billing',
+            'fields' => [],
+        ]);
+
+        $menu = $registry->grouped()->flatten(1)->firstWhere('title', 'Billing');
+
+        $this->assertSame('manage_billing', $menu->permission);
+        $this->assertContains('manage_billing', $this->offeredSlugs());
+    }
+
     // ── who sees it in the sidebar ───────────────────────────────────────────────
 
     private function subscriber(): User
