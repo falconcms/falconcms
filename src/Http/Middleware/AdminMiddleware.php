@@ -179,9 +179,9 @@ class AdminMiddleware
         $bestMatch = null;
         $bestMatchLen = -1;
 
-        foreach (Menu::all() as $menu) {
+        foreach ($this->accessCandidates() as $menu) {
             // Parents with children are reached through their children's URLs.
-            if ($menu->children()->count() > 0) {
+            if ($this->hasChildren($menu)) {
                 continue;
             }
 
@@ -216,6 +216,12 @@ class AdminMiddleware
         }
 
         if ($bestMatch) {
+            // A package can declare a menu public, meaning every signed-in user reaches it and
+            // there is no permission to hold.
+            if (!$bestMatch instanceof Menu && !empty($bestMatch->public)) {
+                return true;
+            }
+
             return $user->hasPermission($sidebar->getPermission($bestMatch));
         }
 
@@ -228,5 +234,47 @@ class AdminMiddleware
 
         // Strict default: any page not owned by a permitted menu is denied.
         return false;
+    }
+
+    /**
+     * Every menu that can own an admin path: the ones in the menus table, plus the ones a
+     * plugin or theme registered in code.
+     *
+     * The registered ones were missing, so a page one of them pointed at matched nothing and
+     * fell through to the strict deny below — the menu appeared in the sidebar, its permission
+     * could be granted in Roles, and opening it still answered 403. Nothing in the message said
+     * which of the three was wrong.
+     *
+     * @return iterable<int, mixed>
+     */
+    protected function accessCandidates(): iterable
+    {
+        $candidates = Menu::all()->all();
+
+        try {
+            foreach (app(AdminMenu::class)->grouped() as $items) {
+                foreach ($items as $item) {
+                    $candidates[] = $item;
+                    foreach ($item->children as $child) {
+                        $candidates[] = $child;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // A package throwing while registering must not decide who gets in; the database
+            // menus still answer for every core page.
+        }
+
+        return $candidates;
+    }
+
+    /** Works for a Menu row (a relation) and for a registered item (a plain Collection). */
+    protected function hasChildren($menu): bool
+    {
+        if ($menu instanceof Menu) {
+            return $menu->children()->count() > 0;
+        }
+
+        return !empty($menu->children) && count($menu->children) > 0;
     }
 }

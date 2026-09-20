@@ -234,7 +234,10 @@ class MenuSeeder extends Seeder
         // more entries in a long unlabelled list.
         $ecommerceMenu = Menu::create([
             'title' => 'Shop',
-            'route' => 'admin.shop.orders.index',
+            // Overview, not Orders. A migration corrected this once and this line put it back
+            // on the next update, because the seeder truncates the menus table and rebuilds it
+            // every time — so clicking Shop landed on Orders again however often it was fixed.
+            'route' => 'admin.shop.overview',
             'params' => null,
             'icon' => 'storefront',
             'group' => self::ECOMMERCE_GROUP,
