@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $type
  * @property string $status
  * @property string|null $lang_code
+ * @property int|null $user_id
  * @property int|null $menu_order
  * @property Carbon|null $published_at
  */

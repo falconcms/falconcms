@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $description
+ * @property string|null $lang_code
+ * @property int|null $origin_id
+ */
 class Tag extends Model
 {
     protected $fillable = ['name', 'slug', 'description', 'lang_code', 'origin_id'];

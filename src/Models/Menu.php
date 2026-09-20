@@ -29,7 +29,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Menu extends Model
 {
-    protected $fillable = ['parent_id', 'title', 'route', 'icon', 'group', 'order', 'permission'];
+    // `params` is here because it is written: the seeder gives Products → All Products a
+    // {"type":"product"} that is the only thing telling it apart from Posts. Seeding ran
+    // unguarded and so kept it, which hid the omission — anything creating a menu outside a
+    // seeder lost it silently, and the menu quietly pointed at the wrong list.
+    protected $fillable = ['parent_id', 'title', 'route', 'params', 'icon', 'group', 'order', 'permission'];
 
     public function children(): HasMany
     {

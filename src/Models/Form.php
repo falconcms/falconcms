@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property array<int, mixed>|null $fields
  * @property array<string, mixed>|null $settings
  * @property bool $status
+ * @property string|null $lang_code
  * @property string|null $success_message
  * @property string|null $redirect_url
  * @property string|null $email_to
@@ -28,7 +29,9 @@ class Form extends Model
 {
     protected $table = 'cms_forms';
 
-    protected $fillable = ['title', 'slug', 'fields', 'settings', 'status', 'success_message', 'redirect_url', 'email_to'];
+    // lang_code included: FormController::store() passes it on every create, and without it
+    // here every form was saved with no language at all.
+    protected $fillable = ['title', 'slug', 'fields', 'settings', 'status', 'lang_code', 'success_message', 'redirect_url', 'email_to'];
 
     protected $casts = [
         'fields' => 'array',

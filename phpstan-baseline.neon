@@ -13,12 +13,6 @@ parameters:
 			path: src/Console/Commands/CancelHeldOrders.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$order_number\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Console/Commands/CancelHeldOrders.php
-
-		-
 			message: '#^Relation ''items'' is not found in FalconCms\\Core\\Models\\Order model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
@@ -181,39 +175,9 @@ parameters:
 			path: src/Http/Controllers/Admin/BlacklistController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/CategoryController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$lang_code\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/CategoryController.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$level\.$#'
 			identifier: property.notFound
 			count: 3
-			path: src/Http/Controllers/Admin/CategoryController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 5
-			path: src/Http/Controllers/Admin/CategoryController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$origin_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/CategoryController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
 			path: src/Http/Controllers/Admin/CategoryController.php
 
 		-
@@ -811,12 +775,6 @@ parameters:
 			path: src/Http/Controllers/Admin/PostController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 5
-			path: src/Http/Controllers/Admin/PostController.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Post\>\:\:\$content\.$#'
 			identifier: property.notFound
 			count: 4
@@ -1075,18 +1033,6 @@ parameters:
 			path: src/Http/Controllers/Admin/ReviewController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Role\:\:\$permissions\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/RoleController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Role\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/RoleController.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasRole\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -1105,75 +1051,9 @@ parameters:
 			path: src/Http/Controllers/Admin/ShopController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$order_number\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$transaction_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$customer_email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$is_read\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$order_number\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$paid_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$payment_method\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$refunded_amount\.$#'
 			identifier: property.notFound
 			count: 1
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 2
 			path: src/Http/Controllers/Admin/ShopController.php
 
 		-
@@ -1181,36 +1061,6 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 5
 			path: src/Http/Controllers/Admin/ShopController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$description\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/TagController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$lang_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/TagController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 5
-			path: src/Http/Controllers/Admin/TagController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$origin_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/TagController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/TagController.php
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\TaxonomyTerm\:\:\$level\.$#'
@@ -1291,6 +1141,12 @@ parameters:
 			path: src/Http/Controllers/Admin/UserController.php
 
 		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/View/Components/Admin/Sidebar.php
+
+		-
 			message: '#^Relation ''role'' is not found in App\\Models\\User model\.$#'
 			identifier: larastan.relationExistence
 			count: 2
@@ -1303,43 +1159,7 @@ parameters:
 			path: src/Http/Controllers/Admin/WordPressImportController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Api/V1/CmsApiController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$parent_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Api/V1/CmsApiController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Api/V1/CmsApiController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Api/V1/CmsApiController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Api/V1/CmsApiController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/FrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
 			path: src/Http/Controllers/FrontendController.php
@@ -1364,12 +1184,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\ProductTag\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/FrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
 			path: src/Http/Controllers/FrontendController.php
@@ -1465,12 +1279,6 @@ parameters:
 			path: src/Http/Controllers/ShopFrontendController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$customer_email\.$#'
-			identifier: property.notFound
-			count: 4
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$customer_phone\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1495,63 +1303,9 @@ parameters:
 			path: src/Http/Controllers/ShopFrontendController.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$order_number\.$#'
-			identifier: property.notFound
-			count: 14
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$paid_at\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$payment_method\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 7
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\OrderDownload\:\:\$productDownload\.$#'
 			identifier: property.notFound
 			count: 1
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$customer_email\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$paid_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/ShopFrontendController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Order\>\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 2
 			path: src/Http/Controllers/ShopFrontendController.php
 
 		-
@@ -1843,24 +1597,6 @@ parameters:
 			path: src/Mail/PasswordResetMail.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$lang_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Models/Category.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$origin_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Models/Category.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Models/Category.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Coupon\:\:\$amount\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1955,12 +1691,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: src/Models/Media.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$paid_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Models/Order.php
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\OrderDownload\:\:\$download_count\.$#'
@@ -2173,18 +1903,6 @@ parameters:
 			path: src/Models/Revision.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$lang_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Models/Tag.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$origin_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Models/Tag.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\TaxonomyTerm\:\:\$lang_code\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2213,24 +1931,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: src/Services/WordPressImporter.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ExportManager.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$parent_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ExportManager.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ExportManager.php
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Comment\:\:\$created_at\.$#'
@@ -2359,18 +2059,6 @@ parameters:
 			path: src/Support/ExportManager.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ExportManager.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Tag\:\:\$slug\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ExportManager.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\TaxonomyTerm\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2433,7 +2121,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasPermission\(\)\.$#'
 			identifier: method.notFound
-			count: 30
+			count: 31
 			path: src/View/Components/Admin/Sidebar.php
 
 		-
@@ -2581,12 +2269,6 @@ parameters:
 			path: tests/Feature/Security/PostActionGuardTest.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Post\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Security/PostActionGuardTest.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -2677,12 +2359,6 @@ parameters:
 			path: tests/Feature/Shop/CheckoutTest.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$customer_email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Shop/CheckoutTest.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$discount_total\.$#'
 			identifier: property.notFound
 			count: 2
@@ -2695,45 +2371,15 @@ parameters:
 			path: tests/Feature/Shop/CheckoutTest.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$order_number\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Shop/CheckoutTest.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$payment_method\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Shop/CheckoutTest.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$shipping_total\.$#'
 			identifier: property.notFound
 			count: 1
 			path: tests/Feature/Shop/CheckoutTest.php
 
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: tests/Feature/Shop/CheckoutTest.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$subtotal\.$#'
-			identifier: property.notFound
-			count: 2
-			path: tests/Feature/Shop/CheckoutTest.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$tax_total\.$#'
 			identifier: property.notFound
 			count: 2
-			path: tests/Feature/Shop/CheckoutTest.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Order\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 5
 			path: tests/Feature/Shop/CheckoutTest.php
 
 		-

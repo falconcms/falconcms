@@ -5,7 +5,24 @@ namespace FalconCms\Core\Models;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * A placed order. The columns are spelled out because static analysis cannot see through
+ * Eloquent's `__get`; the list mirrors $fillable below.
+ *
+ * @property int $id
+ * @property int|null $user_id
+ * @property string $order_number
+ * @property string $status
+ * @property float $subtotal
+ * @property float $total
+ * @property string|null $customer_email
+ * @property string|null $payment_method
+ * @property string|null $transaction_id
+ * @property Carbon|null $paid_at
+ * @property bool $is_read
+ */
 class Order extends Model
 {
     use SoftDeletes;

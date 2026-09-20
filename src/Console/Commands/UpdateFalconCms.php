@@ -89,9 +89,106 @@ class UpdateFalconCms extends Command
         $this->info('Step 7: Auto-creating E-commerce pages...');
         $this->createEcommercePages();
 
+        // 8. Hand back what root just took
+        $this->restoreWebServerOwnership();
+
         $this->info('---------------------------------------');
         $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
+    }
+
+    /**
+     * Give the web-server user back the files this command wrote.
+     *
+     * Run from a shell — which on a Docker host usually means as root — Composer and the
+     * publish steps leave their output owned by root. The site keeps serving, because reading
+     * is all it needs; the damage shows up later, at the next update from the dashboard, where
+     * the pre-flight check correctly refuses to start because the web process cannot rewrite
+     * `vendor/falconcms/falconcms`. The message tells you to chown it, and you do, and the next
+     * root-run update undoes it again.
+     *
+     * So the command that caused it puts it back. It does nothing at all unless it is actually
+     * running as root — as the web user there is nothing to repair and no permission to try.
+     */
+    protected function restoreWebServerOwnership(): void
+    {
+        if (!function_exists('posix_geteuid') || posix_geteuid() !== 0) {
+            return;
+        }
+
+        $owner = $this->webServerOwner();
+        if (!$owner) {
+            return;
+        }
+
+        $this->info('Step 8: Returning file ownership to '.$owner['name'].'...');
+
+        foreach ([
+            base_path('vendor'),
+            base_path('composer.json'),
+            base_path('composer.lock'),
+            base_path('storage'),
+            base_path('bootstrap/cache'),
+            resource_path('views/themes'),
+            base_path('plugins'),
+        ] as $path) {
+            $this->chownRecursive($path, $owner['uid'], $owner['gid']);
+        }
+    }
+
+    /**
+     * Who the site runs as. `public/index.php` is the one file the web server certainly reads
+     * and that this command never rewrites, so its owner is the most reliable answer available
+     * from inside the container — more so than guessing a name like www-data, which is right
+     * on Debian images and wrong on plenty of others.
+     *
+     * @return array{name: string, uid: int, gid: int}|null
+     */
+    protected function webServerOwner(): ?array
+    {
+        foreach ([base_path('public/index.php'), base_path('artisan'), base_path()] as $probe) {
+            if (!file_exists($probe)) {
+                continue;
+            }
+            $uid = @fileowner($probe);
+            $gid = @filegroup($probe);
+            if ($uid === false || $uid === 0) {
+                continue; // root owns it too; it tells us nothing
+            }
+            $pw = function_exists('posix_getpwuid') ? @posix_getpwuid($uid) : null;
+
+            return ['name' => $pw['name'] ?? (string) $uid, 'uid' => $uid, 'gid' => $gid === false ? $uid : $gid];
+        }
+
+        return null;
+    }
+
+    /** chown -R, in PHP, never throwing and never following a symlink out of the tree. */
+    protected function chownRecursive(string $path, int $uid, int $gid): void
+    {
+        if (!file_exists($path)) {
+            return;
+        }
+
+        @chown($path, $uid);
+        @chgrp($path, $gid);
+
+        if (!is_dir($path) || is_link($path)) {
+            return;
+        }
+
+        try {
+            $items = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::SELF_FIRST
+            );
+            foreach ($items as $item) {
+                @chown($item->getPathname(), $uid);
+                @chgrp($item->getPathname(), $gid);
+            }
+        } catch (\Throwable $e) {
+            // An unreadable corner of the tree must not fail an otherwise finished update.
+        }
     }
 
     /**
