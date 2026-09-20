@@ -109,7 +109,10 @@ class SystemSyncSeeder extends Seeder
             // manage_users, which put a Users entry in their sidebar that led to a 403 —
             // the menu said they could manage users and every page behind it disagreed.
             'subscriber' => ['access_dashboard', 'access_overview_dashboard'],
-            'customer' => ['access_dashboard', 'manage_users', 'access_your_profile_users'],
+            // Same as a subscriber, and for the same reason: a customer signs in to the
+            // storefront account page, not to user management, and manage_users only ever
+            // drew them a Users menu that answered 403.
+            'customer' => ['access_dashboard', 'access_overview_dashboard'],
             'user' => [
                 'access_dashboard',
                 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts',
