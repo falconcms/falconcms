@@ -5,7 +5,72 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.3 <Badge type="tip" text="Latest" /> {#v2-7-3}
+## v2.7.4 <Badge type="tip" text="Latest" /> {#v2-7-4}
+
+**Released: 2026-09-22**
+
+A release about the gap between what the builder shows you and what the page renders. Several
+settings took a value, looked right in the editor, and then did something else — or nothing —
+once published.
+
+### Fixed
+
+- **A section's Link Color and Link Hover Color reach the links they are set on.** Both lost to
+  the theme's own rich-text link styling, which is more specific than a single class, so a link
+  inside a Text Block — the commonest place to have one — kept the theme colour. The container's
+  rules match that specificity now. A Text Block with a hover colour of its own was also forcing
+  every link inside it to follow along, with `!important`; links are excluded from that.
+- **Container Link Hover Color** is a new field, under Link Color in the Design tab. Left empty,
+  links keep their own colour on hover, as they always did. `:focus-visible` follows `:hover`, so
+  the same feedback reaches a keyboard.
+- **Container Border Color keeps its opacity.** The editor had drawn it correctly for a while;
+  the page was still using the bare hex, so a border set to any transparency published solid.
+  Untouched sides also stopped emitting a stray, invalid `border-…: px solid` declaration.
+- **A gradient background with one colour paints that colour.** Both the start and the end were
+  required before anything was drawn at all, so choosing one and leaving the other empty gave no
+  gradient and no colour. One colour is a flat fill of it; two still make the gradient. Applies
+  to containers, columns and nested columns.
+- **Row layout wraps on the page, the way it always has in the editor.** A row that overflowed
+  could not break, so its items shrank past their own content and printed over one another.
+- **The editor renders in the site's typography.** Every element defaults to `font-family:
+  inherit`, and the canvas was inheriting the admin's system font while the page used the theme's
+  body font — the same weight came out visibly lighter in the editor than on the page.
+- **Icons from every library show in the builder.** The picker offers Bootstrap, Remix, Boxicons
+  and Lucide alongside Font Awesome, but the three builder screens loaded only Font Awesome, so
+  an icon from any of the other four was an empty box in the canvas and in the picker. Nothing
+  was ever lost from the saved page.
+- **Table row hover works under every preset.** Bordered and Minimal ship with hover off, and
+  choosing a Row hover colour on either did nothing. Choosing a colour now switches it on. The
+  tick box also reports the state actually in effect rather than sitting unticked under a preset
+  that hovers.
+- **`/admin` is a 404 for every browser without a session again.** v2.6.13 let a browser that had
+  signed in before through to the login page, which handed the address back to the one browser
+  most likely to be used to check that moving it had worked. An admin who cannot reach the panel
+  goes to the address in Settings → Login URL.
+- **A settings cache that cannot be cleared is reported at error, not warning.** A production
+  `.env` routinely carries `LOG_LEVEL=error`, so the one message that explains why saved settings
+  keep serving their old values was being filtered out.
+- **Link, border and gradient opacities survive a shortcode round-trip.** The container wrote its
+  background opacities and not these, so a container carried through shortcodes came back with a
+  solid border and solid links.
+
+### Improved
+
+- **Paste lands beside what you right-clicked.** Paste at Start and Paste at End put the copy at
+  the very top or very bottom of the page; they now go immediately before or after the container,
+  column, nested column or element the menu was opened on, and read Paste Before / Paste After
+  when that is what they will do.
+- **The canvas follows what the Navigator opens.** Clicking a node in the Navigator moved the
+  settings panel and left the canvas where it was, so on a long page you were editing something
+  you could not see. It scrolls to the node — only when it is off screen, and never mid-drag.
+- **The drop marker shows where a drag will land.** On the canvas it was drawn as a border, which
+  a container's and a column's own inline border width overrode, so dragging either showed
+  nothing at all. In the Navigator it was a border with a 150ms transition on it, so it trailed
+  behind the pointer and nudged the row 2px taller each time. Both are overlays now.
+
+---
+
+## v2.7.3 {#v2-7-3}
 
 **Released: 2026-09-20**
 
