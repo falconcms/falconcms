@@ -24,6 +24,7 @@
          @contextmenu.prevent.stop="openCtxMenu($event, 'column', ci, coli)"
          @mouseenter="setHover('column', ci, coli)"
          @mouseleave="setHover(null)"
+         :data-fc-node="'column-' + ci + '-' + coli"
          @dragover="onDragOver($event, 'column', ci, coli)"
          @drop="onDrop($event, 'column', ci, coli)">
 
@@ -165,6 +166,7 @@
                   background then showed as a band above it, with all padding set to 0.
                   A flex container does not render whitespace-only text runs at all. --}}
              :style="(el.type === 'row' || el.type === 'section_separator' || el.type === 'code_block' || el.type === 'table' || el.type === 'callout' || el.type === 'toc' || el.type === 'heading' || el.type === 'prev_next') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : (column.settings.contentLayout === 'row' ? { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0', width: 'auto', minWidth: '0' } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' }))"
+             :data-fc-node="'element-' + ci + '-' + coli + '-' + eli"
              @dragover="onDragOver($event, 'element', ci, coli, eli)"
              @drop="onDrop($event, 'element', ci, coli, eli)">
 

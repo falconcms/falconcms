@@ -1606,6 +1606,49 @@
                 return !!(el && elementLocked(el.type));
             };
 
+            /**
+             * Bring the node being edited into view on the canvas.
+             *
+             * Opening something from the Navigator moved the settings panel to it and left the
+             * canvas wherever it was, so on any page longer than the viewport you were editing
+             * a section you could not see and had to hunt for it. Every canvas node carries a
+             * data-fc-node address matching the indices used everywhere else, so the panel and
+             * the canvas can be pointed at the same thing.
+             *
+             * Only scrolls when the node is actually out of view, and never mid-drag: clicking
+             * a node ON the canvas must not shift the page under the pointer. Centred when it
+             * does scroll, so the section arrives somewhere you can see around it.
+             */
+            const scrollCanvasTo = (type, ci, coli, eli, ncoli, neli) => {
+                const key = (type === 'nested-element')
+                    ? `nested-element-${ci}-${coli}-${eli}-${ncoli}-${neli}`
+                    : (type === 'nested-column') ? `nested-column-${ci}-${coli}-${eli}-${ncoli}`
+                    // A nested row is an element of its column, and that is how it is addressed.
+                    : (type === 'element' || type === 'nested-row') ? `element-${ci}-${coli}-${eli}`
+                    : (type === 'column') ? `column-${ci}-${coli}`
+                    : (type === 'container') ? `container-${ci}` : null;
+                if (!key) return;
+
+                requestAnimationFrame(() => {
+                    const el = document.querySelector(`[data-fc-node="${key}"]`);
+                    const area = document.querySelector('.builder-canvas-area');
+                    if (!el || !area) return;
+
+                    const node = el.getBoundingClientRect();
+                    const view = area.getBoundingClientRect();
+                    // Comfortably inside already? Leave the canvas alone.
+                    if (node.top >= view.top && node.bottom <= view.bottom) return;
+
+                    const reduce = window.matchMedia
+                        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    try {
+                        el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+                    } catch (e) {
+                        el.scrollIntoView();
+                    }
+                });
+            };
+
             const setEditingContext = (type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
                 // Nested editing is modal: nothing outside the open row can be selected.
                 if (nestedLockBlocks(ci, coli, eli)) return;
@@ -1661,6 +1704,12 @@
 
                 if (type === 'element' || type === 'nested-element') {
                     initRichEditors();
+                }
+
+                // Re-targeting the same node is what the drag and resize handlers do on every
+                // mouse move, so scrolling there would fight the pointer.
+                if (!sameTarget && !isDragging.value) {
+                    scrollCanvasTo(type, ci, coli, eli, ncoli, neli);
                 }
             };
 

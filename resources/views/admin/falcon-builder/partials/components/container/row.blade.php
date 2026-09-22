@@ -23,6 +23,7 @@
      @contextmenu.prevent.stop="openCtxMenu($event, 'container', ci)"
      @mouseenter="setHover('container', ci); container._bgHover = true"
      @mouseleave="setHover(null); container._bgHover = false"
+     :data-fc-node="'container-' + ci"
      @dragover="onDragOver($event, 'container', ci)"
      @drop="onDrop($event, 'container', ci)">
 @endif
