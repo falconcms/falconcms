@@ -9,29 +9,23 @@ use FalconCms\Core\Models\Post;
 use FalconCms\Core\Support\AdminMenu;
 use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AdminMiddleware
 {
     /**
-     * Marks a browser that has completed a sign-in here.
+     * Kept as a no-op so an older call site cannot fatal during an update.
      *
-     * Set on login (see {@see self::rememberBrowser()}), never cleared on logout: after
-     * signing out on purpose, the next visit to /admin should still reach the login page
-     * rather than a 404. It records nothing about who signed in.
-     */
-    public const RETURNING_COOKIE = 'falcon_admin_seen';
-
-    /**
-     * Remember that this browser has signed in, so a later visit with no session is sent
-     * to the login page instead of a 404. One year, because the whole point is to still
-     * help long after the session that created it has gone.
+     * It used to drop a year-long cookie marking a browser that had signed in, which
+     * {@see self::handle()} then let past the /admin 404 and on to the login page. That
+     * exception is gone — see the note there — so there is nothing left to remember.
+     *
+     * @deprecated Since the /admin 404 applies to every browser again. Stop calling it.
      */
     public static function rememberBrowser(): void
     {
-        Cookie::queue(Cookie::make(self::RETURNING_COOKIE, '1', 60 * 24 * 365));
+        // Intentionally empty.
     }
 
     public function handle(Request $request, Closure $next)
@@ -57,28 +51,21 @@ class AdminMiddleware
 
         // 3. Ensure Authenticated
         //
-        // 404, not a redirect to the login page. The login URL is deliberately moved off
-        // a guessable path (Settings → Login URL); bouncing every anonymous hit on /admin
-        // straight to it handed that address to anyone who typed the obvious guess, which
-        // defeated the whole point of moving it. To someone without a session, the admin
-        // now simply does not exist.
+        // 404, never a redirect to the login page. The login URL is deliberately moved off
+        // a guessable path (Settings → Login URL); bouncing an anonymous hit on /admin
+        // straight to it hands that address to anyone who types the obvious guess, which
+        // defeats the whole point of moving it. Without a session the admin simply does
+        // not exist, whoever is asking.
         //
-        // Except for a browser that has signed in here before. A session lasts hours, the
-        // work in a builder tab lasts longer, and an admin whose session lapsed — or who
-        // opened an old bookmark — met a bare 404 that reads exactly like a broken site,
-        // with nothing anywhere pointing back to a login page they may not have written
-        // down. That browser already knows the address, so sending it there tells it
-        // nothing it did not have, while a stranger still gets a 404.
-        //
-        // The marker is a Laravel cookie, so it is encrypted and signed with APP_KEY:
-        // it cannot be forged from outside, and a wrong or absent one simply is not there.
+        // v2.6.13 carved out an exception for a browser that had signed in here before,
+        // so an admin whose session had lapsed met the login page rather than a bare 404.
+        // The exception is gone: it made the address reachable from /admin again for the
+        // one browser most likely to be used to check whether moving it had worked, and
+        // it left the setting looking like it did nothing. An admin who cannot reach the
+        // panel goes to the address in Settings → Login URL, which is the address they
+        // chose.
         if (!auth()->check()) {
-            if (!$request->cookie(self::RETURNING_COOKIE)) {
-                abort(404);
-            }
-
-            return redirect()->route('admin.login')
-                ->with('error', 'Your session has ended. Please sign in again.');
+            abort(404);
         }
 
         $user = auth()->user()->fresh();
