@@ -138,7 +138,14 @@
     $contentLayout = ($s['contentLayout'] ?? '') ?: 'column';
     if ($contentLayout && $contentLayout !== 'block') {
         $innerStyles[] = 'display: flex';
-        $innerStyles[] = $contentLayout === 'row' ? 'flex-wrap: nowrap' : 'flex-wrap: wrap';
+        // Row layout wraps, exactly as the builder canvas does (columnInnerStyle() in
+        // scripts.blade.php sets flexWrap:'wrap' for both directions). v1.4.2 set this to
+        // nowrap because row items were stacking one-per-line — but the real cause of that
+        // was each element wrapper being width:100%, which the `width:auto!important` rule
+        // below fixes. nowrap on top of it meant a row that overflowed could not break, so
+        // the items shrank past their content (min-width:0) and printed over each other —
+        // ten pills on one line on the home page. Wrapping is also what the editor shows.
+        $innerStyles[] = 'flex-wrap: wrap';
         $innerStyles[] = 'flex-direction: ' . ($contentLayout === 'row' ? 'row' : 'column');
         $gw = intval($s['gapWidth']  ?? 0);
         $gh = intval($s['gapHeight'] ?? 0);

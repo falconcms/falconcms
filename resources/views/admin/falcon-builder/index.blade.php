@@ -12,7 +12,26 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
+    @php
+        /* The canvas has to render in the SITE's typography, not the admin UI's. An element
+           whose font-family is "inherit" — which is the default for every one of them —
+           inherited the builder chrome's system stack here and the theme's body font on the
+           front end, so the same weight came out visibly lighter in the editor than on the
+           page. Load the site's own fonts so the canvas can use them. */
+        $__canvasTypo = json_decode(get_cms_option('theme_typography_body'), true)
+            ?: ['family' => 'Inter', 'size' => '15px'];
+        $__canvasFonts = array_filter([
+            $__canvasTypo['family'] ?? null,
+            (json_decode(get_cms_option('theme_typography_h1'), true)['family'] ?? null),
+            (json_decode(get_cms_option('theme_typography_nav'), true)['family'] ?? null),
+        ]);
+        $__canvasFontUrl = $__canvasFonts ? falcon_google_font_url(array_unique($__canvasFonts)) : '';
+    @endphp
+    @if($__canvasFontUrl)
+    <link href="{{ $__canvasFontUrl }}" rel="stylesheet">
+    @endif
+
+
     <!-- Icons -->
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/material-symbols.css') }}" />

@@ -133,7 +133,20 @@
     }
 
     /* Canvas Styles */
+    /* The canvas renders in the SITE's typography, so an element left on the default
+       font-family:inherit resolves to the same face here as on the front end. Without this
+       the canvas inherited the admin chrome's system stack (Segoe UI on Windows) while the
+       page used the theme body font, and identical settings looked lighter in the editor
+       than they did live. Scoped to the canvas — the builder's own panels and toolbars are
+       outside it and keep the admin UI font. */
+    @php
+        $__cvTypo = json_decode(get_cms_option('theme_typography_body'), true)
+            ?: ['family' => 'Inter', 'size' => '15px'];
+    @endphp
     .canvas-container {
+        font-family: '{{ $__cvTypo['family'] ?? 'Inter' }}', sans-serif;
+        font-size: {{ $__cvTypo['size'] ?? '15px' }};
+        line-height: {{ $__cvTypo['line_height'] ?? '1.6' }};
         width: 100%;
         margin: 0 auto !important;
         background: #fff;
