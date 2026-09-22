@@ -63,16 +63,23 @@
             {{-- Paste is offered wherever the clipboard can actually land: a container
                  anywhere (so a page with nothing on it yet can still receive one), a
                  column into any container or nested row, an element into any column,
-                 nested or not. canPasteHere / pasteHint come from pasteResolve(). --}}
+                 nested or not. canPasteHere / pasteHint come from pasteResolve().
+
+                 The copy lands beside whatever was right-clicked, so the labels read
+                 Before/After. They fall back to Start/End only where there is nothing to
+                 sit beside — the bare canvas, or a container right-clicked with a column
+                 on the clipboard — which is exactly when the ends are what happens. --}}
             <button @click="canPasteHere && ctxPaste('start')"
                     :class="canPasteHere ? 'text-white/90 hover:bg-white/10 hover:text-white cursor-pointer' : 'text-white/25 cursor-not-allowed'"
                     class="w-full px-3 py-2 text-left text-[12.5px] transition-colors flex items-center gap-2.5">
-                <i class="fa fa-arrow-up w-3.5 text-center text-[11px]" :class="canPasteHere ? 'text-white/40' : 'text-white/20'"></i> Paste at Start
+                <i class="fa fa-arrow-up w-3.5 text-center text-[11px]" :class="canPasteHere ? 'text-white/40' : 'text-white/20'"></i>
+                <span>@{{ pasteAnchored ? 'Paste Before' : 'Paste at Start' }}</span>
             </button>
             <button @click="canPasteHere && ctxPaste('end')"
                     :class="canPasteHere ? 'text-white/90 hover:bg-white/10 hover:text-white cursor-pointer' : 'text-white/25 cursor-not-allowed'"
                     class="w-full px-3 py-2 text-left text-[12.5px] transition-colors flex items-center gap-2.5">
-                <i class="fa fa-arrow-down w-3.5 text-center text-[11px]" :class="canPasteHere ? 'text-white/40' : 'text-white/20'"></i> Paste at End
+                <i class="fa fa-arrow-down w-3.5 text-center text-[11px]" :class="canPasteHere ? 'text-white/40' : 'text-white/20'"></i>
+                <span>@{{ pasteAnchored ? 'Paste After' : 'Paste at End' }}</span>
             </button>
             <div v-if="pasteHint" class="px-3 pb-1.5 pt-0.5 text-[9.5px] leading-snug"
                  :class="canPasteHere ? 'text-white/35' : 'text-amber-300/60'">

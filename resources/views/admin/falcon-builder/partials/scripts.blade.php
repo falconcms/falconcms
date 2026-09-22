@@ -2123,8 +2123,14 @@
 
             /**
              * Where the clipboard would land for the context menu currently open:
-             * { list, where } when it can be pasted, { list: null, error } when it cannot.
-             * Driven by what is ON the clipboard, not by what was right-clicked.
+             * { list, where, anchor } when it can be pasted, { list: null, error } when it
+             * cannot. Driven by what is ON the clipboard, not by what was right-clicked.
+             *
+             * `anchor` is the index, within `list`, of the sibling that was right-clicked —
+             * so a paste can land next to it instead of at the far end of the page. It is
+             * null when the click has no sibling to sit beside: the bare canvas, or a
+             * container right-clicked while a column is on the clipboard. ctxPaste() falls
+             * back to the ends of the list in that case.
              */
             const pasteResolve = (m) => {
                 const clip = ctxClipboard.value;
@@ -2141,16 +2147,20 @@
 
                 // A container always goes on the page itself, so it can be pasted from
                 // anywhere — including the bare canvas of a page that is still empty.
-                if (kind === 'container') return { list: L, where: 'this page' };
+                // Right-clicking anything inside a container anchors to that container, so
+                // the copy lands beside it rather than at the top or bottom of the page.
+                if (kind === 'container') {
+                    return { list: L, where: 'this page', anchor: _at(m.ci) ? m.ci : null };
+                }
 
                 if (kind === 'column') {
                     if (inNested || m.type === 'nested-row') {
                         return (rowEl && Array.isArray(rowEl.columns))
-                            ? { list: rowEl.columns, where: 'this nested row' }
+                            ? { list: rowEl.columns, where: 'this nested row', anchor: _at(m.ncoli) ? m.ncoli : null }
                             : { list: null, error: 'That nested row has no columns to paste into.' };
                     }
                     return (container && Array.isArray(container.columns))
-                        ? { list: container.columns, where: 'this container' }
+                        ? { list: container.columns, where: 'this container', anchor: _at(m.coli) ? m.coli : null }
                         : { list: null, error: 'Right-click a container, column or element to paste a column.' };
                 }
 
@@ -2164,21 +2174,35 @@
                     if (clip.data.type === 'row') {
                         return { list: null, error: 'A nested row cannot sit inside a nested column. Paste it into a plain column.' };
                     }
-                    return { list: ncol.elements, where: 'this nested column' };
+                    return { list: ncol.elements, where: 'this nested column', anchor: _at(m.neli) ? m.neli : null };
                 }
                 return (column && Array.isArray(column.elements))
-                    ? { list: column.elements, where: 'this column' }
+                    ? { list: column.elements, where: 'this column', anchor: _at(m.eli) ? m.eli : null }
                     : { list: null, error: 'Right-click a column or an element to paste an element.' };
             };
 
             const canPasteHere = computed(() => !!pasteResolve(ctxMenu.value).list);
+
+            /**
+             * Is the paste going to land beside the node that was right-clicked? The two
+             * buttons say so, because "Paste at Start" over a button that drops the copy
+             * into the middle of the page is worse than no label at all.
+             */
+            const pasteAnchored = computed(() => {
+                const r = pasteResolve(ctxMenu.value);
+                return !!r.list && _at(r.anchor);
+            });
 
             /** Small line under the paste buttons: what lands where, or why it cannot. */
             const pasteHint = computed(() => {
                 const clip = ctxClipboard.value;
                 if (!clip) return 'Clipboard is empty';
                 const r = pasteResolve(ctxMenu.value);
-                return r.list ? (clipKind(clip.type) + ' \u2192 ' + r.where) : (r.error || '');
+                if (!r.list) return r.error || '';
+                const kind = clipKind(clip.type);
+                return _at(r.anchor)
+                    ? (kind + ' \u2192 above or below this ' + kind)
+                    : (kind + ' \u2192 ' + r.where);
             });
 
             const ctxPaste = (position) => {
@@ -2190,7 +2214,19 @@
                 }
                 const copy = cloneObject(ctxClipboard.value.data);
                 assignNewIds(copy);
-                position === 'start' ? r.list.unshift(copy) : r.list.push(copy);
+                // Beside the node that was right-clicked: 'start' goes immediately before
+                // it, 'end' immediately after. Pasting always landed at the very top or the
+                // very bottom of the page before, which on a long page meant scrolling the
+                // copy back to where it was wanted every single time.
+                //
+                // With no sibling to anchor to — the bare canvas, or a container
+                // right-clicked with a column on the clipboard — the ends are still the
+                // only sensible answer, and that is what the labels then say.
+                if (_at(r.anchor)) {
+                    r.list.splice(position === 'start' ? r.anchor : r.anchor + 1, 0, copy);
+                } else {
+                    position === 'start' ? r.list.unshift(copy) : r.list.push(copy);
+                }
                 closeCtxMenu();
             };
 
@@ -6883,7 +6919,7 @@
                 isNestedRowOpen, setNestedRowOpen, nestedChrome, nestedRowHasContent, nestedLockActive, nestedLocked, nestedDimContainer, nestedDimColumn, nestedDimElement,
                 navDragSrc, navDragOver, navDragStart, navDragEnd, navDragOverHandler, navDrop, navCanDrop,
                 ctxMenu, ctxClipboard, ctxMenuTitle, openCtxMenu, closeCtxMenu, ctxEdit, ctxSave, ctxClone, ctxRemove, ctxCopy, ctxPaste, ctxSaveAsGlobal,
-                canPasteHere, pasteHint, clipKind,
+                canPasteHere, pasteHint, pasteAnchored, clipKind,
                 globalSections, showGlobalModal, globalModalName, isSavingGlobal, openGlobalModal, saveAsGlobal, unlinkGlobal, insertGlobalSection, deleteGlobalSection,
                 themeBodyFont, themeHeadingFont, themeNavFont, builderFontGroups, builderFonts: BUILDER_FONTS,
                 titleFontVariants, loadBuilderFont,
