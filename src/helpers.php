@@ -773,6 +773,12 @@ if (!function_exists('forget_cms_options_cache')) {
      * later and it starts working on its own. The usual cause is a cache file left
      * owned by another user, which happens the moment anyone runs `php artisan`
      * as root over SSH while the site itself runs as www-data.
+     *
+     * This is reported at ERROR, not warning. A production .env routinely carries
+     * LOG_LEVEL=error, and at warning the message was filtered out on the one kind
+     * of site that needs it — new.falconcms.com sat with an unclearable cache for
+     * two weeks and logged nothing at all. A setting that silently refuses to
+     * apply is a broken site, so it belongs at the level people actually keep.
      */
     function forget_cms_options_cache(): void
     {
@@ -784,8 +790,8 @@ if (!function_exists('forget_cms_options_cache')) {
             }
         } catch (Throwable $e) {
             try {
-                Log::warning(
-                    'FalconCMS: could not clear the settings cache, so saved settings may keep reading '
+                Log::error(
+                    'FalconCMS: could not clear the settings cache, so saved settings will keep reading '
                     .'their old values until it expires. This is usually a cache file owned by another '
                     .'user — check the ownership of storage/framework/cache (it must be writable by the '
                     .'user the site runs as). Cause: '.$e->getMessage()
