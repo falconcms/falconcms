@@ -42,6 +42,59 @@ if (!defined('FALCON_CMS_VERSION')) {
     unset($__versionFile, $__versionData);
 }
 
+if (!function_exists('falcon_gradient_bg')) {
+    /**
+     * The background-image value for a node's gradient settings, or null for none.
+     *
+     * Both colours used to be required: `!empty(start) && !empty(end)`. Pick one and
+     * nothing at all was drawn — not the gradient, and not the colour you had just
+     * chosen — on the canvas or on the page. Choosing one colour is a perfectly ordinary
+     * thing to do, and it plainly means "fill this with that colour", so one colour now
+     * paints a flat fill of it and two make the gradient they always did.
+     *
+     * Returned as a gradient in both cases rather than a background-color, because the
+     * caller layers it with a background image underneath and expects a background-image
+     * value; a flat fill is a gradient from a colour to itself.
+     *
+     * @param  array  $s  the node's settings
+     * @param  callable  $rgba  fn(?string $hex, $opacity): string — the caller's own
+     *                          hex→rgba, so opacity handling stays identical to its
+     *                          other colours
+     */
+    function falcon_gradient_bg(array $s, callable $rgba): ?string
+    {
+        $startHex = $s['bgGradientStartColor'] ?? '';
+        $endHex = $s['bgGradientEndColor'] ?? '';
+        if (empty($startHex) && empty($endHex)) {
+            return null;
+        }
+
+        $fallbackOpacity = $s['bgColorOpacity'] ?? 1;
+        $start = !empty($startHex) ? $rgba($startHex, $s['bgGradientStartOpacity'] ?? $fallbackOpacity) : null;
+        $end = !empty($endHex) ? $rgba($endHex, $s['bgGradientEndOpacity'] ?? $fallbackOpacity) : null;
+
+        // One colour: a flat fill of it, edge to edge. Fading the missing end to
+        // transparent instead would show the container behind it, which is not what
+        // picking a single colour asks for.
+        if ($start === null || $end === null) {
+            $only = $start ?? $end;
+
+            return "linear-gradient({$only} 0%, {$only} 100%)";
+        }
+
+        $startPos = $s['bgGradientStartPosition'] ?? 0;
+        $endPos = $s['bgGradientEndPosition'] ?? 100;
+
+        if (($s['bgGradientType'] ?? 'linear') === 'linear') {
+            $angle = $s['bgGradientAngle'] ?? 180;
+
+            return "linear-gradient({$angle}deg, {$start} {$startPos}%, {$end} {$endPos}%)";
+        }
+
+        return "radial-gradient(circle at center, {$start} {$startPos}%, {$end} {$endPos}%)";
+    }
+}
+
 if (!function_exists('falcon_elem_resp_css')) {
     /**
      * Generate responsive @media CSS for a builder element.

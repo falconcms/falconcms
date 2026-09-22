@@ -190,18 +190,9 @@
 
     $bgImages = [];
     // Gradient — only when bgType is 'gradient'
-    if ($bgType === 'gradient' && !empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
-        $gType = $s['bgGradientType'] ?? 'linear';
-        $angle = $s['bgGradientAngle'] ?? 180;
-        $start = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? 1);
-        $end   = $hexToRgba($s['bgGradientEndColor'],   $s['bgGradientEndOpacity']   ?? 1);
-        $startPos = $s['bgGradientStartPosition'] ?? 0;
-        $endPos = $s['bgGradientEndPosition'] ?? 100;
-        if ($gType === 'linear') {
-            $bgImages[] = "linear-gradient({$angle}deg, {$start} {$startPos}%, {$end} {$endPos}%)";
-        } else {
-            $bgImages[] = "radial-gradient(circle at center, {$start} {$startPos}%, {$end} {$endPos}%)";
-        }
+    if ($bgType === 'gradient') {
+        $__grad = falcon_gradient_bg($s, $hexToRgba);
+        if ($__grad) $bgImages[] = $__grad;
     }
 
     // BG Image — works when bgType is 'image' or 'gradient' (not 'color')
@@ -412,16 +403,9 @@
             if ($rBgImg !== null) {
                 $rBgImgParts = [];
                 // Preserve gradient overlay if bgType is 'gradient'
-                if ($bgType === 'gradient' && !empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
-                    $gType = $s['bgGradientType'] ?? 'linear';
-                    $gAng  = $s['bgGradientAngle'] ?? 180;
-                    $gS    = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? 1);
-                    $gE    = $hexToRgba($s['bgGradientEndColor'],   $s['bgGradientEndOpacity']   ?? 1);
-                    $gSP   = $s['bgGradientStartPosition'] ?? 0;
-                    $gEP   = $s['bgGradientEndPosition']   ?? 100;
-                    $rBgImgParts[] = $gType === 'linear'
-                        ? "linear-gradient({$gAng}deg, {$gS} {$gSP}%, {$gE} {$gEP}%)"
-                        : "radial-gradient(circle at center, {$gS} {$gSP}%, {$gE} {$gEP}%)";
+                if ($bgType === 'gradient') {
+                    $__rGrad = falcon_gradient_bg($s, $hexToRgba);
+                    if ($__rGrad) $rBgImgParts[] = $__rGrad;
                 }
                 $rBgImgParts[] = "url('{$rBgImg}')";
                 $rInner[] = 'background-image:' . implode(', ', $rBgImgParts) . '!important';

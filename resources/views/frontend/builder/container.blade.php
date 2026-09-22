@@ -41,18 +41,9 @@
     // Gradient and/or image as layered background-image (gradient on top, image below)
     // These have no responsive controls, so they remain inline.
     $bgImages = [];
-    if ($bgType === 'gradient' && !empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
-        $gType    = $s['bgGradientType'] ?? 'linear';
-        $angle    = $s['bgGradientAngle'] ?? 180;
-        $startPos = $s['bgGradientStartPosition'] ?? 0;
-        $endPos   = $s['bgGradientEndPosition']   ?? 100;
-        $start    = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? $s['bgColorOpacity'] ?? 1);
-        $end      = $hexToRgba($s['bgGradientEndColor'],   $s['bgGradientEndOpacity']   ?? $s['bgColorOpacity'] ?? 1);
-        if ($gType === 'linear') {
-            $bgImages[] = "linear-gradient({$angle}deg, {$start} {$startPos}%, {$end} {$endPos}%)";
-        } else {
-            $bgImages[] = "radial-gradient(circle at center, {$start} {$startPos}%, {$end} {$endPos}%)";
-        }
+    if ($bgType === 'gradient') {
+        $__grad = falcon_gradient_bg($s, $hexToRgba);
+        if ($__grad) $bgImages[] = $__grad;
     }
     $ctnBgLazyUrl = null;
     if ($bgType !== 'color' && !empty($s['bgImage'])) {
@@ -234,17 +225,8 @@
         if ($bgType !== 'color' && $hasOvr('bgImage', $dev)) {
             $_rImg = $getResVal('bgImage', $dev);
             $_bgParts = [];
-            if (!empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
-                $_gType = $s['bgGradientType'] ?? 'linear';
-                $_gAng  = $s['bgGradientAngle'] ?? 180;
-                $_gS    = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? $s['bgColorOpacity'] ?? 1);
-                $_gE    = $hexToRgba($s['bgGradientEndColor'],   $s['bgGradientEndOpacity']   ?? $s['bgColorOpacity'] ?? 1);
-                $_gSP   = $s['bgGradientStartPosition'] ?? 0;
-                $_gEP   = $s['bgGradientEndPosition']   ?? 100;
-                $_bgParts[] = $_gType === 'linear'
-                    ? "linear-gradient({$_gAng}deg, {$_gS} {$_gSP}%, {$_gE} {$_gEP}%)"
-                    : "radial-gradient(circle at center, {$_gS} {$_gSP}%, {$_gE} {$_gEP}%)";
-            }
+            $_grad = falcon_gradient_bg($s, $hexToRgba);
+            if ($_grad) $_bgParts[] = $_grad;
             if (!empty($_rImg)) $_bgParts[] = "url('{$_rImg}')";
             $outer[] = 'background-image:' . (!empty($_bgParts) ? implode(', ', $_bgParts) : 'none') . '!important';
         }

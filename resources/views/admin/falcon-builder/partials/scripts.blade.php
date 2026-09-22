@@ -3461,6 +3461,38 @@
                 return css;
             };
 
+            /**
+             * The background-image value for a node's gradient settings, or null.
+             *
+             * The twin of falcon_gradient_bg() in helpers.php, and it has to stay one:
+             * both used to require BOTH colours, so choosing only a start or only an end
+             * drew nothing at all — here and on the page. One colour is a flat fill of it,
+             * two make the gradient.
+             */
+            const falconGradientBg = (s) => {
+                const startHex = s.bgGradientStartColor;
+                const endHex = s.bgGradientEndColor;
+                if (!startHex && !endHex) return null;
+
+                const fallback = s.bgColorOpacity !== undefined ? s.bgColorOpacity : 1;
+                const op = (v) => (v !== undefined && v !== null && v !== '') ? v : fallback;
+                const start = startHex ? hexToRgba(startHex, op(s.bgGradientStartOpacity)) : null;
+                const end = endHex ? hexToRgba(endHex, op(s.bgGradientEndOpacity)) : null;
+
+                if (!start || !end) {
+                    const only = start || end;
+                    return `linear-gradient(${only} 0%, ${only} 100%)`;
+                }
+
+                const sp = (s.bgGradientStartPosition !== undefined ? s.bgGradientStartPosition : 0) + '%';
+                const ep = (s.bgGradientEndPosition !== undefined ? s.bgGradientEndPosition : 100) + '%';
+                if ((s.bgGradientType || 'linear') === 'linear') {
+                    const angle = (s.bgGradientAngle !== undefined ? s.bgGradientAngle : 180) + 'deg';
+                    return `linear-gradient(${angle}, ${start} ${sp}, ${end} ${ep})`;
+                }
+                return `radial-gradient(circle at center, ${start} ${sp}, ${end} ${ep})`;
+            };
+
             const containerStyle = (container, ci) => {
                 const s = container.settings;
                 const dev = device.value;
@@ -3480,15 +3512,9 @@
                 let bgStyle = bgType === 'color' ? hexToRgba(responsiveBgColor, responsiveBgOpacity !== undefined ? responsiveBgOpacity : 1) : undefined;
                 let bgImages = [];
 
-                if (bgType === 'gradient' && s.bgGradientStartColor && s.bgGradientEndColor) {
-                    const start = hexToRgba(s.bgGradientStartColor, s.bgGradientStartOpacity !== undefined ? s.bgGradientStartOpacity : 1);
-                    const end = hexToRgba(s.bgGradientEndColor, s.bgGradientEndOpacity !== undefined ? s.bgGradientEndOpacity : 1);
-
-                    if (s.bgGradientType === 'radial') {
-                        bgImages.push(`radial-gradient(circle at center, ${start} ${s.bgGradientStartPosition || 0}%, ${end} ${s.bgGradientEndPosition || 100}%)`);
-                    } else {
-                        bgImages.push(`linear-gradient(${s.bgGradientAngle || 180}deg, ${start} ${s.bgGradientStartPosition || 0}%, ${end} ${s.bgGradientEndPosition || 100}%)`);
-                    }
+                if (bgType === 'gradient') {
+                    const grad = falconGradientBg(s);
+                    if (grad) bgImages.push(grad);
                 }
 
                 const dynBg = dynBgUrl(s);
@@ -3792,18 +3818,9 @@
                 let bgImages = [];
 
                 // Gradient — only when bgType is 'gradient'
-                if (bgType === 'gradient' && s.bgGradientStartColor && s.bgGradientEndColor) {
-                    const gType = s.bgGradientType || 'linear';
-                    const angle = s.bgGradientAngle !== undefined ? s.bgGradientAngle + 'deg' : '180deg';
-                    const start = hexToRgba(s.bgGradientStartColor, s.bgGradientStartOpacity !== undefined ? s.bgGradientStartOpacity : 1);
-                    const end = hexToRgba(s.bgGradientEndColor, s.bgGradientEndOpacity !== undefined ? s.bgGradientEndOpacity : 1);
-                    const startPos = s.bgGradientStartPosition !== undefined ? s.bgGradientStartPosition + '%' : '0%';
-                    const endPos = s.bgGradientEndPosition !== undefined ? s.bgGradientEndPosition + '%' : '100%';
-                    if (gType === 'linear') {
-                        bgImages.push(`linear-gradient(${angle}, ${start} ${startPos}, ${end} ${endPos})`);
-                    } else {
-                        bgImages.push(`radial-gradient(circle, ${start} ${startPos}, ${end} ${endPos})`);
-                    }
+                if (bgType === 'gradient') {
+                    const grad = falconGradientBg(s);
+                    if (grad) bgImages.push(grad);
                 }
 
                 // BG Image — works when bgType is 'image' or 'gradient' (not 'color')
