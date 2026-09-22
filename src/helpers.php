@@ -982,6 +982,49 @@ if (!function_exists('falcon_menu_is_active')) {
     }
 }
 
+if (!function_exists('falcon_menu_branch_is_active')) {
+    /**
+     * Is this menu item, or anything nested under it, the page being viewed?
+     *
+     * {@see falcon_menu_is_active()} answers only for the item's own URL, so a parent
+     * whose child is the current page stayed unhighlighted and the reader lost track of
+     * which section they were in — the submenu entry lit up, the top-level entry above it
+     * did not. Whole branches are marked instead: the item on the current page and every
+     * ancestor of it.
+     *
+     * Two callers with two shapes. The theme header holds Eloquent rows that expose their
+     * own `children`, which the default reader below walks on its own. The builder's Menu
+     * element holds one flat list plus a collection grouped by parent id, so it passes
+     * $childrenOf to look the next level up. Arrays work too, via a `children` key.
+     *
+     * Depth is capped rather than trusted: menu rows carry a parent_id an editor can point
+     * anywhere, and a row that ends up its own ancestor would otherwise recurse until the
+     * request died.
+     */
+    function falcon_menu_branch_is_active(?string $url, $children = [], ?callable $childrenOf = null, int $depth = 0): bool
+    {
+        if (falcon_menu_is_active($url)) {
+            return true;
+        }
+        if ($depth >= 10 || empty($children)) {
+            return false;
+        }
+
+        foreach ($children as $child) {
+            $childUrl = is_array($child) ? ($child['url'] ?? null) : ($child->url ?? null);
+            $grandChildren = $childrenOf
+                ? $childrenOf($child)
+                : (is_array($child) ? ($child['children'] ?? []) : ($child->children ?? []));
+
+            if (falcon_menu_branch_is_active($childUrl, $grandChildren ?: [], $childrenOf, $depth + 1)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('falcon_refresh_route_cache')) {
     /**
      * Rebuild the route cache, so a setting that routes are built from takes effect.

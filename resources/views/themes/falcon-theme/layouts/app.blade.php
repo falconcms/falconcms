@@ -401,6 +401,14 @@
             .falcon-mega-panel .falcon-mega-link:hover {
                 color: {{ get_cms_option('theme_mega_menu_link_hover_color', '#0091ea') }};
             }
+            {{-- The page you are on, inside the panel. There is no separate colour setting for
+                 it, and inventing one would be a new Customizer field for a state that only
+                 ever wants to read as "here" — so it borrows the link hover colour, which is
+                 already the deliberate accent of this menu. --}}
+            .falcon-mega-panel .falcon-mega-link.is-active,
+            .falcon-mega-panel .falcon-mega-heading.is-active {
+                color: {{ get_cms_option('theme_mega_menu_link_hover_color', '#0091ea') }};
+            }
 
             {{-- Item Border. Every choice in the Customizer's dropdown has a branch here, and
                  every branch draws something on a default menu — a style that quietly does

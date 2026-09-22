@@ -23,7 +23,9 @@
                 @endphp
                 @foreach($menuItems as $item)
                     @php
-                        $isActive = falcon_menu_is_active($item->url);
+                        // The whole branch, not just this row: a top-level item stays marked
+                        // while the reader is on one of its sub-pages.
+                        $isActive = falcon_menu_branch_is_active($item->url, $item->children);
                         $itemHoverColor = get_cms_option('theme_menu_hover_color', '#0091ea');
 
                         // A panel needs sub-items to put in its columns, so an item without any
@@ -64,13 +66,13 @@
                                     @foreach($item->children as $child)
                                         <div class="falcon-mega-col">
                                             @if($child->children->count() > 0)
-                                                <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="falcon-mega-heading">
+                                                <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="falcon-mega-heading {{ falcon_menu_branch_is_active($child->url, $child->children) ? 'is-active' : '' }}">
                                                     @if(!empty($child->icon))<i class="{{ $child->icon }}"></i>@endif{{ $child->title }}
                                                 </a>
                                                 <ul class="falcon-mega-list">
                                                     @foreach($child->children as $grandChild)
                                                         <li>
-                                                            <a href="{{ falcon_anchor_url($grandChild->url) }}" target="{{ $grandChild->target ?? '_self' }}" class="falcon-mega-link">
+                                                            <a href="{{ falcon_anchor_url($grandChild->url) }}" target="{{ $grandChild->target ?? '_self' }}" class="falcon-mega-link {{ falcon_menu_is_active($grandChild->url) ? 'is-active' : '' }}">
                                                                 @if(!empty($grandChild->icon))<i class="{{ $grandChild->icon }}"></i>@endif{{ $grandChild->title }}
                                                             </a>
                                                         </li>
@@ -79,7 +81,7 @@
                                             @else
                                                 <ul class="falcon-mega-list">
                                                     <li>
-                                                        <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="falcon-mega-link">
+                                                        <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="falcon-mega-link {{ falcon_menu_is_active($child->url) ? 'is-active' : '' }}">
                                                             @if(!empty($child->icon))<i class="{{ $child->icon }}"></i>@endif{{ $child->title }}
                                                         </a>
                                                     </li>
@@ -94,9 +96,15 @@
                                  style="background-color: {{ get_cms_option('theme_dropdown_bg', '#ffffff') }}; border: 1px solid var(--border-color);">
                                 <ul class="py-2">
                                     @foreach($item->children as $child)
+                                        {{-- The dropdown row for the page you are on had no marked
+                                             state at all: every row took the same fixed dropdown
+                                             colour, so opening the menu told you nothing about where
+                                             you were. It takes the primary colour now, matching the
+                                             top-level item that is marked above it. --}}
+                                        @php $childActive = falcon_menu_branch_is_active($child->url, $child->children); @endphp
                                         <li class="relative group/sub">
                                             <a href="{{ falcon_anchor_url($child->url) }}" target="{{ $child->target ?? '_self' }}" class="flex items-center justify-between px-5 py-2.5 text-[13px] font-medium hover:bg-slate-50 transition-all"
-                                               style="color: {{ get_cms_option('theme_dropdown_text_color', '#1d2327') }};">
+                                               style="color: {{ $childActive ? 'var(--primary)' : get_cms_option('theme_dropdown_text_color', '#1d2327') }};">
                                                 @php
                                                     $__cic = $child->icon ?? '';
                                                     $__cio = !empty($child->show_only_icon) && $__cic !== '';
@@ -115,7 +123,7 @@
                                                         @foreach($child->children as $grandChild)
                                                             <li>
                                                                 <a href="{{ $grandChild->url }}" target="{{ $grandChild->target ?? '_self' }}" class="block px-5 py-2.5 text-[13px] font-medium hover:bg-slate-50 transition-all"
-                                                                   style="color: {{ get_cms_option('theme_dropdown_text_color', '#1d2327') }};">
+                                                                   style="color: {{ falcon_menu_is_active($grandChild->url) ? 'var(--primary)' : get_cms_option('theme_dropdown_text_color', '#1d2327') }};">
                                                                     @php
                                                                         $__gic = $grandChild->icon ?? '';
                                                                         $__gio = !empty($grandChild->show_only_icon) && $__gic !== '';
@@ -192,7 +200,8 @@
             <nav class="space-y-4" data-falcon-scrollspy="text-primary">
                 @foreach($menuItems as $item)
                     @php
-                        $isActive = falcon_menu_is_active($item->url);
+                        // Same rule as the desktop header — the branch you are inside is marked.
+                        $isActive = falcon_menu_branch_is_active($item->url, $item->children);
                     @endphp
                     <div>
                         @php
@@ -205,7 +214,9 @@
                             <div class="pl-4 space-y-2 border-l border-slate-100 ml-1">
                                 @foreach($item->children as $child)
                                     @php
-                                        $childActive = falcon_menu_is_active($child->url);
+                                        // A second-level item with a third level under it is an
+                                        // ancestor too, so it is marked when a grandchild is current.
+                                        $childActive = falcon_menu_branch_is_active($child->url, $child->children);
                                     @endphp
                                     @php
                                         $__mcic = $child->icon ?? '';

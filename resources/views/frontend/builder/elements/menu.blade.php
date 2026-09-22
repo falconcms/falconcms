@@ -37,12 +37,27 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         // and two copies of it would drift into two different answers on one page.
         $isActive = falcon_same_page($item->url ?? '', $currentUrl);
 
+        // An ancestor of the current page is marked too, so a reader inside a submenu can
+        // still see which top-level section they are in.
+        //
+        // This is a SEPARATE class from .active on purpose. On this element .active carries
+        // a second meaning further down — `.falcon-menu-item.active > .mobile-submenu` is
+        // what holds a submenu open on a phone, and it rotates the arrow — so putting it on
+        // every ancestor would force those branches open and spin their arrows as a side
+        // effect of highlighting. .current-parent only ever paints.
+        $isBranchActive = $hasChildren && !$isActive && falcon_menu_branch_is_active(
+            $item->url ?? '',
+            $children,
+            fn ($c) => $grouped->get($c->id, collect([]))
+        );
+
         // Mega menu: only for desktop top-level items
         $hasMegaMenu = !$isMobile && !$isSubmenu
             && !empty($item->mega_menu_id)
             && isset($megaMenuLayouts[$item->mega_menu_id]);
 
-        $liClass = (($hasChildren || $hasMegaMenu) ? 'has-children' : '') . ($isActive ? ' active' : '');
+        $liClass = (($hasChildren || $hasMegaMenu) ? 'has-children' : '') . ($isActive ? ' active' : '')
+            . ($isBranchActive ? ' current-parent' : '');
         $liExtra = $hasMegaMenu ? ' data-mega-trigger="' . e($item->id) . '"' : '';
         echo '<li class="falcon-menu-item ' . $liClass . '"' . $liExtra . '>';
 
@@ -413,7 +428,11 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
          point at it, which is the ordinary meaning of "this is where you are". Falling
          back to itemColorActive/itemBgColorActive keeps room for a future panel to offer a
          distinct active colour without another migration of this template. --}}
+    {{-- .current-parent is an ancestor of the current page. It is painted exactly like the
+         current item, and deliberately appears ONLY in the colour rules — never in the
+         mobile-submenu or arrow-rotation rules below, which read .active to mean "open". --}}
     .menu-{{ $elId }} .falcon-menu-item.active > .falcon-menu-link,
+    .menu-{{ $elId }} .falcon-menu-item.current-parent > .falcon-menu-link,
     .menu-{{ $elId }} .falcon-menu-link.active {
         color: {{ ($s['itemColorActive'] ?? '') ?: ($s['itemColorHover'] ?? '#0091ea') }} !important;
         background-color: {{ ($s['itemBgColorActive'] ?? '') ?: ($s['itemBgColorHover'] ?? 'transparent') }} !important;
@@ -428,6 +447,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     {{-- The pointer still wins over the active state while it is actually there, so the
          menu keeps responding to a hover on top of the current page too. --}}
     .menu-{{ $elId }} .falcon-menu-item.active > .falcon-menu-link:hover,
+    .menu-{{ $elId }} .falcon-menu-item.current-parent > .falcon-menu-link:hover,
     .menu-{{ $elId }} .falcon-menu-link.active:hover {
         color: {{ $s['itemColorHover'] ?? '#0091ea' }} !important;
         background-color: {{ $s['itemBgColorHover'] ?? 'transparent' }} !important;
@@ -455,6 +475,13 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             color: {{ $s['itemColorHover'] ?? '#0091ea' }};
         @endif
     }
+    @if($s['arrowScopeObj']['active'] ?? false)
+    {{-- Colour only. An ancestor's arrow takes the active colour with the rest of its link,
+         but it must not rotate: rotation means the submenu is open, and this one is not. --}}
+    .menu-{{ $elId }} .falcon-menu-item.current-parent > .falcon-menu-link .falcon-menu-arrow {
+        color: {{ $s['itemColorHover'] ?? '#0091ea' }};
+    }
+    @endif
 
     /* Submenu Arrow Direction */
     .menu-{{ $elId }} .falcon-submenu .fa-chevron-right.falcon-menu-arrow { transform: rotate(-90deg); }
