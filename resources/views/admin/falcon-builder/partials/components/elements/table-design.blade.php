@@ -183,7 +183,9 @@
             <input type="checkbox" v-model="editingElement.settings.stripe"> Striped rows
         </label>
         <label class="flex items-center gap-2 text-[12px] text-slate-700">
-            <input type="checkbox" v-model="editingElement.settings.hover"> Highlight the row under the cursor
+            <input type="checkbox" :checked="fcTblHoverOn(editingElement)"
+                   @change="editingElement.settings.hover = $event.target.checked">
+            Highlight the row under the cursor
         </label>
     </div>
 

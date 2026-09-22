@@ -49,7 +49,19 @@
 
     $borders   = $g('borders');            // all | horizontal | none
     $stripe    = (bool) $g('stripe');
-    $hover     = (bool) $g('hover');
+    // Row hover follows the preset until the author says otherwise — and choosing a Row
+    // hover colour IS saying otherwise. Two of the six presets ship hover off (Bordered
+    // and Minimal), and `hover` came from the preset alone, so on those two the colour
+    // picked in the Design tab lit nothing up and the field looked broken. An explicit
+    // colour turns it on; unticking the box still turns it off, whatever the colour says.
+    $hover = (function () use ($s, $preset) {
+        $own = $s['hover'] ?? null;
+        if ($own !== null && $own !== '') {
+            return (bool) $own;
+        }
+
+        return (bool) ($preset['hover'] ?? false) || !empty($s['hoverBg']);
+    })();
     $sortable  = !empty($s['sortable']) && $headerRow;
     $responsive = $s['responsive'] ?? 'scroll';   // scroll | stack
     $maxHeight = (int) ($s['maxHeight'] ?? 0);

@@ -4491,8 +4491,26 @@
             // this element's id, the same way the Section Separator injects its own.
             const fcTblScopeId = (el) => 'fc-tbl-canvas-' + el.id;
 
+            /**
+             * Is row hover on? The twin of the same decision in the front end's
+             * table.blade.php, and it has to stay one.
+             *
+             * The preset decides until the author does. Bordered and Minimal ship hover
+             * off, so reading the flag from the preset alone meant the Row hover colour
+             * did nothing on those two — the field was there, it just never lit anything.
+             * Choosing a colour is choosing hover; unticking the box still wins.
+             */
+            function fcTblHoverOn(el) {
+                const s = (el && el.settings) || {};
+                if (s.hover !== undefined && s.hover !== null && s.hover !== '') {
+                    return !!s.hover;
+                }
+
+                return !!fcTblPreset(el).hover || !!s.hoverBg;
+            }
+
             function fcTblHoverCss(el) {
-                if (!fcTblVal(el, 'hover')) return '';
+                if (!fcTblHoverOn(el)) return '';
                 const id = fcTblScopeId(el);
                 // Not on the header, and not on a header column: those carry their own
                 // background and the front end leaves them alone too.
@@ -6957,7 +6975,7 @@
                 fcPnVal, fcPnPair, fcPnLabel, fcPnEmptyReason,
                 fcPnGridStyle, fcPnLinkStyle, fcPnArrowStyle, fcPnLabelStyle, fcPnTitleStyle,
                 fcTblCell, fcTblCellFor, fcTblRows, fcTblHead, fcTblBody, fcTblAlign, fcTblVal,
-                fcTblSpec, fcTblTypo, fcTblHoverCss, fcTblScopeId,
+                fcTblSpec, fcTblTypo, fcTblHoverCss, fcTblHoverOn, fcTblScopeId,
                 fcTblOuterStyle, fcTblScrollStyle, fcTblTableStyle,
                 fcTblHeadCellStyle, fcTblCellStyle, fcTblCaptionStyle,
                 fcTblEnsure, fcTblAddRow, fcTblRemoveRow, fcTblMoveRow,
