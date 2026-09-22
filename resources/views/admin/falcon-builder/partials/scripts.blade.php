@@ -1715,7 +1715,10 @@
                             flexWrap: 'wrap', columnGap: '', htmlTag: 'div',
                             menuAnchor: '', visibility: { mobile: true, tablet: true, desktop: true },
                             status: 'published', cssClass: '',
-                            linkColor: '',
+                            // The Design tab's colour picker and its reset button both write
+                            // linkColorOpacity, so a container that never had one stored read
+                            // back undefined the moment the swatch was drawn.
+                            linkColor: '', linkColorOpacity: 1,
                             borderSizeTop: '', borderSizeRight: '', borderSizeBottom: '', borderSizeLeft: '', borderColor: '#000000',
                             borderRadiusTopLeft: '', borderRadiusTopRight: '', borderRadiusBottomRight: '', borderRadiusBottomLeft: '',
                             boxShadow: false, boxShadowPositionVertical: 0, boxShadowPositionHorizontal: 0,

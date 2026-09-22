@@ -666,8 +666,12 @@
                              :style="{ backgroundColor: hexToRgba({{ $base }}.settings.linkColor, {{ $base }}.settings.linkColorOpacity) }"
                              class="w-full h-full cursor-pointer"></div>
                     </div>
+                    {{-- Through the same pair of helpers every other colour field here uses.
+                         A plain v-model on linkColor could not show or accept the opacity the
+                         swatch beside it edits, so a colour picked at 50% read back as an
+                         opaque hex and retyping that hex silently reset the transparency. --}}
                     <div class="relative flex-1">
-                        <input type="text" v-model="{{ $base }}.settings.linkColor" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]" placeholder="#000000">
+                        <input type="text" :value="falconColorDisplay({{ $base }}.settings, 'linkColor', 'linkColorOpacity')" @input="falconColorInput({{ $base }}.settings, 'linkColor', 'linkColorOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]" placeholder="#000000">
                     </div>
                 </div>
             </div>

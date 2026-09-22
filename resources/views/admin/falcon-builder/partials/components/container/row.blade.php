@@ -1,7 +1,7 @@
 @php $pcMode = ($postCardMode ?? false); @endphp
 @if($pcMode)
 <div class="relative w-full"
-     :class="[getVisibilityClasses(container.settings)]"
+     :class="['lc-' + container.id, getVisibilityClasses(container.settings)]"
      :style="containerStyle(container, ci)"
      @click.stop="activeCi = ci"
      @mouseenter="setHover('container', ci); container._bgHover = true"
@@ -9,6 +9,7 @@
 @else
 <div class="container-row relative group/cont"
      :class="[
+        'lc-' + container.id,
         nestedDimContainer(ci) ? 'falcon-nested-dim' : '',
         (!isPreview && editingCi === ci) ? 'container-active' : '',
         isDragging && dragCi === ci && !isColumnDrag ? 'dragging-no-transition' : 'transition-all',
@@ -135,6 +136,12 @@
         @{{ {logged_in:'Logged In Only', logged_out:'Logged Out Only', schedule:'Scheduled'}[container.settings.vis_condition] || '' }}
     </div>
     @endif
+
+    {{-- Container Link Color, previewed the way the page renders it: a descendant rule on
+         the same lc-<id> class the front end uses, not an inline style, so an element that
+         sets its own link colour still wins here exactly as it does live. --}}
+    <component :is="'style'" v-if="container.settings.linkColor"
+               v-text="'.lc-' + container.id + ' a{color:' + hexToRgba(container.settings.linkColor, container.settings.linkColorOpacity ?? 1) + ';}'"></component>
 
     <!-- Container Content Box -->
     <div class="mx-auto w-full flex relative" :style="containerInnerStyle(container)">

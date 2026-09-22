@@ -72,11 +72,22 @@
     
     // Padding moved to <style> block for responsive support (like margin)
 
-    // Borders
-    if (isset($s['borderSizeTop'])) $containerStyles[] = "border-top: {$s['borderSizeTop']}px solid " . ($s['borderColor'] ?? '#000');
-    if (isset($s['borderSizeRight'])) $containerStyles[] = "border-right: {$s['borderSizeRight']}px solid " . ($s['borderColor'] ?? '#000');
-    if (isset($s['borderSizeBottom'])) $containerStyles[] = "border-bottom: {$s['borderSizeBottom']}px solid " . ($s['borderColor'] ?? '#000');
-    if (isset($s['borderSizeLeft'])) $containerStyles[] = "border-left: {$s['borderSizeLeft']}px solid " . ($s['borderColor'] ?? '#000');
+    // Borders — drawn the way a column and the builder canvas both draw theirs.
+    //
+    // Two things were wrong with the hex-only version this replaces. Border Color Opacity
+    // was dropped, so a border set to any transparency previewed correctly in the editor
+    // (containerStyle() has always run it through hexToRgba) and then rendered fully solid
+    // on the page. And `isset()` passed for a side that had never been given a size: the
+    // stored default is '', which produced `border-top: px solid …` — a declaration the
+    // browser throws away, so nothing showed, but it also meant a side left blank was not
+    // simply absent from the style attribute.
+    foreach (['Top', 'Right', 'Bottom', 'Left'] as $__side) {
+        $__w = intval($s['borderSize' . $__side] ?? 0);
+        if ($__w > 0) {
+            $containerStyles[] = 'border-' . strtolower($__side) . ': ' . $__w . 'px solid '
+                . $hexToRgba($s['borderColor'] ?? '#000000', $s['borderColorOpacity'] ?? 1);
+        }
+    }
     
     // Border Radius
     if (isset($s['borderRadiusTopLeft'])) $containerStyles[] = "border-top-left-radius: {$s['borderRadiusTopLeft']}" . ($s['borderRadiusTopLeftUnit'] ?? 'px');
@@ -277,6 +288,19 @@
 
     // Build full CSS string in PHP to avoid Blade parsing @media as directives
     $css  = ".{$cid}{margin-top:{$dMarginTop};margin-bottom:{$dMarginBottom};{$dPaddingCss}--lc-col-gap:{$dColGap};{$dBgCss}{$dExtraCss}}";
+
+    // Container Link Color. The setting has been in the Design tab, and in the saved
+    // container, since containers had a Design tab — nothing ever read it, on the canvas or
+    // here, so picking a colour did nothing at all.
+    //
+    // A descendant rule rather than an inline style, because it is about the links inside
+    // the container, not the container itself. No !important: an element that sets its own
+    // link colour (a Button, a Title with a link colour of its own) still wins, which is
+    // what "a colour for the links in this section" should mean. One class beats the
+    // theme's bare `a { color }`, so it does take effect without shouting.
+    if (!empty($s['linkColor'])) {
+        $css .= ".{$cid} a{color:" . $hexToRgba($s['linkColor'], $s['linkColorOpacity'] ?? 1) . ";}";
+    }
 
     // A "Site Width" container must stay constrained to the site width regardless of the
     // Customizer's Boxed/Wide layout — in Wide mode the theme flips .container-custom to
