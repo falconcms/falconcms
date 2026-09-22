@@ -34,6 +34,29 @@
 
     [v-cloak] { display: none !important; }
 
+    /* Drop indicator.
+       Drawn as an overlay, not as a border on the node itself. The border version only
+       ever worked for elements: a container and a column both carry border-*-width in
+       the inline style their settings produce, and an inline width of 0 beats any class,
+       so dragging a container or a column showed nothing at all and the drag felt broken.
+       A pseudo-element cannot be overridden that way, and it gives all four levels the
+       same marker. Inset rather than offset, so a container with overflow hidden cannot
+       clip it. */
+    .falcon-drop-line { position: relative; }
+    .falcon-drop-line::after {
+        content: '';
+        position: absolute;
+        z-index: 60;
+        pointer-events: none;
+        background: #2271b1;
+        border-radius: 2px;
+        box-shadow: 0 0 0 2px rgba(34, 113, 177, .25);
+    }
+    .falcon-drop-top::after    { left: 0; right: 0; top: 0;    height: 4px; }
+    .falcon-drop-bottom::after { left: 0; right: 0; bottom: 0; height: 4px; }
+    .falcon-drop-left::after   { top: 0; bottom: 0; left: 0;   width: 4px; }
+    .falcon-drop-right::after  { top: 0; bottom: 0; right: 0;  width: 4px; }
+
     /* Builder Layout (Standard CSS as fallback) */
     .builder-wrapper {
         display: grid;

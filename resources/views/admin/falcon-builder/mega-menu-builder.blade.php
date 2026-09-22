@@ -28,6 +28,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
+    {{-- Every other icon library the picker offers. Font Awesome alone was loaded here,
+         so an icon chosen from Bootstrap, Remix, Boxicons or Lucide rendered on the page
+         and showed as an empty box in the editor and in the picker itself — the class was
+         saved correctly, nothing was there to draw it. Unconditional, unlike the front
+         end's falcon_icon_set_links(): this is an editor, and the icon someone is about to
+         pick is not in the markup yet to be scanned for. --}}
+    @foreach(falcon_icon_sets() as $__iconSet)
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/'.$__iconSet['asset']) }}">
+    @endforeach
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/material-symbols.css') }}" />
 
     <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>

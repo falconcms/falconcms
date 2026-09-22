@@ -14,8 +14,8 @@
             (column.settings.hoverType && column.settings.hoverType !== 'none') ? 'hover-effect-' + column.settings.hoverType : '',
             (!isPreview && activeColi === coli && activeColCi === ci) ? 'column-active' : '', 
             isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '',
-            dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragPosition === 'left' ? 'border-l-4 border-l-blue-500' : '',
-            dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragPosition === 'right' ? 'border-r-4 border-r-blue-500' : '',
+            dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragPosition === 'left' ? 'falcon-drop-line falcon-drop-left' : '',
+            dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragPosition === 'right' ? 'falcon-drop-line falcon-drop-right' : '',
             (dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragSource?.type === 'element') ? 'ring-2 ring-blue-400 ring-inset bg-blue-50/30' : '',
             column.settings.linkUrl ? 'cursor-pointer' : ''
          ]"
@@ -155,8 +155,8 @@
              :class="[
                 nestedDimElement(ci, coli, eli) ? 'falcon-nested-dim' : '',
                 (column.settings.contentLayout === 'row' && el.type !== 'row') ? '' : (getResponsiveVal(column.settings, 'contentAlignH', device) && getResponsiveVal(column.settings, 'contentAlignH', device) !== 'stretch' && el.type !== 'title' && el.type !== 'breadcrumb' && el.type !== 'menu' && el.type !== 'text_block' && el.type !== 'special_text' && el.type !== 'button' && el.type !== 'image' && el.type !== 'card' && el.type !== 'spacer' && el.type !== 'html' && el.type !== 'icon_box' && el.type !== 'content_box' && el.type !== 'icon_list' && el.type !== 'accordion' && el.type !== 'tabs' && el.type !== 'video' && el.type !== 'counter' && el.type !== 'star_rating' && el.type !== 'gallery' && el.type !== 'post_meta' && el.type !== 'product_meta' && el.type !== 'post_content' && el.type !== 'post_grid' && el.type !== 'ticker' && !Object.keys(customElements).includes(el.type) ? '' : 'w-full'),
-                dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
-                dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
+                dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'top' ? 'falcon-drop-line falcon-drop-top' : '',
+                dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'bottom' ? 'falcon-drop-line falcon-drop-bottom' : ''
              ]"
              {{-- A row/separator wrapper must be a flex container. Every other element type
                   gets display:flex + line-height:0 here; these two used to get a plain block,

@@ -91,8 +91,8 @@
                     (ncol.settings.hoverType && ncol.settings.hoverType !== 'none') ? 'hover-effect-' + ncol.settings.hoverType : '',
                     (!isPreview && activeColi === ncoli && activeColCi === eli) ? 'nested-column-active' : '',
                     isDragging && dragCi === ci && dragColi === coli && dragEli === eli && dragNcoli === ncoli ? 'dragging-no-transition' : '',
-                    dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragPosition === 'left' ? 'border-l-4 border-l-blue-500' : '',
-                    dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragPosition === 'right' ? 'border-r-4 border-r-blue-500' : '',
+                    dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragPosition === 'left' ? 'falcon-drop-line falcon-drop-left' : '',
+                    dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragPosition === 'right' ? 'falcon-drop-line falcon-drop-right' : '',
                     (dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragSource?.type === 'element') ? 'ring-2 ring-blue-400 ring-inset bg-blue-50/30' : '',
                     ncol.settings.linkUrl ? 'cursor-pointer' : ''
                  ]"
@@ -274,8 +274,8 @@
                       @contextmenu.prevent.stop="openCtxMenu($event, 'nested-element', ci, coli, eli, ncoli, nestedEli)"
                      :class="[
                         (ncol.settings.contentLayout === 'row' && nestedEl.type !== 'row') ? '' : 'w-full',
-                        dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
-                        dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
+                        dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'top' ? 'falcon-drop-line falcon-drop-top' : '',
+                        dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'bottom' ? 'falcon-drop-line falcon-drop-bottom' : ''
                      ]"
                      :style="(nestedEl.type === 'row' || nestedEl.type === 'section_separator' || nestedEl.type === 'code_block' || nestedEl.type === 'table' || nestedEl.type === 'callout' || nestedEl.type === 'toc' || nestedEl.type === 'heading' || nestedEl.type === 'prev_next') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
                      @dragover="onDragOver($event, 'element', ci, coli, eli, ncoli, nestedEli)"

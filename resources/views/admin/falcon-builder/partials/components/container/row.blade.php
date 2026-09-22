@@ -13,8 +13,8 @@
         nestedDimContainer(ci) ? 'falcon-nested-dim' : '',
         (!isPreview && editingCi === ci) ? 'container-active' : '',
         isDragging && dragCi === ci && !isColumnDrag ? 'dragging-no-transition' : 'transition-all',
-        dragTarget === 'container-' + ci + '-null-null-null-null' && dragPosition === 'top' ? 'border-t-4 border-t-blue-500' : '',
-        dragTarget === 'container-' + ci + '-null-null-null-null' && dragPosition === 'bottom' ? 'border-b-4 border-b-blue-500' : '',
+        dragTarget === 'container-' + ci + '-null-null-null-null' && dragPosition === 'top' ? 'falcon-drop-line falcon-drop-top' : '',
+        dragTarget === 'container-' + ci + '-null-null-null-null' && dragPosition === 'bottom' ? 'falcon-drop-line falcon-drop-bottom' : '',
         (dragTarget === 'container-' + ci + '-null-null-null-null' && dragSource?.type === 'column') ? 'ring-2 ring-blue-400 ring-inset bg-blue-50/20' : '',
         getVisibilityClasses(container.settings)
      ]"
