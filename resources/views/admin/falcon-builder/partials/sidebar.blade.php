@@ -31,13 +31,18 @@
                 <p class="text-[11px] text-slate-400 leading-relaxed font-medium">No content has been added yet.</p>
             </div>
             
-            <div v-else class="space-y-1.5">
+            {{-- While a row is being dragged the whole tree drops its transitions. Every row
+                 carries `transition-all`, so the highlight under the pointer and the drop
+                 marker were each easing in over 150ms — at any real dragging speed the marker
+                 was still catching up with the row you had already left, which read as the
+                 drag itself being slow. --}}
+            <div v-else class="space-y-1.5" :class="navDragSrc ? 'dragging-no-transition' : ''">
                 <!-- Container Loop -->
                 <div v-for="(cont, ci) in layout" :key="cont.id" class="group/nav">
                     @if(!($postCardMode ?? false))
                     <!-- Container Row -->
                     <div class="flex items-center gap-2 px-4 py-2 hover:bg-blue-50/50 cursor-pointer group/line transition-all"
-                         :class="[editingContext.type === 'container' && editingContext.ci === ci ? 'bg-blue-50' : '', navDragOver?.type === 'container' && navDragOver?.ci === ci && navCanDrop('container', ci) ? 'border-t-2 border-[#0091ea]' : '']"
+                         :class="[editingContext.type === 'container' && editingContext.ci === ci ? 'bg-blue-50' : '', navDragOver?.type === 'container' && navDragOver?.ci === ci && navCanDrop('container', ci) ? 'falcon-drop-line falcon-drop-top falcon-drop-thin' : '']"
                          draggable="true"
                          @dragstart.stop="navDragStart($event, 'container', ci)"
                          @dragover.prevent="navDragOverHandler($event, 'container', ci)"
@@ -59,7 +64,7 @@
                     <!-- Column Loop -->
                     <div v-for="(col, coli) in cont.columns" :key="col.id" class="{{ ($postCardMode ?? false) ? '' : 'nav-branch' }}">
                         <div class="nav-leaf flex items-center gap-2 py-1.5 hover:bg-slate-50 cursor-pointer group/line transition-all"
-                             :class="[editingContext.type === 'column' && editingContext.ci === ci && editingContext.coli === coli ? 'bg-slate-50 border-l-2 border-[#0091ea] -ml-[1px]' : '', navDragOver?.type === 'column' && navDragOver?.ci === ci && navDragOver?.coli === coli && navCanDrop('column', ci, coli) ? 'border-t-2 border-[#0091ea]' : '']"
+                             :class="[editingContext.type === 'column' && editingContext.ci === ci && editingContext.coli === coli ? 'bg-slate-50 border-l-2 border-[#0091ea] -ml-[1px]' : '', navDragOver?.type === 'column' && navDragOver?.ci === ci && navDragOver?.coli === coli && navCanDrop('column', ci, coli) ? 'falcon-drop-line falcon-drop-top falcon-drop-thin' : '']"
                              draggable="true"
                              @dragstart.stop="navDragStart($event, 'column', ci, coli)"
                              @dragover.prevent="navDragOverHandler($event, 'column', ci, coli)"
@@ -82,7 +87,7 @@
                             <!-- Standard Element -->
                             <div v-if="el.type !== 'row'"
                                  class="nav-leaf flex items-center gap-3 py-1.5 hover:bg-slate-50 cursor-pointer group/line transition-all"
-                                 :class="navDragOver?.type === 'element' && navDragOver?.ci === ci && navDragOver?.coli === coli && navDragOver?.eli === eli && navCanDrop('element', ci, coli, eli) ? 'border-t-2 border-[#0091ea]' : ''"
+                                 :class="navDragOver?.type === 'element' && navDragOver?.ci === ci && navDragOver?.coli === coli && navDragOver?.eli === eli && navCanDrop('element', ci, coli, eli) ? 'falcon-drop-line falcon-drop-top falcon-drop-thin' : ''"
                                  draggable="true"
                                  @dragstart.stop="navDragStart($event, 'element', ci, coli, eli)"
                                  @dragover.prevent="navDragOverHandler($event, 'element', ci, coli, eli)"
@@ -103,7 +108,7 @@
                             <!-- Nested Row (Nested Columns) -->
                             <div v-else class="space-y-0.5">
                                 <div class="nav-leaf flex items-center gap-2 py-1.5 hover:bg-slate-50 cursor-pointer group/line transition-all"
-                                     :class="navDragOver?.type === 'element' && navDragOver?.ci === ci && navDragOver?.coli === coli && navDragOver?.eli === eli && navCanDrop('element', ci, coli, eli) ? 'border-t-2 border-[#0091ea]' : ''"
+                                     :class="navDragOver?.type === 'element' && navDragOver?.ci === ci && navDragOver?.coli === coli && navDragOver?.eli === eli && navCanDrop('element', ci, coli, eli) ? 'falcon-drop-line falcon-drop-top falcon-drop-thin' : ''"
                                      draggable="true"
                                      @dragstart.stop="navDragStart($event, 'element', ci, coli, eli)"
                                      @dragover.prevent="navDragOverHandler($event, 'element', ci, coli, eli)"
@@ -124,7 +129,7 @@
                                 <!-- Nested Column Loop -->
                                 <div v-for="(ncol, ncoli) in el.columns" :key="ncol.id" class="nav-branch">
                                     <div class="nav-leaf flex items-center gap-2 py-1.5 hover:bg-slate-50 cursor-pointer group/line transition-all"
-                                         :class="navDragOver?.type === 'nested-column' && navDragOver?.ci === ci && navDragOver?.coli === coli && navDragOver?.eli === eli && navDragOver?.ncoli === ncoli && navCanDrop('nested-column', ci, coli, eli, ncoli) ? 'border-t-2 border-[#0091ea]' : ''"
+                                         :class="navDragOver?.type === 'nested-column' && navDragOver?.ci === ci && navDragOver?.coli === coli && navDragOver?.eli === eli && navDragOver?.ncoli === ncoli && navCanDrop('nested-column', ci, coli, eli, ncoli) ? 'falcon-drop-line falcon-drop-top falcon-drop-thin' : ''"
                                          draggable="true"
                                          @dragstart.stop="navDragStart($event, 'nested-column', ci, coli, eli, ncoli)"
                                          @dragover.prevent="navDragOverHandler($event, 'nested-column', ci, coli, eli, ncoli)"
@@ -144,7 +149,7 @@
                                     <!-- Nested Elements -->
                                     <div v-for="(nel, neli) in ncol.elements" :key="nel.id" class="nav-branch nav-branch-2">
                                         <div class="nav-leaf flex items-center gap-3 py-1 hover:bg-slate-50 cursor-pointer group/line transition-all"
-                                             :class="navDragOver?.type === 'nested-element' && navDragOver?.ci === ci && navDragOver?.coli === coli && navDragOver?.eli === eli && navDragOver?.ncoli === ncoli && navDragOver?.neli === neli && navCanDrop('nested-element', ci, coli, eli, ncoli, neli) ? 'border-t-2 border-[#0091ea]' : ''"
+                                             :class="navDragOver?.type === 'nested-element' && navDragOver?.ci === ci && navDragOver?.coli === coli && navDragOver?.eli === eli && navDragOver?.ncoli === ncoli && navDragOver?.neli === neli && navCanDrop('nested-element', ci, coli, eli, ncoli, neli) ? 'falcon-drop-line falcon-drop-top falcon-drop-thin' : ''"
                                              draggable="true"
                                              @dragstart.stop="navDragStart($event, 'nested-element', ci, coli, eli, ncoli, neli)"
                                              @dragover.prevent="navDragOverHandler($event, 'nested-element', ci, coli, eli, ncoli, neli)"

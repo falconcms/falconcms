@@ -56,6 +56,12 @@
     .falcon-drop-bottom::after { left: 0; right: 0; bottom: 0; height: 4px; }
     .falcon-drop-left::after   { top: 0; bottom: 0; left: 0;   width: 4px; }
     .falcon-drop-right::after  { top: 0; bottom: 0; right: 0;  width: 4px; }
+    /* Navigator rows are 30-odd pixels tall, so the canvas bar is too heavy for them. */
+    .falcon-drop-thin::after { box-shadow: none; border-radius: 0; }
+    .falcon-drop-thin.falcon-drop-top::after,
+    .falcon-drop-thin.falcon-drop-bottom::after { height: 2px; }
+    .falcon-drop-thin.falcon-drop-left::after,
+    .falcon-drop-thin.falcon-drop-right::after  { width: 2px; }
 
     /* Builder Layout (Standard CSS as fallback) */
     .builder-wrapper {
