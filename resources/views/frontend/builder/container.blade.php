@@ -301,6 +301,14 @@
     if (!empty($s['linkColor'])) {
         $css .= ".{$cid} a{color:" . $hexToRgba($s['linkColor'], $s['linkColorOpacity'] ?? 1) . ";}";
     }
+    // Hover is its own setting, and stands on its own: a section can be given a hover
+    // colour without a resting one, in which case the links keep whatever colour they
+    // already had and only change under the pointer. Focus rides along with it so the
+    // same feedback reaches anyone moving through the page by keyboard.
+    if (!empty($s['linkHoverColor'])) {
+        $__lhc = $hexToRgba($s['linkHoverColor'], $s['linkHoverColorOpacity'] ?? 1);
+        $css .= ".{$cid} a:hover,.{$cid} a:focus-visible{color:{$__lhc};}";
+    }
 
     // A "Site Width" container must stay constrained to the site width regardless of the
     // Customizer's Boxed/Wide layout — in Wide mode the theme flips .container-custom to

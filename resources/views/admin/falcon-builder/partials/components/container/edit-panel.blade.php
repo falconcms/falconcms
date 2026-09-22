@@ -676,6 +676,30 @@
                 </div>
             </div>
 
+            <!-- Container Link Hover Color -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-[11px] font-bold text-[#444]">{{ $label }} Link Hover Color</label>
+                    <div class="flex gap-2 text-slate-300">
+                        <button @click="{{ $base }}.settings.linkHoverColor = ''; {{ $base }}.settings.linkHoverColorOpacity = 1" title="Reset Link Hover Color" class="text-slate-300 hover:text-red-500 transition-colors">
+                            <i class="fa fa-undo text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex gap-2 items-center">
+                    <div class="checkerboard rounded overflow-hidden w-6 h-6 flex-shrink-0 border border-slate-200">
+                        {{-- Left empty the swatch shows the resting Link Color, which is what
+                             the links actually do on hover until a hover colour is picked. --}}
+                        <div @click="openColorPicker($event, {{ $base }}.settings, 'linkHoverColor', 'linkHoverColorOpacity')"
+                             :style="{ backgroundColor: hexToRgba({{ $base }}.settings.linkHoverColor || {{ $base }}.settings.linkColor, {{ $base }}.settings.linkHoverColor ? {{ $base }}.settings.linkHoverColorOpacity : {{ $base }}.settings.linkColorOpacity) }"
+                             class="w-full h-full cursor-pointer"></div>
+                    </div>
+                    <div class="relative flex-1">
+                        <input type="text" :value="falconColorDisplay({{ $base }}.settings, 'linkHoverColor', 'linkHoverColorOpacity')" @input="falconColorInput({{ $base }}.settings, 'linkHoverColor', 'linkHoverColorOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]" placeholder="#000000">
+                    </div>
+                </div>
+            </div>
+
             <!-- Container Border Size -->
             <div>
                 <div class="flex justify-between items-center mb-2">

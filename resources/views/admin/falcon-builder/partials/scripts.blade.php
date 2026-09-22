@@ -1719,6 +1719,7 @@
                             // linkColorOpacity, so a container that never had one stored read
                             // back undefined the moment the swatch was drawn.
                             linkColor: '', linkColorOpacity: 1,
+                            linkHoverColor: '', linkHoverColorOpacity: 1,
                             borderSizeTop: '', borderSizeRight: '', borderSizeBottom: '', borderSizeLeft: '', borderColor: '#000000',
                             borderRadiusTopLeft: '', borderRadiusTopRight: '', borderRadiusBottomRight: '', borderRadiusBottomLeft: '',
                             boxShadow: false, boxShadowPositionVertical: 0, boxShadowPositionHorizontal: 0,

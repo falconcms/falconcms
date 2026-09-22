@@ -591,12 +591,19 @@ class BuilderShortcodeConverter
         self::attr($a, 'link', $s['linkUrl'] ?? null);
         self::attrIf($a, 'link_target', $s['linkTarget'] ?? null, '_self');
         self::attr($a, 'link_color', $s['linkColor'] ?? null);
+        self::attrIf($a, 'link_color_opacity', $s['linkColorOpacity'] ?? null, 1);
+        self::attr($a, 'link_hover_color', $s['linkHoverColor'] ?? null);
+        self::attrIf($a, 'link_hover_color_opacity', $s['linkHoverColorOpacity'] ?? null, 1);
 
         // Border
         foreach (['Top', 'Right', 'Bottom', 'Left'] as $side) {
             self::attr($a, 'border_'.strtolower($side), $s['borderSize'.$side] ?? null);
         }
         self::attrIf($a, 'border_color', $s['borderColor'] ?? null, '#000000');
+        // Carried for the same reason the link opacities above are: this container's
+        // background opacities have always round-tripped, these were simply missed, so a
+        // border set to any transparency came back solid on the far side of a shortcode.
+        self::attrIf($a, 'border_color_opacity', $s['borderColorOpacity'] ?? null, 1);
         foreach (['TopLeft' => 'tl', 'TopRight' => 'tr', 'BottomRight' => 'br', 'BottomLeft' => 'bl'] as $k => $short) {
             self::attr($a, 'radius_'.$short, $s['borderRadius'.$k] ?? null);
         }
@@ -4220,6 +4227,9 @@ class BuilderShortcodeConverter
             'cssClass' => $a['css_class'] ?? null,
             'global_id' => $a['global_id'] ?? null,
             'linkColor' => $a['link_color'] ?? null,
+            'linkColorOpacity' => self::num($a['link_color_opacity'] ?? null) ?? 1,
+            'linkHoverColor' => $a['link_hover_color'] ?? null,
+            'linkHoverColorOpacity' => self::num($a['link_hover_color_opacity'] ?? null) ?? 1,
             'linkUrl' => $a['link'] ?? null,
             'linkTarget' => $a['link_target'] ?? '_self',
             'borderSizeTop' => self::num($a['border_top'] ?? null),
@@ -4227,6 +4237,7 @@ class BuilderShortcodeConverter
             'borderSizeBottom' => self::num($a['border_bottom'] ?? null),
             'borderSizeLeft' => self::num($a['border_left'] ?? null),
             'borderColor' => $a['border_color'] ?? '#000000',
+            'borderColorOpacity' => self::num($a['border_color_opacity'] ?? null) ?? 1,
             'borderRadiusTopLeft' => self::num($a['radius_tl'] ?? null),
             'borderRadiusTopRight' => self::num($a['radius_tr'] ?? null),
             'borderRadiusBottomRight' => self::num($a['radius_br'] ?? null),
