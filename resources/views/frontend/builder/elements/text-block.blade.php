@@ -78,7 +78,15 @@
 
 <style>
     #{{ $appliedId }}:hover { color: {{ $hoverColor ?? ($s['color'] ?? '#333333') }} !important; }
-    #{{ $appliedId }}:hover p, #{{ $appliedId }}:hover * { color: inherit !important; }
+    {{-- Everything nested follows the block's hover colour, EXCEPT links.
+         `:hover *` on its own also caught every <a> in the block, with !important and an
+         id's specificity, so a link could not keep a colour of its own while the block was
+         hovered — which is what stopped the container's Link Hover Color from ever showing
+         on a rich-text link, the commonest place to have one. A link that is given no
+         colour anywhere still inherits from the <p> around it, so a plain block hovers as
+         one piece exactly as before. --}}
+    #{{ $appliedId }}:hover p,
+    #{{ $appliedId }}:hover *:not(a):not(a *) { color: inherit !important; }
     .text-block-container-{{ $elemId }} .text-block-content,
     .text-block-container-{{ $appliedId }} .text-block-content {
         text-align: inherit !important;

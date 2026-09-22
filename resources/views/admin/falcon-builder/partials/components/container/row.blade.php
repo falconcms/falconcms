@@ -142,8 +142,8 @@
          styles, so an element that sets its own link colour still wins here exactly as it
          does live — and hovering a link on the canvas shows the hover colour. --}}
     <component :is="'style'" v-if="container.settings.linkColor || container.settings.linkHoverColor"
-               v-text="(container.settings.linkColor ? '.lc-' + container.id + ' a{color:' + hexToRgba(container.settings.linkColor, container.settings.linkColorOpacity ?? 1) + ';}' : '')
-                     + (container.settings.linkHoverColor ? '.lc-' + container.id + ' a:hover,.lc-' + container.id + ' a:focus-visible{color:' + hexToRgba(container.settings.linkHoverColor, container.settings.linkHoverColorOpacity ?? 1) + ';}' : '')"></component>
+               v-text="(container.settings.linkColor ? '.lc-' + container.id + '.lc-' + container.id + ' a{color:' + hexToRgba(container.settings.linkColor, container.settings.linkColorOpacity ?? 1) + ';}' : '')
+                     + (container.settings.linkHoverColor ? '.lc-' + container.id + '.lc-' + container.id + ' a:hover,.lc-' + container.id + '.lc-' + container.id + ' a:focus-visible{color:' + hexToRgba(container.settings.linkHoverColor, container.settings.linkHoverColorOpacity ?? 1) + ';}' : '')"></component>
 
     <!-- Container Content Box -->
     <div class="mx-auto w-full flex relative" :style="containerInnerStyle(container)">

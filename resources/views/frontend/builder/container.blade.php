@@ -298,8 +298,14 @@
     // link colour (a Button, a Title with a link colour of its own) still wins, which is
     // what "a colour for the links in this section" should mean. One class beats the
     // theme's bare `a { color }`, so it does take effect without shouting.
+    // The class is doubled on purpose. The theme styles rich text with
+    // `.falcon-rich-text a:not([class])`, which is more specific than a single class, so a
+    // plain `.lc-… a` rule lost to it — and a link in a Text Block is exactly where a
+    // section's link colour is wanted. Repeating the class matches that specificity and
+    // wins on order (this block is in the body, the theme's is in the head). Not
+    // !important: an element that sets its own colour inline still beats both.
     if (!empty($s['linkColor'])) {
-        $css .= ".{$cid} a{color:" . $hexToRgba($s['linkColor'], $s['linkColorOpacity'] ?? 1) . ";}";
+        $css .= ".{$cid}.{$cid} a{color:" . $hexToRgba($s['linkColor'], $s['linkColorOpacity'] ?? 1) . ";}";
     }
     // Hover is its own setting, and stands on its own: a section can be given a hover
     // colour without a resting one, in which case the links keep whatever colour they
@@ -307,7 +313,7 @@
     // same feedback reaches anyone moving through the page by keyboard.
     if (!empty($s['linkHoverColor'])) {
         $__lhc = $hexToRgba($s['linkHoverColor'], $s['linkHoverColorOpacity'] ?? 1);
-        $css .= ".{$cid} a:hover,.{$cid} a:focus-visible{color:{$__lhc};}";
+        $css .= ".{$cid}.{$cid} a:hover,.{$cid}.{$cid} a:focus-visible{color:{$__lhc};}";
     }
 
     // A "Site Width" container must stay constrained to the site width regardless of the
