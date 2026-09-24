@@ -28,7 +28,14 @@
 
         <div class="p-4 space-y-2.5 flex-1">
             @foreach($slotMeta as $slot => $m)
-                @php $sec = $layout['assigned'][$slot] ?? null; $slotActive = $layout['active'][$slot] ?? true; @endphp
+                @php
+                    $sec = $layout['assigned'][$slot] ?? null;
+                    $slotActive = $layout['active'][$slot] ?? true;
+                    // A section with nothing built in it renders nothing, and the slot falls
+                    // through to the theme's own. Saying "Active" for that was the screen
+                    // disagreeing with the page — which is exactly how it got reported.
+                    $slotEmpty = $sec && ($sec->is_empty ?? false);
+                @endphp
                 <div class="flex items-stretch border border-[#e2e4e7] rounded-sm overflow-hidden hover:border-[#2271b1] transition-colors" data-slot="{{ $slot }}">
                     <div class="flex items-center justify-center w-11 bg-[#f6f7f7] text-[#646970] border-r border-[#e2e4e7]">
                         <span class="material-symbols-outlined text-[20px]">{{ $m['icon'] }}</span>
@@ -36,7 +43,11 @@
                     @if($sec)
                         <a href="{{ route('admin.falcon-builder', $sec->id) }}" class="flex-1 flex flex-col justify-center px-3 py-1.5 leading-tight hover:text-[#2271b1]">
                             <span class="text-[13px] text-[#1d2327]">{{ $sec->title ?: $m['label'] }}</span>
-                            <span class="slot-status text-[10px] uppercase tracking-wide {{ $slotActive ? 'text-[#00a32a]' : 'text-[#8c8f94]' }}" data-slot-label="{{ $m['label'] }}">{{ $slotActive ? 'Active' : 'Inactive' }} · {{ $m['label'] }}</span>
+                            @if($slotEmpty && $slotActive)
+                                <span class="slot-status text-[10px] uppercase tracking-wide text-[#bd8600]" data-slot-label="{{ $m['label'] }}" title="Nothing has been built in this section yet, so the theme's own {{ strtolower($m['label']) }} is shown instead.">Empty · open to build it</span>
+                            @else
+                                <span class="slot-status text-[10px] uppercase tracking-wide {{ $slotActive ? 'text-[#00a32a]' : 'text-[#8c8f94]' }}" data-slot-label="{{ $m['label'] }}">{{ $slotActive ? 'Active' : 'Inactive' }} · {{ $m['label'] }}</span>
+                            @endif
                         </a>
                         <div class="flex items-center gap-1.5 pr-2.5">
                             <label class="relative inline-flex items-center cursor-pointer" title="Turn this section on/off for this layout only">

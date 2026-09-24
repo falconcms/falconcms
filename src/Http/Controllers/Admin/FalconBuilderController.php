@@ -379,7 +379,14 @@ class FalconBuilderController extends Controller
         // Sections available per slot (for the pickers).
         $sections = [];
         foreach (self::SLOTS as $slot => $meta) {
-            $sections[$slot] = Post::where('type', $meta['type'])->orderBy('title')->get(['id', 'title', 'status', 'updated_at']);
+            // `content` comes along so the card can say when a section has nothing in it.
+            // A section assigned to a slot but never built renders nothing, and the slot falls
+            // through to the theme's own — so calling it "Active" was the screen telling you
+            // one thing while the page did another.
+            $sections[$slot] = Post::where('type', $meta['type'])->orderBy('title')
+                ->get(['id', 'title', 'status', 'updated_at', 'content'])
+                ->each(fn ($s) => $s->setAttribute('is_empty', trim((string) $s->content) === ''))
+                ->makeHidden('content');
         }
 
         // Build the layout list: Global first, then customs. Each slot reflects ONLY this
@@ -475,6 +482,9 @@ class FalconBuilderController extends Controller
                     'id' => $section->id,
                     'title' => $section->title,
                     'status' => $section->status,
+                    // Always true here — it was created a line ago — but stated rather than
+                    // inferred, so the slot row says "Empty" instead of claiming it is active.
+                    'is_empty' => true,
                     'edit_url' => route('admin.falcon-builder', $section->id),
                 ],
                 'message' => 'Section “'.$section->title.'” created.',

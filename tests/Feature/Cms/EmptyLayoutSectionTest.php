@@ -22,6 +22,16 @@ use Illuminate\Support\Facades\DB;
  */
 class EmptyLayoutSectionTest extends TestCase
 {
+    private ?User $admin = null;
+
+    private function administrator(): User
+    {
+        return $this->admin ??= User::forceCreate([
+            'name' => 'Admin', 'email' => 'layout-admin@example.test', 'password' => 'secret-password',
+            'role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id'),
+        ]);
+    }
+
     private function section(string $type, string $content = ''): Post
     {
         return Post::create([
@@ -84,6 +94,48 @@ class EmptyLayoutSectionTest extends TestCase
         $this->assignGlobally('footer', $this->section('falcon_footer', "  \n\t "));
 
         $this->assertNull(get_falcon_footer());
+    }
+
+    public function test_the_layout_screen_says_a_section_is_empty_rather_than_active(): void
+    {
+        // The other half of the same complaint: the front end was right to show the theme
+        // footer, and the Layout screen was calling that section "Active · Footer" in green
+        // while it rendered nothing. One of the two had to change, and it was the label.
+        $empty = $this->section('falcon_footer', '');
+        $built = $this->section('falcon_header', '<p>Real header</p>');
+
+        update_cms_option('falcon_layout_global', json_encode([
+            'footer' => ['id' => $empty->id, 'active' => true],
+            'header' => ['id' => $built->id, 'active' => true],
+        ]));
+        forget_cms_options_cache();
+
+        $html = $this->actingAs($this->administrator())
+            ->get('/admin/falcon-builder-sections')
+            ->assertOk()
+            ->getContent();
+
+        preg_match_all('/<span class="slot-status[^>]*>([^<]*)</', $html, $m);
+        $labels = array_map('trim', $m[1]);
+
+        $this->assertContains('Empty &middot; open to build it', $labels,
+            'an assigned section with nothing in it is still announced as active');
+        $this->assertContains('Active · Header', $labels,
+            'a section that does have content lost its Active label');
+    }
+
+    public function test_a_freshly_created_section_is_reported_as_empty(): void
+    {
+        // Creating from the Layout screen assigns the slot immediately, so this is the exact
+        // moment the screen used to start claiming "Active" about an empty section.
+        $this->withProLicensed(); // creating a section is Pro-gated; the gate is tested elsewhere
+
+        $response = $this->actingAs($this->administrator())
+            ->postJson('/admin/falcon-builder-sections/section', [
+                'slot' => 'footer', 'layout' => 'global', 'name' => 'My Footer',
+            ]);
+
+        $response->assertOk()->assertJsonPath('section.is_empty', true);
     }
 
     public function test_an_unassigned_slot_is_still_null(): void

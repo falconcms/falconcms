@@ -216,11 +216,18 @@
             const icon = slotIcons[slot] || 'article';
             const label = slotLabels[slot] || '';
             const title = String(sec.title || label).replace(/</g, '&lt;');
+            // A section created from here has nothing in it yet, so it renders nothing and the
+            // slot falls through to the theme's own. `is_empty` lets the picker reuse this for
+            // an existing section too.
+            const empty = sec.is_empty !== undefined ? !!sec.is_empty : true;
+            const status = empty
+                ? '<span class="slot-status text-[10px] uppercase tracking-wide text-[#bd8600]" data-slot-label="' + label + '" title="Nothing has been built in this section yet, so the theme's own is shown instead.">Empty &middot; open to build it</span>'
+                : '<span class="slot-status text-[10px] uppercase tracking-wide text-[#00a32a]" data-slot-label="' + label + '">Active &middot; ' + label + '</span>';
             row.innerHTML =
                 '<div class="flex items-center justify-center w-11 bg-[#f6f7f7] text-[#646970] border-r border-[#e2e4e7]"><span class="material-symbols-outlined text-[20px]">' + icon + '</span></div>' +
                 '<a href="' + sec.edit_url + '" class="flex-1 flex flex-col justify-center px-3 py-1.5 leading-tight hover:text-[#2271b1]">' +
                     '<span class="text-[13px] text-[#1d2327]">' + title + '</span>' +
-                    '<span class="slot-status text-[10px] uppercase tracking-wide text-[#00a32a]" data-slot-label="' + label + '">Active · ' + label + '</span>' +
+                    status +
                 '</a>' +
                 '<div class="flex items-center gap-1.5 pr-2.5">' +
                     '<label class="relative inline-flex items-center cursor-pointer" title="Turn this section on/off for this layout only">' +
