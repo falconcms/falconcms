@@ -1887,12 +1887,35 @@ if (!function_exists('falcon_layout_is_active')) {
     }
 }
 
+if (!function_exists('_falcon_builder_section_or_null')) {
+    /**
+     * A layout section's HTML, or null when it would come out as an empty shell.
+     *
+     * An assigned section with nothing built in it rendered as `<footer class="…"></footer>` —
+     * forty-seven characters of nothing, and truthy, so the theme's own footer was skipped and
+     * the page ended with no footer at all. Nothing explained it: the section WAS active and
+     * assigned, it simply had no content, and the two states looked identical from the outside.
+     *
+     * Returning null lets the slot fall through to the theme default, which is what an empty
+     * section means. A section with anything in it at all is rendered untouched.
+     */
+    function _falcon_builder_section_or_null(?string $raw, string $tag, string $wrapperClass): ?string
+    {
+        $html = _falcon_builder_render_wrapper((string) $raw, $tag, $wrapperClass);
+
+        $t = preg_quote($tag, '#');
+        $inner = preg_replace('#^<'.$t.'(?:\s[^>]*)?>(.*)</'.$t.'>$#is', '$1', trim($html));
+
+        return trim((string) $inner) === '' ? null : $html;
+    }
+}
+
 if (!function_exists('get_falcon_header')) {
     function get_falcon_header()
     {
         $header = falcon_layout_assigned_section('header', 'falcon_header');
         if ($header) {
-            return _falcon_builder_render_wrapper($header->content ?? '', 'header', 'falcon-builder-header');
+            return _falcon_builder_section_or_null($header->content ?? '', 'header', 'falcon-builder-header');
         }
 
         return null;
@@ -1904,7 +1927,7 @@ if (!function_exists('get_falcon_footer')) {
     {
         $footer = falcon_layout_assigned_section('footer', 'falcon_footer');
         if ($footer) {
-            return _falcon_builder_render_wrapper($footer->content ?? '', 'footer', 'falcon-builder-footer');
+            return _falcon_builder_section_or_null($footer->content ?? '', 'footer', 'falcon-builder-footer');
         }
 
         return null;
@@ -1916,7 +1939,7 @@ if (!function_exists('get_falcon_page_title_bar')) {
     {
         $ptb = falcon_layout_assigned_section('page_title_bar', 'falcon_ptb');
         if ($ptb) {
-            return _falcon_builder_render_wrapper($ptb->content ?? '', 'div', 'falcon-builder-ptb');
+            return _falcon_builder_section_or_null($ptb->content ?? '', 'div', 'falcon-builder-ptb');
         }
 
         return null;
@@ -1928,7 +1951,7 @@ if (!function_exists('get_falcon_content')) {
     {
         $content = falcon_layout_assigned_section('content', 'falcon_content');
         if ($content) {
-            return _falcon_builder_render_wrapper($content->content ?? '', 'div', 'falcon-builder-content');
+            return _falcon_builder_section_or_null($content->content ?? '', 'div', 'falcon-builder-content');
         }
 
         return null;
