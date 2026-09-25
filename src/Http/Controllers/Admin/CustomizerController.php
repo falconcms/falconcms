@@ -5,6 +5,8 @@ namespace FalconCms\Core\Http\Controllers\Admin;
 use FalconCms\Core\Models\Media;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -993,6 +995,16 @@ class CustomizerController extends Controller
                         'desc' => '<span class="text-red-600 font-semibold">Caution:</span> This will replace all existing original images with optimized versions. This process cannot be undone.',
                         'action' => 'optimizeImages',
                     ],
+                    'clear_caches' => [
+                        'type' => 'action_button',
+                        'label' => 'Caches',
+                        'text' => 'Clear Caches Now',
+                        'desc' => 'Throws away the saved copies of settings, pages, templates and routes so the '
+                            .'site reads everything fresh. Safe to run at any time: nothing is deleted except '
+                            .'copies, which are rebuilt on the next visit. Worth doing when a setting you have '
+                            .'saved does not seem to have taken effect.',
+                        'action' => 'clearCaches',
+                    ],
                 ],
             ],
             'custom_css' => [
@@ -1256,6 +1268,10 @@ class CustomizerController extends Controller
                 return $this->optimizeImages();
             }
 
+            if ($action === 'clearCaches') {
+                return $this->clearCaches();
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => "Action '{$action}' not found.",
@@ -1266,6 +1282,125 @@ class CustomizerController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Throw away every saved copy the site reads instead of the real thing.
+     *
+     * The one that matters is the settings cache. A Customizer save writes the row and then
+     * drops that cache, and when the drop fails the row is right while every page on the site
+     * keeps reading the old value — a setting that saves, reports success, and does nothing.
+     * The usual cause is a file under storage/framework/cache left behind by a command run as
+     * root, which the web server user can no longer delete.
+     *
+     * So this checks rather than assumes. Clearing a cache is only worth a green message if
+     * the cache is actually gone afterwards, and when something is left behind the reply says
+     * what and why, because "Cleared!" over a cache that is still there is worse than no
+     * button at all.
+     */
+    protected function clearCaches()
+    {
+        $cleared = [];
+        $failed = [];
+        $settingsStuck = false;
+
+        try {
+            Cache::forget('falcon:cms_options');
+            if (Cache::has('falcon:cms_options')) {
+                throw new \RuntimeException('the entry is still present after being forgotten');
+            }
+            forget_cms_options_cache();
+            $cleared[] = 'saved settings';
+        } catch (\Throwable $e) {
+            $failed[] = 'saved settings';
+            $settingsStuck = true;
+        }
+
+        foreach ([
+            'cache:clear' => 'cached pages and data',
+            'view:clear' => 'compiled templates',
+            'route:clear' => 'cached routes',
+        ] as $command => $label) {
+            try {
+                Artisan::call($command);
+                $cleared[] = $label;
+            } catch (\Throwable $e) {
+                $failed[] = $label;
+            }
+        }
+
+        // Whether or not the commands above reported success, anything the site cannot write
+        // to is a cache entry it cannot drop — which is the failure that hides.
+        $stuck = $this->unwritableCacheFiles();
+
+        if (!$failed && !$stuck) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cleared '.$this->asList($cleared).'.',
+            ]);
+        }
+
+        $message = $cleared ? 'Cleared '.$this->asList($cleared).'. ' : '';
+        if ($failed) {
+            $message .= 'Could not clear '.$this->asList($failed).'. ';
+        }
+        // A settings cache that will not drop is the failure worth explaining, whether or not
+        // the count above found the file responsible — it may sit in a directory this process
+        // cannot even read, or in a store that is not a directory at all. Say where to look
+        // either way, because the symptom on its own points nowhere.
+        if ($settingsStuck || $stuck) {
+            $message .= $stuck
+                ? $stuck.' file(s) under storage/framework/cache cannot be written by the site, '
+                    .'so saved settings may keep reading their old values. '
+                : 'This is usually a file under storage/framework/cache that the site can no longer '
+                    .'write, left behind by a command run as root. ';
+            $message .= 'Give that folder back to the user the site runs as, for example: '
+                .'chown -R www-data storage/framework/cache';
+        }
+
+        return response()->json(['success' => false, 'message' => trim($message)]);
+    }
+
+    /** How many files under the cache directory the site cannot write to. Capped: this is a count, not an audit. */
+    protected function unwritableCacheFiles(): int
+    {
+        $root = storage_path('framework/cache');
+        if (!is_dir($root)) {
+            return 0;
+        }
+
+        $stuck = 0;
+        try {
+            $items = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
+            foreach ($items as $item) {
+                if (!is_writable($item->getPathname())) {
+                    $stuck++;
+                }
+                if ($stuck >= 100) {
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            // An unreadable directory is itself a permission problem, but not one this count
+            // can put a number on. The named caches above still report their own result.
+            return 0;
+        }
+
+        return $stuck;
+    }
+
+    /** "a, b and c" — the list reads as a sentence, because it is shown as one. */
+    protected function asList(array $items): string
+    {
+        if (count($items) < 2) {
+            return (string) ($items[0] ?? '');
+        }
+        $last = array_pop($items);
+
+        return implode(', ', $items).' and '.$last;
     }
 
     protected function optimizeImages()

@@ -892,7 +892,12 @@ function customizerApp(initialSection) {
 
         async runAction(action, event) {
             let confirmed = false;
-            if (action === 'optimizeImages') {
+            // Clearing a cache throws away copies, not work: everything it drops is rebuilt on
+            // the next visit. Asking "are you sure" about that trains people to click through
+            // the prompts that do matter, like the one below.
+            if (action === 'clearCaches') {
+                confirmed = true;
+            } else if (action === 'optimizeImages') {
                 confirmed = await window.falconConfirm({
                     title: 'Optimize Images',
                     message: 'Caution: This will replace all existing original images with optimized versions. This process cannot be undone. Continue?',
