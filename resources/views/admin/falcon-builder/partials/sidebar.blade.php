@@ -3979,22 +3979,40 @@
 
                                  <!-- ICON -->
                                  <div>
-                                     <label class="text-[12px] font-bold text-[#333] uppercase mb-3 block">ICON</label>
+                                     <div class="flex justify-between items-center mb-3">
+                                         <label class="text-[12px] font-bold text-[#333] uppercase">ICON</label>
+                                         {{-- Normal and Hover are the same fields writing to different keys. A hover
+                                              field left empty means "whatever Normal says", so switching here can
+                                              never quietly change how the icon looks when nobody is pointing at it. --}}
+                                         <div class="flex bg-slate-50 border border-slate-100 rounded overflow-hidden text-[9px] font-bold uppercase">
+                                             <button @click="iconBoxState = 'normal'"
+                                                     :class="iconBoxState === 'normal' ? 'bg-[#2271b1] text-white' : 'text-slate-400 hover:bg-slate-100'"
+                                                     class="px-2.5 py-1 transition-all">Normal</button>
+                                             <button @click="iconBoxState = 'hover'"
+                                                     :class="iconBoxState === 'hover' ? 'bg-[#2271b1] text-white' : 'text-slate-400 hover:bg-slate-100'"
+                                                     class="px-2.5 py-1 transition-all border-l border-slate-100">Hover</button>
+                                         </div>
+                                     </div>
+                                     <p v-if="iconBoxState === 'hover'" class="text-[10px] text-slate-400 mb-3 -mt-1">Leave a field empty to keep its normal value.</p>
                                      <div class="space-y-3">
                                          <!-- Icon Size + Spacing: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Size</label>
                                                  <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                     <input type="number" min="1" v-model.number="editingElement.settings.iconSize"
+                                                     <input type="number" min="1" v-model.number="editingElement.settings[iconBoxField('iconSize')]"
+                                                            :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconSize ?? 40) : ''"
                                                             class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
+                                                     {{-- A unit is not a state: the same measurement cannot be px at rest and rem under the pointer. --}}
                                                      <select v-model="editingElement.settings.iconSizeUnit"
                                                              class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
                                                          <option value="px">px</option><option value="rem">rem</option>
                                                      </select>
                                                  </div>
                                              </div>
-                                             <div class="flex flex-col gap-1">
+                                             {{-- Spacing is the gap down to the title, so putting it on hover would
+                                                  shift the whole card as the pointer crosses it. Normal only. --}}
+                                             <div v-if="iconBoxState === 'normal'" class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Spacing Below</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.iconSpacing"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
@@ -4004,40 +4022,66 @@
                                          <div>
                                              <div class="flex justify-between items-center mb-1.5">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase">Icon Color</label>
-                                                 <button @click="clearColorField(editingElement.settings, 'iconColor')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
+                                                 <button @click="clearColorField(editingElement.settings, iconBoxField('iconColor'))" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
                                              </div>
                                              <div class="flex gap-2 items-center">
                                                  <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                                                      @click="openColorPicker($event, editingElement.settings, 'iconColor')">
-                                                     <div :style="{ backgroundColor: editingElement.settings.iconColor || '#2271b1' }" class="w-full h-full rounded-full"></div>
+                                                      @click="openColorPicker($event, editingElement.settings, iconBoxField('iconColor'))">
+                                                     <div :style="{ backgroundColor: editingElement.settings[iconBoxField('iconColor')] || editingElement.settings.iconColor || '#2271b1' }" class="w-full h-full rounded-full"></div>
                                                  </div>
-                                                 <input type="text" v-model="editingElement.settings.iconColor" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                                                 <input type="text" v-model="editingElement.settings[iconBoxField('iconColor')]"
+                                                        :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconColor || '#2271b1') : ''"
+                                                        class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                                              </div>
                                          </div>
                                          <!-- Icon Background Color -->
                                          <div>
                                              <div class="flex justify-between items-center mb-1.5">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase">Background Color</label>
-                                                 <button @click="clearColorField(editingElement.settings, 'iconBgColor', 'iconBgColorOpacity')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
+                                                 <button @click="clearColorField(editingElement.settings, iconBoxField('iconBgColor'), iconBoxField('iconBgColor') + 'Opacity')" title="Reset" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa fa-undo text-[10px]"></i></button>
                                              </div>
                                              <div class="flex gap-2 items-center">
                                                  <div class="checkerboard rounded-full overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
-                                                      @click="openColorPicker($event, editingElement.settings, 'iconBgColor', 'iconBgColorOpacity')">
-                                                     <div :style="{ backgroundColor: hexToRgba(editingElement.settings.iconBgColor, editingElement.settings.iconBgColorOpacity) }" class="w-full h-full rounded-full"></div>
+                                                      @click="openColorPicker($event, editingElement.settings, iconBoxField('iconBgColor'), iconBoxField('iconBgColor') + 'Opacity')">
+                                                     <div :style="{ backgroundColor: hexToRgba(editingElement.settings[iconBoxField('iconBgColor')] || editingElement.settings.iconBgColor, editingElement.settings[iconBoxField('iconBgColor') + 'Opacity']) }" class="w-full h-full rounded-full"></div>
                                                  </div>
-                                                 <input type="text" :value="falconColorDisplay(editingElement.settings, 'iconBgColor', 'iconBgColorOpacity')" @input="falconColorInput(editingElement.settings, 'iconBgColor', 'iconBgColorOpacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
+                                                 <input type="text" :value="falconColorDisplay(editingElement.settings, iconBoxField('iconBgColor'), iconBoxField('iconBgColor') + 'Opacity')" @input="falconColorInput(editingElement.settings, iconBoxField('iconBgColor'), iconBoxField('iconBgColor') + 'Opacity', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px]">
                                              </div>
                                          </div>
-                                         <!-- Border Radius + Padding: 2-col (when bg set) -->
-                                         <div v-if="editingElement.settings.iconBgColor" class="grid grid-cols-2 gap-2">
+                                         <!-- Border + Border Color -->
+                                         <div class="grid grid-cols-2 gap-2 items-end">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border Radius</label>
-                                                 <input type="number" min="0" v-model.number="editingElement.settings.iconBorderRadius"
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border (px)</label>
+                                                 <input type="number" min="0" v-model.number="editingElement.settings[iconBoxField('iconBorderWidth')]"
+                                                        :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconBorderWidth || 0) : '0'"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
-                                                 <input type="number" min="0" v-model.number="editingElement.settings.iconPadding"
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border Color</label>
+                                                 <div class="flex gap-1.5 items-center">
+                                                     <div class="checkerboard rounded overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                                                          @click="openColorPicker($event, editingElement.settings, iconBoxField('iconBorderColor'))">
+                                                         <div :style="{ backgroundColor: editingElement.settings[iconBoxField('iconBorderColor')] || editingElement.settings.iconBorderColor || '#2271b1' }" class="w-full h-full"></div>
+                                                     </div>
+                                                     <input type="text" v-model="editingElement.settings[iconBoxField('iconBorderColor')]"
+                                                            :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconBorderColor || '#2271b1') : ''"
+                                                            class="w-full border border-slate-200 rounded px-1 h-8 text-[11px]">
+                                                 </div>
+                                             </div>
+                                         </div>
+                                         {{-- Radius and padding only draw anything once the icon is a box, which it
+                                              becomes with a background or a border — the same test both renderers make. --}}
+                                         <div v-if="editingElement.settings.iconBgColor || editingElement.settings.iconBorderWidth || editingElement.settings.iconBgColorHover || editingElement.settings.iconBorderWidthHover" class="grid grid-cols-2 gap-2">
+                                             <div class="flex flex-col gap-1">
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border Radius</label>
+                                                 <input type="number" min="0" v-model.number="editingElement.settings[iconBoxField('iconBorderRadius')]"
+                                                        :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconBorderRadius ?? 50) : ''"
+                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                             </div>
+                                             <div class="flex flex-col gap-1">
+                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (Px)</label>
+                                                 <input type="number" min="0" v-model.number="editingElement.settings[iconBoxField('iconPadding')]"
+                                                        :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconPadding || 0) : ''"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>

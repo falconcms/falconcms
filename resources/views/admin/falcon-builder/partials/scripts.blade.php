@@ -3326,6 +3326,103 @@
                 return str + unit;
             };
 
+            // ── Icon Box: the icon, in both of the states it can be in ──────────────────
+            // The same description as PHP's falcon_icon_box_icon_style(), declaration for
+            // declaration, because the canvas and the page have to agree about an icon a
+            // person is looking at in one and publishing to the other. The wrapper is only
+            // drawn as a box when there is something to draw — a background or a border —
+            // and both states agree about that, so the icon does not shift under the pointer.
+            // Which half of the ICON panel is being edited. The fields are the same fields;
+            // only the key they write to changes, so a setting cannot exist in one state and
+            // be missing from the other. `iconBgColor` + 'Opacity' resolves to
+            // iconBgColorOpacity or iconBgColorHoverOpacity by the same rule.
+            const iconBoxState = ref('normal');
+            const iconBoxField = (base) => iconBoxState.value === 'hover' ? base + 'Hover' : base;
+
+            const iconBoxValue = (s, key, fallback) => {
+                const v = s?.[key];
+
+                return (v === undefined || v === null || v === '') ? fallback : v;
+            };
+
+            const iconBoxDraw = (s, v) => {
+                const unit = iconBoxValue(s, 'iconSizeUnit', 'px');
+                const borderWidth = parseFloat(v.borderWidth) || 0;
+                const boxed = v.bg !== '' || borderWidth > 0;
+                const style = {
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                };
+
+                if (boxed) {
+                    const box = (parseFloat(v.size) || 0) * 2;
+                    style.boxSizing = 'content-box';
+                    style.width = box + 'px';
+                    style.height = box + 'px';
+                    style.backgroundColor = v.bg !== '' ? hexToRgba(v.bg, v.bgOpacity) : 'transparent';
+                    style.borderRadius = (parseFloat(v.radius) || 0) + 'px';
+                    style.padding = (parseFloat(v.padding) || 0) + 'px';
+                    style.border = borderWidth + 'px solid ' + (borderWidth > 0 ? v.borderColor : 'transparent');
+                }
+
+                return { wrap: style, icon: { fontSize: v.size + unit, color: v.color } };
+            };
+
+            const iconBoxNormalValues = (s) => ({
+                size: iconBoxValue(s, 'iconSize', 40),
+                color: iconBoxValue(s, 'iconColor', '#2271b1'),
+                bg: String(iconBoxValue(s, 'iconBgColor', '')),
+                bgOpacity: iconBoxValue(s, 'iconBgColorOpacity', 1),
+                radius: iconBoxValue(s, 'iconBorderRadius', 50),
+                padding: iconBoxValue(s, 'iconPadding', 0),
+                borderWidth: iconBoxValue(s, 'iconBorderWidth', 0),
+                borderColor: iconBoxValue(s, 'iconBorderColor', '#2271b1'),
+            });
+
+            const ICON_BOX_HOVER_KEYS = {
+                size: 'iconSizeHover',
+                color: 'iconColorHover',
+                bg: 'iconBgColorHover',
+                bgOpacity: 'iconBgColorHoverOpacity',
+                radius: 'iconBorderRadiusHover',
+                padding: 'iconPaddingHover',
+                borderWidth: 'iconBorderWidthHover',
+                borderColor: 'iconBorderColorHover',
+            };
+
+            const iconBoxIconStyle = (s) => iconBoxDraw(s, iconBoxNormalValues(s)).wrap;
+            const iconBoxGlyphStyle = (s) => iconBoxDraw(s, iconBoxNormalValues(s)).icon;
+
+            const iconBoxHoverCss = (s, scope) => {
+                const normal = iconBoxNormalValues(s);
+                const hover = { ...normal };
+                let touched = false;
+
+                // Hover falls through to normal per setting, so setting one thing changes one thing.
+                for (const [slot, key] of Object.entries(ICON_BOX_HOVER_KEYS)) {
+                    const v = s?.[key];
+                    if (v === undefined || v === null || v === '') continue;
+                    hover[slot] = v;
+                    touched = true;
+                }
+                if (!touched) return '';
+
+                // An opacity on its own says nothing without a colour to apply it to.
+                if (hover.bg === '' && normal.bg !== '') hover.bg = normal.bg;
+
+                const drawn = iconBoxDraw(s, hover);
+                const important = (style) => Object.entries(style)
+                    .map(([k, v]) => k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()) + ':' + v + ' !important;')
+                    .join('');
+
+                return scope + ' .lazy-icon-box__icon{transition:all .2s ease;}'
+                    + scope + ' .lazy-icon-box__icon i{transition:all .2s ease;}'
+                    + scope + ' .lazy-icon-box__icon:hover{' + important(drawn.wrap) + '}'
+                    + scope + ' .lazy-icon-box__icon:hover i{' + important(drawn.icon) + '}';
+            };
+            // ── End Icon Box icon ───────────────────────────────────────────────────────
+
             // A measurement and its unit, resolved together for the device being previewed.
             // Reading the two apart is how a responsive size goes wrong: a width set to 100 on
             // mobile next to a desktop unit of px comes out as 100px instead of 100%. Both sides
@@ -6338,6 +6435,7 @@
                             iconColor: '#2271b1',
                             iconBgColor: '', iconBgColorOpacity: 1,
                             iconBorderRadius: 50, iconSpacing: 16, iconPadding: 0,
+                            iconBorderWidth: 0, iconBorderColor: '#2271b1',
                             titleTag: 'h3',
                             titleFontFamily: 'inherit',
                             titleFontSize: 20, titleFontSizeUnit: 'px',
@@ -7038,6 +7136,7 @@
                 canvasStyle, canvasScale, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal, googleFontFamily,
                 isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal, respUnitVal,
+                iconBoxIconStyle, iconBoxGlyphStyle, iconBoxHoverCss, iconBoxState, iconBoxField,
                 falconButtonHoverAnim, falconBtnHoverBorder, falconNum,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,

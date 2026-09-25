@@ -191,6 +191,118 @@ if (!function_exists('falcon_fluid_font_size')) {
     }
 }
 
+if (!function_exists('falcon_icon_box_icon_style')) {
+    /**
+     * The Icon Box's icon, in both of the states it can be in.
+     *
+     * The wrapper is only drawn as a box when there is something to draw — a background or a
+     * border — and both states have to agree about that, or the icon would shift under the
+     * pointer for no reason the author asked for.
+     *
+     * Hover has to be a stylesheet rule: inline style cannot express :hover, and the normal
+     * state is written inline, so the rule carries !important for the same reason the Read
+     * More hover already does. Every hover value is optional and falls back to its normal
+     * counterpart, so an icon with nothing set on hover renders exactly as it did before
+     * there were hover settings at all.
+     *
+     * @return array{wrap: string, icon: string, css: string}
+     */
+    function falcon_icon_box_icon_style(array $s, string $scope): array
+    {
+        // A cleared field stores "" rather than null, and `?? $default` does not catch that.
+        $val = static function (string $key, $default) use ($s) {
+            $v = $s[$key] ?? null;
+
+            return ($v === null || $v === '') ? $default : $v;
+        };
+
+        $unit = (string) $val('iconSizeUnit', 'px');
+
+        // One description of the icon, applied twice with different numbers.
+        $draw = static function (array $v) use ($unit): array {
+            $borderWidth = (float) $v['borderWidth'];
+            $boxed = $v['bg'] !== '' || $borderWidth > 0;
+
+            $wrap = 'display:inline-flex;align-items:center;justify-content:center;';
+            if ($boxed) {
+                // The box has always been twice the icon's own size, in px whatever unit the
+                // size itself is in. Left as it was: changing it would resize every icon box
+                // that is already out there.
+                $box = ((float) $v['size']) * 2;
+                $wrap .= 'box-sizing:content-box;'
+                    .'width:'.$box.'px;height:'.$box.'px;'
+                    .'background-color:'.($v['bg'] !== '' ? _falcon_hex_to_rgba((string) $v['bg'], (float) $v['bgOpacity']) : 'transparent').';'
+                    .'border-radius:'.(float) $v['radius'].'px;'
+                    .'padding:'.(float) $v['padding'].'px;'
+                    .'border:'.$borderWidth.'px solid '.($borderWidth > 0 ? $v['borderColor'] : 'transparent').';';
+            }
+
+            return [
+                'wrap' => $wrap,
+                'icon' => 'font-size:'.$v['size'].$unit.';color:'.$v['color'].';',
+            ];
+        };
+
+        $normalValues = [
+            'size' => $val('iconSize', 40),
+            'color' => $val('iconColor', '#2271b1'),
+            'bg' => (string) $val('iconBgColor', ''),
+            'bgOpacity' => $val('iconBgColorOpacity', 1),
+            'radius' => $val('iconBorderRadius', 50),
+            'padding' => $val('iconPadding', 0),
+            'borderWidth' => $val('iconBorderWidth', 0),
+            'borderColor' => $val('iconBorderColor', '#2271b1'),
+        ];
+
+        $normal = $draw($normalValues);
+
+        // Hover falls through to normal per setting, so setting one thing changes one thing.
+        $hoverValues = $normalValues;
+        $touched = false;
+        foreach ([
+            'size' => 'iconSizeHover',
+            'color' => 'iconColorHover',
+            'bg' => 'iconBgColorHover',
+            'bgOpacity' => 'iconBgColorHoverOpacity',
+            'radius' => 'iconBorderRadiusHover',
+            'padding' => 'iconPaddingHover',
+            'borderWidth' => 'iconBorderWidthHover',
+            'borderColor' => 'iconBorderColorHover',
+        ] as $slot => $key) {
+            $v = $s[$key] ?? null;
+            if ($v === null || $v === '') {
+                continue;
+            }
+            $hoverValues[$slot] = $v;
+            $touched = true;
+        }
+
+        // An opacity on its own says nothing without a colour to apply it to.
+        if ($touched && $hoverValues['bg'] === '' && $normalValues['bg'] !== '') {
+            $hoverValues['bg'] = $normalValues['bg'];
+        }
+
+        $css = '';
+        if ($touched) {
+            $h = $draw($hoverValues);
+            $important = static function (string $style): string {
+                $out = '';
+                foreach (array_filter(array_map('trim', explode(';', $style))) as $decl) {
+                    $out .= $decl.' !important;';
+                }
+
+                return $out;
+            };
+            $css = $scope.' .lazy-icon-box__icon{transition:all .2s ease;}'
+                .$scope.' .lazy-icon-box__icon i{transition:all .2s ease;}'
+                .$scope.' .lazy-icon-box__icon:hover{'.$important($h['wrap']).'}'
+                .$scope.' .lazy-icon-box__icon:hover i{'.$important($h['icon']).'}';
+        }
+
+        return ['wrap' => $normal['wrap'], 'icon' => $normal['icon'], 'css' => $css];
+    }
+}
+
 if (!function_exists('falcon_elem_resp_css')) {
     /**
      * Generate responsive @media CSS for a builder element.

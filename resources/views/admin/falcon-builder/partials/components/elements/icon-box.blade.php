@@ -13,6 +13,12 @@
     <component :is="'style'" v-if="el.settings.readMoreText && el.settings.readMoreHoverColor"
                v-text="'.lzib-' + el.id + ' .lazy-icon-box__more:hover{color:' + el.settings.readMoreHoverColor + ' !important;}'"></component>
 
+    {{-- The icon's hover state, by the same means and for the same reason: the normal state is
+         an inline style, so only a rule can override it, and only !important can beat it. The
+         string is built to match falcon_icon_box_icon_style() declaration for declaration. --}}
+    <component :is="'style'" v-if="iconBoxHoverCss(el.settings, '.lzib-' + el.id)"
+               v-text="iconBoxHoverCss(el.settings, '.lzib-' + el.id)"></component>
+
     {{-- Layout: top (stacked) --}}
     <div v-if="!el.settings.layout || el.settings.layout === 'top'"
          class="flex flex-col"
@@ -21,23 +27,9 @@
              textAlign: el.settings.alignment || 'center',
          }">
 
-        <div :style="{
-                 display: 'inline-flex',
-                 alignItems: 'center',
-                 justifyContent: 'center',
-                 boxSizing: 'content-box',
-                 width:  el.settings.iconBgColor ? ((el.settings.iconSize || 40) * 2) + 'px' : 'auto',
-                 height: el.settings.iconBgColor ? ((el.settings.iconSize || 40) * 2) + 'px' : 'auto',
-                 backgroundColor: el.settings.iconBgColor ? hexToRgba(el.settings.iconBgColor, el.settings.iconBgColorOpacity) : 'transparent',
-                 borderRadius: (el.settings.iconBorderRadius ?? 50) + 'px',
-                 padding: el.settings.iconBgColor ? (el.settings.iconPadding || 0) + 'px' : undefined,
-                 marginBottom: (el.settings.iconSpacing || 16) + 'px',
-             }">
-            <i :class="el.settings.icon || 'fas fa-star'"
-               :style="{
-                   fontSize: (el.settings.iconSize || 40) + (el.settings.iconSizeUnit || 'px'),
-                   color: el.settings.iconColor || '#2271b1',
-               }"></i>
+        <div class="lazy-icon-box__icon"
+             :style="[iconBoxIconStyle(el.settings), { marginBottom: (el.settings.iconSpacing || 16) + 'px' }]">
+            <i :style="iconBoxGlyphStyle(el.settings)" :class="el.settings.icon || 'fas fa-star'"></i>
         </div>
 
         <div v-if="el.settings.title || el.settings.description || el.settings.readMoreText" style="width:100%;">
@@ -90,23 +82,8 @@
          class="flex gap-4 items-start w-full"
          :style="{ flexDirection: el.settings.layout === 'right' ? 'row-reverse' : 'row' }">
 
-        <div class="flex-shrink-0"
-             :style="{
-                 display: 'inline-flex',
-                 alignItems: 'center',
-                 justifyContent: 'center',
-                 boxSizing: 'content-box',
-                 width:  el.settings.iconBgColor ? ((el.settings.iconSize || 40) * 2) + 'px' : 'auto',
-                 height: el.settings.iconBgColor ? ((el.settings.iconSize || 40) * 2) + 'px' : 'auto',
-                 backgroundColor: el.settings.iconBgColor ? hexToRgba(el.settings.iconBgColor, el.settings.iconBgColorOpacity) : 'transparent',
-                 borderRadius: (el.settings.iconBorderRadius ?? 50) + 'px',
-                 padding: el.settings.iconBgColor ? (el.settings.iconPadding || 0) + 'px' : undefined,
-             }">
-            <i :class="el.settings.icon || 'fas fa-star'"
-               :style="{
-                   fontSize: (el.settings.iconSize || 40) + (el.settings.iconSizeUnit || 'px'),
-                   color: el.settings.iconColor || '#2271b1',
-               }"></i>
+        <div class="flex-shrink-0 lazy-icon-box__icon" :style="iconBoxIconStyle(el.settings)">
+            <i :style="iconBoxGlyphStyle(el.settings)" :class="el.settings.icon || 'fas fa-star'"></i>
         </div>
 
         <div class="flex-1">

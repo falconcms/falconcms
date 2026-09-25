@@ -29,13 +29,8 @@
     $readMoreText  = trim($s['readMoreText'] ?? '');
     $readMoreUrl   = $s['readMoreUrl']   ?? '';
 
-    $iconSize      = ($s['iconSize']   ?? 40) . ($s['iconSizeUnit']   ?? 'px');
-    $iconColor     = $s['iconColor']   ?? '#0091ea';
-    $iconBgColor   = $s['iconBgColor'] ?? '';
-    $iconBgOpacity = $s['iconBgColorOpacity'] ?? 1;
-    $iconRadius    = ($s['iconBorderRadius'] ?? 50) . 'px';
+    $iconColor     = $s['iconColor']   ?? '#2271b1';
     $iconSpacing   = ($s['iconSpacing']  ?? 16) . 'px';
-    $iconPadding   = ($s['iconPadding']  ?? 0) . 'px';
     $readMoreColor = $s['readMoreColor'] ?? ($iconColor ?: '#2271b1');
 
     $titleTag           = in_array($s['titleTag'] ?? 'h3', ['h1','h2','h3','h4','h5','h6','p','div']) ? ($s['titleTag'] ?? 'h3') : 'h3';
@@ -82,14 +77,12 @@
         ['prop' => 'marginBottom', 'unitProp' => 'marginBottomUnit', 'sel' => ".{$respId}"],
     ]);
 
-    // Icon wrapper style (shared by top / left / right)
-    if ($iconBgColor) {
-        $rawSize    = (int)($s['iconSize'] ?? 40);
-        $wrapSize   = ($rawSize * 2) . 'px';
-        $iconWrapStyle = "display:inline-flex;align-items:center;justify-content:center;box-sizing:content-box;width:{$wrapSize};height:{$wrapSize};background-color:{$iconBgColor};border-radius:{$iconRadius};padding:{$iconPadding};";
-    } else {
-        $iconWrapStyle = "display:inline-flex;align-items:center;justify-content:center;";
-    }
+    // Icon wrapper + icon, in both states, shared by the top / left / right layouts. The
+    // :hover half comes back as a rule because inline style cannot carry one.
+    $iconStyles    = falcon_icon_box_icon_style($s, '#' . $elemId);
+    $iconWrapStyle = $iconStyles['wrap'];
+    $iconInlineCss = $iconStyles['icon'];
+    $iconHoverCss  = $iconStyles['css'];
 
     $titleStyle = "font-family:{$titleFontFamily};font-size:{$titleSize};font-weight:{$titleWeight};color:{$titleColor};margin:0 0 {$titleGap} 0;line-height:{$titleLineHeight};letter-spacing:{$titleLetterSpacing};text-transform:{$titleTransform};";
     $descStyle  = "font-family:{$descFontFamily};font-size:{$descSize};font-weight:{$descWeight};color:{$descColor};line-height:{$descLH};letter-spacing:{$descLetterSpacing};text-transform:{$descTransform};margin:0;";
@@ -97,9 +90,9 @@
     $outerStyle = "width:100%;margin-top:{$marginTop};margin-bottom:{$marginBottom};";
 
     // ── Reusable part renderers (keep link-mode + read-more logic in one place) ───
-    $renderIcon = function ($extra = '') use ($icon, $iconWrapStyle, $iconSize, $iconColor, $linkIcon, $linkUrl, $linkTarget) {
+    $renderIcon = function ($extra = '') use ($icon, $iconWrapStyle, $iconInlineCss, $linkIcon, $linkUrl, $linkTarget) {
         if ($icon === '') return '';
-        $node = '<div class="lazy-icon-box__icon" style="' . $extra . $iconWrapStyle . '"><i class="' . e($icon) . '" style="font-size:' . $iconSize . ';color:' . $iconColor . ';"></i></div>';
+        $node = '<div class="lazy-icon-box__icon" style="' . $extra . $iconWrapStyle . '"><i class="' . e($icon) . '" style="' . $iconInlineCss . '"></i></div>';
         if ($linkIcon) $node = '<a href="' . e($linkUrl) . '" target="' . e($linkTarget) . '" style="text-decoration:none;display:inline-flex;">' . $node . '</a>';
         return $node;
     };
@@ -134,7 +127,7 @@
     $innerTag   = $linkBox ? 'a' : 'div';
     $innerAttrs = $linkBox ? ' href="' . e($linkUrl) . '" target="' . e($linkTarget) . '"' : '';
 @endphp
-@if($respCss || $moreHoverCss){!! '<style>' . $respCss . $moreHoverCss . '</style>' !!}@endif
+@if($respCss || $moreHoverCss || $iconHoverCss){!! '<style>' . $respCss . $moreHoverCss . $iconHoverCss . '</style>' !!}@endif
 
 @if($layout === 'top')
 <div id="{{ $elemId }}"
