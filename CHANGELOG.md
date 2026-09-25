@@ -7,6 +7,81 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.7.5] — 2026-09-25
+
+### Added
+
+- **A custom date range on Analytics.** *1 year* is gone: a chart of 365 points is not a
+  thing anyone reads, and nobody asks their analytics "how was last year" in those words.
+  In its place is a calendar that asks which days. It only offers days the site has visits
+  for — a range drawn across nothing produces a page of zeroes that reads as a fault rather
+  than an answer — and each pickable day carries a bar showing how busy it was against the
+  busiest day in view, so the calendar answers "where is there anything worth looking at"
+  before a range is chosen at all. With no visits recorded, the button says so rather than
+  opening an entirely grey calendar.
+- **Width and Max Width per device on the Image element.** One value for every screen is
+  fine until a 180px logo sits in a column that is a quarter of a desktop and the whole
+  width of a phone. Both fields now cascade mobile → tablet → desktop like every other
+  responsive setting, with the usual reset and device switcher.
+- **A border on the Icon Box's icon, and a state under the pointer.** Border and border
+  colour join the existing size, colour, background, radius and padding — and each of those
+  now has a hover half. Normal and Hover are the same fields writing to different keys, so a
+  hover field left empty means "whatever Normal says" and an icon box with nothing set on
+  hover renders exactly as it did before. Spacing Below is deliberately not among them:
+  hovering would shift the whole card as the pointer crossed it.
+- **Clear Caches, in Customizer → Performance.** A saved setting that will not take effect
+  is almost always a settings cache that could not be dropped, and there was no way to clear
+  it from the admin. The button checks rather than assumes: clearing is reported as success
+  only when the entry is actually gone afterwards, and a failure names the folder, the usual
+  cause and the command that fixes it.
+
+### Changed
+
+- **The builder previews mobile and tablet at the Customizer's own screen sizes.** Small
+  Screen and Medium Screen build the front end's media queries, and now the canvas as well,
+  so the width being previewed and the width a visitor gets are one number rather than two
+  that can drift. An open builder re-reads them when its tab comes back to the front, so
+  changing either one no longer needs a reload. Tablet and mobile also zoom to fit the panel:
+  they lay out at a fixed width, the panel is often narrower, and the far edge of a tablet
+  layout was being cut off rather than scrolled to.
+- **Responsive Typography says what it is doing.** Two sliders producing a clamp() out of a
+  third setting in another section is a black box, and the usual report — "I move them and
+  nothing changes" — is usually true: a 15px body with the factor at 2.1 puts the floor at
+  31.5px, above four of the six headings. The section now states the floor, which headings
+  shrink and by how much, and which are already smaller and stay fixed.
+- **Every email fits a phone.** All five were laid out for a desktop mail client and none of
+  them gave way below that. Each now narrows under 520px — gutters halve, two-column rows
+  become two lines — while the desktop layout stays where it was, so a client that drops the
+  stylesheet gets the layout it always had rather than a broken one.
+
+### Fixed
+
+- **An empty layout section no longer replaces the theme's own with nothing.** A Footer
+  created from the Layout screen is assigned before anything is built in it, and rendered as
+  an empty wrapper: truthy, so the theme footer was skipped and the page ended with no footer
+  at all. An empty section now yields to the theme default, and the Layout screen calls it
+  empty rather than announcing it as active.
+- **Font sizes are read by unit rather than by stripping digits.** Responsive Typography
+  matched a px-only pattern, so a heading written as "2.5rem", "150%" or a bare "40" was left
+  fixed with no sign it had been skipped — and a bare number is not valid CSS either, so that
+  heading lost its size as well. Worse, the body size was read by deleting every non-digit:
+  "1rem" became 1, dropping the floor to 1.5px so every heading shrank to nearly nothing, and
+  "120%" became 120, lifting it to 180px so nothing shrank at all.
+- **The builder's preview frames no longer argue about how tall they are.** Opening a page
+  made the canvas jump up and down for ten seconds. Two things set the header, title bar and
+  footer previews' heights and they measured different quantities — one of them
+  documentElement.scrollHeight, which is floored at the viewport and so could only ever grow
+  the frame while the frame's own message could shrink it. A 400ms poll drove the argument
+  twenty-five times.
+- **The Icon Box's background opacity reaches the page.** It was read into a variable and
+  then never used, so the slider moved the canvas and nothing else. The icon colour also fell
+  back to a different default on the page than in the builder.
+- **Analytics answers for the window it is showing.** Thirteen queries had a start and no
+  end, which is the same as a window only while the window runs to now; the hourly chart
+  blanked the hours that had not happened yet, right for today and wrong for a day in March;
+  and the recent-activity list was never filtered at all, so a window that closed last month
+  was illustrated with this morning's visitors.
+
 ## [2.7.0] — 2026-09-08
 
 ### Added
