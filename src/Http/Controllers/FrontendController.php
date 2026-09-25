@@ -117,16 +117,25 @@ class FrontendController extends Controller
                 ->where('status', 'published')
                 ->first();
 
-            // If not found in current locale, try to find the linked post in this locale
+            // If not found in current locale, try to find the linked post in this locale.
+            //
+            // Both queries here ask about status as well, which they did not. A home page can
+            // be missing from the first query for two reasons — it is in another language, or
+            // somebody unpublished it — and a fallback that never mentions status cannot tell
+            // those apart. It handed back the very post the published check had just refused,
+            // so taking the front page out of publication did nothing at all.
             if (!$post) {
                 $originalPost = Post::find($homePageId);
                 if ($originalPost) {
                     $post = Post::where('origin_id', $originalPost->id)
                         ->where('lang_code', app()->getLocale())
+                        ->where('status', 'published')
                         ->first();
 
-                    // Final fallback to original if still not found
-                    if (!$post) {
+                    // Final fallback to the original — but only while it is published. With
+                    // no home page to show, the site falls through to the theme's own index,
+                    // which is what it does when none is assigned.
+                    if (!$post && $originalPost->status === 'published') {
                         $post = $originalPost;
                     }
                 }
