@@ -4,6 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Form Submission — {{ $form->title }}</title>
+    <style>
+        /* Everything below is a narrowing, never an addition: the inline styles carry the
+           layout, so a client that drops this stylesheet still gets the desktop one rather
+           than a broken one. Only clients that honour it get a version that fits a phone. */
+        @media only screen and (max-width: 520px) {
+            .fc-pad   { padding-left: 20px !important; padding-right: 20px !important; }
+            .fc-head  { padding: 26px 20px 22px !important; }
+            .fc-title { font-size: 18px !important; }
+            /* The envelope badge is decoration, and decoration is what a narrow screen can
+               least afford — its 56px column is a sixth of a phone. */
+            .fc-badge { display: none !important; }
+            .fc-meta  { display: block !important; margin: 0 0 5px !important; }
+
+            /* The two columns become two lines: the label, then its answer underneath. A 36%
+               column of a 320px screen is 115px, which is not a column, it is a squeeze. */
+            .fc-row       { display: block !important; width: 100% !important; }
+            .fc-row-label,
+            .fc-row-value { display: block !important; width: auto !important; padding-left: 16px !important; padding-right: 16px !important; }
+            .fc-row-label { padding-top: 12px !important; padding-bottom: 1px !important; border-bottom: 0 !important; }
+            .fc-row-value { padding-top: 0 !important; padding-bottom: 13px !important; }
+        }
+    </style>
 </head>
 <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
 
@@ -25,10 +47,10 @@
 
                 {{-- ── HEADER ── --}}
                 <tr>
-                    <td style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 60%,#60a5fa 100%);padding:36px 40px 32px;">
+                    <td class="fc-head" style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 60%,#60a5fa 100%);padding:36px 40px 32px;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                                <td valign="middle" style="padding-right:18px;width:56px;">
+                                <td class="fc-badge" valign="middle" style="padding-right:18px;width:56px;">
                                     {{-- envelope icon --}}
                                     <div style="width:52px;height:52px;background:rgba(255,255,255,0.18);border-radius:14px;text-align:center;line-height:52px;">
                                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-top:1px;">
@@ -39,7 +61,7 @@
                                 </td>
                                 <td valign="middle">
                                     <p style="margin:0 0 3px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:1px;">New Submission</p>
-                                    <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.4px;line-height:1.2;">{{ $form->title }}</h1>
+                                    <h1 class="fc-title" style="margin:0;font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.4px;line-height:1.2;">{{ $form->title }}</h1>
                                 </td>
                             </tr>
                         </table>
@@ -48,15 +70,15 @@
 
                 {{-- ── META STRIP ── --}}
                 <tr>
-                    <td style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:12px 40px;">
+                    <td class="fc-pad" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:12px 40px;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
                                 <td style="font-size:12px;color:#64748b;">
-                                    <span style="margin-right:18px;">
+                                    <span class="fc-meta" style="margin-right:18px;">
                                         <span style="font-weight:600;color:#475569;">&#128197; Submitted:</span>
                                         <span style="color:#334155;font-weight:600;margin-left:4px;">{{ $submittedAt }}</span>
                                     </span>
-                                    <span>
+                                    <span class="fc-meta">
                                         <span style="font-weight:600;color:#475569;">&#127760; IP Address:</span>
                                         <span style="color:#334155;font-weight:600;margin-left:4px;">{{ $ip }}</span>
                                     </span>
@@ -68,7 +90,7 @@
 
                 {{-- ── BODY ── --}}
                 <tr>
-                    <td style="padding:32px 40px 24px;">
+                    <td class="fc-pad" style="padding:32px 40px 24px;">
 
                         <p style="margin:0 0 22px;font-size:14px;color:#475569;line-height:1.6;">
                             {{ $introText }}
@@ -80,11 +102,14 @@
                             @php $i = 0; @endphp
                             @foreach($rows as $row)
                                 @php $bg = ($i % 2 === 0) ? '#ffffff' : '#f8fafc'; $i++; @endphp
-                                <tr style="background-color:{{ $bg }};">
-                                    <td style="padding:13px 18px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;width:36%;border-bottom:1px solid #f1f5f9;vertical-align:top;white-space:nowrap;">
+                                <tr class="fc-row" style="background-color:{{ $bg }};">
+                                    {{-- No white-space:nowrap. A label like "How did you hear about us?"
+                                         could not wrap, so it pushed the table wider than the screen and
+                                         took the whole email with it. --}}
+                                    <td class="fc-row-label" style="padding:13px 18px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;width:36%;border-bottom:1px solid #f1f5f9;vertical-align:top;">
                                         {{ $row['label'] }}
                                     </td>
-                                    <td style="padding:13px 18px;font-size:14px;color:#111827;border-bottom:1px solid #f1f5f9;word-break:break-word;line-height:1.55;">
+                                    <td class="fc-row-value" style="padding:13px 18px;font-size:14px;color:#111827;border-bottom:1px solid #f1f5f9;word-break:break-word;overflow-wrap:break-word;line-height:1.55;">
                                         @if($row['is_file'])
                                             <a href="{{ $row['display'] }}" style="display:inline-block;background:#eff6ff;color:#2563eb;text-decoration:none;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid #bfdbfe;">
                                                 &#128206; Download File
@@ -105,14 +130,14 @@
 
                 {{-- ── DIVIDER ── --}}
                 <tr>
-                    <td style="padding:0 40px;">
+                    <td class="fc-pad" style="padding:0 40px;">
                         <div style="height:1px;background:#f1f5f9;"></div>
                     </td>
                 </tr>
 
                 {{-- ── FOOTER NOTE ── --}}
                 <tr>
-                    <td style="padding:20px 40px 28px;text-align:center;">
+                    <td class="fc-pad" style="padding:20px 40px 28px;text-align:center;">
                         <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.6;">
                             {{ $footerText }}
                         </p>
@@ -121,7 +146,7 @@
 
                 {{-- ── BOTTOM BAR ── --}}
                 <tr>
-                    <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:14px 40px;text-align:center;">
+                    <td class="fc-pad" style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:14px 40px;text-align:center;">
                         <p style="margin:0;font-size:11px;color:#9ca3af;">
                             &copy; {{ date('Y') }} {{ $siteName }}@if(!falcon_pro('white_label')) &mdash; Powered by <strong>FalconCMS</strong>@endif
                         </p>
