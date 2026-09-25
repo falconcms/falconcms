@@ -129,6 +129,11 @@ class CustomizerController extends Controller
                     ],
                     // Responsive Typography
                     'hr2' => ['type' => 'heading', 'label' => 'Responsive Typography'],
+                    'rt_state' => [
+                        'type' => 'info',
+                        'label' => 'What These Settings Currently Do',
+                        'desc' => $this->responsiveTypographyState(),
+                    ],
                     'theme_typography_sensitivity' => [
                         'type' => 'range',
                         'label' => 'Responsive Typography Sensitivity',
@@ -1255,6 +1260,60 @@ class CustomizerController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Import failed: '.$e->getMessage());
         }
+    }
+
+    /**
+     * A plain sentence about what Responsive Typography is doing right now.
+     *
+     * The two sliders below produce a clamp() computed from a third setting in another section
+     * — Body Typography's size — so between them they are a black box. The report is always the
+     * same: "I move them and nothing changes on the front end", and it is usually true, because
+     * the floor (body size x factor) has risen above the headings it would otherwise have moved.
+     * Nothing about that is visible from the sliders, so this says it outright: what the floor
+     * comes to, which headings are above it, and which are already smaller and therefore fixed.
+     */
+    protected function responsiveTypographyState(): string
+    {
+        $body = json_decode((string) get_cms_option('theme_typography_body'), true);
+        $bodyPx = falcon_css_size_to_px((string) ($body['size'] ?? '15px'), 16.0)['px'] ?? 15.0;
+        $factor = (float) get_cms_option('theme_font_size_factor', '1.50');
+        $sensitivity = (float) get_cms_option('theme_typography_sensitivity', '0.6');
+        $floor = round($bodyPx * $factor, 2);
+
+        if ($sensitivity <= 0) {
+            return 'Sensitivity is 0, so responsive typography is off and every heading keeps the '
+                .'size you gave it on every screen.';
+        }
+
+        $scaled = [];
+        $fixed = [];
+        foreach (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as $tag) {
+            $typo = json_decode((string) get_cms_option("theme_typography_{$tag}"), true);
+            $px = falcon_css_size_to_px((string) ($typo['size'] ?? ''), $bodyPx)['px'] ?? null;
+            if ($px === null) {
+                continue;
+            }
+            if ($px > $floor) {
+                $small = round($px - ($px - $floor) * min(1.0, $sensitivity));
+                $scaled[] = strtoupper($tag).' ('.round($px).'px &rarr; '.$small.'px)';
+            } else {
+                $fixed[] = strtoupper($tag);
+            }
+        }
+
+        $out = 'The smallest any heading may shrink to is <strong>'.round($bodyPx, 2).'px &times; '
+            .$factor.' = '.$floor.'px</strong>. ';
+
+        $out .= $scaled
+            ? 'Between the small and medium screen widths these shrink: <strong>'.implode(', ', $scaled).'</strong>. '
+            : '<strong>No heading is larger than that</strong>, so nothing shrinks at all — lower the factor below to give them room. ';
+
+        if ($fixed) {
+            $out .= implode(', ', $fixed).' '.(count($fixed) === 1 ? 'is' : 'are')
+                .' already smaller than the minimum, so '.(count($fixed) === 1 ? 'it stays' : 'they stay').' fixed.';
+        }
+
+        return $out;
     }
 
     public function runAction($action)

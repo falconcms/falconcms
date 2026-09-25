@@ -95,6 +95,102 @@ if (!function_exists('falcon_gradient_bg')) {
     }
 }
 
+if (!function_exists('falcon_css_size_to_px')) {
+    /**
+     * A CSS font-size read as a number of pixels, or null when it is not one we can reason about.
+     *
+     * The Customizer's Font Size is a free-text box, so what arrives here is whatever the author
+     * typed: "40px", "2.5rem", "150%", or a bare "40". Returning the unit alongside the pixel
+     * value lets a caller do arithmetic in pixels and still write the answer back in the unit it
+     * was given — which matters for rem, where the whole point is that the reader's own browser
+     * font size still applies.
+     *
+     * $contextPx is what a relative unit resolves against: the root size for the body, and the
+     * body's own size for a heading sitting inside it.
+     */
+    function falcon_css_size_to_px(string $size, float $contextPx = 16.0): ?array
+    {
+        if (!preg_match('/^([0-9]*\.?[0-9]+)\s*(px|rem|em|%)?$/i', trim($size), $m)) {
+            return null;
+        }
+
+        $n = (float) $m[1];
+        $unit = ($m[2] ?? '') !== '' ? strtolower($m[2]) : 'px';
+
+        // A bare number is not valid CSS — the browser drops the whole declaration — so reading
+        // it as px is both what the field's own "16px" placeholder implies and the only reading
+        // that leaves the author with a size rather than with nothing.
+        $perUnit = match ($unit) {
+            'rem' => 16.0,      // the theme leaves html's font-size alone, so a rem is 16px
+            'em' => $contextPx, // a heading's em resolves against the text it is sitting in
+            '%' => $contextPx / 100,
+            default => 1.0,
+        };
+
+        if ($perUnit <= 0 || $n <= 0) {
+            return null;
+        }
+
+        return ['px' => $n * $perUnit, 'unit' => $unit, 'per_unit' => $perUnit];
+    }
+}
+
+if (!function_exists('falcon_fluid_font_size')) {
+    /**
+     * A fixed font-size rewritten as a fluid clamp(), for the Customizer's Responsive Typography.
+     *
+     * Two settings drive it: Sensitivity, how far a size may travel, and Minimum Font Size
+     * Factor, which sets the floor it travels toward (body size x factor). Between the small and
+     * medium screen widths the size slides from that floor up to the size the author set; outside
+     * them it rests at one end or the other, so the desktop appearance never changes.
+     *
+     * The size comes back as written when the feature is off, when the breakpoints are the wrong
+     * way round, when the value is one we cannot read, or when it is already at or below the
+     * floor — something smaller than the minimum has nowhere to shrink to.
+     */
+    function falcon_fluid_font_size(
+        string $size,
+        float $sensitivity,
+        float $floorPx,
+        int $smallBp,
+        int $mediumBp,
+        float $contextPx = 16.0
+    ): string {
+        $size = trim($size);
+        $parsed = falcon_css_size_to_px($size, $contextPx);
+
+        if ($parsed === null) {
+            return $size;
+        }
+
+        // Writing a px value back in the author's own unit, so a size given in rem still answers
+        // to the reader's browser font size.
+        $write = static fn (float $px): string => $parsed['unit'] === 'px'
+            ? rtrim(rtrim(number_format($px, 2, '.', ''), '0'), '.').'px'
+            : rtrim(rtrim(number_format($px / $parsed['per_unit'], 4, '.', ''), '0'), '.').$parsed['unit'];
+
+        $max = $parsed['px'];
+
+        if ($sensitivity <= 0 || $mediumBp <= $smallBp || $floorPx <= 0 || $max <= $floorPx) {
+            // Still normalised: a bare "40" was never going to render at all.
+            return $write($max);
+        }
+
+        $sens = min(1.0, max(0.0, $sensitivity));
+        $min = round($max - ($max - $floorPx) * $sens, 2);
+        $delta = round($max - $min, 2);
+        $span = $mediumBp - $smallBp;
+
+        // Only the middle term is px: calc() can multiply a length by a number and divide it by
+        // one, but it cannot divide a length by a length, which is what carrying rem through the
+        // viewport term would need. The bounds are what the reader sees at either end anyway.
+        $minOut = $write($min);
+        $maxOut = $write($max);
+
+        return "clamp({$minOut}, calc({$min}px + {$delta} * (100vw - {$smallBp}px) / {$span}), {$maxOut})";
+    }
+}
+
 if (!function_exists('falcon_elem_resp_css')) {
     /**
      * Generate responsive @media CSS for a builder element.

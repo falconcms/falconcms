@@ -232,26 +232,17 @@
             $rtSmallBP  = (int) get_cms_option('theme_small_screen_breakpoint', '800');
             $rtMediumBP = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');
             $rtBodyTypo = json_decode(get_cms_option('theme_typography_body'), true);
-            $rtBodyPx   = (float) preg_replace('/[^0-9.]/', '', (string)($rtBodyTypo['size'] ?? '15'));
-            if ($rtBodyPx <= 0) $rtBodyPx = 15;
+            // The body's own size is the yardstick for the floor, so reading it wrongly does not
+            // fail quietly — it moves every heading. A body given in rem used to come out as the
+            // bare number (1rem read as 1px), dropping the floor to nearly nothing and shrinking
+            // every heading to a couple of pixels; in % it came out as 120, putting the floor
+            // above every heading and switching Responsive Typography off altogether.
+            $rtBodyPx = falcon_css_size_to_px((string) ($rtBodyTypo['size'] ?? '15px'), 16.0)['px'] ?? 15.0;
+            $rtFloorPx = $rtBodyPx * $minFontSizeFactor;
 
-            // Turn a fixed desktop px size into a fluid clamp(). Returns the raw size
-            // unchanged when RT is disabled, the unit isn't px, the breakpoints are
-            // misconfigured, or the heading is already at/below the floor — so the
-            // desktop appearance (>= medium breakpoint) never changes.
-            $fluidFontSize = function ($sizeStr) use ($typoSensitivity, $minFontSizeFactor, $rtSmallBP, $rtMediumBP, $rtBodyPx) {
-                $sizeStr = trim((string) $sizeStr);
-                if ($typoSensitivity <= 0 || $rtMediumBP <= $rtSmallBP) return $sizeStr;
-                if (!preg_match('/^([0-9.]+)px$/', $sizeStr, $m)) return $sizeStr;
-                $max   = (float) $m[1];
-                $floor = $rtBodyPx * $minFontSizeFactor;
-                if ($max <= $floor) return $sizeStr;
-                $sens  = min(1, max(0, $typoSensitivity));
-                $min   = round($max - ($max - $floor) * $sens, 2);
-                $delta = round($max - $min, 2);
-                $span  = $rtMediumBP - $rtSmallBP;
-                return "clamp({$min}px, calc({$min}px + {$delta} * (100vw - {$rtSmallBP}px) / {$span}), {$max}px)";
-            };
+            $fluidFontSize = fn ($sizeStr) => falcon_fluid_font_size(
+                (string) $sizeStr, $typoSensitivity, $rtFloorPx, $rtSmallBP, $rtMediumBP, $rtBodyPx
+            );
 
             $tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'nav'];
             $headingTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
@@ -267,7 +258,12 @@
                     echo "body {$tag}, .{$tag}-style { ";
                     if(isset($typo['family'])) echo "font-family: '{$typo['family']}', sans-serif; ";
                     if(isset($typo['size'])) {
-                        $sizeOut = in_array($tag, $headingTags, true) ? $fluidFontSize($typo['size']) : $typo['size'];
+                        // Every tag goes through the same reader, so a size the browser would have
+                        // thrown away (a bare "40") is written out as one it accepts; only headings
+                        // are additionally made fluid.
+                        $sizeOut = in_array($tag, $headingTags, true)
+                            ? $fluidFontSize($typo['size'])
+                            : falcon_fluid_font_size((string) $typo['size'], 0, 0, 0, 0, $rtBodyPx);
                         echo "font-size: {$sizeOut}; ";
                     }
                     if(isset($typo['variant'])) echo "font-weight: {$typo['variant']}; ";
