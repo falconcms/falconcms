@@ -746,13 +746,30 @@
     </style>
     <script>
         (function () {
+            var last = 0, queued = false;
+
             function postH() {
                 var h = Math.ceil(document.body.getBoundingClientRect().height);
-                if (h > 0) parent.postMessage({ falconFrame: @json($builderFramePart), height: h }, '*');
+                // Only a real change is worth reporting. The observer below watches the body,
+                // and the height the parent sets in response to a message is what resizes that
+                // body — so reporting an unchanged height starts a conversation neither side
+                // can end, and the frame visibly oscillates while it runs.
+                if (!(h > 0) || Math.abs(h - last) <= 1) return;
+                last = h;
+                parent.postMessage({ falconFrame: @json($builderFramePart), height: h }, '*');
             }
+
+            // Coalesce a burst of resizes into one report on the next frame, so a reflow that
+            // settles over several ticks is announced once rather than at every step of it.
+            function schedule() {
+                if (queued) return;
+                queued = true;
+                requestAnimationFrame(function () { queued = false; postH(); });
+            }
+
             window.addEventListener('load', function () { postH(); setTimeout(postH, 250); setTimeout(postH, 800); });
-            window.addEventListener('resize', postH);
-            if (window.ResizeObserver) { try { new ResizeObserver(postH).observe(document.body); } catch (e) {} }
+            window.addEventListener('resize', schedule);
+            if (window.ResizeObserver) { try { new ResizeObserver(schedule).observe(document.body); } catch (e) {} }
         })();
     </script>
     @endisset

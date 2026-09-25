@@ -286,26 +286,57 @@
     @if(!empty($frameHeaderUrl ?? null) || !empty($frameTitleBarUrl ?? null) || !empty($frameFooterUrl ?? null))
     <script>
         (function () {
-            function fit(f) {
+            // One place decides a frame's height, and it only ever writes a real change.
+            // Without this guard the message handler below rewrote the style on every message,
+            // and each write resized the frame's body, which made the frame report again.
+            function apply(f, h) {
+                if (!(h > 0)) return;
+                if (Math.abs((parseInt(f.style.height, 10) || 0) - h) <= 1) return;
+                f.style.height = h + 'px';
+            }
+
+            // The content's own height — the same thing the frame itself reports, so the two
+            // cannot disagree. documentElement.scrollHeight is emphatically not it: the root
+            // element's scrolling box IS the viewport, so that number can never come out
+            // smaller than the frame already is. It could only ever grow the frame, while the
+            // frame's own message could shrink it, and the two fought each other every 400ms
+            // for ten seconds — which is what made the canvas jump up and down on the way in.
+            function measure(f) {
                 try {
                     var d = f.contentDocument || (f.contentWindow && f.contentWindow.document);
-                    if (!d || !d.body) return;
-                    var h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);
-                    if (h > 0 && Math.abs((parseInt(f.style.height, 10) || 0) - h) > 1) f.style.height = h + 'px';
-                } catch (e) {}
+                    if (!d || !d.body) return 0;
+                    return Math.ceil(d.body.getBoundingClientRect().height);
+                } catch (e) { return 0; }
             }
+
+            function fit(f) { apply(f, measure(f)); }
             function fitAll() { document.querySelectorAll('iframe[data-falcon-frame]').forEach(fit); }
+
             window.addEventListener('message', function (e) {
                 var d = e.data || {};
-                if (d && d.falconFrame && d.height) {
-                    document.querySelectorAll('iframe[data-falcon-frame="' + d.falconFrame + '"]').forEach(function (f) { f.style.height = d.height + 'px'; });
-                }
+                if (!d || !d.falconFrame || !d.height) return;
+                document.querySelectorAll('iframe[data-falcon-frame="' + d.falconFrame + '"]')
+                    .forEach(function (f) { apply(f, d.height); });
             });
             document.addEventListener('load', function (e) {
                 if (e.target && e.target.matches && e.target.matches('iframe[data-falcon-frame]')) fit(e.target);
             }, true);
             window.addEventListener('load', fitAll);
-            var n = 0, iv = setInterval(function () { fitAll(); if (++n > 25) clearInterval(iv); }, 400);
+
+            // A frame reports its own height, so this is only the safety net for when that
+            // message never arrives. It stops as soon as nothing has moved for three ticks,
+            // rather than running the full ten seconds whatever happens.
+            var ticks = 0, settled = 0, last = '';
+            var iv = setInterval(function () {
+                fitAll();
+                var now = Array.prototype.map.call(
+                    document.querySelectorAll('iframe[data-falcon-frame]'),
+                    function (f) { return f.style.height; }
+                ).join(',');
+                settled = (now === last) ? settled + 1 : 0;
+                last = now;
+                if (settled >= 3 || ++ticks > 25) clearInterval(iv);
+            }, 400);
         })();
     </script>
     @endif
