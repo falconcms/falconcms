@@ -185,6 +185,34 @@
             text-decoration: none;
             font-weight: 600;
         }
+
+        /* ── Phones ──────────────────────────────────────────────────────────────────
+           Nothing here rearranges the email; it takes back room a desktop can spare and
+           a phone cannot. On a 320px screen the gutters alone — 20px of wrapper plus
+           35px of content on each side — spend 110 of the 320, and the Price column
+           claims a further fixed 120 of what is left, so the item names were being
+           squeezed into about 60px and wrapping a word at a time. */
+        @media only screen and (max-width: 520px) {
+            .wrapper { padding: 20px 10px !important; }
+            .header  { padding: 26px 18px !important; }
+            .header h1 { font-size: 21px !important; }
+            .content { padding: 24px 18px 18px !important; }
+            .footer  { padding: 22px 18px !important; }
+
+            .order-meta { padding: 14px !important; }
+            /* Label above value rather than beside it: "Payment Method:" and its answer do
+               not both fit across a phone, and the pair reads better stacked anyway. */
+            .order-meta td      { display: block !important; width: auto !important; padding: 0 !important; }
+            .order-meta .label  { padding-top: 9px !important; font-size: 12px !important; }
+
+            .items-table th, .items-table td { padding: 10px !important; font-size: 13.5px !important; }
+            /* The Price column's 120px is written on the cell itself, so it has to be said
+               again here to be overridden. */
+            .items-table th.text-right { width: 84px !important; }
+
+            .totals-table td { padding: 5px 0 !important; font-size: 13.5px !important; }
+            .customer-note   { padding: 13px 14px !important; }
+        }
     </style>
 </head>
 <body>

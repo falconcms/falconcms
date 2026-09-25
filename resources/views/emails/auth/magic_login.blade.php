@@ -25,6 +25,17 @@
         .footer { background: #f9fafb; border-top: 1px solid #f3f4f6; padding: 20px 32px; text-align: center; }
         .footer-text { font-size: 12px; color: #9ca3af; margin: 0; }
         .footer-link { color: #6366f1; text-decoration: none; }
+
+        /* ── Phones ──────────────────────────────────────────────────────────────────
+           Only a narrowing. On a 320px screen the gutters — 20px of wrapper plus 32px
+           of body on each side — spend 104 of the 320 before a word is written. */
+        @media only screen and (max-width: 520px) {
+            .wrapper { padding: 20px 10px !important; }
+            .header  { padding: 26px 18px !important; }
+            .body    { padding: 26px 18px !important; }
+            .footer  { padding: 20px 18px !important; }
+            .btn     { display: block !important; padding: 14px 18px !important; }
+        }
     </style>
 </head>
 <body>

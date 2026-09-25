@@ -2,28 +2,33 @@
 
 namespace FalconCms\Core\Tests\Feature\Security;
 
-use FalconCms\Core\Http\Middleware\AdminMiddleware;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
 /**
- * What an admin sees when their session has gone.
+ * What an admin sees at /admin when their session has gone: a 404, the same as anyone else.
  *
  * /admin answers a stranger with 404 so that guessing the obvious path cannot reveal the
- * login URL — see {@see AdminAccessTest}. Taken alone that also meets the site's own
- * administrator: sessions last hours, work in a builder tab lasts longer, and nothing on
- * the site links back to a login page they may never have written down. A bare 404 at
- * that moment reads as a broken site, not as "sign in again".
+ * address set in Settings → Login URL — see {@see AdminAccessTest}. v2.6.13 carved out an
+ * exception for the site's own administrator: a browser carrying a year-long
+ * `falcon_admin_seen` cookie, dropped on any successful sign-in, was redirected to the login
+ * page instead of meeting a bare 404.
  *
- * So a browser that has signed in here before is sent to the login page instead. It
- * already knows the address, so it learns nothing; a browser that has not still gets the
- * 404. The marker is an ordinary Laravel cookie, which means it is encrypted with APP_KEY
- * and cannot be produced by anyone who does not already have the key.
+ * The exception was removed again, because the cookie gave away exactly what the 404 was
+ * hiding: it was never cleared on logout, so a shared or handed-on machine kept pointing at
+ * the login URL for a year, to whoever used it next. A 404 that is only sometimes a 404 is
+ * not a 404.
+ *
+ * That cookie is a year long, so browsers are still carrying it. The test below that hands it
+ * over deliberately is the one that matters: the marker must buy nothing.
  */
 class ReturningAdminTest extends TestCase
 {
     use MakesShopFixtures;
+
+    /** The marker v2.6.13 dropped. The constant is gone; the cookies in the wild are not. */
+    private const OLD_MARKER = 'falcon_admin_seen';
 
     private function administrator()
     {
@@ -35,7 +40,7 @@ class ReturningAdminTest extends TestCase
         ]);
     }
 
-    public function test_a_browser_that_has_never_signed_in_still_gets_a_404(): void
+    public function test_a_browser_that_has_never_signed_in_gets_a_404(): void
     {
         $response = $this->get('/admin');
 
@@ -43,7 +48,18 @@ class ReturningAdminTest extends TestCase
         $this->assertNull($response->headers->get('Location'), 'a stranger must not be pointed anywhere');
     }
 
-    public function test_signing_in_marks_the_browser(): void
+    public function test_a_browser_carrying_the_old_marker_gets_the_same_404(): void
+    {
+        // The whole point of the reversal. A machine that was signed in on once, a year ago,
+        // must not still be handing the login URL to whoever is sitting at it now.
+        $response = $this->withCookie(self::OLD_MARKER, '1')->get('/admin');
+
+        $response->assertNotFound();
+        $this->assertNull($response->headers->get('Location'),
+            'the old marker still buys a redirect, which is the thing that was removed');
+    }
+
+    public function test_signing_in_leaves_no_marker_behind(): void
     {
         $admin = $this->administrator();
 
@@ -52,48 +68,33 @@ class ReturningAdminTest extends TestCase
             'password' => 'secret-password',
         ]);
 
-        // Guard the premise: if the sign-in did not happen, the assertion below would
-        // pass or fail for reasons that have nothing to do with the marker.
+        // Guard the premise: if the sign-in did not happen, the assertion below would pass
+        // for a reason that has nothing to do with the marker.
         $this->assertTrue(auth()->check(), 'the sign-in itself must succeed');
         $response->assertRedirect();
 
-        $this->assertNotNull(
-            $this->getCookie(AdminMiddleware::RETURNING_COOKIE),
-            'a completed sign-in should leave the marker behind'
-        );
+        foreach (app('cookie')->getQueuedCookies() as $cookie) {
+            $this->assertNotSame(self::OLD_MARKER, $cookie->getName(),
+                'sign-in is dropping the marker again, and nothing clears it on the way out');
+        }
     }
 
-    public function test_a_returning_browser_without_a_session_is_sent_to_the_login_page(): void
+    public function test_the_marker_does_not_stand_in_for_a_session(): void
     {
-        $response = $this->withCookie(AdminMiddleware::RETURNING_COOKIE, '1')->get('/admin');
+        $response = $this->withCookie(self::OLD_MARKER, '1')->get('/admin/settings');
 
-        $response->assertRedirect(route('admin.login'));
-        $response->assertSessionHas('error');
-    }
-
-    public function test_the_marker_does_not_let_anyone_in(): void
-    {
-        // It only changes what an unauthenticated visitor is shown. It is not a session.
-        $response = $this->withCookie(AdminMiddleware::RETURNING_COOKIE, '1')->get('/admin/settings');
-
-        $response->assertRedirect(route('admin.login'));
         $this->assertFalse(auth()->check(), 'the marker must never stand in for signing in');
+        $this->assertNotSame(200, $response->getStatusCode(), 'the marker let an unauthenticated visitor through');
+    }
+
+    public function test_the_login_url_itself_still_answers(): void
+    {
+        // The 404 hides where the door is; it does not brick the door.
+        $this->get(route('admin.login'))->assertOk();
     }
 
     public function test_an_administrator_with_a_session_is_unaffected(): void
     {
         $this->actingAs($this->administrator())->get('/admin')->assertOk();
-    }
-
-    /** Read a cookie the response queued, whatever Laravel wrapped it in. */
-    private function getCookie(string $name)
-    {
-        foreach (app('cookie')->getQueuedCookies() as $cookie) {
-            if ($cookie->getName() === $name) {
-                return $cookie;
-            }
-        }
-
-        return null;
     }
 }

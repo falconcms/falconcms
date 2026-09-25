@@ -223,8 +223,11 @@ class ClipboardPasteTest extends TestCase
             ],
         ]);
 
+        // Since "Paste lands beside what you right-clicked" the copy no longer drops into the
+        // top of a container, so the hint stopped naming the container and started naming the
+        // node the copy will sit next to — which is the thing the reader is pointing at.
         $this->assertStringContainsString('element', $ok['hint']);
-        $this->assertStringContainsString('nested column', $ok['hint']);
+        $this->assertStringContainsString('above or below', $ok['hint']);
 
         $this->assertNotSame('', $refused['hint'], 'a refused paste explains nothing');
         $this->assertSame($refused['error'], $refused['hint'],
