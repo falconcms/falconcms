@@ -220,6 +220,13 @@
     .topbar-icon svg { width: 20px; height: 20px; }
     .builder-sidebar svg { width: 24px; height: 24px; }
     i.fa { font-size: 14px; }
+    /* …except inside an author's own control. The mobile menu trigger sets its font-size from
+       "Mobile Menu Trigger Font Size" and the front end lets the hamburger inherit it (see the
+       <button class="lazy-mobile-trigger"> in frontend/builder/elements/menu.blade.php). The
+       pin above is admin chrome and applies anywhere, so in the canvas that setting moved the
+       trigger's text and left the icon at 14px — and a trigger with no text is nothing but the
+       icon, so the field looked like it did nothing at all. */
+    .mobile-menu-trigger-preview i.fa { font-size: inherit; }
 
     /* Topbar Icons */
     .topbar-icon {

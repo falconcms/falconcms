@@ -3108,17 +3108,43 @@
             // size themselves for a real desktop and nothing spills past the visible panel, without
             // a permanent scrollbar. (transform: scale() cannot do this: it repaints smaller but
             // leaves the original, oversized layout box in the document flow.)
+
+            // A device button previews a device, not the edge of a media query. `small` and
+            // `medium` are the *upper* bounds of the mobile and tablet bands, so previewing at
+            // them showed the widest phone and the widest tablet there are: 800px of canvas for
+            // a phone that is really about 390px across. Nothing about the elements changed, but
+            // every fixed size in them sat in twice the room it will ever have — a 180px logo in
+            // a half-width column filled 45% of it instead of 92% — which reads as an image that
+            // shrank in responsive mode, with a wide gap beside every column. Preview at a real
+            // device width instead, kept inside the band so exactly the same rules still apply:
+            // mobile at or below `small`, tablet above `small` and no wider than `medium`.
+            const canvasPreviewWidth = (which) => {
+                const small  = Number(window.builderBreakpoints?.small)  || 800;
+                const medium = Number(window.builderBreakpoints?.medium) || 1100;
+                if (which === 'mobile') return Math.min(390, small);
+                const low  = small + 1;              // the tablet band starts one pixel above mobile
+                const high = Math.max(medium, low);   // a medium below small can only be a misconfiguration
+                return Math.min(Math.max(1024, low), high);
+            };
+
             const canvasScale = ref(1);
             const updateCanvasScale = () => {
-                if (device.value !== 'desktop' || isPreview.value) {
+                if (isPreview.value) {
                     canvasScale.value = 1;
                     return;
                 }
                 const panel = document.querySelector('.builder-canvas-area');
                 if (!panel) return;
-                const floor = (window.builderBreakpoints?.medium || 1100) + 1;
+                // Every device but preview lays the canvas out at a fixed width, and the panel
+                // is often narrower than that once the sidebar and the design panel are open.
+                // .builder-canvas-area hides its overflow, so anything past the panel's edge was
+                // being cut off silently rather than scrolled to — the right-hand end of a
+                // tablet layout simply was not there. Fit whichever width this device asks for.
+                const intended = device.value === 'desktop'
+                    ? (Number(window.builderBreakpoints?.medium) || 1100) + 1
+                    : canvasPreviewWidth(device.value);
                 const available = panel.clientWidth;
-                canvasScale.value = (available > 0 && available < floor) ? available / floor : 1;
+                canvasScale.value = (available > 0 && available < intended) ? available / intended : 1;
             };
 
             const canvasStyle = computed(() => {
@@ -3126,13 +3152,11 @@
                 const pb = window.builderPagePadding?.bottom || '60px';
                 const baseStyle = { paddingTop: pt, paddingBottom: pb };
                 if (isPreview.value) return { ...baseStyle, width: '100%' };
-                if (device.value === 'mobile') {
-                    return { ...baseStyle, width: (window.builderBreakpoints?.small || 800) + 'px' };
+                const zoom = canvasScale.value !== 1 ? canvasScale.value : undefined;
+                if (device.value === 'mobile' || device.value === 'tablet') {
+                    return { ...baseStyle, width: canvasPreviewWidth(device.value) + 'px', zoom };
                 }
-                if (device.value === 'tablet') {
-                    return { ...baseStyle, width: (window.builderBreakpoints?.medium || 1100) + 'px' };
-                }
-                return { ...baseStyle, width: '100%', zoom: canvasScale.value !== 1 ? canvasScale.value : undefined };
+                return { ...baseStyle, width: '100%', zoom };
             });
 
             const formatBasisToFraction = (basis) => {
