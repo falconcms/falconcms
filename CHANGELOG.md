@@ -82,6 +82,125 @@ Full release notes, with the reasoning behind each change, live at
   and the recent-activity list was never filtered at all, so a window that closed last month
   was illustrated with this morning's visitors.
 
+## [2.7.4] — 2026-09-22
+
+Thirteen fixes, most of them the same shape: a setting that took a value, looked right on
+the canvas, and then did something else once published.
+
+### Added
+
+- **Link Hover Color on the Container**, beside the Link Color it belongs with.
+
+### Changed
+
+- **`/admin` is a 404 for every browser without a session again.** 2.6.13 had carved out an
+  exception: a browser carrying a year-long `falcon_admin_seen` cookie, dropped on any
+  successful sign-in, was redirected to the login page instead of meeting a bare 404. The
+  cookie was never cleared on logout, so a shared or handed-on machine kept pointing at the
+  login URL for a year, to whoever used it next — which is exactly what the 404 was hiding.
+- **Paste lands beside what you right-clicked**, immediately before or after it, rather than
+  at the top of whatever container it was in.
+- **A settings cache that will not clear is logged at error, not warning.** Every saved
+  setting reads its old value until it expires, which is not a warning-level event.
+
+### Fixed
+
+- **Container Link Color and Border Color do what the panel says**, and a link colour set on
+  a container reaches the links inside it.
+- **A gradient of one colour paints that colour**, instead of fading to something else.
+- **The editor and the page agree on row wrapping and on canvas typography** — two places
+  where the canvas had its own copy of a default and answered it differently.
+- **Icons from every bundled set** appear in the editor, not just one of the five.
+- **Table row hover works under every preset**, rather than half of them.
+- **A submenu marks its parents as well as itself**, so the trail to the current page is
+  visible rather than only its last step.
+- **The Navigator's drop marker keeps up with the drag**, and the canvas follows what the
+  Navigator opens.
+
+## [2.7.3] — 2026-09-20
+
+Four corrections to 2.7.2, three of them sharing a shape: something the CMS did to itself
+and then reported as your problem.
+
+### Fixed
+
+- **Updating from the dashboard no longer refuses to start after a command-line update.** A
+  shell update left the package owned by root, and the pre-flight check was right to stop —
+  what was missing was anything putting the ownership back, so the fix-it instruction had to
+  be followed again every time. The command that causes it now repairs it.
+- **A page a plugin's menu points at can finally be opened.** It answered 403 for everyone
+  but an administrator: the middleware looked for the owning menu in the `menus` table, and a
+  menu registered through a hook is not in it. So the menu was visible, its permission
+  grantable since 2.7.2, and the page still closed.
+- **Clicking Shop goes to Shop.** A migration pointed that route at the overview in June and
+  the seeder overwrote it on every update since, sending it back to Orders.
+- **Two columns are no longer dropped in silence** on the way into models that could not
+  accept them.
+
+## [2.7.2] — 2026-09-20
+
+> **For developers.** The helpers and hook tags that still said `lazy_` are `falcon_` now,
+> and the stored settings keyed under the old name have moved with them. Nothing already
+> written stops working: every old helper name remains as a forward, a renamed hook fires for
+> callbacks registered under either name, an old stored key is still read, and old
+> `[lazy_*]` builder shortcodes still render.
+
+### Added
+
+- **A mega menu the theme header builds itself**, out of a top-level item's own sub-items —
+  columns, a panel width, and eight ways of dividing the panel up. Off by default, and off
+  changes nothing. Offered only where there are sub-items to make one from, with an Item
+  Border Hover Color and a border on every style that can carry one.
+- **Taxonomy archive bases are a setting**, rather than fixed.
+- **A child theme inherits its parent's templates**, as it always claimed to.
+- **The loop can order posts by `published_at`.**
+
+### Changed
+
+- **A menu a plugin or theme registers is listed in Users → Roles.** A package could add a
+  sidebar entry that nobody could be granted; now it can be granted, or marked public, or
+  kept out of the role editor on purpose.
+- **An options page, its menu and its middleware guard name the same permission**, instead of
+  three different ones.
+- **A subscriber holds the Dashboard and the Overview, and nothing else** — rather than a
+  Users menu that answered 403 when clicked.
+- **Grants made under the old permission spelling are carried across** by a migration that
+  only ever adds, and declines anything genuinely ambiguous rather than guessing.
+- **The Post Types and Taxonomies lists use the whole width**, like the Fields screen.
+
+### Fixed
+
+- **Static page caching could serve one visitor's basket to another.**
+- **One unguarded mega-menu property took the whole header down.**
+- **Renaming a term leaves a redirect behind**, so the old address still resolves.
+- **A category in a menu points at where that category lives now**, not where it used to.
+- **Two menus may share a name; they may not share a slug.**
+- **The loop's paginator keeps the rest of the query string**, so a filter survives page two.
+- **A product page's scripts survive an out-of-stock product.**
+- **Two admin screens no longer misdescribe a custom post type**, and term archive links
+  follow the configured base.
+
+## [2.7.1] — 2026-09-15
+
+### Added
+
+- **A custom post type can be told where to sit in the sidebar.** ACPT → Advanced offers the
+  dashboard's own menus to place it after, rather than leaving the position to chance.
+- **The icon picker offers every icon the dashboard can draw** — 4,237 of them, with a search
+  — instead of a hand-picked 36.
+- **A form can be renamed after it is created.**
+- **Shop and Products have a section of their own** in the sidebar.
+
+### Fixed
+
+- **Products stays under Shop.** A post type's menu position was computed from its database
+  id, so the wrong id collided with Shop and the sidebar drew the tie either way round.
+  Positions are no longer derived from ids.
+- **Analytics draws something on Today.** Today is its default range, one day is one data
+  point, and a line through one point is not a line — Today is hourly now.
+- **Six shop and editor faults found while filming the tutorials**, all of them saves that
+  failed without saying so.
+
 ## [2.7.0] — 2026-09-08
 
 ### Added
