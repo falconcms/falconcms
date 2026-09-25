@@ -35,8 +35,9 @@ class CanvasLayoutTest extends TestCase
         $this->assertStringContainsString('.canvas-container.desktop', $styles,
             'there is no dedicated rule for the desktop canvas width');
 
+        // The whole rule, however much comment sits inside it.
         $start = strpos($styles, '.canvas-container.desktop');
-        $block = substr($styles, $start, 200);
+        $block = substr($styles, $start, strpos($styles, '}', $start) - $start);
 
         $this->assertStringContainsString('min-width', $block,
             'the desktop canvas has no minimum width — it can still be narrower than a real desktop visitor ever sees');
@@ -85,7 +86,45 @@ class CanvasLayoutTest extends TestCase
             'the desktop zoom-to-fit state is missing');
         $this->assertStringContainsString('const updateCanvasScale', $scripts,
             'nothing computes the zoom-to-fit scale');
-        $this->assertStringContainsString('zoom: canvasScale.value', $scripts,
+        $this->assertStringContainsString('canvasScale.value !== 1 ? canvasScale.value : undefined', $scripts,
             'the computed scale is never applied to the canvas — canvasStyle does not read canvasScale');
+        $this->assertMatchesRegularExpression('/return \{ \.\.\.baseStyle,[^}]*, zoom \};/', $scripts,
+            'canvasStyle returns no zoom, so the scale it computes changes nothing');
+    }
+
+    /**
+     * Tablet and mobile lay the canvas out at a fixed pixel width too — Small Screen and
+     * Medium Screen — and the panel is just as often narrower than those. With the area's
+     * overflow hidden, the far edge of a tablet layout was cut off rather than scrolled to,
+     * which looks like a layout that ends early rather than a viewport that does.
+     */
+    public function test_zoom_to_fit_is_not_desktop_only(): void
+    {
+        $scripts = file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/scripts.blade.php'
+        );
+
+        $this->assertStringNotContainsString("device.value !== 'desktop' || isPreview.value", $scripts,
+            'updateCanvasScale bails out for tablet and mobile, so their canvases are clipped again');
+        $this->assertStringContainsString('canvasPreviewWidth(device.value)', $scripts,
+            'the scale is not computed against the width tablet and mobile actually use');
+    }
+
+    /**
+     * One pair of numbers for the canvas and for the page. The front end's media queries are
+     * built from Small Screen and Medium Screen, so a preview at any other width is a
+     * preview of a screen the site does not have a rule for.
+     */
+    public function test_the_responsive_canvas_widths_are_the_customizer_screen_sizes(): void
+    {
+        $scripts = file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/partials/scripts.blade.php'
+        );
+
+        $this->assertStringContainsString(
+            "return which === 'mobile' ? small : Math.max(medium, small + 1);", $scripts,
+            'the canvas previews at some width other than the two configured screen sizes');
+        $this->assertStringContainsString('const refreshBreakpoints', $scripts,
+            'an open builder never re-reads the screen sizes, so changing them needs a reload');
     }
 }

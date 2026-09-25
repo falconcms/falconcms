@@ -4,28 +4,78 @@
         <h4 class="text-[11px] font-black uppercase tracking-widest text-[#0091ea] mb-4">Dimension</h4>
         
         <div class="space-y-4">
-            <!-- Width -->
+            <!-- WIDTH -->
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">WIDTH</label>
-                    <div class="flex bg-white border border-slate-200 rounded p-0.5">
-                        <button @click="editingElement.settings.widthUnit = 'px'" :class="editingElement.settings.widthUnit === 'px' ? 'bg-slate-100' : ''" class="px-2 py-0.5 text-[9px] font-bold rounded">PX</button>
-                        <button @click="editingElement.settings.widthUnit = '%'" :class="editingElement.settings.widthUnit === '%' ? 'bg-slate-100' : ''" class="px-2 py-0.5 text-[9px] font-bold rounded">%</button>
+                    <div class="flex gap-1 items-center">
+                        <div class="flex bg-white border border-slate-200 rounded p-0.5">
+                            <button @click="setResponsiveVal(editingElement.settings, 'widthUnit', device, 'px')" :class="(getResponsiveVal(editingElement.settings, 'widthUnit', device) || 'px') === 'px' ? 'bg-slate-100' : ''" class="px-2 py-0.5 text-[9px] font-bold rounded">PX</button>
+                            <button @click="setResponsiveVal(editingElement.settings, 'widthUnit', device, '%')" :class="getResponsiveVal(editingElement.settings, 'widthUnit', device) === '%' ? 'bg-slate-100' : ''" class="px-2 py-0.5 text-[9px] font-bold rounded">%</button>
+                        </div>
+                        <button @click="setResponsiveVal(editingElement.settings, 'width', device, '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                            <i class="fa fa-undo text-[10px]"></i>
+                        </button>
+                        <div class="relative inline-block">
+                            <button @click="activeResponsiveMenu = activeResponsiveMenu === 'imgWidth' ? null : 'imgWidth'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
+                                <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
+                                <i class="fa fa-caret-down text-[8px] text-slate-400"></i>
+                            </button>
+                            <div v-show="activeResponsiveMenu === 'imgWidth'" class="absolute right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 flex gap-0.5 p-1 min-w-max">
+                                <button @click="device = 'desktop'; activeResponsiveMenu = null" :class="device === 'desktop' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Large (Desktop)">
+                                    <i class="fa fa-desktop text-[11px]"></i>
+                                </button>
+                                <button @click="device = 'tablet'; activeResponsiveMenu = null" :class="device === 'tablet' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Medium (Tablet)">
+                                    <i class="fa fa-tablet-alt text-[11px]"></i>
+                                </button>
+                                <button @click="device = 'mobile'; activeResponsiveMenu = null" :class="device === 'mobile' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Small (Mobile)">
+                                    <i class="fa fa-mobile-alt text-[11px]"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <input type="number" v-model="editingElement.settings.width" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                <input type="number" v-model="editingElement.settings[device === 'desktop' ? 'width' : 'width_' + device]"
+                       :placeholder="getResponsiveVal(editingElement.settings, 'width', device) || 'auto'"
+                       class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                <p v-if="device !== 'desktop'" class="text-[10px] text-slate-400 mt-1">Left empty, this screen keeps the <span v-text="device === 'mobile' ? 'tablet' : 'desktop'"></span> value.</p>
             </div>
 
-            <!-- Max Width -->
+            <!-- MAX WIDTH -->
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">MAX WIDTH</label>
-                    <div class="flex bg-white border border-slate-200 rounded p-0.5">
-                        <button @click="editingElement.settings.maxWidthUnit = 'px'" :class="editingElement.settings.maxWidthUnit === 'px' ? 'bg-slate-100' : ''" class="px-2 py-0.5 text-[9px] font-bold rounded">PX</button>
-                        <button @click="editingElement.settings.maxWidthUnit = '%'" :class="editingElement.settings.maxWidthUnit === '%' ? 'bg-slate-100' : ''" class="px-2 py-0.5 text-[9px] font-bold rounded">%</button>
+                    <div class="flex gap-1 items-center">
+                        <div class="flex bg-white border border-slate-200 rounded p-0.5">
+                            <button @click="setResponsiveVal(editingElement.settings, 'maxWidthUnit', device, 'px')" :class="(getResponsiveVal(editingElement.settings, 'maxWidthUnit', device) || 'px') === 'px' ? 'bg-slate-100' : ''" class="px-2 py-0.5 text-[9px] font-bold rounded">PX</button>
+                            <button @click="setResponsiveVal(editingElement.settings, 'maxWidthUnit', device, '%')" :class="getResponsiveVal(editingElement.settings, 'maxWidthUnit', device) === '%' ? 'bg-slate-100' : ''" class="px-2 py-0.5 text-[9px] font-bold rounded">%</button>
+                        </div>
+                        <button @click="setResponsiveVal(editingElement.settings, 'maxWidth', device, '')" title="Reset Value" class="text-slate-300 hover:text-red-500 transition-colors">
+                            <i class="fa fa-undo text-[10px]"></i>
+                        </button>
+                        <div class="relative inline-block">
+                            <button @click="activeResponsiveMenu = activeResponsiveMenu === 'imgMaxWidth' ? null : 'imgMaxWidth'" class="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] transition-all flex items-center gap-1" title="Responsive Mode">
+                                <i class="fa" :class="device === 'desktop' ? 'fa-desktop' : (device === 'tablet' ? 'fa-tablet-alt' : 'fa-mobile-alt')"></i>
+                                <i class="fa fa-caret-down text-[8px] text-slate-400"></i>
+                            </button>
+                            <div v-show="activeResponsiveMenu === 'imgMaxWidth'" class="absolute right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-50 flex gap-0.5 p-1 min-w-max">
+                                <button @click="device = 'desktop'; activeResponsiveMenu = null" :class="device === 'desktop' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Large (Desktop)">
+                                    <i class="fa fa-desktop text-[11px]"></i>
+                                </button>
+                                <button @click="device = 'tablet'; activeResponsiveMenu = null" :class="device === 'tablet' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Medium (Tablet)">
+                                    <i class="fa fa-tablet-alt text-[11px]"></i>
+                                </button>
+                                <button @click="device = 'mobile'; activeResponsiveMenu = null" :class="device === 'mobile' ? 'bg-[#2271b1] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'" class="w-6 h-6 rounded text-[10px] flex items-center justify-center transition-all" title="Small (Mobile)">
+                                    <i class="fa fa-mobile-alt text-[11px]"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <input type="number" v-model="editingElement.settings.maxWidth" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                <input type="number" v-model="editingElement.settings[device === 'desktop' ? 'maxWidth' : 'maxWidth_' + device]"
+                       :placeholder="getResponsiveVal(editingElement.settings, 'maxWidth', device) || '100'"
+                       class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                <p v-if="device !== 'desktop'" class="text-[10px] text-slate-400 mt-1">Left empty, this screen keeps the <span v-text="device === 'mobile' ? 'tablet' : 'desktop'"></span> value.</p>
             </div>
 
             <!-- Sticky Width -->

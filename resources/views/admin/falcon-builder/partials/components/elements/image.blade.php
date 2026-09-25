@@ -17,8 +17,8 @@
     
     <div class="image-inner relative overflow-hidden"
          :style="{
-            width: el.settings.width ? getUnitVal(el.settings.width, el.settings.widthUnit || 'px') : 'auto',
-            maxWidth: el.settings.maxWidth ? getUnitVal(el.settings.maxWidth, el.settings.maxWidthUnit || 'px') : '100%',
+            width: respUnitVal(el.settings, 'width', device, 'auto'),
+            maxWidth: respUnitVal(el.settings, 'maxWidth', device, '100%'),
             borderRadius: getUnitVal(el.settings.borderRadius ?? 0, el.settings.borderRadiusUnit || 'px'),
             borderTopWidth: getUnitVal(el.settings.borderSizeTop ?? 0, 'px'),
             borderRightWidth: getUnitVal(el.settings.borderSizeRight ?? 0, 'px'),

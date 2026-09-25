@@ -43,12 +43,19 @@
     $hoverClass = ($hoverType !== 'none') ? 'hover-' . $hoverType : '';
 
     $iw = '.image-wrap-' . $elemId;
+    // The picture itself, whichever of the four shapes below carries it. Width and max-width
+    // are written inline for desktop, and an inline style outranks any media query, so the
+    // per-device sizes have to arrive as rules on a class of their own — falcon_elem_resp_css()
+    // already marks what it emits !important, which is what lets them win.
+    $ie = '.image-el-' . $elemId;
     $respCss = falcon_elem_resp_css($s, $bpSm, $bpMed, [
         ['prop' => 'textAlign',    'sel' => $iw],
         ['prop' => 'marginTop',    'unitProp' => 'marginTopUnit',    'sel' => $iw],
         ['prop' => 'marginRight',  'unitProp' => 'marginRightUnit',  'sel' => $iw],
         ['prop' => 'marginBottom', 'unitProp' => 'marginBottomUnit', 'sel' => $iw],
         ['prop' => 'marginLeft',   'unitProp' => 'marginLeftUnit',   'sel' => $iw],
+        ['prop' => 'width',        'unitProp' => 'widthUnit',        'sel' => $ie],
+        ['prop' => 'maxWidth',     'unitProp' => 'maxWidthUnit',     'sel' => $ie],
     ]);
 
     // Desktop wrapper style
@@ -122,7 +129,7 @@
                  that makes the one thing alt text is for invisible. The theme already
                  gives .element-image img display:block, which is what closes the inline
                  gap this would otherwise have been for. --}}
-            <div style="{{ $elemStyle }}line-height:0;cursor:zoom-in;"
+            <div class="image-el-{{ $elemId }}" style="{{ $elemStyle }}line-height:0;cursor:zoom-in;"
                  data-lz-gallery="{{ $lightboxId }}" data-lz-gallery-idx="0"
                  data-lz-gallery-url="{{ $url }}"
                  {{-- No caption. Alt text describes the picture for a screen reader and
@@ -135,15 +142,15 @@
                 <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $hasRatio ? $imgStyle : 'max-width:100%;height:auto;' }}">
             </div>
         @elseif($linkUrl)
-            <a href="{{ $linkUrl }}" target="{{ $target }}" style="{{ $elemStyle }}text-decoration:none;">
+            <a href="{{ $linkUrl }}" target="{{ $target }}" class="image-el-{{ $elemId }}" style="{{ $elemStyle }}text-decoration:none;">
                 <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $imgStyle }}">
             </a>
         @elseif($hasRatio)
-            <div style="{{ $elemStyle }}font-size:0;line-height:0;">
+            <div class="image-el-{{ $elemId }}" style="{{ $elemStyle }}font-size:0;line-height:0;">
                 <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $imgStyle }}">
             </div>
         @else
-            <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $elemStyle }}">
+            <img src="{{ $url }}" alt="{{ $alt }}" class="image-el-{{ $elemId }}" style="{{ $elemStyle }}">
         @endif
     @else
         <div style="background:#f0f0f1;border:2px dashed #c3c4c7;padding:40px 20px;text-align:center;color:#8c8f94;font-size:13px;border-radius:4px;">

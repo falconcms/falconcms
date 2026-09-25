@@ -3109,23 +3109,70 @@
             // a permanent scrollbar. (transform: scale() cannot do this: it repaints smaller but
             // leaves the original, oversized layout box in the document flow.)
 
-            // A device button previews a device, not the edge of a media query. `small` and
-            // `medium` are the *upper* bounds of the mobile and tablet bands, so previewing at
-            // them showed the widest phone and the widest tablet there are: 800px of canvas for
-            // a phone that is really about 390px across. Nothing about the elements changed, but
-            // every fixed size in them sat in twice the room it will ever have — a 180px logo in
-            // a half-width column filled 45% of it instead of 92% — which reads as an image that
-            // shrank in responsive mode, with a wide gap beside every column. Preview at a real
-            // device width instead, kept inside the band so exactly the same rules still apply:
-            // mobile at or below `small`, tablet above `small` and no wider than `medium`.
+            // The two Customizer fields, Small Screen and Medium Screen, are the whole story
+            // about width here: the front end's media queries are built from them, and so is
+            // the canvas. Previewing mobile means previewing at Small Screen and tablet at
+            // Medium Screen, so what the canvas shows and what a visitor gets are the same
+            // number rather than two that can drift. Change either field and the canvas moves
+            // with it — including, below, without leaving the builder open on a stale value.
+            const breakpoints = ref({
+                small: Number(window.builderBreakpoints?.small) || 800,
+                medium: Number(window.builderBreakpoints?.medium) || 1100,
+            });
+
             const canvasPreviewWidth = (which) => {
-                const small  = Number(window.builderBreakpoints?.small)  || 800;
-                const medium = Number(window.builderBreakpoints?.medium) || 1100;
-                if (which === 'mobile') return Math.min(390, small);
-                const low  = small + 1;              // the tablet band starts one pixel above mobile
-                const high = Math.max(medium, low);   // a medium below small can only be a misconfiguration
-                return Math.min(Math.max(1024, low), high);
+                const small = breakpoints.value.small;
+                const medium = breakpoints.value.medium;
+                return which === 'mobile' ? small : Math.max(medium, small + 1);
             };
+
+            // The desktop canvas's floor is one pixel past Medium Screen and lives in CSS
+            // (.canvas-container.desktop in styles.blade.php), so it is published as a custom
+            // property rather than re-rendered — that is what lets the same value move when
+            // the setting does, without the page being reloaded.
+            const publishBreakpointVars = () => {
+                document.documentElement.style.setProperty(
+                    '--falcon-canvas-desktop-min', (breakpoints.value.medium + 1) + 'px'
+                );
+            };
+
+            // Someone changing Small Screen or Medium Screen does it in the Customizer, in
+            // another tab, and then comes back here. That return is the signal: re-read the two
+            // values and let the canvas resize itself. A failed read leaves the ones already in
+            // hand — a preview at a slightly stale width beats a preview at no width at all.
+            let breakpointsInFlight = false;
+            const refreshBreakpoints = async () => {
+                if (breakpointsInFlight || !window.builderBreakpointsUrl) return;
+                breakpointsInFlight = true;
+                try {
+                    const res = await fetch(window.builderBreakpointsUrl, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin',
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const small = Number(data.small);
+                    const medium = Number(data.medium);
+                    if (!(small > 0) || !(medium > 0)) return;
+                    if (small === breakpoints.value.small && medium === breakpoints.value.medium) return;
+                    breakpoints.value = { small, medium };
+                    window.builderBreakpoints = { small, medium };
+                    publishBreakpointVars();
+                    nextTick(updateCanvasScale);
+                } catch (e) {
+                    // Offline, or the session expired: keep the values already in hand.
+                } finally {
+                    breakpointsInFlight = false;
+                }
+            };
+
+            onMounted(() => {
+                publishBreakpointVars();
+                window.addEventListener('focus', refreshBreakpoints);
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) refreshBreakpoints();
+                });
+            });
 
             const canvasScale = ref(1);
             const updateCanvasScale = () => {
@@ -3141,7 +3188,7 @@
                 // being cut off silently rather than scrolled to — the right-hand end of a
                 // tablet layout simply was not there. Fit whichever width this device asks for.
                 const intended = device.value === 'desktop'
-                    ? (Number(window.builderBreakpoints?.medium) || 1100) + 1
+                    ? breakpoints.value.medium + 1
                     : canvasPreviewWidth(device.value);
                 const available = panel.clientWidth;
                 canvasScale.value = (available > 0 && available < intended) ? available / intended : 1;
@@ -3277,6 +3324,18 @@
                 // Only bare numbers get the unit appended. Mirrors PHP getUnitVal().
                 if (isNaN(str)) return str;
                 return str + unit;
+            };
+
+            // A measurement and its unit, resolved together for the device being previewed.
+            // Reading the two apart is how a responsive size goes wrong: a width set to 100 on
+            // mobile next to a desktop unit of px comes out as 100px instead of 100%. Both sides
+            // walk the same mobile → tablet → desktop cascade, so they can never come from
+            // different devices. Mirrors the pairing in PHP's falcon_elem_resp_css().
+            const respUnitVal = (settings, prop, deviceMode, fallback = undefined) => {
+                const val = getResponsiveVal(settings, prop, deviceMode);
+                if (val === undefined || val === null || val === '') return fallback;
+                const unit = getResponsiveVal(settings, prop + 'Unit', deviceMode) || 'px';
+                return getUnitVal(val, unit) ?? fallback;
             };
 
             // A saved font is "Josefin Sans, sans-serif" — the fallback stack, not just the
@@ -6978,7 +7037,7 @@
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, canvasScale, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal, googleFontFamily,
                 isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
-                getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal,
+                getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal, respUnitVal,
                 falconButtonHoverAnim, falconBtnHoverBorder, falconNum,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,

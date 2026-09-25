@@ -438,6 +438,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     // (editing a post/page) is unaffected and stays free.
     Route::get('/falcon-builder-sections', [FalconBuilderController::class, 'index'])->name('falcon-builder.sections');
     Route::get('/falcon-builder-sections/condition-items', [FalconBuilderController::class, 'conditionItems'])->name('falcon-builder.condition-items');
+    Route::get('/falcon-builder-sections/breakpoints', [FalconBuilderController::class, 'breakpoints'])->name('falcon-builder.breakpoints');
     Route::middleware(EnsureProEditable::class.':builder_pro')->group(function () {
         Route::post('/falcon-builder-sections/slot-toggle', [FalconBuilderController::class, 'toggleSlot'])->name('falcon-builder.slot.toggle');
         Route::post('/falcon-builder-sections/section', [FalconBuilderController::class, 'createSection'])->name('falcon-builder.section.create');

@@ -199,7 +199,9 @@
        out past its own column with nothing wrong in the column's or the element's own CSS.
        Floor it at the real breakpoint; .builder-canvas-area scrolls horizontally on the rest. */
     .canvas-container.desktop {
-        min-width: {{ (int) get_cms_option('theme_medium_screen_breakpoint', '1100') + 1 }}px;
+        /* The fallback is the value at render time; the custom property is republished
+           whenever Medium Screen changes, so an open builder follows it without a reload. */
+        min-width: var(--falcon-canvas-desktop-min, {{ (int) get_cms_option('theme_medium_screen_breakpoint', '1100') + 1 }}px);
     }
 
 

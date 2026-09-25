@@ -73,6 +73,9 @@
             small: {{ get_cms_option('theme_small_screen_breakpoint', '800') }},
             medium: {{ get_cms_option('theme_medium_screen_breakpoint', '1100') }}
         };
+        {{-- Read again when this tab comes back to the front, so changing Small Screen or
+             Medium Screen in the Customizer resizes an already-open canvas. --}}
+        window.builderBreakpointsUrl = '{{ route('admin.falcon-builder.breakpoints') }}';
 
         window.builderPagePadding = {
             top: '{{ get_cms_option('theme_page_padding_top', '60px') }}',

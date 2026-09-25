@@ -671,6 +671,26 @@ class FalconBuilderController extends Controller
      * AJAX: search individual items for the "Specific …" condition lists.
      * kind = post_type | author | taxonomy (with key = post-type slug / taxonomy slug).
      */
+    /**
+     * The two screen-size settings the builder lays its canvas out with.
+     *
+     * The canvas previews mobile at Small Screen and tablet at Medium Screen, which are the
+     * same numbers the front end builds its media queries from. They are read once when the
+     * builder page renders, so changing either one in the Customizer left an already-open
+     * builder sizing its canvas to the old value until it was reloaded. The builder re-reads
+     * them here when its tab comes back to the front, which is exactly when someone has been
+     * off changing them.
+     */
+    public function breakpoints()
+    {
+        $this->authorize();
+
+        return response()->json([
+            'small' => (int) get_cms_option('theme_small_screen_breakpoint', '800'),
+            'medium' => (int) get_cms_option('theme_medium_screen_breakpoint', '1100'),
+        ]);
+    }
+
     public function conditionItems(Request $request)
     {
         $this->authorize();
