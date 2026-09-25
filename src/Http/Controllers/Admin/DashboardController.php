@@ -1113,6 +1113,100 @@ class DashboardController extends Controller
         }
     }
 
+    /** The presets, in days. A custom range is anything else the reader asks for. */
+    private const ANALYTICS_PRESETS = [1, 7, 30, 90];
+
+    /** As far back as a custom range may reach, and as wide as it may be. */
+    private const ANALYTICS_MAX_DAYS = 731;
+
+    /**
+     * The window the page is about: a first day, a last day, how many days that is, and
+     * whether it was asked for by date rather than picked from the presets.
+     *
+     * A preset is a number of days back from today. A custom range is two dates. Both come
+     * out of here as the same pair, so the rest of the page never has to ask which it was.
+     *
+     * Everything the reader can type is treated as a suggestion. Dates that are not dates,
+     * the wrong way round, in the future, or further apart than the page will draw are
+     * corrected rather than refused: a URL someone edited by hand, or a bookmark from a year
+     * ago, should still show them a page.
+     *
+     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon, 2: int, 3: bool}
+     */
+    private function analyticsWindow(): array
+    {
+        $today = cms_now()->startOfDay();
+        $tz = cms_now()->getTimezone();
+
+        $read = static function ($value) use ($tz) {
+            if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+                return null;
+            }
+            try {
+                $d = \Carbon\Carbon::createFromFormat('Y-m-d', $value, $tz);
+            } catch (\Throwable $e) {
+                return null;
+            }
+
+            // createFromFormat accepts 2026-02-31 and rolls it into March. A date that did
+            // not exist is not a date the reader meant.
+            return ($d && $d->format('Y-m-d') === $value) ? $d->startOfDay() : null;
+        };
+
+        $from = $read(request()->query('from'));
+        $to = $read(request()->query('to'));
+
+        if ($from && $to) {
+            if ($from->greaterThan($to)) {
+                [$from, $to] = [$to, $from];
+            }
+            // Tomorrow has no visits yet, and a window that ends there only adds an empty
+            // step to the chart.
+            if ($to->greaterThan($today)) {
+                $to = $today->copy();
+            }
+            if ($from->greaterThan($today)) {
+                $from = $today->copy();
+            }
+            if ((int) $from->diffInDays($to) + 1 > self::ANALYTICS_MAX_DAYS) {
+                $from = (clone $to)->subDays(self::ANALYTICS_MAX_DAYS - 1);
+            }
+
+            // An int, not the float Carbon hands back: the page decides between an hourly and
+            // a daily chart with ===, and 1.0 is not 1.
+            return [$from, $to, (int) $from->diffInDays($to) + 1, true];
+        }
+
+        $range = (int) request()->query('range', 1);
+        if (!in_array($range, self::ANALYTICS_PRESETS, true)) {
+            $range = 1;
+        }
+
+        return [(clone $today)->subDays($range - 1), $today->copy(), $range, false];
+    }
+
+    /**
+     * Which days have anything to show, and how much, as ['Y-m-d' => visits].
+     *
+     * The calendar greys out every other day. A reader picking a range has no way of knowing
+     * where the site's history starts or which days were quiet, and a range that lands on
+     * nothing produces a page of zeroes that looks like a fault rather than an answer.
+     *
+     * Bounded to the last two years for the same reason the window is: this runs on every
+     * page load, and a table of visits grows without limit.
+     */
+    private function analyticsAvailableDates(string $localDate): array
+    {
+        $since = cms_now()->subDays(self::ANALYTICS_MAX_DAYS - 1)->startOfDay()->utc();
+
+        return Analytics::where('created_at', '>=', $since)
+            ->select(DB::raw("{$localDate} as d"), DB::raw('COUNT(*) as n'))
+            ->groupBy('d')->orderBy('d')
+            ->pluck('n', 'd')
+            ->map(static fn ($n) => (int) $n)
+            ->all();
+    }
+
     public function analytics()
     {
         // Align with the Analytics menu permission (Sidebar::getPermission) so that
@@ -1121,20 +1215,25 @@ class DashboardController extends Controller
             abort(403);
         }
 
-        // ── Date range (dynamic) ──────────────────────────────────────────────
+        // ── The window ────────────────────────────────────────────────────────
         // Today first, and the default: the question people open this page to answer is
         // almost always "what is happening now", and a week's total is the wrong shape for
-        // it. The longer ranges are all still one click away.
-        $range = (int) request()->query('range', 1);
-        if (!in_array($range, [1, 7, 30, 90, 365], true)) {
-            $range = 1;
-        }
+        // it. The longer ranges are all still one click away, and a custom pair of dates
+        // resolves to the same thing — a first day and a last day — so nothing below has to
+        // know which of the two it came from.
+        [$from, $to, $range, $isCustom] = $this->analyticsWindow();
 
         // Locked preview: without Pro (analytics), show believable SAMPLE data behind an
         // upgrade overlay — never the site's real figures. Buying Pro makes it live.
         if (!falcon_pro_editable('analytics')) {
             return view('falcon-cms::admin.analytics.index',
-                $this->sampleAnalyticsData($range) + ['analyticsLocked' => true]);
+                $this->sampleAnalyticsData($range) + [
+                    'analyticsLocked' => true,
+                    'isCustom' => false,
+                    'rangeFrom' => $from->toDateString(),
+                    'rangeTo' => $to->toDateString(),
+                    'availableDates' => [],
+                ]);
         }
 
         // A day here is a day in the CMS timezone (Settings → General), not the
@@ -1142,7 +1241,12 @@ class DashboardController extends Controller
         // in Dhaka — six hours before the server's own midnight. Rows stay in UTC:
         // each boundary is worked out in the site's timezone and handed to the
         // query as the UTC instant it maps to, so nothing stored has to change.
-        $start = cms_now()->subDays($range - 1)->startOfDay()->utc();
+        $start = (clone $from)->startOfDay()->utc();
+        // Inclusive of the last day: a window that ends on the 20th ends at 23:59:59 on the
+        // 20th, not at midnight going into it.
+        $end = (clone $to)->endOfDay()->utc();
+        // The same number of days immediately before, so "vs previous" compares like with like
+        // however the window was chosen.
         $prevStart = (clone $start)->subDays($range);
         $prevEnd = (clone $start)->subSecond();
 
@@ -1193,7 +1297,7 @@ class DashboardController extends Controller
 
         $uniqueVisitors = $visitorsSince($start);
         $totalVisits = $uniqueVisitors;
-        $pageViews = Analytics::where('created_at', '>=', $start)->count();
+        $pageViews = Analytics::whereBetween('created_at', [$start, $end])->count();
         $prevVisits = (int) Analytics::whereBetween('created_at', [$prevStart, $prevEnd])
             ->selectRaw("{$countVisitors} as c")->value('c');
         $visitsChange = $prevVisits > 0 ? round((($totalVisits - $prevVisits) / $prevVisits) * 100, 1) : ($totalVisits > 0 ? 100 : 0);
@@ -1206,9 +1310,11 @@ class DashboardController extends Controller
         // point with no point markers is nothing at all — which is why Today, the default
         // range, showed an empty chart however busy the site was. A day's shape is hourly
         // anyway: "Today" now plots midnight to midnight in the site's own timezone.
+        // One day means hours; anything longer means days — whether that one day is today or
+        // a single day picked out of last month.
         [$labels, $visitsSeries, $uniqueSeries] = $range === 1
-            ? $this->hourlySeries($start, $tzShift, $isSqlite)
-            : $this->dailySeries($start, $localDate, $range);
+            ? $this->hourlySeries($start, $end, $tzShift, $isSqlite)
+            : $this->dailySeries($start, $end, $localDate, $from, $range);
 
         $seriesUnit = $range === 1 ? 'hour' : 'day';
 
@@ -1217,9 +1323,9 @@ class DashboardController extends Controller
         // (new bot visits are already filtered at tracking time).
         // Distinct visitors per value, so a browser share is a share of people rather
         // than a share of pages read.
-        $dist = function (string $col) use ($start, $countVisitors) {
+        $dist = function (string $col) use ($start, $end, $countVisitors) {
             return Analytics::select($col, DB::raw("{$countVisitors} as count"))
-                ->where('created_at', '>=', $start)
+                ->whereBetween('created_at', [$start, $end])
                 ->whereNotIn($col, ['bot', 'Bot / Crawler'])
                 ->groupBy($col)->orderByDesc('count')->get()
                 ->map(fn ($r) => ['label' => $r->{$col} ?: 'Unknown', 'count' => (int) $r->count])->values();
@@ -1230,11 +1336,11 @@ class DashboardController extends Controller
 
         // ── Top pages & referrers (empty referrer = Direct) ──────────────────
         $topPages = Analytics::select('url', DB::raw("{$countVisitors} as count"))
-            ->where('created_at', '>=', $start)
+            ->whereBetween('created_at', [$start, $end])
             ->groupBy('url')->orderByDesc('count')->limit(8)->get();
 
         $topReferrers = Analytics::select(DB::raw("COALESCE(NULLIF(referrer, ''), 'Direct') as ref"), DB::raw("{$countVisitors} as count"))
-            ->where('created_at', '>=', $start)
+            ->whereBetween('created_at', [$start, $end])
             ->groupBy('ref')->orderByDesc('count')->limit(8)->get();
 
         // ── Top countries (geo-resolved; null until geo lookup completes) ─────
@@ -1242,7 +1348,7 @@ class DashboardController extends Controller
         // side by side and disagreeing about what a "country total" means is worse than
         // either answer on its own.
         $topCountries = Analytics::select('country', DB::raw("{$countVisitors} as count"))
-            ->where('created_at', '>=', $start)
+            ->whereBetween('created_at', [$start, $end])
             ->whereNotNull('country')->where('country', '!=', '')
             ->groupBy('country')->orderByDesc('count')->limit(8)->get()
             ->map(fn ($r) => ['label' => $r->country, 'count' => (int) $r->count])->values();
@@ -1251,7 +1357,7 @@ class DashboardController extends Controller
         // COUNT(DISTINCT ip_address), not COUNT(*): one person reading six pages is one
         // visitor, and counting rows made every figure on this card six times too big.
         $visitorsByCountry = Analytics::select('country_code', DB::raw('MAX(country) as country'), DB::raw("{$countVisitors} as visitors"))
-            ->where('created_at', '>=', $start)
+            ->whereBetween('created_at', [$start, $end])
             ->whereNotNull('country_code')->where('country_code', '!=', '')
             ->groupBy('country_code')->orderByDesc('visitors')->get()
             ->map(fn ($r) => ['code' => strtoupper($r->country_code), 'name' => $r->country ?: strtoupper($r->country_code), 'visitors' => (int) $r->visitors])
@@ -1269,12 +1375,12 @@ class DashboardController extends Controller
         // all week. Their Monday is new and the rest are returns, which is what the pair
         // of numbers is meant to say. The two still add up to the headline.
         $firstSeen = Analytics::selectRaw('ip_address, MIN(created_at) as first_at')
-            ->whereIn('ip_address', Analytics::where('created_at', '>=', $start)->select('ip_address'))
+            ->whereIn('ip_address', Analytics::whereBetween('created_at', [$start, $end])->select('ip_address'))
             ->groupBy('ip_address')->pluck('first_at', 'ip_address');
 
         $returningVisitors = 0;
         $seenPairs = Analytics::select('ip_address', DB::raw("{$localDate} as d"))
-            ->where('created_at', '>=', $start)->distinct()->toBase()->get();
+            ->whereBetween('created_at', [$start, $end])->distinct()->toBase()->get();
         foreach ($seenPairs as $pair) {
             $first = $firstSeen[$pair->ip_address] ?? null;
             // Their first-ever visit read as a local day. Shifted by the same number of
@@ -1290,7 +1396,7 @@ class DashboardController extends Controller
         // Skipped on very large datasets — the daily rollup table handles that at scale.
         $sessions = $bounceRate = $pagesPerSession = null;
         if ($totalVisits > 0 && $totalVisits <= 100000) {
-            $rows = Analytics::where('created_at', '>=', $start)
+            $rows = Analytics::whereBetween('created_at', [$start, $end])
                 ->orderBy('ip_address')->orderBy('created_at')
                 ->get(['ip_address', 'created_at']);
             $gap = 1800; // 30 min
@@ -1350,7 +1456,7 @@ class DashboardController extends Controller
         // Summing per-referrer row counts made this a page-view chart wearing a
         // people-shaped label.
         $channelIps = [];
-        foreach (Analytics::select('referrer', 'ip_address', DB::raw("{$localDate} as d"))->where('created_at', '>=', $start)->distinct()->toBase()->get() as $rr) {
+        foreach (Analytics::select('referrer', 'ip_address', DB::raw("{$localDate} as d"))->whereBetween('created_at', [$start, $end])->distinct()->toBase()->get() as $rr) {
             $channelIps[$channelOf($rr->referrer)][$rr->ip_address.'|'.$rr->d] = true;
         }
         $channelCounts = array_map('count', $channelIps);
@@ -1389,7 +1495,7 @@ class DashboardController extends Controller
             return [$h, $h]; // any other site — show its domain
         };
         $sourceIps = [];
-        foreach (Analytics::select('referrer', 'ip_address', DB::raw("{$localDate} as d"))->where('created_at', '>=', $start)->distinct()->toBase()->get() as $rr) {
+        foreach (Analytics::select('referrer', 'ip_address', DB::raw("{$localDate} as d"))->whereBetween('created_at', [$start, $end])->distinct()->toBase()->get() as $rr) {
             [$label, $domain] = $sourceOf($rr->referrer);
             $sourceIps[$label]['domain'] = $domain;
             $sourceIps[$label]['ips'][$rr->ip_address.'|'.$rr->d] = true;
@@ -1399,7 +1505,11 @@ class DashboardController extends Controller
             ->sortByDesc('count')->take(12)->values();
 
         // ── Recent visits ─────────────────────────────────────────────────────
-        $recent = Analytics::latest()->limit(12)->get();
+        // Inside the window too. While every range ended today, "the last twelve visits" and
+        // "the last twelve visits in this range" were the same list; for a window that ended
+        // last month they are not, and the page would have been showing today's visitors
+        // under a heading about a range that closed weeks ago.
+        $recent = Analytics::whereBetween('created_at', [$start, $end])->latest()->limit(12)->get();
 
         return view('falcon-cms::admin.analytics.index', compact(
             'range', 'totalVisits', 'uniqueVisitors', 'pageViews', 'visitsChange', 'today', 'thisMonth',
@@ -1407,22 +1517,30 @@ class DashboardController extends Controller
             'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'topCountries', 'recent',
             'activeNow', 'newVisitors', 'returningVisitors', 'sessions', 'bounceRate', 'pagesPerSession', 'channels',
             'visitorsByCountry', 'trafficSources'
-        ) + ['analyticsLocked' => false]);
+        ) + [
+            'analyticsLocked' => false,
+            'isCustom' => $isCustom,
+            'rangeFrom' => $from->toDateString(),
+            'rangeTo' => $to->toDateString(),
+            'availableDates' => $this->analyticsAvailableDates($localDate),
+        ]);
     }
 
     /**
      * One point per day across the range, zero-filled so a quiet day is a zero rather than a
      * missing step. Returns [labels, page views, unique visitors].
      */
-    private function dailySeries($start, string $localDate, int $range): array
+    private function dailySeries($start, $end, string $localDate, $firstDay, int $range): array
     {
-        $daily = Analytics::where('created_at', '>=', $start)
+        $daily = Analytics::whereBetween('created_at', [$start, $end])
             ->select(DB::raw("{$localDate} as d"), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
             ->groupBy('d')->orderBy('d')->get()->keyBy('d');
 
+        // Walk the window's own days. Counting back from today is the same thing only while
+        // the window ends today, which a custom range need not.
         $labels = $visits = $uniques = [];
-        for ($i = $range - 1; $i >= 0; $i--) {
-            $day = cms_now()->subDays($i);
+        for ($i = 0; $i < $range; $i++) {
+            $day = (clone $firstDay)->addDays($i);
             $key = $day->toDateString();
             $labels[] = $day->format('M j');
             $visits[] = (int) ($daily[$key]->visits ?? 0);
@@ -1439,24 +1557,29 @@ class DashboardController extends Controller
      * but hours that have not happened yet are null rather than zero: the line stops at the
      * current hour instead of dropping to the floor and implying the traffic died.
      */
-    private function hourlySeries($start, int $tzShift, bool $isSqlite): array
+    private function hourlySeries($start, $end, int $tzShift, bool $isSqlite): array
     {
         $localHour = $isSqlite
             ? sprintf("strftime('%%Y-%%m-%%d %%H', datetime(created_at, '%+d seconds'))", $tzShift)
             : sprintf("DATE_FORMAT(created_at + INTERVAL %d SECOND, '%%Y-%%m-%%d %%H')", $tzShift);
 
-        $rows = Analytics::where('created_at', '>=', $start)
+        $rows = Analytics::whereBetween('created_at', [$start, $end])
             ->select(DB::raw("{$localHour} as h"), DB::raw('COUNT(*) as visits'), DB::raw('COUNT(DISTINCT ip_address) as uniques'))
             ->groupBy('h')->orderBy('h')->get()->keyBy('h');
 
         $labels = $visits = $uniques = [];
+        // The day being drawn, which is today for the Today button and some past day when a
+        // single date has been picked. Only today has hours that have not happened yet; on a
+        // past day every hour has, so a quiet one is a zero rather than a gap.
+        $day = cms_now()->parse($start)->setTimezone(cms_now()->getTimezone())->startOfDay();
+        $isToday = $day->isSameDay(cms_now());
         $currentHour = (int) cms_now()->format('G');
-        $cursor = cms_now()->startOfDay();
+        $cursor = $day->copy();
 
         for ($hour = 0; $hour < 24; $hour++) {
             $key = $cursor->format('Y-m-d H');
             $labels[] = $cursor->format('g A');
-            $future = $hour > $currentHour;
+            $future = $isToday && $hour > $currentHour;
             $visits[] = $future ? null : (int) ($rows[$key]->visits ?? 0);
             $uniques[] = $future ? null : (int) ($rows[$key]->uniques ?? 0);
             $cursor = $cursor->copy()->addHour();

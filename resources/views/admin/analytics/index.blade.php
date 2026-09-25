@@ -10,13 +10,61 @@
         .classic-stat-label { font-size:13px; color:#646970; font-weight:500; }
         .range-btn { font-size:12px; font-weight:600; padding:5px 12px; border:1px solid #c3c4c7; background:#fff; color:#50575e; border-radius:3px; }
         .range-btn.active { background:#2271b1; border-color:#2271b1; color:#fff; }
+
+        /* ── Custom range calendar ──────────────────────────────────────────────────
+           Only days the site has visits for can be picked, so a range can never be drawn
+           across nothing. Each pickable day carries a bar showing how busy it was against
+           the busiest day in the window, which turns the calendar into the answer to
+           "where is there anything worth looking at" before a range is even chosen. */
+        .rp { position:absolute; top:calc(100% + 8px); right:0; z-index:50; width:272px;
+              background:#fff; border:1px solid #c3c4c7; border-radius:6px;
+              box-shadow:0 8px 28px rgba(0,0,0,.14); padding:10px; }
+        .rp[hidden] { display:none; }
+        .rp-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+        .rp-month { font-size:13px; font-weight:700; color:#1d2327; }
+        .rp-nav { width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+                  border:1px solid transparent; border-radius:4px; background:none; color:#50575e; cursor:pointer; }
+        .rp-nav:hover:not(:disabled) { background:#f0f0f1; }
+        .rp-nav:disabled { opacity:.3; cursor:default; }
+        .rp-dows, .rp-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+        .rp-dows span { text-align:center; font-size:10px; font-weight:700; color:#8c8f94; padding-bottom:4px; }
+        .rp-day { position:relative; height:32px; border:0; background:none; border-radius:4px;
+                  font-size:12px; color:#1d2327; cursor:pointer; padding:0; overflow:hidden; }
+        .rp-day:disabled { color:#c3c4c7; cursor:default; }
+        .rp-day.rp-empty { visibility:hidden; }
+        .rp-day:hover:not(:disabled) { background:#f0f6fc; }
+        /* How busy the day was, as a bar along the bottom of its cell. */
+        .rp-day .rp-heat { position:absolute; left:4px; right:4px; bottom:3px; height:2px;
+                           border-radius:2px; background:#2271b1; opacity:.5; }
+        .rp-day.in-range { background:#eaf3fb; }
+        .rp-day.edge { background:#2271b1 !important; color:#fff; font-weight:700; }
+        .rp-day.edge .rp-heat { background:#fff; opacity:.75; }
+        .rp-foot { display:flex; align-items:center; justify-content:space-between; gap:8px;
+                   margin-top:8px; padding-top:8px; border-top:1px solid #f0f0f1; }
+        .rp-picked { font-size:11.5px; color:#50575e; }
+        .rp-actions { display:flex; gap:6px; }
+        .rp-btn { font-size:11.5px; font-weight:600; padding:4px 10px; border:1px solid #c3c4c7;
+                  background:#fff; color:#50575e; border-radius:3px; cursor:pointer; }
+        .rp-btn.rp-apply { background:#2271b1; border-color:#2271b1; color:#fff; }
+        .rp-btn:disabled { opacity:.45; cursor:default; }
+        .rp-note { margin-top:6px; font-size:10.5px; color:#8c8f94; text-align:center; }
     </style>
 
     @php
         $palette = ['#2271b1','#46b450','#dba617','#d63638','#826eb4','#00a0d2','#e1701a','#7ad03a','#888'];
-        $rangeLabels = [1=>'Today', 7=>'7 days', 30=>'30 days', 90=>'90 days', 365=>'1 year'];
+        // A year of days is a chart nobody reads and a question nobody asks in those words.
+        // The button that replaced it asks which days instead.
+        $rangeLabels = [1=>'Today', 7=>'7 days', 30=>'30 days', 90=>'90 days'];
         // "vs prev. Today" is not a sentence; the day before is what Today is compared with.
         $rangeCompare = [1=>'yesterday'] + $rangeLabels;
+        // A custom window is any number of days, so neither label can be looked up any more.
+        // Both fall back to saying the number, which reads the same as the presets do.
+        $rangeName = $rangeLabels[$range] ?? ($range . ' days');
+        $comparedWith = $range == 1 ? 'yesterday' : 'prev. ' . ($rangeCompare[$range] ?? $range . ' days');
+        $seriesCaption = ($isCustom ?? false)
+            ? \Carbon\Carbon::parse($rangeFrom)->format('M j') . ' – ' . \Carbon\Carbon::parse($rangeTo)->format('M j, Y')
+                . ($range == 1 ? ', by the hour' : ', by the day')
+            : ($range == 1 ? 'Today, by the hour' : 'Last ' . $rangeName . ', by the day');
     @endphp
 
     <div class="p-4 sm:p-6 bg-[#f0f0f1] min-h-screen {{ ($analyticsLocked ?? false) ? 'relative overflow-hidden' : '' }}">
@@ -42,10 +90,60 @@
                 <h1 class="text-[23px] font-normal text-[#1d2327]">Analytics</h1>
                 <nav class="text-[13px] text-[#646970]">Home / Analytics</nav>
             </div>
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 relative">
                 @foreach($rangeLabels as $r => $lbl)
-                    <a href="{{ route('admin.analytics') }}?range={{ $r }}" class="range-btn {{ $range == $r ? 'active' : '' }}">{{ $lbl }}</a>
+                    <a href="{{ route('admin.analytics') }}?range={{ $r }}" class="range-btn {{ (!($isCustom ?? false) && $range == $r) ? 'active' : '' }}">{{ $lbl }}</a>
                 @endforeach
+
+                @php
+                    // Days the site actually has visits for. The calendar greys out the rest,
+                    // so a range can only ever be drawn across days that have something in them.
+                    $dayCounts = $availableDates ?? [];
+                    $dayKeys = array_keys($dayCounts);
+                    $firstDay = $dayKeys[0] ?? null;
+                    $lastDay = $dayKeys ? end($dayKeys) : null;
+                    $busiest = $dayCounts ? max($dayCounts) : 0;
+                @endphp
+
+                <button type="button" id="range-custom-btn"
+                        class="range-btn {{ ($isCustom ?? false) ? 'active' : '' }} {{ $firstDay ? '' : 'opacity-50 cursor-not-allowed' }}"
+                        @if(!$firstDay) disabled title="There are no visits recorded yet" @endif
+                        style="display:inline-flex;align-items:center;gap:5px;">
+                    <span class="material-symbols-outlined" style="font-size:15px;line-height:1">date_range</span>
+                    <span id="range-custom-label">{{ ($isCustom ?? false) ? \Carbon\Carbon::parse($rangeFrom)->format('M j') . ' – ' . \Carbon\Carbon::parse($rangeTo)->format('M j, Y') : 'Custom' }}</span>
+                </button>
+
+                @if($firstDay)
+                <div id="range-popover" class="rp" hidden
+                     data-days='@json($dayCounts)'
+                     data-first="{{ $firstDay }}" data-last="{{ $lastDay }}"
+                     data-busiest="{{ $busiest }}"
+                     data-from="{{ ($isCustom ?? false) ? $rangeFrom : '' }}"
+                     data-to="{{ ($isCustom ?? false) ? $rangeTo : '' }}"
+                     data-url="{{ route('admin.analytics') }}">
+                    <div class="rp-head">
+                        <button type="button" class="rp-nav" data-step="-1" aria-label="Previous month">
+                            <span class="material-symbols-outlined" style="font-size:18px">chevron_left</span>
+                        </button>
+                        <div class="rp-month" id="rp-month"></div>
+                        <button type="button" class="rp-nav" data-step="1" aria-label="Next month">
+                            <span class="material-symbols-outlined" style="font-size:18px">chevron_right</span>
+                        </button>
+                    </div>
+                    <div class="rp-dows">
+                        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                    </div>
+                    <div class="rp-grid" id="rp-grid"></div>
+                    <div class="rp-foot">
+                        <div class="rp-picked" id="rp-picked">Pick a start date</div>
+                        <div class="rp-actions">
+                            <button type="button" class="rp-btn" id="rp-clear">Clear</button>
+                            <button type="button" class="rp-btn rp-apply" id="rp-apply" disabled>Apply</button>
+                        </div>
+                    </div>
+                    <div class="rp-note">Days with no visits cannot be picked.</div>
+                </div>
+                @endif
             </div>
         </div>
 
@@ -122,7 +220,7 @@
                         <div class="classic-stat-label">Visitors</div>
                         <div class="text-[11px] font-semibold mt-0.5 {{ $visitsChange >= 0 ? 'text-[#46b450]' : 'text-[#d63638]' }}">
                             <span class="material-symbols-outlined text-[12px] align-middle">{{ $visitsChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
-                            {{ $visitsChange >= 0 ? '+' : '' }}{{ $visitsChange }}% vs {{ $range == 1 ? 'yesterday' : 'prev. '.$rangeCompare[$range] }}
+                            {{ $visitsChange >= 0 ? '+' : '' }}{{ $visitsChange }}% vs {{ $comparedWith }}
                             <span class="text-[#646970] font-normal">· one per address per day</span>
                         </div>
                     </div>
@@ -268,7 +366,7 @@
         <div class="classic-card">
             <div class="classic-card-header">
                 <span class="classic-card-title">Traffic Overview</span>
-                <span class="text-[12px] text-[#646970]">{{ $range == 1 ? 'Today, by the hour' : 'Last '.$rangeLabels[$range].', by the day' }}</span>
+                <span class="text-[12px] text-[#646970]">{{ $seriesCaption }}</span>
             </div>
             <div class="p-4" style="height:320px">
                 <canvas id="trafficChart"></canvas>
@@ -580,4 +678,116 @@
         })();
     </script>
     @endpush
+
+    {{-- The custom range calendar. Everything it needs came down on the popover as data
+         attributes, so it does not fetch anything and works before the charts have loaded. --}}
+    @if(!($analyticsLocked ?? false) && ($availableDates ?? []))
+    <script>
+    (function () {
+        var btn = document.getElementById('range-custom-btn');
+        var pop = document.getElementById('range-popover');
+        if (!btn || !pop) return;
+
+        var days     = JSON.parse(pop.dataset.days || '{}');   // 'Y-m-d' -> visits
+        var first    = pop.dataset.first;
+        var last     = pop.dataset.last;
+        var busiest  = Math.max(1, parseInt(pop.dataset.busiest, 10) || 1);
+        var url      = pop.dataset.url;
+        var grid     = document.getElementById('rp-grid');
+        var monthEl  = document.getElementById('rp-month');
+        var pickedEl = document.getElementById('rp-picked');
+        var applyBtn = document.getElementById('rp-apply');
+
+        var from = pop.dataset.from || null;
+        var to   = pop.dataset.to   || null;
+        // The month on show starts wherever the reader last was, or at the most recent day
+        // that has anything in it — never on an empty month they have to navigate out of.
+        var cursor = ymToDate(from || last);
+
+        function ymToDate(key) { var p = key.split('-'); return new Date(+p[0], +p[1] - 1, 1); }
+        function key(y, m, d) {
+            return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        }
+        function pretty(k) {
+            var p = k.split('-');
+            return new Date(+p[0], +p[1] - 1, +p[2])
+                .toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function render() {
+            var y = cursor.getFullYear(), m = cursor.getMonth();
+            monthEl.textContent = cursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+            // Navigation stops at the months that hold the first and last day with data;
+            // there is nothing to find beyond them.
+            pop.querySelector('[data-step="-1"]').disabled = key(y, m, 1) <= first;
+            var lastOfMonth = new Date(y, m + 1, 0).getDate();
+            pop.querySelector('[data-step="1"]').disabled = key(y, m, lastOfMonth) >= last;
+
+            var html = '';
+            for (var blank = 0; blank < new Date(y, m, 1).getDay(); blank++) {
+                html += '<button class="rp-day rp-empty" disabled></button>';
+            }
+            for (var d = 1; d <= lastOfMonth; d++) {
+                var k = key(y, m, d);
+                var n = days[k] || 0;
+                var cls = 'rp-day';
+                if (n) {
+                    if (k === from || k === to) cls += ' edge';
+                    else if (from && to && k > from && k < to) cls += ' in-range';
+                }
+                html += '<button class="' + cls + '" data-k="' + k + '"' +
+                    (n ? ' title="' + n + ' view' + (n === 1 ? '' : 's') + '"' : ' disabled title="No visits"') + '>' +
+                    d +
+                    (n ? '<span class="rp-heat" style="opacity:' + (0.25 + 0.65 * Math.min(1, n / busiest)).toFixed(2) + '"></span>' : '') +
+                    '</button>';
+            }
+            grid.innerHTML = html;
+
+            pickedEl.textContent = !from ? 'Pick a start date'
+                : (!to ? pretty(from) + ' → pick an end date' : pretty(from) + ' – ' + pretty(to));
+            applyBtn.disabled = !(from && to);
+        }
+
+        grid.addEventListener('click', function (e) {
+            var cell = e.target.closest('.rp-day');
+            if (!cell || cell.disabled) return;
+            var k = cell.dataset.k;
+
+            // First click starts a range, second finishes it, third starts again. Clicking a
+            // day before the start is read as meaning that day as the start, not as an error.
+            if (!from || (from && to)) { from = k; to = null; }
+            else if (k < from) { to = from; from = k; }
+            else { to = k; }
+            render();
+        });
+
+        pop.addEventListener('click', function (e) {
+            var nav = e.target.closest('.rp-nav');
+            if (nav && !nav.disabled) {
+                cursor.setMonth(cursor.getMonth() + (+nav.dataset.step));
+                render();
+            }
+        });
+
+        document.getElementById('rp-clear').addEventListener('click', function () {
+            from = to = null;
+            render();
+        });
+
+        applyBtn.addEventListener('click', function () {
+            if (from && to) window.location = url + '?from=' + from + '&to=' + to;
+        });
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            pop.hidden = !pop.hidden;
+            if (!pop.hidden) render();
+        });
+        pop.addEventListener('click', function (e) { e.stopPropagation(); });
+        document.addEventListener('click', function () { pop.hidden = true; });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') pop.hidden = true; });
+    })();
+    </script>
+    @endif
 </x-falcon-cms::layouts.admin>

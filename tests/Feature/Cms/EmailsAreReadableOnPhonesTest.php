@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Tests\Feature\Cms;
 
 use FalconCms\Core\Tests\TestCase;
+use Illuminate\View\Compilers\BladeCompiler;
 
 /**
  * Every email the CMS sends, read on a phone.
@@ -102,7 +103,7 @@ class EmailsAreReadableOnPhonesTest extends TestCase
     public function test_every_email_still_renders(): void
     {
         // The edits are inside <style> in Blade files; a stray brace takes the page down.
-        $compiler = new \Illuminate\View\Compilers\BladeCompiler(app('files'), storage_path('framework/views'));
+        $compiler = new BladeCompiler(app('files'), storage_path('framework/views'));
         $dir = __DIR__.'/../../../resources/views/emails';
 
         foreach (array_keys($this->templates()) as $name) {
