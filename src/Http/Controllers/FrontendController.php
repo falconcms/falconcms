@@ -820,10 +820,40 @@ class FrontendController extends Controller
             // Build submission data from all fields except internal fields
             $data = $request->except(['_token', 'form_id', '_lf_hp_'.$form->id, 'cf-turnstile-response']);
 
-            // Handle file uploads — store and replace value with path
+            // Handle file uploads — store and replace value with path.
+            //
+            // The browser's file inputs only *suggest* what may be sent; a visitor can post any
+            // file to any field name straight past them. So accept a file ONLY for a field the
+            // form actually declares as a file field, cap its size, and — the part that matters —
+            // let it keep its name only when the extension is on the safe allowlist. Otherwise a
+            // .php dropped in form-uploads/ would be a web shell the moment the public disk is
+            // served by Apache/Nginx.
+            $fileFields = [];
+            $maxKb = (int) (config('falcon-options.form_upload_max_kb') ?: 10240); // 10 MB default
+            foreach ($form->fields ?? [] as $f) {
+                if (($f['type'] ?? null) === 'file' && !empty($f['name'])) {
+                    $fileFields[$f['name']] = $f;
+                }
+            }
             foreach ($request->allFiles() as $key => $file) {
+                // A field the form never defined as a file field, or multiple files for one: refuse.
+                if (!isset($fileFields[$key]) || is_array($file)) {
+                    unset($data[$key]);
+
+                    continue;
+                }
+                $ext = (is_object($file) && method_exists($file, 'isValid') && $file->isValid())
+                    ? falcon_safe_upload_extension($file) : null;
+                if ($ext === null || $file->getSize() > $maxKb * 1024) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'That file type or size is not allowed.',
+                    ], 422);
+                }
                 try {
-                    $data[$key] = $file->store('form-uploads', 'public');
+                    // A random name, never the visitor's — the original name can carry its own
+                    // path or a second extension, and two people's "cv.pdf" must not collide.
+                    $data[$key] = $file->storeAs('form-uploads', \Illuminate\Support\Str::uuid().'.'.$ext, 'public');
                 } catch (\Exception $e) {
                     $data[$key] = null;
                 }

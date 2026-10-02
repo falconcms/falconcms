@@ -473,6 +473,52 @@ if (!function_exists('falcon_read_import')) {
     }
 }
 
+if (!function_exists('falcon_safe_upload_extension')) {
+    /**
+     * Decide the extension an uploaded file may keep, for uploads that reach the public disk —
+     * public form attachments especially. The front end's file inputs are only advisory
+     * (a visitor can post straight past them), so the real gate is here.
+     *
+     * An allowlist, not a blocklist: anything not plainly a document, image, audio, video or
+     * archive is refused, so a server-executable upload (.php, .phtml, .phar, .cgi, .pl, .sh,
+     * .htaccess, a double extension like "x.php.jpg") can never land in a web-served folder.
+     * Returns the lower-cased extension to store the file under, or null to reject it.
+     *
+     * Override the list with config('falcon-options.upload_extensions').
+     */
+    function falcon_safe_upload_extension($file): ?string
+    {
+        $default = [
+            // documents
+            'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp',
+            'txt', 'csv', 'rtf',
+            // images
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'bmp', 'svg', 'heic',
+            // audio / video
+            'mp3', 'wav', 'ogg', 'm4a', 'mp4', 'webm', 'mov', 'avi', 'mkv',
+            // archives
+            'zip', 'rar', '7z',
+        ];
+        $allowed = array_map('strtolower', (array) config('falcon-options.upload_extensions', $default));
+
+        $name = is_object($file) && method_exists($file, 'getClientOriginalName')
+            ? (string) $file->getClientOriginalName()
+            : (string) $file;
+
+        // The LAST extension is what the web server runs the file as, so that is the one
+        // checked — "invoice.php.jpg" is judged on "jpg", "shell.jpg.php" on "php".
+        $ext = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+        if ($ext === '' || !in_array($ext, $allowed, true)) {
+            return null;
+        }
+        // Normalise the handful of extensions whose spelling varies.
+        return match ($ext) {
+            'jpeg' => 'jpg',
+            default => $ext,
+        };
+    }
+}
+
 if (!function_exists('falcon_sanitize_html')) {
     /**
      * Strip dangerous HTML from user-supplied rich-text content.
