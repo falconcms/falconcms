@@ -17,6 +17,11 @@
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0"
     },
+    "conflict": {
+        "laravel/framework": "<13.30.0",
+        "league/commonmark": "<2.10.2",
+        "league/flysystem": "<3.36.0"
+    },
     "autoload": {
         "psr-4": {
             "FalconCms\\Core\\": "src/",

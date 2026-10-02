@@ -7,6 +7,7 @@ use FalconCms\Core\Support\SiteHealth;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 /**
  * Settings → Site Health: a read-only report on the server, database, configuration,
@@ -60,6 +61,43 @@ class SiteHealthTest extends TestCase
 
         $debug = collect(SiteHealth::checks())->firstWhere('id', 'app_debug');
         $this->assertSame('critical', $debug['status']);
+    }
+
+    public function test_debug_and_http_on_a_development_machine_are_fine(): void
+    {
+        $this->app['env'] = 'local';
+        config(['app.debug' => true, 'app.url' => 'http://localhost']);
+        $this->app->instance('request', \Illuminate\Http\Request::create('http://lazy-panda.test/admin'));
+
+        $checks = collect(SiteHealth::checks())->keyBy('id');
+        $this->assertSame('good', $checks['app_debug']['status']);
+        $this->assertSame('good', $checks['https']['status']);
+        $this->assertStringContainsString('production', $checks['app_debug']['action'], 'still says what to change before launch');
+    }
+
+    public function test_a_public_server_left_in_local_mode_is_critical(): void
+    {
+        $this->app['env'] = 'local';
+        config(['app.debug' => true, 'app.url' => 'http://example.com']);
+        $this->app->instance('request', \Illuminate\Http\Request::create('http://example.com/admin'));
+
+        $checks = collect(SiteHealth::checks())->keyBy('id');
+        $this->assertSame('critical', $checks['app_debug']['status'], 'APP_ENV=local does not make a public site safe');
+        $this->assertSame('critical', $checks['https']['status']);
+    }
+
+    public function test_the_site_timezone_setting_is_what_counts(): void
+    {
+        config(['app.timezone' => 'UTC']);
+        $this->setCmsOptions(['timezone' => 'Asia/Dhaka']);
+        $tz = collect(SiteHealth::checks())->firstWhere('id', 'timezone');
+        $this->assertSame('good', $tz['status']);
+        $this->assertSame('Timezone: Asia/Dhaka', $tz['label']);
+
+        $this->setCmsOptions(['timezone' => '']);
+        $tz = collect(SiteHealth::checks())->firstWhere('id', 'timezone');
+        $this->assertSame('recommended', $tz['status']);
+        $this->assertStringContainsString('Settings → General', $tz['action']);
     }
 
     public function test_an_env_file_in_public_is_reported(): void
@@ -134,6 +172,59 @@ class SiteHealthTest extends TestCase
             $this->assertNull(collect($r['details']['errors'])->firstWhere('message', 'Ancient'), 'older than a week is left out');
         } finally {
             @unlink($log);
+        }
+    }
+
+    public function test_an_error_whose_file_changed_since_counts_as_fixed_until_it_happens_again(): void
+    {
+        $src = base_path('app/SiteHealthFixed.php');
+        @mkdir(dirname($src), 0777, true);
+        file_put_contents($src, "<?php\n");
+        $log = storage_path('logs/site-health-fixed.log');
+        @mkdir(dirname($log), 0777, true);
+        $path = str_replace('\\', '/', $src);
+        $before = now()->subHours(2)->format('Y-m-d H:i:s');
+        try {
+            touch($src, now()->subHour()->getTimestamp());   // changed after the error
+            file_put_contents($log, "[$before] testing.ERROR: Undefined key at $path:3)\n[$before] testing.ERROR: View [nope.missing] not found.\n");
+
+            $r = collect(SiteHealth::asyncTest('error_log'))->firstWhere('id', 'error_log');
+            $byMsg = collect($r['details']['errors'])->keyBy(fn ($e) => Str::before($e['message'], ' at'));
+            $this->assertTrue($byMsg['Undefined key']['resolved']);
+            $this->assertFalse($byMsg['View [nope.missing] not found.']['resolved'], 'that view still does not exist');
+
+            // It happens again after the change → open again.
+            $after = now()->format('Y-m-d H:i:s');
+            file_put_contents($log, "[$after] testing.ERROR: Undefined key at $path:3)\n", FILE_APPEND);
+            $r = collect(SiteHealth::asyncTest('error_log'))->firstWhere('id', 'error_log');
+            $this->assertFalse(collect($r['details']['errors'])->first(fn ($e) => str_starts_with($e['message'], 'Undefined key'))['resolved']);
+        } finally {
+            @unlink($log);
+            @unlink($src);
+        }
+    }
+
+    public function test_only_fixed_errors_leave_the_check_green(): void
+    {
+        $log = storage_path('logs/site-health-green.log');
+        @mkdir(dirname($log), 0777, true);
+        $at = now()->subHour()->format('Y-m-d H:i:s');
+        // A view that does exist now: the "not found" is history.
+        file_put_contents($log, "[$at] testing.ERROR: View [falcon-cms::admin.settings.site-health] not found.\n");
+        foreach ((array) glob(storage_path('logs/*.log')) as $other) {
+            if ($other !== $log) {
+                rename($other, $other.'.hold');
+            }
+        }
+        try {
+            $r = collect(SiteHealth::asyncTest('error_log'))->firstWhere('id', 'error_log');
+            $this->assertSame('good', $r['status']);
+            $this->assertStringContainsString('have been fixed', $r['label']);
+        } finally {
+            @unlink($log);
+            foreach ((array) glob(storage_path('logs/*.log.hold')) as $held) {
+                rename($held, substr($held, 0, -5));
+            }
         }
     }
 

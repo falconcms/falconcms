@@ -138,7 +138,7 @@
         }
         if (d.errors && d.errors.length) {
             h += '<div class="overflow-x-auto mt-3"><table class="sh-table w-full text-[12.5px] border border-[#f0f0f1]"><tr><th style="width:80px">Level</th><th>Message</th><th style="width:70px">Times</th><th style="width:150px">Last seen</th></tr>'
-                + d.errors.map(e => '<tr><td><span class="px-1.5 py-0.5 rounded text-[11px] font-semibold ' + (e.level === 'WARNING' ? 'sh-sev-medium' : 'sh-sev-critical') + '">' + esc(e.level) + '</span></td>'
+                + d.errors.map(e => '<tr' + (e.resolved ? ' style="opacity:.55"' : '') + '><td><span class="px-1.5 py-0.5 rounded text-[11px] font-semibold ' + (e.resolved ? 'bg-[#edfaef] text-[#00a32a]' : (e.level === 'WARNING' ? 'sh-sev-medium' : 'sh-sev-critical')) + '"' + (e.resolved ? ' title="The file behind it changed after it last happened"' : '') + '>' + (e.resolved ? 'FIXED' : esc(e.level)) + '</span></td>'
                     + '<td><div class="sh-code text-[#1d2327]">' + esc(e.message) + '</div>' + (e.where ? '<div class="sh-code text-[#2271b1] mt-1">' + esc(e.where) + '</div>' : '') + '</td>'
                     + '<td class="text-center font-semibold">' + esc(e.count) + '</td><td class="text-[#646970]">' + esc(e.last) + '</td></tr>').join('')
                 + '</table></div>';

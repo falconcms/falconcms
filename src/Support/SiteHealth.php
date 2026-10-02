@@ -89,6 +89,23 @@ class SiteHealth
         return app()->environment('production');
     }
 
+    /**
+     * Is this a developer's own machine — not production AND reached on a local address
+     * (localhost, 127.0.0.1, *.test, *.local, *.localhost)? Debug mode and plain HTTP are
+     * how a site is built there, so they are not counted against it. Both halves are needed:
+     * a public server left on APP_ENV=local is exactly the case that must NOT pass.
+     */
+    public static function isDevMachine(): bool
+    {
+        if (self::isProduction()) {
+            return false;
+        }
+        $host = strtolower((string) request()->getHost());
+
+        return in_array($host, ['localhost', '127.0.0.1', '::1'], true)
+            || (bool) preg_match('/\.(test|local|localhost)$/', $host);
+    }
+
     private static function phpVersion(): array
     {
         $branch = PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;
@@ -271,15 +288,18 @@ class SiteHealth
         if (!config('app.debug')) {
             return [self::result('app_debug', 'Debug mode is off', self::GOOD, 'Security', 'Errors show a plain error page, not the code behind it.')];
         }
-        if (self::isProduction()) {
-            return [self::result('app_debug', 'Debug mode is ON on a live site', self::CRITICAL, 'Security',
-                'Any error shows visitors the full stack trace — file paths, code, and often database credentials and keys from the environment.',
-                'Set APP_DEBUG=false in .env, then run php artisan config:clear.')];
+        if (self::isDevMachine()) {
+            return [self::result('app_debug', 'Debug mode is on — normal on this development machine', self::GOOD, 'Security',
+                'APP_ENV='.app()->environment().' on '.request()->getHost().', so detailed errors only reach you.',
+                'Before the site goes live: APP_ENV=production and APP_DEBUG=false.')];
         }
 
-        return [self::result('app_debug', 'Debug mode is on (development)', self::RECOMMENDED, 'Security',
-            'Fine while building the site (APP_ENV='.app()->environment().'). It must be off before the site goes live.',
-            'Before launch: APP_ENV=production and APP_DEBUG=false.')];
+        // Debug on and reached on a public address: visitors see the stack traces, whatever
+        // APP_ENV says.
+        return [self::result('app_debug', 'Debug mode is ON on a live site', self::CRITICAL, 'Security',
+            'Any error shows visitors the full stack trace — file paths, code, and often database credentials and keys from the environment.'
+            .(self::isProduction() ? '' : ' APP_ENV is "'.app()->environment().'" but the site is reached at '.request()->getHost().', which is not a local address.'),
+            'Set APP_ENV=production and APP_DEBUG=false in .env, then run php artisan config:clear.')];
     }
 
     private static function appKey(): array
@@ -298,10 +318,14 @@ class SiteHealth
         if ($appHttps || $requestHttps) {
             return [self::result('https', 'The site uses HTTPS', self::GOOD, 'Security', 'Traffic between visitors and the site is encrypted.'.(!$appHttps ? ' (APP_URL still says http:// — update it so links and emails use https.)' : ''))];
         }
-        $local = in_array(request()->getHost(), ['localhost', '127.0.0.1'], true) || str_ends_with(request()->getHost(), '.test');
+        if (self::isDevMachine()) {
+            return [self::result('https', 'Plain HTTP — normal on this development machine', self::GOOD, 'Security',
+                'Traffic to '.request()->getHost().' never leaves this computer.',
+                'When the site goes live, install a certificate (most hosts offer a free Let\'s Encrypt one) and set APP_URL to https://.')];
+        }
 
-        return [self::result('https', 'The site is not using HTTPS', $local ? self::RECOMMENDED : self::CRITICAL, 'Security',
-            'Logins, passwords and orders travel unencrypted.'.($local ? ' (This looks like a local machine — fine here, required when live.)' : ''),
+        return [self::result('https', 'The site is not using HTTPS', self::CRITICAL, 'Security',
+            'Logins, passwords and orders travel unencrypted.',
             'Install a certificate (most hosts offer a free Let\'s Encrypt one) and set APP_URL to https://.')];
     }
 
@@ -470,11 +494,16 @@ class SiteHealth
 
     private static function timezone(): array
     {
-        $tz = config('app.timezone');
+        // The site's own timezone (Settings → General) is what every date is shown in; the
+        // database keeps UTC underneath, which is how it should be.
+        $site = function_exists('cms_timezone') ? cms_timezone() : (string) config('app.timezone');
+        $chosen = (string) get_cms_option('timezone', '') !== '';
 
-        return [self::result('timezone', 'Timezone: '.$tz, $tz === 'UTC' ? self::RECOMMENDED : self::GOOD, 'Site',
-            $tz === 'UTC' ? 'Scheduled posts and order times are in UTC, which may not be your local time.' : 'Dates are shown in '.$tz.'.',
-            $tz === 'UTC' ? 'Set APP_TIMEZONE in .env (e.g. Asia/Dhaka).' : null)];
+        return [$chosen || $site !== 'UTC'
+            ? self::result('timezone', 'Timezone: '.$site, self::GOOD, 'Site', 'Dates and times on the site and in the admin are shown in '.$site.' (stored as UTC underneath).')
+            : self::result('timezone', 'No site timezone is set', self::RECOMMENDED, 'Site',
+                'Scheduled posts and order times are shown in UTC, which is probably not your local time.',
+                'Choose your timezone under Settings → General.')];
     }
 
     private static function proLicense(): array
@@ -758,11 +787,15 @@ class SiteHealth
                 }
                 $msg = preg_replace('/\s*\{"(exception|userId)".*$/s', '', $message);
                 $where = null;
+                $loc = [];
                 if (preg_match('/ at ([^\s(]+):(\d+)\)?/', $message, $loc) || preg_match('/\(View: ([^)]+)\)/', $message, $loc)) {
                     $where = str_replace([str_replace('\\', '/', base_path()).'/', base_path().DIRECTORY_SEPARATOR], '', str_replace('\\', '/', $loc[1])).(isset($loc[2]) ? ':'.$loc[2] : '');
                 }
+                // The file the error is really about: a Blade error names its template in
+                // "(View: …)", which beats the compiled copy in storage/framework/views.
+                $source = preg_match('/\(View: ([^)]+)\)/', $message, $v) ? $v[1] : ($loc[1] ?? null);
                 $key = md5($level.Str::limit($msg, 160, ''));
-                $g = $groups[$key] ?? ['level' => $level, 'message' => Str::limit($msg, 300), 'where' => $where, 'count' => 0, 'last' => $at, 'file' => basename($file)];
+                $g = $groups[$key] ?? ['level' => $level, 'message' => Str::limit($msg, 300), 'where' => $where, 'count' => 0, 'last' => $at, 'file' => basename($file), 'source' => $source];
                 $g['count']++;
                 if ($at > $g['last']) {
                     $g['last'] = $at;
@@ -782,14 +815,70 @@ class SiteHealth
             return $out;
         }
         usort($groups, fn ($a, $b) => strcmp($b['last'], $a['last']));
-        $errors = array_filter($groups, fn ($g) => $g['level'] !== 'WARNING');
-        $out[] = self::result('error_log', $count7.' error(s) logged in the last 7 days ('.$count24.' in the last 24 hours)',
-            $errors ? ($count24 > 0 ? self::CRITICAL : self::RECOMMENDED) : self::RECOMMENDED, 'Site',
-            count($groups).' distinct problem(s). Each one is a page or action that failed for someone — the most recent first.',
-            'Open the file and line shown, fix the cause, then the entry stops appearing.',
-            ['errors' => array_slice(array_values($groups), 0, 50)]);
+        foreach ($groups as &$g) {
+            $g['resolved'] = self::errorResolved($g);
+            unset($g['source']);
+        }
+        unset($g);
+
+        $open = array_values(array_filter($groups, fn ($g) => !$g['resolved']));
+        $fixed = count($groups) - count($open);
+        $openCount = array_sum(array_column($open, 'count'));
+        $open24 = count(array_filter($open, fn ($g) => $g['last'] > now()->subDay()->format('Y-m-d H:i:s')));
+        $fixedNote = $fixed ? ' '.$fixed.' older problem(s) look fixed — the file behind each was changed after it last happened, so they no longer count.' : '';
+
+        if (!$open) {
+            $out[] = self::result('error_log', 'No open errors — '.$fixed.' recent problem(s) have been fixed', self::GOOD, 'Site',
+                'Every error logged in the last 7 days came from code that has been changed since, and none has happened again.',
+                null, ['errors' => array_slice($groups, 0, 50)]);
+
+            return $out;
+        }
+
+        $hard = array_filter($open, fn ($g) => $g['level'] !== 'WARNING');
+        $out[] = self::result('error_log', $openCount.' error(s) logged in the last 7 days'.($open24 ? ' ('.$open24.' problem(s) in the last 24 hours)' : ''),
+            $hard ? ($open24 > 0 ? self::CRITICAL : self::RECOMMENDED) : self::RECOMMENDED, 'Site',
+            count($open).' distinct problem(s). Each one is a page or action that failed for someone — the most recent first.'.$fixedNote,
+            'Open the file and line shown and fix the cause. Once the file is changed and the error stops happening, it is marked fixed here.',
+            ['errors' => array_slice($groups, 0, 50)]);
 
         return $out;
+    }
+
+    /**
+     * Has a logged error been dealt with since? Yes when the file it points at was changed
+     * after it last happened (the template named in "(View: …)", or the file in " at …:line"),
+     * when it named a view that now exists, or when it pointed into a compiled view that has
+     * since been cleared. An error that happens again after the change shows up as open again,
+     * because its last-seen time moves past the file's.
+     */
+    private static function errorResolved(array $g): bool
+    {
+        try {
+            $last = \Carbon\Carbon::parse($g['last'])->getTimestamp();
+        } catch (Throwable $e) {
+            return false;
+        }
+
+        if (preg_match('/View \[([^\]]+)\] not found/', $g['message'], $m)) {
+            $name = $m[1];
+
+            return view()->exists($name) || view()->exists('falcon-cms::'.$name);
+        }
+
+        $path = $g['source'] ?? null;
+        if (!$path) {
+            return false;
+        }
+        $path = str_replace('\\', '/', $path);
+        if (str_contains($path, 'storage/framework/views/')) {
+            return !is_file($path); // compiled copy gone: views were rebuilt from fixed source
+        }
+        if (str_contains($path, '/vendor/laravel/') || str_contains($path, '/vendor/symfony/')) {
+            return false; // the framework is where it surfaced, not where it was caused
+        }
+
+        return is_file($path) && filemtime($path) > $last;
     }
 
     private static function updates(): array
