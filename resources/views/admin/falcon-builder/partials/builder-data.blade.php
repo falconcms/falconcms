@@ -48,6 +48,11 @@
     } catch (\Throwable $e) {
         // Built-ins above already give the builder a usable (if minimal) set.
     }
+
+    // Off-canvas panels, for the "Open Off-Canvas" link source.
+    $__bdOffCanvas = array_map(fn ($p) => [
+        'value' => $p['id'], 'label' => $p['name'] ?? 'Off-Canvas', 'anchor' => \FalconCms\Core\Support\OffCanvas::anchor($p),
+    ], \FalconCms\Core\Support\OffCanvas::all());
 @endphp
 <script>
     window.falconTaxonomies    = {!! json_encode($__bdTaxonomies, JSON_HEX_TAG) !!};
@@ -55,4 +60,5 @@
     window.falconCptList       = {!! json_encode($__bdCptList, JSON_HEX_TAG) !!};
     window.falconCptTaxonomies = {!! json_encode($__bdCptTaxonomies, JSON_HEX_TAG) !!};
     window.falconPostTypeList  = {!! json_encode($__bdPostTypes, JSON_HEX_TAG) !!};
+    window.falconOffCanvasList = {!! json_encode($__bdOffCanvas, JSON_HEX_TAG) !!};
 </script>

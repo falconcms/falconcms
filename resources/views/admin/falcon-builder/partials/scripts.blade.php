@@ -35,6 +35,64 @@
             // Layout Builder sections (header/footer/page-title-bar/content) can also use
             // the dynamic Post elements (Content, Post Meta, Product Meta).
             const layoutMode = ref(window.falconLayoutMode || false);
+            // Off-canvas builder only: the panel's own settings (side, size, overlay, auto-open),
+            // edited in the Panel Options tab. They are not part of the layout, so they save on
+            // their own, a moment after the last change, and the canvas redraws at the panel's
+            // width and colour as they change. null on every other builder screen.
+            const ocSettings = window.falconOffCanvas ? reactive(window.falconOffCanvas.settings) : null;
+            const ocSaveState = ref('');
+            // "On Pages" picker: the Layout Builder's condition targets as fixed options, any
+            // page/post/term by typing (searched on the server), or a typed URL like /blog/*.
+            const ocTargetPicker = ocSettings ? {
+                valueField: 'value', labelField: 'text', searchField: ['text'],
+                optgroupField: 'optgroup', optgroupValueField: 'value', optgroupLabelField: 'label',
+                options: window.falconOffCanvas.targetOptions || [],
+                optgroups: window.falconOffCanvas.targetGroups || [],
+                lockOptgroupOrder: true,
+                maxOptions: null, // TomSelect shows 50 by default — fewer than one post type's entries
+                hideSelected: true,
+                load(query, callback) {
+                    fetch(window.falconOffCanvas.targetSearchUrl + '?q=' + encodeURIComponent(query), { headers: { 'Accept': 'application/json' } })
+                        .then(r => r.json()).then(d => callback(d.items || [])).catch(() => callback());
+                },
+                create(input) {
+                    const path = '/' + input.trim().replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+/, '');
+                    return { value: 'path:' + path, text: 'URL: ' + path, optgroup: 'Custom URL' };
+                },
+                createFilter: (input) => /^\/?[^\s<>"']*$/.test(input.trim()),
+                render: {
+                    option_create: (data, escape) => '<div class="create">Add URL <strong>/' + escape(data.input.replace(/^\/+/, '')) + '</strong> <span style="opacity:.6">(* = wildcard)</span></div>',
+                    no_results: () => '<div class="no-results" style="padding:6px 8px;color:#94a3b8">Type to search pages, posts, categories… or a URL</div>',
+                },
+            } : null;
+            if (ocSettings && !Array.isArray(ocSettings.auto_targets)) ocSettings.auto_targets = [];
+            if (ocSettings) {
+                let ocTimer = null;
+                watch(ocSettings, () => {
+                    ocSaveState.value = 'pending';
+                    clearTimeout(ocTimer);
+                    ocTimer = setTimeout(async () => {
+                        ocSaveState.value = 'saving';
+                        try {
+                            const res = await fetch(window.falconOffCanvas.saveUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                                body: JSON.stringify({ settings: ocSettings })
+                            });
+                            const d = await res.json();
+                            ocSaveState.value = d.success ? 'saved' : 'error';
+                        } catch (e) {
+                            ocSaveState.value = 'error';
+                        }
+                        // One toast per outcome on screen at a time: a slider dragged across
+                        // several saves should not stack a column of identical messages.
+                        const msg = ocSaveState.value === 'saved' ? 'Panel options saved' : 'Panel options could not be saved';
+                        if (!toasts.value.some(t => t.message === msg)) {
+                            showToast(msg, ocSaveState.value === 'saved' ? 'success' : 'error');
+                        }
+                    }, 700);
+                }, { deep: true });
+            }
             const isPreview = ref(false);
             const isSaving = ref(false);
             const isDirty = ref(false);
@@ -173,6 +231,12 @@
                     ]},
                     { key: 'author_url', label: 'Author URL', icon: 'fa-user',  group: 'Author', subFields: [] },
                     { key: 'site_url',   label: 'Site URL',   icon: 'fa-globe', group: 'Site',   subFields: [] },
+                    // Opens a Library off-canvas panel. Stored by id and resolved to its
+                    // #offcanvas-{slug} trigger on render, so it keeps working after a rename.
+                    { key: 'offcanvas_open', label: 'Open Off-Canvas', icon: 'fa-window-restore', group: 'Off-Canvas', subFields: [
+                        { key: 'dynamic_link_offcanvas', label: 'Panel', type: 'select', optionsFrom: 'offCanvases', required: true },
+                    ]},
+                    { key: 'offcanvas_close', label: 'Close Off-Canvas', icon: 'fa-times-circle', group: 'Off-Canvas', subFields: [] },
                 ],
                 image: [
                     { key: 'feature_image', label: 'Feature Image', icon: 'fa-image',       group: 'Post',   subFields: [] },
@@ -195,6 +259,7 @@
                 post_taxonomy: 'Category Name', taxonomy_url: 'example.com/category/term',
                 product_price: '$49.00', product_regular_price: '$59.00', product_sale_price: '$49.00',
                 product_sku: 'SAMPLE-SKU-001', product_stock_status: 'In stock', product_stock_quantity: '25',
+                offcanvas_open: '#offcanvas', offcanvas_close: '#offcanvas-close',
             }[key] || String(key).replace(/_/g, ' '));
             const dynSrcSample = (key) => {
                 const real = (window.builderDynPreview && window.builderDynPreview[key]) || '';
@@ -229,8 +294,20 @@
             // Shown in-canvas when a dynamic bg source is set but resolves to no URL (e.g. a page
             // with no featured image) — signals the dynamic bg is active without a broken image.
             const DYN_BG_PLACEHOLDER = 'linear-gradient(135deg, rgba(34,113,177,0.14), rgba(0,145,234,0.06))';
+            // Off-Canvas in a TEXT or IMAGE menu is an action, not a value: picking it leaves the
+            // title or picture as it is and makes the element open (or close) a panel when
+            // clicked — it is written to the element's link source. Offered only on elements
+            // that have a link to write to.
+            const dynSrcIsAction = (key) => getDynSrcDef(key).group === 'Off-Canvas';
+            const dynSrcSupportsLink = (s) => !!s && ('linkUrl' in s || 'useLink' in s || 'link_dynamic_source' in s);
+            const dynSrcTarget = (key) => dynSrcIsAction(key) && dynSrcMenu.ctx !== 'link' ? 'link_dynamic_source' : dynSrcMenu.sourceKey;
+            const dynSrcIsSelected = (key) => !!dynSrcMenu.settings && dynSrcMenu.settings[dynSrcTarget(key)] === key;
             const getDynSrcGroups = (ctx) => {
-                const opts = dynSrcDefs[ctx] || dynSrcDefs.text;
+                let opts = dynSrcDefs[ctx] || dynSrcDefs.text;
+                if (ctx !== 'link' && dynSrcSupportsLink(dynSrcMenu.settings) && (window.falconOffCanvasList || []).length) {
+                    opts = [...opts, ...dynSrcDefs.link.filter(d => d.group === 'Off-Canvas')
+                        .map(d => ({ ...d, label: d.key === 'offcanvas_open' ? 'Open Off-Canvas on Click' : 'Close Off-Canvas on Click', action: 'link' }))];
+                }
                 const map = {};
                 opts.forEach(opt => { const g = opt.group || 'Other'; if (!map[g]) map[g] = []; map[g].push(opt); });
                 return Object.entries(map).map(([name, items]) => ({ name, items }));
@@ -241,6 +318,9 @@
             const dynSrcFieldOptions = (field) => {
                 if (!field) return [];
                 if (field.options && field.options.length) return field.options;
+                if (field.optionsFrom === 'offCanvases') {
+                    return (window.falconOffCanvasList || []).map(p => ({ value: p.value, label: p.label }));
+                }
                 if (field.optionsFrom === 'postTypes') {
                     return (window.falconPostTypeList || [{ slug: 'post', name: 'Post' }])
                         .map(pt => ({ value: pt.slug, label: pt.name }));
@@ -305,7 +385,17 @@
             const selectDynSource = (key) => {
                 if (!dynSrcMenu.settings) return;
                 const def = getDynSrcDef(key);
-                dynSrcMenu.settings[dynSrcMenu.sourceKey] = key;
+                if (dynSrcMenu.ctx !== 'link' && dynSrcIsAction(key)) {
+                    // An action from a text/image menu: wire the element's link, keep its content.
+                    const s = dynSrcMenu.settings;
+                    s.link_dynamic_source = key;
+                    if ('useLink' in s) s.useLink = true;
+                    if ('lightbox' in s) s.lightbox = false; // an image link and a lightbox are either/or
+                    if (!s.linkTarget) s.linkTarget = '_self'; // a panel opens on this page
+                    showToast('This element now ' + (key === 'offcanvas_open' ? 'opens' : 'closes') + ' an off-canvas panel when clicked.', 'success');
+                } else {
+                    dynSrcMenu.settings[dynSrcMenu.sourceKey] = key;
+                }
                 if (def.subFields && def.subFields.length) {
                     _applySubFieldDefaults(key);
                     dynSrcMenu.configKey = key;
@@ -316,6 +406,12 @@
             };
             const clearDynSource = () => {
                 if (!dynSrcMenu.settings) return;
+                // Removing from the config of an off-canvas action clears the link it wrote.
+                if (dynSrcMenu.showConfig && dynSrcMenu.ctx !== 'link' && dynSrcIsAction(dynSrcMenu.configKey)) {
+                    dynSrcMenu.settings.link_dynamic_source = '';
+                    dynSrcMenu.open = false;
+                    return;
+                }
                 dynSrcMenu.settings[dynSrcMenu.sourceKey] = '';
                 dynSrcMenu.open = false;
             };
@@ -3194,12 +3290,91 @@
                 canvasScale.value = (available > 0 && available < intended) ? available / intended : 1;
             };
 
+            // Off-canvas builder: the canvas IS the panel — the width, height and colour it will
+            // have on the page, on whichever device is being previewed. A drawer (left/right)
+            // keeps the full screen height; a bar or popup takes its height, or shrinks to its
+            // content when the height is 0. % and vw are of the screen being previewed, and a
+            // panel is never wider than that screen, exactly as on the front end.
+            const ocCanvasBox = computed(() => {
+                if (!ocSettings) return {};
+                // The value on the device being previewed: mobile falls back to tablet, tablet
+                // to desktop — the same cascade the front end's stylesheet follows.
+                const v = (k) => getResponsiveVal(ocSettings, k, device.value);
+                const pos = v('position');
+                const side = pos === 'left' || pos === 'right';
+                const fill = pos === 'top' || pos === 'bottom';
+                const screen = (device.value === 'mobile' || device.value === 'tablet') ? canvasPreviewWidth(device.value) : null;
+                const w = Number(v('width')) || 0;
+                let width;
+                if (fill) {
+                    width = screen ? screen + 'px' : '100%';
+                } else if (v('width_unit') === 'px') {
+                    width = screen ? Math.min(screen, w) + 'px' : 'min(100%, ' + w + 'px)';
+                } else {
+                    width = screen ? Math.round(screen * w / 100) + 'px' : w + '%';
+                }
+                // A popup keeps 16px clear of the screen edge on each side.
+                if (pos === 'center' && screen) width = 'min(' + width + ', ' + (screen - 32) + 'px)';
+                const h = Number(v('height')) || 0;
+                const box = {
+                    width,
+                    minWidth: '0', // the desktop canvas is floored at Medium Screen; a panel is not
+                    background: ocSettings.bg_color || '#ffffff',
+                    borderRadius: (Number(v('radius')) || 0) + 'px',
+                };
+                if (!side) box.minHeight = h > 0 ? h + v('height_unit') : '0px';
+                return box;
+            });
+            // Where a bar or popup with a fixed height ends. Content past it scrolls inside the
+            // panel on the page; the canvas keeps growing so it can still be edited, and marks
+            // the edge with a dashed line.
+            const ocCanvasFold = computed(() => {
+                if (!ocSettings) return null;
+                const pos = getResponsiveVal(ocSettings, 'position', device.value);
+                if (pos === 'left' || pos === 'right') return null;
+                const h = Number(getResponsiveVal(ocSettings, 'height', device.value)) || 0;
+                return h > 0 ? h + getResponsiveVal(ocSettings, 'height_unit', device.value) : null;
+            });
+            // Panel Options fields that can differ per device read and write through these.
+            // Writing the desktop value, or the value the device would inherit anyway, leaves
+            // no override behind — so "same as above" stays "same as above".
+            const ocVal = (key) => ocSettings ? getResponsiveVal(ocSettings, key, device.value) : undefined;
+            // Sizes stay within what their unit allows on this device — 100 at most for %, vw
+            // and vh — the same limits the server applies, so what the canvas shows is what saves.
+            const ocLimit = (key, value) => {
+                if (key === 'width') return Math.max(1, Math.min(getResponsiveVal(ocSettings, 'width_unit', device.value) === 'px' ? 3000 : 100, Number(value) || 0));
+                if (key === 'height') return Math.max(0, Math.min(getResponsiveVal(ocSettings, 'height_unit', device.value) === 'px' ? 3000 : 100, Number(value) || 0));
+                return value;
+            };
+            const ocSet = (key, value) => {
+                if (!ocSettings) return;
+                value = ocLimit(key, value);
+                if (device.value === 'desktop') {
+                    ocSettings[key] = value;
+                } else {
+                    const k = key + '_' + device.value;
+                    const inherited = device.value === 'mobile' ? getResponsiveVal(ocSettings, key, 'tablet') : ocSettings[key];
+                    if (String(value) === String(inherited)) delete ocSettings[k];
+                    else ocSettings[k] = value;
+                }
+                // A new unit can make the size it already had out of range (400px → 400%).
+                if (key === 'width_unit' || key === 'height_unit') {
+                    const size = key === 'width_unit' ? 'width' : 'height';
+                    const cur = getResponsiveVal(ocSettings, size, device.value);
+                    if (ocLimit(size, cur) !== Number(cur)) ocSet(size, cur);
+                }
+            };
+            const ocOverridden = (key) => !!ocSettings && device.value !== 'desktop'
+                && ocSettings[key + '_' + device.value] !== undefined && ocSettings[key + '_' + device.value] !== '';
+            const ocResetDevice = (keys) => { keys.forEach(k => { delete ocSettings[k + '_' + device.value]; }); };
+
             const canvasStyle = computed(() => {
                 const pt = window.builderPagePadding?.top || '60px';
                 const pb = window.builderPagePadding?.bottom || '60px';
                 const baseStyle = { paddingTop: pt, paddingBottom: pb };
                 if (isPreview.value) return { ...baseStyle, width: '100%' };
                 const zoom = canvasScale.value !== 1 ? canvasScale.value : undefined;
+                if (ocSettings) return { ...baseStyle, zoom, ...ocCanvasBox.value };
                 if (device.value === 'mobile' || device.value === 'tablet') {
                     return { ...baseStyle, width: canvasPreviewWidth(device.value) + 'px', zoom };
                 }
@@ -7195,6 +7370,7 @@
                 falconMenuData: reactive(window.falconMenuData || {}),
                 falconMenusList: window.falconMenusList || {},
                 postCardMode,
+                ocSettings, ocSaveState, ocTargetPicker, ocCanvasFold, ocVal, ocSet, ocOverridden, ocResetDevice,
                 customElements,
                 getCustomElementPreviewText,
                 getCustomElementPreviewColor,
@@ -7207,7 +7383,7 @@
                 contentBoxCols, contentBoxDot, contentBoxFlexAlign, contentBoxIconStyle, contentBoxIconWrapStyle,
                 contentBoxDotStyle, contentBoxDotIcon, contentBoxTitleStyle, contentBoxContentStyle, contentBoxMoreStyle,
                 contentBoxItemStyle, contentBoxItemLayoutStyle, contentBoxCss, contentBoxHasMore, activeContentBoxItem,
-                dynSrcMenu, dynSrcDefs, getDynSrcDef, getDynSrcGroups, dynSrcPreview, openDynSrcMenu, selectDynSource, clearDynSource,
+                dynSrcMenu, dynSrcDefs, getDynSrcDef, getDynSrcGroups, dynSrcIsSelected, dynSrcPreview, openDynSrcMenu, selectDynSource, clearDynSource,
                 dynSrcFieldOptions, onDynSrcFieldChange
             };
         }
@@ -7220,6 +7396,8 @@
                 create: false,
                 placeholder: el._tsCfg.placeholder || '',
                 dropdownParent: 'body',
+                // Anything else TomSelect takes — options, optgroups, a remote `load`, `create`.
+                ...(el._tsCfg.settings || {}),
                 onChange(val) {
                     if (typeof el._tsCfg.onChange === 'function') {
                         // For multi-select, always use ts.getValue() to get the FULL selection array

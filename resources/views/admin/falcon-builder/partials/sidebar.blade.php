@@ -15,6 +15,14 @@
             <span class="text-[11px] font-black uppercase tracking-widest">Page Options</span>
         </button>
         @endif
+        @if($isOffCanvasBuilder ?? false)
+        <button @click="activeTab='oc_options'"
+                :class="activeTab==='oc_options' ? 'text-[#0091ea] border-b-2 border-[#0091ea]' : 'text-slate-500 hover:text-[#0091ea]'"
+                class="flex-1 flex items-center justify-center gap-1.5 h-11 transition-all border-l border-slate-100">
+            <i class="fa fa-sliders-h text-[10px]"></i>
+            <span class="text-[11px] font-black uppercase tracking-widest">Panel Options</span>
+        </button>
+        @endif
     </div>
 
     <!-- Tab Content -->
@@ -243,6 +251,10 @@
             </div>
         </div>
 
+        @endif
+
+        @if($isOffCanvasBuilder ?? false)
+            @include('falcon-cms::admin.falcon-builder.partials.off-canvas-options')
         @endif
 
         <!-- Settings Tab -->
@@ -1676,7 +1688,19 @@
                                     <div class="flex justify-between items-center mb-2">
                                         <label class="text-[12px] font-bold text-[#333]">Link URL</label>
                                     </div>
-                                    <input type="text" v-model="editingElement.settings.linkUrl"
+                                    {{-- Set from the Title's dynamic menu (Open/Close Off-Canvas on Click). --}}
+                                    <div v-if="editingElement.settings.link_dynamic_source"
+                                         class="flex items-center justify-between px-3 py-2.5 bg-[#2271b1]/8 border border-[#0091ea]/25 rounded-lg select-none">
+                                        <div class="flex items-center gap-2">
+                                            <i :class="['fa', getDynSrcDef(editingElement.settings.link_dynamic_source).icon, 'text-[#0091ea] text-sm']"></i>
+                                            <span class="text-[12px] font-bold text-[#0091ea]">@{{ getDynSrcDef(editingElement.settings.link_dynamic_source).label }}</span>
+                                        </div>
+                                        <button @click.stop="editingElement.settings.link_dynamic_source = ''"
+                                                class="w-5 h-5 flex items-center justify-center text-[#0091ea]/50 hover:text-red-500 transition-colors rounded">
+                                            <i class="fa fa-times text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                    <input v-else type="text" v-model="editingElement.settings.linkUrl"
                                            placeholder="https://"
                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                 </div>
@@ -5706,12 +5730,14 @@
                         {{-- A post type with no taxonomies registered: say so instead of an empty select --}}
                         <p v-if="field.type === 'select' && field.optionsFrom === 'taxonomies' && !dynSrcFieldOptions(field).length"
                            class="text-[10px] text-amber-500 mt-0.5">No taxonomy is registered for this post type.</p>
-                        <input v-else-if="field.type === 'number'"
+                        {{-- Explicit conditions, not v-else: the chain would hang off the <p> above and
+                             draw a text box under every select. --}}
+                        <input v-if="field.type === 'number'"
                                type="number"
                                v-model="dynSrcMenu.settings[field.key]"
                                :placeholder="field.placeholder || ''"
                                class="w-full text-[12px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/20">
-                        <input v-else
+                        <input v-if="field.type !== 'select' && field.type !== 'number'"
                                type="text"
                                v-model="dynSrcMenu.settings[field.key]"
                                :placeholder="field.placeholder || ''"
@@ -5747,11 +5773,11 @@
                     <button v-for="opt in group.items" :key="opt.key"
                             @click="selectDynSource(opt.key)"
                             class="w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-all"
-                            :class="dynSrcMenu.settings?.[dynSrcMenu.sourceKey] === opt.key ? 'bg-[#2271b1]/10 text-[#0091ea]' : 'text-slate-600 hover:bg-slate-50'">
+                            :class="dynSrcIsSelected(opt.key) ? 'bg-[#2271b1]/10 text-[#0091ea]' : 'text-slate-600 hover:bg-slate-50'">
                         <i :class="['fa', opt.icon, 'text-[10px] w-3.5 flex-shrink-0']"></i>
                         <span class="text-[12px] font-medium flex-1">@{{ opt.label }}</span>
                         <i v-if="opt.subFields && opt.subFields.length" class="fa fa-chevron-right text-[9px] text-slate-300 flex-shrink-0"></i>
-                        <i v-else-if="dynSrcMenu.settings?.[dynSrcMenu.sourceKey] === opt.key" class="fa fa-check text-[9px] text-[#0091ea] flex-shrink-0"></i>
+                        <i v-else-if="dynSrcIsSelected(opt.key)" class="fa fa-check text-[9px] text-[#0091ea] flex-shrink-0"></i>
                     </button>
                 </template>
             </div>

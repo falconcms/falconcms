@@ -35,6 +35,7 @@ use FalconCms\Core\Http\Controllers\Admin\RegisterController;
 use FalconCms\Core\Http\Controllers\Admin\ReviewController;
 use FalconCms\Core\Http\Controllers\Admin\RoleController;
 use FalconCms\Core\Http\Controllers\Admin\SettingsTabController;
+use FalconCms\Core\Http\Controllers\Admin\SiteHealthController;
 use FalconCms\Core\Http\Controllers\Admin\ShopController;
 use FalconCms\Core\Http\Controllers\Admin\ShopReportController;
 use FalconCms\Core\Http\Controllers\Admin\TagController;
@@ -142,6 +143,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
         Route::get('falcon-builder-library/mega-menus/{id}/builder', [BuilderLibraryController::class, 'editMegaMenuBuilder'])->name('falcon-builder.mega-menus.builder');
         Route::post('falcon-builder-library/mega-menus/{id}/builder', [BuilderLibraryController::class, 'saveMegaMenuLayout'])->name('falcon-builder.mega-menus.save-layout');
         Route::post('falcon-builder-library/mega-menus/{id}/settings', [BuilderLibraryController::class, 'saveMegaMenuSettings'])->name('falcon-builder.mega-menus.save-settings');
+        Route::post('falcon-builder-library/off-canvas', [BuilderLibraryController::class, 'saveOffCanvas'])->name('falcon-builder.off-canvas.save');
+        Route::get('falcon-builder-library/off-canvas-targets', [BuilderLibraryController::class, 'offCanvasTargets'])->name('falcon-builder.off-canvas.targets');
+        Route::post('falcon-builder-library/off-canvas-import', [BuilderLibraryController::class, 'importOffCanvas'])->name('falcon-builder.off-canvas.import');
+        Route::patch('falcon-builder-library/off-canvas/{id}', [BuilderLibraryController::class, 'updateOffCanvas'])->name('falcon-builder.off-canvas.update');
+        Route::delete('falcon-builder-library/off-canvas/{id}', [BuilderLibraryController::class, 'deleteOffCanvas'])->name('falcon-builder.off-canvas.delete');
+        Route::post('falcon-builder-library/off-canvas/{id}/duplicate', [BuilderLibraryController::class, 'duplicateOffCanvas'])->name('falcon-builder.off-canvas.duplicate');
+        Route::get('falcon-builder-library/off-canvas/{id}/export', [BuilderLibraryController::class, 'exportOffCanvas'])->name('falcon-builder.off-canvas.export');
+        Route::get('falcon-builder-library/off-canvas/{id}/builder', [BuilderLibraryController::class, 'editOffCanvasBuilder'])->name('falcon-builder.off-canvas.builder');
+        Route::post('falcon-builder-library/off-canvas/{id}/builder', [BuilderLibraryController::class, 'saveOffCanvasLayout'])->name('falcon-builder.off-canvas.save-layout');
+        Route::post('falcon-builder-library/off-canvas/{id}/settings', [BuilderLibraryController::class, 'saveOffCanvasSettings'])->name('falcon-builder.off-canvas.save-settings');
         Route::get('falcon-builder/library', [BuilderLibraryController::class, 'index'])->name('falcon-builder.library.index');
         Route::post('falcon-builder/library/save', [BuilderLibraryController::class, 'save'])->name('falcon-builder.library.save');
         Route::delete('falcon-builder/library/{type}/{id}', [BuilderLibraryController::class, 'delete'])->name('falcon-builder.library.delete');
@@ -349,6 +360,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('settings/email-templates', [DashboardController::class, 'emailTemplates'])->name('settings.email-templates');
     Route::post('settings/email-templates', [DashboardController::class, 'updateEmailTemplate'])->name('settings.email-templates.update');
     Route::post('settings/email-templates/test', [DashboardController::class, 'testEmailTemplate'])->name('settings.email-templates.test');
+    Route::get('settings/site-health', [SiteHealthController::class, 'index'])->name('settings.site-health');
+    Route::get('settings/site-health/test/{test}', [SiteHealthController::class, 'test'])->name('settings.site-health.test');
     // Custom top-level settings tabs (falcon_add_settings_tab). Registered LAST so
     // every native settings/* route matches first; this only catches unknown slugs,
     // which the controller resolves against the registry (404 if not a real tab).

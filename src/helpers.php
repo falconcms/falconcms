@@ -23,6 +23,7 @@ use FalconCms\Core\Models\Wishlist;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
 use FalconCms\Core\Services\EcommerceData;
+use FalconCms\Core\Support\OffCanvas;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -3532,6 +3533,7 @@ if (!function_exists('falcon_dynamic_config')) {
                 'link_tax_slug' => $s['dynamic_link_tax_slug'] ?? '',
                 'link_tax_which' => $s['dynamic_link_tax_which'] ?? 'first',
                 'fallback' => $s['dynamic_link_tax_fallback'] ?? '',
+                'offcanvas' => $s['dynamic_link_offcanvas'] ?? '',
             ];
         }
 
@@ -3876,6 +3878,13 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
                 }
                 $term = ($config['link_tax_which'] ?? 'first') === 'last' ? $terms->last() : $terms->first();
                 $val = falcon_term_archive_url($term, $taxSlug, (string) ($post->type ?? 'post'));
+                break;
+
+            case 'offcanvas_open':
+                $val = OffCanvas::anchorFor((string) ($config['offcanvas'] ?? ''));
+                break;
+            case 'offcanvas_close':
+                $val = '#offcanvas-close';
                 break;
 
             case 'post_comment_count':

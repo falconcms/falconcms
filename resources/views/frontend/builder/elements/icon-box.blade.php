@@ -18,6 +18,10 @@
     // ── Link mode: which part becomes the link (box | icon | title). Defaults to
     //    "box" so existing icon boxes (whole box clickable) keep working. ──────────
     $linkUrl    = $s['linkUrl']    ?? '';
+    // A link source chosen from the dynamic menu (e.g. Open Off-Canvas) wins over the typed URL.
+    if (!empty($s['link_dynamic_source']) && function_exists('falcon_resolve_dynamic_value')) {
+        $linkUrl = falcon_resolve_dynamic_value($s['link_dynamic_source'], $post ?? null, falcon_dynamic_config($s, 'link')) ?: $linkUrl;
+    }
     $linkTarget = $s['linkTarget'] ?? '_self';
     $linkMode   = $s['linkMode']   ?? 'box';
     $hasLink    = $linkUrl !== '';

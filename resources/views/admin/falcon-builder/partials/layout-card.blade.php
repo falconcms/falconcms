@@ -41,7 +41,7 @@
                         <span class="material-symbols-outlined text-[20px]">{{ $m['icon'] }}</span>
                     </div>
                     @if($sec)
-                        <a href="{{ route('admin.falcon-builder', $sec->id) }}" class="flex-1 flex flex-col justify-center px-3 py-1.5 leading-tight hover:text-[#2271b1]">
+                        <a href="{{ route('admin.posts.edit', $sec->id) }}" class="flex-1 flex flex-col justify-center px-3 py-1.5 leading-tight hover:text-[#2271b1]">
                             <span class="text-[13px] text-[#1d2327]">{{ $sec->title ?: $m['label'] }}</span>
                             @if($slotEmpty && $slotActive)
                                 <span class="slot-status text-[10px] uppercase tracking-wide text-[#bd8600]" data-slot-label="{{ $m['label'] }}" title="Nothing has been built in this section yet, so the theme's own {{ strtolower($m['label']) }} is shown instead.">Empty · open to build it</span>

@@ -116,8 +116,18 @@ class Sidebar extends Component
             return $currentPath === 'admin';
         }
 
+        // A Layout section edits on the post edit screen (admin/posts/{id}/edit) but belongs to
+        // Falcon Builder → Layouts, so that is the menu lit while one is open.
+        if ($targetPath === 'admin/falcon-builder-sections' && preg_match('#^admin/posts/(\d+)/edit$#', $currentPath, $m)) {
+            try {
+                return in_array(Post::where('id', $m[1])->value('type'), \FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::SECTION_TYPES, true);
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
+
         // 2. Base path check
-        $indexPaths = ['admin/posts', 'admin/pages', 'admin/users', 'admin/settings', 'admin/roles', 'admin/categories', 'admin/tags', 'admin/product-categories', 'admin/product-tags', 'admin/comments', 'admin/profile', 'admin/plugins'];
+        $indexPaths =['admin/posts', 'admin/pages', 'admin/users', 'admin/settings', 'admin/roles', 'admin/categories', 'admin/tags', 'admin/product-categories', 'admin/product-tags', 'admin/comments', 'admin/profile', 'admin/plugins'];
 
         // Special case: Your Profile belongs to Users group
         if ($targetPath === 'admin/users' && ($currentPath === 'admin/profile' || str_starts_with($currentPath, 'admin/users/') && str_ends_with($currentPath, '/edit'))) {

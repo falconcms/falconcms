@@ -61,7 +61,7 @@
         </div>
 
         <!-- Actual Layout -->
-        <div v-else class="w-full bg-white min-h-full flex flex-col {{ ($postCardMode ?? false) ? 'justify-center' : '' }}">
+        <div v-else :class="ocSettings ? 'bg-transparent' : 'bg-white'" class="w-full min-h-full flex flex-col {{ ($postCardMode ?? false) ? 'justify-center' : '' }}">
             <template v-for="(container, ci) in layout" :key="container.id">
                 @include('falcon-cms::admin.falcon-builder.partials.components.container.row')
             </template>
@@ -72,6 +72,12 @@
              touched. The open row lifts itself above it (z-[950] on its wrapper), so the work
              inside — and the Finished tick — stay reachable. It says nothing when clicked:
              the rest of the canvas is dimmed and blurred, which already reads as "not now". --}}
+        {{-- Off-canvas builder: the bottom edge of a bar or popup with a fixed height. --}}
+        <div v-if="ocCanvasFold && !isPreview" class="absolute left-0 right-0 z-[800] pointer-events-none border-t-2 border-dashed border-[#0091ea]/60"
+             :style="{ top: ocCanvasFold }">
+            <span class="absolute right-2 -top-[22px] text-[10px] font-bold uppercase tracking-wider text-[#0091ea] bg-white/90 px-1.5 py-0.5 rounded">Panel height</span>
+        </div>
+
         <div v-if="nestedLockActive" class="absolute inset-0 z-[900]"
              @click.stop @contextmenu.prevent.stop></div>
 

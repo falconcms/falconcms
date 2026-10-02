@@ -150,6 +150,18 @@ class FalconCmsServiceProvider extends ServiceProvider
                 echo view('falcon-cms::components.frontend.to-top')->render();
             }, 20);
 
+            // Off-canvas panels from the Builder Library. The footer hook fires inside the
+            // layout's own output buffer, so everything the page has drawn above it — header,
+            // content, footer — is already in that buffer, and only the panels it links to
+            // (or that open by themselves) get rendered. Not in the builder's header/footer
+            // preview frames, which have no business opening a drawer.
+            add_falcon_action('falcon_footer', function () {
+                if (request()->routeIs('admin.*')) {
+                    return;
+                }
+                echo \FalconCms\Core\Support\OffCanvas::renderForPage((string) ob_get_contents());
+            }, 15);
+
             $settingsScreens = [
                 'general' => ['falcon_settings_form_bottom', '', null],
                 'seo' => ['falcon_seo_settings_form_bottom', '', null],

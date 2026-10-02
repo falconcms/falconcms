@@ -1,8 +1,18 @@
-<x-falcon-cms::layouts.admin pro-lock-allow-forms="1" pro-lock-feature="{{ ($post->type ?? '') === 'product' ? 'ecommerce' : '' }}" title="Edit {{ ucfirst($post->type) }}" active-menu="{{ $post->type === 'page' ? 'pages' : ($post->type ?: 'posts') }}">
+@php
+    // A Layout section (header, footer, page title bar, content) edits on this same screen as
+    // a page; $layoutSection says which slot it fills and which layouts use it.
+    $layoutSection = $layoutSection ?? null;
+    $typeLabel = $layoutSection ? $layoutSection['label'].' Section' : ucfirst($post->type);
+@endphp
+<x-falcon-cms::layouts.admin pro-lock-allow-forms="1" pro-lock-feature="{{ ($post->type ?? '') === 'product' ? 'ecommerce' : '' }}" title="Edit {{ $typeLabel }}" active-menu="{{ $layoutSection ? 'falcon-builder-sections' : ($post->type === 'page' ? 'pages' : ($post->type ?: 'posts')) }}">
     
     <div class="mb-4">
-        <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">Edit {{ ucfirst($post->type) }}</h1>
+        <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">Edit {{ $typeLabel }}</h1>
+        @if($layoutSection)
+        <a href="{{ route('admin.falcon-builder.sections') }}" class="wp-btn-secondary px-2 py-0.5 text-[12px] bg-white hover:bg-[#f6f7f7] border-[#2271b1] text-[#2271b1] leading-normal">&larr; Back to Layouts</a>
+        @else
         <a href="{{ route('admin.posts.create', ['type' => $post->type]) }}" class="wp-btn-secondary px-2 py-0.5 text-[12px] bg-white hover:bg-[#f6f7f7] border-[#2271b1] text-[#2271b1] leading-normal">Add New</a>
+        @endif
     </div>
 
     {{-- Without this, a refused save looks like a button that did nothing: the form comes back
@@ -56,7 +66,7 @@
                         <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
                     @enderror
                     
-                    @if(!isset($postType) || $postType->is_public)
+                    @if(!$layoutSection && (!isset($postType) || $postType->is_public))
                     <div id="permalink-container" data-is-home="{{ is_falcon_homepage($post) ? '1' : '0' }}" class="mt-2 text-[13px] flex items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
@@ -270,7 +280,9 @@
                 @endif
 
                 @include('falcon-cms::admin.posts.partials.product-data', ['post' => $post, 'type' => $type])
+                @unless($layoutSection)
                 @include('falcon-cms::admin.posts.partials.seo', ['post' => $post])
+                @endunless
             </div>
 
             <!-- Right Column: Metaboxes -->
@@ -455,11 +467,42 @@
                         <a href="{{ route('admin.posts.revisions', $post->id) }}" class="text-[#2271b1] hover:underline text-[13px] font-semibold">Browse</a>
                     </div>
                     <div class="bg-[#f6f7f7] border-t border-[#dfdfdf] p-2 flex justify-between items-center">
+                        @if($layoutSection)
+                        {{-- A section is deleted from Layouts, which also takes it off every layout using it. --}}
+                        <a href="{{ route('admin.falcon-builder.sections') }}" class="text-[#2271b1] hover:underline text-[13px]">Layouts</a>
+                        @else
                         <button type="submit" form="trash-form-main" class="text-[#b32d2e] hover:text-[#8a2424] text-[13px] underline bg-transparent border-0 cursor-pointer">Move to Trash</button>
+                        @endif
                         <span id="autosave-status" class="text-[11px] text-[#646970] italic mr-auto ml-2"></span>
                         <button type="submit" id="main-publish-btn" class="wp-btn-primary">Update</button>
                     </div>
                 </div>
+
+                @if($layoutSection)
+                <!-- Layout Metabox: where this section is used -->
+                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
+                    <div class="wp-metabox-header"><span>Layout</span></div>
+                    <div class="wp-metabox-content p-3 text-[13px] text-[#3c434a] space-y-3">
+                        <p>Type: <strong class="text-[#1d2327]">{{ $layoutSection['label'] }}</strong></p>
+                        @if($layoutSection['layouts'])
+                            <div>
+                                <p class="mb-1">Used in:</p>
+                                <ul class="space-y-1">
+                                    @foreach($layoutSection['layouts'] as $use)
+                                    <li class="flex items-center justify-between">
+                                        <span>{{ $use['name'] }}</span>
+                                        <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded {{ $use['active'] ? 'bg-[#edfaef] text-[#00a32a]' : 'bg-[#f0f0f1] text-[#646970]' }}">{{ $use['active'] ? 'On' : 'Off' }}</span>
+                                    </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @else
+                            <p class="text-[#646970] italic">Not assigned to any layout yet — it does not show on the site until it is.</p>
+                        @endif
+                        <a href="{{ route('admin.falcon-builder.sections') }}" class="inline-block text-[#2271b1] hover:underline font-semibold">Manage in Layouts &rarr;</a>
+                    </div>
+                </div>
+                @endif
 
                 <!-- Categories Metabox -->
                 @if($post->type === 'post' && !in_array('categories', $overriddenTaxonomies))

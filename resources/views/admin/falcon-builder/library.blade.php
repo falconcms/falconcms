@@ -30,7 +30,7 @@
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-[23px] font-normal text-[#1d2327] mb-0.5">Builder Library</h1>
-            <p class="text-[13px] text-[#646970]">Manage saved builder items, post cards, and mega menus.</p>
+            <p class="text-[13px] text-[#646970]">Manage saved builder items, post cards, mega menus and off-canvas panels.</p>
         </div>
         <div class="flex items-center gap-3">
             <nav class="text-[12px] text-[#646970]">Falcon Builder / Library</nav>
@@ -58,6 +58,18 @@
                     <span class="material-symbols-outlined text-[16px]">upload</span> Import
                 </button>
             </form>
+            <button id="btn-new-off-canvas" onclick="openOffCanvasModal()" style="display:none"
+                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white text-[13px] font-semibold rounded transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">add</span> New Off-Canvas
+            </button>
+            <form id="btn-import-off-canvas" action="{{ route('admin.falcon-builder.off-canvas.import') }}" method="POST" enctype="multipart/form-data" class="inline" style="display:none">
+                @csrf
+                <input type="file" name="library_file" accept=".json,application/json" class="hidden" id="oc-import-file" onchange="this.form.submit()">
+                <button type="button" onclick="document.getElementById('oc-import-file').click()"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] text-[13px] font-semibold rounded transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">upload</span> Import
+                </button>
+            </form>
         </div>
     </div>
 
@@ -70,6 +82,7 @@
             'elements'       => ['label' => 'Elements',       'icon' => 'widgets',       'count' => count($library['elements'])],
             'post_cards'     => ['label' => 'Post Cards',     'icon' => 'style',         'count' => count($postCards)],
             'mega_menus'     => ['label' => 'Mega Menus',     'icon' => 'view_quilt',    'count' => count($megaMenus)],
+            'off_canvas'     => ['label' => 'Off-Canvas',     'icon' => 'side_navigation', 'count' => count($offCanvases)],
         ];
         $libraryItems = [
             'containers'     => $library['containers'],
@@ -220,6 +233,103 @@
                 </div>
             @endif
         </div>
+
+        {{-- ── Off-Canvas Tab ── --}}
+        <div id="panel-off_canvas" class="tab-panel p-6" style="display:none">
+            @if(count($offCanvases) === 0)
+                <div class="py-20 text-center">
+                    <span class="material-symbols-outlined text-[56px] text-[#c3c4c7] block mb-4">side_navigation</span>
+                    <p class="text-[15px] font-semibold text-[#50575e] mb-1">No off-canvas panels yet</p>
+                    <p class="text-[13px] text-[#9ca3af] mb-6 max-w-[520px] mx-auto">Design slide-in drawers and popups with the builder — a mobile menu, a cart sidebar, a newsletter popup. Open one from any link, button or menu item.</p>
+                    <button onclick="openOffCanvasModal()"
+                            class="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#2271b1] hover:bg-[#135e96] text-white text-[13px] font-semibold rounded transition-colors shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]">add</span> Create Your First Off-Canvas
+                    </button>
+                </div>
+            @else
+                <div class="mb-5 flex items-start gap-3 rounded border border-[#c5d9ed] bg-[#f0f6fb] px-4 py-3 text-[12.5px] text-[#1d4f7a]">
+                    <span class="material-symbols-outlined text-[18px] text-[#2271b1] shrink-0">info</span>
+                    <div>
+                        <strong>How to open a panel:</strong> set any link, button or menu item URL to its trigger (e.g. <code class="px-1 bg-white rounded">#offcanvas-mobile-menu</code>),
+                        or pick <em>Open Off-Canvas</em> from a link's dynamic source. A link to <code class="px-1 bg-white rounded">#offcanvas-close</code> inside a panel closes it.
+                        A panel only loads on pages that link to it — or that it opens on by itself.
+                    </div>
+                </div>
+                @php
+                    $ocPosLabels  = ['left' => 'Left Drawer', 'right' => 'Right Drawer', 'top' => 'Top Bar', 'bottom' => 'Bottom Bar', 'center' => 'Popup'];
+                    $ocTrigLabels = ['load' => 'Auto: on load', 'scroll' => 'Auto: on scroll', 'exit' => 'Auto: exit intent'];
+                    $ocMinis      = [
+                        'left'   => 'left:12px;top:12px;bottom:12px;width:32%;',
+                        'right'  => 'right:12px;top:12px;bottom:12px;width:32%;',
+                        'top'    => 'left:12px;right:12px;top:12px;height:34%;',
+                        'bottom' => 'left:12px;right:12px;bottom:12px;height:34%;',
+                        'center' => 'left:32%;right:32%;top:24%;bottom:24%;border-radius:4px;',
+                    ];
+                @endphp
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    @foreach($offCanvases as $oc)
+                    @php
+                        $ocS      = \FalconCms\Core\Support\OffCanvas::settings($oc['config']['settings'] ?? []);
+                        $ocOn     = $oc['enabled'] ?? true;
+                        $ocAnchor = \FalconCms\Core\Support\OffCanvas::anchor($oc);
+                        $ocEmpty  = empty($oc['config']['layout']);
+                    @endphp
+                    <div class="lib-card relative bg-white border border-[#dcdcde] rounded overflow-hidden group {{ $ocOn ? '' : 'opacity-60' }}" id="occard-{{ $oc['id'] }}">
+                        @if($libLocked)<span class="absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm" title="Pro feature"><span class="material-symbols-outlined" style="font-size:11px">lock</span> Pro</span>@endif
+
+                        {{-- Miniature of where the panel sits on screen --}}
+                        <div class="relative h-24 bg-gradient-to-br from-[#f9fafb] to-[#eef0f2] border-b border-[#f0f0f1] overflow-hidden">
+                            <div class="absolute inset-3 rounded-sm bg-white/70 border border-[#e2e4e7]"></div>
+                            <div class="absolute bg-[#2271b1]/80 group-hover:bg-[#2271b1] transition-colors" style="{{ $ocMinis[$ocS['position']] }}"></div>
+                            <span class="absolute bottom-1.5 left-2 text-[10px] font-semibold text-[#50575e] bg-white/90 px-1.5 rounded">{{ $ocPosLabels[$ocS['position']] }}</span>
+                            @if($ocS['trigger'] !== 'none')
+                            <span class="absolute top-1.5 left-2 text-[10px] font-semibold text-[#8a5a00] bg-[#fdf3dc] px-1.5 rounded flex items-center gap-0.5"><span class="material-symbols-outlined" style="font-size:11px">bolt</span>{{ $ocTrigLabels[$ocS['trigger']] }}</span>
+                            @endif
+                        </div>
+
+                        <div class="p-4">
+                            <div class="flex items-start justify-between gap-2 mb-0.5">
+                                <p class="text-[13px] font-semibold text-[#1d2327] truncate leading-snug" title="{{ $oc['name'] }}">{{ $oc['name'] }}</p>
+                                <label class="relative inline-flex items-center cursor-pointer shrink-0" title="Enabled — a disabled panel never loads">
+                                    <input type="checkbox" class="sr-only" {{ $ocOn ? 'checked' : '' }} onchange="toggleOffCanvas('{{ $oc['id'] }}', this)">
+                                    <span class="oc-toggle w-8 h-[18px] rounded-full relative transition-colors {{ $ocOn ? 'bg-[#2271b1]' : 'bg-[#c3c4c7]' }}">
+                                        <span class="absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow transition-all" style="left:{{ $ocOn ? '16px' : '2px' }}"></span>
+                                    </span>
+                                </label>
+                            </div>
+                            <p class="text-[11px] text-[#9ca3af] mb-2">{{ $oc['created_at'] }}@if($ocEmpty) · <span class="text-[#b26200]">empty — design it</span>@endif</p>
+
+                            <button type="button" onclick="copyOcTrigger(this, '{{ $ocAnchor }}')" title="Copy the trigger link"
+                                    class="w-full mb-3 flex items-center justify-between gap-2 px-2 py-1.5 rounded border border-dashed border-[#c3c4c7] bg-[#f9fafb] hover:border-[#2271b1] hover:bg-[#f0f6fb] transition-colors">
+                                <code class="text-[11px] text-[#2271b1] truncate">{{ $ocAnchor }}</code>
+                                <span class="material-symbols-outlined text-[14px] text-[#646970] oc-copy-icon">content_copy</span>
+                            </button>
+
+                            <div class="flex gap-2">
+                                <a href="{{ $libLocked ? '#' : route('admin.falcon-builder.off-canvas.builder', $oc['id']) }}"
+                                   @if($libLocked) onclick="event.preventDefault(); window.showToast && window.showToast('This feature is available in the Pro version.','error');" @endif
+                                   class="flex-1 py-1.5 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center gap-1">
+                                    <span class="material-symbols-outlined text-[13px]">edit</span> Edit
+                                </a>
+                                <button onclick="duplicateOffCanvas('{{ $oc['id'] }}')" title="Duplicate"
+                                        class="py-1.5 px-2 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[13px]">library_add</span>
+                                </button>
+                                <a href="{{ route('admin.falcon-builder.off-canvas.export', $oc['id']) }}" title="Export as .json"
+                                   class="py-1.5 px-2 rounded text-[11px] font-semibold border border-[#c3c4c7] bg-white text-[#50575e] hover:bg-[#f0f0f1] hover:border-[#8c8f94] transition-colors flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[13px]">download</span>
+                                </a>
+                                <button onclick="deleteOffCanvas('{{ $oc['id'] }}')" title="Delete"
+                                        class="py-1.5 px-2 rounded text-[11px] font-semibold border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-[13px]">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 
@@ -296,8 +406,66 @@
     </div>
 </div>
 
+{{-- ════════════════════════════════════════════════════
+     Off-Canvas Creation Modal
+════════════════════════════════════════════════════ --}}
+<div id="offCanvasModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" style="display:none!important">
+    <div class="bg-white w-[95vw] max-w-[680px] max-h-[90vh] flex flex-col rounded-lg shadow-2xl overflow-hidden">
+
+        {{-- Modal Header --}}
+        <div class="bg-[#1d2327] text-white px-6 py-4 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px] text-[#72aee6]">side_navigation</span>
+                <h3 class="text-[14px] font-bold uppercase tracking-widest">New Off-Canvas</h3>
+            </div>
+            <button onclick="closeOffCanvasModal()" class="text-white/50 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        {{-- Modal Body --}}
+        <div class="p-6 overflow-y-auto">
+            <label class="block text-[12px] font-bold text-[#1d2327] uppercase tracking-wider mb-2">Name</label>
+            <input type="text" id="oc-name" placeholder="e.g. Mobile Menu, Newsletter Popup, Cart Drawer…"
+                   class="w-full border border-[#c3c4c7] rounded px-3 py-2.5 text-[13px] text-[#1d2327] focus:outline-none focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1]/20"
+                   onkeydown="if(event.key==='Enter') saveOffCanvas()">
+
+            <label class="block text-[12px] font-bold text-[#1d2327] uppercase tracking-wider mt-5 mb-2">Type</label>
+            <div class="grid grid-cols-5 gap-2">
+                @foreach([
+                    'left'   => ['Left', 'left:4px;top:4px;bottom:4px;width:34%;'],
+                    'right'  => ['Right', 'right:4px;top:4px;bottom:4px;width:34%;'],
+                    'top'    => ['Top', 'left:4px;right:4px;top:4px;height:34%;'],
+                    'bottom' => ['Bottom', 'left:4px;right:4px;bottom:4px;height:34%;'],
+                    'center' => ['Popup', 'left:26%;right:26%;top:22%;bottom:22%;border-radius:3px;'],
+                ] as $ocPos => [$ocLabel, $ocMini])
+                <label class="style-opt cursor-pointer">
+                    <input type="radio" name="oc-position" value="{{ $ocPos }}" class="sr-only" {{ $ocPos === 'right' ? 'checked' : '' }}>
+                    <div class="border-2 border-[#dcdcde] rounded p-2 text-center transition-colors">
+                        <div class="relative h-12 bg-[#f0f0f1] rounded-sm mb-1.5">
+                            <div class="absolute bg-[#2271b1]" style="{{ $ocMini }}"></div>
+                        </div>
+                        <span class="text-[11px] font-semibold">{{ $ocLabel }}</span>
+                    </div>
+                </label>
+                @endforeach
+            </div>
+            <p class="text-[12px] text-[#646970] mt-3">After creating, design the content in the builder, then set size, overlay, animation and auto-open rules under <strong>Panel Options</strong>.</p>
+        </div>
+
+        {{-- Modal Footer --}}
+        <div class="shrink-0 px-6 py-4 bg-[#f9fafb] border-t border-[#f0f0f1] flex items-center justify-between">
+            <button onclick="closeOffCanvasModal()" class="px-5 py-2 text-[13px] font-semibold text-[#50575e] hover:text-[#1d2327] transition-colors">Cancel</button>
+            <button onclick="saveOffCanvas()"
+                    class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#2271b1] hover:bg-[#135e96] text-white text-[13px] font-semibold rounded transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[16px]">save</span> Create &amp; Design
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
-const ALL_TABS = ['containers', 'columns', 'nested_columns', 'elements', 'post_cards', 'mega_menus'];
+const ALL_TABS = ['containers', 'columns', 'nested_columns', 'elements', 'post_cards', 'mega_menus', 'off_canvas'];
 
 function switchTab(key) {
     ALL_TABS.forEach(t => {
@@ -316,6 +484,10 @@ function switchTab(key) {
     if (btnMega) btnMega.style.display = key === 'mega_menus' ? '' : 'none';
     if (impCard) impCard.style.display = key === 'post_cards' ? 'inline' : 'none';
     if (impMega) impMega.style.display = key === 'mega_menus' ? 'inline' : 'none';
+    const btnOc = document.getElementById('btn-new-off-canvas');
+    const impOc = document.getElementById('btn-import-off-canvas');
+    if (btnOc) btnOc.style.display = key === 'off_canvas' ? '' : 'none';
+    if (impOc) impOc.style.display = key === 'off_canvas' ? 'inline' : 'none';
 }
 
 function deleteLibItem(type, id) {
@@ -394,6 +566,84 @@ function deleteMegaMenu(id) {
         method: 'DELETE',
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
     }).then(r => r.json()).then(d => { if (d.success) document.getElementById('mmcard-' + id)?.remove(); });
+}
+
+// ── Off-Canvas ─────────────────────────────────────────
+const OC_LOCKED  = @json($libLocked);
+const ocHeaders  = { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' };
+const ocUrls     = {
+    update:    '{{ route("admin.falcon-builder.off-canvas.update", ["id" => "__I__"]) }}',
+    remove:    '{{ route("admin.falcon-builder.off-canvas.delete", ["id" => "__I__"]) }}',
+    duplicate: '{{ route("admin.falcon-builder.off-canvas.duplicate", ["id" => "__I__"]) }}',
+};
+const ocUrl      = (name, id) => ocUrls[name].replace('__I__', id);
+const ocProToast = () => { window.showToast && window.showToast('This feature is available in the Pro version.', 'error'); };
+
+function openOffCanvasModal() {
+    if (OC_LOCKED) { ocProToast(); return; }
+    const m = document.getElementById('offCanvasModal');
+    m.style.removeProperty('display');
+    m.style.display = 'flex';
+    document.getElementById('oc-name').focus();
+}
+function closeOffCanvasModal() {
+    document.getElementById('offCanvasModal').style.display = 'none';
+    document.getElementById('oc-name').value = '';
+}
+document.getElementById('offCanvasModal').addEventListener('click', e => { if (e.target === document.getElementById('offCanvasModal')) closeOffCanvasModal(); });
+
+function saveOffCanvas() {
+    const name = document.getElementById('oc-name').value.trim();
+    if (!name) { document.getElementById('oc-name').focus(); return; }
+    const position = (document.querySelector('input[name="oc-position"]:checked') || {}).value || 'right';
+    fetch('{{ route("admin.falcon-builder.off-canvas.save") }}', {
+        method: 'POST', headers: ocHeaders, body: JSON.stringify({ name, position })
+    }).then(r => r.json()).then(d => {
+        // Straight into the builder: a panel with nothing in it is not worth a stop in the list.
+        if (d.success && d.builder_url) window.location.href = d.builder_url;
+        else if (d.pro) ocProToast();
+    });
+}
+
+function toggleOffCanvas(id, input) {
+    if (OC_LOCKED) { input.checked = !input.checked; ocProToast(); return; }
+    const on = input.checked;
+    fetch(ocUrl('update', id), { method: 'PATCH', headers: ocHeaders, body: JSON.stringify({ enabled: on }) })
+        .then(r => r.json()).then(d => {
+            if (!d.success) { input.checked = !on; if (d.pro) ocProToast(); return; }
+            document.getElementById('occard-' + id)?.classList.toggle('opacity-60', !on);
+            const track = input.nextElementSibling;
+            track.classList.toggle('bg-[#2271b1]', on);
+            track.classList.toggle('bg-[#c3c4c7]', !on);
+            track.firstElementChild.style.left = on ? '16px' : '2px';
+        });
+}
+
+function duplicateOffCanvas(id) {
+    if (OC_LOCKED) { ocProToast(); return; }
+    fetch(ocUrl('duplicate', id), { method: 'POST', headers: ocHeaders })
+        .then(r => r.json()).then(d => { if (d.success) location.href = '{{ route("admin.falcon-builder.library") }}?tab=off_canvas'; });
+}
+
+function deleteOffCanvas(id) {
+    if (!confirm('Delete this off-canvas? Links pointing at it will stop opening anything.')) return;
+    fetch(ocUrl('remove', id), { method: 'DELETE', headers: ocHeaders })
+        .then(r => r.json()).then(d => { if (d.success) document.getElementById('occard-' + id)?.remove(); else if (d.pro) ocProToast(); });
+}
+
+function copyOcTrigger(btn, text) {
+    const done = () => {
+        const icon = btn.querySelector('.oc-copy-icon');
+        if (icon) { icon.textContent = 'check'; setTimeout(() => { icon.textContent = 'content_copy'; }, 1500); }
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done);
+        return;
+    }
+    const t = document.createElement('textarea');
+    t.value = text; document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    t.remove();
 }
 
 // Init

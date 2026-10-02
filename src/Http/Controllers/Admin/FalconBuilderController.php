@@ -26,6 +26,44 @@ class FalconBuilderController extends Controller
         'footer' => ['type' => 'falcon_footer',  'label' => 'Footer',         'renders' => true],
     ];
 
+    /** Post types that are Layout sections rather than content. */
+    public const SECTION_TYPES = ['falcon_header', 'falcon_ptb', 'falcon_content', 'falcon_footer'];
+
+    /**
+     * What a section is and where it is used — for the section's edit screen: its slot
+     * ("Header"), and every layout that has it assigned, with whether it is switched on there.
+     *
+     * @return array{slot: string, label: string, layouts: list<array{name: string, active: bool}>}
+     */
+    public static function sectionUsage($post): array
+    {
+        $slot = 'content';
+        foreach (self::SLOTS as $key => $meta) {
+            if ($meta['type'] === ($post->type ?? null)) {
+                $slot = $key;
+            }
+        }
+
+        $self = new self;
+        $used = [];
+        foreach ($self->globalAssignments() as $value) {
+            $e = self::assignEntry($value);
+            if ($e && $e['id'] === (int) $post->id) {
+                $used[] = ['name' => 'Global Layout', 'active' => $e['active']];
+            }
+        }
+        foreach ($self->customLayouts() as $layout) {
+            foreach ((array) ($layout['assignments'] ?? []) as $value) {
+                $e = self::assignEntry($value);
+                if ($e && $e['id'] === (int) $post->id) {
+                    $used[] = ['name' => $layout['name'] ?? 'Layout', 'active' => $e['active']];
+                }
+            }
+        }
+
+        return ['slot' => $slot, 'label' => self::SLOTS[$slot]['label'], 'layouts' => $used];
+    }
+
     private function authorize(): void
     {
         if (!auth()->user()->hasPermission('manage_settings')) {
@@ -188,7 +226,7 @@ class FalconBuilderController extends Controller
     }
 
     /** Custom taxonomies available on the site (built-ins + ACPT), for archive conditions. */
-    private function taxonomyCatalogue(): array
+    public function taxonomyCatalogue(): array
     {
         $tax = [];
         $tax[] = ['key' => 'category', 'name' => 'Categories'];
@@ -218,7 +256,7 @@ class FalconBuilderController extends Controller
      *   ['type'=>'group','label','source'=>['kind','key'],'search'=>bool].
      * All options are generated dynamically from the site's post types & taxonomies.
      */
-    private function conditionTabs(): array
+    public function conditionTabs(): array
     {
         $tabs = [];
         $byName = [];
@@ -285,7 +323,7 @@ class FalconBuilderController extends Controller
     }
 
     /** Human label for a stored condition target (resolves specific post/term/author titles). */
-    private function targetLabel(string $target): string
+    public function targetLabel(string $target): string
     {
         static $ptNames = null, $taxNames = null;
         if ($ptNames === null) {
@@ -451,7 +489,7 @@ class FalconBuilderController extends Controller
             'layout' => 'nullable|string|max:64',
             'name' => 'required|string|max:255',
         ]);
-        $layout = $data['layout'] ?: 'global';
+        $layout = ($data['layout'] ?? null) ?: 'global';
         $meta = self::SLOTS[$data['slot']];
 
         $base = Str::slug($data['name']) ?: $data['slot'];
@@ -485,13 +523,13 @@ class FalconBuilderController extends Controller
                     // Always true here — it was created a line ago — but stated rather than
                     // inferred, so the slot row says "Empty" instead of claiming it is active.
                     'is_empty' => true,
-                    'edit_url' => route('admin.falcon-builder', $section->id),
+                    'edit_url' => route('admin.posts.edit', $section->id),
                 ],
                 'message' => 'Section “'.$section->title.'” created.',
             ]);
         }
 
-        return redirect()->route('admin.falcon-builder', $section->id);
+        return redirect()->route('admin.posts.edit', $section->id);
     }
 
     public function assignSection(Request $request)
@@ -503,7 +541,7 @@ class FalconBuilderController extends Controller
             'layout' => 'nullable|string|max:64',
             'section_id' => 'required|integer|exists:posts,id',
         ]);
-        $layout = $data['layout'] ?: 'global';
+        $layout = ($data['layout'] ?? null) ?: 'global';
         $meta = self::SLOTS[$data['slot']];
 
         $section = Post::where('id', $data['section_id'])->where('type', $meta['type'])->firstOrFail();
@@ -523,7 +561,7 @@ class FalconBuilderController extends Controller
             'slot' => 'required|in:'.implode(',', array_keys(self::SLOTS)),
             'layout' => 'nullable|string|max:64',
         ]);
-        $this->assign($data['slot'], null, $data['layout'] ?: 'global');
+        $this->assign($data['slot'], null, ($data['layout'] ?? null) ?: 'global');
 
         return back()->with('success', self::SLOTS[$data['slot']]['label'].' reset.');
     }
@@ -730,7 +768,7 @@ class FalconBuilderController extends Controller
         return response()->json(['items' => $items, 'has_more' => $paginator->hasMorePages()]);
     }
 
-    private function taxonomyTermQuery(string $taxonomy, string $s)
+    public function taxonomyTermQuery(string $taxonomy, string $s)
     {
         $q = match ($taxonomy) {
             'category' => Category::query(),

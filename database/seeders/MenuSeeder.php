@@ -208,6 +208,7 @@ class MenuSeeder extends Seeder
             ['title' => 'REST API',        'route' => 'admin.settings.api',             'order' => 5],
             ['title' => 'Integrations',    'route' => 'admin.settings.integrations',    'order' => 6],
             ['title' => 'Email Templates', 'route' => 'admin.settings.email-templates', 'order' => 7],
+            ['title' => 'Site Health',     'route' => 'admin.settings.site-health',     'order' => 8],
         ]);
 
         // 14. Products — the second half of the eCommerce section, directly beneath Shop (55).

@@ -65,7 +65,7 @@ class PostController extends Controller
         if ($return !== '' && str_starts_with($return, '/') && !str_starts_with($return, '//')) {
             $builderBackUrl = $return;
         } elseif (in_array($post->type, $layoutTypes, true)) {
-            $builderBackUrl = route('admin.falcon-builder.sections');
+            $builderBackUrl = route('admin.posts.edit', $post->id);
         } elseif ($post->type === 'page' && Route::has('admin.pages.edit')) {
             $builderBackUrl = route('admin.pages.edit', $post->id);
         } elseif (Route::has('admin.posts.edit')) {
@@ -103,7 +103,7 @@ class PostController extends Controller
                     // Relative URL (absolute=false) so the iframe is always same-origin as the builder.
                     $frameUrl = route('admin.falcon-builder.frame', ['id' => $post->id, 'part' => $part], false);
                     // Edit → the assigned custom section if there is one, else the Layout Builder overview.
-                    $editUrl = $sec ? route('admin.falcon-builder', $sec->id) : route('admin.falcon-builder.sections');
+                    $editUrl = $sec ? route('admin.posts.edit', $sec->id) : route('admin.falcon-builder.sections');
                     if ($part === 'header') {
                         $frameHeaderUrl = $frameUrl;
                         $frameHeaderEditUrl = $editUrl;
@@ -466,6 +466,11 @@ class PostController extends Controller
         }
         if ($type === 'post') {
             $perms[] = 'manage_posts';
+        }
+        // Layout sections are edited by whoever may run the Layout Builder, which is
+        // manage_settings — the same gate FalconBuilderController applies.
+        if (in_array($type, FalconBuilderController::SECTION_TYPES, true)) {
+            $perms[] = 'manage_settings';
         }
 
         foreach (array_merge($perms, $extra) as $p) {
@@ -1157,6 +1162,15 @@ class PostController extends Controller
         $postType = PostType::where('slug', $type)->first();
         $supports = $postType ? ($postType->supports ?? ['title', 'editor', 'excerpt', 'featured_image']) : ['title', 'editor', 'excerpt', 'featured_image'];
 
+        // A Layout section (header, footer, page title bar, content) opens on this same edit
+        // screen as a page — title, rich editor showing the builder's shortcodes, Page Builder —
+        // without what only a public page has: excerpt, featured image, permalink, SEO.
+        $layoutSection = null;
+        if (in_array($type, FalconBuilderController::SECTION_TYPES, true)) {
+            $supports = ['title', 'editor'];
+            $layoutSection = FalconBuilderController::sectionUsage($post);
+        }
+
         // Detect custom taxonomies that override built-in ones
         $overriddenTaxonomies = CustomTaxonomy::where('is_active', true)
             ->whereJsonContains('post_types', $type)
@@ -1220,7 +1234,7 @@ class PostController extends Controller
         } catch (\Throwable $e) {
         }
 
-        return view('falcon-cms::admin.posts.edit', compact('post', 'pages', 'type', 'supports', 'assignedTaxonomies', 'fieldGroups', 'fieldValues', 'postType', 'overriddenTaxonomies', 'pendingAutosave', 'revisionCount'));
+        return view('falcon-cms::admin.posts.edit', compact('post', 'pages', 'type', 'supports', 'assignedTaxonomies', 'fieldGroups', 'fieldValues', 'postType', 'overriddenTaxonomies', 'pendingAutosave', 'revisionCount', 'layoutSection'));
     }
 
     /** Full revisions comparison page (classic editor) — before/after diff + restore. */
@@ -1665,7 +1679,11 @@ class PostController extends Controller
 
         clear_page_cache();
 
-        return redirect()->back()->with('success', ucfirst($post->type).' updated successfully.');
+        $label = in_array($post->type, FalconBuilderController::SECTION_TYPES, true)
+            ? FalconBuilderController::sectionUsage($post)['label'].' section'
+            : ucfirst($post->type);
+
+        return redirect()->back()->with('success', $label.' updated successfully.');
     }
 
     public function destroy(Post $post)

@@ -241,6 +241,45 @@
                 </div>
             </div>
 
+            <!-- Off-Canvas panels (Builder Library) — a menu item that opens one -->
+            @php
+                $__menuOffCanvas = \FalconCms\Core\Support\OffCanvas::all();
+                // Off-canvas is Pro (builder_pro): without it the box shows, locked.
+                $__ocLocked = !falcon_pro_editable('builder_pro');
+            @endphp
+            @if($__menuOffCanvas)
+            <div class="wp-metabox mb-0">
+                <div class="wp-metabox-header flex justify-between items-center lazy-acc-header" onclick="toggleAcc('offcanvas')">
+                    <span class="flex items-center gap-1.5">Off-Canvas @if($__ocLocked)<span class="px-1 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase">Pro</span>@endif</span>
+                    <svg id="acc-icon-offcanvas" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div id="acc-offcanvas" class="hidden wp-metabox-content p-3" data-acc="offcanvas">
+                    <div class="max-h-44 overflow-y-auto border border-[#dfdfdf] p-2 mb-3 bg-[#fcfcfc] space-y-1 text-[13px]">
+                        @foreach($__menuOffCanvas as $__oc)
+                        <label class="flex items-center gap-2 cursor-pointer hover:text-[#2271b1]">
+                            <input type="checkbox" class="item-cb rounded-sm border-[#8c8f94]" @disabled($__ocLocked)
+                                data-title="{{ $__oc['name'] }}"
+                                data-url="{{ \FalconCms\Core\Support\OffCanvas::anchor($__oc) }}"
+                                data-type="custom">
+                            {{ $__oc['name'] }}
+                            @if(!($__oc['enabled'] ?? true))<span class="text-[11px] text-[#646970]">(disabled)</span>@endif
+                        </label>
+                        @endforeach
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <label class="text-[12px] text-[#2271b1] cursor-pointer">
+                            <input type="checkbox" onchange="selectAll(this,'offcanvas')" class="mr-1" @disabled($__ocLocked)>Select All
+                        </label>
+                        @if($__ocLocked)
+                        <button type="button" onclick="window.showToast && window.showToast('This feature is available in the Pro version.', 'error')" class="wp-btn-secondary h-7 py-0 px-3 text-[12px] opacity-60">Add to Menu</button>
+                        @else
+                        <button onclick="addChecked(this)" class="wp-btn-secondary h-7 py-0 px-3 text-[12px]">Add to Menu</button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Custom Link -->
             <div class="wp-metabox mb-0">
                 <div class="wp-metabox-header flex justify-between items-center lazy-acc-header" onclick="toggleAcc('custom')">
