@@ -1435,7 +1435,12 @@ class CustomizerController extends Controller
                 \RecursiveIteratorIterator::CHILD_FIRST
             );
             foreach ($items as $item) {
-                if (!is_writable($item->getPathname())) {
+                // Files only. A real write probe, not is_writable(): on Windows is_writable()
+                // reports the read-only ATTRIBUTE, not the actual ACL, so it calls perfectly
+                // writable cache files "stuck" and turns a clean clear into a scary error.
+                // Opening for append tests the true permission on both Windows and Linux without
+                // changing a byte.
+                if ($item->isFile() && !$this->isReallyWritable($item->getPathname())) {
                     $stuck++;
                 }
                 if ($stuck >= 100) {
@@ -1449,6 +1454,30 @@ class CustomizerController extends Controller
         }
 
         return $stuck;
+    }
+
+    /**
+     * Is this file actually writable by the process right now? Opening it for append needs the
+     * same permission a cache drop does, and — unlike is_writable() on Windows — it reflects the
+     * real ACL rather than the read-only attribute. Nothing is written; the handle is closed at
+     * once. A file genuinely locked or permission-denied (the Linux root-owned leftover this
+     * check exists for) fails to open and is correctly counted.
+     */
+    protected function isReallyWritable(string $path): bool
+    {
+        if (!is_file($path)) {
+            return false;
+        }
+        // 'r+' opens for writing without creating or truncating, so it neither alters the file
+        // nor invents one, and it fails exactly when the OS would refuse a write — honouring the
+        // real ACL on Windows, which is_writable() does not.
+        $h = @fopen($path, 'r+');
+        if ($h === false) {
+            return false;
+        }
+        fclose($h);
+
+        return true;
     }
 
     /** "a, b and c" — the list reads as a sentence, because it is shown as one. */
