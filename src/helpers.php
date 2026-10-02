@@ -8060,6 +8060,31 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
     return $elements;
 });
 
+if (!function_exists('falcon_builder_element_defs')) {
+    /**
+     * The custom builder-element definitions (everything registered on the `falcon_builder_elements`
+     * filter), resolved once per request and cached.
+     *
+     * The front-end renderer needs this for every column, and it used to call
+     * apply_falcon_filters('falcon_builder_elements', []) inside the column partial — so on a page
+     * with a hundred columns the whole filter chain ran a hundred times, and a plugin that lists
+     * rows in its callback (the slider element enumerating every slider, for one) ran that query
+     * once per column. The registry is identical all request long, so it is built once here.
+     *
+     * Pass $fresh = true to rebuild (the admin builder, where elements can be registered after a
+     * first read, uses the filter directly and does not go through this cache).
+     */
+    function falcon_builder_element_defs(bool $fresh = false): array
+    {
+        static $defs = null;
+        if ($defs === null || $fresh) {
+            $defs = apply_falcon_filters('falcon_builder_elements', []);
+        }
+
+        return is_array($defs) ? $defs : [];
+    }
+}
+
 if (!function_exists('get_falcon_builder_fonts')) {
     /**
      * Every font family a builder layout uses, so the page can load them.

@@ -633,7 +633,7 @@
          made the whole column area hover-sensitive even where the card does not reach. --}}
     <div class="lazy-column-inner {{ $hoverClass }}{{ $colBgLazyUrl ? ' lz-lazy-bg' : '' }}" style="{{ implode('; ', $innerStyles) }}"@if($colBgLazyUrl) data-bg="{{ $colBgLazyUrl }}"@endif>
         @if(!empty($column['elements']))
-            @php $__customBuilderDefs = apply_falcon_filters('falcon_builder_elements', []); @endphp
+            @php $__customBuilderDefs = falcon_builder_element_defs(); @endphp
             @foreach($column['elements'] as $el)
                 @if($el['type'] === 'row')
                     @if($contentLayout === 'row')
