@@ -116,6 +116,20 @@ class VisitorLogTest extends TestCase
             ->assertRedirect(route('admin.analytics'));
     }
 
+    public function test_a_custom_date_window_is_honoured(): void
+    {
+        $this->visit(['ip_address' => '10.0.0.1', 'created_at' => now()->subDays(20)]);  // inside
+        $this->visit(['ip_address' => '10.0.0.2', 'created_at' => now()->subDays(2)]);   // outside
+
+        $from = now()->subDays(25)->toDateString();
+        $to = now()->subDays(10)->toDateString();
+        $this->actingAs($this->admin())->get('/admin/analytics/visitors?from='.$from.'&to='.$to)
+            ->assertOk()
+            ->assertSee('10.0.0.1', false)
+            ->assertDontSee('10.0.0.2', false)
+            ->assertSee('vl-custom-panel', false); // the custom picker is present
+    }
+
     public function test_it_is_closed_without_the_analytics_permission(): void
     {
         $sub = User::forceCreate([

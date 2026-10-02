@@ -184,12 +184,16 @@ class MenuSeeder extends Seeder
         ]);
 
         // 11. Analytics
-        Menu::create([
+        $analyticsMenu = Menu::create([
             'title' => 'Analytics',
             'route' => 'admin.analytics',
             'icon' => 'insights',
             'group' => 'System',
             'order' => 87,
+        ]);
+        $analyticsMenu->children()->createMany([
+            ['title' => 'Overview',    'route' => 'admin.analytics',          'order' => 1],
+            ['title' => 'Visitor Log', 'route' => 'admin.analytics.visitors', 'order' => 2],
         ]);
 
         // 12. Settings

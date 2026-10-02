@@ -36,15 +36,28 @@
                     <a href="{{ route('admin.analytics') }}" class="text-[#2271b1] hover:underline no-underline">Analytics</a> / Visitor Log
                 </nav>
             </div>
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-1.5 relative">
                 @foreach($rangeLabels as $r => $lbl)
                     <a href="{{ $rangeUrl($r) }}" class="range-btn {{ (!$isCustom && $range == $r) ? 'active' : '' }}">{{ $lbl }}</a>
                 @endforeach
-                @if($isCustom)
-                    <span class="range-btn active" style="display:inline-flex;align-items:center;gap:5px;">
-                        <span class="material-symbols-outlined" style="font-size:15px;line-height:1">date_range</span>{{ $windowLabel }}
-                    </span>
-                @endif
+
+                <button type="button" id="vl-custom-btn" class="range-btn {{ $isCustom ? 'active' : '' }}" style="display:inline-flex;align-items:center;gap:5px;cursor:pointer">
+                    <span class="material-symbols-outlined" style="font-size:15px;line-height:1">date_range</span>
+                    <span>{{ $isCustom ? $windowLabel : 'Custom' }}</span>
+                </button>
+
+                {{-- A plain from/to date panel — the controller already reads ?from=&to=. --}}
+                <div id="vl-custom-panel" hidden
+                     style="position:absolute;top:calc(100% + 8px);right:0;z-index:50;background:#fff;border:1px solid #c3c4c7;border-radius:6px;box-shadow:0 8px 28px rgba(0,0,0,.14);padding:12px;width:230px">
+                    <label class="block text-[11px] font-bold text-[#646970] uppercase mb-1">From</label>
+                    <input type="date" id="vl-from" max="{{ now()->timezone(cms_timezone())->toDateString() }}" value="{{ $isCustom ? $rangeFrom : '' }}" class="vl-input w-full mb-2">
+                    <label class="block text-[11px] font-bold text-[#646970] uppercase mb-1">To</label>
+                    <input type="date" id="vl-to" max="{{ now()->timezone(cms_timezone())->toDateString() }}" value="{{ $isCustom ? $rangeTo : '' }}" class="vl-input w-full mb-3">
+                    <div class="flex justify-end gap-2">
+                        <button type="button" id="vl-custom-cancel" class="range-btn" style="cursor:pointer">Cancel</button>
+                        <button type="button" id="vl-custom-apply" class="range-btn active" style="cursor:pointer">Apply</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -132,4 +145,32 @@
             <div class="mt-4">{{ $visits->links() }}</div>
         @endif
     </div>
+
+    <script>
+    (function () {
+        const btn = document.getElementById('vl-custom-btn');
+        const panel = document.getElementById('vl-custom-panel');
+        const from = document.getElementById('vl-from');
+        const to = document.getElementById('vl-to');
+        const apply = document.getElementById('vl-custom-apply');
+        const cancel = document.getElementById('vl-custom-cancel');
+        if (!btn) return;
+
+        const toggle = (show) => { panel.hidden = (show === undefined) ? !panel.hidden : !show; };
+        btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+        cancel.addEventListener('click', () => toggle(false));
+        panel.addEventListener('click', (e) => e.stopPropagation());
+        document.addEventListener('click', () => toggle(false));
+
+        // Carry the current country + search so changing the range keeps the filter.
+        const carried = {!! json_encode(array_filter(['country' => $country, 'q' => $q])) !!};
+        apply.addEventListener('click', () => {
+            if (!from.value || !to.value) { alert('Pick both a start and an end date.'); return; }
+            const params = new URLSearchParams(carried);
+            params.set('from', from.value);
+            params.set('to', to.value);
+            window.location = '{{ route('admin.analytics.visitors') }}?' + params.toString();
+        });
+    })();
+    </script>
 </x-falcon-cms::layouts.admin>
