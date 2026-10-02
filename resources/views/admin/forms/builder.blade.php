@@ -496,6 +496,9 @@
                 html += row('Max File Size (MB)', `<input type="number" value="${esc(field.max_size_mb||'')}" oninput="updateField('max_size_mb',this.value)" placeholder="No limit" min="0" class="${inp}">`);
             }
 
+            // Conditional logic — show/hide this field based on other answers.
+            html += conditionalHtml(field);
+
             // Column Width — only when total columns > 1
             const cols = totalCols();
             if (cols > 1) {
@@ -511,6 +514,133 @@
         }
 
         panel.innerHTML = html || '<p class="text-xs text-gray-400 text-center mt-4">No settings for this field</p>';
+    }
+
+    // ── conditional logic ────────────────────────────────────────────
+    // Which fields can drive a condition: any value-bearing field but this one.
+    const COND_SOURCE_TYPES = ['text','email','tel','number','textarea','select','radio','checkbox','date','hidden'];
+    const COND_OPS = {
+        choice:  [['is','is'],['is_not','is not'],['empty','is empty'],['not_empty','is not empty']],
+        checks:  [['contains','has'],['not_contains','does not have'],['empty','is empty'],['not_empty','is not empty']],
+        numdate: [['is','is'],['is_not','is not'],['gt','greater than'],['lt','less than'],['empty','is empty'],['not_empty','is not empty']],
+        text:    [['is','is'],['is_not','is not'],['contains','contains'],['not_contains','does not contain'],['empty','is empty'],['not_empty','is not empty']],
+    };
+    const NO_VALUE_OPS = ['empty','not_empty'];
+
+    function condSources(field) {
+        return fields.filter(f => f.id !== field.id && f.name && COND_SOURCE_TYPES.includes(f.type));
+    }
+    function condOpsFor(type) {
+        if (type === 'select' || type === 'radio') return COND_OPS.choice;
+        if (type === 'checkbox') return COND_OPS.checks;
+        if (type === 'number' || type === 'date') return COND_OPS.numdate;
+        return COND_OPS.text;
+    }
+    function condOptionList(srcField) {
+        return String(srcField.options || '').split('\n').map(s => s.trim()).filter(Boolean);
+    }
+
+    function conditionalHtml(field) {
+        const c = field.conditional || {};
+        const on = !!c.enabled;
+        const sources = condSources(field);
+
+        let h = `<div class="mb-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+            <div class="flex items-center gap-2 ${on ? 'mb-3' : ''}">
+                <input type="checkbox" id="cond-check" ${on?'checked':''} onchange="condEnable(this.checked)" class="rounded">
+                <label for="cond-check" class="text-xs font-bold text-indigo-800 uppercase tracking-tighter">Conditional Logic</label>
+            </div>`;
+
+        if (on && !sources.length) {
+            h += `<p class="text-[11px] text-indigo-500">Add another field first — conditions react to the answers of other fields.</p></div>`;
+            return h;
+        }
+        if (on) {
+            const rules = Array.isArray(c.rules) && c.rules.length ? c.rules : [{ field:'', operator:'is', value:'' }];
+            h += `<div class="flex items-center gap-1.5 text-[11px] text-indigo-700 mb-2 flex-wrap">
+                <select onchange="condField('action',this.value)" class="border border-indigo-200 rounded px-1.5 py-1 bg-white">
+                    <option value="show" ${(c.action||'show')==='show'?'selected':''}>Show this field</option>
+                    <option value="hide" ${c.action==='hide'?'selected':''}>Hide this field</option>
+                </select>
+                <span>when</span>
+                <select onchange="condField('logic',this.value)" class="border border-indigo-200 rounded px-1.5 py-1 bg-white">
+                    <option value="all" ${(c.logic||'all')==='all'?'selected':''}>all</option>
+                    <option value="any" ${c.logic==='any'?'selected':''}>any</option>
+                </select>
+                <span>of these match:</span>
+            </div>`;
+
+            rules.forEach((rule, i) => {
+                const src = sources.find(f => f.name === rule.field);
+                const ops = condOpsFor(src ? src.type : 'text');
+                if (src && !ops.some(o => o[0] === rule.operator)) rule.operator = ops[0][0];
+                const needsValue = !NO_VALUE_OPS.includes(rule.operator);
+
+                let valCtrl = '';
+                if (needsValue) {
+                    const opts = src ? condOptionList(src) : [];
+                    if (opts.length) {
+                        valCtrl = `<select onchange="condRule(${i},'value',this.value)" class="flex-1 min-w-0 border border-indigo-200 rounded px-1.5 py-1 bg-white text-[11px]">
+                            <option value="">-- value --</option>
+                            ${opts.map(o=>`<option value="${esc(o)}" ${rule.value===o?'selected':''}>${esc(o)}</option>`).join('')}
+                        </select>`;
+                    } else {
+                        const t = (src && (src.type==='number')) ? 'number' : (src && src.type==='date' ? 'date' : 'text');
+                        valCtrl = `<input type="${t}" value="${esc(rule.value||'')}" onchange="condRule(${i},'value',this.value)" placeholder="value" class="flex-1 min-w-0 border border-indigo-200 rounded px-1.5 py-1 text-[11px]">`;
+                    }
+                }
+
+                h += `<div class="flex items-center gap-1 mb-1.5">
+                    <select onchange="condRule(${i},'field',this.value)" class="flex-1 min-w-0 border border-indigo-200 rounded px-1.5 py-1 bg-white text-[11px]">
+                        <option value="">-- field --</option>
+                        ${sources.map(f=>`<option value="${esc(f.name)}" ${rule.field===f.name?'selected':''}>${esc(f.label||f.name)}</option>`).join('')}
+                    </select>
+                    <select onchange="condRule(${i},'operator',this.value)" class="shrink-0 border border-indigo-200 rounded px-1.5 py-1 bg-white text-[11px]">
+                        ${ops.map(o=>`<option value="${o[0]}" ${rule.operator===o[0]?'selected':''}>${o[1]}</option>`).join('')}
+                    </select>
+                    ${valCtrl}
+                    <button onclick="condRuleDel(${i})" title="Remove rule" class="shrink-0 text-red-400 hover:text-red-600"><span class="material-symbols-outlined text-[15px]">close</span></button>
+                </div>`;
+            });
+
+            h += `<button onclick="condRuleAdd()" class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 mt-1"><span class="material-symbols-outlined text-[13px] align-[-2px]">add</span> Add rule</button>`;
+        }
+        h += `</div>`;
+        return h;
+    }
+
+    function condCurrent() { return fields.find(f => f.id === selectedId); }
+    function condEnsure(field) {
+        if (!field.conditional) field.conditional = { enabled:false, action:'show', logic:'all', rules:[{ field:'', operator:'is', value:'' }] };
+        return field.conditional;
+    }
+    function condEnable(on) {
+        const f = condCurrent(); if (!f) return;
+        condEnsure(f).enabled = on;
+        renderSettings(f);
+    }
+    function condField(key, value) {
+        const f = condCurrent(); if (!f) return;
+        condEnsure(f)[key] = value;
+    }
+    function condRule(i, key, value) {
+        const f = condCurrent(); if (!f) return;
+        const c = condEnsure(f);
+        if (!c.rules[i]) c.rules[i] = { field:'', operator:'is', value:'' };
+        c.rules[i][key] = value;
+        if (key === 'field' || key === 'operator') renderSettings(f); // value control may change
+    }
+    function condRuleAdd() {
+        const f = condCurrent(); if (!f) return;
+        condEnsure(f).rules.push({ field:'', operator:'is', value:'' });
+        renderSettings(f);
+    }
+    function condRuleDel(i) {
+        const f = condCurrent(); if (!f) return;
+        const c = condEnsure(f);
+        c.rules.splice(i, 1);
+        if (!c.rules.length) c.rules.push({ field:'', operator:'is', value:'' });
+        renderSettings(f);
     }
 
     const inp = 'w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none';

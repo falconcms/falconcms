@@ -155,14 +155,33 @@
                     }
                 }
 
-                $reqData = '';
-                if ($required) {
-                    $reqData = 'data-lf-req="1"'
-                        . ' data-lf-name="' . e($name) . '"'
-                        . ' data-lf-type="' . e($field['type']) . '"'
-                        . ' data-lf-err="'  . e($field['error_message'] ?? '') . '"';
+                // Every real input wrapper carries its name and type, so the conditional-logic
+                // engine can find it, clear it when hidden, and skip its required check.
+                $idData = ' data-lf-name="' . e($name) . '" data-lf-type="' . e($field['type']) . '"';
+                $reqData = $required
+                    ? ' data-lf-req="1" data-lf-err="' . e($field['error_message'] ?? '') . '"'
+                    : '';
+                // Conditional logic: show/hide this field based on other answers. Normalised to
+                // the shape the front-end engine (and the builder) use; invalid rules dropped.
+                $condData = '';
+                $cond = $field['conditional'] ?? null;
+                if (is_array($cond) && !empty($cond['enabled']) && !empty($cond['rules']) && is_array($cond['rules'])) {
+                    $rules = array_values(array_filter(array_map(function ($r) {
+                        if (!is_array($r) || empty($r['field']) || empty($r['operator'])) {
+                            return null;
+                        }
+
+                        return ['field' => (string) $r['field'], 'operator' => (string) $r['operator'], 'value' => (string) ($r['value'] ?? '')];
+                    }, $cond['rules'])));
+                    if ($rules) {
+                        $condData = ' data-lf-cond="' . e(json_encode([
+                            'action' => ($cond['action'] ?? 'show') === 'hide' ? 'hide' : 'show',
+                            'logic' => ($cond['logic'] ?? 'all') === 'any' ? 'any' : 'all',
+                            'rules' => $rules,
+                        ], JSON_HEX_APOS | JSON_HEX_QUOT)) . '"';
+                    }
                 }
-                $wrapAttrs = trim($gridAttr . ' ' . $reqData);
+                $wrapAttrs = trim($gridAttr . $idData . $reqData . $condData);
             @endphp
 
             @if($field['type'] === 'heading')
@@ -337,11 +356,88 @@
     // ── validation ───────────────────────────────────────────────────
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    // ── conditional logic (show/hide fields by other answers) ─────────
+    // A field may carry data-lf-cond = { action:'show'|'hide', logic:'all'|'any', rules:[...] }.
+    // Rules read the current value of another field by its name. Re-run on every change, and
+    // on load, until the set of visible fields stops changing (so a field that reveals another,
+    // which reveals a third, settles in one pass).
+    const condWraps = Array.from(form.querySelectorAll('[data-lf-cond]')).map(wrap => {
+        let cfg = null;
+        try { cfg = JSON.parse(wrap.getAttribute('data-lf-cond')); } catch (e) {}
+        return { wrap, cfg };
+    }).filter(c => c.cfg && Array.isArray(c.cfg.rules) && c.cfg.rules.length);
+
+    // The value(s) of a field by name, as a flat array of strings (checkboxes → every checked).
+    function fieldValues(name) {
+        const checks = form.querySelectorAll(`input[name="${name}[]"]:checked, input[name="${name}"][type=checkbox]:checked`);
+        if (checks.length) return Array.from(checks).map(i => i.value);
+        const radio = form.querySelector(`input[name="${name}"][type=radio]:checked`);
+        if (radio) return [radio.value];
+        const el = form.querySelector(`[name="${name}"]:not([type=checkbox]):not([type=radio]), [name="${name}[]"]`);
+        if (el && 'value' in el) return [String(el.value)];
+        return [];
+    }
+
+    function ruleMatches(rule) {
+        const vals = fieldValues(rule.field);
+        const joined = vals.join(' ').trim();
+        const target = String(rule.value ?? '');
+        const num = parseFloat(joined), tnum = parseFloat(target);
+        switch (rule.operator) {
+            case 'empty':      return joined === '';
+            case 'not_empty':  return joined !== '';
+            case 'is':         return vals.some(v => v === target);
+            case 'is_not':     return !vals.some(v => v === target) && joined !== '';
+            case 'contains':   return joined.toLowerCase().includes(target.toLowerCase()) && target !== '';
+            case 'not_contains': return !joined.toLowerCase().includes(target.toLowerCase());
+            case 'gt':         return !isNaN(num) && !isNaN(tnum) && num > tnum;
+            case 'lt':         return !isNaN(num) && !isNaN(tnum) && num < tnum;
+            default:           return false;
+        }
+    }
+
+    function shouldShow(cfg) {
+        const results = cfg.rules.map(ruleMatches);
+        const matched = cfg.logic === 'any' ? results.some(Boolean) : results.every(Boolean);
+        return cfg.action === 'hide' ? !matched : matched;
+    }
+
+    function applyConditions() {
+        if (!condWraps.length) return;
+        for (let pass = 0; pass < condWraps.length + 1; pass++) {
+            let changed = false;
+            condWraps.forEach(({ wrap, cfg }) => {
+                const show = shouldShow(cfg);
+                const hidden = wrap.dataset.lfHidden === '1';
+                if (show && hidden) { wrap.style.display = ''; delete wrap.dataset.lfHidden; changed = true; }
+                else if (!show && !hidden) {
+                    wrap.style.display = 'none';
+                    wrap.dataset.lfHidden = '1';
+                    // A field the visitor cannot see must not carry a stale answer into the
+                    // submission, and its error must clear.
+                    wrap.querySelectorAll('input, select, textarea').forEach(i => {
+                        if (i.type === 'checkbox' || i.type === 'radio') i.checked = false;
+                        else i.value = '';
+                    });
+                    clearErr(wrap);
+                    changed = true;
+                }
+            });
+            if (!changed) break;
+        }
+    }
+
+    form.addEventListener('input', applyConditions);
+    form.addEventListener('change', applyConditions);
+    applyConditions();
+
     function validate() {
         let ok = true, first = null;
 
         // 1. Required fields
         form.querySelectorAll('[data-lf-req]').forEach(wrap => {
+            // A field hidden by conditional logic is not being asked, so it is not required.
+            if (wrap.dataset.lfHidden === '1') return;
             const type = wrap.dataset.lfType;
             const name = wrap.dataset.lfName;
             let empty  = true;
