@@ -116,6 +116,13 @@ class Sidebar extends Component
             return $currentPath === 'admin';
         }
 
+        // Analytics Overview shares its path prefix with its sibling Visitor Log
+        // (admin/analytics vs admin/analytics/visitors), so it must match exactly —
+        // otherwise the startsWith rule below lights Overview up on the log page too.
+        if ($targetPath === 'admin/analytics') {
+            return $currentPath === 'admin/analytics';
+        }
+
         // A Layout section edits on the post edit screen (admin/posts/{id}/edit) but belongs to
         // Falcon Builder → Layouts, so that is the menu lit while one is open.
         if ($targetPath === 'admin/falcon-builder-sections' && preg_match('#^admin/posts/(\d+)/edit$#', $currentPath, $m)) {
