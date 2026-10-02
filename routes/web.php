@@ -306,6 +306,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     // controller shows a locked preview with SAMPLE data when unlicensed, real data with Pro.
     Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('analytics/realtime', [DashboardController::class, 'analyticsRealtime'])->name('analytics.realtime');
+    Route::get('analytics/visitors', [DashboardController::class, 'analyticsVisitors'])->name('analytics.visitors');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
 
     // Users

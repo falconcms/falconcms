@@ -1688,6 +1688,100 @@ class DashboardController extends Controller
     }
 
     /** Live real-time data for the analytics page (polled by JS). */
+    /**
+     * Visitor Log — every individual visit in the window, newest first, as a record rather
+     * than a chart: the exact time, the IP, the country and city, the page, and how they came.
+     *
+     * The analytics page answers "how many"; this answers "who, from where, and when". Same
+     * date window and Pro gate as the analytics page; filterable by country and a free-text
+     * search over IP, page and referrer, and exportable to CSV for the whole filtered set.
+     */
+    public function analyticsVisitors()
+    {
+        if (!auth()->user()->hasPermission('manage_analytics')) {
+            abort(403);
+        }
+
+        // The log is real data, so without Pro it is not shown at all — the analytics page is
+        // where the upgrade offer and the sample live.
+        if (!falcon_pro_editable('analytics')) {
+            return redirect()->route('admin.analytics');
+        }
+
+        [$from, $to, $range, $isCustom] = $this->analyticsWindow();
+        $start = (clone $from)->startOfDay()->utc();
+        $end = (clone $to)->endOfDay()->utc();
+
+        $country = trim((string) request()->query('country', ''));
+        $q = trim((string) request()->query('q', ''));
+
+        $base = Analytics::whereBetween('created_at', [$start, $end])
+            ->when($country !== '', fn ($query) => $query->where('country_code', $country))
+            ->when($q !== '', function ($query) use ($q) {
+                $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
+                $query->where(fn ($w) => $w->where('ip_address', 'like', $like)
+                    ->orWhere('url', 'like', $like)
+                    ->orWhere('referrer', 'like', $like));
+            });
+
+        // Countries present in the window, for the filter dropdown — so it only ever offers
+        // countries that actually have visits in the range being looked at.
+        $countries = (clone $base)->whereNotNull('country_code')->where('country_code', '!=', '')
+            ->select('country_code', DB::raw('MAX(country) as country'), DB::raw('COUNT(*) as n'))
+            ->groupBy('country_code')->orderByDesc('n')->get()
+            ->map(fn ($r) => ['code' => strtoupper($r->country_code), 'name' => $r->country ?: strtoupper($r->country_code)])
+            ->values();
+
+        // CSV export of the whole filtered set (capped), streamed so a large range never
+        // builds the entire file in memory.
+        if (request()->query('export') === 'csv') {
+            return $this->streamVisitorCsv((clone $base)->latest(), $from, $to);
+        }
+
+        $visits = (clone $base)->latest()->paginate(50)->withQueryString();
+
+        return view('falcon-cms::admin.analytics.visitors', [
+            'visits' => $visits,
+            'countries' => $countries,
+            'range' => $range,
+            'isCustom' => $isCustom,
+            'rangeFrom' => $from->toDateString(),
+            'rangeTo' => $to->toDateString(),
+            'country' => $country,
+            'q' => $q,
+            'total' => $visits->total(),
+        ]);
+    }
+
+    /** Stream the filtered visitor log as a CSV download, a chunk at a time. */
+    protected function streamVisitorCsv($query, $from, $to)
+    {
+        $filename = 'visitor-log-'.$from->toDateString().'-to-'.$to->toDateString().'.csv';
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Date/Time', 'IP Address', 'Country', 'City', 'Page', 'Referrer', 'Device', 'Browser', 'OS']);
+            $n = 0;
+            foreach ($query->cursor() as $v) {
+                fputcsv($out, [
+                    $v->created_at ? Carbon::parse($v->created_at)->timezone(cms_timezone())->format('Y-m-d H:i:s') : '',
+                    $v->ip_address,
+                    $v->country,
+                    $v->city,
+                    $v->url,
+                    $v->referrer,
+                    $v->device_type,
+                    $v->browser,
+                    $v->os,
+                ]);
+                if (++$n >= 50000) {
+                    break; // a hard cap so an unbounded range cannot stream forever
+                }
+            }
+            fclose($out);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     public function analyticsRealtime()
     {
         if (!auth()->user()->hasPermission('manage_analytics')) {

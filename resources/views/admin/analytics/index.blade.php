@@ -89,6 +89,14 @@
             <div>
                 <h1 class="text-[23px] font-normal text-[#1d2327]">Analytics</h1>
                 <nav class="text-[13px] text-[#646970]">Home / Analytics</nav>
+                @unless($analyticsLocked ?? false)
+                {{-- The log answers "who, from where, and when", which the charts above do not. --}}
+                <a href="{{ route('admin.analytics.visitors') }}{{ ($isCustom ?? false) ? '?from='.$rangeFrom.'&to='.$rangeTo : '?range='.$range }}"
+                   class="inline-flex items-center gap-1 mt-1 text-[13px] font-semibold text-[#2271b1] hover:text-[#135e96] no-underline">
+                    <span class="material-symbols-outlined" style="font-size:16px">format_list_bulleted</span>
+                    Visitor Log — every visit with IP &amp; country
+                </a>
+                @endunless
             </div>
             <div class="flex items-center gap-1.5 relative">
                 @foreach($rangeLabels as $r => $lbl)
