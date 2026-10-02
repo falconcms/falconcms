@@ -2409,6 +2409,12 @@ if (!function_exists('get_falcon_posts')) {
             $query->orderBy($safeOrderby, $args['order']);
         }
 
+        // Eager-load what a card or loop row reads for every post — author, categories, tags,
+        // taxonomy terms. Without this each post in the loop fetched them on its own (the author,
+        // its categories and its terms, one query per post per relation), which on a grid of a
+        // dozen posts was dozens of extra queries. Loaded once here for the whole set instead.
+        $query->with(['user:id,name', 'categories', 'tags', 'taxonomyTerms']);
+
         if ($args['paginate']) {
             // withQueryString, because page two has to be the same list as page one. Without
             // it every other parameter — a search term, a filter, a sort — is dropped from the
