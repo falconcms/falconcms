@@ -68,6 +68,29 @@ class HtmlOptimizeTest extends TestCase
         $this->assertStringContainsString('var x =   1;', $out, 'script whitespace is untouched');
     }
 
+    public function test_minify_also_minifies_inline_css(): void
+    {
+        $html = "<style>\n  .box {\n    color: red;\n    margin: 0;\n  }\n  /* a comment */\n  .b , .c { padding : 2px ; }\n</style><div>  x  </div>";
+        $out = $this->opt($html, ['perf_minify_html' => '1']);
+
+        $this->assertStringContainsString('.box{color:red;margin:0}', $out);
+        $this->assertStringNotContainsString('/* a comment */', $out);
+        $this->assertStringContainsString('.b,.c{padding:2px}', $out);
+    }
+
+    public function test_optimisation_applies_to_logged_in_visitors_too(): void
+    {
+        // Minify/defer/lazy change delivery, not content, so a logged-in reader benefits as well.
+        $user = \App\Models\User::forceCreate([
+            'name' => 'U', 'email' => 'perf@example.test', 'password' => 'secret',
+            'role_id' => (int) \Illuminate\Support\Facades\DB::table('roles')->where('slug', 'subscriber')->value('id'),
+        ]);
+        $this->actingAs($user);
+
+        $out = $this->opt('<div>   <p>Hi</p>   </div>', ['perf_minify_html' => '1']);
+        $this->assertStringContainsString('<div><p>Hi</p></div>', $out);
+    }
+
     public function test_non_html_and_admin_are_left_alone(): void
     {
         $this->setCmsOptions(['perf_minify_html' => '1']);

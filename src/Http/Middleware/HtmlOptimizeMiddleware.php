@@ -63,7 +63,11 @@ class HtmlOptimizeMiddleware
 
     private function optimizable(Request $request, $response): bool
     {
-        if (!$request->isMethod('get') || $request->is('admin*') || $request->is('api*') || auth()->check()) {
+        // Applies to logged-in visitors too: minifying, deferring and lazy-loading change how
+        // the page is delivered, not what it says, so they are safe for everyone — unlike the
+        // page cache, which must never serve one visitor's page to another. Only the admin and
+        // the API are left out.
+        if (!$request->isMethod('get') || $request->is('admin*') || $request->is('api*')) {
             return false;
         }
         if (!method_exists($response, 'getStatusCode') || $response->getStatusCode() !== 200) {
@@ -115,23 +119,45 @@ class HtmlOptimizeMiddleware
         }, $html) ?? $html;
     }
 
-    /** Collapse whitespace between tags, but never inside pre / textarea / script / style. */
+    /**
+     * Collapse whitespace between tags. pre / textarea / script keep their contents verbatim;
+     * inline <style> is minified as CSS (the builder emits a lot of it, so it is worth shrinking
+     * rather than leaving alone).
+     */
     private function minify(string $html): string
     {
-        // Protect the elements whose whitespace is meaningful.
+        // Minify the CSS inside every <style> first, then shield the result so the HTML pass
+        // below does not touch it.
         $protected = [];
-        $html = preg_replace_callback('/<(pre|textarea|script|style)\b[^>]*>.*?<\/\1>/is', function ($m) use (&$protected) {
+        $shield = function (string $content) use (&$protected) {
             $key = "\x01".count($protected)."\x01";
-            $protected[$key] = $m[0];
+            $protected[$key] = $content;
 
             return $key;
-        }, $html) ?? $html;
+        };
 
-        // Whitespace between tags, and runs of whitespace within text.
-        $html = preg_replace('/>\s+</', '><', $html) ?? $html;
-        $html = preg_replace('/\s{2,}/', ' ', $html) ?? $html;
+        $html = preg_replace_callback('/(<style\b[^>]*>)(.*?)(<\/style>)/is',
+            fn ($m) => $shield($m[1].$this->minifyCss($m[2]).$m[3]), $html) ?? $html;
+
+        // Contents whose whitespace is meaningful: left exactly as they are.
+        $html = preg_replace_callback('/<(pre|textarea|script)\b[^>]*>.*?<\/\1>/is',
+            fn ($m) => $shield($m[0]), $html) ?? $html;
+
         $html = preg_replace('/<!--(?!\[if).*?-->/s', '', $html) ?? $html; // keep IE conditionals
+        $html = preg_replace('/>\s+</', '><', $html) ?? $html;             // between tags
+        $html = preg_replace('/\s{2,}/', ' ', $html) ?? $html;            // runs within text
 
         return strtr($html, $protected);
+    }
+
+    /** Conservative CSS minify: drop comments and the whitespace that carries no meaning. */
+    private function minifyCss(string $css): string
+    {
+        $css = preg_replace('#/\*(?!!).*?\*/#s', '', $css) ?? $css;  // comments (keep /*! ... */)
+        $css = preg_replace('/\s+/', ' ', $css) ?? $css;             // all whitespace runs → one space
+        $css = preg_replace('/\s*([{}:;,>~+])\s*/', '$1', $css) ?? $css; // around separators
+        $css = str_replace(';}', '}', $css);                         // last semicolon in a block
+
+        return trim($css);
     }
 }
