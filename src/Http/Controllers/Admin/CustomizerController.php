@@ -1002,12 +1002,17 @@ class CustomizerController extends Controller
                         'label' => 'Load Assets Only When Needed',
                         'desc' => 'Font Awesome and Alpine.js load on a page only when that page actually uses them (an icon, an interactive widget). A plain content page then skips both. Icon fonts and each builder element already load this way. Leave off if you add Font Awesome icons by hand in custom code.',
                         'default' => '0',
+                        // Driven by the Falcon theme's own templates/markers, so it is disabled when
+                        // another theme is active (it would not take effect there).
+                        'theme_only' => true,
                     ],
                     'perf_compiled_css' => [
                         'type' => 'toggle',
                         'label' => 'Compiled CSS (skip runtime Tailwind)',
                         'desc' => 'Loads one pre-built, purged stylesheet (~60 KB) and skips the 400 KB tailwind.min.js that otherwise builds styles in the browser on every page. Big speed win. Colours and fonts still follow the Customizer. Leave off if you type Tailwind utility classes into a builder element\'s "CSS Class" field, since those are not in the pre-built file (use Custom CSS for them instead).',
                         'default' => '0',
+                        // Built from, and loaded by, the Falcon theme only — disabled under another theme.
+                        'theme_only' => true,
                     ],
                     'performance_webp_conversion' => [
                         'type' => 'toggle',

@@ -192,6 +192,11 @@
                                                 $label = $field['label'] ?? $key;
                                                 $desc  = $field['desc']  ?? '';
                                                 $type  = $field['type']  ?? 'text';
+                                                // A field flagged theme_only only has effect under the Falcon theme (or its
+                                                // child); when another theme is active it is shown disabled so it cannot be
+                                                // turned on where it would do nothing.
+                                                $themeLocked = !empty($field['theme_only'])
+                                                    && !in_array(get_cms_option('active_theme', 'falcon-theme'), ['falcon-theme', 'falcon-theme-child'], true);
                                             @endphp
                                                  @if($type === 'heading')
                                                     <tr class="section-heading-row bg-[#f6f7f7] border-b border-[#c3c4c7]">
@@ -222,6 +227,12 @@
                                                     <label for="field_{{ $key }}" class="text-[13px] font-semibold text-[#2271b1] block mb-0.5 cursor-pointer">{{ $label }}</label>
                                                     @if($desc)
                                                         <p class="text-[11px] text-[#646970] leading-relaxed m-0">{!! $desc !!}</p>
+                                                    @endif
+                                                    @if($themeLocked)
+                                                        <p class="text-[11px] text-[#996800] leading-relaxed m-0 mt-1 flex items-center gap-1">
+                                                            <span class="material-symbols-outlined" style="font-size:14px !important;">lock</span>
+                                                            Works only with the Falcon theme — active theme: <strong>{{ get_cms_option('active_theme', 'falcon-theme') }}</strong>
+                                                        </p>
                                                     @endif
                                                 </th>
                                                 <td class="px-5 py-3.5 align-middle">
@@ -468,11 +479,14 @@
                                                         </div>
 
                                                     @elseif($type === 'toggle')
-                                                        <label for="toggle_{{ $key }}" class="flex items-center gap-3 cursor-pointer select-none">
+                                                        <label for="toggle_{{ $key }}" class="flex items-center gap-3 select-none {{ $themeLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer' }}">
                                                             <div class="relative w-11 h-6 flex-shrink-0">
+                                                                {{-- When theme-locked the value is frozen at what it is; the checkbox is disabled so
+                                                                     it cannot be changed, but the hidden input still submits so nothing is lost. --}}
                                                                 <input type="hidden" name="{{ $key }}" id="hidden_{{ $key }}" value="{{ $val == '1' ? '1' : '0' }}">
                                                                 <input type="checkbox" id="toggle_{{ $key }}" class="sr-only peer"
                                                                        {{ $val == '1' ? 'checked' : '' }}
+                                                                       {{ $themeLocked ? 'disabled' : '' }}
                                                                        onchange="
                                                                            document.getElementById('hidden_{{ $key }}').value = this.checked ? '1' : '0';
                                                                            var lbl = document.getElementById('tlabel_{{ $key }}');
@@ -484,7 +498,7 @@
                                                             </div>
                                                             <span id="tlabel_{{ $key }}"
                                                                   style="font-size:13px; font-weight:500; color:{{ $val == '1' ? '#2271b1' : '#8c8f94' }};">
-                                                                {{ $val == '1' ? 'Enabled' : 'Disabled' }}
+                                                                {{ $themeLocked ? 'Unavailable' : ($val == '1' ? 'Enabled' : 'Disabled') }}
                                                             </span>
                                                         </label>
 
