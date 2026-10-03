@@ -81,7 +81,25 @@ class PostController extends Controller
         // shows nothing. These are edited from the Layout Builder, never from here.
         $frameHeaderUrl = $frameTitleBarUrl = $frameFooterUrl = null;
         $frameHeaderEditUrl = $frameTitleBarEditUrl = $frameFooterEditUrl = null;
-        if (!in_array($post->type, $layoutTypes, true)) {
+
+        // The header/footer preview frames render through the active theme's app.blade, which must
+        // honour $builderFramePart to output only the requested part. The Falcon theme (and any
+        // theme built to support it) does; an unrelated theme would instead draw its whole page
+        // chrome in every frame, so we skip the frames there and the builder shows just the canvas.
+        $themeSupportsFrames = (function (): bool {
+            try {
+                $view = function_exists('falcon_theme_view')
+                    ? falcon_theme_view('layouts.app')
+                    : 'falcon-cms::themes.falcon-theme.layouts.app';
+                $path = view()->getFinder()->find($view);
+
+                return str_contains((string) @file_get_contents($path), 'builderFramePart');
+            } catch (\Throwable $e) {
+                return false;
+            }
+        })();
+
+        if ($themeSupportsFrames && !in_array($post->type, $layoutTypes, true)) {
             if (function_exists('falcon_layout_context')) {
                 falcon_layout_context(['kind' => 'single', 'post_type' => $post->type, 'post_id' => $post->id]);
             }
