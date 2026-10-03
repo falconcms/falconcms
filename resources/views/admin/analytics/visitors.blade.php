@@ -6,6 +6,13 @@
         .range-btn.active { background:#2271b1; border-color:#2271b1; color:#fff; }
         .vl-input { border:1px solid #c3c4c7; border-radius:3px; font-size:13px; padding:6px 10px; background:#fff; color:#1d2327; }
         .vl-input:focus { outline:none; border-color:#2271b1; box-shadow:0 0 0 1px #2271b1; }
+        /* TomSelect copies the select's .vl-input class to its wrapper, which then draws a second
+           border around the inner control. Drop the wrapper's border so only the control's shows. */
+        .ts-wrapper.vl-input { border:0 !important; padding:0 !important; box-shadow:none !important; min-width:240px; }
+        .ts-wrapper .ts-control { border:1px solid #c3c4c7; border-radius:3px; min-height:36px; padding:4px 10px; font-size:13px; box-shadow:none; }
+        .ts-wrapper.focus .ts-control { border-color:#2271b1; box-shadow:0 0 0 1px #2271b1; }
+        .vl-danger { border-color:#d63638 !important; color:#d63638 !important; background:#fff; }
+        .vl-danger:hover:not(:disabled) { background:#d63638 !important; color:#fff !important; }
         .vl-table { width:100%; border-collapse:collapse; font-size:12.5px; }
         .vl-table th { text-align:left; font-weight:600; color:#646970; padding:9px 14px; border-bottom:1px solid #f0f0f1; white-space:nowrap; background:#f9fafb; }
         .vl-table td { padding:9px 14px; border-bottom:1px solid #f6f7f7; color:#50575e; vertical-align:top; }
@@ -80,9 +87,9 @@
                 <input type="hidden" name="range" value="{{ $range }}">
             @endif
 
-            <input type="text" name="q" value="{{ $q }}" placeholder="Search IP, page or referrer…" class="vl-input w-[240px] max-w-full">
+            <input type="text" name="q" value="{{ $q }}" placeholder="Search IP, page or referrer…" class="vl-input flex-1 min-w-[280px] max-w-[560px]">
 
-            <select name="country[]" id="vl-country" multiple placeholder="All countries" class="vl-input" style="min-width:200px">
+            <select name="country[]" id="vl-country" multiple placeholder="All countries" class="vl-input" style="min-width:240px">
                 @foreach($countries as $c)
                     <option value="{{ $c['code'] }}" {{ in_array($c['code'], $country, true) ? 'selected' : '' }}>{{ $c['name'] }}</option>
                 @endforeach
@@ -112,11 +119,10 @@
         </form>
 
         <!-- Bulk actions + table -->
-        <form method="POST" action="{{ route('admin.analytics.visitors.delete') }}" id="vl-bulk-form"
-              onsubmit="return document.querySelectorAll('.vl-cb:checked').length ? confirm('Delete the selected visitor rows? This cannot be undone.') : false;">
+        <form method="POST" action="{{ route('admin.analytics.visitors.delete') }}" id="vl-bulk-form">
             @csrf
             <div class="flex items-center gap-2 mb-2">
-                <button type="submit" id="vl-delete-btn" class="range-btn" disabled
+                <button type="button" id="vl-delete-btn" class="range-btn vl-danger" disabled
                         style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;opacity:.5">
                     <span class="material-symbols-outlined" style="font-size:15px;line-height:1">delete</span>
                     Delete selected (<span id="vl-sel-count">0</span>)
@@ -180,6 +186,7 @@
 
     <link href="{{ asset('vendor/falcon-cms/css/tom-select.default.min.css') }}" rel="stylesheet">
     <script src="{{ asset('vendor/falcon-cms/js/tom-select.complete.min.js') }}"></script>
+    <script src="{{ asset('vendor/falcon-cms/js/sweetalert2.all.min.js') }}"></script>
     <script>
     // Country multi-select
     (function () {
@@ -205,6 +212,7 @@
         const btn = document.getElementById('vl-delete-btn');
         const count = document.getElementById('vl-sel-count');
         if (!btn) return;
+        const form = document.getElementById('vl-bulk-form');
         const sync = () => {
             const checked = boxes().filter(b => b.checked).length;
             count.textContent = checked;
@@ -215,6 +223,26 @@
         all?.addEventListener('change', () => { boxes().forEach(b => b.checked = all.checked); sync(); });
         document.addEventListener('change', (e) => { if (e.target.classList?.contains('vl-cb')) sync(); });
         sync();
+
+        // Confirm with SweetAlert before deleting.
+        btn.addEventListener('click', () => {
+            const n = boxes().filter(b => b.checked).length;
+            if (!n) return;
+            const go = () => form.submit();
+            if (window.Swal && typeof Swal.fire === 'function') {
+                Swal.fire({
+                    title: 'Delete ' + n + ' visitor ' + (n === 1 ? 'row' : 'rows') + '?',
+                    text: 'This cannot be undone.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d63638',
+                    cancelButtonColor: '#50575e',
+                    confirmButtonText: 'Yes, delete',
+                }).then((r) => { if (r.isConfirmed) go(); });
+            } else if (confirm('Delete the selected visitor rows? This cannot be undone.')) {
+                go();
+            }
+        });
     })();
 
     // Custom date range

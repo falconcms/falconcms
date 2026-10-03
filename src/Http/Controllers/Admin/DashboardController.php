@@ -1744,7 +1744,7 @@ class DashboardController extends Controller
             return $this->streamVisitorCsv((clone $base)->latest(), $from, $to);
         }
 
-        $visits = (clone $base)->latest()->paginate(20)->withQueryString();
+        $visits = (clone $base)->latest()->paginate(15)->withQueryString();
 
         return view('falcon-cms::admin.analytics.visitors', [
             'visits' => $visits,
