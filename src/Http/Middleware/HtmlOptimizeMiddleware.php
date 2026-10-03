@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
+use FalconCms\Core\Support\LucideIcons;
 use Illuminate\Http\Request;
 
 /**
@@ -38,7 +39,8 @@ class HtmlOptimizeMiddleware
         $defer = get_cms_option('perf_defer_js', '0') === '1';
         $minifyHtml = get_cms_option('perf_minify_html', '0') === '1';
         $minifyCss = get_cms_option('perf_minify_css', '0') === '1';
-        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss) {
+        $conditional = get_cms_option('perf_conditional_assets', '0') === '1';
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional) {
             return $response;
         }
 
@@ -47,6 +49,9 @@ class HtmlOptimizeMiddleware
             return $response;
         }
 
+        if ($conditional) {
+            $html = $this->inlineLucide($html);
+        }
         if ($lazy) {
             $html = $this->lazyImages($html);
         }
@@ -80,6 +85,42 @@ class HtmlOptimizeMiddleware
         $type = strtolower((string) $response->headers->get('Content-Type'));
 
         return $type === '' || str_contains($type, 'text/html');
+    }
+
+    /**
+     * Render the theme's Lucide icons (<i data-lucide="x">) as inline SVG so the 390 KB
+     * lucide.min.js need not load. An icon whose SVG we do not have is left as-is and the full
+     * library is kept to draw it, so nothing a page uses can disappear; when every icon on the
+     * page is one we have, the library's <script> is dropped entirely.
+     */
+    private function inlineLucide(string $html): string
+    {
+        if (stripos($html, 'data-lucide') === false) {
+            return $html;
+        }
+
+        $html = preg_replace_callback('/<i\b([^>]*?)data-lucide="([a-z0-9-]+)"([^>]*?)>\s*<\/i>/i',
+            function ($m) {
+                $name = $m[2];
+                if (!LucideIcons::has($name)) {
+                    return $m[0]; // unknown → leave for the full library
+                }
+                // Carry the element's own class onto the SVG so utility sizing (w-5 h-5) still
+                // applies, exactly as the Lucide script does.
+                $attrs = $m[1].$m[3];
+                $class = preg_match('/class="([^"]*)"/i', $attrs, $c) ? $c[1].' ' : '';
+
+                return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"'
+                    .' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+                    .' class="'.$class.'lucide lucide-'.$name.'" aria-hidden="true">'.LucideIcons::ICONS[$name].'</svg>';
+            }, $html) ?? $html;
+
+        // If no Lucide placeholders are left, the library has nothing to do — drop its script.
+        if (stripos($html, 'data-lucide') === false) {
+            $html = preg_replace('#<script\b[^>]*\bsrc="[^"]*lucide[^"]*\.js"[^>]*>\s*</script>#i', '', $html) ?? $html;
+        }
+
+        return $html;
     }
 
     /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first eager. */

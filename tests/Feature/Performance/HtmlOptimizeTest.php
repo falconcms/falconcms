@@ -97,6 +97,37 @@ class HtmlOptimizeTest extends TestCase
         $this->assertStringContainsString('<div><p>Hi</p></div>', $out);
     }
 
+    public function test_known_lucide_icons_become_inline_svg_and_the_library_is_dropped(): void
+    {
+        $html = '<i data-lucide="user" class="w-5 h-5"></i>'
+            .'<script src="/vendor/falcon-cms/js/lucide.min.js"></script>';
+        $out = $this->opt($html, ['perf_conditional_assets' => '1']);
+
+        $this->assertStringContainsString('<svg', $out);
+        $this->assertStringContainsString('lucide lucide-user', $out);
+        $this->assertStringContainsString('class="w-5 h-5 lucide lucide-user"', $out, 'sizing class carried onto the SVG');
+        $this->assertStringNotContainsString('data-lucide', $out);
+        $this->assertStringNotContainsString('lucide.min.js', $out, 'library dropped when every icon is inlined');
+    }
+
+    public function test_an_unknown_lucide_icon_keeps_the_library(): void
+    {
+        $html = '<i data-lucide="user"></i><i data-lucide="some-unknown-icon"></i>'
+            .'<script src="/vendor/falcon-cms/js/lucide.min.js"></script>';
+        $out = $this->opt($html, ['perf_conditional_assets' => '1']);
+
+        $this->assertStringContainsString('lucide lucide-user', $out, 'known one is still inlined');
+        $this->assertStringContainsString('data-lucide="some-unknown-icon"', $out, 'unknown left for the library');
+        $this->assertStringContainsString('lucide.min.js', $out, 'library kept to draw the unknown');
+    }
+
+    public function test_lucide_is_untouched_when_the_toggle_is_off(): void
+    {
+        $html = '<i data-lucide="user"></i><script src="/x/lucide.min.js"></script>';
+        $out = $this->opt($html, ['perf_conditional_assets' => '0']);
+        $this->assertSame($html, $out);
+    }
+
     public function test_non_html_and_admin_are_left_alone(): void
     {
         $this->setCmsOptions(['perf_minify_html' => '1']);
