@@ -4034,11 +4034,13 @@
                                                      </select>
                                                  </div>
                                              </div>
-                                             {{-- Spacing is the gap down to the title, so putting it on hover would
-                                                  shift the whole card as the pointer crosses it. Normal only. --}}
-                                             <div v-if="iconBoxState === 'normal'" class="flex flex-col gap-1">
+                                             {{-- Spacing is the gap down to the title. A hover value animates that gap
+                                                  (the card below shifts as the pointer crosses the icon); leave it empty
+                                                  to keep the normal spacing on hover. --}}
+                                             <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Spacing Below</label>
-                                                 <input type="number" min="0" v-model.number="editingElement.settings.iconSpacing"
+                                                 <input type="number" min="0" v-model.number="editingElement.settings[iconBoxField('iconSpacing')]"
+                                                        :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconSpacing ?? 16) : ''"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>

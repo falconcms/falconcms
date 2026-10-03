@@ -3581,20 +3581,32 @@
                     hover[slot] = v;
                     touched = true;
                 }
-                if (!touched) return '';
+
+                // Spacing Below can change on hover too; the normal value is an inline style, so the
+                // hover value needs an !important rule to override it. Empty = keep the normal value.
+                const spacingHover = s?.['iconSpacingHover'];
+                const spacingHoverSet = !(spacingHover === undefined || spacingHover === null || spacingHover === '');
+
+                if (!touched && !spacingHoverSet) return '';
 
                 // An opacity on its own says nothing without a colour to apply it to.
                 if (hover.bg === '' && normal.bg !== '') hover.bg = normal.bg;
 
-                const drawn = iconBoxDraw(s, hover);
                 const important = (style) => Object.entries(style)
                     .map(([k, v]) => k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()) + ':' + v + ' !important;')
                     .join('');
 
-                return scope + ' .lazy-icon-box__icon{transition:all .2s ease;}'
-                    + scope + ' .lazy-icon-box__icon i{transition:all .2s ease;}'
-                    + scope + ' .lazy-icon-box__icon:hover{' + important(drawn.wrap) + '}'
-                    + scope + ' .lazy-icon-box__icon:hover i{' + important(drawn.icon) + '}';
+                let css = scope + ' .lazy-icon-box__icon{transition:all .2s ease;}'
+                    + scope + ' .lazy-icon-box__icon i{transition:all .2s ease;}';
+                if (touched) {
+                    const drawn = iconBoxDraw(s, hover);
+                    css += scope + ' .lazy-icon-box__icon:hover{' + important(drawn.wrap) + '}'
+                        + scope + ' .lazy-icon-box__icon:hover i{' + important(drawn.icon) + '}';
+                }
+                if (spacingHoverSet) {
+                    css += scope + ' .lazy-icon-box__icon:hover{margin-bottom:' + Number(spacingHover) + 'px !important;}';
+                }
+                return css;
             };
             // ── End Icon Box icon ───────────────────────────────────────────────────────
 

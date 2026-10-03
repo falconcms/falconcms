@@ -283,9 +283,14 @@ if (!function_exists('falcon_icon_box_icon_style')) {
             $hoverValues['bg'] = $normalValues['bg'];
         }
 
+        // Spacing Below (margin under the icon) can also change on hover. The normal value is an
+        // inline style on the wrapper, so the hover value needs an !important rule to override it;
+        // it falls through to normal when the hover field is empty, like every other hover setting.
+        $spacingHover = $s['iconSpacingHover'] ?? null;
+        $spacingHoverSet = !($spacingHover === null || $spacingHover === '');
+
         $css = '';
-        if ($touched) {
-            $h = $draw($hoverValues);
+        if ($touched || $spacingHoverSet) {
             $important = static function (string $style): string {
                 $out = '';
                 foreach (array_filter(array_map('trim', explode(';', $style))) as $decl) {
@@ -295,9 +300,15 @@ if (!function_exists('falcon_icon_box_icon_style')) {
                 return $out;
             };
             $css = $scope.' .lazy-icon-box__icon{transition:all .2s ease;}'
-                .$scope.' .lazy-icon-box__icon i{transition:all .2s ease;}'
-                .$scope.' .lazy-icon-box__icon:hover{'.$important($h['wrap']).'}'
-                .$scope.' .lazy-icon-box__icon:hover i{'.$important($h['icon']).'}';
+                .$scope.' .lazy-icon-box__icon i{transition:all .2s ease;}';
+            if ($touched) {
+                $h = $draw($hoverValues);
+                $css .= $scope.' .lazy-icon-box__icon:hover{'.$important($h['wrap']).'}'
+                    .$scope.' .lazy-icon-box__icon:hover i{'.$important($h['icon']).'}';
+            }
+            if ($spacingHoverSet) {
+                $css .= $scope.' .lazy-icon-box__icon:hover{margin-bottom:'.(float) $spacingHover.'px !important;}';
+            }
         }
 
         return ['wrap' => $normal['wrap'], 'icon' => $normal['icon'], 'css' => $css];

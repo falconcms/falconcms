@@ -132,6 +132,28 @@ class IconBoxIconStateTest extends TestCase
         $this->assertStringContainsString('transition:all .2s ease', $out['css']);
     }
 
+    public function test_spacing_below_can_change_on_hover(): void
+    {
+        // Spacing Below (margin under the icon) now has a hover value, like Size and the colours.
+        $out = $this->style(['iconSize' => 24, 'iconSpacing' => 16, 'iconSpacingHover' => 4]);
+
+        $this->assertStringContainsString('.lazy-icon-box__icon:hover{margin-bottom:4px !important;}', $out['css']);
+        $this->assertStringContainsString('transition:all .2s ease', $out['css'], 'so the gap animates');
+    }
+
+    public function test_spacing_hover_alone_is_enough_to_produce_a_rule(): void
+    {
+        // Even with no colour/size hover, a hover spacing on its own gives a rule.
+        $out = $this->style(['iconSpacingHover' => 0]);
+        $this->assertStringContainsString('margin-bottom:0px !important', $out['css']);
+    }
+
+    public function test_an_empty_spacing_hover_is_not_a_hover_value(): void
+    {
+        $out = $this->style(['iconSize' => 40, 'iconColor' => '#2271b1', 'iconSpacingHover' => '']);
+        $this->assertSame('', $out['css'], 'a cleared hover spacing leaves the normal spacing alone');
+    }
+
     public function test_the_scope_keeps_one_icon_box_out_of_another(): void
     {
         $out = falcon_icon_box_icon_style(['iconColorHover' => '#fff'], '#lzib-42');
