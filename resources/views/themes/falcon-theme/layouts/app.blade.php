@@ -727,7 +727,13 @@
     <!-- Scripts -->
     <script src="{{ asset('vendor/falcon-cms/js/lucide.min.js') }}"></script>
     <script>
-        lucide.createIcons();
+        // Guarded + retried on load, so it is safe even when the Performance "Defer
+        // JavaScript" option loads lucide.min.js after this inline call runs.
+        (function () {
+            function draw() { if (window.lucide) lucide.createIcons(); }
+            if (window.lucide) draw();
+            else window.addEventListener('load', draw);
+        })();
     </script>
     @stack('scripts')
     {!! do_falcon_action('falcon_footer') !!}

@@ -973,6 +973,24 @@ class CustomizerController extends Controller
                         'desc' => 'Enable response caching for frontend. Drastically improves speed by caching HTML output.',
                         'default' => '0',
                     ],
+                    'perf_lazy_images' => [
+                        'type' => 'toggle',
+                        'label' => 'Lazy-load Images',
+                        'desc' => 'Images below the fold load only as the reader scrolls to them, so the first screen appears faster. The first image on the page stays eager. Works on every page, default theme or page builder.',
+                        'default' => '0',
+                    ],
+                    'perf_defer_js' => [
+                        'type' => 'toggle',
+                        'label' => 'Defer JavaScript',
+                        'desc' => 'Lets scripts load without blocking the page from drawing. Safe scripts only — the ones that must run first (Tailwind, Alpine, the security check) are left alone.',
+                        'default' => '0',
+                    ],
+                    'perf_minify_html' => [
+                        'type' => 'toggle',
+                        'label' => 'Minify HTML',
+                        'desc' => 'Strips the blank space between tags so each page is a little smaller to download. Code, pre and script blocks are left untouched.',
+                        'default' => '0',
+                    ],
                     'performance_webp_conversion' => [
                         'type' => 'toggle',
                         'label' => 'WebP Conversion',

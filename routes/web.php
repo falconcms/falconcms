@@ -53,6 +53,7 @@ use FalconCms\Core\Http\Middleware\EnsurePro;
 use FalconCms\Core\Http\Middleware\EnsureProEditable;
 use FalconCms\Core\Http\Middleware\MaintenanceModeMiddleware;
 use FalconCms\Core\Http\Middleware\PageCacheMiddleware;
+use FalconCms\Core\Http\Middleware\HtmlOptimizeMiddleware;
 use FalconCms\Core\Http\Middleware\SecurityHeadersMiddleware;
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Language;
@@ -518,7 +519,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
 });
 
 // 3. Frontend Routes (Catch-all for posts/pages) - Outside Admin Group
-Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddleware::class, PageCacheMiddleware::class])->group(function () {
+Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddleware::class, PageCacheMiddleware::class, HtmlOptimizeMiddleware::class])->group(function () {
     Route::get('/', [FrontendController::class, 'index'])->name('frontend.index');
     Route::get('lang/{locale}', [FrontendController::class, 'setLocale'])->name('frontend.set-locale');
 
