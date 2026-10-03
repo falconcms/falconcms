@@ -1,4 +1,4 @@
-<div class="flex items-center gap-1 border-b border-[#c3c4c7] mb-8">
+<div class="flex items-center gap-1 border-b border-[#c3c4c7] mb-8 overflow-x-auto [&>a]:flex-shrink-0 [&>a]:whitespace-nowrap">
     <a href="{{ route('admin.settings.index') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.index') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
         General Settings
     </a>

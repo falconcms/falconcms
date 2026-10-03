@@ -74,6 +74,47 @@
         .toast-error { border-left-color: #d63638; }
         .toast-info { border-left-color: #2271b1; }
         .toast-warning { border-left-color: #ffb900; }
+
+        /* ── Mobile / responsive back-end ──────────────────────────────────────────────
+           On a phone/tablet the fixed sidebar would sit on top of the content and the body's
+           160px left padding would squeeze every page into a sliver (which is what pushed text
+           out of the dashboard widgets). Below 783px the sidebar becomes an off-canvas drawer:
+           the body padding is removed so content is full width, and a hamburger in the admin bar
+           slides the menu in over a backdrop. */
+        #mobile-menu-toggle { display: none; }
+        #sidebar-backdrop { display: none; position: fixed; inset: 32px 0 0 0; background: rgba(0,0,0,.45); z-index: 998; }
+        @media (max-width: 782px) {
+            body, body.sidebar-collapsed { padding-left: 0 !important; }
+            #adminmenuwrap, body.sidebar-collapsed #adminmenuwrap {
+                width: 240px !important; overflow-x: hidden !important;
+                transform: translateX(-100%); transition: transform .2s ease; z-index: 999;
+            }
+            body.sidebar-mobile-open #adminmenuwrap { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,.45); }
+            body.sidebar-mobile-open #sidebar-backdrop { display: block; }
+            #mobile-menu-toggle { display: inline-flex !important; }
+            /* The off-canvas drawer always shows full labels, never the icon-only collapsed form. */
+            body.sidebar-collapsed .collapse-text,
+            body.sidebar-collapsed .sidebar-item-link > span { display: inline !important; }
+            body.sidebar-collapsed li[class*="uppercase"] { display: block !important; }
+            body.sidebar-collapsed .sidebar-item-link { justify-content: flex-start !important; padding-left: .75rem !important; padding-right: .75rem !important; }
+            body.sidebar-collapsed .sidebar-item div[class*="mr-3"] { margin-right: .75rem !important; }
+            body.sidebar-collapsed #sidebar-toggle-btn { justify-content: flex-start !important; width: 100% !important; }
+            body.sidebar-collapsed #sidebar-toggle-btn > div { margin-right: .75rem !important; }
+
+            /* Form controls given a fixed pixel width (w-[400px] etc.) must not push the page wider
+               than the phone. .wp-input needs width:100% (not just max-width) because inside an
+               auto-layout form table a fixed width still stretches the cell past the screen. */
+            .wp-input { width: 100% !important; max-width: 100% !important; }
+            input[type="text"], input[type="email"], input[type="url"], input[type="number"],
+            input[type="password"], input[type="search"], input[type="tel"], input[type="date"],
+            select, textarea { max-width: 100% !important; }
+            /* The admin list tables (anything with a .wp-table-header) are wider than a phone;
+               let each scroll inside its own box instead of widening the page. Layout tables used
+               for form rows have no .wp-table-header, so they are left to reflow normally. */
+            table:has(.wp-table-header), .wp-responsive-table {
+                display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%;
+            }
+        }
     </style>
     <script defer src="{{ asset('vendor/falcon-cms/js/alpine.min.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/material-symbols.css') }}" />
@@ -89,6 +130,10 @@
     <!-- WP Admin Bar (Top) -->
     <div id="wpadminbar" class="fixed top-0 left-0 right-0 h-8 bg-[#1d2327] z-50 flex items-center justify-between text-[#c3c4c7] px-2 text-[13px]">
         <div class="flex items-center space-x-4">
+            <button id="mobile-menu-toggle" type="button" aria-label="Toggle menu"
+                    class="items-center justify-center w-8 h-8 text-[#c3c4c7] hover:text-[#72aee6] transition">
+                <span class="material-symbols-outlined" style="font-size:22px !important;">menu</span>
+            </button>
             @if(auth()->user()->hasPermission('access_dashboard'))
                 <a href="{{ route('admin.dashboard.index') }}" class="flex items-center px-2 gap-1.5 group no-underline">
                     <span class="flex items-center justify-center w-6 h-6 rounded bg-[#2271b1] group-hover:bg-[#135e96] transition-colors flex-shrink-0">
@@ -120,8 +165,30 @@
         </div>
     </div>
 
+    <!-- Backdrop behind the off-canvas sidebar on mobile -->
+    <div id="sidebar-backdrop"></div>
+
     <!-- WP Admin Menu (Sidebar) -->
     <x-falcon-cms::admin.sidebar :activeMenu="$activeMenu ?? null" />
+
+    <!-- Mobile off-canvas sidebar toggle -->
+    <script>
+        (function () {
+            var body = document.body;
+            function close() { body.classList.remove('sidebar-mobile-open'); }
+            document.getElementById('mobile-menu-toggle')?.addEventListener('click', function (e) {
+                e.stopPropagation();
+                body.classList.toggle('sidebar-mobile-open');
+            });
+            document.getElementById('sidebar-backdrop')?.addEventListener('click', close);
+            // Tapping a real menu link closes the drawer so the page change is visible.
+            document.getElementById('adminmenuwrap')?.addEventListener('click', function (e) {
+                if (e.target.closest('a[href]')) close();
+            });
+            // If the window grows back to desktop, drop the mobile state so nothing is stuck open.
+            window.addEventListener('resize', function () { if (window.innerWidth > 782) close(); });
+        })();
+    </script>
 
     <!-- Main Content -->
     <div class="p-4 sm:p-5">

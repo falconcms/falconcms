@@ -2,6 +2,17 @@
 <x-slot name="title">Customizer &lsaquo; FalconCMS</x-slot>
 <x-falcon-cms::admin.delete-modal />
 
+{{-- On a phone the two-pane editor would overflow: narrow the sections rail and stack each
+     field's label above its control so a row fits the screen instead of forcing a wide column. --}}
+<style>
+    @media (max-width: 782px) {
+        #customizer-sections { width: 150px !important; }
+        #customizer-form tr.field-row { display: block; }
+        #customizer-form tr.field-row > th { display: block; width: auto !important; padding-bottom: 0 !important; }
+        #customizer-form tr.field-row > td { display: block; width: auto !important; padding-top: .4rem !important; }
+    }
+</style>
+
 {{-- Toast container --}}
 <div id="customizer-toast" class="fixed top-6 right-6 z-[99999] flex flex-col gap-2 pointer-events-none" style="min-width:280px;"></div>
 
@@ -23,7 +34,7 @@
     <div class="flex flex-1 overflow-hidden rounded border border-[#c3c4c7] shadow-sm bg-white">
 
         {{-- ===== LEFT SIDEBAR — dark like dashboard ===== --}}
-        <div class="flex-shrink-0 bg-[#1d2327] overflow-y-auto overflow-x-hidden" style="width:210px; border-right:1px solid #2c3338;">
+        <div id="customizer-sections" class="flex-shrink-0 bg-[#1d2327] overflow-y-auto overflow-x-hidden" style="width:210px; border-right:1px solid #2c3338;">
             <p class="px-3 pt-3 pb-1 text-[10px] font-semibold text-[#8c8f94] uppercase tracking-wider">Theme Options</p>
             @php $renderedGroups = []; @endphp
             @foreach($sections as $key => $sec)
@@ -599,7 +610,7 @@
             </div>
 
             {{-- ===== STICKY FOOTER BAR ===== --}}
-            <div class="flex-shrink-0 border-t border-[#c3c4c7] bg-[#f6f7f7] px-5 py-2.5 flex items-center gap-2">
+            <div class="flex-shrink-0 border-t border-[#c3c4c7] bg-[#f6f7f7] px-3 sm:px-5 py-2.5 flex flex-wrap items-center gap-2">
                 <span class="text-[11px] text-[#8c8f94] mr-auto">All sections saved together.</span>
                 <button type="button" @click="ajaxReset('all')" class="wp-btn-secondary h-8 px-3 text-[12px]">Reset All</button>
                 <button type="button" @click="ajaxReset('section')" class="wp-btn-secondary h-8 px-3 text-[12px]">Reset Section</button>
