@@ -15,6 +15,7 @@
         #wpadminbar svg { width: 18px; height: 18px; fill: #c3c4c7; }
         .material-symbols-outlined { font-size: 20px !important; }
 
+        .wp-btn-primary, .wp-btn-secondary, .wp-btn-outline { white-space: nowrap; }
         .wp-btn-primary { background: #2271b1; color: #fff; border: 1px solid #2271b1; border-radius: 3px; padding: 0 10px; min-height: 30px; font-size: 13px; line-height: 2.15384615; cursor: pointer; transition: all 0.1s; display: inline-flex; align-items: center; }
         .wp-btn-primary:hover { background: #135e96; border-color: #135e96; }
         .wp-btn-secondary { background: #f6f7f7; color: #2271b1; border: 1px solid #2271b1; border-radius: 3px; padding: 0 10px; min-height: 30px; font-size: 13px; line-height: 2.15384615; cursor: pointer; transition: all 0.1s; display: inline-flex; align-items: center;}
@@ -104,6 +105,10 @@
             input[type="text"], input[type="email"], input[type="url"], input[type="number"],
             input[type="password"], input[type="search"], input[type="tel"], input[type="date"],
             select, textarea { max-width: 100% !important; }
+            /* …but the pager's little page-number box must stay small, not stretch full width. */
+            .wp-pagination .wp-input { width: 36px !important; }
+            /* The status-filter links (All | Published | …) wrap tidily instead of overflowing. */
+            [class~="items-center"][class~="text-[#646970]"] { flex-wrap: wrap; row-gap: 3px; }
             /* The admin list tables (anything with a .wp-table-header) are wider than a phone;
                let each scroll inside its own box instead of widening the page. Layout tables used
                for form rows have no .wp-table-header, so they are left to reflow normally. */
