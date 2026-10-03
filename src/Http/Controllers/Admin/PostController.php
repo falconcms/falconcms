@@ -82,24 +82,13 @@ class PostController extends Controller
         $frameHeaderUrl = $frameTitleBarUrl = $frameFooterUrl = null;
         $frameHeaderEditUrl = $frameTitleBarEditUrl = $frameFooterEditUrl = null;
 
-        // The header/footer preview frames render through the active theme's app.blade, which must
-        // honour $builderFramePart to output only the requested part. The Falcon theme (and any
-        // theme built to support it) does; an unrelated theme would instead draw its whole page
-        // chrome in every frame, so we skip the frames there and the builder shows just the canvas.
-        $themeSupportsFrames = (function (): bool {
-            try {
-                $view = function_exists('falcon_theme_view')
-                    ? falcon_theme_view('layouts.app')
-                    : 'falcon-cms::themes.falcon-theme.layouts.app';
-                $path = view()->getFinder()->find($view);
+        // The Falcon theme's app.blade honours $builderFramePart and outputs just the requested
+        // part. A theme that doesn't is handled in framePreview() by slicing its <header>/<footer>
+        // out of the full page — which works for header and footer, but not the title bar, so that
+        // frame is only offered when the theme renders parts natively.
+        $themeSupportsFrames = $this->themeSupportsFrameParts();
 
-                return str_contains((string) @file_get_contents($path), 'builderFramePart');
-            } catch (\Throwable $e) {
-                return false;
-            }
-        })();
-
-        if ($themeSupportsFrames && !in_array($post->type, $layoutTypes, true)) {
+        if (!in_array($post->type, $layoutTypes, true)) {
             if (function_exists('falcon_layout_context')) {
                 falcon_layout_context(['kind' => 'single', 'post_type' => $post->type, 'post_id' => $post->id]);
             }
@@ -111,6 +100,11 @@ class PostController extends Controller
                     'footer' => ['falcon_footer', 'footer'],
                 ];
                 foreach ($slots as $part => $meta) {
+                    // The title bar can't be sliced reliably out of an arbitrary theme, so it is
+                    // only previewed on a theme that renders parts natively.
+                    if ($part === 'titlebar' && !$themeSupportsFrames) {
+                        continue;
+                    }
                     // Always preview the slot: it renders the active custom section, or the theme
                     // default header/title-bar/footer — exactly what the frontend shows.
                     try {
@@ -166,10 +160,58 @@ class PostController extends Controller
             ]);
         }
 
-        return response(view('falcon-cms::admin.falcon-builder.frame-preview', [
+        $html = view('falcon-cms::admin.falcon-builder.frame-preview', [
             'post' => $post,
             'builderFramePart' => $part,
-        ])->render())->header('X-Frame-Options', 'SAMEORIGIN');
+        ])->render();
+
+        // A theme that honours $builderFramePart already returned just the part. One that does not
+        // returned its whole page (header + empty content + footer); slice the requested part out of
+        // it, keeping <head> so the theme's own CSS still styles it.
+        if (!$this->themeSupportsFrameParts()) {
+            $html = $this->sliceFramePart($html, $part);
+        }
+
+        return response($html)->header('X-Frame-Options', 'SAMEORIGIN');
+    }
+
+    /**
+     * Does the active theme's app.blade render a single builder frame part on its own? It does when
+     * it reads $builderFramePart (the Falcon theme, its child, or any theme built the same way).
+     */
+    private function themeSupportsFrameParts(): bool
+    {
+        try {
+            $view = function_exists('falcon_theme_view')
+                ? falcon_theme_view('layouts.app')
+                : 'falcon-cms::themes.falcon-theme.layouts.app';
+            $path = view()->getFinder()->find($view);
+
+            return str_contains((string) @file_get_contents($path), 'builderFramePart');
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Keep only the <header> or <footer> of a full theme page, with its <head> (so the theme's CSS
+     * still applies) and <body> tag (so body-level styles still cascade). Used for themes that draw
+     * their whole page in every frame; if the part isn't found the body is emptied so the frame
+     * collapses rather than repeating the whole chrome.
+     */
+    private function sliceFramePart(string $html, string $part): string
+    {
+        $tag = $part === 'footer' ? 'footer' : 'header'; // title bar isn't offered for these themes
+        preg_match('/<head\b[^>]*>(.*?)<\/head>/is', $html, $headM);
+        preg_match('/<body\b[^>]*>/i', $html, $bodyM);
+        preg_match_all('/<'.$tag.'\b[^>]*>.*?<\/'.$tag.'>/is', $html, $partM);
+
+        $head = $headM[1] ?? '';
+        $bodyOpen = $bodyM[0] ?? '<body>';
+        // header: the first one; footer: the last one (page chrome order).
+        $piece = empty($partM[0]) ? '' : ($tag === 'footer' ? end($partM[0]) : $partM[0][0]);
+
+        return '<!DOCTYPE html><html><head>'.$head.'</head>'.$bodyOpen.$piece.'</body></html>';
     }
 
     public function saveBuilder(Request $request, $id)
