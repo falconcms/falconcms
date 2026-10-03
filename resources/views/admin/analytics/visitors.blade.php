@@ -28,6 +28,16 @@
     @endphp
 
     <div class="p-4 sm:p-6 bg-[#f0f0f1] min-h-screen">
+        @if(session('success'))
+            <div class="mb-4 px-4 py-3 rounded border-l-4 border-[#46b450] bg-white text-[13px] text-[#1d2327] shadow-sm">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 px-4 py-3 rounded border-l-4 border-[#d63638] bg-white text-[13px] text-[#1d2327] shadow-sm">{{ session('error') }}</div>
+        @endif
+        @if($errors->any())
+            <div class="mb-4 px-4 py-3 rounded border-l-4 border-[#d63638] bg-white text-[13px] text-[#1d2327] shadow-sm">{{ $errors->first() }}</div>
+        @endif
+
         <!-- Header -->
         <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
             <div>
@@ -70,17 +80,16 @@
                 <input type="hidden" name="range" value="{{ $range }}">
             @endif
 
-            <input type="text" name="q" value="{{ $q }}" placeholder="Search IP, page or referrer…" class="vl-input flex-1 min-w-[200px]">
+            <input type="text" name="q" value="{{ $q }}" placeholder="Search IP, page or referrer…" class="vl-input w-[240px] max-w-full">
 
-            <select name="country" class="vl-input">
-                <option value="">All countries</option>
+            <select name="country[]" id="vl-country" multiple placeholder="All countries" class="vl-input" style="min-width:200px">
                 @foreach($countries as $c)
-                    <option value="{{ $c['code'] }}" {{ $country === $c['code'] ? 'selected' : '' }}>{{ $c['name'] }}</option>
+                    <option value="{{ $c['code'] }}" {{ in_array($c['code'], $country, true) ? 'selected' : '' }}>{{ $c['name'] }}</option>
                 @endforeach
             </select>
 
             <button type="submit" class="range-btn active" style="cursor:pointer">Filter</button>
-            @if($q !== '' || $country !== '')
+            @if($q !== '' || !empty($country))
                 @php $clearUrl = route('admin.analytics.visitors').'?'.http_build_query($isCustom ? ['from' => $rangeFrom, 'to' => $rangeTo] : ['range' => $range]); @endphp
                 <a href="{{ $clearUrl }}" class="range-btn">Clear</a>
             @endif
@@ -91,26 +100,48 @@
             <a href="{{ $exportUrl }}" class="range-btn" style="display:inline-flex;align-items:center;gap:5px;">
                 <span class="material-symbols-outlined" style="font-size:15px;line-height:1">download</span> Export CSV
             </a>
+            <button type="button" id="vl-import-btn" class="range-btn" style="display:inline-flex;align-items:center;gap:5px;cursor:pointer">
+                <span class="material-symbols-outlined" style="font-size:15px;line-height:1">upload</span> Import CSV
+            </button>
         </form>
 
-        <!-- Table -->
-        <div class="vl-card overflow-x-auto">
-            <table class="vl-table">
-                <thead>
-                    <tr>
-                        <th>Date &amp; Time</th>
-                        <th>IP Address</th>
-                        <th>Country / City</th>
-                        <th>Page</th>
-                        <th>Referrer</th>
-                        <th>Device</th>
-                        <th>Browser</th>
-                        <th>OS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($visits as $v)
+        {{-- Hidden import form — the button above opens the file dialog and it auto-submits. --}}
+        <form method="POST" action="{{ route('admin.analytics.visitors.import') }}" enctype="multipart/form-data" id="vl-import-form" class="hidden">
+            @csrf
+            <input type="file" name="file" id="vl-import-file" accept=".csv,text/csv">
+        </form>
+
+        <!-- Bulk actions + table -->
+        <form method="POST" action="{{ route('admin.analytics.visitors.delete') }}" id="vl-bulk-form"
+              onsubmit="return document.querySelectorAll('.vl-cb:checked').length ? confirm('Delete the selected visitor rows? This cannot be undone.') : false;">
+            @csrf
+            <div class="flex items-center gap-2 mb-2">
+                <button type="submit" id="vl-delete-btn" class="range-btn" disabled
+                        style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;opacity:.5">
+                    <span class="material-symbols-outlined" style="font-size:15px;line-height:1">delete</span>
+                    Delete selected (<span id="vl-sel-count">0</span>)
+                </button>
+            </div>
+
+            <div class="vl-card overflow-x-auto">
+                <table class="vl-table">
+                    <thead>
                         <tr>
+                            <th style="width:34px"><input type="checkbox" id="vl-cb-all" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></th>
+                            <th>Date &amp; Time</th>
+                            <th>IP Address</th>
+                            <th>Country / City</th>
+                            <th>Page</th>
+                            <th>Referrer</th>
+                            <th>Device</th>
+                            <th>Browser</th>
+                            <th>OS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($visits as $v)
+                            <tr>
+                            <td><input type="checkbox" name="ids[]" value="{{ $v->id }}" class="vl-cb rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></td>
                             <td class="whitespace-nowrap text-[#1d2327]">
                                 {{ $v->created_at ? \Illuminate\Support\Carbon::parse($v->created_at)->timezone(cms_timezone())->format('M j, Y') : '—' }}
                                 <span class="text-[#9ca3af]">{{ $v->created_at ? \Illuminate\Support\Carbon::parse($v->created_at)->timezone(cms_timezone())->format('g:i A') : '' }}</span>
@@ -135,18 +166,58 @@
                             <td>{{ $v->os ?: '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="text-center text-[#646970]" style="padding:40px">No visits match this range or filter.</td></tr>
+                        <tr><td colspan="9" class="text-center text-[#646970]" style="padding:40px">No visits match this range or filter.</td></tr>
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
+        </form>
 
-        @if($visits->hasPages())
-            <div class="mt-4">{{ $visits->links() }}</div>
-        @endif
+        <div class="mt-4">
+            <x-falcon-cms::admin.pagination :paginator="$visits" />
+        </div>
     </div>
 
+    <link href="{{ asset('vendor/falcon-cms/css/tom-select.default.min.css') }}" rel="stylesheet">
+    <script src="{{ asset('vendor/falcon-cms/js/tom-select.complete.min.js') }}"></script>
     <script>
+    // Country multi-select
+    (function () {
+        if (window.TomSelect && document.getElementById('vl-country')) {
+            new TomSelect('#vl-country', { plugins: ['remove_button'], maxItems: null, hideSelected: true });
+        }
+    })();
+
+    // Import CSV — the button opens the file dialog, and picking a file submits the form.
+    (function () {
+        const btn = document.getElementById('vl-import-btn');
+        const file = document.getElementById('vl-import-file');
+        const form = document.getElementById('vl-import-form');
+        if (!btn || !file || !form) return;
+        btn.addEventListener('click', () => file.click());
+        file.addEventListener('change', () => { if (file.value) form.submit(); });
+    })();
+
+    // Bulk select + delete
+    (function () {
+        const all = document.getElementById('vl-cb-all');
+        const boxes = () => Array.from(document.querySelectorAll('.vl-cb'));
+        const btn = document.getElementById('vl-delete-btn');
+        const count = document.getElementById('vl-sel-count');
+        if (!btn) return;
+        const sync = () => {
+            const checked = boxes().filter(b => b.checked).length;
+            count.textContent = checked;
+            btn.disabled = checked === 0;
+            btn.style.opacity = checked === 0 ? '.5' : '1';
+            if (all) all.checked = checked > 0 && checked === boxes().length;
+        };
+        all?.addEventListener('change', () => { boxes().forEach(b => b.checked = all.checked); sync(); });
+        document.addEventListener('change', (e) => { if (e.target.classList?.contains('vl-cb')) sync(); });
+        sync();
+    })();
+
+    // Custom date range
     (function () {
         const btn = document.getElementById('vl-custom-btn');
         const panel = document.getElementById('vl-custom-panel');
@@ -162,13 +233,16 @@
         panel.addEventListener('click', (e) => e.stopPropagation());
         document.addEventListener('click', () => toggle(false));
 
-        // Carry the current country + search so changing the range keeps the filter.
-        const carried = {!! json_encode(array_filter(['country' => $country, 'q' => $q])) !!};
+        // Carry the current country (multi) + search so changing the range keeps the filter.
+        const carriedCountries = {!! json_encode(array_values($country)) !!};
+        const carriedQ = @json($q);
         apply.addEventListener('click', () => {
             if (!from.value || !to.value) { alert('Pick both a start and an end date.'); return; }
-            const params = new URLSearchParams(carried);
+            const params = new URLSearchParams();
             params.set('from', from.value);
             params.set('to', to.value);
+            if (carriedQ) params.set('q', carriedQ);
+            carriedCountries.forEach(c => params.append('country[]', c));
             window.location = '{{ route('admin.analytics.visitors') }}?' + params.toString();
         });
     })();

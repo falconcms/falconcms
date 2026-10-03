@@ -1712,11 +1712,17 @@ class DashboardController extends Controller
         $start = (clone $from)->startOfDay()->utc();
         $end = (clone $to)->endOfDay()->utc();
 
-        $country = trim((string) request()->query('country', ''));
+        // Country is now a multi-select: accept one or many codes (country[]=US&country[]=GB)
+        // and fall back to a single ?country=US so existing links keep working.
+        $countryParam = request()->query('country', []);
+        $country = array_values(array_filter(array_map(
+            fn ($c) => strtoupper(trim((string) $c)),
+            is_array($countryParam) ? $countryParam : [$countryParam]
+        )));
         $q = trim((string) request()->query('q', ''));
 
         $base = Analytics::whereBetween('created_at', [$start, $end])
-            ->when($country !== '', fn ($query) => $query->where('country_code', $country))
+            ->when(!empty($country), fn ($query) => $query->whereIn('country_code', $country))
             ->when($q !== '', function ($query) use ($q) {
                 $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
                 $query->where(fn ($w) => $w->where('ip_address', 'like', $like)
@@ -1738,7 +1744,7 @@ class DashboardController extends Controller
             return $this->streamVisitorCsv((clone $base)->latest(), $from, $to);
         }
 
-        $visits = (clone $base)->latest()->paginate(50)->withQueryString();
+        $visits = (clone $base)->latest()->paginate(20)->withQueryString();
 
         return view('falcon-cms::admin.analytics.visitors', [
             'visits' => $visits,
@@ -1760,13 +1766,14 @@ class DashboardController extends Controller
 
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Date/Time', 'IP Address', 'Country', 'City', 'Page', 'Referrer', 'Device', 'Browser', 'OS']);
+            fputcsv($out, ['Date/Time', 'IP Address', 'Country', 'Country Code', 'City', 'Page', 'Referrer', 'Device', 'Browser', 'OS']);
             $n = 0;
             foreach ($query->cursor() as $v) {
                 fputcsv($out, [
                     $v->created_at ? Carbon::parse($v->created_at)->timezone(cms_timezone())->format('Y-m-d H:i:s') : '',
                     $v->ip_address,
                     $v->country,
+                    $v->country_code,
                     $v->city,
                     $v->url,
                     $v->referrer,
@@ -1780,6 +1787,114 @@ class DashboardController extends Controller
             }
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * Import visitor-log rows from a CSV (the same shape Export produces). The header row is read
+     * by name, so column order and extra columns do not matter; a row with no usable data is
+     * skipped. Dates are read in the site timezone and stored as UTC, matching how visits are
+     * recorded. Capped so a huge upload cannot run away.
+     */
+    public function analyticsVisitorsImport(Request $request)
+    {
+        if (!auth()->user()->hasPermission('manage_analytics')) {
+            abort(403);
+        }
+        if (!falcon_pro_editable('analytics')) {
+            return redirect()->route('admin.analytics');
+        }
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:20480'],
+        ]);
+
+        $handle = fopen($request->file('file')->getRealPath(), 'r');
+        if ($handle === false) {
+            return back()->with('error', 'Could not read the uploaded file.');
+        }
+
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+
+            return back()->with('error', 'The file is empty.');
+        }
+        // Map header labels → column index, case/space-insensitive.
+        $norm = fn ($s) => strtolower(trim((string) $s));
+        $idx = [];
+        foreach ($header as $i => $label) {
+            $idx[$norm($label)] = $i;
+        }
+        $col = function (array $row, array $names) use ($idx) {
+            foreach ($names as $n) {
+                if (isset($idx[$n]) && isset($row[$idx[$n]]) && $row[$idx[$n]] !== '') {
+                    return trim((string) $row[$idx[$n]]);
+                }
+            }
+
+            return null;
+        };
+
+        $tz = cms_timezone();
+        $now = now();
+        // cms_analytics keeps only created_at (no updated_at), so the insert must not set one.
+        $batch = [];
+        $imported = 0;
+        $flush = function () use (&$batch, &$imported) {
+            if ($batch) {
+                Analytics::insert($batch);
+                $imported += count($batch);
+                $batch = [];
+            }
+        };
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $when = $col($row, ['date/time', 'date', 'datetime', 'created_at']);
+            try {
+                $created = $when ? Carbon::parse($when, $tz)->utc() : $now;
+            } catch (\Throwable $e) {
+                $created = $now;
+            }
+            $code = $col($row, ['country code', 'country_code']);
+            $batch[] = [
+                'ip_address' => $col($row, ['ip address', 'ip', 'ip_address']),
+                'url' => $col($row, ['page', 'url']),
+                'referrer' => $col($row, ['referrer', 'referer']),
+                'country' => $col($row, ['country']),
+                'country_code' => $code ? strtoupper($code) : null,
+                'city' => $col($row, ['city']),
+                'device_type' => $col($row, ['device', 'device_type']),
+                'browser' => $col($row, ['browser']),
+                'os' => $col($row, ['os']),
+                'created_at' => $created,
+            ];
+            if (count($batch) >= 500) {
+                $flush();
+            }
+            if ($imported + count($batch) >= 100000) {
+                break; // hard cap
+            }
+        }
+        $flush();
+        fclose($handle);
+
+        return back()->with('success', number_format($imported).' visitor '.($imported === 1 ? 'row' : 'rows').' imported.');
+    }
+
+    /** Delete the selected visitor-log rows (bulk checkbox action). */
+    public function analyticsVisitorsDelete(Request $request)
+    {
+        if (!auth()->user()->hasPermission('manage_analytics')) {
+            abort(403);
+        }
+        if (!falcon_pro_editable('analytics')) {
+            return redirect()->route('admin.analytics');
+        }
+
+        $ids = array_values(array_filter(array_map('intval', (array) $request->input('ids', []))));
+        $deleted = $ids ? Analytics::whereIn('id', $ids)->delete() : 0;
+
+        return back()->with('success', number_format($deleted).' visitor '.($deleted === 1 ? 'row' : 'rows').' deleted.');
     }
 
     public function analyticsRealtime()

@@ -308,6 +308,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('analytics/realtime', [DashboardController::class, 'analyticsRealtime'])->name('analytics.realtime');
     Route::get('analytics/visitors', [DashboardController::class, 'analyticsVisitors'])->name('analytics.visitors');
+    Route::post('analytics/visitors/import', [DashboardController::class, 'analyticsVisitorsImport'])->name('analytics.visitors.import');
+    Route::post('analytics/visitors/delete', [DashboardController::class, 'analyticsVisitorsDelete'])->name('analytics.visitors.delete');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
 
     // Users
