@@ -8135,6 +8135,64 @@ if (!function_exists('get_falcon_builder_fonts')) {
     }
 }
 
+if (!function_exists('get_falcon_builder_font_weights')) {
+    /**
+     * Every font weight a builder layout actually uses, so the page can ask Google for only
+     * those instead of all nine (100–900) per family.
+     *
+     * Detection is by key name, like get_falcon_builder_fonts(): anything named `fontWeight`,
+     * `variant`, `*Weight` or `*weight`. Values map 'bold' → 700 and 'normal' → 400; only whole
+     * hundreds 100–900 are kept. The caller unions these with the theme's own typography weights
+     * and with 400/700 as a floor, so a weight that is used is always present — and because the
+     * result is a subset of the full 100–900 the page requested before, no font can start failing.
+     */
+    function get_falcon_builder_font_weights($layout, array &$weights = []): array
+    {
+        if (!is_array($layout)) {
+            return array_values(array_unique($weights));
+        }
+        foreach ($layout as $key => $value) {
+            if (is_array($value)) {
+                get_falcon_builder_font_weights($value, $weights);
+
+                continue;
+            }
+            if (!is_string($key)) {
+                continue;
+            }
+            if ($key !== 'variant' && $key !== 'fontWeight'
+                && !str_ends_with($key, 'Weight') && !str_ends_with($key, 'weight')) {
+                continue;
+            }
+            $w = is_string($value) ? strtolower(trim($value)) : $value;
+            // Named weights map to their CSS number so a font set to e.g. "Light" or "Semi Bold"
+            // keeps that weight instead of being dropped (a bare (int) cast would make it 0).
+            $named = [
+                'thin' => 100, 'hairline' => 100,
+                'extralight' => 200, 'extra-light' => 200, 'ultralight' => 200, 'ultra-light' => 200,
+                'light' => 300,
+                'normal' => 400, 'regular' => 400, 'book' => 400, '' => 400,
+                'medium' => 500,
+                'semibold' => 600, 'semi-bold' => 600, 'demibold' => 600, 'demi-bold' => 600,
+                'bold' => 700,
+                'extrabold' => 800, 'extra-bold' => 800, 'ultrabold' => 800, 'ultra-bold' => 800,
+                'black' => 900, 'heavy' => 900,
+            ];
+            if (is_string($w)) {
+                $w = $named[str_replace(' ', '', $w)] ?? $w;
+            } elseif ($w === null) {
+                $w = 400;
+            }
+            $w = (int) $w;
+            if ($w >= 100 && $w <= 900) {
+                $weights[] = $w;
+            }
+        }
+
+        return array_values(array_unique($weights));
+    }
+}
+
 if (!function_exists('falcon_google_font_url')) {
     /**
      * A Google Fonts stylesheet URL for the given families, or '' when none are loadable.

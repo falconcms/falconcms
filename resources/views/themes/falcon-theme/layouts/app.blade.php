@@ -55,10 +55,25 @@
         // Add builder fonts from everything this page renders: its own content AND the
         // assigned header/footer sections. Collecting only $post->content meant a font
         // chosen in the Layout header or footer was never loaded on the front-end.
-        $__collectFonts = function ($content) use (&$fontsToLoad) {
+        // Weights actually used, so Google is asked for only those rather than all nine per
+        // family. Seeded with the theme typography weights and a 400/700 floor; the builder
+        // content adds any others. The result is always a subset of the old full range, so no
+        // weight that is in use can go missing.
+        $fontWeights = [400, 700];
+        foreach ([$bodyTypo, $h1Typo, $navTypo, $megaTypo] as $__t) {
+            if (!empty($__t['variant'])) $fontWeights[] = (int) $__t['variant'];
+        }
+        foreach (['h2', 'h3', 'h4', 'h5', 'h6'] as $__h) {
+            $__ht = json_decode((string) get_cms_option('theme_typography_'.$__h), true);
+            if (!empty($__ht['variant'])) $fontWeights[] = (int) $__ht['variant'];
+        }
+        $__collectFonts = function ($content) use (&$fontsToLoad, &$fontWeights) {
             if (empty($content)) return;
             $layout = is_string($content) ? json_decode($content, true) : $content;
-            if (is_array($layout)) $fontsToLoad = array_merge($fontsToLoad, get_falcon_builder_fonts($layout));
+            if (is_array($layout)) {
+                $fontsToLoad = array_merge($fontsToLoad, get_falcon_builder_fonts($layout));
+                $fontWeights = array_merge($fontWeights, get_falcon_builder_font_weights($layout));
+            }
         };
         if (isset($post) && !empty($post->content)) {
             $isBuilder = $post->editor_type === 'builder' || (is_string($post->content) && (str_starts_with($post->content, '[') || str_starts_with($post->content, '{')));
@@ -73,9 +88,13 @@
         }
 
         $fontsToLoad = array_unique(array_filter($fontsToLoad));
-        // Built here so unknown families are dropped instead of 400-ing the whole request,
-        // and so the full 100–900 weight range is available (the builder offers Thin/Black).
-        $googleFontsUrl = falcon_google_font_url($fontsToLoad);
+        // Only the weights in use (deduped, sorted). Falls back to the full range if somehow
+        // none were found, so a page can never end up with no weights at all.
+        $fontWeights = array_values(array_unique(array_filter($fontWeights, fn ($w) => $w >= 100 && $w <= 900)));
+        sort($fontWeights);
+        $__weightStr = $fontWeights ? implode(';', $fontWeights) : '100;200;300;400;500;600;700;800;900';
+        // Built here so unknown families are dropped instead of 400-ing the whole request.
+        $googleFontsUrl = falcon_google_font_url($fontsToLoad, $__weightStr);
 
         // Layout Type
         $layoutType = get_cms_option('theme_layout_type', 'boxed');

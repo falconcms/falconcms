@@ -168,11 +168,18 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             }
         }
     }
+    // Only the weights this menu actually uses (the three parts' fontWeight), so we ask Google
+    // for a handful instead of all nine. Falls back to 400/700 if none are set, so the font
+    // always loads.
+    $menuWeights = get_falcon_builder_font_weights($s);
+    $menuWeights = array_values(array_unique(array_filter($menuWeights, fn ($w) => $w >= 100 && $w <= 900)));
+    sort($menuWeights);
+    $menuWeightStr = $menuWeights ? implode(';', $menuWeights) : '400;700';
 @endphp
 
 @if(count($fontsToLoad) > 0)
     @foreach($fontsToLoad as $font)
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', trim($font, "'\"")) }}:wght@100;200;300;400;500;600;700;800;900&display=swap">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', trim($font, "'\"")) }}:wght@{{ $menuWeightStr }}&display=swap">
     @endforeach
 @endif
 

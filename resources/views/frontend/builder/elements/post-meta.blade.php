@@ -235,10 +235,16 @@
             $fontToLoad = $primaryFamily;
         }
     }
+    // The meta text uses a single weight; request just that one (not all nine). The shared
+    // helper normalises bold/normal and named weights (Light, Semi Bold…); fall back to
+    // 400;700 so the font always loads if nothing resolves.
+    $pmWeights = get_falcon_builder_font_weights(['meta_weight' => $fontWeight]);
+    sort($pmWeights);
+    $pmWeightStr = $pmWeights ? implode(';', $pmWeights) : '400;700';
 @endphp
 
 @if($fontToLoad)
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', $fontToLoad) }}:wght@100;200;300;400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', $fontToLoad) }}:wght@{{ $pmWeightStr }}&display=swap">
 @endif
 
 @if(!empty($metaItems))
