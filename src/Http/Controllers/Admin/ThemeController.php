@@ -71,6 +71,9 @@ class ThemeController extends Controller
             }
         }
 
+        // Active theme first; the rest keep their discovered order (sort is stable on PHP 8).
+        uasort($themes, static fn ($a, $b) => ($b['is_active'] <=> $a['is_active']));
+
         return view('falcon-cms::admin.themes.index', compact('themes', 'activeTheme'));
     }
 
