@@ -244,7 +244,8 @@
 @endphp
 
 @if($fontToLoad)
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', $fontToLoad) }}:wght@{{ $pmWeightStr }}&display=swap">
+{{-- '@' is kept inside the expression: Blade reads @{{ as an escape and would print the braces verbatim. --}}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', $fontToLoad) }}:wght{{ '@'.$pmWeightStr }}&display=swap">
 @endif
 
 @if(!empty($metaItems))
