@@ -7,6 +7,63 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.7.6] — 2026-10-03
+
+### Added
+
+- **Off-canvas panels in the Builder Library.** Build slide-in panels and pop-ups with the page
+  builder and show them on the pages, posts, products or CPT entries you choose — matched canvas
+  size, responsive device modes and a save toast. (Pro.)
+- **Site Health (Settings → Site Health).** One page that reports the PHP and database versions,
+  known dependency vulnerabilities, a quick code scan and environment checks, judging errors, dev
+  machines and the timezone by what is actually true rather than by guesswork.
+- **A Visitor Log (Analytics → Visitor Log).** A record of individual visits — time, IP, country
+  and city, page, referrer, device, browser and OS — with its own sidebar entry and a custom date
+  range. It can be filtered by several countries at once (a searchable multi-select), searched by
+  IP/page/referrer, paginated, exported to CSV and imported back from one, and rows can be
+  bulk-selected and deleted.
+- **Conditional fields in the Form Builder.** A field can show or hide based on another field's
+  answer.
+- **A responsive back-end.** Below 783px the admin sidebar becomes an off-canvas drawer opened by a
+  hamburger, the page uses the full width (no more text spilling out of dashboard widgets), form
+  fields and list tables stop overflowing, and the list-table toolbars wrap and align tidily.
+- **Performance options (Customizer → Performance), all off by default.** Lazy-load images, defer
+  non-critical JavaScript, minify HTML and inline CSS (separate toggles), "Load Assets Only When
+  Needed" (Font Awesome, Alpine and SweetAlert load on a page only when it uses them, and Lucide
+  icons render as inline SVG so the 390 KB library can be dropped), and "Compiled CSS" (one pre-built
+  purged stylesheet of ~65 KB in place of the 400 KB runtime Tailwind). Colours and fonts still
+  follow the Customizer.
+- **Google Fonts ask only for the weights a page uses** rather than all nine per family.
+- **Icon Box: Spacing Below on hover** — the gap under the icon can change on hover, like Size and
+  the colours.
+
+### Changed
+
+- **The active theme is listed first** on the Themes screen.
+- **Performance options that only work with the Falcon theme are disabled under another theme**,
+  with a note saying so; the theme-agnostic ones (lazy images, defer JS, minify) stay available.
+- The page builder's header/footer preview now works under **any** theme, not only the Falcon
+  theme — the real header and footer are sliced out of the rendered page and shown around the canvas.
+- HTML optimisations now apply to logged-in visitors too.
+- Unpublishing the home page now takes it off the site.
+- Faster pages: builder element definitions are resolved once per request instead of per column,
+  and author, categories, tags and terms are eager-loaded in `get_falcon_posts()`.
+
+### Fixed
+
+- A per-element Google Fonts link rendered with literal `{{ }}` braces (a Blade `@{{` escape
+  collision), producing a blocked request and no font.
+- Analytics "Overview" stayed highlighted while on the Visitor Log page.
+- A false "cache not writable" warning on Clear Cache on Windows (`is_writable()` reflects the
+  read-only attribute, not the real permission).
+- The Customizer footer breaking when a literal `<style>` tag appeared in a field description.
+
+### Security
+
+- Public form file uploads are now validated server-side (extension allow-list, size cap, UUID
+  filename) to close an unrestricted-upload / remote-code-execution path.
+- Pinned safe versions of framework dependencies to clear known advisories.
+
 ## [2.7.5] — 2026-09-25
 
 ### Added
