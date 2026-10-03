@@ -994,7 +994,7 @@ class CustomizerController extends Controller
                     'perf_minify_css' => [
                         'type' => 'toggle',
                         'label' => 'Minify CSS',
-                        'desc' => 'Minifies the inline CSS the page builder outputs — removes comments and dead whitespace from every <style> block. Works on its own or alongside Minify HTML.',
+                        'desc' => 'Minifies the inline CSS the page builder outputs — removes comments and dead whitespace from every style block. Works on its own or alongside Minify HTML.',
                         'default' => '0',
                     ],
                     'performance_webp_conversion' => [
