@@ -36,7 +36,22 @@
         $headingColor = get_cms_option('theme_heading_color', '#1d2327');
         $siteWidth = get_cms_option('theme_site_width', '1240px');
         $favicon = get_cms_option('theme_site_favicon');
-        
+
+        // Colour channels ("r g b") for the compiled stylesheet, whose Tailwind tokens are
+        // rgb(var(--x-rgb) / <alpha-value>) so opacity modifiers like bg-primary/5 work on a
+        // Customizer colour — something a plain var() cannot do. The runtime build uses the hex
+        // directly and never needs these. Falls back to the colour's own default on a bad value.
+        $__hexToRgb = function ($hex, $fallback = '0 0 0') {
+            $hex = ltrim(trim((string) $hex), '#');
+            if (strlen($hex) === 3) {
+                $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+            }
+            if (!preg_match('/^[0-9a-fA-F]{6}$/', $hex)) {
+                return $fallback;
+            }
+            return hexdec(substr($hex, 0, 2)).' '.hexdec(substr($hex, 2, 2)).' '.hexdec(substr($hex, 4, 2));
+        };
+
         // Typography Processing
         $bodyTypo = json_decode(get_cms_option('theme_typography_body'), true) ?: ['family' => 'Inter', 'variant' => '400', 'size' => '15px'];
         $h1Typo = json_decode(get_cms_option('theme_typography_h1'), true);
@@ -117,14 +132,25 @@
     {{-- Font Awesome and Alpine load here only when the "Load assets only when needed" option is
          off. With it on, they move below — next to the icon-set links — and are emitted only when
          the page's own markup actually uses them (an "fa-" class, an "x-data" attribute). --}}
-    @php $__condAssets = get_cms_option('perf_conditional_assets', '0') === '1'; @endphp
+    @php
+        $__condAssets = get_cms_option('perf_conditional_assets', '0') === '1';
+        // Compiled-CSS mode: load the pre-built purged stylesheet and skip the runtime Tailwind
+        // JIT (tailwind.min.js + its inline config) entirely. Falls back to the runtime build if
+        // the compiled file was never published, so the theme can never render unstyled.
+        $__compiledCss = get_cms_option('perf_compiled_css', '0') === '1'
+            && is_file(public_path('vendor/falcon-cms/css/falcon-tailwind.css'));
+    @endphp
     @unless($__condAssets)
     <!-- FontAwesome -->
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
     @endunless
 
     <!-- Tailwind -->
+    @if($__compiledCss)
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/falcon-tailwind.css') }}">
+    @else
     <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>
+    @endif
     @unless($__condAssets)
     <!-- Alpine.js -->
     <script defer src="{{ asset('vendor/falcon-cms/js/alpine.min.js') }}"></script>
@@ -147,6 +173,7 @@
             };
         })();
     </script>
+    @unless($__compiledCss)
     <script>
         tailwind.config = {
             theme: {
@@ -167,6 +194,7 @@
             }
         }
     </script>
+    @endunless
 
     <style>
         :root {
@@ -179,7 +207,25 @@
             --bg-alt: #f5f7f9;
             --border-color: #e8e8e8;
             --site-width: {{ is_numeric($siteWidth) ? $siteWidth . 'px' : $siteWidth }};
-            
+
+            /* Tailwind colour tokens — so the compiled (static) stylesheet's bg-primary,
+               text-heading, text-link … stay driven by the Customizer, exactly like the
+               runtime build. The runtime tailwind.config below sets the same names inline. */
+            --secondary: {{ $secondaryColor }};
+            --heading: {{ $headingColor }};
+            --body-color: {{ $textColor }};
+            --link: {{ $linkColor }};
+            --link-hover: {{ $linkHoverColor }};
+            --font-sans: '{{ $bodyTypo["family"] }}';
+            /* Channel forms so bg-primary/5, ring-primary/20 … resolve in the compiled stylesheet */
+            --primary-rgb: {{ $__hexToRgb($primaryColor, '0 145 234') }};
+            --primary-hover-rgb: {{ $__hexToRgb($primaryHover, '0 122 193') }};
+            --secondary-rgb: {{ $__hexToRgb($secondaryColor, '29 35 39') }};
+            --heading-rgb: {{ $__hexToRgb($headingColor, '29 35 39') }};
+            --body-rgb: {{ $__hexToRgb($textColor, '29 35 39') }};
+            --link-rgb: {{ $__hexToRgb($linkColor, '0 145 234') }};
+            --link-hover-rgb: {{ $__hexToRgb($linkHoverColor, '0 122 193') }};
+
             /* Typography Variables */
             --body-font: '{{ $bodyTypo["family"] }}', sans-serif;
             --body-size: {{ $bodyTypo["size"] ?? '15px' }};

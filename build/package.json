@@ -1,0 +1,12 @@
+{
+  "name": "falconcms-theme-css",
+  "private": true,
+  "description": "Builds the static, purged Tailwind stylesheet for the Falcon theme so the front-end need not ship the 400 KB runtime JIT. Output: ../public/assets/css/falcon-tailwind.css (published to the site as vendor/falcon-cms/css/falcon-tailwind.css).",
+  "scripts": {
+    "build": "tailwindcss -c tailwind.config.js -i src/input.css -o ../public/assets/css/falcon-tailwind.css --minify",
+    "watch": "tailwindcss -c tailwind.config.js -i src/input.css -o ../public/assets/css/falcon-tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}
