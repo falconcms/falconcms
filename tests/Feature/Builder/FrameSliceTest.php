@@ -37,6 +37,8 @@ class FrameSliceTest extends TestCase
         $this->assertStringNotContainsString('<footer', $out, 'the footer is dropped');
         $this->assertStringContainsString('.x{color:red}', $out, 'the head CSS is kept');
         $this->assertStringContainsString('<body class="theme">', $out, 'the body tag (and its classes) is kept');
+        $this->assertStringContainsString('falconFrame:"header"', $out, 'the self-measure script reports as the header frame');
+        $this->assertStringContainsString('parent.postMessage', $out, 'so the iframe can auto-size and be visible');
     }
 
     public function test_the_footer_frame_keeps_only_the_footer(): void
@@ -65,7 +67,7 @@ class FrameSliceTest extends TestCase
         $out = $this->slice($html, 'header');
 
         $this->assertStringNotContainsString('only content', $out);
-        $this->assertStringNotContainsString('<header', $out);
-        $this->assertMatchesRegularExpression('/<body[^>]*>\s*<\/body>/', $out, 'body is empty');
+        $this->assertStringNotContainsString('<header', $out, 'no header is placed in the body');
+        $this->assertStringContainsString('.y{}', $out, 'the head CSS is still kept');
     }
 }

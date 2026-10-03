@@ -195,9 +195,13 @@ class PostController extends Controller
 
     /**
      * Keep only the <header> or <footer> of a full theme page, with its <head> (so the theme's CSS
-     * still applies) and <body> tag (so body-level styles still cascade). Used for themes that draw
-     * their whole page in every frame; if the part isn't found the body is emptied so the frame
-     * collapses rather than repeating the whole chrome.
+     * still applies). Used for themes that draw their whole page in every frame; if the part isn't
+     * found the body is emptied so the frame collapses rather than repeating the whole chrome.
+     *
+     * The builder iframe has no height of its own — the frame has to measure itself and tell the
+     * parent. The Falcon theme carries that script; a sliced page does not, so it is re-added here
+     * (same postMessage protocol the builder listens for) along with the margin/overflow reset,
+     * otherwise the frame would render but stay zero-height and invisible.
      */
     private function sliceFramePart(string $html, string $part): string
     {
@@ -207,11 +211,25 @@ class PostController extends Controller
         preg_match_all('/<'.$tag.'\b[^>]*>.*?<\/'.$tag.'>/is', $html, $partM);
 
         $head = $headM[1] ?? '';
-        $bodyOpen = $bodyM[0] ?? '<body>';
+        $bodyOpen = $bodyM[0] ?? '<body>'; // keep body classes so body-level styling cascades
         // header: the first one; footer: the last one (page chrome order).
         $piece = empty($partM[0]) ? '' : ($tag === 'footer' ? end($partM[0]) : $partM[0][0]);
 
-        return '<!DOCTYPE html><html><head>'.$head.'</head>'.$bodyOpen.$piece.'</body></html>';
+        $reset = '<style>html,body{margin:0!important;padding:0!important;min-height:0!important;'
+            .'background:transparent!important;overflow:hidden;}</style>';
+
+        $frame = json_encode($part);
+        $resize = '<script>(function(){var last=0,queued=false;'
+            .'function postH(){var h=Math.ceil(document.body.getBoundingClientRect().height);'
+            .'if(!(h>0)||Math.abs(h-last)<=1)return;last=h;'
+            .'parent.postMessage({falconFrame:'.$frame.',height:h},"*");}'
+            .'function schedule(){if(queued)return;queued=true;requestAnimationFrame(function(){queued=false;postH();});}'
+            .'window.addEventListener("load",function(){postH();setTimeout(postH,250);setTimeout(postH,800);});'
+            .'window.addEventListener("resize",schedule);'
+            .'if(window.ResizeObserver){try{new ResizeObserver(schedule).observe(document.body);}catch(e){}}'
+            .'})();</script>';
+
+        return '<!DOCTYPE html><html><head>'.$head.$reset.'</head>'.$bodyOpen.$piece.$resize.'</body></html>';
     }
 
     public function saveBuilder(Request $request, $id)
