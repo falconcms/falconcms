@@ -179,7 +179,7 @@
             </div>
         </form>
 
-        <div class="mt-4">
+        <div class="mt-4 flex justify-end">
             <x-falcon-cms::admin.pagination :paginator="$visits" />
         </div>
     </div>

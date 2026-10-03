@@ -85,21 +85,17 @@
         #sidebar-backdrop { display: none; position: fixed; inset: 32px 0 0 0; background: rgba(0,0,0,.45); z-index: 998; }
         @media (max-width: 782px) {
             body, body.sidebar-collapsed { padding-left: 0 !important; }
-            #adminmenuwrap, body.sidebar-collapsed #adminmenuwrap {
+            /* The sidebar is an off-canvas drawer at phone width, in BOTH its full (240px) and its
+               collapsed (icon-only) state. The collapsed width + icon-only styling come from the
+               global body.sidebar-collapsed rules above, which win here on width, so "Collapse Menu"
+               behaves exactly as on desktop — only the slide-in/out is added for mobile. */
+            #adminmenuwrap {
                 width: 240px !important; overflow-x: hidden !important;
-                transform: translateX(-100%); transition: transform .2s ease; z-index: 999;
+                transform: translateX(-100%); transition: transform .2s ease, width .2s ease; z-index: 999;
             }
             body.sidebar-mobile-open #adminmenuwrap { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,.45); }
             body.sidebar-mobile-open #sidebar-backdrop { display: block; }
             #mobile-menu-toggle { display: inline-flex !important; }
-            /* The off-canvas drawer always shows full labels, never the icon-only collapsed form. */
-            body.sidebar-collapsed .collapse-text,
-            body.sidebar-collapsed .sidebar-item-link > span { display: inline !important; }
-            body.sidebar-collapsed li[class*="uppercase"] { display: block !important; }
-            body.sidebar-collapsed .sidebar-item-link { justify-content: flex-start !important; padding-left: .75rem !important; padding-right: .75rem !important; }
-            body.sidebar-collapsed .sidebar-item div[class*="mr-3"] { margin-right: .75rem !important; }
-            body.sidebar-collapsed #sidebar-toggle-btn { justify-content: flex-start !important; width: 100% !important; }
-            body.sidebar-collapsed #sidebar-toggle-btn > div { margin-right: .75rem !important; }
 
             /* Form controls given a fixed pixel width (w-[400px] etc.) must not push the page wider
                than the phone. .wp-input needs width:100% (not just max-width) because inside an

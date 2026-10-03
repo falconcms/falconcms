@@ -219,27 +219,10 @@
     document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById('sidebar-toggle-btn');
         const body = document.body;
-        const iconEl = document.querySelector('#sidebar-toggle-btn .collapse-icon');
-        const textEl = document.querySelector('#sidebar-toggle-btn .collapse-text');
-        const isMobile = () => window.innerWidth <= 782;
 
-        // The same button means two things. On a phone the menu is an off-canvas drawer, so
-        // "collapse to icons" makes no sense — there it becomes "Close Menu" and shuts the drawer.
-        // On desktop it collapses the sidebar to icons as before.
-        function applyMode() {
-            if (!iconEl || !textEl) return;
-            if (isMobile()) {
-                iconEl.textContent = 'close';
-                iconEl.classList.remove('rotate-180');
-                textEl.textContent = 'Close Menu';
-            } else {
-                iconEl.textContent = 'keyboard_double_arrow_left';
-                textEl.textContent = 'Collapse Menu';
-                iconEl.classList.toggle('rotate-180', body.classList.contains('sidebar-collapsed'));
-            }
+        if (localStorage.getItem('sidebar-collapsed') === 'true') {
+            document.querySelector('.collapse-icon')?.classList.add('rotate-180');
         }
-        applyMode();
-        window.addEventListener('resize', applyMode);
 
         // Remove no-transition class after first paint so animations work normally after that
         requestAnimationFrame(function() {
@@ -248,15 +231,12 @@
             });
         });
 
+        // Collapse to icons — the same behaviour on desktop and on the mobile drawer.
         btn?.addEventListener('click', function() {
-            if (isMobile()) {
-                body.classList.remove('sidebar-mobile-open'); // close the drawer
-                return;
-            }
             body.classList.toggle('sidebar-collapsed');
             const isCollapsed = body.classList.contains('sidebar-collapsed');
             localStorage.setItem('sidebar-collapsed', isCollapsed);
-            iconEl?.classList.toggle('rotate-180', isCollapsed);
+            document.querySelector('.collapse-icon')?.classList.toggle('rotate-180', isCollapsed);
         });
     });
 </script>
