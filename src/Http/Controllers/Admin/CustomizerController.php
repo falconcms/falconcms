@@ -987,8 +987,14 @@ class CustomizerController extends Controller
                     ],
                     'perf_minify_html' => [
                         'type' => 'toggle',
-                        'label' => 'Minify HTML & CSS',
-                        'desc' => 'Strips the blank space between tags, and minifies the inline CSS the page builder outputs (comments and dead whitespace), so each page is smaller to download. Code, pre and script blocks are left untouched.',
+                        'label' => 'Minify HTML',
+                        'desc' => 'Strips the blank space between tags so each page is smaller to download. Code, pre and script blocks are left untouched.',
+                        'default' => '0',
+                    ],
+                    'perf_minify_css' => [
+                        'type' => 'toggle',
+                        'label' => 'Minify CSS',
+                        'desc' => 'Minifies the inline CSS the page builder outputs — removes comments and dead whitespace from every <style> block. Works on its own or alongside Minify HTML.',
                         'default' => '0',
                     ],
                     'performance_webp_conversion' => [

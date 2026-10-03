@@ -36,8 +36,9 @@ class HtmlOptimizeMiddleware
 
         $lazy = get_cms_option('perf_lazy_images', '0') === '1';
         $defer = get_cms_option('perf_defer_js', '0') === '1';
-        $minify = get_cms_option('perf_minify_html', '0') === '1';
-        if (!$lazy && !$defer && !$minify) {
+        $minifyHtml = get_cms_option('perf_minify_html', '0') === '1';
+        $minifyCss = get_cms_option('perf_minify_css', '0') === '1';
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss) {
             return $response;
         }
 
@@ -52,8 +53,10 @@ class HtmlOptimizeMiddleware
         if ($defer) {
             $html = $this->deferScripts($html);
         }
-        if ($minify) {
-            $html = $this->minify($html);
+        // CSS minify (inline <style>) and HTML minify are independent switches, but both are done
+        // in one pass so the HTML collapse never disturbs CSS it should have shrunk first.
+        if ($minifyHtml || $minifyCss) {
+            $html = $this->minify($html, $minifyHtml, $minifyCss);
         }
 
         $response->setContent($html);
@@ -124,10 +127,8 @@ class HtmlOptimizeMiddleware
      * inline <style> is minified as CSS (the builder emits a lot of it, so it is worth shrinking
      * rather than leaving alone).
      */
-    private function minify(string $html): string
+    private function minify(string $html, bool $minifyHtml, bool $minifyCss): string
     {
-        // Minify the CSS inside every <style> first, then shield the result so the HTML pass
-        // below does not touch it.
         $protected = [];
         $shield = function (string $content) use (&$protected) {
             $key = "\x01".count($protected)."\x01";
@@ -136,8 +137,15 @@ class HtmlOptimizeMiddleware
             return $key;
         };
 
+        // Each <style> is minified when CSS minify is on, and always shielded so the HTML pass
+        // never collapses CSS it should not touch.
         $html = preg_replace_callback('/(<style\b[^>]*>)(.*?)(<\/style>)/is',
-            fn ($m) => $shield($m[1].$this->minifyCss($m[2]).$m[3]), $html) ?? $html;
+            fn ($m) => $shield($m[1].($minifyCss ? $this->minifyCss($m[2]) : $m[2]).$m[3]), $html) ?? $html;
+
+        if (!$minifyHtml) {
+            // CSS-only: nothing else changes, just restore the (minified) style blocks.
+            return strtr($html, $protected);
+        }
 
         // Contents whose whitespace is meaningful: left exactly as they are.
         $html = preg_replace_callback('/<(pre|textarea|script)\b[^>]*>.*?<\/\1>/is',

@@ -68,14 +68,20 @@ class HtmlOptimizeTest extends TestCase
         $this->assertStringContainsString('var x =   1;', $out, 'script whitespace is untouched');
     }
 
-    public function test_minify_also_minifies_inline_css(): void
+    public function test_css_minify_runs_independently_of_html_minify(): void
     {
         $html = "<style>\n  .box {\n    color: red;\n    margin: 0;\n  }\n  /* a comment */\n  .b , .c { padding : 2px ; }\n</style><div>  x  </div>";
-        $out = $this->opt($html, ['perf_minify_html' => '1']);
 
-        $this->assertStringContainsString('.box{color:red;margin:0}', $out);
-        $this->assertStringNotContainsString('/* a comment */', $out);
-        $this->assertStringContainsString('.b,.c{padding:2px}', $out);
+        // CSS on, HTML off: the <style> is minified, the whitespace between tags is kept.
+        $cssOnly = $this->opt($html, ['perf_minify_css' => '1', 'perf_minify_html' => '0']);
+        $this->assertStringContainsString('.box{color:red;margin:0}', $cssOnly);
+        $this->assertStringNotContainsString('/* a comment */', $cssOnly);
+        $this->assertStringContainsString('.b,.c{padding:2px}', $cssOnly);
+        $this->assertStringContainsString('<div>  x  </div>', $cssOnly, 'HTML whitespace untouched when only CSS minify is on');
+
+        // HTML on, CSS off: tags collapse, the CSS keeps its comment and spacing.
+        $htmlOnly = $this->opt($html, ['perf_minify_html' => '1', 'perf_minify_css' => '0']);
+        $this->assertStringContainsString('/* a comment */', $htmlOnly, 'CSS untouched when only HTML minify is on');
     }
 
     public function test_optimisation_applies_to_logged_in_visitors_too(): void
