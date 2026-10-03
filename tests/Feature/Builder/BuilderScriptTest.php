@@ -53,6 +53,38 @@ class BuilderScriptTest extends TestCase
     }
 
     /**
+     * The Layout screen (Falcon Builder → Sections) has the same failure mode. In v2.7.5 an
+     * apostrophe — "the theme's own" — inside a single-quoted string ended the string early;
+     * the whole script died, and every switch, picker and the conditions modal on the
+     * screen silently did nothing.
+     */
+    public function test_the_layout_screen_script_parses(): void
+    {
+        $node = $this->nodeBinary();
+        if ($node === null) {
+            $this->markTestSkipped('node is not on PATH; cannot parse the layout screen script');
+        }
+
+        $source = (string) file_get_contents(
+            __DIR__.'/../../../resources/views/admin/falcon-builder/sections.blade.php'
+        );
+
+        preg_match_all('/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/', $source, $m);
+        $this->assertNotEmpty($m[1], 'the layout screen has no inline script; the extraction below needs updating');
+
+        foreach ($m[1] as $i => $body) {
+            $tmp = tempnam(sys_get_temp_dir(), 'fcjs').'.js';
+            file_put_contents($tmp, $this->toJavaScript($body));
+            $out = [];
+            $status = 0;
+            exec(escapeshellarg($node).' --check '.escapeshellarg($tmp).' 2>&1', $out, $status);
+            @unlink($tmp);
+
+            $this->assertSame(0, $status, "inline script #{$i} on the layout screen does not parse:\n".implode("\n", $out));
+        }
+    }
+
+    /**
      * Reduce a Blade-flavoured script to something a JavaScript parser can read.
      *
      * Each construct is replaced by the shape of what it produces, not by nothing. A

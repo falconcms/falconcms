@@ -334,6 +334,9 @@ class BackupController extends Controller
     {
         $this->checkAccess();
         @set_time_limit(0);
+        // A full restore outlives the browser's patience. When the tab gave up (nginx 499)
+        // PHP stopped after the database and never put the media files back.
+        @ignore_user_abort(true);
 
         $filename = basename($filename);
         $path = storage_path('app/backups/'.$filename);
@@ -562,18 +565,44 @@ class BackupController extends Controller
         $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql); // strip UTF-8 BOM
         $statements = $this->parseSqlStatements($sql);
         $executed = 0;
+        $keepActivityLog = Schema::hasTable('activity_logs');
 
         $this->toggleForeignKeys(false);
         try {
             foreach ($statements as $stmt) {
+                if ($keepActivityLog && $this->touchesActivityLog($stmt)) {
+                    continue;
+                }
                 DB::unprepared($stmt);
                 $executed++;
             }
         } finally {
             $this->toggleForeignKeys(true);
+
+            // Settings are served from a cache, not the table. Without this the site keeps
+            // showing whatever was configured before the restore — on demo.falconcms.com
+            // (2026-10-01) a restored database still served the vandalised title and an
+            // enabled Magic Login until the cache was cleared by hand.
+            forget_cms_options_cache();
         }
 
         return $executed;
+    }
+
+    /**
+     * A restore leaves the activity log alone. The log is the record of what happened
+     * to the site — the moment it matters most is right after an incident, which is also
+     * when a backup gets restored; letting the dump drop and recreate the table erased
+     * the evidence of the very changes being rolled back.
+     */
+    private function touchesActivityLog(string $stmt): bool
+    {
+        $table = preg_quote(DB::getTablePrefix().'activity_logs', '/');
+
+        return (bool) preg_match(
+            '/^\s*(?:DROP\s+TABLE(?:\s+IF\s+EXISTS)?|CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?|INSERT\s+(?:IGNORE\s+)?INTO|REPLACE\s+INTO|ALTER\s+TABLE|LOCK\s+TABLES|TRUNCATE(?:\s+TABLE)?|DELETE\s+FROM)\s+[`"]?'.$table.'[`"]?[\s(;,]/i',
+            $stmt.' '
+        );
     }
 
     /**

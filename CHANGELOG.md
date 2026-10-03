@@ -57,6 +57,11 @@ Full release notes, with the reasoning behind each change, live at
 - A false "cache not writable" warning on Clear Cache on Windows (`is_writable()` reflects the
   read-only attribute, not the real permission).
 - The Customizer footer breaking when a literal `<style>` tag appeared in a field description.
+- The Layout screen (Falcon Builder → Sections) was dead — an apostrophe in a tooltip
+  (`theme's`) closed a single-quoted JavaScript string and broke the whole script.
+- Restoring a backup now keeps the activity log (the record of what happened, most needed right
+  after an incident), clears the settings cache afterwards (so the site stops serving pre-restore
+  values), and survives the browser tab closing mid-restore.
 
 ### Security
 

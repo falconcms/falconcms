@@ -221,7 +221,7 @@
             // an existing section too.
             const empty = sec.is_empty !== undefined ? !!sec.is_empty : true;
             const status = empty
-                ? '<span class="slot-status text-[10px] uppercase tracking-wide text-[#bd8600]" data-slot-label="' + label + '" title="Nothing has been built in this section yet, so the theme's own is shown instead.">Empty &middot; open to build it</span>'
+                ? '<span class="slot-status text-[10px] uppercase tracking-wide text-[#bd8600]" data-slot-label="' + label + '" title="Nothing has been built in this section yet, so the theme&#39;s own is shown instead.">Empty &middot; open to build it</span>'
                 : '<span class="slot-status text-[10px] uppercase tracking-wide text-[#00a32a]" data-slot-label="' + label + '">Active &middot; ' + label + '</span>';
             row.innerHTML =
                 '<div class="flex items-center justify-center w-11 bg-[#f6f7f7] text-[#646970] border-r border-[#e2e4e7]"><span class="material-symbols-outlined text-[20px]">' + icon + '</span></div>' +

@@ -319,6 +319,50 @@ class BackupRestoreTest extends TestCase
         $this->assertStringEndsWith('.sql', $stored[0]);
     }
 
+    // ---- what a restore leaves behind ------------------------------------------
+
+    /**
+     * A restore is what you reach for after an incident, so it must not wipe the record of
+     * the incident. On demo.falconcms.com (2026-10-01) the dump's DROP + CREATE emptied the
+     * activity log, and the vandals' actions had to be dug back out of the MySQL binlog.
+     */
+    public function test_a_restore_keeps_the_activity_log(): void
+    {
+        DB::table('activity_logs')->insert([
+            'action' => 'deleted',
+            'description' => 'Deleted page permanently: Home',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->placeBackup('with-log.zip', [
+            'database.sql' => "DROP TABLE IF EXISTS \"activity_logs\";\n"
+                ."CREATE TABLE \"activity_logs\" (\"id\" integer primary key, \"action\" varchar);\n"
+                ."INSERT INTO \"activity_logs\" (\"id\", \"action\") VALUES (1, 'from-backup');\n",
+        ]);
+
+        $this->restore('with-log.zip')->assertSessionHas('success');
+
+        $this->assertDatabaseHas('activity_logs', ['description' => 'Deleted page permanently: Home']);
+        $this->assertDatabaseMissing('activity_logs', ['action' => 'from-backup']);
+    }
+
+    /** Settings are served from a cache; a restore that skips it changes nothing visible. */
+    public function test_a_restore_serves_the_restored_settings(): void
+    {
+        DB::table('cms_settings')->updateOrInsert(['key' => 'site_title'], ['value' => 'Vandalised']);
+        forget_cms_options_cache();
+        $this->assertSame('Vandalised', get_cms_option('site_title'));
+
+        $this->placeBackup('settings.zip', [
+            'database.sql' => "UPDATE \"cms_settings\" SET \"value\" = 'Restored' WHERE \"key\" = 'site_title';\n",
+        ]);
+
+        $this->restore('settings.zip')->assertSessionHas('success');
+
+        $this->assertSame('Restored', get_cms_option('site_title'));
+    }
+
     public function test_a_subscriber_cannot_upload_a_backup(): void
     {
         $this->actingAs($this->subscriber())->post('/admin/tools/backup/upload', [
