@@ -997,6 +997,12 @@ class CustomizerController extends Controller
                         'desc' => 'Minifies the inline CSS the page builder outputs — removes comments and dead whitespace from every style block. Works on its own or alongside Minify HTML.',
                         'default' => '0',
                     ],
+                    'perf_conditional_assets' => [
+                        'type' => 'toggle',
+                        'label' => 'Load Assets Only When Needed',
+                        'desc' => 'Font Awesome and Alpine.js load on a page only when that page actually uses them (an icon, an interactive widget). A plain content page then skips both. Icon fonts and each builder element already load this way. Leave off if you add Font Awesome icons by hand in custom code.',
+                        'default' => '0',
+                    ],
                     'performance_webp_conversion' => [
                         'type' => 'toggle',
                         'label' => 'WebP Conversion',

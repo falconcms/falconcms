@@ -95,13 +95,21 @@
     
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- Font Awesome and Alpine load here only when the "Load assets only when needed" option is
+         off. With it on, they move below — next to the icon-set links — and are emitted only when
+         the page's own markup actually uses them (an "fa-" class, an "x-data" attribute). --}}
+    @php $__condAssets = get_cms_option('perf_conditional_assets', '0') === '1'; @endphp
+    @unless($__condAssets)
     <!-- FontAwesome -->
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
+    @endunless
 
     <!-- Tailwind -->
     <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>
+    @unless($__condAssets)
     <!-- Alpine.js -->
     <script defer src="{{ asset('vendor/falcon-cms/js/alpine.min.js') }}"></script>
+    @endunless
     <!-- SweetAlert2 -->
     <script src="{{ asset('vendor/falcon-cms/js/sweetalert2.all.min.js') }}"></script>
     <script>
@@ -665,6 +673,19 @@
     @foreach($__iconLinks as $__iconLink)
     <link rel="stylesheet" href="{{ $__iconLink }}">
     @endforeach
+
+    {{-- With "Load assets only when needed" on, pull in Font Awesome and Alpine only when the
+         page's rendered markup actually uses them — the same content buffer the icon scan above
+         reads. A page with no "fa-" icon and no "x-data" ships neither. Detection errs toward
+         loading (a stray match just loads the library), so nothing that is used goes missing. --}}
+    @if($__condAssets)
+        @if(stripos($__iconScan, 'fa-') !== false)
+        <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
+        @endif
+        @if(stripos($__iconScan, 'x-data') !== false)
+        <script defer src="{{ asset('vendor/falcon-cms/js/alpine.min.js') }}"></script>
+        @endif
+    @endif
 
     @yield('styles')
     {!! do_falcon_action('falcon_head') !!}
