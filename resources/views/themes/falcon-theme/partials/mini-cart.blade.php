@@ -104,8 +104,10 @@ window.LazyCart = (function () {
 
     let _toastTimer;
     function toast(message, icon) {
-        if (window.Swal) {
-            Swal.fire({ title: message, icon: icon || 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500, timerProgressBar: true });
+        // falconToast uses SweetAlert if it is on the page, and otherwise lazy-loads it on the
+        // first toast — so this global mini-cart never forces the bundle onto a plain content page.
+        if (window.falconToast) {
+            window.falconToast(message, icon);
             return;
         }
         // Fallback: small bar at top of the mini-cart panel

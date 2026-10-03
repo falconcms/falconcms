@@ -51,6 +51,7 @@ class HtmlOptimizeMiddleware
 
         if ($conditional) {
             $html = $this->inlineLucide($html);
+            $html = $this->conditionalSweetAlert($html);
         }
         if ($lazy) {
             $html = $this->lazyImages($html);
@@ -121,6 +122,42 @@ class HtmlOptimizeMiddleware
         }
 
         return $html;
+    }
+
+    /**
+     * Drop the ~45 KB SweetAlert2 bundle on pages that never call it. The theme wraps the library
+     * and its one patch in <!--falcon-swal--> … <!--/falcon-swal-->; everything OUTSIDE that block
+     * is the page's own markup, so if none of it references Swal the bundle is removed, and if any
+     * of it does (a storefront handler, a builder card, anything added later) the block is kept
+     * verbatim. Either way the marker comments themselves are stripped. This sees the finished page,
+     * so it needs no list of which templates use Swal.
+     */
+    private function conditionalSweetAlert(string $html): string
+    {
+        if (stripos($html, '<!--falcon-swal-->') === false) {
+            return $html;
+        }
+
+        // Scan the page with BOTH SweetAlert blocks removed — the eager bundle and the always-present
+        // lazy loader — so only the page's own Swal use counts. The lazy loader references Swal and
+        // the bundle URL itself, which must not pin the bundle to every page.
+        $scan = preg_replace('/<!--falcon-swal-->.*?<!--\/falcon-swal-->/is', '', $html, 1) ?? $html;
+        $scan = preg_replace('/<!--falcon-swal-lazy-->.*?<!--\/falcon-swal-lazy-->/is', '', $scan, 1) ?? $scan;
+
+        $usesSwal = preg_match('/\bSwal\s*\.\s*\w+/', $scan) === 1
+            || preg_match('/\bswal\s*\(/i', $scan) === 1;
+
+        if (!$usesSwal) {
+            // Nothing else on the page calls Swal → drop the eager bundle; the lazy loader stays
+            // (markers stripped) so the mini-cart toast can still fetch it on demand.
+            $html = preg_replace('/<!--falcon-swal-->.*?<!--\/falcon-swal-->/is', '', $html, 1) ?? $html;
+        }
+
+        // Either way, remove the marker comments.
+        return str_replace(
+            ['<!--falcon-swal-->', '<!--/falcon-swal-->', '<!--falcon-swal-lazy-->', '<!--/falcon-swal-lazy-->'],
+            '', $html
+        );
     }
 
     /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first eager. */

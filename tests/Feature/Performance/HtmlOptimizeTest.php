@@ -128,6 +128,65 @@ class HtmlOptimizeTest extends TestCase
         $this->assertSame($html, $out);
     }
 
+    public function test_sweetalert_is_dropped_on_a_page_that_never_calls_it(): void
+    {
+        $html = '<head><!--falcon-swal--><script src="/x/sweetalert2.all.min.js"></script>'
+            .'<script>/*patch*/</script><!--/falcon-swal--></head><body><p>Just content</p></body>';
+        $out = $this->opt($html, ['perf_conditional_assets' => '1']);
+
+        $this->assertStringNotContainsString('sweetalert2', $out, 'bundle removed when unused');
+        $this->assertStringNotContainsString('falcon-swal', $out, 'marker comments removed');
+        $this->assertStringContainsString('Just content', $out);
+    }
+
+    public function test_lazy_loader_is_kept_and_does_not_pin_the_eager_bundle(): void
+    {
+        // The always-present lazy loader references Swal and the bundle URL; on a page with no other
+        // Swal use the eager bundle is still dropped, but the lazy loader stays so the mini-cart
+        // toast can fetch it on demand.
+        $html = '<head>'
+            .'<!--falcon-swal--><script src="/x/sweetalert2.all.min.js"></script><!--/falcon-swal-->'
+            .'<!--falcon-swal-lazy--><script>window.falconToast=function(){/* loads sweetalert2 then Swal.fire */}</script><!--/falcon-swal-lazy-->'
+            .'</head><body><p>content only</p></body>';
+        $out = $this->opt($html, ['perf_conditional_assets' => '1']);
+
+        $this->assertStringNotContainsString('src="/x/sweetalert2.all.min.js"', $out, 'eager bundle dropped');
+        $this->assertStringContainsString('window.falconToast', $out, 'lazy loader kept');
+        $this->assertStringNotContainsString('falcon-swal', $out, 'all marker comments removed');
+    }
+
+    public function test_eager_bundle_kept_when_a_page_uses_swal_alongside_the_lazy_loader(): void
+    {
+        $html = '<head>'
+            .'<!--falcon-swal--><script src="/x/sweetalert2.all.min.js"></script><!--/falcon-swal-->'
+            .'<!--falcon-swal-lazy--><script>window.falconToast=function(){}</script><!--/falcon-swal-lazy-->'
+            .'</head><body><button onclick="Swal.fire({})">buy</button></body>';
+        $out = $this->opt($html, ['perf_conditional_assets' => '1']);
+
+        $this->assertStringContainsString('src="/x/sweetalert2.all.min.js"', $out, 'eager bundle kept for a page that uses Swal');
+        $this->assertStringContainsString('window.falconToast', $out, 'lazy loader kept too');
+        $this->assertStringNotContainsString('falcon-swal', $out, 'marker comments removed');
+    }
+
+    public function test_sweetalert_is_kept_when_the_page_calls_it(): void
+    {
+        $html = '<head><!--falcon-swal--><script src="/x/sweetalert2.all.min.js"></script><!--/falcon-swal--></head>'
+            .'<body><button onclick="Swal.fire({text:\'hi\'})">x</button></body>';
+        $out = $this->opt($html, ['perf_conditional_assets' => '1']);
+
+        $this->assertStringContainsString('sweetalert2.all.min.js', $out, 'bundle kept when used');
+        $this->assertStringNotContainsString('falcon-swal', $out, 'marker comments still removed');
+    }
+
+    public function test_sweetalert_markers_are_left_alone_when_the_toggle_is_off(): void
+    {
+        // Only the conditional-assets toggle governs this; with it off the block (and its markers)
+        // pass through untouched.
+        $html = '<head><!--falcon-swal--><script src="/x/sweetalert2.all.min.js"></script><!--/falcon-swal--></head><body>x</body>';
+        $out = $this->opt($html, ['perf_conditional_assets' => '0', 'perf_minify_html' => '0']);
+        $this->assertSame($html, $out);
+    }
+
     public function test_non_html_and_admin_are_left_alone(): void
     {
         $this->setCmsOptions(['perf_minify_html' => '1']);

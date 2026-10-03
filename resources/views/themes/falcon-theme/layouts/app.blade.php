@@ -155,6 +155,11 @@
     <!-- Alpine.js -->
     <script defer src="{{ asset('vendor/falcon-cms/js/alpine.min.js') }}"></script>
     @endunless
+    {{-- SweetAlert2. Wrapped in markers so that, with "Load Assets Only When Needed" on, the
+         HTML-optimise middleware can drop this ~45 KB bundle on any page whose finished markup
+         never calls Swal — and keep it, untouched, on any page that does (now or in future),
+         without this template needing to know which pages those are. --}}
+    <!--falcon-swal-->
     <!-- SweetAlert2 -->
     <script src="{{ asset('vendor/falcon-cms/js/sweetalert2.all.min.js') }}"></script>
     <script>
@@ -173,6 +178,35 @@
             };
         })();
     </script>
+    <!--/falcon-swal-->
+
+    {{-- Lazy SweetAlert for the always-present bits (the mini-cart toast): if the bundle above was
+         kept it is used as-is; if it was dropped (a page with no other Swal), it is fetched on the
+         first toast and the call replayed. This block is in its own markers so the drop check never
+         counts it as "the page uses Swal" — otherwise the mini-cart would pin the bundle to every
+         page. Kept tiny and dependency-free. --}}
+    <!--falcon-swal-lazy-->
+    <script>
+        (function () {
+            window.falconToast = function (message, icon) {
+                var opts = { title: message, icon: icon || 'success', toast: true, position: 'top-end',
+                             showConfirmButton: false, timer: 2500, timerProgressBar: true };
+                var run = function (S) { if (S && typeof S.fire === 'function') S.fire(opts); };
+                if (window.Swal) { run(window.Swal); return; }
+                (window.__falconSwalQ = window.__falconSwalQ || []).push(run);
+                if (window.__falconSwalLoading) return;
+                window.__falconSwalLoading = true;
+                var s = document.createElement('script');
+                s.src = '{{ asset('vendor/falcon-cms/js/sweetalert2.all.min.js') }}';
+                s.onload = function () {
+                    var q = window.__falconSwalQ || []; window.__falconSwalQ = [];
+                    for (var i = 0; i < q.length; i++) q[i](window.Swal);
+                };
+                document.head.appendChild(s);
+            };
+        })();
+    </script>
+    <!--/falcon-swal-lazy-->
     @unless($__compiledCss)
     <script>
         tailwind.config = {
