@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
  *  - perf_defer_js:     adds defer to external <script src> that is not already defer/async and
  *    is not on the must-run-early list, so scripts stop blocking the parser.
  *  - perf_minify_html:  collapses the whitespace between tags.
+ *  - perf_inline_icons: swaps the icon libraries' stylesheets for the few rules the page uses.
  *
  * Only successful, non-admin, HTML GET responses are touched; never JSON, downloads, the admin,
  * or anything inside a logged-in session where correctness matters more than bytes.
@@ -46,7 +47,8 @@ class HtmlOptimizeMiddleware
         $minifyHtml = get_cms_option('perf_minify_html', '0') === '1';
         $minifyCss = get_cms_option('perf_minify_css', '0') === '1';
         $conditional = get_cms_option('perf_conditional_assets', '0') === '1';
-        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional) {
+        $inlineIcons = get_cms_option('perf_inline_icons', '0') === '1';
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons) {
             return $response;
         }
 
@@ -58,6 +60,9 @@ class HtmlOptimizeMiddleware
         if ($conditional) {
             $html = $this->inlineLucide($html);
             $html = $this->conditionalSweetAlert($html);
+        }
+        if ($inlineIcons) {
+            $html = $this->inlineIcons($html);
         }
         if ($lazy) {
             $html = $this->lazyImages($html);
@@ -164,6 +169,49 @@ class HtmlOptimizeMiddleware
             ['<!--falcon-swal-->', '<!--/falcon-swal-->', '<!--falcon-swal-lazy-->', '<!--/falcon-swal-lazy-->'],
             '', $html
         );
+    }
+
+    /**
+     * Replace the icon libraries' stylesheets (Font Awesome and the extra sets) with one inline
+     * <style> holding only the rules for the icons this page shows.
+     *
+     * Each library is a render-blocking 70–140 KB stylesheet, and a page typically uses a
+     * handful of its icons. The finished HTML is scanned as a whole, inline scripts and Alpine
+     * expressions included, so an icon a widget swaps in on click is kept. A library the page
+     * uses no icon from is dropped entirely. Works on any theme: it only needs the CMS's own
+     * stylesheet URLs, wherever the theme put them.
+     */
+    private function inlineIcons(string $html): string
+    {
+        $assets = [];
+        foreach (falcon_icon_inline_sets() as $set => $def) {
+            $assets[strtolower(basename($def['asset']))] = $set;
+        }
+        $names = implode('|', array_map(fn ($a) => preg_quote($a, '#'), array_keys($assets)));
+        if (!preg_match_all('#<link\b[^>]*\bhref=["\'][^"\']*/vendor/falcon-cms/css/('.$names.')(?:\?[^"\']*)?["\'][^>]*>#i', $html, $links, PREG_SET_ORDER)) {
+            return $html;
+        }
+
+        $sets = array_values(array_unique(array_map(fn ($l) => $assets[strtolower($l[1])], $links)));
+        // the links themselves name no icons; keep them out of the scan
+        $scan = str_replace(array_column($links, 0), '', $html);
+        try {
+            $css = falcon_icon_set_inline_css($scan, $sets);
+        } catch (\Throwable $e) {
+            return $html; // never worse than before: keep the stylesheets
+        }
+
+        $first = true;
+        foreach ($links as $link) {
+            $replacement = '';
+            if ($first && $css !== '') {
+                $replacement = '<style id="falcon-icon-css">'.$css.'</style>';
+            }
+            $first = false;
+            $html = preg_replace('/'.preg_quote($link[0], '/').'/', $replacement, $html, 1) ?? $html;
+        }
+
+        return $html;
     }
 
     /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first few eager. */

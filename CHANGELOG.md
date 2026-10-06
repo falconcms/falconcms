@@ -18,12 +18,13 @@ Full release notes, with the reasoning behind each change, live at
 
 ### Performance
 
-- **Extra icon sets no longer block rendering.** A page that shows icons from Bootstrap Icons,
-  Remix, Boxicons or Lucide downloaded each set's whole stylesheet: 70–140 KB of CSS apiece,
-  render-blocking, for what was usually a handful of icons. The page now carries, inline, only
-  the rules for the icons it shows: a kilobyte or two for a typical page. The fonts load with
-  `font-display: swap`. Icons named in Alpine expressions and data attributes are included too.
-  The `falcon_icon_inline_css` filter switches back to linking whole stylesheets.
+- **New option: Inline Only the Icons in Use** (Customizer → Performance, off by default). Icon
+  libraries (Font Awesome, Bootstrap Icons, Remix, Boxicons, Lucide) each load a whole
+  stylesheet, 70–140 KB apiece, and the page waits for it before it paints. With the option on,
+  the page carries, inline, only the rules for the icons it shows: usually a kilobyte or two.
+  Libraries the page doesn't use are dropped, and the fonts load with `font-display: swap`. The
+  whole page is scanned, so icons named in Alpine expressions and inline scripts are kept too.
+  Works with any theme. Measured on falconcms.com, mobile LCP fell from 11.4 s to about 3.8 s.
 - **The hero image is no longer lazy-loaded.** With "Lazy-load images" on, only the first image on
   the page stayed eager. That image is usually the logo, so the hero, the largest paint on most
   pages, was lazy and loaded late. The first three images now stay eager, as in WordPress.

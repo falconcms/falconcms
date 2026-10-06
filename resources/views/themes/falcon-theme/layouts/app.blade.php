@@ -767,14 +767,8 @@
         $customContent   = get_falcon_content();
         $customFooter    = get_falcon_footer();
         $__iconScan .= $customHeader . $customTitleBar . $customContent . $customFooter;
-        // Only the rules for the icons this page uses, inline: nothing to wait for. Falls back to
-        // linking the whole stylesheets when inlining is switched off (falcon_icon_inline_css).
-        $__iconCss = function_exists('falcon_icon_set_inline_css') ? falcon_icon_set_inline_css($__iconScan) : '';
-        $__iconLinks = $__iconCss === '' && function_exists('falcon_icon_set_links') ? falcon_icon_set_links($__iconScan) : [];
+        $__iconLinks = function_exists('falcon_icon_set_links') ? falcon_icon_set_links($__iconScan) : [];
     @endphp
-    @if($__iconCss !== '')
-    <style id="falcon-icon-css">{!! $__iconCss !!}</style>
-    @endif
     @foreach($__iconLinks as $__iconLink)
     <link rel="stylesheet" href="{{ $__iconLink }}">
     @endforeach

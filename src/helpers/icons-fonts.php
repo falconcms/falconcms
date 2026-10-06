@@ -112,20 +112,39 @@ if (!function_exists('falcon_icon_set_links')) {
     }
 }
 
+if (!function_exists('falcon_icon_inline_sets')) {
+    /**
+     * Every icon stylesheet the CMS ships that can be cut down to the icons a page uses: Font
+     * Awesome plus the extra sets. `glyph` says how one icon's rule looks: "before" for
+     * `.ri-home-line::before{content:…}`, "var" for Font Awesome's `.fa-house{--fa:…}`.
+     *
+     * @return array<string,array{class:string,asset:string,glyph:string}>
+     */
+    function falcon_icon_inline_sets(): array
+    {
+        $sets = ['fontawesome' => ['class' => 'fa-', 'asset' => 'css/font-awesome.all.min.css', 'glyph' => 'var']];
+        foreach (falcon_icon_sets() as $set => $def) {
+            $sets[$set] = ['class' => $def['class'], 'asset' => $def['asset'], 'glyph' => 'before'];
+        }
+
+        return $sets;
+    }
+}
+
 if (!function_exists('falcon_icon_set_parts')) {
     /**
-     * One icon set's stylesheet split into what every page needs (the @font-face, the base
-     * class rules, sizing and animation helpers) and one rule per icon, keyed by icon class.
+     * One icon stylesheet split into what every page needs (the @font-face rules, the base
+     * classes, sizing and animation helpers) and one rule per icon, keyed by icon class.
      *
-     * A page that shows two Remix icons should not download all 3,000 of them: with these
-     * parts, falcon_icon_set_inline_css() emits only the rules a page uses. Parsed once per
-     * file version and cached, since every page asks for the same split.
+     * A page that shows two Remix icons should not download all 3,000: with these parts,
+     * falcon_icon_set_inline_css() emits only the rules a page uses. Parsed once per file
+     * version and cached, since every page asks for the same split.
      *
      * @return array{base:string,glyphs:array<string,string>}
      */
     function falcon_icon_set_parts(string $set): array
     {
-        $def = falcon_icon_sets()[$set] ?? null;
+        $def = falcon_icon_inline_sets()[$set] ?? null;
         $file = $def ? __DIR__.'/../../public/'.str_replace('css/', 'assets/css/', $def['asset']) : '';
         if (!$def || !is_file($file)) {
             return ['base' => '', 'glyphs' => []];
@@ -135,7 +154,9 @@ if (!function_exists('falcon_icon_set_parts')) {
             $css = preg_replace('#/\*.*?\*/#s', '', (string) @file_get_contents($file)) ?? '';
             // the stylesheet is served from vendor/falcon-cms/css/, so its fonts sit at ../webfonts/
             $fonts = rtrim(asset('vendor/falcon-cms/webfonts'), '/').'/';
-            $glyphSelector = '/^\.('.$def['class'].'[a-z0-9-]+)\s*::?before$/i';
+            $glyphSelector = $def['glyph'] === 'var'
+                ? '/^\.('.$def['class'].'[a-z0-9-]+)$/i'
+                : '/^\.('.$def['class'].'[a-z0-9-]+)\s*::?before$/i';
 
             $base = '';
             $glyphs = [];
@@ -169,9 +190,12 @@ if (!function_exists('falcon_icon_set_parts')) {
                             $icons[] = strtolower($m[1]);
                         }
                     }
-                    if ($prelude !== '' && $prelude[0] !== '@' && count($icons) === count($selectors)) {
-                        foreach ($icons as $k => $icon) {
-                            $glyphs[$icon] = ($glyphs[$icon] ?? '').$selectors[$k].$body;
+                    $isGlyph = $prelude !== '' && $prelude[0] !== '@' && count($icons) === count($selectors)
+                        && ($def['glyph'] !== 'var' || str_contains($body, '--fa'));
+                    if ($isGlyph) {
+                        // aliases share one rule (.fa-mail-reply,.fa-reply{…}): each name maps to it
+                        foreach ($icons as $icon) {
+                            $glyphs[$icon] = $prelude.$body;
                         }
                     } else {
                         $base .= $prelude.$body; // base classes, size/rotate/spin helpers, @keyframes
@@ -193,31 +217,30 @@ if (!function_exists('falcon_icon_set_parts')) {
 
 if (!function_exists('falcon_icon_set_inline_css')) {
     /**
-     * The CSS for just the icons a chunk of rendered HTML uses, from the sets other than Font
-     * Awesome, ready to go in a <style> tag.
+     * The CSS for just the icons a chunk of rendered HTML uses, from the given sets (all of
+     * them by default), ready to go in a <style> tag. A set the HTML uses no icon from adds
+     * nothing.
      *
-     * Linking a set's stylesheet blocks rendering on 70–140 KB of CSS for what is usually a
-     * handful of icons. Inlined, the few rules a page needs cost a kilobyte or two and nothing
-     * waits. The whole HTML is scanned, not only class attributes, so an icon named in an
-     * Alpine expression or a data attribute (an accordion's open/closed icon) is kept too.
-     * Returns '' when the page uses none, or when the falcon_icon_inline_css filter is false,
-     * in which case the caller links the stylesheets as before.
+     * The whole HTML is scanned, not only class attributes, so an icon named in an Alpine
+     * expression, a data attribute or an inline script (an accordion's open/closed icon) is
+     * kept too. Used by "Inline Only the Icons in Use" (HtmlOptimizeMiddleware).
+     *
+     * @param  list<string>|null  $sets
      */
-    function falcon_icon_set_inline_css(string $html): string
+    function falcon_icon_set_inline_css(string $html, ?array $sets = null): string
     {
-        if (!apply_falcon_filters('falcon_icon_inline_css', true)) {
-            return '';
-        }
-
         $css = '';
-        foreach (falcon_icon_sets() as $set => $def) {
+        foreach (falcon_icon_inline_sets() as $set => $def) {
+            if ($sets !== null && !in_array($set, $sets, true)) {
+                continue;
+            }
             if (!preg_match_all('/(?<![a-z0-9_-])('.$def['class'].'[a-z0-9-]+)/i', $html, $m)) {
                 continue;
             }
             $parts = falcon_icon_set_parts($set);
             $used = array_intersect_key($parts['glyphs'], array_flip(array_map('strtolower', array_unique($m[1]))));
             if ($used) {
-                $css .= $parts['base'].implode('', $used);
+                $css .= $parts['base'].implode('', array_unique($used));
             }
         }
 

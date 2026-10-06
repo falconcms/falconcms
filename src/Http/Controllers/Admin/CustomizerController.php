@@ -1014,6 +1014,12 @@ class CustomizerController extends Controller
                         // Built from, and loaded by, the Falcon theme only — disabled under another theme.
                         'theme_only' => true,
                     ],
+                    'perf_inline_icons' => [
+                        'type' => 'toggle',
+                        'label' => 'Inline Only the Icons in Use',
+                        'desc' => 'Icon libraries (Font Awesome, Bootstrap Icons, Remix, Boxicons, Lucide) normally load their whole stylesheet: 70–140 KB each, and the page waits for it before it shows. With this on, the page carries just the rules for the icons it actually shows, usually a kilobyte or two, and nothing waits. Works with any theme. Leave off if your theme adds icons from its own JavaScript files.',
+                        'default' => '0',
+                    ],
                     'performance_webp_conversion' => [
                         'type' => 'toggle',
                         'label' => 'WebP Conversion',

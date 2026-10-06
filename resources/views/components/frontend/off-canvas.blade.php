@@ -30,12 +30,10 @@
         ];
     }
     $__ocFontUrl = $__ocFonts ? falcon_google_font_url(array_unique($__ocFonts)) : '';
-    $__ocHtml = implode('', array_column($__ocPanels, 'html'));
-    $__ocIconCss = function_exists('falcon_icon_set_inline_css') ? falcon_icon_set_inline_css($__ocHtml) : '';
-    $__ocIcons = $__ocIconCss === '' && function_exists('falcon_icon_set_links') ? falcon_icon_set_links($__ocHtml) : [];
+    $__ocIcons = function_exists('falcon_icon_set_links')
+        ? falcon_icon_set_links(implode('', array_column($__ocPanels, 'html'))) : [];
 @endphp
 @if($__ocFontUrl)<link rel="stylesheet" href="{{ $__ocFontUrl }}">@endif
-@if($__ocIconCss !== '')<style>{!! $__ocIconCss !!}</style>@endif
 @foreach($__ocIcons as $__ocIcon)<link rel="stylesheet" href="{{ $__ocIcon }}">@endforeach
 
 @once
