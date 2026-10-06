@@ -95,6 +95,15 @@ class IconInlineCssTest extends TestCase
         $this->assertLessThan(strpos($out, '</head>'), strpos($out, 'falcon-icon-css'), 'in the head, where the first link was');
     }
 
+    /** A glyph code such as "\30" (fa-0) must reach the page as written, not read as a back-reference. */
+    public function test_glyph_codes_with_digits_survive(): void
+    {
+        $out = $this->optimise('<html><head>'.$this->link('font-awesome.all.min.css').'</head><body><i class="fa-solid fa-0"></i><i class="fa-solid fa-at"></i></body></html>');
+
+        $this->assertStringContainsString('.fa-0{--fa:"\30"}', $out);
+        $this->assertStringContainsString('.fa-at{--fa:"\40"}', $out);
+    }
+
     public function test_a_library_the_page_does_not_use_is_dropped(): void
     {
         $out = $this->optimise('<html><head>'.$this->link('font-awesome.all.min.css').'</head><body><p>Text only.</p></body></html>');

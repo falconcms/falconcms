@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
+use FalconCms\Core\Support\CriticalCss;
 use FalconCms\Core\Support\LocalGoogleFonts;
 use FalconCms\Core\Support\LucideIcons;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ use Illuminate\Http\Request;
  *  - perf_minify_html:  collapses the whitespace between tags.
  *  - perf_inline_icons: swaps the icon libraries' stylesheets for the few rules the page uses.
  *  - perf_local_google_fonts: serves Google Fonts from the site itself, their CSS inline.
+ *  - perf_critical_css: the compiled stylesheet's rules for this page inline, the rest later.
  *
  * Only successful, non-admin, HTML GET responses are touched; never JSON, downloads, the admin,
  * or anything inside a logged-in session where correctness matters more than bytes.
@@ -57,7 +59,8 @@ class HtmlOptimizeMiddleware
         $conditional = get_cms_option('perf_conditional_assets', '0') === '1';
         $inlineIcons = get_cms_option('perf_inline_icons', '0') === '1';
         $localFonts = get_cms_option('perf_local_google_fonts', '0') === '1';
-        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts) {
+        $critical = get_cms_option('perf_critical_css', '0') === '1';
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical) {
             return $response;
         }
 
@@ -78,6 +81,9 @@ class HtmlOptimizeMiddleware
             if (!$complete) {
                 $response->headers->set(self::PROVISIONAL_HEADER, '1');
             }
+        }
+        if ($critical) {
+            $html = $this->criticalCss($html);
         }
         if ($lazy) {
             $html = $this->lazyImages($html);
@@ -223,7 +229,12 @@ class HtmlOptimizeMiddleware
                 $replacement = '<style id="falcon-icon-css">'.$css.'</style>';
             }
             $first = false;
-            $html = preg_replace('/'.preg_quote($link[0], '/').'/', $replacement, $html, 1) ?? $html;
+            // not preg_replace: icon CSS is full of backslashes ("\30" for fa-0) that a regex
+            // replacement would read as back-references
+            $at = strpos($html, $link[0]);
+            if ($at !== false) {
+                $html = substr_replace($html, $replacement, $at, strlen($link[0]));
+            }
         }
 
         return $html;
@@ -268,6 +279,44 @@ class HtmlOptimizeMiddleware
         }
 
         return [$html, $complete];
+    }
+
+    /**
+     * Put the compiled stylesheet's rules for this page inline and load the full file without
+     * blocking the first paint.
+     *
+     * The compiled Tailwind file is the one stylesheet every Falcon page waits on. The page now
+     * paints with the rules it uses (see CriticalCss) and fetches the whole file alongside, at
+     * the same place in the cascade, so anything JavaScript adds later is styled as before. A
+     * browser without JavaScript gets the plain link from <noscript>.
+     */
+    private function criticalCss(string $html): string
+    {
+        if (!preg_match('#<link\b[^>]*\bhref=["\']([^"\']*/vendor/falcon-cms/css/falcon-tailwind\.css(?:\?[^"\']*)?)["\'][^>]*>#i', $html, $link)) {
+            return $html;
+        }
+        $file = public_path('vendor/falcon-cms/css/falcon-tailwind.css');
+        if (!is_file($file)) {
+            return $html;
+        }
+
+        try {
+            $css = CriticalCss::forHtml(str_replace($link[0], '', $html), $file);
+        } catch (\Throwable $e) {
+            return $html; // never worse than before: keep the blocking link
+        }
+        if ($css === '') {
+            return $html;
+        }
+
+        $href = $link[1];
+        $replacement = '<style id="falcon-critical-css">'.$css.'</style>'
+            .'<link rel="preload" href="'.$href.'" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">'
+            .'<noscript><link rel="stylesheet" href="'.$href.'"></noscript>';
+
+        $at = strpos($html, $link[0]);
+
+        return $at === false ? $html : substr_replace($html, $replacement, $at, strlen($link[0]));
     }
 
     /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first few eager. */

@@ -25,6 +25,12 @@ Full release notes, with the reasoning behind each change, live at
   Libraries the page doesn't use are dropped, and the fonts load with `font-display: swap`. The
   whole page is scanned, so icons named in Alpine expressions and inline scripts are kept too.
   Works with any theme. Measured on falconcms.com, mobile LCP fell from 11.4 s to about 3.8 s.
+- **New option: Critical CSS** (Customizer → Performance, works with Compiled CSS, off by
+  default). Each page carries, inline, only the compiled stylesheet's rules it uses: about 15 KB
+  of the 68 KB file on a typical page. The full file then loads without holding up the first
+  paint, so classes added later by JavaScript are styled as before; a browser without JavaScript
+  gets the plain link. Checked element by element on desktop and mobile: the first paint matches
+  the normal page.
 - **New option: Host Google Fonts Locally** (Customizer → Performance, off by default). The
   Google Fonts the site uses are copied to `public/falcon-fonts`, and each page carries their
   `@font-face` rules inline. The text no longer waits on Google's servers, and visitors' browsers
@@ -40,6 +46,12 @@ Full release notes, with the reasoning behind each change, live at
 - **The hero image is no longer lazy-loaded.** With "Lazy-load images" on, only the first image on
   the page stayed eager. That image is usually the logo, so the hero, the largest paint on most
   pages, was lazy and loaded late. The first three images now stay eager, as in WordPress.
+
+### Fixed
+
+- **Icons whose code starts with a digit keep their glyph when inlined.** Font Awesome writes
+  `fa-0` as `"\30"`, and putting the CSS in place with a regular-expression replacement read
+  that as a back-reference. (Found before release.)
 
 ### Accessibility
 

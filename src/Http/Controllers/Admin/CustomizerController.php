@@ -1014,6 +1014,14 @@ class CustomizerController extends Controller
                         // Built from, and loaded by, the Falcon theme only — disabled under another theme.
                         'theme_only' => true,
                     ],
+                    'perf_critical_css' => [
+                        'type' => 'toggle',
+                        'label' => 'Critical CSS',
+                        'desc' => 'Works with Compiled CSS. Each page carries, inline, only the styles it uses (typically 10–20 KB of the ~65 KB file) and shows straight away; the full stylesheet still loads, just without holding up the first paint, so anything added later by JavaScript is styled as before. Turn on Compiled CSS first.',
+                        'default' => '0',
+                        // Cuts down the Falcon theme's compiled stylesheet — disabled under another theme.
+                        'theme_only' => true,
+                    ],
                     'perf_inline_icons' => [
                         'type' => 'toggle',
                         'label' => 'Inline Only the Icons in Use',
