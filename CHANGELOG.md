@@ -49,6 +49,11 @@ Full release notes, with the reasoning behind each change, live at
 
 ### Fixed
 
+- **No more JavaScript errors on a variable product page.** Before a variation was chosen, and
+  again after "Reset Selection", the Availability row and the SKU read the empty selection and
+  threw a burst of "Cannot read properties of null (reading 'stock_status')" errors (10 per
+  load). They now read it safely. The `single-product-variable` template is now at
+  `@version 1.0.1`, so Site Health flags a theme copy that still has the old code.
 - **Icons whose code starts with a digit keep their glyph when inlined.** Font Awesome writes
   `fa-0` as `"\30"`, and putting the CSS in place with a regular-expression replacement read
   that as a back-reference. (Found before release.)

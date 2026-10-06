@@ -1,4 +1,4 @@
-{{-- @version 1.0.0 --}}
+{{-- @version 1.0.1 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', $post->title)
@@ -238,10 +238,10 @@
                     <div x-show="selectedVariation" x-transition class="pt-4 mt-4 border-t border-gray-200 flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <span class="text-[12px] font-bold text-gray-800 uppercase">Availability:</span>
-                            <span :class="selectedVariation.stock_status === 'instock' ? 'text-emerald-600' : 'text-red-600'" class="text-[14px] font-medium" x-text="selectedVariation.stock_status === 'instock' ? 'In Stock' : 'Out of Stock'"></span>
+                            <span :class="selectedVariation?.stock_status === 'instock' ? 'text-emerald-600' : 'text-red-600'" class="text-[14px] font-medium" x-text="selectedVariation?.stock_status === 'instock' ? 'In Stock' : 'Out of Stock'"></span>
                         </div>
-                        <div x-show="selectedVariation.manage_stock && selectedVariation.stock_quantity > 0" class="text-gray-500 text-[12px] italic">
-                            Only <span x-text="selectedVariation.stock_quantity"></span> left!
+                        <div x-show="selectedVariation?.manage_stock && selectedVariation?.stock_quantity > 0" class="text-gray-500 text-[12px] italic">
+                            Only <span x-text="selectedVariation?.stock_quantity"></span> left!
                         </div>
                     </div>
                     
@@ -286,7 +286,7 @@
 
                 <?php do_falcon_action('falcon_variable_before_product_meta', $post); ?>
                 <div class="text-[13px] text-gray-500 space-y-3 mt-6">
-                    <div x-show="selectedVariation && selectedVariation.sku"><span class="uppercase font-bold text-gray-800">SKU:</span> <span x-text="selectedVariation.sku" class="ml-2 bg-gray-100 px-2 py-0.5 rounded text-gray-600"></span></div>
+                    <div x-show="selectedVariation && selectedVariation.sku"><span class="uppercase font-bold text-gray-800">SKU:</span> <span x-text="selectedVariation?.sku" class="ml-2 bg-gray-100 px-2 py-0.5 rounded text-gray-600"></span></div>
                     <div x-show="!selectedVariation && '{{ $post->shopData->sku }}'"><span class="uppercase font-bold text-gray-800">SKU:</span> <span class="ml-2">{{ $post->shopData->sku }}</span></div>
                     <div><span class="uppercase font-bold text-gray-800">Category:</span>
                         <span class="ml-2">
