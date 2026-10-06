@@ -6,6 +6,7 @@
  * Loaded by src/helpers.php.
  */
 
+use FalconCms\Core\Support\LucideIcons;
 use Illuminate\Support\Facades\Cache;
 
 if (!function_exists('falcon_icon_sets')) {
@@ -109,6 +110,21 @@ if (!function_exists('falcon_icon_set_links')) {
         }
 
         return $links;
+    }
+}
+
+if (!function_exists('falcon_lucide_icon')) {
+    /**
+     * A Lucide icon drawn on the server as an <svg>, for markup the HTML optimiser never sees:
+     * a fragment loaded over AJAX (the mini-cart's lines) arrives after the page, at a point
+     * where "Load Assets Only When Needed" may have dropped lucide.min.js, and an
+     * <i data-lucide> in it would stay blank. An icon there is no copy of here falls back to
+     * the placeholder, for the library to draw.
+     */
+    function falcon_lucide_icon(string $name, string $class = ''): string
+    {
+        return LucideIcons::svg($name, $class)
+            ?? '<i data-lucide="'.e($name).'"'.($class !== '' ? ' class="'.e($class).'"' : '').'></i>';
     }
 }
 

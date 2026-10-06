@@ -1,10 +1,10 @@
-{{-- @version 1.0.0 --}}
+{{-- @version 1.0.1 --}}
 {{-- Mini-cart line items (rendered into the off-canvas drawer via AJAX). Expects: $cart --}}
 @if(empty($cart))
     <?php do_falcon_action('falcon_mini_cart_empty'); ?>
     <div class="flex flex-col items-center justify-center text-center py-20 px-6">
         <div class="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
-            <i data-lucide="shopping-cart" class="w-7 h-7 text-gray-300"></i>
+            {!! falcon_lucide_icon('shopping-cart', 'w-7 h-7 text-gray-300') !!}
         </div>
         <p class="text-[15px] font-semibold text-heading mb-1">Your cart is empty</p>
         <p class="text-[13px] text-gray-400">Add some products to get started.</p>
@@ -31,7 +31,7 @@
                 </div>
                 <div class="flex flex-col items-end justify-between shrink-0">
                     <button type="button" onclick="LazyCart.remove('{{ $key }}')" title="Remove" class="text-gray-300 hover:text-red-500 transition-colors">
-                        <i data-lucide="x" class="w-4 h-4"></i>
+                        {!! falcon_lucide_icon('x', 'w-4 h-4') !!}
                     </button>
                     <span class="text-[13px] font-bold text-heading">{{ falcon_price_format($linePrice * $item['quantity']) }}</span>
                 </div>

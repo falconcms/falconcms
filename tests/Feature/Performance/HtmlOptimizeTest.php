@@ -143,6 +143,34 @@ class HtmlOptimizeTest extends TestCase
         $this->assertStringNotContainsString('lucide.min.js', $out, 'library dropped when every icon is inlined');
     }
 
+    /** A page with no Lucide icon at all has nothing for the library to draw (falconcms.com loaded all 393 KB of it). */
+    public function test_a_page_without_lucide_icons_drops_the_library(): void
+    {
+        $out = $this->opt('<p>Text.</p><script defer src="/vendor/falcon-cms/js/lucide.min.js"></script>', ['perf_conditional_assets' => '1']);
+
+        $this->assertStringNotContainsString('lucide.min.js', $out);
+        $this->assertStringContainsString('<p>Text.</p>', $out);
+    }
+
+    /** Markup that arrives over AJAX never passes through here, so the shop draws its icons itself. */
+    public function test_the_mini_cart_lines_need_no_icon_library(): void
+    {
+        $html = view('falcon-shop::frontend.ecommerce.mini-cart-items', ['cart' => [
+            'k1' => ['id' => 1, 'name' => 'Lamp', 'slug' => 'lamp', 'price' => 10, 'sale_price' => null, 'quantity' => 1, 'thumbnail' => null],
+        ]])->render();
+        $empty = view('falcon-shop::frontend.ecommerce.mini-cart-items', ['cart' => []])->render();
+
+        $this->assertStringNotContainsString('data-lucide', $html.$empty);
+        $this->assertStringContainsString('lucide-x', $html, 'the remove button');
+        $this->assertStringContainsString('lucide-shopping-cart', $empty, 'the empty basket');
+    }
+
+    public function test_the_lucide_helper_falls_back_to_the_placeholder(): void
+    {
+        $this->assertStringContainsString('class="w-4 h-4 lucide lucide-x"', falcon_lucide_icon('x', 'w-4 h-4'));
+        $this->assertSame('<i data-lucide="no-such-icon" class="a"></i>', falcon_lucide_icon('no-such-icon', 'a'));
+    }
+
     public function test_an_unknown_lucide_icon_keeps_the_library(): void
     {
         $html = '<i data-lucide="user"></i><i data-lucide="some-unknown-icon"></i>'

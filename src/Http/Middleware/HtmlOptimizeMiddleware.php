@@ -128,27 +128,23 @@ class HtmlOptimizeMiddleware
      */
     private function inlineLucide(string $html): string
     {
-        if (stripos($html, 'data-lucide') === false) {
-            return $html;
+        if (stripos($html, 'data-lucide') !== false) {
+            $html = preg_replace_callback('/<i\b([^>]*?)data-lucide="([a-z0-9-]+)"([^>]*?)>\s*<\/i>/i',
+                function ($m) {
+                    // Carry the element's own class onto the SVG so utility sizing (w-5 h-5)
+                    // still applies, exactly as the Lucide script does. An icon there is no copy
+                    // of here is left for the full library.
+                    $attrs = $m[1].$m[3];
+                    $class = preg_match('/class="([^"]*)"/i', $attrs, $c) ? $c[1] : '';
+
+                    return LucideIcons::svg($m[2], $class) ?? $m[0];
+                }, $html) ?? $html;
         }
 
-        $html = preg_replace_callback('/<i\b([^>]*?)data-lucide="([a-z0-9-]+)"([^>]*?)>\s*<\/i>/i',
-            function ($m) {
-                $name = $m[2];
-                if (!LucideIcons::has($name)) {
-                    return $m[0]; // unknown → leave for the full library
-                }
-                // Carry the element's own class onto the SVG so utility sizing (w-5 h-5) still
-                // applies, exactly as the Lucide script does.
-                $attrs = $m[1].$m[3];
-                $class = preg_match('/class="([^"]*)"/i', $attrs, $c) ? $c[1].' ' : '';
-
-                return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"'
-                    .' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
-                    .' class="'.$class.'lucide lucide-'.$name.'" aria-hidden="true">'.LucideIcons::ICONS[$name].'</svg>';
-            }, $html) ?? $html;
-
-        // If no Lucide placeholders are left, the library has nothing to do — drop its script.
+        // No Lucide placeholder left, or none to begin with: the library has nothing to draw.
+        // (The second case used to keep it, so a page with no Lucide icon at all still loaded
+        // all 390 KB of it.) The shop's own AJAX fragments draw their icons server-side
+        // (falcon_lucide_icon), so they do not need it either.
         if (stripos($html, 'data-lucide') === false) {
             $html = preg_replace('#<script\b[^>]*\bsrc="[^"]*lucide[^"]*\.js"[^>]*>\s*</script>#i', '', $html) ?? $html;
         }

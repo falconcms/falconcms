@@ -7,6 +7,19 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [Unreleased]
+
+### Fixed
+
+- **"Load Assets Only When Needed" drops the Lucide library on pages with no Lucide icon.** The
+  393 KB `lucide.min.js` was dropped only when a page's Lucide icons could all be drawn
+  server-side, so a page with none at all, such as falconcms.com, still loaded it. On mobile
+  that accounted for most of the main-thread work.
+- **The mini-cart's icons show with "Load Assets Only When Needed" on.** The cart lines are loaded
+  over AJAX after the library may have been dropped, so the remove button's ✕ stayed blank. They
+  are now drawn on the server, through the new `falcon_lucide_icon()` helper. The
+  `ecommerce/mini-cart-items` template is now at `@version 1.0.1`.
+
 ## [2.7.9] — 2026-10-07
 
 Three new speed options, all off by default, and a new docs page explaining every

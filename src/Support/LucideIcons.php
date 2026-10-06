@@ -49,4 +49,21 @@ class LucideIcons
     {
         return isset(self::ICONS[$name]);
     }
+
+    /**
+     * The icon as a finished <svg>, drawn the way lucide.createIcons() draws it (the class
+     * carried over, so utility sizing such as "w-5 h-5" still applies), or null when there is
+     * no copy of it here.
+     */
+    public static function svg(string $name, string $class = ''): ?string
+    {
+        if (!self::has($name)) {
+            return null;
+        }
+        $class = trim($class);
+
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"'
+            .' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+            .' class="'.($class !== '' ? $class.' ' : '').'lucide lucide-'.$name.'" aria-hidden="true">'.self::ICONS[$name].'</svg>';
+    }
 }
