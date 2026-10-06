@@ -25,6 +25,18 @@ Full release notes, with the reasoning behind each change, live at
   Libraries the page doesn't use are dropped, and the fonts load with `font-display: swap`. The
   whole page is scanned, so icons named in Alpine expressions and inline scripts are kept too.
   Works with any theme. Measured on falconcms.com, mobile LCP fell from 11.4 s to about 3.8 s.
+- **New option: Host Google Fonts Locally** (Customizer → Performance, off by default). The
+  Google Fonts the site uses are copied to `public/falcon-fonts`, and each page carries their
+  `@font-face` rules inline. The text no longer waits on Google's servers, and visitors' browsers
+  never contact Google, which also helps with the GDPR. The copy is made in the background after
+  a page's first visit; until then, and whenever a download fails, fonts load from Google as
+  before. Pages served in the meantime are not kept in the page cache. Works with any theme.
+- **The hero image is fetched first.** With "Lazy-load images" on, the first image after the
+  site header gets `fetchpriority="high"`. On nearly every page that image is the hero, the
+  largest paint. Pages without a `<header>` are left alone.
+- **Builder images reserve their space.** An image from the media library carries its `width`
+  and `height`, so the content below doesn't jump when it loads. If the element has no alt text
+  of its own, the library's alt text is used.
 - **The hero image is no longer lazy-loaded.** With "Lazy-load images" on, only the first image on
   the page stayed eager. That image is usually the logo, so the hero, the largest paint on most
   pages, was lazy and loaded late. The first three images now stay eager, as in WordPress.

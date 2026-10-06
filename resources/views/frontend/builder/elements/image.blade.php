@@ -23,6 +23,14 @@
         $url = $s['url'] ?? $s['src'] ?? '';
     }
     $alt      = $s['alt']        ?? '';
+    // What the media library knows: the size, so the page keeps the image's space before it
+    // loads (no jump), and the alt text when this element was given none.
+    $media = function_exists('falcon_media_info') ? falcon_media_info($url ?? '') : null;
+    if ($alt === '' && $media && $media['alt'] !== '') {
+        $alt = $media['alt'];
+    }
+    $sizeAttrs = $media && $media['width'] && $media['height']
+        ? ' width="'.$media['width'].'" height="'.$media['height'].'"' : '';
     $linkDynamic = $s['link_dynamic_source'] ?? '';
     $linkUrl = $linkDynamic
         ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null, falcon_dynamic_config($s, 'link')) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
@@ -139,18 +147,18 @@
                       it. It stays on the img, where it belongs, and names the trigger for
                       anyone listening to the page. --}}
                  aria-label="{{ $alt !== '' ? $alt.' — view larger' : 'View larger' }}">
-                <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $hasRatio ? $imgStyle : 'max-width:100%;height:auto;' }}">
+                <img src="{{ $url }}" alt="{{ $alt }}"{!! $sizeAttrs !!} style="{{ $hasRatio ? $imgStyle : 'max-width:100%;height:auto;' }}">
             </div>
         @elseif($linkUrl)
             <a href="{{ $linkUrl }}" target="{{ $target }}" class="image-el-{{ $elemId }}" style="{{ $elemStyle }}text-decoration:none;">
-                <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $imgStyle }}">
+                <img src="{{ $url }}" alt="{{ $alt }}"{!! $sizeAttrs !!} style="{{ $imgStyle }}">
             </a>
         @elseif($hasRatio)
             <div class="image-el-{{ $elemId }}" style="{{ $elemStyle }}font-size:0;line-height:0;">
-                <img src="{{ $url }}" alt="{{ $alt }}" style="{{ $imgStyle }}">
+                <img src="{{ $url }}" alt="{{ $alt }}"{!! $sizeAttrs !!} style="{{ $imgStyle }}">
             </div>
         @else
-            <img src="{{ $url }}" alt="{{ $alt }}" class="image-el-{{ $elemId }}" style="{{ $elemStyle }}">
+            <img src="{{ $url }}" alt="{{ $alt }}"{!! $sizeAttrs !!} class="image-el-{{ $elemId }}" style="{{ $elemStyle }}">
         @endif
     @else
         <div style="background:#f0f0f1;border:2px dashed #c3c4c7;padding:40px 20px;text-align:center;color:#8c8f94;font-size:13px;border-radius:4px;">

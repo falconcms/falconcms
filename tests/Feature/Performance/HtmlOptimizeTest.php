@@ -48,6 +48,24 @@ class HtmlOptimizeTest extends TestCase
         $this->assertSame(1, substr_count($out, 'loading="lazy"'));
     }
 
+    /** The hero — the first image after the site header — is fetched first and never lazy. */
+    public function test_the_first_image_after_the_header_gets_priority(): void
+    {
+        $html = '<header><img src="/logo.png"></header><main><img src="/hero.jpg"><img src="/b.jpg"></main>';
+        $out = $this->opt($html, ['perf_lazy_images' => '1']);
+
+        $this->assertStringContainsString('<img src="/hero.jpg" fetchpriority="high">', $out);
+        $this->assertSame(1, substr_count($out, 'fetchpriority'), 'one image only: priority for all is priority for none');
+        $this->assertStringContainsString('<img src="/logo.png">', $out);
+    }
+
+    public function test_no_priority_is_guessed_without_a_header_or_against_the_authors_choice(): void
+    {
+        $this->assertStringNotContainsString('fetchpriority', $this->opt('<img src="/a.jpg"><img src="/b.jpg">', ['perf_lazy_images' => '1']));
+        $this->assertStringNotContainsString('fetchpriority="high"', $this->opt(
+            '<header></header><img src="/a.jpg" loading="lazy">', ['perf_lazy_images' => '1']), 'an image the author made lazy stays as it is');
+    }
+
     /** A file moved out of an inline <script> opts out, so it still runs where the inline one did. */
     public function test_a_script_marked_data_no_defer_is_never_deferred(): void
     {

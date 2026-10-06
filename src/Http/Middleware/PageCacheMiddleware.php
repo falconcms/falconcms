@@ -78,6 +78,14 @@ class PageCacheMiddleware
             if ($this->isPersonal($request)) {
                 return $response;
             }
+            // A stand-in the optimiser served while something it needs is still being prepared
+            // (local Google Fonts on their first request): the next request gets the real page,
+            // and that is the one to keep.
+            if ($response->headers->has(HtmlOptimizeMiddleware::PROVISIONAL_HEADER)) {
+                $response->headers->remove(HtmlOptimizeMiddleware::PROVISIONAL_HEADER);
+
+                return $response;
+            }
 
             Cache::put($key, [
                 'content' => $response->getContent(),

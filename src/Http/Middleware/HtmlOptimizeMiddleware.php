@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
+use FalconCms\Core\Support\LocalGoogleFonts;
 use FalconCms\Core\Support\LucideIcons;
 use Illuminate\Http\Request;
 
@@ -19,12 +20,19 @@ use Illuminate\Http\Request;
  *    is not on the must-run-early list, so scripts stop blocking the parser.
  *  - perf_minify_html:  collapses the whitespace between tags.
  *  - perf_inline_icons: swaps the icon libraries' stylesheets for the few rules the page uses.
+ *  - perf_local_google_fonts: serves Google Fonts from the site itself, their CSS inline.
  *
  * Only successful, non-admin, HTML GET responses are touched; never JSON, downloads, the admin,
  * or anything inside a logged-in session where correctness matters more than bytes.
  */
 class HtmlOptimizeMiddleware
 {
+    /**
+     * Set on a response that is a stand-in while something it needs is still being prepared
+     * (local Google Fonts on their first request). PageCacheMiddleware does not keep it.
+     */
+    public const PROVISIONAL_HEADER = 'X-Falcon-Provisional';
+
     /** How many images, from the top of the page, are never made lazy. */
     private const EAGER_IMAGES = 3;
 
@@ -48,7 +56,8 @@ class HtmlOptimizeMiddleware
         $minifyCss = get_cms_option('perf_minify_css', '0') === '1';
         $conditional = get_cms_option('perf_conditional_assets', '0') === '1';
         $inlineIcons = get_cms_option('perf_inline_icons', '0') === '1';
-        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons) {
+        $localFonts = get_cms_option('perf_local_google_fonts', '0') === '1';
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts) {
             return $response;
         }
 
@@ -63,6 +72,12 @@ class HtmlOptimizeMiddleware
         }
         if ($inlineIcons) {
             $html = $this->inlineIcons($html);
+        }
+        if ($localFonts) {
+            [$html, $complete] = $this->localGoogleFonts($html);
+            if (!$complete) {
+                $response->headers->set(self::PROVISIONAL_HEADER, '1');
+            }
         }
         if ($lazy) {
             $html = $this->lazyImages($html);
@@ -214,14 +229,66 @@ class HtmlOptimizeMiddleware
         return $html;
     }
 
+    /**
+     * Serve the page's Google Fonts from the site: each fonts.googleapis.com stylesheet link
+     * becomes its @font-face rules inline, pointing at local copies of the font files, and the
+     * preconnect hints to Google go once nothing needs them.
+     *
+     * A stylesheet not copied yet keeps Google's link for this request and is downloaded after
+     * the response has gone out; the second element of the result says whether every link was
+     * served locally, so a stand-in page is not kept in the page cache.
+     *
+     * @return array{0:string,1:bool}
+     */
+    private function localGoogleFonts(string $html): array
+    {
+        if (stripos($html, 'fonts.googleapis.com') === false) {
+            return [$html, true];
+        }
+
+        $complete = true;
+        $html = preg_replace_callback('#<link\b[^>]*\bhref=["\']((?:https?:)?//fonts\.googleapis\.com/css2?\?[^"\']+)["\'][^>]*>#i',
+            function ($m) use (&$complete) {
+                if (!preg_match('/\brel=["\']?stylesheet/i', $m[0])) {
+                    return $m[0]; // a preconnect or preload; dealt with below
+                }
+                $css = LocalGoogleFonts::css($m[1]);
+                if ($css === null) {
+                    LocalGoogleFonts::scheduleDownload($m[1]);
+                    $complete = false;
+
+                    return $m[0];
+                }
+
+                return '<style class="falcon-local-fonts">'.$css.'</style>';
+            }, $html) ?? $html;
+
+        if ($complete) {
+            $html = preg_replace('#<link\b(?=[^>]*\brel=["\']?(?:preconnect|dns-prefetch))[^>]*\bhref=["\'](?:https?:)?//fonts\.(?:googleapis|gstatic)\.com/?["\'][^>]*>\s*#i', '', $html) ?? $html;
+        }
+
+        return [$html, $complete];
+    }
+
     /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first few eager. */
     private function lazyImages(string $html): string
     {
         $seen = 0;
+        // The first image after the site header is the hero on nearly every page, and with it
+        // the largest-contentful paint: it is fetched first (fetchpriority) and never lazy.
+        // Only on a page that marks its header; without one there is nothing to go by.
+        $headerEnd = stripos($html, '</header>');
+        $heroDone = $headerEnd === false;
 
-        return preg_replace_callback('/<img\b[^>]*>/i', function ($m) use (&$seen) {
-            $tag = $m[0];
+        return preg_replace_callback('/<img\b[^>]*>/i', function ($m) use (&$seen, &$heroDone, $headerEnd) {
+            [$tag, $offset] = $m[0];
             $seen++;
+            if (!$heroDone && $offset > $headerEnd) {
+                $heroDone = true;
+                if (stripos($tag, 'fetchpriority=') === false && !preg_match('/loading=["\']?lazy/i', $tag)) {
+                    return preg_replace('/\s*\/?>$/', ' fetchpriority="high">', $tag, 1);
+                }
+            }
             // The first images are usually above the fold: the logo, then the hero and whatever
             // sits beside it. Only the first stayed eager, so a hero image, the largest-contentful
             // paint on most pages, was lazy and waited for layout. Three, as WordPress does.
@@ -234,7 +301,7 @@ class HtmlOptimizeMiddleware
             }
 
             return preg_replace('/\s*\/?>$/', $add.'>', $tag, 1);
-        }, $html) ?? $html;
+        }, $html, -1, $count, PREG_OFFSET_CAPTURE) ?? $html;
     }
 
     /** Add defer to parser-blocking external scripts that can safely wait. */

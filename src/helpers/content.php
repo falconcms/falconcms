@@ -771,6 +771,39 @@ if (!function_exists('falcon_placeholder_image')) {
     }
 }
 
+if (!function_exists('falcon_media_info')) {
+    /**
+     * What the media library knows about an image URL from this site: its pixel size and alt
+     * text, or null for anything it has no record of (an external URL, an SVG it could not
+     * measure, a file uploaded outside the library).
+     *
+     * The size lets a page reserve the image's space before it loads, so the text below does
+     * not jump when it arrives; the alt text fills in when an element was given none.
+     *
+     * @return array{width:?int,height:?int,alt:string}|null
+     */
+    function falcon_media_info(?string $url): ?array
+    {
+        $url = (string) $url;
+        if ($url === '' || !preg_match('#/storage/(.+)$#', parse_url($url, PHP_URL_PATH) ?: '', $m)) {
+            return null;
+        }
+        $path = rawurldecode($m[1]);
+
+        try {
+            $row = DB::table('media')->where('path', $path)->first(['width', 'height', 'alt_text']);
+        } catch (Throwable $e) {
+            $row = null;
+        }
+
+        return $row ? [
+            'width' => $row->width ? (int) $row->width : null,
+            'height' => $row->height ? (int) $row->height : null,
+            'alt' => (string) ($row->alt_text ?? ''),
+        ] : null;
+    }
+}
+
 if (!function_exists('get_falcon_image_url')) {
     function get_falcon_image_url($path, $default = null)
     {

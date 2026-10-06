@@ -1020,6 +1020,12 @@ class CustomizerController extends Controller
                         'desc' => 'Icon libraries (Font Awesome, Bootstrap Icons, Remix, Boxicons, Lucide) normally load their whole stylesheet: 70–140 KB each, and the page waits for it before it shows. With this on, the page carries just the rules for the icons it actually shows, usually a kilobyte or two, and nothing waits. Works with any theme. Leave off if your theme adds icons from its own JavaScript files.',
                         'default' => '0',
                     ],
+                    'perf_local_google_fonts' => [
+                        'type' => 'toggle',
+                        'label' => 'Host Google Fonts Locally',
+                        'desc' => 'Keeps a copy of the Google Fonts your site uses on this server and serves them from here, so pages stop waiting on Google\'s servers before the text shows. Visitors\' browsers never contact Google, which also helps with privacy rules such as the GDPR. The copy is made in the background after the first visit; until then, and if it ever fails, fonts load from Google as before. Works with any theme.',
+                        'default' => '0',
+                    ],
                     'performance_webp_conversion' => [
                         'type' => 'toggle',
                         'label' => 'WebP Conversion',
