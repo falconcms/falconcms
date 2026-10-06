@@ -88,13 +88,20 @@ if (!function_exists('falcon_visit_page')) {
     /**
      * Human-friendly page label for an analytics visit URL.
      * Strips the scheme + host (works for raw-IP visits too) and shows just the path;
-     * for the homepage (root) it shows the site domain instead of a bare "/".
+     * for the homepage (root) it shows the domain the visit came in on instead of a bare "/".
+     *
+     * That is the visit's own host, not APP_URL's: a site reached under more than one domain
+     * (a new domain while APP_URL still names the old one, say) would otherwise label every
+     * homepage visit with a domain nobody used.
      */
     function falcon_visit_page($url)
     {
-        $path = preg_replace('#^https?://[^/]+#i', '', (string) $url);
+        $path = preg_replace('#^https?://[^/?\#]+#i', '', (string) $url);
+        if (str_starts_with($path, '?')) {
+            $path = '/'.$path; // the homepage with a query string: "/?author=1", not "?author=1"
+        }
         if ($path === '' || $path === '/') {
-            $host = parse_url((string) config('app.url'), PHP_URL_HOST);
+            $host = parse_url((string) $url, PHP_URL_HOST) ?: parse_url((string) config('app.url'), PHP_URL_HOST);
             if (empty($host) && function_exists('request')) {
                 try {
                     $host = request()->getHost();

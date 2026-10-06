@@ -65,7 +65,13 @@ class ShopAdminScreensTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $this->get("/admin/shop/orders/{$orderId}")->assertOk()->assertSee('ORD-ADMIN-1');
+        // a line whose product was deleted since: product_id is null (nullOnDelete)
+        DB::table('shop_order_items')->insert([
+            'order_id' => $orderId, 'product_id' => null, 'product_name' => 'Retired Lamp', 'quantity' => 1,
+            'price' => 100, 'subtotal' => 100, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->get("/admin/shop/orders/{$orderId}")->assertOk()->assertSee('ORD-ADMIN-1')->assertSee('Retired Lamp');
         $this->get("/admin/shop/orders/{$orderId}/invoice")->assertOk()
             ->assertSee('/plugin-assets/falcon-shop/admin/css/invoice.css?v=', false);
     }

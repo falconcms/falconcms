@@ -15,7 +15,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class PluginAssetController extends Controller
 {
-    private const TYPES = [
+    /** Extension => Content-Type. PluginManager::publishAssets() copies only these too. */
+    public const TYPES = [
         'css' => 'text/css; charset=utf-8',
         'js' => 'application/javascript; charset=utf-8',
         'mjs' => 'application/javascript; charset=utf-8',

@@ -5,7 +5,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.7 <Badge type="tip" text="Latest" /> {#v2-7-7}
+## v2.7.8 <Badge type="tip" text="Latest" /> {#v2-7-8}
+
+**Released: 2026-10-06**
+
+Fixes from putting 2.7.7 on real servers.
+
+### Fixed
+
+- **The shop's CSS and JavaScript load on every server.** Plugin files were served only through
+  the CMS at `/plugin-assets/…`. Many nginx setups answer every `.css` and `.js` URL straight
+  from disk, so on those servers the mini-cart, wishlist, filter and shop admin scripts returned
+  404. Active plugins' static files are now also copied to `public/plugin-assets/{slug}`, at
+  the same URLs:
+  - `falcon:install`, `falcon:update` and activating a plugin publish them
+  - deactivating a plugin removes them
+  - only static web files are copied, never PHP
+
+  No server configuration needs to change.
+- **An order or report that includes a deleted product opens.** The order page, Shop → Reports
+  and the dashboard's top products linked each line to its product. Once a product was deleted
+  there was no product to link to, and the page failed with a 500. The line now shows the
+  product's name without a link.
+- **Analytics labels a homepage visit with the domain it came in on**, not the one in
+  `APP_URL`. A site that moved to a new domain without updating `APP_URL` no longer lists its
+  homepage visits under the old domain. A homepage visit with a query string reads
+  `/?author=1` rather than `?author=1`.
+
+---
+## v2.7.7 {#v2-7-7}
 
 **Released: 2026-10-06**
 

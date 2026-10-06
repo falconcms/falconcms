@@ -7,6 +7,7 @@ use FalconCms\Core\Models\Plugin;
 use FalconCms\Core\Support\PluginManager;
 use FalconCms\Core\Tests\TestCase;
 use FalconShop\ShopServiceProvider;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -194,6 +195,51 @@ class BundledPluginTest extends TestCase
             $this->assertFileDoesNotExist($cache);
         } finally {
             @unlink($cache);
+        }
+    }
+
+    /**
+     * Servers that answer .css/.js URLs from disk only (no fallback to the CMS) would 404
+     * every plugin asset; a copy in public/plugin-assets is found at the same URL.
+     */
+    public function test_an_active_plugins_static_files_are_published_and_nothing_else(): void
+    {
+        $public = public_path('plugin-assets/falcon-shop');
+        try {
+            $this->withAsset('frontend/js/zz-probe.php', '<?php echo 1;', function () use ($public) {
+                $this->withAsset('frontend/css/zz-probe.css', 'body{--zz:1}', function () use ($public) {
+                    File::ensureDirectoryExists($public.'/frontend/css');
+                    File::put($public.'/frontend/css/zz-stale.css', 'old');
+
+                    $this->assertTrue(app(PluginManager::class)->publishAssets('falcon-shop'));
+
+                    $this->assertSame('body{--zz:1}', File::get($public.'/frontend/css/zz-probe.css'));
+                    $this->assertFileEquals(PluginManager::bundledPath().'/falcon-shop/assets/frontend/js/mini-cart.js', $public.'/frontend/js/mini-cart.js');
+                    $this->assertFileDoesNotExist($public.'/frontend/js/zz-probe.php', 'PHP must never be copied into public/');
+                    $this->assertFileDoesNotExist($public.'/frontend/css/zz-stale.css', 'a file the plugin no longer ships must go');
+                });
+            });
+        } finally {
+            File::deleteDirectory(public_path('plugin-assets'));
+        }
+    }
+
+    public function test_switching_the_shop_off_removes_its_published_files_and_on_brings_them_back(): void
+    {
+        $plugins = app(PluginManager::class);
+        $public = public_path('plugin-assets/falcon-shop/frontend/js/mini-cart.js');
+        try {
+            $this->assertSame(['falcon-shop'], $plugins->syncPublishedAssets());
+            $this->assertFileExists($public);
+
+            $plugins->deactivate('falcon-shop');
+            $this->assertFileDoesNotExist($public);
+            $this->assertSame([], $plugins->syncPublishedAssets(), 'an update must not publish a switched-off plugin');
+
+            $plugins->activate('falcon-shop');
+            $this->assertFileExists($public);
+        } finally {
+            File::deleteDirectory(public_path('plugin-assets'));
         }
     }
 }

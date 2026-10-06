@@ -113,7 +113,12 @@
                         @foreach($topProducts as $row)
                         <tr class="hover:bg-[#f6f7f7]">
                             <td class="py-2.5">
-                                <a href="{{ route('admin.posts.edit', $row->product_id) }}" class="text-[#2271b1] hover:text-[#135e96] font-medium">{{ $row->product_name }}</a>
+                                @if($row->product_id)
+                                    <a href="{{ route('admin.posts.edit', $row->product_id) }}" class="text-[#2271b1] hover:text-[#135e96] font-medium">{{ $row->product_name }}</a>
+                                @else
+                                    {{-- the product has since been deleted --}}
+                                    <span class="font-medium text-[#1d2327]">{{ $row->product_name }}</span>
+                                @endif
                             </td>
                             <td class="py-2.5 px-2 text-right text-[#646970]">{{ number_format($row->units_sold) }}</td>
                             <td class="py-2.5 text-right font-semibold text-[#1d2327]">{{ $money($row->revenue) }}</td>

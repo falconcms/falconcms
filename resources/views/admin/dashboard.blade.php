@@ -394,7 +394,12 @@
                         <div class="flex items-center justify-between gap-2 {{ !$loop->first ? 'border-t border-[#f0f0f1] pt-2' : '' }}">
                             <div class="flex items-center gap-2 min-w-0">
                                 <span class="flex-shrink-0 w-5 h-5 rounded-full bg-[#eef4fb] text-[#2271b1] text-[11px] font-bold flex items-center justify-center">{{ $i + 1 }}</span>
-                                <a href="{{ route('admin.posts.edit', $tp->product_id) }}" class="text-[12px] font-medium text-[#1d2327] hover:text-[#2271b1] truncate">{{ $tp->product_name }}</a>
+                                @if($tp->product_id)
+                                    <a href="{{ route('admin.posts.edit', $tp->product_id) }}" class="text-[12px] font-medium text-[#1d2327] hover:text-[#2271b1] truncate">{{ $tp->product_name }}</a>
+                                @else
+                                    {{-- the product has since been deleted --}}
+                                    <span class="text-[12px] font-medium text-[#1d2327] truncate">{{ $tp->product_name }}</span>
+                                @endif
                             </div>
                             <div class="text-right flex-shrink-0">
                                 <div class="text-[12px] font-bold text-[#1d2327]">{{ $currency }}{{ number_format((float) $tp->revenue, 0) }}</div>

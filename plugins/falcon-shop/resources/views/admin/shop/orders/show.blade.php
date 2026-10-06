@@ -48,7 +48,12 @@
                                                 </div>
                                             @endif
                                             <div>
-                                                <a href="{{ route('admin.posts.edit', $item->product_id) }}" class="font-semibold text-[#2271b1] hover:underline">{{ $item->product_name }}</a>
+                                                {{-- product_id is null once the product is deleted: name only, no edit link --}}
+                                                @if($item->product_id)
+                                                    <a href="{{ route('admin.posts.edit', $item->product_id) }}" class="font-semibold text-[#2271b1] hover:underline">{{ $item->product_name }}</a>
+                                                @else
+                                                    <span class="font-semibold text-[#1d2327]">{{ $item->product_name }}</span>
+                                                @endif
                                                 @if($item->variation_details)
                                                     <div class="text-[11px] text-[#646970]">{{ $item->variation_details }}</div>
                                                 @endif

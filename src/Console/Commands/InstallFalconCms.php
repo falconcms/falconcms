@@ -6,6 +6,7 @@ use App\Models\User;
 use FalconCms\Core\Console\Concerns\ReconcilesMigrations;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\Role;
+use FalconCms\Core\Support\PluginManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -35,6 +36,9 @@ class InstallFalconCms extends Command
             '--tag' => 'falcon-cms-assets',
             '--force' => true,
         ]);
+
+        // 2b. Active plugins' CSS/JS (the bundled shop's, on a new site) into public/plugin-assets
+        app(PluginManager::class)->syncPublishedAssets();
 
         // 3. Publish Themes
         $this->info('Step 3: Publishing themes to resources/views/themes...');

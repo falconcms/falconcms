@@ -48,6 +48,11 @@ class UpdateFalconCms extends Command
             '--force' => true,
         ]);
 
+        // 3b. Active plugins' CSS/JS into public/plugin-assets (servers that answer .css/.js
+        // only from disk would 404 them otherwise); switched-off plugins' copies removed.
+        $published = app(PluginManager::class)->syncPublishedAssets();
+        $this->info('Step 3b: Published plugin assets'.($published ? ' ('.implode(', ', $published).')' : '').'.');
+
         // 4. Publish Themes (Force) — parent theme only
         $this->info('Step 4: Refreshing themes...');
         $this->call('vendor:publish', [
@@ -67,16 +72,16 @@ class UpdateFalconCms extends Command
             $this->info('Step 4a: Removed stale published view overrides (vendor/falcon-cms).');
         }
 
-        $removed = $this->removeRetiredShopTemplates();
-        if ($removed > 0) {
-            $this->info("Step 4c: Removed {$removed} shop template(s) the parent theme no longer ships (the shop plugin serves them now).");
-        }
-
         // 4b. Publish child theme skeleton if it does not exist yet (never --force)
         $this->info('Step 4b: Publishing child theme (skipped if already exists)...');
         $this->call('vendor:publish', [
             '--tag' => 'falcon-theme-child',
         ]);
+
+        $removed = $this->removeRetiredShopTemplates();
+        if ($removed > 0) {
+            $this->info("Step 4c: Removed {$removed} shop template(s) the parent theme no longer ships (the shop plugin serves them now).");
+        }
 
         // 5. Sync footer defaults (update stale default values from old installs)
         $this->info('Step 5: Syncing footer defaults...');

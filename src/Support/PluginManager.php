@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Support;
 
 use FalconCms\Core\Http\Controllers\DormantPluginController;
+use FalconCms\Core\Http\Controllers\PluginAssetController;
 use FalconCms\Core\Models\Plugin;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -365,6 +366,88 @@ class PluginManager
         }
     }
 
+    /**
+     * Copy a plugin's static files to public/plugin-assets/{slug}, under the same URLs
+     * PluginAssetController answers.
+     *
+     * Many servers serve every .css/.js URL straight from disk and 404 when there is no
+     * file, so the request never reaches the CMS. With the files in public/, those servers
+     * find them, and on a server that passes the request to the CMS the controller still
+     * answers. Only the static types the controller serves are copied, never PHP or anything
+     * else, and nothing outside assets/: a symlink pointing out of the folder is skipped.
+     * The copy replaces any earlier one, so files the plugin no longer ships are gone too.
+     */
+    public function publishAssets(string $slug): bool
+    {
+        $manifest = $this->manifest($slug);
+        $root = $manifest ? realpath($manifest['dir'].DIRECTORY_SEPARATOR.'assets') : false;
+        if (!$root || !is_dir($root)) {
+            return false;
+        }
+
+        try {
+            $target = public_path('plugin-assets/'.$slug);
+            File::deleteDirectory($target);
+
+            foreach (File::allFiles($root) as $file) {
+                $real = $file->getRealPath();
+                $extension = strtolower($file->getExtension());
+                if (!$real || !str_starts_with($real, $root.DIRECTORY_SEPARATOR) || !isset(PluginAssetController::TYPES[$extension])) {
+                    continue;
+                }
+                $to = $target.'/'.str_replace('\\', '/', $file->getRelativePathname());
+                File::ensureDirectoryExists(dirname($to));
+                File::copy($real, $to);
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            // The controller still serves them on servers that pass the request through.
+            Log::warning("Could not publish the assets of plugin '{$slug}': ".$e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Bring public/plugin-assets in line with which plugins are on: every active plugin's
+     * files published fresh, a switched-off plugin's removed. Run by falcon:update and
+     * falcon:install, so an update that brings new plugin files also brings their copies.
+     *
+     * @return list<string> the slugs whose assets were published
+     */
+    public function syncPublishedAssets(): array
+    {
+        try {
+            $rows = Plugin::pluck('is_active', 'slug')->map(fn ($v) => (bool) $v)->all();
+        } catch (Throwable $e) {
+            $rows = []; // no plugins table yet: the bundled default-on plugins count as on
+        }
+
+        $published = [];
+        foreach (array_keys($this->discover()) as $slug) {
+            if ($this->isActive($slug, $rows)) {
+                if ($this->publishAssets($slug)) {
+                    $published[] = $slug;
+                }
+            } else {
+                $this->unpublishAssets($slug);
+            }
+        }
+
+        return $published;
+    }
+
+    /** Remove a plugin's published files: a switched-off plugin leaves nothing in public/. */
+    public function unpublishAssets(string $slug): void
+    {
+        try {
+            File::deleteDirectory(public_path('plugin-assets/'.$slug));
+        } catch (Throwable $e) {
+            Log::warning("Could not remove the published assets of plugin '{$slug}': ".$e->getMessage());
+        }
+    }
+
     /** Register a PSR-4 namespace on the live Composer loader. */
     protected function registerPsr4(string $namespace, string $path): void
     {
@@ -409,6 +492,7 @@ class PluginManager
             return $this->result(false, 'Activation failed: '.$e->getMessage());
         }
 
+        $this->publishAssets($slug);
         $this->refreshCaches();
 
         return $this->result(true, ($manifest['name'] ?? $slug).' activated.');
@@ -444,6 +528,7 @@ class PluginManager
             return $this->result(false, 'Deactivation failed: '.$e->getMessage());
         }
 
+        $this->unpublishAssets($slug);
         $this->refreshCaches();
 
         return $this->result(true, ($manifest['name'] ?? $slug).' deactivated.');
@@ -486,6 +571,8 @@ class PluginManager
 
             return $this->result(false, 'Update failed: '.$e->getMessage());
         }
+
+        $this->publishAssets($slug);
 
         return $this->result(true, ($manifest['name'] ?? $slug).' updated to '.($manifest['version'] ?? '?').'.');
     }
