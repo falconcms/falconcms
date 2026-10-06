@@ -471,6 +471,9 @@ class PostController extends Controller
 
     protected function checkTypeActive($slug)
     {
+        // A post type owned by a plugin that is off (products without the shop) has no screens.
+        abort_unless(falcon_post_type_available((string) $slug), 404);
+
         // Products are an e-commerce (Pro) feature, "browse but locked": viewing the product
         // list/editor is fine, but creating/updating/deleting needs real Pro (licensed or grace,
         // not merely grandfathered). Only WRITE requests are blocked; GET browsing passes.

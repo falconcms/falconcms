@@ -74,7 +74,7 @@ class HookManager
      * re-boot, never during a request.
      *
      * Note what this does NOT bring back. Hooks registered while a file is being loaded —
-     * helpers.php registers the whole builder element library that way — run once per
+     * src/helpers/builder-elements.php registers the whole builder element library that way — run once per
      * process and are gone for good once this is called. Prefer snapshot()/restore() when
      * what you want is isolation rather than a genuinely empty registry.
      */

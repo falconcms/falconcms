@@ -1,0 +1,14 @@
+{
+    "name": "Falcon Shop",
+    "slug": "falcon-shop",
+    "version": "1.0.0",
+    "description": "Turn your site into a complete online store. Sell simple, variable and digital products, then run orders, coupons, promotions, shipping and tax from one dashboard.",
+    "author": "FalconCMS",
+    "requires_php": ">=8.3",
+    "requires_cms": ">=2.7",
+    "namespace": "FalconShop\\",
+    "provider": "FalconShop\\ShopServiceProvider",
+    "default_active": true,
+    "settings_route": "admin.shop.settings",
+    "dependencies": []
+}

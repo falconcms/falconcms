@@ -2,10 +2,12 @@
 
 namespace FalconCms\Core\Tests\Feature\Performance;
 
+use App\Models\User;
 use FalconCms\Core\Http\Middleware\HtmlOptimizeMiddleware;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The optional front-end HTML optimisations — lazy images, deferred scripts, minified HTML.
@@ -41,6 +43,16 @@ class HtmlOptimizeTest extends TestCase
         $this->assertStringContainsString('<img src="/b.jpg" loading="lazy" decoding="async">', $out);
         $this->assertStringContainsString('loading="eager"', $out, 'an explicit loading is left alone');
         $this->assertSame(1, substr_count($out, 'loading="lazy"'));
+    }
+
+    /** A file moved out of an inline <script> opts out, so it still runs where the inline one did. */
+    public function test_a_script_marked_data_no_defer_is_never_deferred(): void
+    {
+        $html = '<script data-no-defer src="/plugin-assets/falcon-shop/frontend/js/wishlist.js?v=1"></script>';
+        $out = $this->opt($html, ['perf_defer_js' => '1']);
+
+        $this->assertStringContainsString($html, $out);
+        $this->assertStringNotContainsString('<script defer', $out);
     }
 
     public function test_defer_js_adds_defer_except_to_must_run_early_scripts(): void
@@ -87,9 +99,9 @@ class HtmlOptimizeTest extends TestCase
     public function test_optimisation_applies_to_logged_in_visitors_too(): void
     {
         // Minify/defer/lazy change delivery, not content, so a logged-in reader benefits as well.
-        $user = \App\Models\User::forceCreate([
+        $user = User::forceCreate([
             'name' => 'U', 'email' => 'perf@example.test', 'password' => 'secret',
-            'role_id' => (int) \Illuminate\Support\Facades\DB::table('roles')->where('slug', 'subscriber')->value('id'),
+            'role_id' => (int) DB::table('roles')->where('slug', 'subscriber')->value('id'),
         ]);
         $this->actingAs($user);
 

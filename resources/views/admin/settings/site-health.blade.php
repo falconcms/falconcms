@@ -8,6 +8,7 @@
     .sh-badge-Performance { color: #2271b1; border-color: #b6d0ea; }
     .sh-badge-Database { color: #6b4fbb; border-color: #cfc3ee; }
     .sh-badge-Site { color: #50575e; border-color: #c3c4c7; }
+    .sh-badge-Plugins { color: #996800; border-color: #f0d9a8; }
     .sh-ring { transition: stroke-dashoffset .8s ease; }
     .sh-sev-critical { background: #fcf0f1; color: #b32d2e; }
     .sh-sev-high { background: #fcf0f1; color: #b32d2e; }

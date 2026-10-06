@@ -65,8 +65,11 @@ class LegacyHelperAliasTest extends TestCase
 
     public function test_no_falcon_helper_is_still_called_lazy(): void
     {
-        $source = file_get_contents(__DIR__.'/../../../src/helpers.php')
-            .file_get_contents(__DIR__.'/../../../src/ecommerce_helpers.php');
+        $files = array_merge(
+            glob(__DIR__.'/../../../src/helpers/*.php'),
+            [__DIR__.'/../../../src/helpers.php', __DIR__.'/../../../src/ecommerce_helpers.php']
+        );
+        $source = implode('', array_map('file_get_contents', $files));
 
         preg_match_all('/function\s+([a-z_]*lazy[a-z_]*)\s*\(/', $source, $m);
 

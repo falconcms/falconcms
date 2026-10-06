@@ -156,7 +156,7 @@ class CartPriceRefreshTest extends TestCase
      */
     public function test_place_order_refreshes_prices_before_totalling(): void
     {
-        $source = file_get_contents(__DIR__.'/../../../src/Http/Controllers/ShopFrontendController.php');
+        $source = file_get_contents(__DIR__.'/../../../plugins/falcon-shop/src/Http/Controllers/ShopFrontendController.php');
         $start = strpos($source, 'public function placeOrder');
 
         $this->assertNotFalse($start, 'placeOrder() has been renamed — update this test');

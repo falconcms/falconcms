@@ -3,13 +3,13 @@
 namespace FalconCms\Core\Http\Controllers;
 
 use App\Models\User;
+use FalconCms\Core\Http\Controllers\Concerns\ResolvesParentTheme;
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Comment;
 use FalconCms\Core\Models\CustomTaxonomy;
 use FalconCms\Core\Models\Form;
 use FalconCms\Core\Models\FormSubmission;
 use FalconCms\Core\Models\Language;
-use FalconCms\Core\Models\Order;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\ProductCategory;
@@ -20,9 +20,12 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class FrontendController extends Controller
 {
+    use ResolvesParentTheme;
+
     protected function resolveThemeView($view, $fallback = null)
     {
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
@@ -67,36 +70,6 @@ class FrontendController extends Controller
 
         // Final desperation: Return the falconView name anyway, but it might still fail if even the base doesn't exist
         return $falconView;
-    }
-
-    /**
-     * The parent named in a theme's theme.json, if it declares one.
-     *
-     * Read from the app copy first and the packaged copy second, the same order the service
-     * provider uses when it loads the theme.
-     */
-    protected function parentThemeOf(string $theme): ?string
-    {
-        static $cache = [];
-        if (array_key_exists($theme, $cache)) {
-            return $cache[$theme];
-        }
-
-        $candidates = [
-            resource_path("views/themes/{$theme}/theme.json"),
-            __DIR__."/../../../resources/views/themes/{$theme}/theme.json",
-        ];
-        foreach ($candidates as $path) {
-            if (!is_file($path)) {
-                continue;
-            }
-            $json = json_decode((string) file_get_contents($path), true);
-            $parent = is_array($json) ? ($json['parent'] ?? null) : null;
-
-            return $cache[$theme] = ($parent && $parent !== $theme) ? (string) $parent : null;
-        }
-
-        return $cache[$theme] = null;
     }
 
     public function index($locale = null)
@@ -216,6 +189,7 @@ class FrontendController extends Controller
             $archivePostType = 'post';
 
         } elseif (in_array($routeName, ['frontend.product_category', 'frontend.product_category.locale'])) {
+            abort_unless(falcon_post_type_available('product'), 404);
             $slugs = explode('/', urldecode($slug));
             $lastSlug = end($slugs);
 
@@ -239,6 +213,7 @@ class FrontendController extends Controller
             $archivePostType = 'product';
 
         } elseif (in_array($routeName, ['frontend.product_tag', 'frontend.product_tag.locale'])) {
+            abort_unless(falcon_post_type_available('product'), 404);
             // Try the dedicated ProductTag table first, fall back to ACPT taxonomy_terms
             try {
                 $tag = ProductTag::where('slug', $slug)->firstOrFail();
@@ -376,7 +351,8 @@ class FrontendController extends Controller
             }
 
             $postType = PostType::where('slug', $type)->first();
-            if (!$postType || !$postType->is_active || !$postType->is_public) {
+            // A plugin-owned type (products) is unavailable while its plugin is off.
+            if (!$postType || !$postType->is_active || !$postType->is_public || !falcon_post_type_available($type)) {
                 abort(404);
             }
 
@@ -389,7 +365,7 @@ class FrontendController extends Controller
             // 1. Check if it's a CPT archive first (e.g. /dramas)
             if (!$type) {
                 $postType = PostType::where('slug', $postSlug)->first();
-                if ($postType && $postType->is_active && $postType->is_public) {
+                if ($postType && $postType->is_active && $postType->is_public && falcon_post_type_available($postType->slug)) {
                     $postsQuery = Post::where('posts.type', $postType->slug)
                         ->where('posts.lang_code', app()->getLocale())
                         ->where('posts.status', 'published');
@@ -412,11 +388,16 @@ class FrontendController extends Controller
                     $title = $postType->name;
                     $type = $postType->name;
 
-                    $archiveView = 'archive-'.$postType->slug;
-                    $resolvedArchiveView = $this->resolveThemeView($archiveView);
+                    // A plugin that owns the type may pick the archive template (the shop's
+                    // archive-product); otherwise archive-{type}, then the generic archive.
+                    $resolvedArchiveView = apply_falcon_filters('falcon_archive_view', null, $postType->slug);
+                    if ($resolvedArchiveView === null) {
+                        $archiveView = 'archive-'.$postType->slug;
+                        $resolvedArchiveView = $this->resolveThemeView($archiveView);
 
-                    if (!view()->exists($resolvedArchiveView)) {
-                        $resolvedArchiveView = $this->resolveThemeView('archive');
+                        if (!view()->exists($resolvedArchiveView)) {
+                            $resolvedArchiveView = $this->resolveThemeView('archive');
+                        }
                     }
 
                     falcon_layout_context(['kind' => 'archive', 'archive_type' => 'post_type', 'post_type' => $postType->slug]);
@@ -465,7 +446,7 @@ class FrontendController extends Controller
             // Validate CPT status if it's a CPT
             if (!in_array($post->type, ['post', 'page'])) {
                 $postType = $post->postTypeDefinition;
-                if ($postType && (!$postType->is_active || !$postType->is_public)) {
+                if (($postType && (!$postType->is_active || !$postType->is_public)) || !falcon_post_type_available($post->type)) {
                     abort(404);
                 }
             }
@@ -483,20 +464,12 @@ class FrontendController extends Controller
         // 2. If it's a Custom Post Type, try single-{type} first
         if ($post->type !== 'page' && $post->type !== 'post') {
             $viewName = "single-{$post->type}";
-
-            // Special check for variable products — detect the "variable" flag in either column
-            // (shopData stores it under `type` or `product_type` depending on how it was saved).
-            if ($post->type === 'product' && $post->shopData) {
-                $sd = $post->shopData;
-                if (($sd->type ?? null) === 'variable' || ($sd->product_type ?? null) === 'variable') {
-                    $viewName = 'single-product-variable';
-                }
-            }
         }
 
-        // 3. Resolve the view with fallback
-        $fallback = ($post->type === 'product') ? 'single-product' : $baseView;
-        $view = $this->resolveThemeView($viewName, $fallback);
+        // 3. Resolve the view with fallback. A plugin that owns the type may pick the template
+        //    itself — the shop plugin chooses the simple or variable product page.
+        $view = apply_falcon_filters('falcon_single_view', null, $post);
+        $view ??= $this->resolveThemeView($viewName, $baseView);
 
         // 4. Final override check for slug-specific view (e.g. themes/falcon-theme/my-custom-page-slug.blade.php)
         if (preg_match('/^[a-z0-9-]+$/', $post->slug) && view()->exists($post->slug)) {
@@ -511,85 +484,11 @@ class FrontendController extends Controller
             return view($this->resolveThemeView('index'), compact('post'));
         }
 
-        // Check if this page is assigned as a special Shop Page
-        $shopPageId = get_shop_option('shop_shop_page_id');
-        $cartPageId = get_shop_option('shop_cart_page_id');
-        $checkoutPageId = get_shop_option('shop_checkout_page_id');
-        $accountPageId = get_shop_option('shop_account_page_id');
-
-        // Cart / checkout / account are the transactional storefront — a Pro feature that
-        // locks the moment the freemium grace window ends (strict = license OR grace, so
-        // grandfathering is ignored, mirroring EnsurePro:ecommerce,strict on the shop routes).
-        if (!falcon_pro_editable('ecommerce')
-            && in_array($post->id, array_filter([$cartPageId, $checkoutPageId, $accountPageId]))) {
-            return response()->view('falcon-cms::pro-required', [
-                'message' => 'This feature is available in the Pro version.',
-            ], 200);
-        }
-
-        // The Shop listing page stays reachable whenever ecommerce is available
-        // (grandfather-inclusive), so products can still be browsed after grace ends.
-        if ($post->id == $shopPageId && !falcon_pro('ecommerce')) {
-            return response()->view('falcon-cms::pro-required', [
-                'message' => 'This feature is available in the Pro version.',
-            ], 200);
-        }
-
-        if ($post->id == $shopPageId) {
-            $postsQuery = Post::where('posts.type', 'product')
-                ->where('posts.lang_code', app()->getLocale())
-                ->where('posts.status', 'published')
-                // Eager-load what the product card needs so the category shows and
-                // there's no N+1 (and it works under strict lazy-loading in prod).
-                ->with(['taxonomyTerms', 'productCategories', 'shopData.variations']);
-
-            // Sidebar options come from the *unfiltered* set, so deselecting a filter is always
-            // possible — a panel that removes its own options as you use it is a dead end.
-            $filterOptions = falcon_product_filter_options(fn () => Post::where('posts.type', 'product')
-                ->where('posts.lang_code', app()->getLocale())
-                ->where('posts.status', 'published'));
-
-            falcon_apply_product_filters($postsQuery);
-            falcon_apply_product_sorting($postsQuery);
-
-            $posts = $postsQuery->paginate(12)->withQueryString();
-            $title = $post->title;
-            $type = 'Shop';
-            falcon_layout_context(['kind' => 'archive', 'post_type' => 'product']);
-
-            return view($this->resolveThemeView('archive-product', 'archive'), compact('posts', 'title', 'type', 'post', 'filterOptions'));
-        }
-
-        if ($post->id == $cartPageId) {
-            $cart = session()->get('falcon_cart', []);
-
-            return view($this->resolveThemeView('ecommerce.cart'), compact('cart', 'post'));
-        }
-
-        if ($post->id == $checkoutPageId) {
-            $cart = session()->get('falcon_cart', []);
-
-            return view($this->resolveThemeView('ecommerce.checkout'), compact('cart', 'post'));
-        }
-
-        if ($post->id == $accountPageId) {
-            if (!auth()->check()) {
-                return view($this->resolveThemeView('ecommerce.account'), [
-                    'orders' => null,
-                    'post' => $post,
-                ]);
-            }
-            $ordersQuery = Order::with(['items.product'])->where('user_id', auth()->id());
-            if (request()->filled('s')) {
-                $s = request('s');
-                $ordersQuery->where(function ($q) use ($s) {
-                    $q->where('order_number', 'like', "%{$s}%")
-                        ->orWhere('status', 'like', "%{$s}%");
-                });
-            }
-            $orders = $ordersQuery->latest()->paginate(8)->withQueryString();
-
-            return view($this->resolveThemeView('ecommerce.account'), compact('orders', 'post'));
+        // A plugin may answer for this page itself — the shop plugin renders the pages assigned
+        // as Shop, Cart, Checkout and Account. With no plugin answering, it is an ordinary page.
+        $pluginResponse = apply_falcon_filters('falcon_frontend_page_response', null, $post);
+        if ($pluginResponse !== null) {
+            return $pluginResponse;
         }
 
         $post->load('comments.replies');
@@ -614,6 +513,10 @@ class FrontendController extends Controller
         $title = 'Search results for: '.($query ?: 'All');
 
         $postsQuery = Post::where('status', 'published')->where('lang_code', app()->getLocale());
+        // Types whose plugin is off (products without the shop) are not searchable.
+        if ($unavailable = falcon_unavailable_post_types()) {
+            $postsQuery->whereNotIn('type', $unavailable);
+        }
 
         // Optional scoping from the Advanced Search element (post types + category).
         $postTypeRaw = (string) $request->input('post_type', '');
@@ -669,6 +572,9 @@ class FrontendController extends Controller
 
         $query = Post::where('status', 'published')
             ->where('title', 'like', '%'.$q.'%');
+        if ($unavailable = falcon_unavailable_post_types()) {
+            $query->whereNotIn('type', $unavailable);
+        }
 
         if (!empty($types)) {
             $query->whereIn('type', $types);
@@ -853,7 +759,7 @@ class FrontendController extends Controller
                 try {
                     // A random name, never the visitor's — the original name can carry its own
                     // path or a second extension, and two people's "cv.pdf" must not collide.
-                    $data[$key] = $file->storeAs('form-uploads', \Illuminate\Support\Str::uuid().'.'.$ext, 'public');
+                    $data[$key] = $file->storeAs('form-uploads', Str::uuid().'.'.$ext, 'public');
                 } catch (\Exception $e) {
                     $data[$key] = null;
                 }

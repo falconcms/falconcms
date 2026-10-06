@@ -1,0 +1,62 @@
+        .ts-wrapper.wp-input {
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            height: auto !important;
+            min-height: 32px !important;
+        }
+        .ts-control {
+            border: 1px solid #8c8f94 !important;
+            border-radius: 3px !important;
+            padding: 4px 12px !important;
+            font-size: 14px !important;
+            color: #1d2327 !important;
+            background-color: #fff !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.07) inset !important;
+            min-height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: #2271b1 !important;
+            box-shadow: 0 0 0 1px #2271b1 !important;
+            outline: none !important;
+        }
+        .ts-dropdown {
+            font-size: 14px !important;
+            border: 1px solid #2271b1 !important;
+            border-top: none !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+            border-radius: 0 0 3px 3px !important;
+            z-index: 9999 !important;
+        }
+        .ts-dropdown .active {
+            background-color: #2271b1 !important;
+            color: #fff !important;
+        }
+        .ts-dropdown .option {
+            padding: 8px 12px !important;
+        }
+        .ts-control input {
+            font-size: 14px !important;
+        }
+        /* Dropdown Search Box Style */
+        .ts-dropdown .dropdown-input-wrap {
+            padding: 8px !important;
+            border-bottom: 1px solid #e8e8e8 !important;
+            background-color: #f6f7f7 !important;
+        }
+        .ts-dropdown .dropdown-input {
+            border: 1px solid #8c8f94 !important;
+            border-radius: 3px !important;
+            padding: 6px 10px !important;
+            font-size: 13px !important;
+            width: 100% !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.07) inset !important;
+        }
+        .ts-dropdown .dropdown-input:focus {
+            border-color: #2271b1 !important;
+            box-shadow: 0 0 0 1px #2271b1 !important;
+            outline: none !important;
+        }
+    

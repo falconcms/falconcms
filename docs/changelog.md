@@ -5,7 +5,66 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.4 <Badge type="tip" text="Latest" /> {#v2-7-4}
+## v2.7.7 <Badge type="tip" text="Latest" /> {#v2-7-7}
+
+**Released: 2026-10-06**
+
+The shop becomes a plugin. It ships with the CMS as **Falcon Shop**, stays free and stays on, so a
+site that updates sees no difference. What is new is that it can be switched off, and that a theme
+can restyle every shop page without losing track of later fixes.
+See [Shop Plugin & Templates](/ecommerce/shop-plugin).
+
+### Changed
+
+- **The shop is a bundled plugin, Falcon Shop.** Admin → Plugins → Falcon Shop has a Settings link
+  to the shop's settings and a Deactivate link. While the shop is off:
+  - no shop code, CSS or JavaScript loads, in the storefront or the admin
+  - Shop and Products leave the admin menu, and their screens answer 404
+  - products leave the site, its search and the sitemap
+  - `/cart`, `/checkout` and the other shop URLs act as though there had never been a shop: a
+    page of your own with that slug shows, otherwise the theme's 404
+  - themes that link to `route('shop.cart')` or call the cart helpers keep working
+
+  Products, orders, customers and settings are never touched. Switch the shop back on and
+  everything is where you left it. `FALCON_DISABLED_PLUGINS=falcon-shop` in `.env` forces it off
+  from the server.
+- **`falcon:update` clears out old shop templates.** Earlier releases published the shop
+  templates into the site's copy of falcon-theme, where they would have shadowed the plugin's
+  templates indefinitely. The update removes them from falcon-theme only. That theme is replaced
+  on every update anyway, and child themes are never touched.
+- **A route cache built with the shop in the other state** is detected and rebuilt, instead of
+  sending shop URLs to code that is no longer loaded.
+
+### Added
+
+- **`php artisan shop:template`** shows which shop templates the active theme overrides, and
+  `php artisan shop:template ecommerce/cart` copies one into the theme to restyle.
+- **Template versions.** Each shop template starts with an `@version` comment. Settings →
+  Site Health and `shop:template` flag a theme copy that has fallen behind the shop's template.
+- **For theme and plugin developers:**
+  - hooks `falcon_header_actions`, `falcon_after_footer`, `falcon_frontend_page_response`,
+    `falcon_single_view`, `falcon_archive_view`, `falcon_plugin_post_types`,
+    `falcon_site_health_checks` and `falcon_placeholder_image`
+  - helpers `falcon_plugin_active()`, `falcon_plugin_asset()`, `falcon_post_type_available()`
+    and `falcon_placeholder_image()`
+  - a `settings_route` key in `plugin.json`, which adds a Settings link on the Plugins screen
+
+### Fixed
+
+- **Shop pages wear the active theme.** They always used falcon-theme's header and footer. They
+  now use the active theme's layout.
+- **A child theme gets its parent's shop templates**, rather than skipping straight to
+  falcon-theme's.
+- **Four variable-product hooks fire** (`falcon_variable_before/after_product_images`,
+  `falcon_variable_before/after_product_description`), and `falcon_product_description_title`
+  applies to variable products too.
+- **No more broken placeholder images.** Imageless products and posts pointed at a
+  `placeholder.jpg` that never shipped, and imageless cart lines pointed at a dead external
+  service. Both now show an inline placeholder.
+- **No PHP deprecation notices when mail is sent** on PHP 8.2 and later.
+
+---
+## v2.7.4 {#v2-7-4}
 
 **Released: 2026-09-22**
 

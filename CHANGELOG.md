@@ -7,6 +7,79 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.7.7] — 2026-10-06
+
+### Changed
+
+- **The shop is now a bundled plugin, Falcon Shop (`falcon-shop`).** It is still free and still
+  switched on on every site, new or updated, so nothing changes until you choose to switch it off.
+  It can now be deactivated under Admin → Plugins, or forced off with
+  `FALCON_DISABLED_PLUGINS=falcon-shop` in `.env`. While it is off:
+  - no shop code, CSS or JavaScript loads, in the storefront or the admin
+  - the Shop and Products screens leave the admin
+  - shop URLs fall through to ordinary pages or the theme's 404
+  - theme calls to `route('shop.*')` and the common cart helpers keep working
+
+  Products, orders and settings are untouched in either state. Models and migrations stay in the
+  core. Classes that moved keep working under their old `FalconCms\Core\...` names.
+- **Theme overrides of shop templates live at the same paths as before** (for example
+  `ecommerce/cart.blade.php` in the theme), and the shop's own templates now come from the plugin.
+- **`falcon:update` removes the shop templates that earlier releases published into
+  `resources/views/themes/falcon-theme`.** Those copies were never refreshed again and would
+  have overridden the plugin's templates indefinitely. Only that parent theme is affected, and
+  every update already overwrites it. Child themes are never touched.
+- **The order email moved into the plugin.** A restyled copy published at the old view path
+  (`vendor/falcon-cms/emails/shop/order_notification`) is still used.
+
+### Added
+
+- **`php artisan shop:template`** lists the shop's templates and shows which ones the active theme
+  overrides. `php artisan shop:template ecommerce/cart` copies a template into the theme for you
+  to customise.
+- **Template versions.** Every shop template starts with a `{{-- @version x.y.z --}}` line. If a
+  theme's copy is older than the shop's template, or has no version line, Site Health and
+  `shop:template` report it as outdated.
+- **Hooks for themes and plugins:**
+  - `falcon_header_actions` (the cart icon) and `falcon_after_footer` (the mini-cart) in theme
+    layouts
+  - `falcon_frontend_page_response`, `falcon_single_view` and `falcon_archive_view`, so a plugin
+    can render its own content
+  - `falcon_plugin_post_types`, which ties a post type to the plugin that serves it
+  - `falcon_site_health_checks`, which adds a plugin's checks to Site Health
+- **Helpers:** `falcon_plugin_active()`, `falcon_plugin_asset()` and
+  `falcon_post_type_available()`.
+
+### Fixed
+
+- **Shop pages wear the active theme.** Product, cart, checkout and the other shop pages always
+  used falcon-theme's header and footer, whatever theme was active. They now use the active
+  theme's own layout.
+- **A child theme gets its parent's shop templates.** The cart, checkout, confirmation, mini-cart,
+  order tracking and wishlist looked in the child theme and then went straight to falcon-theme,
+  skipping a parent theme's own shop templates.
+- **Four variable-product hooks fire.** `falcon_variable_before_product_images`,
+  `falcon_variable_after_product_images`, `falcon_variable_before_product_description` and
+  `falcon_variable_after_product_description` lived only in a template that was never rendered.
+  `falcon_product_description_title` now applies to variable products as well. The unused
+  `ecommerce/single.blade.php` and `ecommerce/single-product-variable.blade.php` templates are gone.
+- **Products and posts without an image show a placeholder instead of a broken image.**
+  - Product cards, the product page and the post archive pointed at
+    `assets/images/placeholder.jpg`, a file that never shipped, so every one of them was a 404.
+  - A cart line without a thumbnail loaded an image from via.placeholder.com, a service that no
+    longer responds.
+
+  Both now use `falcon_placeholder_image()`, an inline SVG, so the page makes no extra request.
+  The `falcon_placeholder_image` filter lets a site use its own image instead.
+- **No PHP deprecation notices when an email is sent.** The mail classes set `$tries` and
+  `$backoff` without declaring them, which triggers a deprecation notice on PHP 8.2 and later.
+
+### Developers
+
+- `src/helpers.php` is split into topic files under `src/helpers/`, and the builder's shortcode
+  converter into one class per element under `src/Services/ShortcodeConverter/Elements/`.
+  Function names, signatures and behaviour are unchanged. CONTRIBUTING.md describes where new
+  helpers and builder elements go.
+
 ## [2.7.6] — 2026-10-03
 
 ### Added

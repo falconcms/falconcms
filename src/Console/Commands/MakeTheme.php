@@ -2,7 +2,7 @@
 
 namespace FalconCms\Core\Console\Commands;
 
-use FalconCms\Core\FalconCmsServiceProvider;
+use FalconShop\Templates;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -93,10 +93,11 @@ class MakeTheme extends Command
      */
     protected function copyShopTemplates(string $dir, string $slug): int
     {
-        $source = $this->baseThemePath();
-        if (!$source) {
+        // The shop templates live in the shop plugin; with the plugin off there is nothing to copy.
+        if (!falcon_plugin_active('falcon-shop') || !class_exists(Templates::class)) {
             return 0;
         }
+        $source = Templates::defaultsPath();
 
         // Top-level product templates + the whole ecommerce/ folder.
         $files = ['archive-product.blade.php', 'single-product.blade.php', 'single-product-variable.blade.php'];
@@ -121,19 +122,6 @@ class MakeTheme extends Command
         }
 
         return $copied;
-    }
-
-    /** Locate the base (falcon-theme) source — app copy first, then the package. */
-    protected function baseThemePath(): ?string
-    {
-        $app = resource_path('views/themes/falcon-theme');
-        if (File::isDirectory($app)) {
-            return $app;
-        }
-        $providerDir = dirname((new \ReflectionClass(FalconCmsServiceProvider::class))->getFileName());
-        $package = $providerDir.'/../resources/views/themes/falcon-theme';
-
-        return File::isDirectory($package) ? $package : null;
     }
 
     /** A child theme that inherits the parent's templates; override selectively. */

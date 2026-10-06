@@ -60,7 +60,7 @@ class MenuElementTest extends TestCase
      */
     public function test_no_menu_setting_is_declared_twice(): void
     {
-        $source = file_get_contents(__DIR__.'/../../../src/helpers.php');
+        $source = file_get_contents(__DIR__.'/../../../src/helpers/builder-elements.php');
         $start = strpos($source, "\$elements['menu'] = [");
         $this->assertNotFalse($start, 'the Menu element definition has moved');
 

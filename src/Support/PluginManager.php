@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Support;
 
+use FalconCms\Core\Http\Controllers\DormantPluginController;
 use FalconCms\Core\Models\Plugin;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,9 @@ class PluginManager
 
     /** The Composer class loader, resolved lazily for runtime PSR-4 registration. */
     protected $composer = null;
+
+    /** Guard so the switched-off plugins' controller stand-in is registered once. */
+    protected bool $dormantLoaderRegistered = false;
 
     public function __construct(?string $path = null)
     {
@@ -85,9 +89,22 @@ class PluginManager
         return $slug ? $this->path.DIRECTORY_SEPARATOR.$slug : $this->path;
     }
 
+    /**
+     * Plugins that ship inside the CMS package itself (e.g. the shop). They update with the
+     * CMS, can be deactivated but never uninstalled, and may be active by default.
+     */
+    public static function bundledPath(): string
+    {
+        return dirname(__DIR__, 2).DIRECTORY_SEPARATOR.'plugins';
+    }
+
     // ── Discovery ────────────────────────────────────────────────────────────
 
-    /** All plugins present on disk with a valid manifest, keyed by slug. */
+    /**
+     * All plugins present on disk with a valid manifest, keyed by slug: the site's own
+     * plugins, then the bundled ones. A bundled plugin wins over a site folder with the
+     * same slug, so a stale copy dropped into the site can never shadow the real one.
+     */
     public function discover(): array
     {
         if ($this->manifests !== null) {
@@ -95,31 +112,55 @@ class PluginManager
         }
         $this->manifests = [];
 
-        if (!is_dir($this->path)) {
-            return $this->manifests;
-        }
-
-        foreach (glob($this->path.'/*', GLOB_ONLYDIR) ?: [] as $dir) {
-            $manifestFile = $dir.'/plugin.json';
-            if (!is_file($manifestFile)) {
+        foreach ([[$this->path, false], [static::bundledPath(), true]] as [$root, $bundled]) {
+            if (!is_dir($root)) {
                 continue;
             }
-            $data = json_decode((string) file_get_contents($manifestFile), true);
-            if (!is_array($data)) {
-                continue;
+            foreach (glob($root.'/*', GLOB_ONLYDIR) ?: [] as $dir) {
+                $manifestFile = $dir.'/plugin.json';
+                if (!is_file($manifestFile)) {
+                    continue;
+                }
+                $data = json_decode((string) file_get_contents($manifestFile), true);
+                if (!is_array($data)) {
+                    continue;
+                }
+                // Slug comes from the manifest, falling back to the folder name; keep
+                // it to a safe charset (it feeds routes, view namespaces, DB rows).
+                $slug = preg_replace('/[^A-Za-z0-9_\-]/', '', (string) ($data['slug'] ?? basename($dir)));
+                if ($slug === '') {
+                    continue;
+                }
+                $data['slug'] = $slug;
+                $data['dir'] = $dir;
+                $data['bundled'] = $bundled;
+                // Only a bundled plugin may be active by default; a site plugin is opt-in.
+                $data['default_active'] = $bundled && !empty($data['default_active']);
+                $this->manifests[$slug] = $data;
             }
-            // Slug comes from the manifest, falling back to the folder name; keep
-            // it to a safe charset (it feeds routes, view namespaces, DB rows).
-            $slug = preg_replace('/[^A-Za-z0-9_\-]/', '', (string) ($data['slug'] ?? basename($dir)));
-            if ($slug === '') {
-                continue;
-            }
-            $data['slug'] = $slug;
-            $data['dir'] = $dir;
-            $this->manifests[$slug] = $data;
         }
 
         return $this->manifests;
+    }
+
+    /**
+     * Whether a plugin counts as active, given the DB rows (slug => is_active).
+     *
+     * A row decides. With no row yet, a bundled default-active plugin is active — so a site
+     * that updates the CMS keeps its shop even before (or without) running migrations, and
+     * turning it off is what writes the row.
+     */
+    protected function isActive(string $slug, array $rows): bool
+    {
+        // The config switch beats everything (see falcon-options.disabled_plugins).
+        if (in_array($slug, (array) config('falcon-options.disabled_plugins', []), true)) {
+            return false;
+        }
+        if (array_key_exists($slug, $rows)) {
+            return (bool) $rows[$slug];
+        }
+
+        return (bool) ($this->manifest($slug)['default_active'] ?? false);
     }
 
     /** A single discovered manifest, or null. */
@@ -140,20 +181,47 @@ class PluginManager
         foreach ($this->discover() as $slug => $manifest) {
             $rec = $records[$slug] ?? null;
 
+            // A bundled plugin updates with the CMS itself, so it never offers its own update.
             $updateAvailable = false;
-            if ($rec && !empty($manifest['version']) && !empty($rec->version)) {
+            if (empty($manifest['bundled']) && $rec && !empty($manifest['version']) && !empty($rec->version)) {
                 $updateAvailable = version_compare($manifest['version'], $rec->version, '>');
             }
 
+            $active = $this->isActive($slug, array_map(fn ($r) => (bool) $r->is_active, $records));
             $out[$slug] = $manifest + [
-                'installed' => $rec !== null,
-                'active' => $rec ? (bool) $rec->is_active : false,
+                'installed' => $rec !== null || !empty($manifest['bundled']),
+                'active' => $active,
                 'installed_version' => $rec->version ?? null,
                 'update_available' => $updateAvailable,
+                'settings_url' => $active ? $this->settingsUrl($manifest) : null,
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * Where the Plugins screen's "Settings" link goes: the route named by the manifest's
+     * "settings_route". Only a registered, live route counts. A dormant twin is not a page,
+     * and neither is the route of a plugin that is not loaded on this request.
+     */
+    protected function settingsUrl(array $manifest): ?string
+    {
+        $name = (string) ($manifest['settings_route'] ?? '');
+        if ($name === '') {
+            return null;
+        }
+
+        try {
+            $route = app('router')->getRoutes()->getByName($name);
+            if ($route === null || !empty($route->defaults['_falcon_dormant'])) {
+                return null;
+            }
+
+            return route($name);
+        } catch (Throwable $e) {
+            return null;
+        }
     }
 
     /** DB records keyed by slug (empty when the table is missing). */
@@ -166,14 +234,16 @@ class PluginManager
         }
     }
 
-    /** Slugs of plugins marked active in the DB (safe before the table exists). */
+    /** Slugs of active plugins: DB state, plus bundled default-active ones with no row yet. */
     public function activeSlugs(): array
     {
         try {
-            return Plugin::where('is_active', true)->pluck('slug')->all();
+            $rows = Plugin::pluck('is_active', 'slug')->map(fn ($v) => (bool) $v)->all();
         } catch (Throwable $e) {
             return [];
         }
+
+        return array_values(array_filter(array_keys($this->discover()), fn ($slug) => $this->isActive($slug, $rows)));
     }
 
     // ── Loading ──────────────────────────────────────────────────────────────
@@ -197,21 +267,59 @@ class PluginManager
         // Returning WITHOUT setting the guard when the DB isn't ready lets a later
         // call (boot()) retry, instead of permanently loading nothing.
         try {
-            $activeSlugs = DB::table('plugins')->where('is_active', true)->pluck('slug')->all();
+            $rows = DB::table('plugins')->pluck('is_active', 'slug')->map(fn ($v) => (bool) $v)->all();
+            $this->bootedActive = true;
         } catch (Throwable $e) {
-            return;
+            // No plugins table yet (a fresh install before migrating, or a test app that
+            // migrates after it boots). Nobody has switched anything off, so the bundled
+            // default-active plugins still load; site plugins wait for the retry in boot().
+            $rows = [];
         }
 
-        $this->bootedActive = true;
-
-        $active = array_intersect($this->orderByDependencies(array_keys($this->discover())), $activeSlugs);
+        $active = array_filter(
+            $this->orderByDependencies(array_keys($this->discover())),
+            fn ($slug) => $this->isActive($slug, $rows)
+        );
 
         foreach ($active as $slug) {
             $manifest = $this->manifest($slug);
-            if ($manifest) {
+            if ($manifest && !isset($this->loaded[$slug])) {
                 $this->loadPlugin($app, $manifest);
             }
         }
+
+        $this->registerDormantControllers();
+    }
+
+    /**
+     * Make the controllers of plugins that are switched off answer 404 instead of failing.
+     *
+     * A route cache built while a plugin was on still routes its URLs to its controllers. With
+     * the plugin off, its namespace is never registered, so each of those requests would be a
+     * 500 until the cache was cleared. This autoloader runs only after Composer has failed to
+     * find a class, and only for a controller (…\Http\Controllers\…) in the namespace of a
+     * plugin that is not loaded. It never loads any of the plugin's own code.
+     */
+    protected function registerDormantControllers(): void
+    {
+        if ($this->dormantLoaderRegistered) {
+            return;
+        }
+        $this->dormantLoaderRegistered = true;
+
+        spl_autoload_register(function (string $class): void {
+            if (!str_contains($class, '\\Http\\Controllers\\')) {
+                return;
+            }
+            foreach ($this->discover() as $slug => $manifest) {
+                $namespace = rtrim((string) ($manifest['namespace'] ?? ''), '\\');
+                if ($namespace !== '' && !isset($this->loaded[$slug]) && str_starts_with($class, $namespace.'\\')) {
+                    class_alias(DormantPluginController::class, $class);
+
+                    return;
+                }
+            }
+        });
     }
 
     /** Manifests loaded this request — used by the boot phase (views/routes/migrations). */
@@ -301,6 +409,8 @@ class PluginManager
             return $this->result(false, 'Activation failed: '.$e->getMessage());
         }
 
+        $this->refreshCaches();
+
         return $this->result(true, ($manifest['name'] ?? $slug).' activated.');
     }
 
@@ -327,10 +437,14 @@ class PluginManager
         }
 
         try {
-            Plugin::where('slug', $slug)->update(['is_active' => false]);
+            // updateOrCreate, not update: a bundled default-active plugin may have no row yet,
+            // and without one it would still count as active.
+            Plugin::updateOrCreate(['slug' => $slug], ['is_active' => false]);
         } catch (Throwable $e) {
             return $this->result(false, 'Deactivation failed: '.$e->getMessage());
         }
+
+        $this->refreshCaches();
 
         return $this->result(true, ($manifest['name'] ?? $slug).' deactivated.');
     }
@@ -386,6 +500,12 @@ class PluginManager
     public function uninstall(string $slug, bool $deleteFiles = true): array
     {
         $manifest = $this->manifest($slug);
+
+        // A bundled plugin ships with the CMS: it can be switched off, never removed —
+        // its files belong to the package, and its data must survive.
+        if (!empty($manifest['bundled'])) {
+            return $this->result(false, ($manifest['name'] ?? $slug).' is part of FalconCMS and cannot be uninstalled. Deactivate it instead.');
+        }
 
         if ($manifest && ($blocker = $this->activeDependent($slug))) {
             return $this->result(false, "Cannot uninstall — '{$blocker}' depends on it.");
@@ -626,12 +746,37 @@ class PluginManager
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
+    /**
+     * After a plugin is switched on or off: a cached route table would still hold (or lack)
+     * its routes, and cached pages would still carry (or miss) its markup — the shop's cart
+     * icon, say. Both are rebuilt on the next request.
+     */
+    protected function refreshCaches(): void
+    {
+        try {
+            if (app()->routesAreCached()) {
+                Artisan::call('route:clear');
+            }
+        } catch (Throwable $e) {
+            Log::warning('Could not clear the route cache after a plugin change: '.$e->getMessage());
+        }
+        if (function_exists('clear_page_cache')) {
+            try {
+                clear_page_cache();
+            } catch (Throwable $e) {
+                Log::warning('Could not clear the page cache after a plugin change: '.$e->getMessage());
+            }
+        }
+    }
+
     /** Deactivate a plugin that threw during load, so the CMS stays up. */
     protected function handleFatal(string $slug, Throwable $e): void
     {
         Log::error("Plugin '{$slug}' failed to load and was deactivated: ".$e->getMessage());
         try {
-            Plugin::where('slug', $slug)->update(['is_active' => false]);
+            // updateOrCreate, not update: a bundled default-active plugin may have no row yet,
+            // and without one it would still count as active.
+            Plugin::updateOrCreate(['slug' => $slug], ['is_active' => false]);
         } catch (Throwable $ignored) {
             // Table may not exist yet — nothing more we can do safely.
         }

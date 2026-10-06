@@ -3,6 +3,7 @@
 namespace FalconCms\Core\View\Components\Admin;
 
 use App\Models\User;
+use FalconCms\Core\Http\Controllers\Admin\FalconBuilderController;
 use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
@@ -95,7 +96,21 @@ class Sidebar extends Component
         // model (view the page freely; write actions are gated by EnsureProEditable + a toast) or
         // the analytics "locked preview". So no Pro menu item is hidden here anymore.
         if (str_contains($route, '.')) {
-            return Route::has($route);
+            if (!Route::has($route)) {
+                return false;
+            }
+            // A dormant twin — the name kept while its plugin is off — is not a page to link to.
+            $named = Route::getRoutes()->getByName($route);
+            if ($named && !empty($named->defaults['_falcon_dormant'])) {
+                return false;
+            }
+            // Nor is a screen for a post type whose plugin is off (Products without the shop).
+            $params = json_decode((string) ($menu->params ?? ''), true);
+            if (is_array($params) && !empty($params['type']) && !falcon_post_type_available((string) $params['type'])) {
+                return false;
+            }
+
+            return true;
         }
 
         return true;
@@ -127,14 +142,14 @@ class Sidebar extends Component
         // Falcon Builder → Layouts, so that is the menu lit while one is open.
         if ($targetPath === 'admin/falcon-builder-sections' && preg_match('#^admin/posts/(\d+)/edit$#', $currentPath, $m)) {
             try {
-                return in_array(Post::where('id', $m[1])->value('type'), \FalconCms\Core\Http\Controllers\Admin\FalconBuilderController::SECTION_TYPES, true);
+                return in_array(Post::where('id', $m[1])->value('type'), FalconBuilderController::SECTION_TYPES, true);
             } catch (\Throwable $e) {
                 return false;
             }
         }
 
         // 2. Base path check
-        $indexPaths =['admin/posts', 'admin/pages', 'admin/users', 'admin/settings', 'admin/roles', 'admin/categories', 'admin/tags', 'admin/product-categories', 'admin/product-tags', 'admin/comments', 'admin/profile', 'admin/plugins'];
+        $indexPaths = ['admin/posts', 'admin/pages', 'admin/users', 'admin/settings', 'admin/roles', 'admin/categories', 'admin/tags', 'admin/product-categories', 'admin/product-tags', 'admin/comments', 'admin/profile', 'admin/plugins'];
 
         // Special case: Your Profile belongs to Users group
         if ($targetPath === 'admin/users' && ($currentPath === 'admin/profile' || str_starts_with($currentPath, 'admin/users/') && str_ends_with($currentPath, '/edit'))) {

@@ -169,7 +169,7 @@ class IconBoxIconStateTest extends TestCase
      */
     public function test_the_canvas_knows_about_every_setting_the_page_does(): void
     {
-        $php = (string) file_get_contents(__DIR__.'/../../../src/helpers.php');
+        $php = (string) file_get_contents(__DIR__.'/../../../src/helpers/styles.php');
         $canvas = (string) file_get_contents(
             __DIR__.'/../../../resources/views/admin/falcon-builder/partials/scripts.blade.php');
 
@@ -195,7 +195,7 @@ class IconBoxIconStateTest extends TestCase
 
         $this->assertStringContainsString("const boxed = v.bg !== '' || borderWidth > 0;", $canvas);
 
-        $php = (string) file_get_contents(__DIR__.'/../../../src/helpers.php');
+        $php = (string) file_get_contents(__DIR__.'/../../../src/helpers/styles.php');
         $this->assertStringContainsString("\$boxed = \$v['bg'] !== '' || \$borderWidth > 0;", $php);
     }
 }

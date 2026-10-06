@@ -26,7 +26,8 @@ class SitemapController extends Controller
         // All active post types (builtin + custom) — dynamic
         $allPostTypes = PostType::where('is_active', true)->get();
         foreach ($allPostTypes as $pt) {
-            if (get_cms_option('sitemap_include_'.$pt->slug, '1') == '1') {
+            // A plugin-owned type (products) is left out while its plugin is off.
+            if (get_cms_option('sitemap_include_'.$pt->slug, '1') == '1' && falcon_post_type_available($pt->slug)) {
                 $ptPosts = Post::where('type', $pt->slug)
                     ->where('status', 'published')
                     // A row with no slug would emit the site root as its <loc>, listing the

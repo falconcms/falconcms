@@ -162,6 +162,7 @@ export default defineConfig({
             { text: 'Orders', link: '/ecommerce/orders' },
             { text: 'Coupons', link: '/ecommerce/coupons' },
             { text: 'Promotions', link: '/ecommerce/promotions' },
+            { text: 'Shop Plugin & Templates', link: '/ecommerce/shop-plugin' },
           ]
         },
       ],
@@ -187,7 +188,8 @@ export default defineConfig({
         {
           text: 'Changelog',
           items: [
-            { text: 'v2.7.4 (Latest)', link: '/changelog#v2-7-4' },
+            { text: 'v2.7.7 (Latest)', link: '/changelog#v2-7-7' },
+            { text: 'v2.7.4', link: '/changelog#v2-7-4' },
             { text: 'v2.7.3', link: '/changelog#v2-7-3' },
             { text: 'v2.7.2', link: '/changelog#v2-7-2' },
             { text: 'v2.7.1', link: '/changelog#v2-7-1' },

@@ -3,10 +3,10 @@
 namespace FalconCms\Core\Tests\Feature\Shop;
 
 use App\Models\User;
-use FalconCms\Core\Http\Controllers\ShopFrontendController;
 use FalconCms\Core\Models\CustomerAddress;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
+use FalconShop\Http\Controllers\ShopFrontendController;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Facade;

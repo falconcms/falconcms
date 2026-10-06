@@ -77,13 +77,20 @@
                             <strong class="text-[#1d2327] text-[14px]">{{ $p['name'] ?? $slug }}</strong>
                             <div class="mt-1 text-[13px] flex flex-wrap items-center gap-x-1">
                                 @if($active)
+                                    @if(!empty($p['settings_url']))
+                                        <a href="{{ $p['settings_url'] }}" class="text-[#2271b1] hover:underline">Settings</a>
+                                        <span class="text-[#c3c4c7]">|</span>
+                                    @endif
                                     <a href="#" onclick="event.preventDefault();submitSingle('{{ route('admin.plugins.deactivate', $slug) }}')" class="text-[#2271b1] hover:underline">Deactivate</a>
                                 @else
                                     <a href="#" onclick="event.preventDefault();submitSingle('{{ route('admin.plugins.activate', $slug) }}')" class="text-[#2271b1] hover:underline">Activate</a>
-                                    <span class="text-[#c3c4c7]">|</span>
-                                    <a href="#" onclick="event.preventDefault();confirmDelete('{{ route('admin.plugins.destroy', $slug) }}', '{{ $p['name'] ?? $slug }}')" class="text-[#b32d2e] hover:underline">Delete</a>
+                                    @if(empty($p['bundled']))
+                                        <span class="text-[#c3c4c7]">|</span>
+                                        <a href="#" onclick="event.preventDefault();confirmDelete('{{ route('admin.plugins.destroy', $slug) }}', '{{ $p['name'] ?? $slug }}')" class="text-[#b32d2e] hover:underline">Delete</a>
+                                    @endif
                                 @endif
-                                @if($p['update_available'])
+                                {{-- A bundled plugin ships with the CMS and updates with it: no delete, no separate update. --}}
+                                @if(empty($p['bundled']) && $p['update_available'])
                                     <span class="text-[#c3c4c7]">|</span>
                                     <a href="#" onclick="event.preventDefault();submitSingle('{{ route('admin.plugins.update', $slug) }}')" class="text-[#996800] hover:underline">Update Now</a>
                                 @endif

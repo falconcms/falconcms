@@ -140,6 +140,7 @@ resources/views/plugins/seo-booster/
 | `lifecycle` | — | Class with optional `activate`/`deactivate`/`uninstall`/`upgrade` methods. |
 | `provider` | — | A Laravel ServiceProvider, registered on load. |
 | `bootstrap` | — | Bootstrap filename. Defaults to `plugin.php`. |
+| `settings_route` | — | Name of the route for the plugin's settings page, e.g. `"seo-booster.settings"`. While the plugin is active, the Plugins screen shows a **Settings** link to it. |
 | `dependencies` | — | Slugs that must be installed **and active** first. |
 
 ### The bootstrap — `plugin.php`

@@ -2,10 +2,10 @@
 
 namespace FalconCms\Core\Tests\Feature\Shop;
 
-use FalconCms\Core\Http\Controllers\ShopFrontendController;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
+use FalconShop\Http\Controllers\ShopFrontendController;
 use Illuminate\Support\Facades\DB;
 use ReflectionClass;
 

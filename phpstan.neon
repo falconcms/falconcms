@@ -10,12 +10,22 @@ parameters:
         - database
         - routes
         - tests
+        - plugins/falcon-shop/src
 
-    # helpers.php is one long file of procedural template helpers (the WordPress-style API
-    # themes call). It is not analysed — but it IS scanned, so every falcon_*() call site
-    # elsewhere resolves to a real signature instead of "function not found".
+    # helpers.php and src/helpers/ are the procedural template helpers (the WordPress-style
+    # API themes call). They are not analysed — but they ARE scanned, so every falcon_*()
+    # call site elsewhere resolves to a real signature instead of "function not found".
     excludePaths:
         - src/helpers.php
+        - src/helpers
+        - plugins/falcon-shop/src/helpers
 
     scanFiles:
         - src/helpers.php
+
+    scanDirectories:
+        - src/helpers
+
+    # A plugin's helpers are not autoloaded by Composer; the bootstrap declares them.
+    bootstrapFiles:
+        - phpstan-bootstrap.php

@@ -32,9 +32,9 @@ abstract class TestCase extends Orchestra
         // a process-wide singleton, so without this each test would inherit the previous
         // test's filters and a second copy of every hook the provider registers.
         //
-        // A snapshot rather than a reset: helpers.php registers the builder element library
-        // while it is being loaded, which happens once per process. Resetting would throw
-        // that away for every test after the first. The baseline is captured before the
+        // A snapshot rather than a reset: src/helpers/builder-elements.php registers the
+        // builder element library while it is being loaded, which happens once per process.
+        // Resetting would throw that away for every test after the first. The baseline is captured before the
         // very first boot, so it holds exactly those file-load registrations and nothing
         // else, and each boot then adds one clean copy of the provider's own hooks.
         if (self::$hookBaseline === null) {

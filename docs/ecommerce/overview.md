@@ -1,6 +1,9 @@
 # E-commerce Overview
 
-Falcon CMS includes a complete e-commerce system built directly into the package — no extra plugins needed.
+Falcon CMS includes a complete e-commerce system. It ships with the package as the bundled
+**Falcon Shop** plugin, already switched on, so there is nothing extra to install. See
+[Shop Plugin & Templates](/ecommerce/shop-plugin) to switch it off or to restyle its pages in a
+theme.
 
 ![Shop overview](/screenshots/shop-overview.webp)
 

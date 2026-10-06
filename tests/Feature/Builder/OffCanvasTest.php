@@ -3,9 +3,11 @@
 namespace FalconCms\Core\Tests\Feature\Builder;
 
 use App\Models\User;
+use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Support\OffCanvas;
 use FalconCms\Core\Tests\TestCase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -207,7 +209,7 @@ class OffCanvasTest extends TestCase
     public function test_the_target_picker_searches_pages_and_terms(): void
     {
         $page = $this->page('<p>x</p>');
-        \FalconCms\Core\Models\Category::create(['name' => 'Landing News', 'slug' => 'landing-news', 'lang_code' => 'en']);
+        Category::create(['name' => 'Landing News', 'slug' => 'landing-news', 'lang_code' => 'en']);
 
         $items = $this->actingAs($this->administrator())
             ->getJson('/admin/falcon-builder-library/off-canvas-targets?q=Landing')
@@ -336,7 +338,7 @@ class OffCanvasTest extends TestCase
             ->assertOk()->getContent();
         $this->assertSame('falcon_off_canvas', json_decode($json, true)['_type']);
 
-        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('cart.json', $json);
+        $file = UploadedFile::fake()->createWithContent('cart.json', $json);
         $this->actingAs($this->administrator())
             ->post('/admin/falcon-builder-library/off-canvas-import', ['library_file' => $file])
             ->assertRedirect();

@@ -24,8 +24,11 @@ use Illuminate\Http\Request;
  */
 class HtmlOptimizeMiddleware
 {
-    /** Scripts that must run before the page paints — never deferred. */
-    private const DEFER_SKIP = ['tailwind', 'cdn.tailwindcss', 'alpine', 'turnstile', 'recaptcha'];
+    /**
+     * Scripts that must run before the page paints — never deferred. "data-no-defer" lets any
+     * script opt out: a file moved out of an inline <script> keeps running exactly where it did.
+     */
+    private const DEFER_SKIP = ['tailwind', 'cdn.tailwindcss', 'alpine', 'turnstile', 'recaptcha', 'data-no-defer'];
 
     public function handle(Request $request, Closure $next)
     {

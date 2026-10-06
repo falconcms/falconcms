@@ -841,8 +841,9 @@
     @endif
 @endif
 
-    {{-- Off-canvas mini cart --}}
-    @include('falcon-cms::themes.falcon-theme.partials.mini-cart')
+    {{-- After the footer, before the icon script: plugins add body-level UI here (the shop's
+         mini-cart). Its icons are drawn by the lucide call below. --}}
+    <?php do_falcon_action('falcon_after_footer'); ?>
 
     <!-- Scripts -->
     <script src="{{ asset('vendor/falcon-cms/js/lucide.min.js') }}"></script>

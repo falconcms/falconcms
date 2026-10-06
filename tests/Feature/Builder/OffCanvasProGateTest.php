@@ -60,7 +60,7 @@ class OffCanvasProGateTest extends TestCase
         $admin = $this->administrator();
 
         $this->actingAs($admin)->get('/admin/falcon-builder-library?tab=off_canvas')
-            ->assertOk()->assertSee('Mobile Menu', false)->assertSee("viewing the Library in preview", false);
+            ->assertOk()->assertSee('Mobile Menu', false)->assertSee('viewing the Library in preview', false);
     }
 
     public function test_an_existing_panel_still_works_on_the_site(): void

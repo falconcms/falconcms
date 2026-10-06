@@ -2,10 +2,10 @@
 
 namespace FalconCms\Core\Tests\Feature\Security;
 
-use FalconCms\Core\Http\Controllers\ShopFrontendController;
 use FalconCms\Core\Models\OrderDownload;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
+use FalconShop\Http\Controllers\ShopFrontendController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;

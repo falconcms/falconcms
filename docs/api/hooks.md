@@ -187,6 +187,25 @@ add_falcon_action('falcon_footer', function() {
 
 ---
 
+#### `falcon_header_actions`
+Fires inside the theme header's icon row (next to search and account). The shop plugin puts
+its cart icon here. Call it from a custom theme's header to get the cart icon.
+
+```php
+add_falcon_action('falcon_header_actions', function() {
+    echo '<a href="/contact" class="header-icon">Contact</a>';
+});
+```
+
+---
+
+#### `falcon_after_footer`
+Fires after the footer, just before `</body>`. Use it for markup such as drawers and modals.
+The shop plugin adds its mini-cart here, or at `falcon_footer` if a theme has no
+`falcon_after_footer`.
+
+---
+
 ### Post Content
 
 #### `falcon_before_content`
@@ -1041,6 +1060,81 @@ add_falcon_filter('falcon_general_settings_fields', function($fields) {
 
 ---
 
+#### `falcon_placeholder_image`
+**Args:** `$src`
+
+Sets the image shown for a post or product that has none (`falcon_placeholder_image()`). The
+default is an inline grey SVG.
+
+```php
+add_falcon_filter('falcon_placeholder_image', fn () => asset('images/no-photo.webp'));
+```
+
+---
+
+#### `falcon_site_health_checks`
+**Args:** `$checks`
+
+Add checks of your own to **Settings → Site Health**. Each check is an array with `id`,
+`label`, `status` (`good`, `recommended` or `critical`), and optionally `category` (defaults to
+`Plugins`), `description`, `action`, and `details` (`['files' => [...]]` shows a list).
+
+```php
+add_falcon_filter('falcon_site_health_checks', function($checks) {
+    $checks[] = [
+        'id'          => 'my_api_key',
+        'label'       => get_cms_option('my_api_key') ? 'My API key is set' : 'My API key is missing',
+        'status'      => get_cms_option('my_api_key') ? 'good' : 'recommended',
+        'description' => 'My Plugin needs an API key to sync orders.',
+    ];
+    return $checks;
+});
+```
+
+---
+
+### Plugin Routing Filters
+
+A plugin uses these filters to take over rendering of its own content. Each one starts as `null`, which tells the CMS to render as usual. Return something else to replace the CMS's choice.
+
+#### `falcon_frontend_page_response`
+**Args:** `$response, $post`
+
+Return a response or view to render instead of a page. The shop uses this filter for the pages
+assigned as Shop, Cart, Checkout and Account.
+
+#### `falcon_single_view`
+**Args:** `$view, $post`
+
+Return the view name to render a single post with, for example a product template.
+
+#### `falcon_archive_view`
+**Args:** `$view, $postTypeSlug`
+
+Return the view name for a post type's archive.
+
+#### `falcon_plugin_post_types`
+**Args:** `$owners`
+
+Maps a post type to the plugin that serves it (`['product' => 'falcon-shop']`). While that
+plugin is off, its post type's singles and archives return 404 and are left out of search and
+the sitemap, and its admin screens are hidden.
+
+```php
+add_falcon_filter('falcon_plugin_post_types', function($owners) {
+    $owners['event'] = 'my-events-plugin';
+    return $owners;
+});
+```
+
+::: warning Register it where it always runs
+Register this filter in a theme's `functions.php` or in an always-on provider. If the plugin
+registers it from its own code, the filter disappears when the plugin is turned off, which is
+exactly when it is needed.
+:::
+
+---
+
 ### REST API Filter
 
 #### `falcon_api_post_data`
@@ -1114,7 +1208,7 @@ return [
 
 ## Complete Hook List
 
-### Actions (58 total)
+### Actions (86 total)
 
 | Hook | Args |
 |---|---|
@@ -1202,8 +1296,10 @@ return [
 | `falcon_before_order_confirmation` | `$order` |
 | `falcon_order_confirmation_item_meta` | `$item, $order` |
 | `falcon_after_order_confirmation` | `$order` |
+| `falcon_header_actions` | — |
+| `falcon_after_footer` | — |
 
-### Filters (46 total)
+### Filters (37 total)
 
 | Hook | Args |
 |---|---|
@@ -1238,3 +1334,9 @@ return [
 | `falcon_checkout_field_labels` | `$labels, $context` |
 | `falcon_invoice_title` | `$title, $order` |
 | `falcon_order_item_meta` | `$meta, $item, $order` |
+| `falcon_site_health_checks` | `$checks` |
+| `falcon_frontend_page_response` | `$response, $post` |
+| `falcon_single_view` | `$view, $post` |
+| `falcon_archive_view` | `$view, $postTypeSlug` |
+| `falcon_plugin_post_types` | `$owners` |
+| `falcon_placeholder_image` | `$src` |

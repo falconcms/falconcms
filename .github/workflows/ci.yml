@@ -113,4 +113,4 @@ jobs:
           coverage: none
 
       - name: Lint every PHP file
-        run: find src database routes config -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+        run: find src database routes config plugins -name '*.php' -print0 | xargs -0 -n1 -P4 php -l

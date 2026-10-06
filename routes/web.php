@@ -26,18 +26,11 @@ use FalconCms\Core\Http\Controllers\Admin\PageController;
 use FalconCms\Core\Http\Controllers\Admin\PluginController;
 use FalconCms\Core\Http\Controllers\Admin\PostController;
 use FalconCms\Core\Http\Controllers\Admin\PostTypeController;
-use FalconCms\Core\Http\Controllers\Admin\ProductCategoryController;
-use FalconCms\Core\Http\Controllers\Admin\ProductDownloadController;
-use FalconCms\Core\Http\Controllers\Admin\ProductTagController;
-use FalconCms\Core\Http\Controllers\Admin\PromotionController;
 use FalconCms\Core\Http\Controllers\Admin\RedirectController;
 use FalconCms\Core\Http\Controllers\Admin\RegisterController;
-use FalconCms\Core\Http\Controllers\Admin\ReviewController;
 use FalconCms\Core\Http\Controllers\Admin\RoleController;
 use FalconCms\Core\Http\Controllers\Admin\SettingsTabController;
 use FalconCms\Core\Http\Controllers\Admin\SiteHealthController;
-use FalconCms\Core\Http\Controllers\Admin\ShopController;
-use FalconCms\Core\Http\Controllers\Admin\ShopReportController;
 use FalconCms\Core\Http\Controllers\Admin\TagController;
 use FalconCms\Core\Http\Controllers\Admin\TaxonomyTermController;
 use FalconCms\Core\Http\Controllers\Admin\ThemeController;
@@ -45,20 +38,16 @@ use FalconCms\Core\Http\Controllers\Admin\UserController;
 use FalconCms\Core\Http\Controllers\Admin\WidgetController;
 use FalconCms\Core\Http\Controllers\Admin\WordPressImportController;
 use FalconCms\Core\Http\Controllers\FrontendController;
-use FalconCms\Core\Http\Controllers\ShopFrontendController;
 use FalconCms\Core\Http\Controllers\SitemapController;
-use FalconCms\Core\Http\Controllers\WishlistController;
 use FalconCms\Core\Http\Middleware\AdminMiddleware;
 use FalconCms\Core\Http\Middleware\EnsurePro;
 use FalconCms\Core\Http\Middleware\EnsureProEditable;
+use FalconCms\Core\Http\Middleware\HtmlOptimizeMiddleware;
 use FalconCms\Core\Http\Middleware\MaintenanceModeMiddleware;
 use FalconCms\Core\Http\Middleware\PageCacheMiddleware;
-use FalconCms\Core\Http\Middleware\HtmlOptimizeMiddleware;
 use FalconCms\Core\Http\Middleware\SecurityHeadersMiddleware;
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Language;
-use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -88,9 +77,6 @@ Route::middleware(['web', SecurityHeadersMiddleware::class])->group(function () 
     // Admin magic login (passwordless)
     Route::post('admin-magic-login', [LoginController::class, 'requestAdminMagicLink'])->name('admin.magic.request')->middleware('throttle:5,1');
     Route::get('admin-magic-login/verify/{token}', [LoginController::class, 'verifyAdminMagicLink'])->name('admin.magic.verify');
-
-    // Frontend magic email check (AJAX, rate-limited)
-    Route::post('magic-email-check', [ShopFrontendController::class, 'checkMagicEmail'])->name('shop.magic.email.check')->middleware('throttle:30,1');
 
     // The stock /admin/login and /admin/register paths are dead ends on purpose.
     // They used to redirect to the custom slugs, which meant the one thing an attacker
@@ -237,28 +223,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
 
         return response()->json($category);
     })->name('categories.ajax');
-
-    // Product Categories & Tags — Pro (e-commerce), "browse but locked": the pages are viewable;
-    // EnsureProEditable (method-aware) gates only the write methods.
-    Route::middleware(EnsureProEditable::class.':ecommerce')->group(function () {
-        // Product Categories (dedicated, first-class — mirrors Categories)
-        Route::get('product-categories', [ProductCategoryController::class, 'index'])->name('product-categories.index');
-        Route::post('product-categories', [ProductCategoryController::class, 'store'])->name('product-categories.store');
-        Route::post('product-categories/bulk', [ProductCategoryController::class, 'bulk'])->name('product-categories.bulk');
-        Route::post('product-categories/ajax', [ProductCategoryController::class, 'ajax'])->name('product-categories.ajax');
-        Route::get('product-categories/edit/{product_category}', [ProductCategoryController::class, 'edit'])->name('product-categories.edit');
-        Route::put('product-categories/{product_category}', [ProductCategoryController::class, 'update'])->name('product-categories.update');
-        Route::delete('product-categories/{product_category}', [ProductCategoryController::class, 'destroy'])->name('product-categories.destroy');
-
-        // Product Tags (dedicated, first-class — mirrors Tags)
-        Route::get('product-tags', [ProductTagController::class, 'index'])->name('product-tags.index');
-        Route::post('product-tags', [ProductTagController::class, 'store'])->name('product-tags.store');
-        Route::post('product-tags/bulk', [ProductTagController::class, 'bulk'])->name('product-tags.bulk');
-        Route::post('product-tags/ajax', [ProductTagController::class, 'ajax'])->name('product-tags.ajax');
-        Route::get('product-tags/edit/{product_tag}', [ProductTagController::class, 'edit'])->name('product-tags.edit');
-        Route::put('product-tags/{product_tag}', [ProductTagController::class, 'update'])->name('product-tags.update');
-        Route::delete('product-tags/{product_tag}', [ProductTagController::class, 'destroy'])->name('product-tags.destroy');
-    }); // end EnsurePro:ecommerce — Product Categories & Tags
 
     // Navigation Menus
     Route::post('menus/{id}/duplicate', [MenuManagementController::class, 'duplicate'])->name('menus.duplicate');
@@ -481,43 +445,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::delete('forms/submissions/{submission}', [FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');
     Route::delete('forms/{form}', [FormController::class, 'destroy'])->name('forms.destroy');
 
-    // Shop Management — Pro (e-commerce), "browse but locked": the shop back-office is viewable
-    // so owners can look around; EnsureProEditable (method-aware) gates only the write actions.
-    Route::prefix('shop')->name('shop.')->middleware(EnsureProEditable::class.':ecommerce')->group(function () {
-        Route::get('overview', [ShopController::class, 'overview'])->name('overview');
-        Route::get('orders', [ShopController::class, 'orders'])->name('orders.index');
-        Route::post('orders/bulk', [ShopController::class, 'ordersBulk'])->name('orders.bulk');
-        Route::get('orders/{id}', [ShopController::class, 'orderShow'])->name('orders.show');
-        Route::get('orders/{id}/invoice', [ShopController::class, 'orderInvoice'])->name('orders.invoice');
-        Route::post('orders/{id}/status', [ShopController::class, 'orderUpdateStatus'])->name('orders.status');
-        Route::post('orders/{id}/refund', [ShopController::class, 'orderRefund'])->name('orders.refund');
-        Route::get('settings', [ShopController::class, 'settings'])->name('settings');
-        Route::post('settings', [ShopController::class, 'saveSettings'])->name('settings.save');
-
-        // Sales Reports
-        Route::get('reports', [ShopReportController::class, 'index'])->name('reports.index');
-        Route::get('reports/export', [ShopReportController::class, 'export'])->name('reports.export');
-
-        // Product download files (admin)
-        Route::post('products/{productDataId}/downloads', [ProductDownloadController::class, 'store'])->name('products.downloads.store');
-        Route::delete('products/downloads/{download}', [ProductDownloadController::class, 'destroy'])->name('products.downloads.destroy');
-
-        // Promotions — automatic cart rules (buy X get Y), no coupon code involved.
-        Route::get('promotions', [PromotionController::class, 'index'])->name('promotions.index');
-        Route::post('promotions/bulk', [PromotionController::class, 'bulk'])->name('promotions.bulk');
-        Route::get('promotions/create', [PromotionController::class, 'create'])->name('promotions.create');
-        Route::post('promotions', [PromotionController::class, 'store'])->name('promotions.store');
-        Route::get('promotions/{id}/edit', [PromotionController::class, 'edit'])->name('promotions.edit');
-        Route::put('promotions/{id}', [PromotionController::class, 'update'])->name('promotions.update');
-        Route::delete('promotions/{id}', [PromotionController::class, 'destroy'])->name('promotions.destroy');
-
-        // Reviews
-        Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
-        Route::post('reviews/{review}/toggle-approve', [ReviewController::class, 'toggleApprove'])->name('reviews.toggle-approve');
-        Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
-        Route::post('reviews/bulk', [ReviewController::class, 'bulk'])->name('reviews.bulk');
-    });
-
 });
 
 // 3. Frontend Routes (Catch-all for posts/pages) - Outside Admin Group
@@ -590,94 +517,6 @@ Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddl
     Route::get('/search/live', [FrontendController::class, 'liveSearch'])->name('frontend.search.live');
     Route::post('/comment', [FrontendController::class, 'storeComment'])->name('frontend.comment.store')->middleware('throttle:10,1');
     Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit')->middleware('throttle:5,1');
-
-    // Shop Frontend — Pro (e-commerce). Route names stay REGISTERED (published themes call
-    // route('shop.*') directly, so removing them would 500 the whole site). 'strict' mode
-    // ignores grandfathering: the storefront (cart/checkout/account/add-to-cart) locks the
-    // moment the freemium grace window ends — browsing products stays open elsewhere.
-    Route::middleware(EnsurePro::class.':ecommerce,strict')->group(function () {
-        Route::prefix('cart')->name('shop.')->group(function () {
-            Route::get('/', [ShopFrontendController::class, 'cart'])->name('cart');
-            Route::get('/fragment', [ShopFrontendController::class, 'miniCart'])->name('cart.fragment');
-            Route::post('/add', [ShopFrontendController::class, 'addToCart'])->name('cart.add')->middleware('throttle:30,1');
-            Route::post('/update', [ShopFrontendController::class, 'updateCart'])->name('cart.update')->middleware('throttle:30,1');
-            Route::post('/remove/{key}', [ShopFrontendController::class, 'removeFromCart'])->name('cart.remove')->middleware('throttle:30,1');
-            Route::post('/apply-coupon', [ShopFrontendController::class, 'applyCoupon'])->name('cart.coupon')->middleware('throttle:10,1');
-            Route::get('/remove-coupon', [ShopFrontendController::class, 'removeCoupon'])->name('cart.coupon.remove');
-            Route::post('/update-shipping', [ShopFrontendController::class, 'updateShipping'])->name('cart.shipping.update')->middleware('throttle:20,1');
-            Route::post('/review', [ShopFrontendController::class, 'storeReview'])->name('review.store')->middleware('throttle:5,1');
-        });
-        Route::get('/checkout', [ShopFrontendController::class, 'checkout'])->name('shop.checkout');
-        Route::post('/checkout', [ShopFrontendController::class, 'placeOrder'])->name('shop.place-order');
-        // Post-purchase customer access stays open even after grace ends — a paid
-        // customer must always reach their order confirmation, tracking and digital
-        // downloads (each verifies ownership in the controller).
-        Route::get('/order-confirmation/{id}', [ShopFrontendController::class, 'confirmation'])->name('shop.confirmation')
-            ->withoutMiddleware([EnsurePro::class.':ecommerce,strict']);
-
-        // Order tracking
-        Route::match(['get', 'post'], '/track-order', [ShopFrontendController::class, 'trackOrder'])->name('shop.track')
-            ->withoutMiddleware([EnsurePro::class.':ecommerce,strict']);
-
-        // Account page login / logout / profile / password
-        Route::post('/account-login', [ShopFrontendController::class, 'accountLogin'])->name('shop.account.login');
-        Route::post('/account-logout', [ShopFrontendController::class, 'accountLogout'])->name('shop.account.logout');
-        Route::post('/account-profile-update', [ShopFrontendController::class, 'updateProfile'])->name('shop.account.profile.update');
-        Route::post('/account-password-update', [ShopFrontendController::class, 'updatePassword'])->name('shop.account.password.update');
-
-        // Saved addresses. Every action re-checks ownership in the controller — the id in the URL is
-        // a claim, not a permission.
-        Route::post('/account-address', [ShopFrontendController::class, 'saveAddress'])->name('shop.account.address.save')->middleware('throttle:20,1');
-        Route::post('/account-address/{id}/delete', [ShopFrontendController::class, 'deleteAddress'])->name('shop.account.address.delete')->middleware('throttle:20,1');
-        Route::post('/account-address/{id}/default', [ShopFrontendController::class, 'setDefaultAddress'])->name('shop.account.address.default')->middleware('throttle:20,1');
-
-        // Digital downloads (token-based, no auth required)
-        Route::get('/download/{token}', [ShopFrontendController::class, 'downloadFile'])->name('shop.download')->middleware('throttle:30,1')
-            ->withoutMiddleware([EnsurePro::class.':ecommerce,strict']);
-
-        // Magic login (passwordless)
-        Route::post('/magic-login', [ShopFrontendController::class, 'requestMagicLink'])->name('shop.magic.request')->middleware('throttle:5,1');
-        Route::get('/magic-login/{token}', [ShopFrontendController::class, 'verifyMagicLink'])->name('shop.magic.verify');
-
-        // Wishlist
-        Route::get('/wishlist', [WishlistController::class, 'index'])->name('shop.wishlist');
-        Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('shop.wishlist.toggle');
-        Route::post('/wishlist/remove', [WishlistController::class, 'remove'])->name('shop.wishlist.remove');
-
-        // Online payment gateway return / cancel — gateways (e.g. SSLCommerz) POST here without a CSRF token.
-        //
-        // BOTH CSRF classes are listed on purpose. Laravel 11+ registers
-        // PreventRequestForgery in the `web` group and keeps VerifyCsrfToken only as a legacy
-        // subclass; withoutMiddleware() matches on the registered name, so excluding just the old
-        // name silently did nothing and these callbacks were answering 419.
-        Route::match(['get', 'post'], '/payment/return/{id}', [ShopFrontendController::class, 'paymentReturn'])
-            ->name('shop.payment.return')
-            ->withoutMiddleware([
-                PreventRequestForgery::class,
-                VerifyCsrfToken::class,
-                EnsurePro::class.':ecommerce,strict',
-            ]);
-        Route::match(['get', 'post'], '/payment/cancel/{id}', [ShopFrontendController::class, 'paymentCancel'])
-            ->name('shop.payment.cancel')
-            ->withoutMiddleware([
-                PreventRequestForgery::class,
-                VerifyCsrfToken::class,
-                EnsurePro::class.':ecommerce,strict',
-            ]);
-
-        // Stripe webhook — the reliable half of payment confirmation (the browser return URL is
-        // best-effort; a customer who closes the tab never hits it). Stripe signs the request and
-        // the controller verifies that signature, which is the only authentication here.
-        // Stays outside the Pro gate so a store that lapses still reconciles payments already taken.
-        Route::post('/payment/stripe/webhook', [ShopFrontendController::class, 'stripeWebhook'])
-            ->name('shop.payment.stripe.webhook')
-            ->middleware('throttle:300,1')
-            ->withoutMiddleware([
-                PreventRequestForgery::class,
-                VerifyCsrfToken::class,
-                EnsurePro::class.':ecommerce,strict',
-            ]);
-    }); // end EnsurePro:ecommerce — Shop Frontend
 
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('frontend.sitemap');

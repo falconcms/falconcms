@@ -80,7 +80,7 @@
                         @if($product->featured_image)
                             <img src="{{ str_starts_with($product->featured_image, 'http') ? $product->featured_image : asset('storage/'.$product->featured_image) }}" alt="{{ $product->title }}" class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity">
                         @else
-                            <img src="{{ asset('assets/images/placeholder.jpg') }}" alt="Placeholder" class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-70">
+                            <img src="{{ falcon_placeholder_image() }}" alt="Placeholder" class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-70">
                         @endif
                         @if($product->shopData && $product->shopData->active_sale_price)
                             <span class="absolute top-3 left-3 bg-sky-100 text-sky-700 text-[13px] font-bold px-3 py-1 rounded-full shadow uppercase tracking-wide z-10">Sale!</span>

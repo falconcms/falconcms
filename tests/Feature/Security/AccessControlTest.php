@@ -3,11 +3,11 @@
 namespace FalconCms\Core\Tests\Feature\Security;
 
 use App\Models\User;
-use FalconCms\Core\Http\Controllers\ShopFrontendController;
 use FalconCms\Core\Http\Middleware\AuthenticateApiToken;
 use FalconCms\Core\Models\ApiToken;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
+use FalconShop\Http\Controllers\ShopFrontendController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;

@@ -39,6 +39,26 @@ turned on. Don't add to it to silence a genuine bug in new code — only pre-exi
   rendering (404) — this is enforced, not just a convention.
 - **Hooks over hard dependencies**: prefer `add_falcon_filter()` / `add_falcon_action()`
   extension points over reaching into another feature's internals directly.
+- **Global helpers go in a topic file**: `src/helpers.php` only loads `src/helpers/*.php`,
+  one file per topic (`content.php`, `menus.php`, `shop-tax.php`, …). Put a new helper in
+  the file it belongs to, inside an `if (!function_exists('...'))` guard. If no file fits,
+  or the file is past roughly 1,000 lines, add a new topic file and list it in
+  `src/helpers.php`. Don't add helpers to `src/helpers.php` itself.
+- **One class per builder element**: each core element converts between builder JSON and
+  its shortcode in its own class, `src/Services/ShortcodeConverter/Elements/<Name>Element.php`,
+  which extends `Element` and holds both directions: `toShortcode()` and `fromShortcode()`.
+  Change the two together, because a setting that is written but not read back is lost on
+  the next save. To add an element:
+  1. create the class and add it to `BuilderShortcodeConverter::ELEMENTS`;
+  2. mirror it in `public/assets/js/falcon-builder-converter.js` (the canvas's converter);
+  3. add its render view in `resources/views/frontend/builder/elements/` and its builder
+     component in `resources/views/admin/falcon-builder/partials/components/elements/`.
+
+  Never add a `case` back into `BuilderShortcodeConverter` itself; it is only the entry point
+  and the element dispatch. Containers, columns, filter-registered elements and the lossless
+  extra attributes live beside the elements in `src/Services/ShortcodeConverter/`
+  (`ContainerConverter`, `ColumnConverter`, `CustomElementConverter`, `Fidelity`).
+  `BuilderElementRegistryTest` fails for a class that isn't registered or doesn't round-trip.
 - **Tests accompany behavior changes**: if you fix a bug or add a feature, add or update a
   test that would have caught it. [Test coverage](#test-coverage) below lists what each
   suite guards.

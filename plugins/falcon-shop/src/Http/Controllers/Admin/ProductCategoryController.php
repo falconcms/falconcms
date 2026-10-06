@@ -1,0 +1,230 @@
+<?php
+
+namespace FalconShop\Http\Controllers\Admin;
+
+use FalconCms\Core\Models\ProductCategory;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Routing\Controller;
+
+class ProductCategoryController extends Controller
+{
+    public function index(Request $request)
+    {
+        $lang = $request->query('lang');
+        $query = ProductCategory::withCount('posts');
+
+        if ($lang && $lang !== 'all') {
+            $query->where('lang_code', $lang);
+        }
+
+        $query->latest();
+
+        if ($request->has('s')) {
+            $query->where('name', 'like', '%'.$request->s.'%');
+            $categories = $query->paginate(10);
+        } else {
+            $allCategories = $query->get();
+            $tree = collect();
+            $visitedIds = [];
+
+            $buildTree = function ($parentId, $level) use (&$buildTree, $allCategories, &$tree, &$visitedIds) {
+                foreach ($allCategories->where('parent_id', $parentId) as $cat) {
+                    if (in_array($cat->id, $visitedIds)) {
+                        continue;
+                    }
+                    $visitedIds[] = $cat->id;
+                    $cat->level = $level;
+                    $tree->push($cat);
+                    $buildTree($cat->id, $level + 1);
+                }
+            };
+
+            $buildTree(null, 0);
+
+            if ($tree->count() < $allCategories->count()) {
+                $orphans = $allCategories->whereNotIn('id', $visitedIds);
+                foreach ($orphans as $orphan) {
+                    if (in_array($orphan->id, $visitedIds)) {
+                        continue;
+                    }
+                    $orphan->level = 0;
+                    $tree->push($orphan);
+                    $visitedIds[] = $orphan->id;
+                    $buildTree($orphan->id, 1);
+                }
+            }
+
+            $page = Paginator::resolveCurrentPage() ?: 1;
+            $perPage = 10;
+            $fullTree = $tree;
+            $categories = new LengthAwarePaginator(
+                $tree->forPage($page, $perPage),
+                $tree->count(),
+                $perPage,
+                $page,
+                ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
+            );
+        }
+
+        return view('falcon-shop::admin.product-categories.index', compact('categories', 'fullTree'));
+    }
+
+    public function bulk(Request $request)
+    {
+        $action = $request->input('action') !== '-1' ? $request->input('action') : $request->input('action2');
+        $ids = $request->input('ids');
+
+        if (($action === 'delete') && !empty($ids)) {
+            ProductCategory::whereIn('id', $ids)->delete();
+
+            return back()->with('success', 'Selected categories deleted.');
+        }
+
+        return back()->with('error', 'Please select an action and at least one item.');
+    }
+
+    public function store(Request $request)
+    {
+        $lang = $request->input('lang_code');
+        if (!$lang || $lang === 'all') {
+            $lang = app()->getLocale();
+        }
+
+        $baseSlug = $request->slug ?: $request->name;
+        $request->merge([
+            'slug' => ProductCategory::generateUniqueSlug($baseSlug, 0, $lang),
+            'lang_code' => $lang,
+        ]);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:product_categories,id',
+            'description' => 'nullable|string',
+            'lang_code' => 'required|string|max:10',
+            'origin_id' => 'nullable|integer',
+        ]);
+
+        $category = ProductCategory::create($validated);
+        falcon_log_activity('created', "Created a new product category: {$category->name}", $category);
+
+        return redirect()->route('admin.product-categories.index')->with('success', 'Category added.');
+    }
+
+    public function edit(ProductCategory $product_category)
+    {
+        $category = $product_category;
+        $allCategories = ProductCategory::where('lang_code', $category->lang_code)
+            ->where('id', '!=', $category->id)
+            ->latest()
+            ->get();
+        $fullTree = collect();
+        $visitedIds = [];
+
+        $buildTree = function ($parentId, $level) use (&$buildTree, $allCategories, &$fullTree, &$visitedIds) {
+            foreach ($allCategories->where('parent_id', $parentId) as $cat) {
+                if (in_array($cat->id, $visitedIds)) {
+                    continue;
+                }
+                $visitedIds[] = $cat->id;
+                $cat->level = $level;
+                $fullTree->push($cat);
+                $buildTree($cat->id, $level + 1);
+            }
+        };
+        $buildTree(null, 0);
+
+        return view('falcon-shop::admin.product-categories.edit', compact('category', 'fullTree'));
+    }
+
+    public function update(Request $request, ProductCategory $product_category)
+    {
+        $category = $product_category;
+        $baseSlug = $request->slug ?: $request->name;
+        $request->merge(['slug' => ProductCategory::generateUniqueSlug($baseSlug, $category->id)]);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255',
+            'parent_id' => [
+                'nullable',
+                'exists:product_categories,id',
+                function ($attribute, $value, $fail) use ($category) {
+                    if ($value == $category->id) {
+                        $fail('A category cannot be its own parent.');
+
+                        return;
+                    }
+                    if ($value) {
+                        $parent = ProductCategory::find($value);
+                        while ($parent) {
+                            if ($parent->id == $category->id) {
+                                $fail('Circular reference detected: The selected parent is already a sub-category of this category.');
+                                break;
+                            }
+                            $parent = $parent->parent;
+                        }
+                    }
+                },
+            ],
+            'description' => 'nullable|string',
+            'lang_code' => 'required|string|max:10',
+        ]);
+
+        $category->update($validated);
+
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $targetLang) {
+                $exists = ProductCategory::where('origin_id', $category->id)->where('lang_code', $targetLang)->exists();
+                if ($exists) {
+                    continue;
+                }
+
+                $clone = $category->replicate();
+                $clone->lang_code = $targetLang;
+                $clone->origin_id = $category->id;
+                $clone->name = falcon_translate($category->name, $targetLang);
+                $clone->slug = ProductCategory::generateUniqueSlug($clone->name, 0, $targetLang);
+                if ($category->description) {
+                    $clone->description = falcon_translate($category->description, $targetLang);
+                }
+                $clone->save();
+            }
+        }
+
+        falcon_log_activity('updated', "Updated product category: {$category->name}", $category);
+
+        return redirect()->route('admin.product-categories.index')->with('success', 'Category updated.');
+    }
+
+    public function destroy(ProductCategory $product_category)
+    {
+        $name = $product_category->name;
+        $product_category->delete();
+        falcon_log_activity('deleted', "Deleted product category: {$name}", $product_category);
+
+        return redirect()->route('admin.product-categories.index')->with('success', 'Category deleted.');
+    }
+
+    public function ajax(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:product_categories,id',
+            'lang_code' => 'nullable|string',
+        ]);
+
+        $lang = $request->lang_code ?: app()->getLocale();
+        $slug = ProductCategory::generateUniqueSlug($request->name, 0, $lang);
+        $category = ProductCategory::create([
+            'name' => $request->name,
+            'slug' => $slug,
+            'parent_id' => $request->parent_id,
+            'lang_code' => $lang,
+        ]);
+
+        return response()->json($category);
+    }
+}

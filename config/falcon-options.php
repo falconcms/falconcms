@@ -37,6 +37,16 @@ return [
     */
     'upgrade_url' => env('FALCON_UPGRADE_URL', 'https://falconcms.com/#pricing'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Plugins forced off
+    |--------------------------------------------------------------------------
+    | Slugs listed here never load, whatever the Plugins screen says — an emergency
+    | switch for a plugin that breaks a site before its admin can be reached (e.g.
+    | FALCON_DISABLED_PLUGINS=falcon-shop). Comma-separated in the env.
+    */
+    'disabled_plugins' => array_filter(array_map('trim', explode(',', (string) env('FALCON_DISABLED_PLUGINS', '')))),
+
     'hooks' => [
         'general-settings' => [
             'fields' => [],

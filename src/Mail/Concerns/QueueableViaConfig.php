@@ -12,6 +12,17 @@ namespace FalconCms\Core\Mail\Concerns;
  */
 trait QueueableViaConfig
 {
+    /**
+     * Read by the queue when it sends the mail. Declared here because Mailable does not, and
+     * setting an undeclared property is deprecated since PHP 8.2.
+     *
+     * @var int|null
+     */
+    public $tries;
+
+    /** @var int|int[]|null */
+    public $backoff;
+
     protected function configureQueue(): void
     {
         $this->connection = config('falcon-options.queue_mail', false)

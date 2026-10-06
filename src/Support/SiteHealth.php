@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Support;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -74,6 +75,20 @@ class SiteHealth
                 $out[] = self::result('check_'.$method, 'Could not run the '.Str::headline($method).' check', self::RECOMMENDED, 'Site',
                     'The check itself failed: '.$e->getMessage());
             }
+        }
+
+        // Plugins add their own checks: each an array of id, label, status (good, recommended,
+        // critical), category, description, and optionally action and details.
+        try {
+            $added = apply_falcon_filters('falcon_site_health_checks', []);
+            foreach (is_array($added) ? $added : [] as $result) {
+                if (is_array($result) && isset($result['id'], $result['label'], $result['status'])) {
+                    $out[] = $result + ['category' => 'Plugins', 'description' => '', 'action' => null, 'details' => []];
+                }
+            }
+        } catch (Throwable $e) {
+            $out[] = self::result('check_plugins', 'Could not run the plugins\' checks', self::RECOMMENDED, 'Plugins',
+                'A plugin\'s check failed: '.$e->getMessage());
         }
 
         return $out;
@@ -774,7 +789,7 @@ class SiteHealth
             preg_match_all('/^\[(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2})[^\]]*\]\s+\w+\.(ERROR|CRITICAL|ALERT|EMERGENCY|WARNING):\s+(.*)$/m', (string) $buffer, $m, PREG_SET_ORDER);
             foreach ($m as [, $at, $level, $message]) {
                 try {
-                    $time = \Carbon\Carbon::parse($at);
+                    $time = Carbon::parse($at);
                 } catch (Throwable $e) {
                     continue;
                 }
@@ -855,7 +870,7 @@ class SiteHealth
     private static function errorResolved(array $g): bool
     {
         try {
-            $last = \Carbon\Carbon::parse($g['last'])->getTimestamp();
+            $last = Carbon::parse($g['last'])->getTimestamp();
         } catch (Throwable $e) {
             return false;
         }

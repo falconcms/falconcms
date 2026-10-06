@@ -2,6 +2,8 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
+use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Support\OffCanvas;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -386,7 +388,7 @@ class BuilderLibraryController extends Controller
                 continue;
             }
             $groups[$group] ??= ['value' => $group, 'label' => $group];
-            \FalconCms\Core\Models\Post::where('type', $type)
+            Post::where('type', $type)
                 ->orderBy('title')->limit(50)->get(['id', 'title'])
                 ->each(function ($p) use (&$options, $group) {
                     $options['post:'.$p->id] ??= ['value' => 'post:'.$p->id, 'text' => $p->title ?: 'Item #'.$p->id, 'optgroup' => $group];
@@ -416,10 +418,10 @@ class BuilderLibraryController extends Controller
         }
 
         $conditions = app(FalconBuilderController::class);
-        $typeNames = \FalconCms\Core\Models\PostType::pluck('name', 'slug')->all();
+        $typeNames = PostType::pluck('name', 'slug')->all();
         $items = [];
 
-        \FalconCms\Core\Models\Post::query()
+        Post::query()
             ->where('title', 'like', '%'.$q.'%')
             ->orderBy('title')->limit(25)->get(['id', 'title', 'type'])
             ->each(function ($p) use (&$items, $typeNames) {

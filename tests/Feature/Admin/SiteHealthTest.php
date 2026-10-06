@@ -5,6 +5,7 @@ namespace FalconCms\Core\Tests\Feature\Admin;
 use App\Models\User;
 use FalconCms\Core\Support\SiteHealth;
 use FalconCms\Core\Tests\TestCase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -67,7 +68,7 @@ class SiteHealthTest extends TestCase
     {
         $this->app['env'] = 'local';
         config(['app.debug' => true, 'app.url' => 'http://localhost']);
-        $this->app->instance('request', \Illuminate\Http\Request::create('http://lazy-panda.test/admin'));
+        $this->app->instance('request', Request::create('http://lazy-panda.test/admin'));
 
         $checks = collect(SiteHealth::checks())->keyBy('id');
         $this->assertSame('good', $checks['app_debug']['status']);
@@ -79,7 +80,7 @@ class SiteHealthTest extends TestCase
     {
         $this->app['env'] = 'local';
         config(['app.debug' => true, 'app.url' => 'http://example.com']);
-        $this->app->instance('request', \Illuminate\Http\Request::create('http://example.com/admin'));
+        $this->app->instance('request', Request::create('http://example.com/admin'));
 
         $checks = collect(SiteHealth::checks())->keyBy('id');
         $this->assertSame('critical', $checks['app_debug']['status'], 'APP_ENV=local does not make a public site safe');

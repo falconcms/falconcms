@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Tests\Feature\Admin;
 
 use App\Models\User;
+use FalconCms\Core\Http\Controllers\Admin\CustomizerController;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
@@ -48,7 +49,7 @@ class CacheClearTest extends TestCase
 
     public function test_the_write_probe_matches_real_permission_not_the_readonly_attribute(): void
     {
-        $controller = new \FalconCms\Core\Http\Controllers\Admin\CustomizerController;
+        $controller = new CustomizerController;
         $method = new \ReflectionMethod($controller, 'isReallyWritable');
         $method->setAccessible(true);
 

@@ -67,6 +67,11 @@ class UpdateFalconCms extends Command
             $this->info('Step 4a: Removed stale published view overrides (vendor/falcon-cms).');
         }
 
+        $removed = $this->removeRetiredShopTemplates();
+        if ($removed > 0) {
+            $this->info("Step 4c: Removed {$removed} shop template(s) the parent theme no longer ships (the shop plugin serves them now).");
+        }
+
         // 4b. Publish child theme skeleton if it does not exist yet (never --force)
         $this->info('Step 4b: Publishing child theme (skipped if already exists)...');
         $this->call('vendor:publish', [
@@ -294,6 +299,60 @@ class UpdateFalconCms extends Command
         } catch (\Throwable $e) {
             Log::warning('Falcon update: could not re-register relocated plugin migrations: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Delete the shop templates that earlier releases published into the parent theme.
+     *
+     * The shop's templates live in the shop plugin now, and the parent theme no longer ships
+     * them, so the force-publish in step 4 stopped refreshing the copies sites already had. A
+     * theme's copy of a shop template wins over the plugin's, so those copies would go on
+     * serving an old cart and checkout indefinitely. They extend falcon-theme's layout by name
+     * as well, so a child theme's own layout never showed on them.
+     *
+     * Only falcon-theme, and only the files it used to ship. That theme is the CMS's own and
+     * step 4 overwrites it on every update, so anything in it was already being replaced; a
+     * site that restyles the shop does it in a child theme, which is never touched here.
+     */
+    protected function removeRetiredShopTemplates(): int
+    {
+        $theme = resource_path('views/themes/falcon-theme');
+        if (!is_dir($theme)) {
+            return 0;
+        }
+
+        $retired = [
+            'archive-product.blade.php',
+            'single-product.blade.php',
+            'single-product-variable.blade.php',
+            'ecommerce/account.blade.php',
+            'ecommerce/cart.blade.php',
+            'ecommerce/checkout.blade.php',
+            'ecommerce/confirmation.blade.php',
+            'ecommerce/invoice.blade.php',
+            'ecommerce/mini-cart-items.blade.php',
+            'ecommerce/single.blade.php',
+            'ecommerce/single-product-variable.blade.php',
+            'ecommerce/track-order.blade.php',
+            'ecommerce/wishlist.blade.php',
+            'shop/cart.blade.php',
+            'shop/checkout.blade.php',
+            'shop/confirmation.blade.php',
+        ];
+
+        $removed = 0;
+        foreach ($retired as $relative) {
+            if (File::isFile($theme.'/'.$relative) && File::delete($theme.'/'.$relative)) {
+                $removed++;
+            }
+        }
+        foreach (['ecommerce', 'shop'] as $dir) {
+            if (is_dir($theme.'/'.$dir) && File::isEmptyDirectory($theme.'/'.$dir)) {
+                File::deleteDirectory($theme.'/'.$dir);
+            }
+        }
+
+        return $removed;
     }
 
     protected function syncFooterDefaults()

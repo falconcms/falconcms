@@ -6,6 +6,7 @@ use App\Models\User;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
 use FalconCms\Core\Tests\TestCase;
+use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -112,7 +113,7 @@ class LayoutSectionEditScreenTest extends TestCase
         $section = $this->createSection();
         $this->actingAs($this->administrator())->get('/admin/posts/'.$section->id.'/edit');
 
-        $this->assertTrue(\FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive(url('admin/falcon-builder-sections')));
+        $this->assertTrue(Sidebar::isUrlActive(url('admin/falcon-builder-sections')));
     }
 
     public function test_only_layout_builder_users_may_edit_sections(): void

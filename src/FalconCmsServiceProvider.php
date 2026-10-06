@@ -23,26 +23,31 @@ use FalconCms\Core\Console\Commands\UpdateFalconCms;
 use FalconCms\Core\Http\Middleware\AuthenticateApiToken;
 use FalconCms\Core\Http\Middleware\BuilderShortcodeMiddleware;
 use FalconCms\Core\Http\Middleware\LocalizationMiddleware;
-use FalconCms\Core\Http\Middleware\PersistCart;
 use FalconCms\Core\Http\Middleware\RedirectMiddleware;
 use FalconCms\Core\Http\Middleware\TrackVisits;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Pro\NullLicenseGateway;
 use FalconCms\Core\Support\AdminMenu;
+use FalconCms\Core\Support\OffCanvas;
 use FalconCms\Core\Support\PluginManager;
 use FalconCms\Core\Support\SettingsExtension;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Routing\Events\Routing;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class FalconCmsServiceProvider extends ServiceProvider
 {
+    /** dropRouteCacheIfShopStateChanged() runs once per application. */
+    private bool $routeCacheChecked = false;
+
     public function boot(): void
     {
         Gate::before(function ($user, $ability) {
@@ -64,28 +69,50 @@ class FalconCmsServiceProvider extends ServiceProvider
             // Never let plugin loading stop the CMS from booting.
         }
 
+        // Stand-ins for the shop plugin's theme-facing helpers. After the plugins have
+        // loaded, so each one is defined only when the plugin did not define the real one.
+        require_once __DIR__.'/helpers/shop-fallbacks.php';
+
         // Register Middlewares
         $this->app['router']->prependMiddlewareToGroup('web', RedirectMiddleware::class);
         $this->app['router']->pushMiddlewareToGroup('web', TrackVisits::class);
         $this->app['router']->pushMiddlewareToGroup('web', LocalizationMiddleware::class);
         $this->app['router']->pushMiddlewareToGroup('web', BuilderShortcodeMiddleware::class);
-        $this->app['router']->pushMiddlewareToGroup('web', PersistCart::class);
         $this->app['router']->aliasMiddleware('api.token', AuthenticateApiToken::class);
+
+        // Not in booted(): a cached route table is loaded by a booted callback of its own that
+        // runs after ours. Routing fires once it is in place, just before a request is matched.
+        if ($this->app->routesAreCached()) {
+            $this->app['events']->listen(Routing::class, fn () => $this->dropRouteCacheIfShopStateChanged());
+        }
 
         $this->app->booted(function () {
             $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+
+            // Active plugins' static files, reachable before the frontend catch-all.
+            $this->loadRoutesFrom(__DIR__.'/../routes/plugin-assets.php');
 
             // Active plugins' own routes are registered BEFORE the CMS web routes
             // so a plugin route can be reached — otherwise the frontend catch-all
             // (a greedy /{slug} at the end of web.php) would shadow every plugin URL.
             foreach ($this->loadedPlugins() as $manifest) {
-                $routes = $manifest['dir'].'/routes/web.php';
-                if (is_file($routes)) {
-                    $this->loadRoutesFrom($routes);
+                // routes/web.php for the site, routes/admin.php for the back office (optional)
+                foreach (['web', 'admin'] as $routeFile) {
+                    $routes = $manifest['dir'].'/routes/'.$routeFile.'.php';
+                    if (is_file($routes)) {
+                        $this->loadRoutesFrom($routes);
+                    }
                 }
             }
 
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+            // Shop plugin off: keep its route names resolvable (themes call route('shop.cart')
+            // directly) without serving anything. After web.php, so the frontend catch-all
+            // answers GETs for /cart etc. the way it would on a site that never had a shop.
+            if (!isset($this->loadedPlugins()['falcon-shop'])) {
+                $this->loadRoutesFrom(__DIR__.'/../routes/shop-dormant.php');
+            }
         });
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'falcon-cms');
@@ -159,7 +186,7 @@ class FalconCmsServiceProvider extends ServiceProvider
                 if (request()->routeIs('admin.*')) {
                     return;
                 }
-                echo \FalconCms\Core\Support\OffCanvas::renderForPage((string) ob_get_contents());
+                echo OffCanvas::renderForPage((string) ob_get_contents());
             }, 15);
 
             $settingsScreens = [
@@ -455,6 +482,47 @@ class FalconCmsServiceProvider extends ServiceProvider
             array_unshift($paths, $themePath);
         }
         config(['view.paths' => array_unique($paths)]);
+    }
+
+    /**
+     * A route cache that was built with the shop in the other state is deleted.
+     *
+     * Switching the shop on or off from the admin clears the route cache. Switching it with
+     * FALCON_DISABLED_PLUGINS, or the plugin switching itself off after a fatal error, does not,
+     * and the cached table would go on serving the old state: the shop's URLs answer 404 while
+     * it is on, or reach controllers that are not loaded while it is off. One cheap lookup
+     * tells the two apart: `shop.cart` is a dormant twin exactly when the cache was built with
+     * the shop off. When they disagree, the cache file goes and the next request reads the
+     * route files.
+     */
+    protected function dropRouteCacheIfShopStateChanged(): void
+    {
+        if ($this->routeCacheChecked || !$this->app->routesAreCached()) {
+            return;
+        }
+        $this->routeCacheChecked = true;
+
+        try {
+            $cart = $this->app['router']->getRoutes()->getByName('shop.cart');
+            if ($cart === null) {
+                return;
+            }
+            $cachedOff = !empty($cart->defaults['_falcon_dormant']);
+            $shopOn = isset($this->loadedPlugins()['falcon-shop']);
+            if ($cachedOff !== $shopOn) {
+                return;
+            }
+
+            @unlink($this->app->getCachedRoutesPath());
+            // cached pages carry the old state too (the cart icon, the mini-cart's script)
+            if (function_exists('clear_page_cache')) {
+                clear_page_cache();
+            }
+            Log::warning('The route cache was built with the shop plugin '.($shopOn ? 'off' : 'on')
+                .' and it is now '.($shopOn ? 'on' : 'off').', so the cache was removed. Run php artisan route:cache to rebuild it.');
+        } catch (\Throwable $e) {
+            // a broken check must never take the site down
+        }
     }
 
     /** Manifests of plugins successfully loaded this request (safe if none). */

@@ -1,0 +1,192 @@
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1a1a1a;
+            line-height: 1.5;
+            margin: 0;
+            padding: 40px;
+            background: #fff;
+        }
+
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Status badge (top-right, near invoice number) */
+        .inv-badge {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 14px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .inv-badge.paid      { background: #d1fae5; color: #047857; }
+        .inv-badge.pending   { background: #fef3c7; color: #b45309; }
+        .inv-badge.partial   { background: #f3e8ff; color: #7e22ce; }
+        .inv-badge.refunded  { background: #fee2e2; color: #b91c1c; }
+        .inv-badge.cancelled { background: #fee2e2; color: #b91c1c; }
+        .inv-badge.failed    { background: #fee2e2; color: #b91c1c; }
+
+        /* Diagonal watermark stamp for fully refunded invoices */
+        .inv-stamp {
+            position: absolute;
+            top: 42%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-20deg);
+            font-size: 86px;
+            font-weight: 800;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: rgba(185, 28, 28, 0.10);
+            border: 7px solid rgba(185, 28, 28, 0.10);
+            padding: 6px 44px;
+            border-radius: 14px;
+            pointer-events: none;
+            z-index: 0;
+            white-space: nowrap;
+        }
+        .invoice-container > *:not(.inv-stamp) { position: relative; z-index: 1; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 30px;
+            margin-bottom: 40px;
+        }
+
+        .logo-section h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #1363df;
+            letter-spacing: -0.5px;
+        }
+
+        .invoice-details {
+            text-align: right;
+        }
+
+        .invoice-details h2 {
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            color: #4b5563;
+        }
+
+        .invoice-details p {
+            margin: 5px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .address-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .address-box h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #9ca3af;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .address-box p {
+            margin: 0;
+            font-size: 15px;
+            color: #374151;
+        }
+
+        .order-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .order-table th {
+            background: #f9fafb;
+            text-align: left;
+            padding: 12px 15px;
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .order-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+        }
+
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .totals-table {
+            width: 250px;
+        }
+
+        .totals-table tr td {
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .totals-table tr td:last-child {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .total-row td {
+            border-top: 2px solid #1363df;
+            padding-top: 15px !important;
+            font-size: 18px !important;
+            color: #1363df;
+        }
+
+        .footer {
+            margin-top: 60px;
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 20px;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1363df;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(19, 99, 223, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    

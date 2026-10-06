@@ -23,17 +23,19 @@ use Illuminate\View\Compilers\BladeCompiler;
  */
 class EmailsAreReadableOnPhonesTest extends TestCase
 {
-    /** @return array<string, string> file name => contents */
-    private function templates(): array
+    /** @return array<string, string> file name => path; the shop's emails live in its plugin */
+    private function templateFiles(): array
     {
-        $dir = __DIR__.'/../../../resources/views/emails';
+        $root = __DIR__.'/../../..';
         $found = [];
 
-        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS));
-        foreach ($it as $file) {
-            if ($file->isFile() && str_ends_with($file->getFilename(), '.blade.php')) {
-                $name = str_replace('\\', '/', substr($file->getPathname(), strlen($dir) + 1));
-                $found[$name] = (string) file_get_contents($file->getPathname());
+        foreach (['' => $root.'/resources/views/emails', 'shop/' => $root.'/plugins/falcon-shop/resources/views/emails'] as $prefix => $dir) {
+            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS));
+            foreach ($it as $file) {
+                if ($file->isFile() && str_ends_with($file->getFilename(), '.blade.php')) {
+                    $name = $prefix.str_replace('\\', '/', substr($file->getPathname(), strlen($dir) + 1));
+                    $found[$name] = $file->getPathname();
+                }
             }
         }
 
@@ -41,6 +43,12 @@ class EmailsAreReadableOnPhonesTest extends TestCase
         $this->assertNotEmpty($found, 'no email templates were found at all');
 
         return $found;
+    }
+
+    /** @return array<string, string> file name => contents */
+    private function templates(): array
+    {
+        return array_map(fn ($path) => (string) file_get_contents($path), $this->templateFiles());
     }
 
     public function test_every_email_has_something_to_say_about_a_narrow_screen(): void
@@ -104,10 +112,8 @@ class EmailsAreReadableOnPhonesTest extends TestCase
     {
         // The edits are inside <style> in Blade files; a stray brace takes the page down.
         $compiler = new BladeCompiler(app('files'), storage_path('framework/views'));
-        $dir = __DIR__.'/../../../resources/views/emails';
-
-        foreach (array_keys($this->templates()) as $name) {
-            $compiler->compile($dir.'/'.$name);
+        foreach ($this->templateFiles() as $name => $path) {
+            $compiler->compile($path);
             $this->assertTrue(true, "{$name} compiles");
         }
     }

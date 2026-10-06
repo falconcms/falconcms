@@ -147,7 +147,8 @@ class DashboardController extends Controller
         try {
             // Only expose ecommerce figures (revenue, orders, customer names) to users who can
             // access the shop. Without this gate every dashboard-accessing role would see them.
-            if (Schema::hasTable('shop_orders') && auth()->user()->hasPermission('access_shop') && falcon_pro_editable('ecommerce')) {
+            // …and only while the shop plugin is on: with it off the dashboard runs no shop query.
+            if (falcon_plugin_active('falcon-shop') && Schema::hasTable('shop_orders') && auth()->user()->hasPermission('access_shop') && falcon_pro_editable('ecommerce')) {
                 $hasShop = true;
                 // Statuses that represent earned revenue. Net = total minus any amount refunded.
                 $revenueStatuses = ['completed', 'processing', 'partially-refunded'];
