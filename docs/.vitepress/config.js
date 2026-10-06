@@ -102,6 +102,7 @@ export default defineConfig({
             { text: 'Forms', link: '/guide/forms' },
             { text: 'Multi-language', link: '/guide/multilang' },
             { text: 'Analytics', link: '/guide/analytics' },
+            { text: 'Performance', link: '/guide/performance' },
           ]
         },
         {
@@ -188,7 +189,8 @@ export default defineConfig({
         {
           text: 'Changelog',
           items: [
-            { text: 'v2.7.8 (Latest)', link: '/changelog#v2-7-8' },
+            { text: 'v2.7.9 (Latest)', link: '/changelog#v2-7-9' },
+            { text: 'v2.7.8', link: '/changelog#v2-7-8' },
             { text: 'v2.7.7', link: '/changelog#v2-7-7' },
             { text: 'v2.7.4', link: '/changelog#v2-7-4' },
             { text: 'v2.7.3', link: '/changelog#v2-7-3' },

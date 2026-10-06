@@ -5,7 +5,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.8 <Badge type="tip" text="Latest" /> {#v2-7-8}
+## v2.7.9 <Badge type="tip" text="Latest" /> {#v2-7-9}
+
+**Released: 2026-10-07**
+
+A speed release. Three new options under **Customizer → Performance**, all off by default, and a
+new [Performance](/guide/performance) page explaining every speed setting.
+
+### Added
+
+- **Inline Only the Icons in Use.** Icon libraries such as Font Awesome, Bootstrap Icons, Remix,
+  Boxicons and Lucide each load a whole stylesheet of 70–140 KB, and the page waits for it before
+  it shows. With this on, the page carries only the rules for the icons it shows, usually a
+  kilobyte or two. Libraries the page doesn't use are dropped. Works with any theme.
+- **Critical CSS.** Works with Compiled CSS. Each page carries, inline, only the styles it uses,
+  typically 10–20 KB of the 68 KB file. The full stylesheet loads without holding up the first
+  paint, so styles added later by JavaScript still apply.
+- **Host Google Fonts Locally.** The fonts are copied to your own server and served from there.
+  Visitors' browsers never contact Google, which also helps with the GDPR. The copy is made in the
+  background, and the page falls back to Google until the copy exists.
+
+### Changed
+
+- **Lazy-load Images keeps the top of the page eager.** The first three images load straight
+  away, and the first image after the header (usually the hero) is fetched first.
+- **Builder images reserve their space.** Images from the media library carry their width and
+  height, so the text below doesn't jump. If an image element has no alt text of its own, it
+  uses the media library's alt text.
+
+### Fixed
+
+- **No JavaScript errors on a variable product page.** Before a variation was chosen, the
+  availability row and the SKU threw "Cannot read properties of null" errors.
+- **`falcon:update` restarts queue workers**, so they don't keep running the old code.
+
+### Accessibility
+
+- **The mobile menu button has a name.** It is labelled "Menu", and it reports whether the menu
+  is open.
+
+---
+
+## v2.7.8 {#v2-7-8}
 
 **Released: 2026-10-06**
 

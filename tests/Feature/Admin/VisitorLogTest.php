@@ -75,6 +75,10 @@ class VisitorLogTest extends TestCase
 
     public function test_only_visits_in_the_window_are_shown(): void
     {
+        // Midday: "three hours ago" must still be today. Run between midnight and 3 a.m., the
+        // first visit fell on yesterday and the test failed for no fault in the code.
+        $this->travelTo(now()->setTime(12, 0));
+
         $this->visit(['ip_address' => '11.11.11.11', 'created_at' => now()->subHours(3)]);     // today
         $this->visit(['ip_address' => '22.22.22.22', 'created_at' => now()->subDays(40)]);     // older
 

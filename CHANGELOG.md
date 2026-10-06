@@ -7,16 +7,12 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
-## [Unreleased]
+## [2.7.9] — 2026-10-07
 
-### Fixed
+Three new speed options, all off by default, and a new docs page explaining every
+performance setting: https://falconcms.github.io/falconcms/guide/performance
 
-- **`falcon:update` restarts queue workers.** A running `queue:work` keeps the code it started
-  with, so after an update it went on running the old version until someone restarted it by
-  hand. The update now signals workers to restart once their current job is finished. On a site
-  without a worker this does nothing.
-
-### Performance
+### Added
 
 - **New option: Inline Only the Icons in Use** (Customizer → Performance, off by default). Icon
   libraries (Font Awesome, Bootstrap Icons, Remix, Boxicons, Lucide) each load a whole
@@ -24,7 +20,8 @@ Full release notes, with the reasoning behind each change, live at
   the page carries, inline, only the rules for the icons it shows: usually a kilobyte or two.
   Libraries the page doesn't use are dropped, and the fonts load with `font-display: swap`. The
   whole page is scanned, so icons named in Alpine expressions and inline scripts are kept too.
-  Works with any theme. Measured on falconcms.com, mobile LCP fell from 11.4 s to about 3.8 s.
+  Works with any theme. In a Lighthouse test of falconcms.com that left those stylesheets out,
+  the simulated mobile LCP fell from 11.4 s to about 3.8 s.
 - **New option: Critical CSS** (Customizer → Performance, works with Compiled CSS, off by
   default). Each page carries, inline, only the compiled stylesheet's rules it uses: about 15 KB
   of the 68 KB file on a typical page. The full file then loads without holding up the first
@@ -37,15 +34,18 @@ Full release notes, with the reasoning behind each change, live at
   never contact Google, which also helps with the GDPR. The copy is made in the background after
   a page's first visit; until then, and whenever a download fails, fonts load from Google as
   before. Pages served in the meantime are not kept in the page cache. Works with any theme.
+
+### Changed
+
+- **The hero image is no longer lazy-loaded.** With "Lazy-load images" on, only the first image on
+  the page stayed eager. That image is usually the logo, so the hero, the largest paint on most
+  pages, was lazy and loaded late. The first three images now stay eager, as in WordPress.
 - **The hero image is fetched first.** With "Lazy-load images" on, the first image after the
   site header gets `fetchpriority="high"`. On nearly every page that image is the hero, the
   largest paint. Pages without a `<header>` are left alone.
 - **Builder images reserve their space.** An image from the media library carries its `width`
   and `height`, so the content below doesn't jump when it loads. If the element has no alt text
   of its own, the library's alt text is used.
-- **The hero image is no longer lazy-loaded.** With "Lazy-load images" on, only the first image on
-  the page stayed eager. That image is usually the logo, so the hero, the largest paint on most
-  pages, was lazy and loaded late. The first three images now stay eager, as in WordPress.
 
 ### Fixed
 
@@ -54,9 +54,10 @@ Full release notes, with the reasoning behind each change, live at
   threw a burst of "Cannot read properties of null (reading 'stock_status')" errors (10 per
   load). They now read it safely. The `single-product-variable` template is now at
   `@version 1.0.1`, so Site Health flags a theme copy that still has the old code.
-- **Icons whose code starts with a digit keep their glyph when inlined.** Font Awesome writes
-  `fa-0` as `"\30"`, and putting the CSS in place with a regular-expression replacement read
-  that as a back-reference. (Found before release.)
+- **`falcon:update` restarts queue workers.** A running `queue:work` keeps the code it started
+  with, so after an update it went on running the old version until someone restarted it by
+  hand. The update now signals workers to restart once their current job is finished. On a site
+  without a worker this does nothing.
 
 ### Accessibility
 

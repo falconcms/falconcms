@@ -976,7 +976,7 @@ class CustomizerController extends Controller
                     'perf_lazy_images' => [
                         'type' => 'toggle',
                         'label' => 'Lazy-load Images',
-                        'desc' => 'Images below the fold load only as the reader scrolls to them, so the first screen appears faster. The first image on the page stays eager. Works on every page, default theme or page builder.',
+                        'desc' => 'Images below the fold load only as the reader scrolls to them, so the first screen appears faster. The first three images stay eager, and the first image after the site header (usually the hero) is fetched first. Works on every page, default theme or page builder.',
                         'default' => '0',
                     ],
                     'perf_defer_js' => [
