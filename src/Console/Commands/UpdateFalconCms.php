@@ -94,6 +94,11 @@ class UpdateFalconCms extends Command
             opcache_reset();
             $this->info('Step 6b: OPcache cleared.');
         }
+        // A running queue:work keeps the code it started with; this tells it to exit after its
+        // current job so its supervisor starts it on the new code. After optimize:clear, since
+        // the signal lives in the cache. Harmless where no worker runs.
+        $this->call('queue:restart');
+        $this->info('Step 6c: Queue workers told to restart.');
 
         // 7. Auto-create E-commerce pages
         $this->info('Step 7: Auto-creating E-commerce pages...');

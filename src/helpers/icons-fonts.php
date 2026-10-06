@@ -112,6 +112,119 @@ if (!function_exists('falcon_icon_set_links')) {
     }
 }
 
+if (!function_exists('falcon_icon_set_parts')) {
+    /**
+     * One icon set's stylesheet split into what every page needs (the @font-face, the base
+     * class rules, sizing and animation helpers) and one rule per icon, keyed by icon class.
+     *
+     * A page that shows two Remix icons should not download all 3,000 of them: with these
+     * parts, falcon_icon_set_inline_css() emits only the rules a page uses. Parsed once per
+     * file version and cached, since every page asks for the same split.
+     *
+     * @return array{base:string,glyphs:array<string,string>}
+     */
+    function falcon_icon_set_parts(string $set): array
+    {
+        $def = falcon_icon_sets()[$set] ?? null;
+        $file = $def ? __DIR__.'/../../public/'.str_replace('css/', 'assets/css/', $def['asset']) : '';
+        if (!$def || !is_file($file)) {
+            return ['base' => '', 'glyphs' => []];
+        }
+
+        $parse = function () use ($file, $def) {
+            $css = preg_replace('#/\*.*?\*/#s', '', (string) @file_get_contents($file)) ?? '';
+            // the stylesheet is served from vendor/falcon-cms/css/, so its fonts sit at ../webfonts/
+            $fonts = rtrim(asset('vendor/falcon-cms/webfonts'), '/').'/';
+            $glyphSelector = '/^\.('.$def['class'].'[a-z0-9-]+)\s*::?before$/i';
+
+            $base = '';
+            $glyphs = [];
+            $len = strlen($css);
+            $depth = 0;
+            $start = 0;
+            for ($i = 0; $i < $len; $i++) {
+                if ($css[$i] === '{') {
+                    $depth++;
+                } elseif ($css[$i] === '}' && --$depth === 0) {
+                    $block = trim(substr($css, $start, $i - $start + 1));
+                    $start = $i + 1;
+                    $brace = strpos($block, '{');
+                    $prelude = trim(substr($block, 0, $brace));
+                    $body = substr($block, $brace);
+
+                    if (stripos($prelude, '@font-face') === 0) {
+                        // swap: the text and layout show at once; the icon fills in when its font lands
+                        $body = preg_replace('/font-display\s*:\s*[a-z]+\s*;?/i', '', $body);
+                        $body = '{font-display:swap;'.ltrim($body, '{');
+                        $body = str_replace(['url("../webfonts/', "url('../webfonts/", 'url(../webfonts/'], ['url("'.$fonts, "url('".$fonts, 'url('.$fonts], $body);
+                        $base .= '@font-face'.$body;
+
+                        continue;
+                    }
+
+                    $selectors = array_map('trim', explode(',', $prelude));
+                    $icons = [];
+                    foreach ($selectors as $selector) {
+                        if (preg_match($glyphSelector, $selector, $m)) {
+                            $icons[] = strtolower($m[1]);
+                        }
+                    }
+                    if ($prelude !== '' && $prelude[0] !== '@' && count($icons) === count($selectors)) {
+                        foreach ($icons as $k => $icon) {
+                            $glyphs[$icon] = ($glyphs[$icon] ?? '').$selectors[$k].$body;
+                        }
+                    } else {
+                        $base .= $prelude.$body; // base classes, size/rotate/spin helpers, @keyframes
+                    }
+                }
+            }
+
+            return ['base' => $base, 'glyphs' => $glyphs];
+        };
+
+        $key = 'falcon_icon_parts_'.$set.'_'.(int) @filemtime($file).'_'.md5(asset('vendor/falcon-cms/webfonts'));
+        try {
+            return Cache::remember($key, 86400, $parse);
+        } catch (Throwable $e) {
+            return $parse();
+        }
+    }
+}
+
+if (!function_exists('falcon_icon_set_inline_css')) {
+    /**
+     * The CSS for just the icons a chunk of rendered HTML uses, from the sets other than Font
+     * Awesome, ready to go in a <style> tag.
+     *
+     * Linking a set's stylesheet blocks rendering on 70–140 KB of CSS for what is usually a
+     * handful of icons. Inlined, the few rules a page needs cost a kilobyte or two and nothing
+     * waits. The whole HTML is scanned, not only class attributes, so an icon named in an
+     * Alpine expression or a data attribute (an accordion's open/closed icon) is kept too.
+     * Returns '' when the page uses none, or when the falcon_icon_inline_css filter is false,
+     * in which case the caller links the stylesheets as before.
+     */
+    function falcon_icon_set_inline_css(string $html): string
+    {
+        if (!apply_falcon_filters('falcon_icon_inline_css', true)) {
+            return '';
+        }
+
+        $css = '';
+        foreach (falcon_icon_sets() as $set => $def) {
+            if (!preg_match_all('/(?<![a-z0-9_-])('.$def['class'].'[a-z0-9-]+)/i', $html, $m)) {
+                continue;
+            }
+            $parts = falcon_icon_set_parts($set);
+            $used = array_intersect_key($parts['glyphs'], array_flip(array_map('strtolower', array_unique($m[1]))));
+            if ($used) {
+                $css .= $parts['base'].implode('', $used);
+            }
+        }
+
+        return $css;
+    }
+}
+
 if (!function_exists('falcon_fontawesome_aliases')) {
     /**
      * Alternate names for the bundled Font Awesome icons, keyed by icon name.

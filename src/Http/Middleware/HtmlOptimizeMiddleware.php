@@ -24,6 +24,9 @@ use Illuminate\Http\Request;
  */
 class HtmlOptimizeMiddleware
 {
+    /** How many images, from the top of the page, are never made lazy. */
+    private const EAGER_IMAGES = 3;
+
     /**
      * Scripts that must run before the page paints — never deferred. "data-no-defer" lets any
      * script opt out: a file moved out of an inline <script> keeps running exactly where it did.
@@ -163,7 +166,7 @@ class HtmlOptimizeMiddleware
         );
     }
 
-    /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first eager. */
+    /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first few eager. */
     private function lazyImages(string $html): string
     {
         $seen = 0;
@@ -171,9 +174,10 @@ class HtmlOptimizeMiddleware
         return preg_replace_callback('/<img\b[^>]*>/i', function ($m) use (&$seen) {
             $tag = $m[0];
             $seen++;
-            // The first image is usually above the fold (hero, logo): keeping it eager avoids
-            // pushing back the largest-contentful paint.
-            if ($seen === 1 || stripos($tag, 'loading=') !== false) {
+            // The first images are usually above the fold: the logo, then the hero and whatever
+            // sits beside it. Only the first stayed eager, so a hero image, the largest-contentful
+            // paint on most pages, was lazy and waited for layout. Three, as WordPress does.
+            if ($seen <= self::EAGER_IMAGES || stripos($tag, 'loading=') !== false) {
                 return $tag;
             }
             $add = ' loading="lazy"';

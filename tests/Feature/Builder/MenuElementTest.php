@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Tests\Feature\Builder;
 
 use FalconCms\Core\Tests\TestCase;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The page builder's Menu element.
@@ -240,6 +241,31 @@ class MenuElementTest extends TestCase
 
         $this->assertStringContainsString('color: #0091ea', $html,
             'a menu with no active colours of its own must fall back to the hover colour');
+    }
+
+    /**
+     * The mobile menu's button had no name: an icon alone, so a screen reader announced
+     * "button" and Lighthouse failed the page on it. With no trigger text it is labelled
+     * "Menu", and it says whether the menu is open.
+     */
+    public function test_the_mobile_menu_button_has_a_name_and_an_open_state(): void
+    {
+        $menuId = DB::table('navigation_menus')->insertGetId(['name' => 'Main', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('navigation_menu_items')->insert([
+            'navigation_menu_id' => $menuId, 'title' => 'Home', 'url' => '/', 'order' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $render = fn (array $s) => view('falcon-cms::frontend.builder.elements.menu', [
+            'el' => ['id' => 'test-menu-a11y', 'settings' => ['menuId' => $menuId, 'mobileMenuTriggerExpandIcon' => 'fa-bars'] + $s],
+        ])->render();
+
+        $html = $render([]);
+        $this->assertMatchesRegularExpression('/<button type="button" class="lazy-mobile-trigger"[^>]*aria-label="Menu"/', $html);
+        $this->assertMatchesRegularExpression('/<button[^>]*lazy-mobile-trigger[^>]*aria-expanded="false"/', $html);
+        $this->assertMatchesRegularExpression('/<button[^>]*lazy-mobile-trigger[^>]*aria-controls="nav-test-menu-a11y"/', $html);
+        $this->assertStringContainsString("trigger.setAttribute('aria-expanded'", $html, 'the open state follows the menu');
+
+        // visible text already names it; a second, different name would only confuse
+        $this->assertDoesNotMatchRegularExpression('/lazy-mobile-trigger[^>]*aria-label=/', $render(['mobileMenuTriggerText' => 'Browse']));
     }
 
     // ---- the canvas must lay items out the way the front end will --------------

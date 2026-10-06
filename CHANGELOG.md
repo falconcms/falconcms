@@ -7,6 +7,34 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [Unreleased]
+
+### Fixed
+
+- **`falcon:update` restarts queue workers.** A running `queue:work` keeps the code it started
+  with, so after an update it went on running the old version until someone restarted it by
+  hand. The update now signals workers to restart once their current job is finished. On a site
+  without a worker this does nothing.
+
+### Performance
+
+- **Extra icon sets no longer block rendering.** A page that shows icons from Bootstrap Icons,
+  Remix, Boxicons or Lucide downloaded each set's whole stylesheet: 70–140 KB of CSS apiece,
+  render-blocking, for what was usually a handful of icons. The page now carries, inline, only
+  the rules for the icons it shows: a kilobyte or two for a typical page. The fonts load with
+  `font-display: swap`. Icons named in Alpine expressions and data attributes are included too.
+  The `falcon_icon_inline_css` filter switches back to linking whole stylesheets.
+- **The hero image is no longer lazy-loaded.** With "Lazy-load images" on, only the first image on
+  the page stayed eager. That image is usually the logo, so the hero, the largest paint on most
+  pages, was lazy and loaded late. The first three images now stay eager, as in WordPress.
+
+### Accessibility
+
+- **The mobile menu button has a name.** It was an icon alone, so screen readers announced just
+  "button" and Lighthouse failed the page on it. With no trigger text set, it is labelled "Menu".
+  It reports whether the menu is open (`aria-expanded`) and which menu it controls. The sidebar's
+  close button is labelled "Close menu".
+
 ## [2.7.8] — 2026-10-06
 
 ### Fixed

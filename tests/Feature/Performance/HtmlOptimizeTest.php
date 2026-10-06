@@ -34,12 +34,15 @@ class HtmlOptimizeTest extends TestCase
         ]));
     }
 
-    public function test_lazy_images_skips_the_first_and_respects_existing(): void
+    public function test_lazy_images_skips_the_first_three_and_respects_existing(): void
     {
-        $html = '<img src="/hero.jpg"><img src="/b.jpg"><img src="/c.jpg" loading="eager">';
+        // logo, hero, the image beside the hero: above the fold, so never lazy
+        $html = '<img src="/logo.png"><img src="/hero.jpg"><img src="/side.jpg"><img src="/b.jpg"><img src="/c.jpg" loading="eager">';
         $out = $this->opt($html, ['perf_lazy_images' => '1']);
 
-        $this->assertStringContainsString('<img src="/hero.jpg">', $out, 'first image stays eager');
+        $this->assertStringContainsString('<img src="/logo.png">', $out);
+        $this->assertStringContainsString('<img src="/hero.jpg">', $out, 'the hero, the usual largest paint, stays eager');
+        $this->assertStringContainsString('<img src="/side.jpg">', $out);
         $this->assertStringContainsString('<img src="/b.jpg" loading="lazy" decoding="async">', $out);
         $this->assertStringContainsString('loading="eager"', $out, 'an explicit loading is left alone');
         $this->assertSame(1, substr_count($out, 'loading="lazy"'));

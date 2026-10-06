@@ -367,9 +367,9 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
                               (is_numeric($pLeft) ? $pLeft.'px' : $pLeft) . ";";
                     $modeIsExpanded = ($s['mobileMenuMode'] ?? 'collapsed') === 'expanded';
                 @endphp
-                <button class="lazy-mobile-trigger" id="trigger-{{ $elId }}" style="font-size: {{ $triggerFontSize }}; color: {{ $s['mobileMenuTriggerTextColor'] ?? '#333' }}; background: {{ $s['mobileMenuTriggerBgColor'] ?? 'transparent' }}; {{ $pStyle }} margin-bottom: {{ intval($s['mobileMenuTriggerSpacing'] ?? 0) }}px; width: max-content; border: none; cursor: pointer; display: flex; align-items: center; gap: 10px; border-radius: 4px;">
-                    <span class="icon-expand" style="{{ $modeIsExpanded ? 'display:none;' : '' }}"><i class="fa {{ $triggerIconExpand }}"></i></span>
-                    <span class="icon-collapse" style="{{ $modeIsExpanded ? '' : 'display:none;' }}"><i class="fa {{ $triggerIconCollapse }}"></i></span>
+                <button type="button" class="lazy-mobile-trigger" id="trigger-{{ $elId }}" aria-controls="nav-{{ $elId }}" aria-expanded="{{ $modeIsExpanded ? 'true' : 'false' }}"@if(empty($s['mobileMenuTriggerText'])) aria-label="Menu"@endif style="font-size: {{ $triggerFontSize }}; color: {{ $s['mobileMenuTriggerTextColor'] ?? '#333' }}; background: {{ $s['mobileMenuTriggerBgColor'] ?? 'transparent' }}; {{ $pStyle }} margin-bottom: {{ intval($s['mobileMenuTriggerSpacing'] ?? 0) }}px; width: max-content; border: none; cursor: pointer; display: flex; align-items: center; gap: 10px; border-radius: 4px;">
+                    <span class="icon-expand" aria-hidden="true" style="{{ $modeIsExpanded ? 'display:none;' : '' }}"><i class="fa {{ $triggerIconExpand }}"></i></span>
+                    <span class="icon-collapse" aria-hidden="true" style="{{ $modeIsExpanded ? '' : 'display:none;' }}"><i class="fa {{ $triggerIconCollapse }}"></i></span>
                     @if(!empty($s['mobileMenuTriggerText']))
                         <span class="ml-2 text-sm font-bold">{{ $s['mobileMenuTriggerText'] }}</span>
                     @endif
@@ -380,7 +380,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
                 @if(($s['mobileMenuExpandMode'] ?? '') === 'sidebar')
                     <div class="lazy-sidebar-header" style="background: {{ $s['mobileMenuBgColor'] ?? '#fff' }}; border-bottom: 1px solid {{ $s['mobileMenuSeparatorColor'] ?? '#eee' }}; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between;">
                         <span class="font-bold uppercase text-xs tracking-widest">{{ $s['mobileMenuTriggerText'] ?: 'Menu' }}</span>
-                        <button class="lazy-sidebar-close" style="background: none; border: none; cursor: pointer; font-size: 20px; color: {{ $s['mobileMenuTextColor'] ?? '#333' }};">&times;</button>
+                        <button type="button" class="lazy-sidebar-close" aria-label="Close menu" style="background: none; border: none; cursor: pointer; font-size: 20px; color: {{ $s['mobileMenuTextColor'] ?? '#333' }};">&times;</button>
                     </div>
                 @endif
                 <ul class="lazy-mobile-list" data-falcon-scrollspy="active">
@@ -702,6 +702,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 
             if (overlay) overlay.classList.toggle('active', isActive);
             if (trigger) {
+                trigger.setAttribute('aria-expanded', isActive ? 'true' : 'false');
                 trigger.querySelector('.icon-expand').style.display = isActive ? 'none' : 'block';
                 trigger.querySelector('.icon-collapse').style.display = isActive ? 'block' : 'none';
             }
