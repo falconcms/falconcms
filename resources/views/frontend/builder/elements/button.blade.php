@@ -10,6 +10,10 @@
     $resolvedLinkUrl = $linkDynamic
         ? (function_exists('falcon_resolve_dynamic_value') ? (falcon_resolve_dynamic_value($linkDynamic, $post ?? null, falcon_dynamic_config($s, 'link')) ?: ($s['linkUrl'] ?? '')) : ($postPermalink ?? $s['linkUrl'] ?? ''))
         : ($s['linkUrl'] ?? '');
+    // A URL pasted from an HTML snippet (Lemon Squeezy's checkout embed, say) arrives as
+    // "?embed=1&amp;media=0". Blade escapes it again, so the browser got "amp;media" as the
+    // parameter name. Decode first; {{ }} below encodes it exactly once.
+    $resolvedLinkUrl = html_entity_decode((string) $resolvedLinkUrl, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
     // Render an <a> whenever the Link URL has any value (including a bare "#").
     // Only a truly empty field renders a plain <span> with no anchor.
