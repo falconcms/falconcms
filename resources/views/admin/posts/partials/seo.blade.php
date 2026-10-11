@@ -201,6 +201,9 @@
     </div>
 </div>
 
+{{-- Plugins add to the SEO panel here, e.g. the page's own search performance. --}}
+{!! do_falcon_action('falcon_seo_metabox_after', $post) !!}
+
 <script>
     function switchSeoTab(tab) {
         document.querySelectorAll('.seo-tab-content').forEach(el => el.classList.add('hidden'));
