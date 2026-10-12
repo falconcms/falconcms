@@ -145,12 +145,10 @@
     <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/font-awesome.all.min.css') }}">
     @endunless
 
-    <!-- Tailwind -->
-    @if($__compiledCss)
-    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/falcon-tailwind.css') }}">
-    @else
+    <!-- Tailwind (the compiled stylesheet is linked at the end of <head>, see there) -->
+    @unless($__compiledCss)
     <script src="{{ asset('vendor/falcon-cms/js/tailwind.min.js') }}"></script>
-    @endif
+    @endunless
     @unless($__condAssets)
     <!-- Alpine.js -->
     <script defer src="{{ asset('vendor/falcon-cms/js/alpine.min.js') }}"></script>
@@ -799,6 +797,14 @@
          user with manage_settings can write it, the same gate the script fields use. --}}
     @if(get_cms_option('theme_head_html'))
         {!! get_cms_option('theme_head_html') !!}
+    @endif
+
+    {{-- Compiled Tailwind goes LAST in <head>, where the runtime build puts its own <style>: the
+         theme's styles above were written for that order. Linked earlier, its reset lost to them,
+         so links took the theme's link colour instead of their heading's (shop product names
+         turned green) and the cascade no longer matched what the page looks like without it. --}}
+    @if($__compiledCss)
+    <link rel="stylesheet" href="{{ asset('vendor/falcon-cms/css/falcon-tailwind.css') }}">
     @endif
 </head>
 @php

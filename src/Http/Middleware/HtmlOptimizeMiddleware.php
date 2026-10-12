@@ -10,6 +10,7 @@ use FalconCms\Core\Support\LucideIcons;
 use FalconCms\Core\Support\SpeculativeLoading;
 use FalconCms\Core\Support\WebVitals;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Optional front-end HTML optimisations, each driven by a Customizer → Performance toggle and
@@ -416,7 +417,7 @@ class HtmlOptimizeMiddleware
         }
 
         try {
-            $sizes = \Illuminate\Support\Facades\DB::table('media')->whereIn('path', array_keys($paths))
+            $sizes = DB::table('media')->whereIn('path', array_keys($paths))
                 ->whereNotNull('width')->whereNotNull('height')
                 ->get(['path', 'width', 'height'])->keyBy('path');
         } catch (\Throwable $e) {
@@ -584,9 +585,49 @@ class HtmlOptimizeMiddleware
     {
         $css = preg_replace('#/\*(?!!).*?\*/#s', '', $css) ?? $css;  // comments (keep /*! ... */)
         $css = preg_replace('/\s+/', ' ', $css) ?? $css;             // all whitespace runs → one space
+
+        // calc(), clamp(), min() and max() are set aside before the separator pass: inside them
+        // "+" and "-" are operators that MUST have a space on each side. "calc(26px+5vw)" is
+        // invalid, the browser drops the whole declaration, and every fluid heading fell back
+        // to the body size.
+        $math = [];
+        $css = $this->shieldMath($css, $math);
         $css = preg_replace('/\s*([{}:;,>~+])\s*/', '$1', $css) ?? $css; // around separators
+        $css = strtr($css, $math);
         $css = str_replace(';}', '}', $css);                         // last semicolon in a block
 
         return trim($css);
+    }
+
+    /** Replace each calc()/clamp()/min()/max() expression (nesting included) with a placeholder. */
+    private function shieldMath(string $css, array &$math): string
+    {
+        $out = '';
+        $length = strlen($css);
+        $i = 0;
+        while ($i < $length) {
+            if (!preg_match('/\b(?:calc|clamp|min|max)\(/i', $css, $m, PREG_OFFSET_CAPTURE, $i)) {
+                break;
+            }
+            $start = $m[0][1];
+            $depth = 0;
+            $end = $start + strlen($m[0][0]) - 1; // the "("
+            for ($j = $end; $j < $length; $j++) {
+                if ($css[$j] === '(') {
+                    $depth++;
+                } elseif ($css[$j] === ')' && --$depth === 0) {
+                    break;
+                }
+            }
+            if ($j >= $length) {
+                break; // unbalanced: leave the rest as it is
+            }
+            $key = "\x01M".count($math)."\x01";
+            $math[$key] = trim(preg_replace('/\s+/', ' ', substr($css, $start, $j - $start + 1)) ?? '');
+            $out .= substr($css, $i, $start - $i).$key;
+            $i = $j + 1;
+        }
+
+        return $out.substr($css, $i);
     }
 }

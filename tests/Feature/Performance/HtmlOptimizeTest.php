@@ -4,6 +4,7 @@ namespace FalconCms\Core\Tests\Feature\Performance;
 
 use App\Models\User;
 use FalconCms\Core\Http\Middleware\HtmlOptimizeMiddleware;
+use FalconCms\Core\Support\AvifImages;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -163,6 +164,22 @@ class HtmlOptimizeTest extends TestCase
         $this->assertStringContainsString('/* a comment */', $htmlOnly, 'CSS untouched when only HTML minify is on');
     }
 
+    /**
+     * Inside calc(), "+" and "-" need a space on each side. Without one the browser drops the whole
+     * declaration: the theme's fluid heading sizes (clamp + calc) vanished and every H2 fell back
+     * to the body size. The "+" combinator in a selector still loses its spaces.
+     */
+    public function test_css_minify_keeps_the_spaces_math_needs(): void
+    {
+        $html = "<style>body h2 { font-size: clamp(26.3px, calc(26.3px + 5.7 * (100vw - 800px) / 300), 32px); }\n"
+            .'a + b { margin: calc( 1rem  -  2px ); width: min(100%, max(10px + 2em, 50%)); }</style>';
+
+        $out = $this->opt($html, ['perf_minify_css' => '1']);
+
+        $this->assertStringContainsString('body h2{font-size:clamp(26.3px, calc(26.3px + 5.7 * (100vw - 800px) / 300), 32px)}', $out);
+        $this->assertStringContainsString('a+b{margin:calc( 1rem - 2px );width:min(100%, max(10px + 2em, 50%))}', $out);
+    }
+
     public function test_optimisation_applies_to_logged_in_visitors_too(): void
     {
         // Minify/defer/lazy change delivery, not content, so a logged-in reader benefits as well.
@@ -305,10 +322,11 @@ class HtmlOptimizeTest extends TestCase
         $admin = $mw->handle(Request::create('/admin/x', 'GET'), fn () => new Response('<div>  <b>x</b></div>', 200, ['Content-Type' => 'text/html']));
         $this->assertSame('<div>  <b>x</b></div>', $admin->getContent());
     }
+
     /** AVIF copies are offered first; browsers without AVIF keep the original. */
     public function test_library_images_with_an_avif_copy_are_offered_it(): void
     {
-        if (!\FalconCms\Core\Support\AvifImages::supported()) {
+        if (!AvifImages::supported()) {
             $this->markTestSkipped('GD without AVIF on this PHP.');
         }
         @mkdir(storage_path('app/public/media'), 0777, true);
@@ -329,6 +347,7 @@ class HtmlOptimizeTest extends TestCase
             @unlink(storage_path('app/public/media/hero.avif'));
         }
     }
+
     public function test_speculation_rules_prefetch_on_press_and_skip_private_pages(): void
     {
         $out = $this->opt('<html><head><title>x</title></head><body><a href="/about">a</a></body></html>', ['perf_speculative_loading' => '1', 'login_url' => 'secret-door']);
