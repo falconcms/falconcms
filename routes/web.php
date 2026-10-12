@@ -363,6 +363,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('seo/redirects', [RedirectController::class, 'store'])->name('redirects.store');
     Route::delete('seo/redirects/{redirect}', [RedirectController::class, 'destroy'])->name('redirects.destroy');
     Route::post('seo/redirects/bulk', [RedirectController::class, 'bulk'])->name('redirects.bulk');
+    Route::post('seo/redirects/not-found/forget', [RedirectController::class, 'forgetNotFound'])->name('redirects.not-found.forget');
     Route::get('seo/related-posts', [DashboardController::class, 'getRelatedPosts'])->name('seo.related-posts');
 
     Route::get('update', [DashboardController::class, 'updateCheck'])->name('update');

@@ -118,6 +118,18 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                     </div>
                 </div>
 
+                {{-- 404 log --}}
+                <div class="wp-metabox">
+                    <div class="wp-metabox-header"><span>Broken links (404 log)</span></div>
+                    <div class="wp-metabox-content p-4 space-y-2">
+                        <label class="flex items-center gap-2 text-[14px] font-semibold text-[#1d2327]">
+                            <input type="checkbox" name="seo_404_log" value="1" @checked(($settings['seo_404_log'] ?? '1') !== '0') class="rounded-sm border-[#8c8f94]">
+                            Record pages visitors could not find
+                        </label>
+                        <p class="text-[12px] text-[#646970]">Missing pages (not images or files) are listed under <a href="{{ route('admin.redirects.index') }}" class="text-[#2271b1]">SEO → Redirects</a>, with how often and from where, ready to redirect in one click. A page whose address you change is redirected automatically.</p>
+                    </div>
+                </div>
+
                 {{-- Large image previews: Google Discover and image-rich results --}}
                 <div class="wp-metabox">
                     <div class="wp-metabox-header"><span>Google Discover &amp; large previews</span></div>
