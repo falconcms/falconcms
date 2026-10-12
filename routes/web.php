@@ -331,6 +331,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::delete('settings/api/tokens/{id}', [DashboardController::class, 'revokeApiToken'])->name('settings.api.tokens.destroy');
     Route::get('settings/integrations', [DashboardController::class, 'integrationsSettings'])->name('settings.integrations');
     Route::post('settings/integrations', [DashboardController::class, 'updateIntegrationsSettings'])->name('settings.integrations.update');
+    Route::post('settings/integrations/cloudflare-purge', [DashboardController::class, 'purgeCloudflare'])->name('settings.integrations.cloudflare-purge');
     Route::get('settings/email-templates', [DashboardController::class, 'emailTemplates'])->name('settings.email-templates');
     Route::post('settings/email-templates', [DashboardController::class, 'updateEmailTemplate'])->name('settings.email-templates.update');
     Route::post('settings/email-templates/test', [DashboardController::class, 'testEmailTemplate'])->name('settings.email-templates.test');

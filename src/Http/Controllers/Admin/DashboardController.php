@@ -16,6 +16,7 @@ use FalconCms\Core\Models\Product;
 use FalconCms\Core\Models\Role;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Services\EcommerceData;
+use FalconCms\Core\Support\Cloudflare;
 use FalconCms\Core\Support\KeywordDemand;
 use FalconCms\Core\Support\KeywordSuggestions;
 use FalconCms\Core\Support\LinkSuggestions;
@@ -965,6 +966,17 @@ class DashboardController extends Controller
         return redirect()->route('admin.settings.api')->with('success', 'API token revoked.');
     }
 
+    /** Settings → Integrations → Cloudflare → "Purge everything now". */
+    public function purgeCloudflare()
+    {
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
+        $error = Cloudflare::purgeEverything();
+
+        return redirect()->back()->with($error ? 'error' : 'success', $error ?? 'Cloudflare cache purged.');
+    }
+
     public function integrationsSettings()
     {
         if (!auth()->user()->hasPermission('manage_settings')) {
@@ -988,6 +1000,19 @@ class DashboardController extends Controller
                 ['key' => $key],
                 ['value' => $request->input($key, ''), 'updated_at' => now()]
             );
+        }
+
+        // Cloudflare cache purge. The token is stored encrypted, and an empty field keeps it.
+        $settings = [Cloudflare::ENABLED => $request->boolean(Cloudflare::ENABLED) ? '1' : '0',
+            Cloudflare::ZONE => trim((string) $request->input(Cloudflare::ZONE, ''))];
+        $token = trim((string) $request->input(Cloudflare::TOKEN, ''));
+        if ($request->boolean('cloudflare_api_token_remove')) {
+            $settings[Cloudflare::TOKEN] = '';
+        } elseif ($token !== '') {
+            $settings[Cloudflare::TOKEN] = Crypt::encryptString($token);
+        }
+        foreach ($settings as $key => $value) {
+            DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value, 'updated_at' => now()]);
         }
 
         // Persist any theme/plugin fields injected into this screen — this
