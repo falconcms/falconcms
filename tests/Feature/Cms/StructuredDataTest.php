@@ -121,4 +121,27 @@ class StructuredDataTest extends TestCase
         $post2 = Post::forceCreate(['title' => 'Hi2', 'slug' => 'hi2', 'type' => 'post', 'status' => 'published', 'content' => '', 'lang_code' => 'en', 'user_id' => $noBio->id]);
         $this->assertSame('', trim(view('falcon-cms::themes.falcon-theme.partials.single-author', ['post' => $post2->fresh()])->render()));
     }
+    public function test_videos_in_a_post_become_video_objects(): void
+    {
+        $content = '[falcon_video url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"] <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ"></iframe>'
+            .' <p>also https://youtu.be/abcdefghijk</p>';
+        $post = Post::forceCreate(['title' => 'Tour', 'slug' => 'tour', 'type' => 'page', 'status' => 'published', 'content' => $content,
+            'lang_code' => 'en', 'published_at' => '2026-09-01 10:00:00']);
+
+        $videos = array_values(array_filter($this->graphFor($post->fresh())['@graph'], fn ($n) => ($n['@type'] ?? '') === 'VideoObject'));
+
+        $this->assertCount(2, $videos, 'the same video twice is one video');
+        $this->assertSame('https://www.youtube.com/embed/dQw4w9WgXcQ', $videos[0]['embedUrl']);
+        $this->assertSame('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg', $videos[0]['thumbnailUrl']);
+        $this->assertStringStartsWith('2026-09-01', $videos[0]['uploadDate']);
+        $this->assertSame('Tour', $videos[0]['name']);
+    }
+
+    public function test_a_vimeo_video_without_any_thumbnail_is_skipped(): void
+    {
+        $post = Post::forceCreate(['title' => 'V', 'slug' => 'v', 'type' => 'page', 'status' => 'published',
+            'content' => '<iframe src="https://player.vimeo.com/video/123456789"></iframe>', 'lang_code' => 'en']);
+
+        $this->assertNull($this->byType($this->graphFor($post->fresh()), 'VideoObject'));
+    }
 }

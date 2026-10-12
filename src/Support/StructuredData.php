@@ -206,6 +206,10 @@ final class StructuredData
         }
         $graph[] = array_filter($node, fn ($v) => $v !== null && $v !== '');
 
+        if ($post) {
+            array_push($graph, ...self::videos($post, $page));
+        }
+
         foreach (self::takeExtra() as $extra) {
             unset($extra['@context']);
             $graph[] = $extra;
@@ -214,6 +218,51 @@ final class StructuredData
         $graph = apply_falcon_filters('falcon_structured_data', $graph, $page);
 
         return ['@context' => 'https://schema.org', '@graph' => array_values($graph)];
+    }
+
+    /**
+     * A VideoObject for each YouTube or Vimeo video in the post (a builder Video element, or an
+     * embed in the text), so the page can show as a video result. Up to three. Google requires
+     * a name, a thumbnail and an upload date: the name and date come from the post, the
+     * thumbnail from YouTube (or the featured image), and a video with no thumbnail is skipped.
+     */
+    public static function videos($post, array $page): array
+    {
+        $content = (string) ($post->content ?? '');
+        $uploaded = self::date($post->published_at ?? $post->created_at ?? null);
+        if ($content === '' || !$uploaded) {
+            return [];
+        }
+
+        $found = [];
+        if (preg_match_all('#(?:youtube(?:-nocookie)?\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})#', $content, $yt)) {
+            foreach ($yt[1] as $id) {
+                $found['yt:'.$id] = ['embedUrl' => 'https://www.youtube.com/embed/'.$id, 'thumbnailUrl' => 'https://i.ytimg.com/vi/'.$id.'/hqdefault.jpg'];
+            }
+        }
+        if (preg_match_all('#(?:player\.)?vimeo\.com/(?:video/)?(\d{6,})#', $content, $vm) && !empty($page['image'])) {
+            foreach ($vm[1] as $id) {
+                $found['vm:'.$id] = ['embedUrl' => 'https://player.vimeo.com/video/'.$id, 'thumbnailUrl' => $page['image']];
+            }
+        }
+
+        $name = trim((string) ($post->title ?? '')) ?: $page['title'];
+        $nodes = [];
+        $n = 0;
+        foreach (array_slice($found, 0, 3) as $video) {
+            $n++;
+            $nodes[] = [
+                '@type' => 'VideoObject',
+                '@id' => url()->current().'#video-'.$n,
+                'name' => $n === 1 ? $name : $name.' ('.$n.')',
+                'description' => $page['description'] !== '' ? $page['description'] : $name,
+                'thumbnailUrl' => $video['thumbnailUrl'],
+                'uploadDate' => $uploaded,
+                'embedUrl' => $video['embedUrl'],
+            ];
+        }
+
+        return $nodes;
     }
 
     private static function date($value): ?string
