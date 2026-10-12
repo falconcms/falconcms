@@ -99,50 +99,17 @@
 <meta property="twitter:site" content="{{ '@' . ltrim($twitterHandle, '@') }}">
 @endif
 
-<!-- JSON-LD Schema Markup -->
+<!-- JSON-LD: the site's organization, the site, this page and its author, as one linked graph -->
 @php
-    $schema = [
-        "@context" => "https://schema.org",
-        "@type" => ($type === 'article' ? 'BlogPosting' : 'WebSite'),
-        "headline" => $metaText($currentTitle),
-        "description" => $metaText($currentDesc),
-        "url" => url()->current(),
-        "publisher" => [
-            "@type" => "Organization",
-            "name" => $siteTitle,
-            "logo" => [
-                "@type" => "ImageObject",
-                "url" => asset('favicon.ico')
-            ]
-        ]
-    ];
-
-    if ($currentImage) {
-        $schema['image'] = $currentImage;
-    }
-
-    // A product page describes a Product, not a WebSite — that is what puts the price, the
-    // availability and the star rating into a search result.
-    $isProductSchema = false;
-    if (isset($post) && function_exists('falcon_product_schema')) {
-        $productSchema = falcon_product_schema($post);
-        if ($productSchema) {
-            $schema = $productSchema;
-            $isProductSchema = true;
-        }
-    }
-
-    // Products fall into the 'article' bucket above, so without this guard the blog fields
-    // (author, datePublished) were being appended to the Product — properties it does not have.
-    if (isset($post) && $type === 'article' && !$isProductSchema) {
-        $schema['datePublished'] = $post->published_at ? $post->published_at->toIso8601String() : $post->created_at->toIso8601String();
-        $schema['dateModified'] = $post->updated_at->toIso8601String();
-        $schema['author'] = [
-            "@type" => "Person",
-            "name" => $post->author->name ?? 'Admin'
-        ];
-    }
+    $schema = \FalconCms\Core\Support\StructuredData::graph([
+        'site_title' => (string) $siteTitle,
+        'title' => $metaText($currentTitle),
+        'description' => $metaText($currentDesc),
+        'image' => $currentImage,
+        'type' => $type,
+        'post' => $post ?? null,
+    ]);
 @endphp
 <script type="application/ld+json">
-{!! json_encode($schema, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+{!! json_encode($schema, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
 </script>

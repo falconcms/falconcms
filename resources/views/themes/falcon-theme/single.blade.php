@@ -81,6 +81,7 @@
                 </div>
             @endif
 
+            @include('falcon-cms::themes.falcon-theme.partials.single-author', ['post' => $post])
             @include('falcon-cms::themes.falcon-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])
             @include('falcon-cms::themes.falcon-theme.partials.single-related', ['post' => $post])
 
@@ -180,6 +181,8 @@
                                 @endforeach
                             </div>
                         @endif
+
+                        @include('falcon-cms::themes.falcon-theme.partials.single-author', ['post' => $post])
 
                         <!-- Share Buttons -->
                         @include('falcon-cms::themes.falcon-theme.partials.single-share', ['post' => $post, 'permalink' => $permalink])

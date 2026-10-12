@@ -67,6 +67,59 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                     </div>
                 </div>
 
+                {{-- Who runs the site: Organization / LocalBusiness structured data --}}
+                @php $orgType = $settings['seo_org_type'] ?? 'Organization'; @endphp
+                <div class="wp-metabox" x-data="{ type: @js($orgType) }">
+                    <div class="wp-metabox-header"><span>Your business or organization</span></div>
+                    <div class="wp-metabox-content p-4 space-y-4">
+                        <p class="text-[12px] text-[#646970]">Tells Google who stands behind the site: it can show your logo, profiles and contact details in its knowledge panel, and it counts towards trust. Every page carries it; fill in what applies.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Type</label>
+                                <select name="seo_org_type" x-model="type" class="wp-input w-full h-8 py-0">
+                                    @foreach(\FalconCms\Core\Support\StructuredData::BUSINESS_TYPES as $value => $label)
+                                        <option value="{{ $value }}" @selected($orgType === $value)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Name</label>
+                                <input type="text" name="seo_org_name" value="{{ $settings['seo_org_name'] ?? '' }}" class="wp-input w-full h-8" placeholder="{{ get_cms_option('site_title', '') }}">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Logo URL</label>
+                                <input type="text" name="seo_org_logo" value="{{ $settings['seo_org_logo'] ?? '' }}" class="wp-input w-full h-8" placeholder="Empty: the theme logo is used">
+                                <p class="text-[11px] text-[#646970] mt-1">A square or wide logo, at least 112×112px.</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Social profiles</label>
+                                <textarea name="seo_org_same_as" rows="3" class="wp-input w-full text-[13px]" placeholder="https://facebook.com/yourpage&#10;https://www.linkedin.com/company/you&#10;https://x.com/you">{{ $settings['seo_org_same_as'] ?? '' }}</textarea>
+                                <p class="text-[11px] text-[#646970] mt-1">One address per line: Facebook, LinkedIn, X, YouTube, Instagram, Wikipedia…</p>
+                            </div>
+                            <div>
+                                <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Phone</label>
+                                <input type="text" name="seo_org_phone" value="{{ $settings['seo_org_phone'] ?? '' }}" class="wp-input w-full h-8" placeholder="+880 1700 000000">
+                            </div>
+                            <div>
+                                <label class="block text-[13px] font-semibold text-[#1d2327] mb-1">Email</label>
+                                <input type="email" name="seo_org_email" value="{{ $settings['seo_org_email'] ?? '' }}" class="wp-input w-full h-8">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1" x-show="type !== 'Organization'" x-cloak>
+                            <div class="sm:col-span-2 text-[12px] font-semibold text-[#50575e] uppercase">Address (shown for a local business)</div>
+                            <div class="sm:col-span-2">
+                                <input type="text" name="seo_org_street" value="{{ $settings['seo_org_street'] ?? '' }}" class="wp-input w-full h-8" placeholder="Street address">
+                            </div>
+                            <input type="text" name="seo_org_city" value="{{ $settings['seo_org_city'] ?? '' }}" class="wp-input w-full h-8" placeholder="City">
+                            <input type="text" name="seo_org_region" value="{{ $settings['seo_org_region'] ?? '' }}" class="wp-input w-full h-8" placeholder="Region / division">
+                            <input type="text" name="seo_org_postal_code" value="{{ $settings['seo_org_postal_code'] ?? '' }}" class="wp-input w-full h-8" placeholder="Postal code">
+                            <input type="text" name="seo_org_country" value="{{ $settings['seo_org_country'] ?? '' }}" class="wp-input w-full h-8" placeholder="Country code, e.g. BD">
+                            <input type="text" name="seo_org_price_range" value="{{ $settings['seo_org_price_range'] ?? '' }}" class="wp-input w-full h-8" placeholder="Price range, e.g. $$">
+                        </div>
+                        <p class="text-[12px] text-[#646970]">Authors get the same treatment from their profile: name, photo, bio and social links (Users → edit) become a Person linked from every post they write, with a profile page at their author archive.</p>
+                    </div>
+                </div>
+
                 {{-- AI crawlers: two plain choices, written into robots.txt --}}
                 <div class="wp-metabox">
                     <div class="wp-metabox-header"><span>AI crawlers</span></div>

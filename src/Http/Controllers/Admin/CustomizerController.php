@@ -763,6 +763,12 @@ class CustomizerController extends Controller
                         'desc' => 'Display the post author.',
                         'default' => '1',
                     ],
+                    'theme_single_show_author_box' => [
+                        'type' => 'toggle',
+                        'label' => 'Show Author Box',
+                        'desc' => 'Under a post, the author\'s photo, bio and profile links, with a link to their other posts. Shown only for authors who have written a bio (Users → edit).',
+                        'default' => '1',
+                    ],
                     'theme_single_show_date' => [
                         'type' => 'toggle',
                         'label' => 'Show Date',
