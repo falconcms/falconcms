@@ -11,6 +11,7 @@ use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Order;
 use FalconCms\Core\Models\OrderItem;
 use FalconCms\Core\Models\Post;
+use FalconCms\Core\Support\LinkSuggestions;
 use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\Product;
 use FalconCms\Core\Models\Role;
@@ -845,29 +846,15 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', 'SEO Settings updated successfully!');
     }
 
+    /** Internal link suggestions for the post being edited: where to link out, and who should link in. */
     public function getRelatedPosts(Request $request)
     {
-        $search = $request->query('s');
-        $excludeId = $request->query('exclude');
-
-        if (!$search) {
-            return response()->json([]);
+        $title = (string) $request->query('s', '');
+        if (mb_strlen(trim($title)) < 3 && trim((string) $request->query('keyword', '')) === '') {
+            return response()->json(['outbound' => [], 'inbound' => []]);
         }
 
-        $posts = Post::where('status', 'published')
-            ->where('id', '!=', $excludeId)
-            ->where('title', 'like', '%'.$search.'%')
-            ->limit(5)
-            ->get(['id', 'title', 'slug', 'type']);
-
-        $posts->map(function ($post) {
-            $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type.'/';
-            $post->url = url('/'.$prefix.$post->slug);
-
-            return $post;
-        });
-
-        return response()->json($posts);
+        return response()->json(LinkSuggestions::for($title, (string) $request->query('keyword', ''), (int) $request->query('exclude', 0)));
     }
 
     public function activityLogs(Request $request)

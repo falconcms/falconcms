@@ -178,7 +178,7 @@
         <div id="seo-tab-internal" class="seo-tab-content hidden p-4">
             <div class="mb-4">
                 <h4 class="text-[13px] font-bold text-[#2c3338] mb-1">Internal Link Suggestions</h4>
-                <p class="text-[12px] text-[#646970]">Linking to related content helps search engines understand your site structure and improves user engagement.</p>
+                <p class="text-[12px] text-[#646970]">Links between related pages help search engines find and understand them. Suggestions use the title and the focus keyword; nothing is added for you.</p>
             </div>
             <div id="internal-links-suggestions" class="space-y-3">
                 <div class="text-[13px] text-gray-500 italic">Start typing a title to see suggestions...</div>
@@ -232,40 +232,48 @@
     }
 
     function fetchInternalSuggestions() {
-        const title = document.querySelector('input[name="title"]').value;
+        const title = document.querySelector('input[name="title"]')?.value || '';
+        const keyword = document.getElementById('seo-focus-keyword')?.value || '';
         const container = document.getElementById('internal-links-suggestions');
         const postId = "{{ $post->id ?? 0 }}";
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 
-        if (!title || title.length < 3) {
-            container.innerHTML = '<div class="text-[13px] text-gray-500 italic">Enter at least 3 characters in the post title to see suggestions...</div>';
+        if (title.length < 3 && keyword.length < 3) {
+            container.innerHTML = '<div class="text-[13px] text-gray-500 italic">Enter a title or a focus keyword to see suggestions...</div>';
             return;
         }
 
         container.innerHTML = '<div class="text-[13px] text-gray-500 italic">Searching for related content...</div>';
 
-        fetch("{{ route('admin.seo.related-posts') }}?s=" + encodeURIComponent(title) + "&exclude=" + postId)
+        fetch("{{ route('admin.seo.related-posts') }}?s=" + encodeURIComponent(title) + "&keyword=" + encodeURIComponent(keyword) + "&exclude=" + postId)
             .then(res => res.json())
             .then(data => {
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="text-[13px] text-red-500 italic">No related posts found.</div>';
-                    return;
-                }
-
-                let html = '<div class="space-y-2">';
-                data.forEach(item => {
-                    html += `
-                        <div class="p-2 border border-gray-100 rounded bg-gray-50 flex items-center justify-between group">
-                            <div class="flex-1">
-                                <div class="text-[13px] font-medium text-[#2271b1] truncate">${item.title}</div>
-                                <div class="text-[11px] text-gray-400 truncate">${item.url}</div>
-                            </div>
-                            <button type="button" onclick="copyToClipboard('${item.url}')" class="ml-2 p-1.5 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-100 transition-colors" title="Copy URL">
-                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                            </button>
+                // Whatever the editor holds right now, to mark pages this one already links to.
+                const content = (document.querySelector('[name="content"]')?.value || '').toLowerCase();
+                const row = (item, linkedHere) => `
+                    <div class="p-2 border border-gray-100 rounded bg-gray-50 flex items-center justify-between gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[13px] font-medium text-[#2271b1] truncate">${esc(item.title)}</div>
+                            <div class="text-[11px] text-gray-500 truncate">${esc(item.reason)}</div>
+                            <div class="text-[11px] text-gray-400 truncate">${esc(item.url)}</div>
                         </div>
-                    `;
-                });
-                html += '</div>';
+                        ${linkedHere ? '<span class="text-[11px] text-green-700 font-semibold whitespace-nowrap">Already linked</span>' : ''}
+                        ${item.edit && !item.url_only ? `<a href="${esc(item.edit)}" target="_blank" class="text-[11px] text-[#2271b1] whitespace-nowrap">Open</a>` : ''}
+                        <button type="button" data-url="${esc(item.url)}" onclick="copyToClipboard(this.dataset.url)" class="p-1.5 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-100" title="Copy URL">
+                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        </button>
+                    </div>`;
+
+                const out = data.outbound || [];
+                const inb = data.inbound || [];
+                let html = '<div class="text-[12px] font-bold text-[#2c3338] mb-1">Link from this page to</div>';
+                html += out.length
+                    ? '<div class="space-y-2 mb-4">' + out.map(i => row(i, i.path && content.includes(i.path.toLowerCase()) && i.path !== '/')).join('') + '</div>'
+                    : '<div class="text-[13px] text-gray-500 italic mb-4">No related pages found.</div>';
+                html += '<div class="text-[12px] font-bold text-[#2c3338] mb-1">Pages that could link here</div>';
+                html += inb.length
+                    ? '<div class="space-y-2">' + inb.map(i => row(i, false)).join('') + '</div>'
+                    : '<div class="text-[13px] text-gray-500 italic">{{ ($post->id ?? null) ? 'None found: set a focus keyword to look for pages that mention it.' : 'Save the page first to see which pages could link to it.' }}</div>';
                 container.innerHTML = html;
             });
     }
