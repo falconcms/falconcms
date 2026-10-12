@@ -329,13 +329,7 @@ final class SeoAudit
     /** Text a reader sees: tags, builder shortcodes and JSON markup removed. */
     private static function text(string $content): string
     {
-        if (str_starts_with(ltrim($content), '{') || str_starts_with(ltrim($content), '[{')) {
-            preg_match_all('/"(?:text|content|title|html)"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"/', $content, $m);
-            $content = implode(' ', array_map(fn ($s) => json_decode('"'.$s.'"') ?? $s, $m[1]));
-        }
-        $content = preg_replace('/\[[^\]]*\]/', ' ', $content) ?? $content;
-
-        return trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?? '');
+        return falcon_content_text($content);
     }
 
     private static function path(?string $url): string

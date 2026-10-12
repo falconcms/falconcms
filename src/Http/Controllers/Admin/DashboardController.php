@@ -11,6 +11,7 @@ use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Order;
 use FalconCms\Core\Models\OrderItem;
 use FalconCms\Core\Models\Post;
+use FalconCms\Core\Support\KeywordSuggestions;
 use FalconCms\Core\Support\LinkSuggestions;
 use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\Product;
@@ -855,6 +856,25 @@ class DashboardController extends Controller
         }
 
         return response()->json(LinkSuggestions::for($title, (string) $request->query('keyword', ''), (int) $request->query('exclude', 0)));
+    }
+
+    /**
+     * Keyword ideas for the page being edited (SEO → Keywords): from what it is unsaved in the
+     * editor, or what is saved when the editor sends no content (the page builder).
+     */
+    public function keywordSuggestions(Request $request)
+    {
+        $data = $request->validate([
+            'post_id' => 'nullable|integer',
+            'title' => 'nullable|string|max:500',
+            'seo_title' => 'nullable|string|max:500',
+            'description' => 'nullable|string|max:2000',
+            'slug' => 'nullable|string|max:500',
+            'content' => 'nullable|string|max:2000000',
+            'keyword' => 'nullable|string|max:200',
+        ]);
+
+        return response()->json(KeywordSuggestions::for(array_map(fn ($v) => (string) $v, $data) + ['post_id' => 0]));
     }
 
     public function activityLogs(Request $request)

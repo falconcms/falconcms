@@ -67,6 +67,26 @@ if (!function_exists('get_falcon_post_content')) {
     }
 }
 
+if (!function_exists('falcon_content_text')) {
+    /**
+     * The words a reader sees in a post's stored content, whatever the editor saved: HTML,
+     * builder shortcodes, or builder JSON (whose words sit in "text", "content", "title", "html",
+     * "description" and "subtitle" values). Used where content is measured or analysed, not
+     * displayed. $separator goes between blocks (a paragraph, a heading, a builder element).
+     */
+    function falcon_content_text($content, string $separator = ' '): string
+    {
+        $content = (string) $content;
+        if (str_starts_with(ltrim($content), '{') || str_starts_with(ltrim($content), '[{')) {
+            preg_match_all('/"(?:text|content|title|html|description|subtitle)"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"/', $content, $m);
+            $content = implode($separator, array_map(fn ($s) => json_decode('"'.$s.'"') ?? $s, $m[1]));
+        }
+        $content = preg_replace('/\[[^\]]*\]/', ' ', $content) ?? $content;
+
+        return falcon_html_to_text(preg_replace('/<\/?(p|div|h[1-6]|li|br|td|th|section)\b[^>]*>/i', $separator, $content) ?? $content);
+    }
+}
+
 if (!function_exists('falcon_html_to_text')) {
     /**
      * Convert rendered HTML to clean plain text. Unlike strip_tags(), this first

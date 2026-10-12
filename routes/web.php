@@ -367,6 +367,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('seo/redirects/bulk', [RedirectController::class, 'bulk'])->name('redirects.bulk');
     Route::post('seo/redirects/not-found/forget', [RedirectController::class, 'forgetNotFound'])->name('redirects.not-found.forget');
     Route::get('seo/related-posts', [DashboardController::class, 'getRelatedPosts'])->name('seo.related-posts');
+    Route::post('seo/keyword-suggestions', [DashboardController::class, 'keywordSuggestions'])->name('seo.keyword-suggestions');
 
     Route::get('update', [DashboardController::class, 'updateCheck'])->name('update');
     Route::post('update/run', [DashboardController::class, 'runUpdate'])->name('update.run');
