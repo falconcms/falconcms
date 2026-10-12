@@ -57,6 +57,9 @@ class SeoAuditTest extends TestCase
         $menuTarget = Post::where('slug', 'linked-by-menu')->first();
         $this->make('alone');
         $this->make('hub', ['content' => '<p>'.str_repeat('word ', 400).'</p><a href="/post/linked-by-post">read</a>']);
+        // Builder JSON stores links as "linkUrl":"https:\/\/site\/post\/…".
+        $this->make('json-linked');
+        $this->make('builder-hub', ['content' => '{"sections":[{"linkUrl":"https:\/\/example.test\/post\/json-linked","text":"'.str_repeat('word ', 400).'"}]}']);
         $menu = DB::table('navigation_menus')->insertGetId(['name' => 'Main', 'location' => 'primary', 'created_at' => now(), 'updated_at' => now()]);
         DB::table('navigation_menu_items')->insert(['navigation_menu_id' => $menu, 'title' => 'M', 'type' => 'post', 'object_id' => $menuTarget->id, 'created_at' => now(), 'updated_at' => now()]);
 
@@ -65,6 +68,7 @@ class SeoAuditTest extends TestCase
         $this->assertContains('Alone', $orphans);
         $this->assertNotContains('Linked-by-post', $orphans);
         $this->assertNotContains('Linked-by-menu', $orphans);
+        $this->assertNotContains('Json-linked', $orphans);
     }
 
     public function test_the_audit_page_renders_for_settings_managers(): void

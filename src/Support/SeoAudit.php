@@ -21,7 +21,8 @@ final class SeoAudit
     /** Types that are never pages of their own (layouts, sections, cards…). */
     private const CONTENT_TYPES_EXCLUDED = ['falcon_content', 'falcon_header', 'falcon_footer', 'falcon_ptb', 'lazy_header', 'lazy_footer'];
 
-    private const WEIGHT = ['error' => 6, 'warning' => 3, 'info' => 1];
+    /** The most a kind of issue can cost, when every page has it. */
+    private const WEIGHT = ['error' => 30, 'warning' => 15, 'info' => 5];
 
     /**
      * @return array{score: int, checked: int, checks: list<array{key: string, label: string, severity: string, help: string, items: list<array>}>}
@@ -45,12 +46,17 @@ final class SeoAudit
 
         $checks = array_values((array) apply_falcon_filters('falcon_seo_audit_checks', $checks, $posts));
 
-        $penalty = 0;
+        // Each kind of issue costs up to its weight, in proportion to the share of pages it
+        // affects: one page without a description on a 500-page site is not the same as all of
+        // them. (A flat cost per finding sank any real site to 0, which says nothing.)
+        $total = max(1, count($posts));
+        $penalty = 0.0;
         foreach ($checks as $check) {
-            $penalty += min(25, (self::WEIGHT[$check['severity']] ?? 1) * count($check['items']));
+            $share = min(1, count($check['items']) / $total);
+            $penalty += (self::WEIGHT[$check['severity']] ?? 5) * max($share, 0.1);
         }
 
-        return ['score' => max(0, 100 - $penalty), 'checked' => count($posts), 'checks' => $checks];
+        return ['score' => max(0, (int) round(100 - $penalty)), 'checked' => count($posts), 'checks' => $checks];
     }
 
     /**
@@ -154,7 +160,9 @@ final class SeoAudit
         try {
             $sources = DB::table('posts')->where('status', 'published')->whereNull('deleted_at')->pluck('content', 'id');
             foreach ($sources as $id => $content) {
-                if (preg_match_all('#(?:href|url|link_url|link)\s*=\s*\\\\?["\']([^"\'\\\\]+)#i', (string) $content, $m)) {
+                // Builder content is JSON ("linkUrl":"https:\/\/…") as well as HTML (href="…") and shortcodes (link_url="…").
+                $content = str_replace('\\/', '/', (string) $content);
+                if (preg_match_all('#(?:href|url|link_url|link|linkUrl)"?\s*[=:]\s*\\\\?["\']([^"\'\\\\]+)#i', $content, $m)) {
                     foreach ($m[1] as $url) {
                         $linked[self::path($url)][] = (int) $id;
                     }
