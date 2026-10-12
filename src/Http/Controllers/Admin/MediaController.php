@@ -4,6 +4,7 @@ namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Media;
 use FalconCms\Core\Support\SvgSanitizer;
+use FalconCms\Core\Support\AvifImages;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Storage;
@@ -250,6 +251,10 @@ class MediaController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
+            if (str_starts_with((string) $mimeType, 'image/')) {
+                AvifImages::generate($path);
+            }
+
             falcon_log_activity('created', "Uploaded media: {$media->filename}", $media);
 
             return response()->json([
@@ -347,6 +352,7 @@ class MediaController extends Controller
     {
         $disk = Storage::disk('public');
         $disk->delete($path); // the original
+        AvifImages::delete($path);
 
         $info = pathinfo($path);
         if (empty($info['filename'])) {
@@ -384,8 +390,12 @@ class MediaController extends Controller
                     continue;
                 }
 
-                // Skip if already webp and we are targeting webp
+                // Skip if already webp and we are targeting webp (it may still lack its AVIF copy)
                 if ($autoWebp && $media->mime_type === 'image/webp') {
+                    if (AvifImages::enabled() && AvifImages::generate($media->path)) {
+                        $count++;
+                    }
+
                     continue;
                 }
 
@@ -435,8 +445,9 @@ class MediaController extends Controller
 
                 $imageData = ob_get_clean();
                 if ($success && $imageData) {
-                    // Delete old file
+                    // Delete old file (and its AVIF copy, which no longer matches)
                     Storage::disk('public')->delete($media->path);
+                    AvifImages::delete($media->path);
 
                     // Save new file
                     Storage::disk('public')->put($newPath, $imageData);
@@ -450,6 +461,7 @@ class MediaController extends Controller
                         'height' => $height,
                         'compressed_size' => strlen($imageData),
                     ]);
+                    AvifImages::generate($newPath);
                     $count++;
                 }
                 imagedestroy($img);

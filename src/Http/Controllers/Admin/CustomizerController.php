@@ -985,6 +985,12 @@ class CustomizerController extends Controller
                         'desc' => 'Images below the fold load only as the reader scrolls to them, so the first screen appears faster. The first three images stay eager; the hero (the first image or section background after the site header) is preloaded and fetched first; and library images get their shape reserved so the page does not jump as they arrive. Works on every page, default theme or page builder.',
                         'default' => '0',
                     ],
+                    'perf_avif' => [
+                        'type' => 'toggle',
+                        'label' => 'Serve AVIF Images',
+                        'desc' => 'Library images also get an AVIF copy (usually 20-30% smaller than WebP), offered to browsers that support it; others keep the original. New uploads get one automatically; run Media → Bulk Optimize once for existing images. Needs PHP GD with AVIF support'.(\FalconCms\Core\Support\AvifImages::supported() ? ' (available on this server).' : ' (NOT available on this server, so this has no effect).'),
+                        'default' => '0',
+                    ],
                     'perf_defer_js' => [
                         'type' => 'toggle',
                         'label' => 'Defer JavaScript',

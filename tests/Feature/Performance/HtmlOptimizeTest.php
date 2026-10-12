@@ -305,4 +305,28 @@ class HtmlOptimizeTest extends TestCase
         $admin = $mw->handle(Request::create('/admin/x', 'GET'), fn () => new Response('<div>  <b>x</b></div>', 200, ['Content-Type' => 'text/html']));
         $this->assertSame('<div>  <b>x</b></div>', $admin->getContent());
     }
+    /** AVIF copies are offered first; browsers without AVIF keep the original. */
+    public function test_library_images_with_an_avif_copy_are_offered_it(): void
+    {
+        if (!\FalconCms\Core\Support\AvifImages::supported()) {
+            $this->markTestSkipped('GD without AVIF on this PHP.');
+        }
+        @mkdir(storage_path('app/public/media'), 0777, true);
+        file_put_contents(storage_path('app/public/media/hero.webp'), 'x');
+        file_put_contents(storage_path('app/public/media/hero.avif'), 'x');
+
+        try {
+            $html = '<html><head></head><body><header></header><img src="/storage/media/hero.webp" alt="h"><img src="/storage/media/none.webp">'
+                .'<img src="/storage/media/hero.webp" srcset="/a 1x"></body></html>';
+            $out = $this->opt($html, ['perf_avif' => '1', 'perf_lazy_images' => '1']);
+
+            $this->assertStringContainsString('<picture class="falcon-avif"><source type="image/avif" srcset="/storage/media/hero.avif"><img src="/storage/media/hero.webp" alt="h"', $out);
+            $this->assertStringContainsString('<link rel="preload" as="image" href="/storage/media/hero.avif" type="image/avif" fetchpriority="high"', $out);
+            $this->assertStringContainsString('<style>picture.falcon-avif{display:contents}</style></head>', $out);
+            $this->assertSame(1, substr_count($out, '<picture'), 'no AVIF copy, or a srcset of its own: left alone');
+        } finally {
+            @unlink(storage_path('app/public/media/hero.webp'));
+            @unlink(storage_path('app/public/media/hero.avif'));
+        }
+    }
 }

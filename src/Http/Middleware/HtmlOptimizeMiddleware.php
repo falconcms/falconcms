@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
+use FalconCms\Core\Support\AvifImages;
 use FalconCms\Core\Support\CriticalCss;
 use FalconCms\Core\Support\LocalGoogleFonts;
 use FalconCms\Core\Support\LucideIcons;
@@ -60,7 +61,8 @@ class HtmlOptimizeMiddleware
         $inlineIcons = get_cms_option('perf_inline_icons', '0') === '1';
         $localFonts = get_cms_option('perf_local_google_fonts', '0') === '1';
         $critical = get_cms_option('perf_critical_css', '0') === '1';
-        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical) {
+        $avif = AvifImages::enabled();
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical && !$avif) {
             return $response;
         }
 
@@ -89,6 +91,9 @@ class HtmlOptimizeMiddleware
             $html = $this->prioritiseHero($html);
             $html = $this->reserveImageSpace($html);
             $html = $this->lazyImages($html);
+        }
+        if ($avif) {
+            $html = $this->avifPictures($html);
         }
         if ($defer) {
             $html = $this->deferScripts($html);
@@ -429,6 +434,48 @@ class HtmlOptimizeMiddleware
 
             return preg_replace('/\s*\/?>$/', ' style="'.$ratio.'">', $tag, 1);
         }, $html) ?? $html;
+    }
+
+    /**
+     * Offer the AVIF copy of library images: <img src="/storage/x.webp"> becomes
+     * <picture class="falcon-avif"><source type="image/avif" srcset="/storage/x.avif"><img …></picture>.
+     * The picture is display:contents, so it adds no box and the image sits in the layout
+     * exactly as before. Images with their own srcset, and ones already inside a <picture>,
+     * are left alone.
+     */
+    private function avifPictures(string $html): string
+    {
+        $wrapped = 0;
+        $swapped = [];
+        $out = preg_replace_callback('/(<picture\b.*?<\/picture>)|<img\b[^>]*>/is', function ($m) use (&$wrapped, &$swapped) {
+            if (!empty($m[1])) {
+                return $m[0];
+            }
+            $tag = $m[0];
+            if (stripos($tag, 'srcset=') !== false
+                || !preg_match('/\bsrc=(["\'])([^"\']*\/storage\/([^"\'?#]+\.(?:webp|jpe?g|png)))(?:[?#][^"\']*)?\1/i', $tag, $src)
+                || !AvifImages::existsFor(rawurldecode($src[3]))) {
+                return $tag;
+            }
+            $wrapped++;
+            $avif = preg_replace('/\.[A-Za-z0-9]+$/', '.avif', $src[2]);
+            $swapped[$src[2]] = $avif;
+
+            return '<picture class="falcon-avif"><source type="image/avif" srcset="'.$avif.'">'.$tag.'</picture>';
+        }, $html) ?? $html;
+
+        // A preloaded hero should fetch the AVIF, not the original as well. With type set, a
+        // browser that cannot show AVIF skips the preload and loads the original as usual.
+        foreach ($swapped as $original => $avif) {
+            $out = str_replace('<link rel="preload" as="image" href="'.$original.'" fetchpriority="high"',
+                '<link rel="preload" as="image" href="'.$avif.'" type="image/avif" fetchpriority="high"', $out);
+        }
+
+        if ($wrapped && ($head = stripos($out, '</head>')) !== false) {
+            $out = substr_replace($out, '<style>picture.falcon-avif{display:contents}</style>', $head, 0);
+        }
+
+        return $out;
     }
 
     /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first few eager. */
