@@ -93,13 +93,30 @@
                                 </a>
                                 @if($hasChildren)
                                     @if($isActive)
+                                        @php
+                                            // One child lit: when several match (Overview at /x and Settings at /x/settings,
+                                            // both on /x/settings), the one with the longest address is where you are.
+                                            $activeChildHref = null;
+                                            $activeChildLength = -1;
+                                            foreach ($menu->children as $child) {
+                                                if (!$canSee($child)) continue;
+                                                $candidate = $resolveRoute($child);
+                                                if (\FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($candidate, true)) {
+                                                    $length = strlen((string) parse_url((string) $candidate, PHP_URL_PATH)) + strlen((string) parse_url((string) $candidate, PHP_URL_QUERY));
+                                                    if ($length > $activeChildLength) {
+                                                        $activeChildHref = $candidate;
+                                                        $activeChildLength = $length;
+                                                    }
+                                                }
+                                            }
+                                        @endphp
                                         <div class="bg-[#2c3338] block w-full">
                                             <ul class="py-1">
                                                 @foreach($menu->children as $child)
                                                     @php
                                                         if (!$canSee($child)) continue;
                                                         $childHref = $resolveRoute($child);
-                                                        $isChildActive = \FalconCms\Core\View\Components\Admin\Sidebar::isUrlActive($childHref, true);
+                                                        $isChildActive = $activeChildHref !== null && $childHref === $activeChildHref;
                                                     @endphp
                                                     <li>
                                                         <a href="{{ $childHref }}" class="block px-3 py-[6px] transition text-[13px] {{ $isChildActive ? 'text-white font-semibold' : 'text-[#c3c4c7] hover:text-[#72aee6]' }}">
