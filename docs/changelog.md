@@ -5,7 +5,46 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.10 <Badge type="tip" text="Latest" /> {#v2-7-10}
+## v2.7.11 <Badge type="tip" text="Latest" /> {#v2-7-11}
+
+**Released: 2026-10-13**
+
+The shop makes its own pages, and two fixes found by turning every speed option on at once.
+
+### Added
+
+- **The shop makes its own pages.** When Falcon Shop is activated (or on its first run after an
+  install or update), it creates the **Shop, Cart, Checkout, Account** and new **Wishlist** pages
+  and assigns them. A page already at the usual address is used rather than duplicated. A page you
+  delete later stays deleted.
+- **Shop → Settings → Product & Inventory** shows each shop page's state (Live, Not published,
+  In the trash, Missing). **Create missing pages** brings back what is missing: it restores a
+  deleted page from the trash, publishes an unpublished one, and creates any that is gone. It
+  never changes a page's content. There is also a new **Wishlist page** setting.
+- **Media → Generate AVIF copies.** Makes the AVIF copy of every image already in the library, in
+  small batches, with progress shown. Originals and their addresses are never changed. Shown
+  while Serve AVIF Images is on.
+
+### Changed
+
+- **Serve AVIF Images is locked off**, with the reason shown, on a server whose PHP cannot write
+  AVIF, instead of being "on" and doing nothing.
+- **The CMS no longer creates the shop pages itself.** It used to do so even with the shop off,
+  and every update brought back a page you had deleted.
+- **Shop links (cart, checkout, shop, account) only point at a published page.** A draft or
+  deleted page used to send visitors to a 404.
+
+### Fixed
+
+- **Minify CSS broke `calc()`.** It removed the spaces `calc()` needs around `+`, so browsers
+  dropped the theme's fluid heading sizes and headings in content fell back to the body size.
+- **Compiled CSS changed some colours.** Shop product names turned to the link colour, because
+  the compiled stylesheet loaded before the theme's styles. It now loads where the runtime build
+  puts its styles, and pages look the same with it on or off.
+
+---
+
+## v2.7.10 {#v2-7-10}
 
 **Released: 2026-10-13**
 
