@@ -1035,7 +1035,7 @@ class CustomizerController extends Controller
                     'perf_compiled_css' => [
                         'type' => 'toggle',
                         'label' => 'Compiled CSS (skip runtime Tailwind)',
-                        'desc' => 'Loads one pre-built, purged stylesheet (~60 KB) and skips the 400 KB tailwind.min.js that otherwise builds styles in the browser on every page. Big speed win. Colours and fonts still follow the Customizer. Leave off if you type Tailwind utility classes into a builder element\'s "CSS Class" field, since those are not in the pre-built file (use Custom CSS for them instead).',
+                        'desc' => 'Loads one pre-built, purged stylesheet (~60 KB) and skips the 400 KB tailwind.min.js that otherwise builds styles in the browser on every page. Big speed win. Colours and fonts still follow the Customizer. Tailwind classes that come with your content (a builder element\'s "CSS Class" field, imported HTML) are covered too: the common ones are added to the page automatically, and a page that needs more falls back to the in-browser build.',
                         'default' => '0',
                         // Built from, and loaded by, the Falcon theme only — disabled under another theme.
                         'theme_only' => true,

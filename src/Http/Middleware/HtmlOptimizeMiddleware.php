@@ -4,6 +4,7 @@ namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use FalconCms\Core\Support\AvifImages;
+use FalconCms\Core\Support\CompiledCssCoverage;
 use FalconCms\Core\Support\CriticalCss;
 use FalconCms\Core\Support\LocalGoogleFonts;
 use FalconCms\Core\Support\LucideIcons;
@@ -67,7 +68,8 @@ class HtmlOptimizeMiddleware
         $avif = AvifImages::enabled();
         $speculative = SpeculativeLoading::enabled();
         $rum = WebVitals::enabled();
-        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical && !$avif && !$speculative && !$rum) {
+        $compiled = get_cms_option('perf_compiled_css', '0') === '1';
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical && !$avif && !$speculative && !$rum && !$compiled) {
             return $response;
         }
 
@@ -88,6 +90,9 @@ class HtmlOptimizeMiddleware
             if (!$complete) {
                 $response->headers->set(self::PROVISIONAL_HEADER, '1');
             }
+        }
+        if ($compiled) {
+            $html = $this->runtimeTailwindWhereNeeded($html);
         }
         if ($critical) {
             $html = $this->criticalCss($html);
@@ -332,6 +337,31 @@ class HtmlOptimizeMiddleware
         $at = strpos($html, $link[0]);
 
         return $at === false ? $html : substr_replace($html, $replacement, $at, strlen($link[0]));
+    }
+
+    /**
+     * Compiled CSS covers the theme's templates, not classes that arrive with the content (imported
+     * HTML, a builder element's CSS Class field). For a page that has some, the common ones are
+     * written here as a small <style> after the compiled file (TailwindLite). Only when what is
+     * left is something the runtime build would make does it load, waking the inert config the
+     * theme wrote. Pages that need neither keep the compiled file alone.
+     */
+    private function runtimeTailwindWhereNeeded(string $html): string
+    {
+        if (!preg_match('#<script\s+type="text/plain"\s+id="falcon-tw-config"\s*>#i', $html, $tag)) {
+            return $html;
+        }
+        $plan = CompiledCssCoverage::plan($html, public_path('vendor/falcon-cms/css/falcon-tailwind.css'));
+
+        if ($plan['css'] !== '' && ($head = strripos($html, '</head>')) !== false) {
+            $html = substr_replace($html, '<style id="falcon-extra-css">'.$plan['css'].'</style>', $head, 0);
+        }
+        if ($plan['runtime']) {
+            $runtime = '<script src="'.asset('vendor/falcon-cms/js/tailwind.min.js').'"></script>';
+            $html = str_replace($tag[0], $runtime.'<script id="falcon-tw-config">', $html);
+        }
+
+        return $html;
     }
 
     /**

@@ -205,8 +205,10 @@
         })();
     </script>
     <!--/falcon-swal-lazy-->
-    @unless($__compiledCss)
-    <script>
+    {{-- With Compiled CSS the config is written but inert (type text/plain): the optimiser wakes it,
+         with the runtime build, only on a page whose content uses classes the compiled file
+         lacks (see CompiledCssCoverage). --}}
+    <script @if($__compiledCss) type="text/plain" id="falcon-tw-config" @endif>
         tailwind.config = {
             theme: {
                 extend: {
@@ -226,7 +228,7 @@
             }
         }
     </script>
-    @endunless
+
 
     <style>
         :root {
