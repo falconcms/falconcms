@@ -991,6 +991,12 @@ class CustomizerController extends Controller
                         'desc' => 'Library images also get an AVIF copy (usually 20-30% smaller than WebP), offered to browsers that support it; others keep the original. New uploads get one automatically; run Media → Bulk Optimize once for existing images. Needs PHP GD with AVIF support'.(\FalconCms\Core\Support\AvifImages::supported() ? ' (available on this server).' : ' (NOT available on this server, so this has no effect).'),
                         'default' => '0',
                     ],
+                    'perf_speculative_loading' => [
+                        'type' => 'toggle',
+                        'label' => 'Instant Page Loads (Speculation Rules)',
+                        'desc' => 'The next page starts loading the moment a visitor presses a link, so it opens almost instantly in Chrome and Edge (other browsers are unaffected). Never for the admin, login, cart, checkout or account pages. The same feature WordPress ships in core.',
+                        'default' => '0',
+                    ],
                     'perf_defer_js' => [
                         'type' => 'toggle',
                         'label' => 'Defer JavaScript',

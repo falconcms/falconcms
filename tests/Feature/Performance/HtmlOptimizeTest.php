@@ -329,4 +329,18 @@ class HtmlOptimizeTest extends TestCase
             @unlink(storage_path('app/public/media/hero.avif'));
         }
     }
+    public function test_speculation_rules_prefetch_on_press_and_skip_private_pages(): void
+    {
+        $out = $this->opt('<html><head><title>x</title></head><body><a href="/about">a</a></body></html>', ['perf_speculative_loading' => '1', 'login_url' => 'secret-door']);
+
+        $this->assertMatchesRegularExpression('#<script type="speculationrules">(.+?)</script></head>#', $out);
+        preg_match('#<script type="speculationrules">(.+?)</script>#', $out, $m);
+        $rule = json_decode($m[1], true)['prefetch'][0];
+        $this->assertSame('conservative', $rule['eagerness']);
+        $excluded = $rule['where']['and'][1]['not']['href_matches'];
+        foreach (['/admin*', '/cart*', '/checkout*', '/account*', '/secret-door*'] as $path) {
+            $this->assertContains($path, $excluded);
+        }
+        $this->assertStringNotContainsString('speculationrules', $this->opt('<html><head></head></html>', ['perf_speculative_loading' => '0']));
+    }
 }

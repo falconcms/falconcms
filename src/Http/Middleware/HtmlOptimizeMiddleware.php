@@ -7,6 +7,7 @@ use FalconCms\Core\Support\AvifImages;
 use FalconCms\Core\Support\CriticalCss;
 use FalconCms\Core\Support\LocalGoogleFonts;
 use FalconCms\Core\Support\LucideIcons;
+use FalconCms\Core\Support\SpeculativeLoading;
 use Illuminate\Http\Request;
 
 /**
@@ -62,7 +63,8 @@ class HtmlOptimizeMiddleware
         $localFonts = get_cms_option('perf_local_google_fonts', '0') === '1';
         $critical = get_cms_option('perf_critical_css', '0') === '1';
         $avif = AvifImages::enabled();
-        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical && !$avif) {
+        $speculative = SpeculativeLoading::enabled();
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical && !$avif && !$speculative) {
             return $response;
         }
 
@@ -94,6 +96,9 @@ class HtmlOptimizeMiddleware
         }
         if ($avif) {
             $html = $this->avifPictures($html);
+        }
+        if ($speculative && ($head = stripos($html, '</head>')) !== false && stripos($html, 'type="speculationrules"') === false) {
+            $html = substr_replace($html, SpeculativeLoading::script(), $head, 0);
         }
         if ($defer) {
             $html = $this->deferScripts($html);
