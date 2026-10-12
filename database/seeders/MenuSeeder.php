@@ -194,6 +194,7 @@ class MenuSeeder extends Seeder
         $analyticsMenu->children()->createMany([
             ['title' => 'Overview',    'route' => 'admin.analytics',          'order' => 1],
             ['title' => 'Visitor Log', 'route' => 'admin.analytics.visitors', 'order' => 2],
+            ['title' => 'Web Vitals',  'route' => 'admin.analytics.vitals',   'order' => 3],
         ]);
 
         // 12. Settings

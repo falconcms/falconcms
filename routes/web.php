@@ -30,6 +30,7 @@ use FalconCms\Core\Http\Controllers\Admin\RedirectController;
 use FalconCms\Core\Http\Controllers\Admin\BulkSeoController;
 use FalconCms\Core\Http\Controllers\Admin\KeywordResearchController;
 use FalconCms\Core\Http\Controllers\Admin\SeoAuditController;
+use FalconCms\Core\Http\Controllers\Admin\WebVitalsController;
 use FalconCms\Core\Http\Controllers\Admin\RegisterController;
 use FalconCms\Core\Http\Controllers\Admin\RoleController;
 use FalconCms\Core\Http\Controllers\Admin\SettingsTabController;
@@ -275,6 +276,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('analytics/realtime', [DashboardController::class, 'analyticsRealtime'])->name('analytics.realtime');
     Route::get('analytics/visitors', [DashboardController::class, 'analyticsVisitors'])->name('analytics.visitors');
+    Route::get('analytics/web-vitals', [WebVitalsController::class, 'index'])->name('analytics.vitals');
     Route::post('analytics/visitors/import', [DashboardController::class, 'analyticsVisitorsImport'])->name('analytics.visitors.import');
     Route::post('analytics/visitors/delete', [DashboardController::class, 'analyticsVisitorsDelete'])->name('analytics.visitors.delete');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
@@ -531,6 +533,11 @@ Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddl
     Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit')->middleware('throttle:5,1');
 
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
+    // Real visitors' Core Web Vitals, sent with sendBeacon (no CSRF token: a plain beacon, rate-limited,
+    // and only ever adds a measurement). Both CSRF classes are named, as for the shop's gateway callbacks.
+    Route::post('/falcon-vitals', [WebVitalsController::class, 'store'])->name('frontend.web-vitals')
+        ->middleware('throttle:30,1')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class, \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
     // IndexNow ownership key: answers only for this site's own key, and only while IndexNow is on.
     Route::get('/{indexnowKey}.txt', [FrontendController::class, 'indexNowKey'])->name('frontend.indexnow-key')->where('indexnowKey', '[a-f0-9]{32}');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('frontend.sitemap');

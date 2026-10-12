@@ -997,6 +997,12 @@ class CustomizerController extends Controller
                         'desc' => 'The next page starts loading the moment a visitor presses a link, so it opens almost instantly in Chrome and Edge (other browsers are unaffected). Never for the admin, login, cart, checkout or account pages. The same feature WordPress ships in core.',
                         'default' => '0',
                     ],
+                    'perf_rum' => [
+                        'type' => 'toggle',
+                        'label' => 'Measure Real Visitor Speed (Web Vitals)',
+                        'desc' => 'Measures how fast each page loads and responds for your real visitors (LCP, INP, CLS) and shows it under Analytics → Web Vitals, by page, for mobile and desktop. A tiny script with no outside service; it reports as the visitor leaves the page, so it never slows the page down. No personal data is stored.',
+                        'default' => '0',
+                    ],
                     'perf_defer_js' => [
                         'type' => 'toggle',
                         'label' => 'Defer JavaScript',

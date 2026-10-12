@@ -8,6 +8,7 @@ use FalconCms\Core\Support\CriticalCss;
 use FalconCms\Core\Support\LocalGoogleFonts;
 use FalconCms\Core\Support\LucideIcons;
 use FalconCms\Core\Support\SpeculativeLoading;
+use FalconCms\Core\Support\WebVitals;
 use Illuminate\Http\Request;
 
 /**
@@ -64,7 +65,8 @@ class HtmlOptimizeMiddleware
         $critical = get_cms_option('perf_critical_css', '0') === '1';
         $avif = AvifImages::enabled();
         $speculative = SpeculativeLoading::enabled();
-        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical && !$avif && !$speculative) {
+        $rum = WebVitals::enabled();
+        if (!$lazy && !$defer && !$minifyHtml && !$minifyCss && !$conditional && !$inlineIcons && !$localFonts && !$critical && !$avif && !$speculative && !$rum) {
             return $response;
         }
 
@@ -99,6 +101,10 @@ class HtmlOptimizeMiddleware
         }
         if ($speculative && ($head = stripos($html, '</head>')) !== false && stripos($html, 'type="speculationrules"') === false) {
             $html = substr_replace($html, SpeculativeLoading::script(), $head, 0);
+        }
+        // Real visitors' Web Vitals: a few hundred bytes before </body>, sent as the visitor leaves.
+        if ($rum && ($body = strripos($html, '</body>')) !== false && !str_contains($html, '/falcon-vitals')) {
+            $html = substr_replace($html, WebVitals::script(), $body, 0);
         }
         if ($defer) {
             $html = $this->deferScripts($html);
