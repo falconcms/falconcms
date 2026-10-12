@@ -96,6 +96,21 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                     </div>
                 </div>
 
+                {{-- Large image previews: Google Discover and image-rich results --}}
+                <div class="wp-metabox">
+                    <div class="wp-metabox-header"><span>Google Discover &amp; large previews</span></div>
+                    <div class="wp-metabox-content p-4 space-y-2">
+                        <label class="flex items-center gap-2 text-[14px] font-semibold text-[#1d2327]">
+                            <input type="checkbox" name="seo_large_image_preview" value="1" @checked(($settings['seo_large_image_preview'] ?? '1') !== '0') class="rounded-sm border-[#8c8f94]">
+                            Allow Google to show large image previews
+                        </label>
+                        <p class="text-[12px] text-[#646970]">
+                            Adds <code>max-image-preview:large</code> to every indexable page. Google Discover shows a page with a big image only when it has this
+                            and a featured image at least 1200px wide; the editor warns when a featured image is smaller.
+                        </p>
+                    </div>
+                </div>
+
                 {{-- Global Meta --}}
                 <div class="wp-metabox">
                     <div class="wp-metabox-header"><span>Global SEO Defaults</span></div>

@@ -57,6 +57,16 @@
                 </div>
             </div>
 
+            {{-- Google Discover shows a large image only from a featured image at least 1200px wide. --}}
+            @php
+                $featuredInfo = !empty($post->featured_image) ? falcon_media_info(asset('storage/'.$post->featured_image)) : null;
+            @endphp
+            @if($featuredInfo && $featuredInfo['width'] && $featuredInfo['width'] < 1200)
+                <div class="text-[12px] text-[#8a6100] bg-[#fcf9e8] border border-[#f0c33c] rounded px-3 py-2 -mt-2 mb-4">
+                    The featured image is {{ $featuredInfo['width'] }}px wide. Google Discover and large image previews need at least 1200px.
+                </div>
+            @endif
+
             {{-- SEO Title --}}
             <div>
                 <div class="flex justify-between items-center mb-1">

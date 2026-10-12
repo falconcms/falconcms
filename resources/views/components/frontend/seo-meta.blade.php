@@ -59,8 +59,13 @@
 <!-- Basic Meta Tags -->
 <title>{!! $meta($currentTitle) !!}</title>
 <meta name="description" content="{!! $meta($currentDesc) !!}">
-@if($noindex || $nofollow)
-<meta name="robots" content="{{ ($noindex ? 'noindex' : 'index') }},{{ ($nofollow ? 'nofollow' : 'follow') }}">
+@if($noindex)
+<meta name="robots" content="noindex,{{ $nofollow ? 'nofollow' : 'follow' }}">
+@elseif(get_cms_option('seo_large_image_preview', '1') !== '0')
+{{-- Lets Google show a large image (Discover, results): it needs this and a 1200px+ image. --}}
+<meta name="robots" content="index,{{ $nofollow ? 'nofollow' : 'follow' }},max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+@elseif($nofollow)
+<meta name="robots" content="index,nofollow">
 @endif
 <link rel="canonical" href="{{ $canonical }}">
 @unless($noindex)

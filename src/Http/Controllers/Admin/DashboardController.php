@@ -786,7 +786,7 @@ class DashboardController extends Controller
         $data = $request->except('_token');
 
         // Handle Sitemap Checkboxes — all active post types + taxonomies
-        $checkboxes = ['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow', 'indexnow_enabled'];
+        $checkboxes = ['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow', 'indexnow_enabled', 'seo_large_image_preview'];
 
         try {
             $slugs = PostType::where('is_active', true)->pluck('slug');
