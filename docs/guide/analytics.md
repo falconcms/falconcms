@@ -67,6 +67,48 @@ The last 30 minutes, refreshed every 12 seconds.
 
 ---
 
+## Web Vitals
+
+Web Vitals is part of the free core: it needs no Pro licence.
+
+**Analytics → Web Vitals** shows how fast your pages are for the people who actually open them,
+measured in their browsers:
+
+| Metric | Measures | Good |
+|---|---|---|
+| **LCP**: Largest Contentful Paint | How long until the main content shows | ≤ 2.5 s |
+| **INP**: Interaction to Next Paint | How fast the page answers a tap or click | ≤ 200 ms |
+| **CLS**: Cumulative Layout Shift | How much the page jumps while loading | ≤ 0.1 |
+| **TTFB**: Time to First Byte | How long the server takes to answer | ≤ 800 ms |
+
+LCP, INP and CLS are the Core Web Vitals Google uses in ranking.
+
+![Analytics → Web Vitals](/screenshots/web-vitals.webp)
+
+*Each figure is the 75th percentile, as Google judges it, with the share of good, middling and poor visits. Pages are listed slowest first.*
+
+- Turn it on with **Measure Real Visitor Speed** under **Customizer → Performance**. It is off by
+  default.
+- Pick a range (today, 7, 28 or 90 days) and a device (mobile or desktop).
+- Each figure is the **75th percentile**: three in four visits were at least this fast.
+- **Pages, slowest first** lists every page with at least three measured visits. Fix the red ones
+  first.
+
+How it works:
+
+- **The script:** a few hundred bytes, using the browser's own measuring tools, with no outside
+  service. It sends its numbers once, as the visitor leaves the page, so it never slows the page
+  down.
+- **What is stored:** only the page address, mobile or desktop, and the four figures. No IP, no
+  cookie, nothing personal.
+- **What is left out:** bots and admin pages are not measured. At most 20,000 visits a day are
+  kept, and data older than 90 days is removed.
+
+Google's own field data in Search Console runs 28 days behind and often has nothing for a small
+site. These figures are today's.
+
+---
+
 ## What is not counted
 
 - Known bots and crawlers are filtered when the visit is recorded.

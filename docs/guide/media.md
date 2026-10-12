@@ -26,9 +26,37 @@ Click any file to:
 
 ## Bulk Operations
 
-Select multiple files and:
-- **Bulk Delete** — Remove multiple files at once
-- **Bulk Optimize** — Compress images to reduce file size
+Select multiple files and **Bulk Delete** them at once.
+
+## Image optimisation
+
+Images are optimised as they are uploaded. Set this up under **Customizer → Performance**:
+
+- **WebP Conversion:** uploads are converted to WebP.
+- **Image Quality** and **Max Image Width:** the compression level, and the widest an image is kept.
+
+**Optimize Existing Images Now**, in the same section, applies these settings to images already in
+the library. It replaces each original with an optimised copy under a new file name, and this
+cannot be undone. Take a backup first, and check pages that link to an image file directly.
+
+## AVIF copies
+
+With **Serve AVIF Images** on (Customizer → Performance), every library image also gets an AVIF
+copy. AVIF is usually 20–30% smaller than WebP. Browsers that support it get the AVIF, and the
+rest keep the original. New uploads get their copy automatically.
+
+For images already in the library, press **Generate AVIF copies** at the top of the Media Library.
+It works through the library in small batches and shows its progress. It only adds copies: the
+originals, their file names and their addresses are never changed. An image that would not get
+smaller is skipped.
+
+![Generate AVIF copies](/screenshots/media-avif.webp)
+
+*The button appears while Serve AVIF Images is on and the server can write AVIF.*
+
+AVIF needs PHP's GD extension with AVIF support. On a server without it, the switch is locked off
+in the Customizer with the reason, and the button does not appear. Ask your host to enable AVIF
+in GD.
 
 ## Using Media in Content
 

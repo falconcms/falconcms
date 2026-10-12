@@ -14,6 +14,7 @@ Most Laravel CMS solutions are either too simple or require you to rebuild every
 - **Full admin dashboard** — pages, posts, custom post types, menus, media, users, settings
 - **Falcon Builder** — a visual drag-and-drop page builder (think Elementor, but for Laravel)
 - **E-commerce ready** — shop, cart, checkout, orders, coupons out of the box
+- **SEO built in** — structured data, sitemaps, breadcrumbs, an SEO Audit and a bulk editor ([SEO](/guide/seo))
 - **Extensible** — WordPress-like hooks let you customize everything without modifying core files
 - **Plugins** — drop-in [plugins](/guide/plugins) add features, admin pages and settings; install one by dragging a `.zip`
 
@@ -67,7 +68,14 @@ Complete shop system including products, variable products, cart, checkout, orde
 - Categories, Tags, Custom Taxonomies
 - Revisions & Autosave
 - Media Library
-- SEO meta fields
+- SEO fields, with keyword ideas
+
+### SEO & Speed
+- Clean meta tags, canonical addresses, breadcrumbs and linked structured data on every page
+- Image sitemaps, hreflang, IndexNow, AI-crawler controls and a 404 log
+- An SEO Audit, a Bulk SEO editor, and keyword ideas with search demand in the editor
+- Google Search Console inside the admin with Pro ([Search Console](/guide/search-console))
+- Compiled CSS, critical CSS, AVIF images, instant page loads and real-visitor Web Vitals ([Performance](/guide/performance))
 
 ### Developer Tools
 - WordPress-like Action & Filter hooks

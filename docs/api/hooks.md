@@ -1101,7 +1101,7 @@ A plugin uses these filters to take over rendering of its own content. Each one 
 **Args:** `$response, $post`
 
 Return a response or view to render instead of a page. The shop uses this filter for the pages
-assigned as Shop, Cart, Checkout and Account.
+assigned as Shop, Cart, Checkout, Account and Wishlist.
 
 #### `falcon_single_view`
 **Args:** `$view, $post`
@@ -1150,6 +1150,76 @@ add_falcon_filter('falcon_api_post_data', function($data, $post) {
     return $data;
 });
 ```
+
+---
+
+### SEO, Shop Pages and Admin Panels
+
+These let a plugin add to the SEO tools, the admin screens and the shop's own pages. The
+[Search Console plugin](/guide/search-console) is built on them.
+
+#### `falcon_seo_metabox_after` (action)
+**Args:** `$post`
+
+Prints under the editor's SEO box. Use it for a panel of your own about the page.
+
+#### `falcon_admin_list_seo_cell` (action)
+**Args:** `$post`
+
+Prints inside the SEO column of the Posts and Pages lists, one row at a time.
+
+#### `falcon_dashboard_widgets` (action)
+**Args:** —
+
+Prints a card on the admin dashboard.
+
+#### `falcon_install_defaults` (action)
+**Args:** —
+
+Fired by `falcon:install`, `falcon:update` and the default-content seeder. A plugin creates the
+content it needs here. The shop makes its pages here, only once, so a page the owner deleted is
+not brought back.
+
+#### `falcon_seo_noindex` (filter)
+**Args:** `$noindex, $post`
+
+Return `true` to keep a page out of search: it gets `noindex`, and is left out of the sitemap and
+the SEO Audit. `$post` is `null` on pages that are not a post (archives, plugin routes).
+
+```php
+add_falcon_filter('falcon_seo_noindex', function ($noindex, $post = null) {
+    return $noindex || ($post && $post->slug === 'thank-you');
+});
+```
+
+#### `falcon_breadcrumbs` (filter)
+**Args:** `$items, $post`
+
+The breadcrumb trail, a list of `['title' => …, 'url' => …]` from Home to the current page. It is
+used by every breadcrumb on the site and by the page's `BreadcrumbList`.
+
+#### `falcon_structured_data` (filter)
+**Args:** `$graph, $page`
+
+The page's JSON-LD graph (a list of nodes) before it is printed. Add a node, or change one.
+
+#### `falcon_seo_audit_checks` (filter)
+**Args:** `$checks, $posts`
+
+Add a check to **Settings → SEO Audit**. Each check is
+`['key', 'label', 'severity' => 'error'|'warning'|'info', 'help', 'items' => [['id', 'title', 'detail', 'edit']]]`.
+
+#### `falcon_link_suggestions` / `falcon_keyword_suggestions` (filters)
+**Args:** `$result, $context`
+
+Add to the editor's Internal Linking and Keywords tabs. `$context` carries the post id, its title
+and focus keyword (and, for keywords, the page's text, headings and description).
+
+#### `falcon_template_page_ids` (filter)
+**Args:** `$ids`
+
+Ids of pages drawn by templates rather than their own content (the shop adds its pages). The SEO
+Audit does not report them as empty.
 
 ---
 
@@ -1208,7 +1278,7 @@ return [
 
 ## Complete Hook List
 
-### Actions (86 total)
+### Actions (90 total)
 
 | Hook | Args |
 |---|---|
@@ -1298,8 +1368,12 @@ return [
 | `falcon_after_order_confirmation` | `$order` |
 | `falcon_header_actions` | — |
 | `falcon_after_footer` | — |
+| `falcon_seo_metabox_after` | `$post` |
+| `falcon_admin_list_seo_cell` | `$post` |
+| `falcon_dashboard_widgets` | — |
+| `falcon_install_defaults` | — |
 
-### Filters (37 total)
+### Filters (44 total)
 
 | Hook | Args |
 |---|---|
@@ -1340,3 +1414,10 @@ return [
 | `falcon_archive_view` | `$view, $postTypeSlug` |
 | `falcon_plugin_post_types` | `$owners` |
 | `falcon_placeholder_image` | `$src` |
+| `falcon_seo_noindex` | `$noindex, $post` |
+| `falcon_breadcrumbs` | `$items, $post` |
+| `falcon_structured_data` | `$graph, $page` |
+| `falcon_seo_audit_checks` | `$checks, $posts` |
+| `falcon_link_suggestions` | `$result, $context` |
+| `falcon_keyword_suggestions` | `$result, $context` |
+| `falcon_template_page_ids` | `$ids` |

@@ -1,11 +1,46 @@
 # Storefront
 
-What shoppers see outside the admin: the shop archive and its filters, the customer account,
-and the structured data search engines read.
+What shoppers see outside the admin: the shop's pages, the shop archive and its filters, the
+customer account, and the structured data search engines read.
 
 ![The shop archive](/screenshots/storefront.webp)
 
 *The shop archive as the default theme renders it — filter sidebar, product grid, sale badges, and add-to-cart.*
+
+## Shop pages
+
+The shop runs on five pages: **Shop**, **Cart**, **Checkout**, **Account** and **Wishlist**. You
+don't create them yourself.
+
+- **Activating Falcon Shop** creates them and assigns them under **Shop → Settings → Product &
+  Inventory → Shop pages**. A page that already exists at the usual address (`/cart`, `/account`…)
+  is used rather than duplicated.
+- **A site that has had the shop on since install** gets them once, on the first install or
+  update (or the first admin screen opened afterwards).
+- **A page you delete stays deleted.** Updates do not bring it back.
+
+![Shop → Settings → Shop pages](/screenshots/shop-pages.webp)
+
+*Each shop page's state, with View and Edit, and the page assigned to each role.*
+
+The panel shows each page's state: **Live**, **Not published**, **In the trash** or **Missing**.
+When one needs attention, **Create missing pages** brings it back:
+
+- **in the trash:** the same page is restored and published again;
+- **gone for good:** a new page is created;
+- **none assigned:** a page at the usual address is assigned; failing that, one is created.
+
+It never changes a page's content, and never makes a second page for a role that has one. A draft
+you assigned yourself is left for you to publish.
+
+Good to know:
+
+- **Links:** the theme's cart, checkout, shop and account links only point at a published page.
+  With none, they fall back to the shop's own addresses, so a visitor never lands on a 404.
+- **Not in search:** the Cart, Checkout, Account and Wishlist pages are `noindex` and left out of
+  the sitemap. Only the Shop page is listed.
+- **The Wishlist page** shows a signed-in customer's saved products. A visitor who is not signed in
+  is sent to the Account page first, and comes back after signing in.
 
 ## Shop filters
 

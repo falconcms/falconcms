@@ -51,3 +51,13 @@ DEMO_URL=http://falcon.test DEMO_EMAIL=admin@example.com DEMO_PASSWORD=secret \
 
 Prefer the public demo for anything that ships. It carries demo content that is meant to
 be seen, and it is the same site a reader can click through for themselves.
+
+## Screenshots this script does not take
+
+The SEO, Search Console, Web Vitals and shop-pages images (`seo-*.webp`, `bulk-seo.webp`,
+`editor-seo-*.webp`, `editor-search-console.webp`, `search-console*.webp`, `web-vitals.webp`,
+`customizer-performance.webp`, `integrations-cloudflare.webp`, `media-avif.webp`,
+`shop-pages.webp`) were taken from a development site with the same capture settings
+(1440×900 at 2×, downscaled to 1600px WebP at 0.92). The demo cannot produce them: it is
+read-only, so the editor's keyword and search-demand requests are refused, and it has no
+Search Console connection or visitor speed data. Re-take them on a site that has.

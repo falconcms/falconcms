@@ -13,6 +13,7 @@ part of the free core.
 - **Custom fields** — ACPT field groups
 - **Advanced login** — multi-device & magic login
 - **Falcon Slider** — the layer-based slider builder ([docs](/slider/overview))
+- **Falcon Search Console** — Google Search Console inside the admin, with opportunities, a content plan and each page's numbers in its editor ([docs](/guide/search-console))
 
 Pro ships as a separate, proprietary package — `falconcms/pro` — delivered from a
 **private repository**. It is never bundled in the free download, so you install it
