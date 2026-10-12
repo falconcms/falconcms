@@ -533,5 +533,6 @@ Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddl
     // IndexNow ownership key: answers only for this site's own key, and only while IndexNow is on.
     Route::get('/{indexnowKey}.txt', [FrontendController::class, 'indexNowKey'])->name('frontend.indexnow-key')->where('indexnowKey', '[a-f0-9]{32}');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('frontend.sitemap');
+    Route::get('/sitemap-{part}.xml', [SitemapController::class, 'part'])->name('frontend.sitemap.part')->where('part', '[0-9]+');
     Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'single'])->name('frontend.show')->where('slug', '.*');
 });

@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Tests\Feature\Cms;
 
+use FalconCms\Core\Http\Controllers\SitemapController;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Tests\TestCase;
@@ -130,6 +131,48 @@ class SitemapTest extends TestCase
 
         $this->assertStringNotContainsString('kept-out', $body);
         $this->assertStringNotContainsString('<loc>'.url('/home').'</loc>', $body);
+    }
+
+    /** Google Images finds a page's pictures through the sitemap: featured image first, then the content's. */
+    public function test_each_post_lists_its_images(): void
+    {
+        $json = json_encode([['type' => 'image', 'settings' => ['src' => '/storage/media/builder-photo.webp']]]);
+        $this->publishedPost(['slug' => 'with-images', 'featured_image' => 'media/cover.jpg',
+            'content' => '<p><img src="https://cdn.example.com/a.png" alt="a"><img src="data:image/gif;base64,AAA"></p>'.$json]);
+
+        $body = $this->get('/sitemap.xml')->assertOk()->getContent();
+
+        $this->assertStringContainsString('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"', $body);
+        $this->assertStringContainsString('<image:loc>'.asset('storage/media/cover.jpg').'</image:loc>', $body);
+        $this->assertStringContainsString('<image:loc>https://cdn.example.com/a.png</image:loc>', $body);
+        $this->assertStringContainsString('<image:loc>'.url('/storage/media/builder-photo.webp').'</image:loc>', $body);
+        $this->assertStringNotContainsString('data:image', $body);
+        $this->assertNotFalse(simplexml_load_string($body), 'the sitemap is well-formed XML');
+    }
+
+    /** Past PER_FILE addresses, sitemap.xml becomes an index of sitemap-1.xml, sitemap-2.xml… */
+    public function test_a_large_site_gets_a_sitemap_index_of_numbered_files(): void
+    {
+        PostType::firstOrCreate(['slug' => 'post'], ['name' => 'Posts', 'singular_name' => 'Post', 'is_active' => true]);
+        $rows = [];
+        for ($i = 1; $i <= SitemapController::PER_FILE + 5; $i++) {
+            $rows[] = ['title' => "Post $i", 'slug' => "post-$i", 'type' => 'post', 'status' => 'published', 'lang_code' => 'en',
+                'content' => '', 'created_at' => now(), 'updated_at' => now()];
+        }
+        foreach (array_chunk($rows, 200) as $chunk) {
+            DB::table('posts')->insert($chunk);
+        }
+
+        $index = $this->get('/sitemap.xml')->assertOk()->getContent();
+        $this->assertStringContainsString('<sitemapindex', $index);
+        $this->assertStringContainsString('<loc>'.url('/sitemap-1.xml').'</loc>', $index);
+        $this->assertStringContainsString('<loc>'.url('/sitemap-2.xml').'</loc>', $index);
+
+        $first = $this->get('/sitemap-1.xml')->assertOk()->getContent();
+        $second = $this->get('/sitemap-2.xml')->assertOk()->getContent();
+        $this->assertSame(SitemapController::PER_FILE, substr_count($first, '<url>'));
+        $this->assertSame(6, substr_count($second, '<url>'), 'home + 1005 posts = 1006 addresses');
+        $this->get('/sitemap-3.xml')->assertNotFound();
     }
 
     public function test_a_draft_is_not_listed(): void
