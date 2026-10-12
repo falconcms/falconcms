@@ -66,6 +66,52 @@ class HtmlOptimizeTest extends TestCase
             '<header></header><img src="/a.jpg" loading="lazy">', ['perf_lazy_images' => '1']), 'an image the author made lazy stays as it is');
     }
 
+    /** The hero image is also preloaded from <head>, with its srcset, so it starts before the CSS. */
+    public function test_the_hero_image_is_preloaded(): void
+    {
+        $html = '<html><head><title>x</title></head><body><header><img src="/logo.png"></header>'
+            .'<main><img src="/hero.jpg" srcset="/hero-800.jpg 800w, /hero.jpg 1600w" sizes="100vw"><img src="/b.jpg"></main></body></html>';
+        $out = $this->opt($html, ['perf_lazy_images' => '1']);
+
+        $this->assertStringContainsString('<link rel="preload" as="image" href="/hero.jpg" fetchpriority="high" data-falcon-hero-preload imagesrcset="/hero-800.jpg 800w, /hero.jpg 1600w" imagesizes="100vw"></head>', $out);
+        $this->assertStringContainsString('<img src="/hero.jpg" srcset="/hero-800.jpg 800w, /hero.jpg 1600w" sizes="100vw" fetchpriority="high">', $out);
+    }
+
+    /** A builder hero is a section background: preloaded, since the browser meets it only in CSS. */
+    public function test_a_background_image_hero_is_preloaded(): void
+    {
+        $html = '<html><head></head><body><header>menu</header>'
+            .'<section style="background-image: url(&quot;/storage/media/hero.webp&quot;); min-height:80vh">Hi</section><img src="/later.jpg"></body></html>';
+        $out = $this->opt($html, ['perf_lazy_images' => '1']);
+
+        $this->assertStringContainsString('<link rel="preload" as="image" href="/storage/media/hero.webp" fetchpriority="high" data-falcon-hero-preload></head>', $out);
+        $this->assertStringNotContainsString('<img src="/later.jpg" fetchpriority', $out, 'the image after the background is not the hero');
+    }
+
+    public function test_a_lazy_hero_chosen_by_its_author_is_not_preloaded(): void
+    {
+        $out = $this->opt('<html><head></head><body><header></header><img src="/a.jpg" loading="lazy"></body></html>', ['perf_lazy_images' => '1']);
+
+        $this->assertStringNotContainsString('rel="preload"', $out);
+    }
+
+    /** Library images without a size get their shape reserved, without risking a stretched image. */
+    public function test_library_images_get_an_aspect_ratio_from_the_media_table(): void
+    {
+        DB::table('media')->insert([
+            ['filename' => 'a.jpg', 'path' => 'media/a.jpg', 'mime_type' => 'image/jpeg', 'original_size' => 1, 'width' => 1200, 'height' => 800, 'created_at' => now(), 'updated_at' => now()],
+            ['filename' => 'b.jpg', 'path' => 'media/b.jpg', 'mime_type' => 'image/jpeg', 'original_size' => 1, 'width' => 400, 'height' => 400, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        $html = '<img src="/storage/media/a.jpg"><img src="https://site.test/storage/media/b.jpg" style="border:0">'
+            .'<img src="/storage/media/a.jpg" width="10" height="10"><img src="/elsewhere.jpg">';
+        $out = $this->opt($html, ['perf_lazy_images' => '1']);
+
+        $this->assertStringContainsString('<img src="/storage/media/a.jpg" style="aspect-ratio:1200/800;">', $out);
+        $this->assertStringContainsString('style="border:0;aspect-ratio:400/400;"', $out);
+        $this->assertStringContainsString('<img src="/storage/media/a.jpg" width="10" height="10">', $out, 'a sized image is left alone');
+        $this->assertStringContainsString('<img src="/elsewhere.jpg" loading="lazy"', $out, 'not from the library: no ratio');
+    }
+
     /** A file moved out of an inline <script> opts out, so it still runs where the inline one did. */
     public function test_a_script_marked_data_no_defer_is_never_deferred(): void
     {

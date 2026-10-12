@@ -86,6 +86,8 @@ class HtmlOptimizeMiddleware
             $html = $this->criticalCss($html);
         }
         if ($lazy) {
+            $html = $this->prioritiseHero($html);
+            $html = $this->reserveImageSpace($html);
             $html = $this->lazyImages($html);
         }
         if ($defer) {
@@ -315,6 +317,120 @@ class HtmlOptimizeMiddleware
         return $at === false ? $html : substr_replace($html, $replacement, $at, strlen($link[0]));
     }
 
+    /**
+     * Get the hero — the largest-contentful paint on most pages — fetched first.
+     *
+     * The hero is whichever comes first after the site header: an <img>, or a section's CSS
+     * background-image (the usual builder hero). An <img> gains fetchpriority="high" (web.dev
+     * measured a lazily loaded hero pushing LCP from 2.9 s to 3.5 s). Either way a
+     * <link rel="preload"> goes into <head>, because the browser only finds a background image
+     * once the CSS is applied, far too late.
+     */
+    private function prioritiseHero(string $html): string
+    {
+        $headerEnd = stripos($html, '</header>');
+        $headEnd = stripos($html, '</head>');
+        if ($headerEnd === false || $headEnd === false || stripos($html, 'data-falcon-hero-preload') !== false) {
+            return $html;
+        }
+
+        $img = preg_match('/<img\b[^>]*>/i', $html, $im, PREG_OFFSET_CAPTURE, $headerEnd) ? $im[0] : null;
+        $bg = preg_match('/style=(["\'])[^"\']*?background(?:-image)?\s*:[^"\']*?url\(\s*(?:&quot;|[\'"])?([^)\'"&]+)/i', $html, $bm, PREG_OFFSET_CAPTURE, $headerEnd)
+            ? ['url' => $bm[2][0], 'offset' => $bm[0][1]] : null;
+
+        $preload = null;
+        if ($img && (!$bg || $img[1] < $bg['offset'])) {
+            [$tag, $offset] = $img;
+            // An image its author made lazy is left exactly as it is (see lazyImages).
+            if (!preg_match('/\bsrc=["\']([^"\']+)["\']/i', $tag, $src) || str_starts_with($src[1], 'data:')
+                || preg_match('/loading=["\']?lazy/i', $tag)) {
+                return $html;
+            }
+            $new = $tag;
+            if (stripos($new, 'fetchpriority=') === false) {
+                $new = preg_replace('/\s*\/?>$/', ' fetchpriority="high">', $new, 1);
+            }
+            $html = substr_replace($html, $new, $offset, strlen($tag));
+            $preload = '<link rel="preload" as="image" href="'.$src[1].'" fetchpriority="high" data-falcon-hero-preload';
+            if (preg_match('/\bsrcset=["\']([^"\']+)["\']/i', $tag, $set)) {
+                $preload .= ' imagesrcset="'.$set[1].'"';
+                if (preg_match('/\bsizes=["\']([^"\']+)["\']/i', $tag, $sizes)) {
+                    $preload .= ' imagesizes="'.$sizes[1].'"';
+                }
+            }
+            $preload .= '>';
+        } elseif ($bg && !str_starts_with($bg['url'], 'data:')) {
+            $preload = '<link rel="preload" as="image" href="'.e(html_entity_decode(trim($bg['url']))).'" fetchpriority="high" data-falcon-hero-preload>';
+        }
+
+        if ($preload === null) {
+            return $html;
+        }
+        // Inserted with substr_replace, not preg_replace: a URL may hold "$1" or "\1".
+        $headEnd = stripos($html, '</head>');
+
+        return substr_replace($html, $preload, $headEnd, 0);
+    }
+
+    /**
+     * Give images from the media library their shape before they load, so the text below does
+     * not jump when they arrive (layout shift). Only an <img> with neither width nor height
+     * gets it, and as an inline aspect-ratio rather than width/height attributes: the ratio
+     * reserves the space whenever the image's width is set and its height left to follow, and
+     * unlike a height attribute it can never stretch an image whose stylesheet forgot
+     * height:auto. One query for the whole page.
+     */
+    private function reserveImageSpace(string $html): string
+    {
+        if (!function_exists('falcon_media_info') || !preg_match_all('/<img\b[^>]*>/i', $html, $all)) {
+            return $html;
+        }
+
+        $paths = [];
+        foreach ($all[0] as $tag) {
+            if (preg_match('/\b(?:width|height)=/i', $tag) || stripos($tag, 'aspect-ratio') !== false) {
+                continue;
+            }
+            if (preg_match('/\bsrc=["\'][^"\']*\/storage\/([^"\'?#]+)/i', $tag, $p)) {
+                $paths[rawurldecode($p[1])] = true;
+            }
+        }
+        if ($paths === []) {
+            return $html;
+        }
+
+        try {
+            $sizes = \Illuminate\Support\Facades\DB::table('media')->whereIn('path', array_keys($paths))
+                ->whereNotNull('width')->whereNotNull('height')
+                ->get(['path', 'width', 'height'])->keyBy('path');
+        } catch (\Throwable $e) {
+            return $html;
+        }
+        if ($sizes->isEmpty()) {
+            return $html;
+        }
+
+        return preg_replace_callback('/<img\b[^>]*>/i', function ($m) use ($sizes) {
+            $tag = $m[0];
+            if (preg_match('/\b(?:width|height)=/i', $tag) || stripos($tag, 'aspect-ratio') !== false
+                || !preg_match('/\bsrc=["\'][^"\']*\/storage\/([^"\'?#]+)/i', $tag, $p)) {
+                return $tag;
+            }
+            $size = $sizes[rawurldecode($p[1])] ?? null;
+            if (!$size || (int) $size->width < 1 || (int) $size->height < 1) {
+                return $tag;
+            }
+            $ratio = 'aspect-ratio:'.(int) $size->width.'/'.(int) $size->height.';';
+            if (preg_match('/\bstyle=(["\'])(.*?)\1/is', $tag, $st, PREG_OFFSET_CAPTURE)) {
+                $existing = rtrim($st[2][0]);
+
+                return substr_replace($tag, ($existing === '' || str_ends_with($existing, ';') ? $existing : $existing.';').$ratio, $st[2][1], strlen($st[2][0]));
+            }
+
+            return preg_replace('/\s*\/?>$/', ' style="'.$ratio.'">', $tag, 1);
+        }, $html) ?? $html;
+    }
+
     /** Add loading="lazy" + decoding="async" to images that have neither, leaving the first few eager. */
     private function lazyImages(string $html): string
     {
@@ -323,7 +439,8 @@ class HtmlOptimizeMiddleware
         // the largest-contentful paint: it is fetched first (fetchpriority) and never lazy.
         // Only on a page that marks its header; without one there is nothing to go by.
         $headerEnd = stripos($html, '</header>');
-        $heroDone = $headerEnd === false;
+        // prioritiseHero has already chosen (and it may have been a background image, not an <img>).
+        $heroDone = $headerEnd === false || str_contains($html, 'data-falcon-hero-preload');
 
         return preg_replace_callback('/<img\b[^>]*>/i', function ($m) use (&$seen, &$heroDone, $headerEnd) {
             [$tag, $offset] = $m[0];
@@ -337,7 +454,8 @@ class HtmlOptimizeMiddleware
             // The first images are usually above the fold: the logo, then the hero and whatever
             // sits beside it. Only the first stayed eager, so a hero image, the largest-contentful
             // paint on most pages, was lazy and waited for layout. Three, as WordPress does.
-            if ($seen <= self::EAGER_IMAGES || stripos($tag, 'loading=') !== false) {
+            // An image already given priority (the hero, by prioritiseHero) stays eager wherever it is.
+            if ($seen <= self::EAGER_IMAGES || stripos($tag, 'loading=') !== false || stripos($tag, 'fetchpriority="high"') !== false) {
                 return $tag;
             }
             $add = ' loading="lazy"';
