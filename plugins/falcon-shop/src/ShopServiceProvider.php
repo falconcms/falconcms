@@ -54,6 +54,11 @@ class ShopServiceProvider extends ServiceProvider
         // The pages assigned as Shop, Cart, Checkout and Account render the shop; with the
         // plugin off they are ordinary pages.
         add_falcon_filter('falcon_frontend_page_response', [Http\AssignedShopPages::class, 'respond']);
+        // Shop, cart, checkout and account pages are drawn by templates: no content is not "empty".
+        add_falcon_filter('falcon_template_page_ids', fn ($ids) => array_merge((array) $ids, array_map('intval', array_filter([
+            get_shop_option('shop_shop_page_id'), get_shop_option('shop_cart_page_id'),
+            get_shop_option('shop_checkout_page_id'), get_shop_option('shop_account_page_id'),
+        ]))));
 
         $this->registerProductTemplates();
 

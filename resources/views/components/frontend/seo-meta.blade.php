@@ -50,6 +50,12 @@
         $currentTitle = $withSite($title);
     }
 
+    // Settings → SEO → "Hide this site from search engines" (demo, staging, under construction).
+    if (\FalconCms\Core\Support\SearchVisibility::hidden()) {
+        $noindex = true;
+        $nofollow = true;
+    }
+
     $ogTitle = $ogTitle ?? $currentTitle;
     $ogDesc = $ogDesc ?? $currentDesc;
     $twitterTitle = $twitterTitle ?? $ogTitle;

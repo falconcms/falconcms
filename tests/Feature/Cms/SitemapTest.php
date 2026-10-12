@@ -104,6 +104,34 @@ class SitemapTest extends TestCase
         );
     }
 
+    /**
+     * Each entry is the address the site links to and names as canonical (/post/slug), not a
+     * bare /slug that answered too: Google was handed two addresses for every post.
+     */
+    public function test_entries_use_the_canonical_permalink(): void
+    {
+        $post = $this->publishedPost(['slug' => 'canonical-one', 'lang_code' => 'en']);
+        $page = Post::forceCreate(['title' => 'About', 'slug' => 'about', 'type' => 'page', 'status' => 'published', 'content' => 'x', 'lang_code' => 'en']);
+
+        $body = $this->get('/sitemap.xml')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<loc>'.url('/post/canonical-one').'</loc>', $body);
+        $this->assertStringNotContainsString('<loc>'.url('/canonical-one').'</loc>', $body);
+        $this->assertStringContainsString('<loc>'.url('/about').'</loc>', $body);
+    }
+
+    public function test_noindexed_posts_and_the_home_page_are_not_listed_again(): void
+    {
+        $this->publishedPost(['slug' => 'kept-out', 'seo_meta' => ['noindex' => '1']]);
+        $home = Post::forceCreate(['title' => 'Home', 'slug' => 'home', 'type' => 'page', 'status' => 'published', 'content' => 'x', 'lang_code' => 'en']);
+        $this->setCmsOptions(['home_page_id' => (string) $home->id]);
+
+        $body = $this->get('/sitemap.xml')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('kept-out', $body);
+        $this->assertStringNotContainsString('<loc>'.url('/home').'</loc>', $body);
+    }
+
     public function test_a_draft_is_not_listed(): void
     {
         $this->publishedPost(['slug' => 'a-draft', 'status' => 'draft']);

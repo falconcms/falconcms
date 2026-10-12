@@ -24,6 +24,7 @@ use FalconCms\Core\Http\Middleware\AuthenticateApiToken;
 use FalconCms\Core\Http\Middleware\BuilderShortcodeMiddleware;
 use FalconCms\Core\Http\Middleware\LocalizationMiddleware;
 use FalconCms\Core\Http\Middleware\RedirectMiddleware;
+use FalconCms\Core\Http\Middleware\SearchVisibilityMiddleware;
 use FalconCms\Core\Http\Middleware\TrackVisits;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Pro\LicenseGateway;
@@ -82,6 +83,7 @@ class FalconCmsServiceProvider extends ServiceProvider
         $this->app['router']->pushMiddlewareToGroup('web', TrackVisits::class);
         $this->app['router']->pushMiddlewareToGroup('web', LocalizationMiddleware::class);
         $this->app['router']->pushMiddlewareToGroup('web', BuilderShortcodeMiddleware::class);
+        $this->app['router']->pushMiddlewareToGroup('web', SearchVisibilityMiddleware::class);
         $this->app['router']->aliasMiddleware('api.token', AuthenticateApiToken::class);
 
         // Not in booted(): a cached route table is loaded by a booted callback of its own that

@@ -52,10 +52,11 @@ class FrontendPagesRenderTest extends TestCase
         $post = $this->makePost(['title' => 'A Post To Read', 'slug' => 'a-post-to-read']);
 
         // /post/{slug} is what get_falcon_permalink() hands out; the bare slug is the
-        // catch-all that has always answered too. Both have to work.
-        foreach (['/post/'.$post->slug, '/'.$post->slug] as $url) {
-            $this->get($url)->assertOk()->assertSee('A Post To Read', false);
-        }
+        // catch-all that has always answered too. Both have to work — the bare one by a
+        // permanent redirect, so search engines see one address, not two copies.
+        $this->get('/post/'.$post->slug)->assertOk()->assertSee('A Post To Read', false);
+        $this->get('/'.$post->slug)->assertRedirect(url('/post/'.$post->slug));
+        $this->followingRedirects()->get('/'.$post->slug)->assertOk()->assertSee('A Post To Read', false);
     }
 
     public function test_a_page_renders(): void

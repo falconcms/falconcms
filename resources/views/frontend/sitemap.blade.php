@@ -23,7 +23,7 @@
     @foreach($posts as $post)
         @php $modified = $post->updated_at ?? $post->created_at; @endphp
         <url>
-            <loc>{{ url($post->slug) }}</loc>
+            <loc>{{ get_falcon_permalink($post) }}</loc>
             @if($modified)
             <lastmod>{{ $modified->toAtomString() }}</lastmod>
             @endif

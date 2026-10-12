@@ -31,6 +31,8 @@ final class SeoAudit
     {
         $posts = self::posts();
         $checks = array_values(array_filter([
+            self::siteHidden(),
+            self::emptyPages($posts),
             self::missingDescriptions($posts),
             self::duplicates($posts, 'title', 'Duplicate titles', 'warning',
                 'Two pages with the same title compete with each other and leave searchers guessing which to click. Give each its own.'),
@@ -100,6 +102,59 @@ final class SeoAudit
         }
 
         return $out;
+    }
+
+    /** The whole site noindexed by Settings → SEO: right for a demo, fatal for a live site. */
+    private static function siteHidden(): ?array
+    {
+        if (!SearchVisibility::hidden()) {
+            return null;
+        }
+
+        return self::check('site_hidden', 'The whole site is hidden from search engines', 'error',
+            'Settings → SEO → "Hide this site from search engines" is on, so no page can appear on Google. Right for a demo or staging copy; untick it before launch.',
+            [['id' => 0, 'title' => 'Search engine visibility', 'detail' => 'Every page says noindex.',
+                'edit' => Route::has('admin.settings.seo') ? route('admin.settings.seo') : null]]);
+    }
+
+    /**
+     * Published pages with nothing on them. Google files them as "Soft 404": the address
+     * answers, but the page looks like an error. Fill them, or unpublish them.
+     */
+    private static function emptyPages(array $posts): ?array
+    {
+        // The home, blog and shop pages are drawn by templates: no content of their own is normal.
+        $templated = array_map('intval', array_filter(array_merge(
+            [get_cms_option('home_page_id'), get_cms_option('blog_page_id')],
+            (array) apply_falcon_filters('falcon_template_page_ids', [])
+        )));
+        $items = [];
+        foreach ($posts as $p) {
+            // Builder JSON keeps its words in keys text() does not read; a long body is not empty.
+            if (in_array($p['id'], $templated, true) || mb_strlen(trim(strip_tags($p['content']))) > 300) {
+                continue;
+            }
+            if ($p['words'] < 20 && !self::hasMedia($p['content']) && !self::hasOwnTemplate($p['path'])) {
+                $items[] = self::item($p, $p['words'] === 0 ? 'No content at all.' : 'Only '.$p['words'].' words.');
+            }
+        }
+
+        return self::check('empty_page', 'Empty pages (Google: "Soft 404")', 'error',
+            'These pages are published but show nothing, so Google treats them as missing pages ("Soft 404"). Add content, or switch them to draft and take them out of menus.', $items);
+    }
+
+    /** A theme may draw a page from a template named after its slug (themes/…/pricing.blade.php). */
+    private static function hasOwnTemplate(string $path): bool
+    {
+        $slug = basename($path);
+
+        return preg_match('/^[a-z0-9-]+$/', $slug) === 1 && view()->exists($slug);
+    }
+
+    /** A page carried by a form, slider, gallery, video or embed is not empty, even without text. */
+    private static function hasMedia(string $content): bool
+    {
+        return (bool) preg_match('/<(img|video|iframe|form|picture)\b|\[(falcon_[a-z_]+|contact|form|gallery|video|products?)\b|"type"\s*:\s*"(image|video|gallery|form|slider|map|products?)"/i', $content);
     }
 
     private static function missingDescriptions(array $posts): ?array

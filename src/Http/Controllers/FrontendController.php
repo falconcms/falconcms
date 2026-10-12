@@ -453,6 +453,21 @@ class FrontendController extends Controller
             }
         }
 
+        // A post reached by its bare slug (/my-post) lives at /post/my-post: the address every
+        // link and its canonical use. Answering at both left Google two copies of each post.
+        if (!$type && $post->type !== 'page' && !($homePageId && $post->id == $homePageId)) {
+            $permalink = get_falcon_permalink($post);
+            // Paths only, relative to the install (a site in a subfolder): comparing whole URLs
+            // could loop forever behind a proxy that changes the scheme.
+            $base = rtrim((string) parse_url(url('/'), PHP_URL_PATH), '/');
+            $target = '/'.trim(substr(rawurldecode((string) parse_url($permalink, PHP_URL_PATH)), strlen($base)), '/');
+            if ($target !== '/'.trim(rawurldecode(request()->path()), '/')) {
+                $query = request()->getQueryString();
+
+                return redirect($permalink.($query ? '?'.$query : ''), 301);
+            }
+        }
+
         // Redirect to home if this page is set as the static home page (and it's not the locale root)
         if ($homePageId && $post->id == $homePageId && !$isLocale) {
             return redirect('/', 301);
@@ -648,6 +663,12 @@ class FrontendController extends Controller
             $content = "User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: ".url('/sitemap.xml');
         }
         $content = rtrim($content).AiCrawlers::rules($content);
+
+        // Hidden from search engines: crawling stays allowed (Google has to fetch a page to see
+        // its noindex), only the sitemap pointer goes, since the sitemap is withdrawn.
+        if (\FalconCms\Core\Support\SearchVisibility::hidden()) {
+            $content = trim(preg_replace('/^\s*Sitemap:.*$\R?/mi', '', $content) ?? $content);
+        }
 
         return response($content, 200)->header('Content-Type', 'text/plain');
     }

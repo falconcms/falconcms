@@ -30,7 +30,7 @@ final class IndexNow
 
     public static function enabled(): bool
     {
-        return (string) get_cms_option('indexnow_enabled', '0') === '1' && self::publicHost();
+        return (string) get_cms_option('indexnow_enabled', '0') === '1' && self::publicHost() && !SearchVisibility::hidden();
     }
 
     /** The site's key, created the first time it is asked for. */

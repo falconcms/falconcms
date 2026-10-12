@@ -82,4 +82,17 @@ class SeoAuditTest extends TestCase
 
         $this->assertSame(1, DB::table('posts')->where('slug', 'alpha')->count(), 'nothing is changed');
     }
+    public function test_published_pages_with_nothing_on_them_are_flagged_as_soft_404s(): void
+    {
+        $this->make('empty-page', ['type' => 'page', 'content' => null]);
+        $this->make('slider-only', ['type' => 'page', 'content' => '<p>[falcon_slider id="3"]</p>']);
+        $home = $this->make('home', ['type' => 'page', 'content' => null]);
+        $blog = $this->make('blog', ['type' => 'page', 'content' => null]);
+        $this->setCmsOptions(['home_page_id' => (string) $home->id, 'blog_page_id' => (string) $blog->id]);
+
+        $check = $this->check(SeoAudit::run(), 'empty_page');
+
+        $this->assertSame('error', $check['severity']);
+        $this->assertSame(['Empty-page'], array_column($check['items'], 'title'), 'a slider page, the home and the blog page are not empty');
+    }
 }

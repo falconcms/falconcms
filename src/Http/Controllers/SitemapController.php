@@ -6,6 +6,7 @@ use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\Tag;
+use FalconCms\Core\Support\SearchVisibility;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
@@ -19,7 +20,12 @@ class SitemapController extends Controller
      */
     public function index()
     {
+        // A site hidden from search engines has nothing to offer them.
+        abort_if(SearchVisibility::hidden(), 404);
+
         $posts = collect();
+        // The home page is the sitemap's first entry already, at its real address (/).
+        $homePageId = (int) get_cms_option('home_page_id', 0);
         $categories = collect();
         $tags = collect();
 
@@ -36,9 +42,15 @@ class SitemapController extends Controller
                     ->where('slug', '!=', '')
                     // Only what the template reads: a sitemap on a large site should not
                     // hydrate every column of every post.
-                    ->select('id', 'slug', 'updated_at', 'created_at')
+                    // type and lang_code build the address the site itself links to (and names
+                    // as canonical): /post/slug, /bn/slug. A bare /slug for every type listed a
+                    // second address for each post that Google then had to choose between.
+                    ->select('id', 'slug', 'type', 'lang_code', 'seo_meta', 'updated_at', 'created_at')
                     ->latest()
-                    ->get();
+                    ->get()
+                    // A page that asks not to be indexed does not belong in the list of pages to index.
+                    ->reject(fn ($post) => (($post->seo_meta['noindex'] ?? '0') == '1')
+                        || ($homePageId && (int) $post->id === $homePageId));
                 $posts = $posts->merge($ptPosts);
             }
         }
