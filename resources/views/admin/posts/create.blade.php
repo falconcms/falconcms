@@ -35,7 +35,7 @@
             <div class="flex-grow min-w-0">
                 @if(in_array('title', $supports))
                 <div class="mb-4">
-                    <input type="text" name="title" id="title-input" value="{{ old('title') }}" 
+                    <input type="text" name="title" id="title-input" value="{{ old('title', (string) request()->query('title', '')) }}" 
                            class="w-full text-[1.7em] leading-normal border @error('title') border-[#d63638] @else border-[#8c8f94] @enderror rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
                            placeholder="Add title">
                     @error('title')
@@ -43,7 +43,7 @@
                     @enderror
                     
                     @if(!isset($postType) || $postType->is_public)
-                    <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center font-medium">
+                    <div id="permalink-container" class="mt-2 text-[13px] {{ old('title', request()->query('title')) ? 'flex' : 'hidden' }} items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
                             @php 
@@ -603,6 +603,10 @@
                     permalinkContainer?.classList.add('flex');
                 }
             });
+            // A title handed in by a link (?title=…) gets its slug as if typed.
+            if (titleInput.value && !slugInput.value) {
+                titleInput.dispatchEvent(new Event('blur'));
+            }
 
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
                 viewSpan?.classList.add('hidden');
