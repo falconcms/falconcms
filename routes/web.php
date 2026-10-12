@@ -97,6 +97,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
     Route::get('media/upload', [MediaController::class, 'create'])->name('media.create');
     Route::post('media/bulk-optimize', [MediaController::class, 'bulkOptimize'])->name('media.bulk-optimize');
+    Route::post('media/avif-generate', [MediaController::class, 'generateAvif'])->name('media.avif-generate');
     Route::post('media', [MediaController::class, 'store'])->name('media.store');
     Route::put('media/{media}', [MediaController::class, 'update'])->name('media.update');
     Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');

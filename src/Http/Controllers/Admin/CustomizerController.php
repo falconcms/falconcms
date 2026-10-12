@@ -988,7 +988,7 @@ class CustomizerController extends Controller
                     'perf_avif' => [
                         'type' => 'toggle',
                         'label' => 'Serve AVIF Images',
-                        'desc' => 'Library images also get an AVIF copy (usually 20-30% smaller than WebP), offered to browsers that support it; others keep the original. New uploads get one automatically; run Media → Bulk Optimize once for existing images. Needs PHP GD with AVIF support'.(\FalconCms\Core\Support\AvifImages::supported() ? ' (available on this server).' : ' (NOT available on this server, so this has no effect).'),
+                        'desc' => 'Library images also get an AVIF copy (usually 20-30% smaller than WebP), offered to browsers that support it; others keep the original. New uploads get one automatically; for images already in the library, press Media → Generate AVIF copies once (originals are not changed). Needs PHP GD with AVIF support'.(\FalconCms\Core\Support\AvifImages::supported() ? ' (available on this server).' : ' (NOT available on this server, so this has no effect).'),
                         'default' => '0',
                     ],
                     'perf_speculative_loading' => [
