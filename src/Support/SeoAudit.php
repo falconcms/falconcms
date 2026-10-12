@@ -81,7 +81,8 @@ final class SeoAudit
         $out = [];
         foreach ($rows as $row) {
             $seo = json_decode((string) $row->seo_meta, true) ?: [];
-            if (($seo['noindex'] ?? '0') == '1') {
+            // Pages kept out of search on purpose: by the editor, or by a plugin (the shop's cart).
+            if (($seo['noindex'] ?? '0') == '1' || apply_falcon_filters('falcon_seo_noindex', false, $row)) {
                 continue;
             }
             $text = self::text((string) $row->content);

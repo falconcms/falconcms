@@ -201,6 +201,14 @@ final class StructuredData
 
         $node ??= ['@type' => 'WebPage', '@id' => $current.'#webpage', 'url' => $current, 'name' => $page['title'],
             'description' => $page['description'], 'isPartOf' => ['@id' => url('/').'#website']];
+
+        // The page's place in the site: the same trail the visible breadcrumb shows.
+        if ($breadcrumb = Breadcrumbs::schema($page['breadcrumbs'] ?? [])) {
+            $graph[] = $breadcrumb;
+            if (in_array($node['@type'], ['WebPage', 'ProfilePage'], true)) {
+                $node['breadcrumb'] = ['@id' => $breadcrumb['@id']];
+            }
+        }
         if (!empty($page['image']) && !isset($node['image'])) {
             $node['image'] = $page['image'];
         }

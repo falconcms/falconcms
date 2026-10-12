@@ -54,6 +54,21 @@ class ShopServiceProvider extends ServiceProvider
         // The pages assigned as Shop, Cart, Checkout and Account render the shop; with the
         // plugin off they are ordinary pages.
         add_falcon_filter('falcon_frontend_page_response', [Http\AssignedShopPages::class, 'respond']);
+        // Cart, checkout and account are for one visitor, never a search result: noindex, and kept
+        // out of the sitemap and the SEO Audit. (The shop listing itself stays indexable.)
+        add_falcon_filter('falcon_seo_noindex', function ($noindex, $post = null) {
+            $id = (int) (is_object($post) ? ($post->id ?? 0) : 0);
+
+            // The storefront's own screens (/cart, /checkout, order confirmation, wishlist).
+            if (!$id && request()->route() && request()->routeIs('shop.*')) {
+                return true;
+            }
+
+            return $noindex || ($id && in_array($id, array_map('intval', array_filter([
+                get_shop_option('shop_cart_page_id'), get_shop_option('shop_checkout_page_id'), get_shop_option('shop_account_page_id'),
+            ])), true));
+        });
+
         // Shop, cart, checkout and account pages are drawn by templates: no content is not "empty".
         add_falcon_filter('falcon_template_page_ids', fn ($ids) => array_merge((array) $ids, array_map('intval', array_filter([
             get_shop_option('shop_shop_page_id'), get_shop_option('shop_cart_page_id'),

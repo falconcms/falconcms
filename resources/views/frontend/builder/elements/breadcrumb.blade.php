@@ -7,36 +7,21 @@
     if ($separator === '') { $separator = '/'; }
     $showCurrent = ($s['showCurrent'] ?? true) !== false;
 
-    // Build the breadcrumb trail (mirrors the frontend breadcrumbs component)
-    $items = [];
-    if ($showHome) {
-        $items[] = ['title' => $homeLabel, 'url' => url('/')];
+    // The site's one trail (Support\Breadcrumbs), the same one in the page's structured data.
+    $items = \FalconCms\Core\Support\Breadcrumbs::trail((isset($post) && $post) ? $post : null, $title ?? null, $homeLabel);
+    if (!$items && (isset($post) && $post)) {
+        // The home page has no trail of its own; the element still shows where it is.
+        $items = [['title' => $homeLabel, 'url' => url('/')]];
     }
-
-    if (isset($post) && $post) {
-        if (($post->type ?? null) && $post->type !== 'post' && $post->type !== 'page') {
-            try {
-                $postType = \FalconCms\Core\Models\PostType::where('slug', $post->type)->first();
-                if ($postType) {
-                    $items[] = ['title' => $postType->name, 'url' => route('frontend.show', $post->type)];
-                }
-            } catch (\Throwable $e) {}
-        }
-
-        if (($post->type ?? null) === 'post' && isset($post->categories) && $post->categories->isNotEmpty()) {
-            $cat = $post->categories->first();
-            try {
-                $items[] = ['title' => $cat->name, 'url' => route('frontend.category', $cat->slug)];
-            } catch (\Throwable $e) {
-                $items[] = ['title' => $cat->name, 'url' => null];
-            }
-        }
-
-        if ($showCurrent) {
-            $items[] = ['title' => $post->title ?? '', 'url' => null];
-        }
-    } elseif ($showCurrent && isset($title)) {
-        $items[] = ['title' => $title, 'url' => null];
+    if (!$showHome && $items) {
+        array_shift($items);
+    }
+    if (!$showCurrent && $items) {
+        array_pop($items);
+    }
+    // The current page is plain text, not a link to itself.
+    if ($showCurrent && $items) {
+        $items[count($items) - 1]['url'] = null;
     }
 
     // Visibility classes

@@ -50,6 +50,7 @@ class SitemapController extends Controller
                     ->get()
                     // A page that asks not to be indexed does not belong in the list of pages to index.
                     ->reject(fn ($post) => (($post->seo_meta['noindex'] ?? '0') == '1')
+                        || apply_falcon_filters('falcon_seo_noindex', false, $post)
                         || ($homePageId && (int) $post->id === $homePageId));
                 $posts = $posts->merge($ptPosts);
             }

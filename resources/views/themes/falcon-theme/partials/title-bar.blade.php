@@ -45,10 +45,22 @@
             <h1 class="lazy-title-bar-title" style="color:{{ $tc }};font-size:{{ $size }};line-height:1.2;margin:0;font-weight:700;">{{ $tbTitle }}</h1>
         @endif
         @if($showCrumb)
+            {{-- The site's one breadcrumb trail: the same one Google reads from the page's structured data. --}}
+            @php
+                $tbCrumbs = \FalconCms\Core\Support\Breadcrumbs::trail(
+                    (!empty($current_post) && is_object($current_post)) ? $current_post : ((!empty($post) && is_object($post)) ? $post : null),
+                    $tbTitle
+                ) ?: [['title' => 'Home', 'url' => url('/')], ['title' => $tbTitle, 'url' => null]];
+            @endphp
             <nav class="lazy-title-bar-breadcrumb text-[14px]" style="color:{{ $cc }};" aria-label="Breadcrumb">
-                <a href="{{ url('/') }}" style="color:{{ $cc }};" class="hover:opacity-75 transition-opacity">Home</a>
-                <span class="mx-1.5 opacity-60">/</span>
-                <span style="color:{{ $tc }};">{{ $tbTitle }}</span>
+                @foreach($tbCrumbs as $crumb)
+                    @if(!$loop->last)
+                        <a href="{{ $crumb['url'] }}" style="color:{{ $cc }};" class="hover:opacity-75 transition-opacity">{{ $crumb['title'] }}</a>
+                        <span class="mx-1.5 opacity-60">/</span>
+                    @else
+                        <span style="color:{{ $tc }};" aria-current="page">{{ $crumb['title'] }}</span>
+                    @endif
+                @endforeach
             </nav>
         @endif
     </div>

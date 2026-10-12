@@ -7,7 +7,11 @@
     $currentTitle = $siteTitle;
     $currentDesc = $siteDesc;
     $currentImage = $defaultImage ? asset('storage/' . $defaultImage) : null;
-    $canonical = url()->current();
+    // The address without its query string, so sorted, filtered and tracked copies (?orderby=,
+    // ?color=, ?utm_source=) all name the one page. Except ?page=: page 2 of an archive lists other
+    // posts than page 1, and Google asks each page of a series to name itself.
+    $pageNumber = (int) request()->query('page', 1);
+    $canonical = url()->current().($pageNumber > 1 ? '?page='.$pageNumber : '');
     $type = 'website';
     $noindex = false;
     $nofollow = false;
@@ -49,6 +53,15 @@
     } elseif (isset($title)) {
         $currentTitle = $withSite($title);
     }
+
+    // Pages that are no use as a search result: the site's own search results, and an archive
+    // with nothing in it. Plugins add theirs (the shop: cart, checkout, account).
+    $layoutKind = falcon_layout_context()['kind'] ?? null;
+    if ($layoutKind === 'search'
+        || ($layoutKind === 'archive' && isset($posts) && $posts instanceof \Illuminate\Contracts\Pagination\Paginator && $posts->isEmpty())) {
+        $noindex = true;
+    }
+    $noindex = (bool) apply_falcon_filters('falcon_seo_noindex', $noindex, $post ?? null);
 
     // Settings → SEO → "Hide this site from search engines" (demo, staging, under construction).
     if (\FalconCms\Core\Support\SearchVisibility::hidden()) {
@@ -114,6 +127,7 @@
         'image' => $currentImage,
         'type' => $type,
         'post' => $post ?? null,
+        'breadcrumbs' => \FalconCms\Core\Support\Breadcrumbs::trail($post ?? null, $title ?? null),
     ]);
 @endphp
 <script type="application/ld+json">
