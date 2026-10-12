@@ -5,7 +5,87 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.9 <Badge type="tip" text="Latest" /> {#v2-7-9}
+## v2.7.10 <Badge type="tip" text="Latest" /> {#v2-7-10}
+
+**Released: 2026-10-13**
+
+An SEO release. Most of it runs on its own with nothing to set up; the rest is off until you turn
+it on. Nothing changes the SEO title, description or other data you have already written.
+
+### Added
+
+- **SEO Audit** (Settings → SEO Audit). A site-wide check-up with a score. It finds missing and
+  duplicate titles and descriptions, empty pages (what Google calls "Soft 404"), pages nothing
+  links to, images without alt text, short posts, posts without a featured image, and pages
+  hidden from search. Each finding names the page, with **View** and **Fix** links.
+- **Bulk SEO** (Settings → Bulk SEO). Every page's SEO title, meta description, focus keyword and
+  noindex on one screen. Filter to what is missing. Character counts include the site name Google
+  shows. Only the rows you change are saved.
+- **Keywords tab** in the editor's SEO panel. It suggests the phrases a page is about and shows
+  where each is still missing (title, headings, first paragraph, URL, description).
+  **Search demand** shows how many people search for a keyword, from free sources:
+  - a Google Keyword Planner CSV you import (SEO Audit tab);
+  - Bing Webmaster Tools, with your own free API key;
+  - Google's search suggestions, which are optional and off by default.
+- **Hide this site from search engines** (Settings → SEO), for a demo, staging copy or unfinished
+  site. Every page says noindex, the sitemap is withdrawn and IndexNow stops. The SEO Audit warns
+  while it is on.
+- **Breadcrumbs as structured data.** One trail (Home › Blog › Category › Post) for the theme's
+  title bar, the breadcrumb component, the builder element and a `BreadcrumbList` in the page's
+  JSON-LD.
+- **Linked structured data.** Organization or LocalBusiness (Settings → SEO), WebSite, the page,
+  and the post's real author as a Person, as one JSON-LD graph. Also VideoObject for YouTube and
+  Vimeo videos, and an optional author box on posts.
+- **Image sitemap.** Each page in `sitemap.xml` lists its images for Google Images. Sites with
+  more than 1,000 addresses get a sitemap index of numbered files. The address stays
+  `/sitemap.xml`.
+- **hreflang** links between translations on multilingual sites, with `x-default`.
+- **IndexNow** (Settings → SEO, off by default). Bing, Yandex and others hear about new, changed
+  and removed pages at once.
+- **Google Discover.** `max-image-preview:large`, and the editor warns when a featured image is
+  narrower than 1200px.
+- **AI crawlers** (Settings → SEO). Block AI training and AI search crawlers separately, in
+  robots.txt. Google and Bing search are never affected.
+- **404 log** on the Redirects screen, with one click to redirect a broken address.
+- **Internal link suggestions both ways**: pages to link to, and pages that mention this one
+  without linking to it, each with the reason.
+- **Analytics → Web Vitals.** Real visitors' LCP, INP, CLS and TTFB, by page, for mobile and
+  desktop, at the 75th percentile as Google judges it. Turn on **Measure Real Visitor Speed** in
+  Customizer → Performance. A small script with no outside service.
+- **Cloudflare cache purge** (Settings → Integrations). Cloudflare's cache is emptied whenever the
+  site changes, once per save, after the page is sent.
+- **Customizer → Performance:** **Serve AVIF Images** and **Instant Page Loads** (Speculation
+  Rules). Both are off by default.
+- New hooks for plugins: `falcon_seo_metabox_after`, `falcon_admin_list_seo_cell`,
+  `falcon_dashboard_widgets`, and the filters `falcon_seo_audit_checks`,
+  `falcon_link_suggestions`, `falcon_keyword_suggestions`, `falcon_seo_noindex`,
+  `falcon_breadcrumbs`, `falcon_template_page_ids` and `falcon_structured_data`.
+
+### Changed
+
+- **Optimise Images** also preloads the hero (an image or a section background) and reserves the
+  space of library images, so the page does not jump while it loads.
+- **Pages no one should land on from a search** say noindex and stay out of the sitemap: site
+  search results, empty archives, and the shop's cart, checkout and account.
+- **The canonical address** drops sort, filter and tracking parameters, and keeps `?page=N`.
+- **A new post or page can take its title from `?title=`** in the address.
+
+### Fixed
+
+- **`&` in SEO titles and descriptions** showed as `&amp;`, and the site name could be added
+  twice.
+- **Posts were listed twice.** The sitemap listed posts at `/slug` while the site links to
+  `/post/slug`. The sitemap now uses the real address, and `/slug` redirects there permanently.
+- **Structured data credited every post to "Admin"** instead of its author.
+- **Two menu items lit at once:** the SEO menu on SEO Audit, and a plugin's Overview together with
+  its Settings. Only the page you are on is lit now.
+- **SEO Audit's sections opened and closed unreliably**, and closing one could close every section
+  with the same badge.
+- **Lucide icons:** `lucide.min.js` is no longer loaded on pages without a Lucide icon.
+
+---
+
+## v2.7.9 {#v2-7-9}
 
 **Released: 2026-10-07**
 
