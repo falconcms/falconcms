@@ -11,19 +11,21 @@ use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Order;
 use FalconCms\Core\Models\OrderItem;
 use FalconCms\Core\Models\Post;
-use FalconCms\Core\Support\KeywordSuggestions;
-use FalconCms\Core\Support\LinkSuggestions;
 use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\Product;
 use FalconCms\Core\Models\Role;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Services\EcommerceData;
+use FalconCms\Core\Support\KeywordDemand;
+use FalconCms\Core\Support\KeywordSuggestions;
+use FalconCms\Core\Support\LinkSuggestions;
 use FalconCms\Core\Support\SettingsExtension;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -788,7 +790,16 @@ class DashboardController extends Controller
         $data = $request->except('_token');
 
         // Handle Sitemap Checkboxes — all active post types + taxonomies
-        $checkboxes = ['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow', 'indexnow_enabled', 'seo_large_image_preview', 'ai_block_training', 'ai_block_search', 'seo_404_log', 'seo_hide_site'];
+        $checkboxes = ['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow', 'indexnow_enabled', 'seo_large_image_preview', 'ai_block_training', 'ai_block_search', 'seo_404_log', 'seo_hide_site', 'keyword_autocomplete'];
+
+        // The Bing key is stored encrypted, and an empty field keeps the one already saved.
+        $bingKey = trim((string) ($data[KeywordDemand::BING_KEY] ?? ''));
+        unset($data[KeywordDemand::BING_KEY], $data['bing_webmaster_api_key_remove']);
+        if ($request->boolean('bing_webmaster_api_key_remove')) {
+            $data[KeywordDemand::BING_KEY] = '';
+        } elseif ($bingKey !== '') {
+            $data[KeywordDemand::BING_KEY] = Crypt::encryptString($bingKey);
+        }
 
         try {
             $slugs = PostType::where('is_active', true)->pluck('slug');

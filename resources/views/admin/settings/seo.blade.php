@@ -215,6 +215,54 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                     </div>
                 </div>
 
+                {{-- Keyword research: free sources for search demand in the editor's Keywords tab --}}
+                @php
+                    $bingSaved = ($settings['bing_webmaster_api_key'] ?? '') !== '';
+                    $plannerCount = \FalconCms\Core\Support\KeywordDemand::plannerCount();
+                @endphp
+                <div class="wp-metabox" id="keyword-research">
+                    <div class="wp-metabox-header"><span>Keyword research</span></div>
+                    <div class="wp-metabox-content p-4 space-y-4">
+                        <p class="text-[12px] text-[#646970]">How many people search for a keyword, shown in the editor (SEO → Keywords → Search demand). All three sources are free; use any of them.</p>
+
+                        <div>
+                            <label class="block text-[13px] font-bold text-[#2c3338] mb-1">Bing Webmaster Tools API key</label>
+                            <input type="password" name="bing_webmaster_api_key" autocomplete="off" class="wp-input w-[360px] max-w-full"
+                                   placeholder="{{ $bingSaved ? 'Saved. Leave empty to keep it.' : 'Paste your API key' }}">
+                            @if($bingSaved)
+                                <label class="inline-flex items-center gap-1 text-[12px] text-[#646970] ml-2">
+                                    <input type="checkbox" name="bing_webmaster_api_key_remove" value="1" class="rounded-sm border-[#8c8f94]"> Remove
+                                </label>
+                            @endif
+                            <p class="text-[12px] text-[#646970] mt-1">Searches on Bing for a keyword and related keywords. In <a href="https://www.bing.com/webmasters" target="_blank" rel="noopener" class="text-[#2271b1]">Bing Webmaster Tools</a> (add and verify this site; it can import it from Google Search Console), open Settings → API access → API key. Stored encrypted.</p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-4">
+                            <div>
+                                <label class="block text-[13px] font-bold text-[#2c3338] mb-1">Country</label>
+                                <input type="text" name="keyword_country" value="{{ $settings['keyword_country'] ?? 'us' }}" maxlength="5" class="wp-input w-[90px]" placeholder="us">
+                            </div>
+                            <div>
+                                <label class="block text-[13px] font-bold text-[#2c3338] mb-1">Language</label>
+                                <input type="text" name="keyword_language" value="{{ $settings['keyword_language'] ?? 'en-US' }}" maxlength="10" class="wp-input w-[110px]" placeholder="en-US">
+                            </div>
+                            <p class="text-[12px] text-[#646970] self-end pb-1">Where your visitors search: "us" + "en-US", "gb" + "en-GB", "bd" + "bn-BD"…</p>
+                        </div>
+
+                        <label class="flex items-start gap-2 text-[13px] text-[#1d2327]">
+                            <input type="checkbox" name="keyword_autocomplete" value="1" @checked(($settings['keyword_autocomplete'] ?? '0') === '1') class="rounded-sm border-[#8c8f94] mt-1">
+                            <span>Show Google's search suggestions<br>
+                                <span class="text-[#646970] text-[12px]">What people type into Google around a keyword (no volumes). Not an official Google API: asked only when you press "Check" in the editor, and remembered for a week.</span></span>
+                        </label>
+
+                        <div class="pt-3 border-t border-[#f0f0f1] text-[12px] text-[#646970]">
+                            <strong class="text-[#1d2327]">Google Keyword Planner:</strong>
+                            {{ $plannerCount ? number_format($plannerCount).' keywords imported.' : 'nothing imported yet.' }}
+                            Import a file under the Save button below.
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Global Meta --}}
                 <div class="wp-metabox">
                     <div class="wp-metabox-header"><span>Global SEO Defaults</span></div>
@@ -319,6 +367,35 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                 <button type="submit" class="wp-btn-primary h-[32px] px-4 font-semibold">Save SEO Settings</button>
             </div>
         </form>
+
+        {{-- Its own form: a file upload cannot sit inside the settings form above. --}}
+        <div class="wp-metabox max-w-[800px] mt-8" id="keyword-planner-import">
+            <div class="wp-metabox-header"><span>Import Google Keyword Planner data</span></div>
+            <div class="wp-metabox-content p-4 space-y-3 text-[13px]">
+                @if(session('error'))
+                    <div class="bg-[#fcf0f1] border-l-4 border-[#d63638] p-2 text-[12px]">{{ session('error') }}</div>
+                @endif
+                @error('keywords_file')
+                    <div class="bg-[#fcf0f1] border-l-4 border-[#d63638] p-2 text-[12px]">{{ $message }}</div>
+                @enderror
+                <ol class="list-decimal ml-5 text-[12px] text-[#646970] space-y-1">
+                    <li>Open <a href="https://ads.google.com/aw/keywordplanner/home" target="_blank" rel="noopener" class="text-[#2271b1]">Google Keyword Planner</a> (free with a Google Ads account; no ad needs to run).</li>
+                    <li>Choose "Discover new keywords" or "Get search volume", enter your topics and set the location and language.</li>
+                    <li>Press Download keyword ideas → .csv, and upload the file here. Any keyword tool's CSV with a "Keyword" and a volume column works too.</li>
+                </ol>
+                <form method="POST" action="{{ route('admin.settings.seo.keywords-import') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
+                    @csrf
+                    <input type="file" name="keywords_file" accept=".csv,.tsv,.txt" required class="text-[12px]">
+                    <button type="submit" class="wp-btn-secondary h-8 py-0 px-3 text-[13px]">Import</button>
+                </form>
+                @if($plannerCount)
+                    <form method="POST" action="{{ route('admin.settings.seo.keywords-clear') }}" onsubmit="return confirm('Remove all imported keyword data?')">
+                        @csrf
+                        <button type="submit" class="text-[12px] text-[#b32d2e] hover:underline">Remove the {{ number_format($plannerCount) }} imported keywords</button>
+                    </form>
+                @endif
+            </div>
+        </div>
     </div>
 
     @push('scripts')

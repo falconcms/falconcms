@@ -28,6 +28,7 @@ use FalconCms\Core\Http\Controllers\Admin\PostController;
 use FalconCms\Core\Http\Controllers\Admin\PostTypeController;
 use FalconCms\Core\Http\Controllers\Admin\RedirectController;
 use FalconCms\Core\Http\Controllers\Admin\BulkSeoController;
+use FalconCms\Core\Http\Controllers\Admin\KeywordResearchController;
 use FalconCms\Core\Http\Controllers\Admin\SeoAuditController;
 use FalconCms\Core\Http\Controllers\Admin\RegisterController;
 use FalconCms\Core\Http\Controllers\Admin\RoleController;
@@ -371,6 +372,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('seo/redirects/not-found/forget', [RedirectController::class, 'forgetNotFound'])->name('redirects.not-found.forget');
     Route::get('seo/related-posts', [DashboardController::class, 'getRelatedPosts'])->name('seo.related-posts');
     Route::post('seo/keyword-suggestions', [DashboardController::class, 'keywordSuggestions'])->name('seo.keyword-suggestions');
+    Route::post('seo/keyword-demand', [KeywordResearchController::class, 'demand'])->name('seo.keyword-demand')->middleware('throttle:60,1');
+    Route::post('settings/seo/keywords-import', [KeywordResearchController::class, 'import'])->name('settings.seo.keywords-import');
+    Route::post('settings/seo/keywords-clear', [KeywordResearchController::class, 'clear'])->name('settings.seo.keywords-clear');
 
     Route::get('update', [DashboardController::class, 'updateCheck'])->name('update');
     Route::post('update/run', [DashboardController::class, 'runUpdate'])->name('update.run');

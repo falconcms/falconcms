@@ -184,6 +184,17 @@
                 </div>
                 <button type="button" onclick="fetchKeywordSuggestions()" class="wp-btn-secondary h-7 py-0 px-3 text-[12px] whitespace-nowrap">Analyse again</button>
             </div>
+            {{-- Search demand: how many people search for a keyword (Keyword Planner import, Bing, suggestions) --}}
+            <div class="mb-5 p-3 border border-[#dcdcde] rounded bg-white">
+                <div class="text-[12px] font-bold text-[#2c3338] mb-2">Search demand</div>
+                <div class="flex gap-2">
+                    <input type="text" id="keyword-demand-q" class="wp-input flex-1 h-8 text-[13px]" placeholder="A keyword to check, e.g. the focus keyword"
+                           onkeydown="if (event.key === 'Enter') { event.preventDefault(); fetchKeywordDemand(); }">
+                    <button type="button" onclick="fetchKeywordDemand()" class="wp-btn-secondary h-8 py-0 px-3 text-[12px]">Check</button>
+                </div>
+                <div id="keyword-demand" class="mt-2"></div>
+            </div>
+
             <div id="keyword-suggestions" class="space-y-3">
                 <div class="text-[13px] text-gray-500 italic">Open this tab to analyse the page...</div>
             </div>
@@ -245,6 +256,8 @@
             fetchInternalSuggestions();
         }
         if (tab === 'keywords') {
+            const demand = document.getElementById('keyword-demand-q');
+            if (demand && !demand.value) demand.value = document.getElementById('seo-focus-keyword')?.value || '';
             fetchKeywordSuggestions();
         }
     }
@@ -275,7 +288,10 @@
         const chips = (inn, keys) => keys.map(k => inn[k]
             ? `<span class="inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#edfaef] text-[#00731a] mr-1 mb-1">✓ ${places[k]}</span>`
             : `<span class="inline-block text-[10px] px-1.5 py-0.5 rounded bg-[#fcf0f1] text-[#b32d2e] mr-1 mb-1">✗ ${places[k]}</span>`).join('');
-        const useBtn = phrase => `<button type="button" data-phrase="${esc(phrase)}" onclick="useFocusKeyword(this.dataset.phrase)" class="text-[11px] text-[#2271b1] hover:underline whitespace-nowrap">Use as focus keyword</button>`;
+        const useBtn = phrase => `<span class="flex items-center gap-3">
+            <button type="button" data-phrase="${esc(phrase)}" onclick="fetchKeywordDemand(this.dataset.phrase); document.getElementById('keyword-demand-q').scrollIntoView({block: 'center', behavior: 'smooth'})" class="text-[11px] text-[#646970] hover:text-[#2271b1] whitespace-nowrap">Search demand</button>
+            <button type="button" data-phrase="${esc(phrase)}" onclick="useFocusKeyword(this.dataset.phrase)" class="text-[11px] text-[#2271b1] hover:underline whitespace-nowrap">Use as focus keyword</button>
+        </span>`;
 
         fetch("{{ route('admin.seo.keyword-suggestions') }}", {method: 'POST', body, headers: {'Accept': 'application/json'}})
             .then(res => res.json())
@@ -319,6 +335,61 @@
             .catch(() => {
                 container.innerHTML = '<div class="text-[13px] text-[#b32d2e]">Could not analyse the page. Try again.</div>';
             });
+    }
+
+    function fetchKeywordDemand(q) {
+        const input = document.getElementById('keyword-demand-q');
+        if (q !== undefined) input.value = q;
+        const query = input.value.trim();
+        const box = document.getElementById('keyword-demand');
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+        const num = n => n >= 1e6 ? (n / 1e6).toFixed(n % 1e6 ? 1 : 0) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(n % 1e3 ? 1 : 0) + 'K' : String(n);
+        const google = r => r && r.searches_high != null
+            ? (r.searches_low != null && r.searches_low !== r.searches_high ? num(r.searches_low) + '–' + num(r.searches_high) : num(r.searches_high))
+            : null;
+        if (!query) { box.innerHTML = ''; return; }
+        box.innerHTML = '<div class="text-[12px] text-gray-500 italic">Checking...</div>';
+
+        const body = new FormData();
+        body.append('_token', document.querySelector('input[name="_token"]')?.value || '');
+        body.append('q', query);
+        fetch("{{ route('admin.seo.keyword-demand') }}", {method: 'POST', body, headers: {'Accept': 'application/json'}})
+            .then(res => res.json())
+            .then(d => {
+                const s = d.sources || {};
+                if (!s.planner && !s.bing && !s.autocomplete) {
+                    box.innerHTML = `<div class="text-[12px] text-[#646970]">No source is set up yet. Add a free Bing key, import Google Keyword Planner data, or turn on search suggestions in <a href="{{ route('admin.settings.seo') }}#keyword-research" target="_blank" class="text-[#2271b1]">Settings → SEO → Keyword research</a>.</div>`;
+                    return;
+                }
+                let html = '<div class="flex flex-wrap gap-2 mb-2">';
+                if (s.planner) html += `<span class="text-[12px] px-2 py-1 rounded bg-[#f0f6fc] text-[#135e96]">Google: <strong>${google(d.volume) ? esc(google(d.volume)) + ' searches/month' : 'not in your imported data'}</strong>${d.volume?.competition ? ' · ' + esc(d.volume.competition) + ' competition' : ''}</span>`;
+                if (s.bing) html += `<span class="text-[12px] px-2 py-1 rounded bg-[#f0f6fc] text-[#135e96]">Bing: <strong>${d.bing ? esc(num(d.bing.impressions)) + ' searches in the last 30 days' : 'no data'}</strong></span>`;
+                html += '</div>';
+                (d.errors || []).forEach(e => html += `<div class="text-[12px] text-[#b32d2e] mb-1">${esc(e)}</div>`);
+
+                const related = d.related || [];
+                if (related.length) {
+                    html += '<div class="text-[11px] font-bold text-[#2c3338] mt-2 mb-1">Related searches</div><div class="divide-y divide-[#f0f0f1] border border-[#f0f0f1] rounded">';
+                    html += related.map(r => `
+                        <div class="flex items-center justify-between gap-2 px-2 py-1.5">
+                            <span class="text-[12px] text-[#1d2327] truncate">${esc(r.query)}</span>
+                            <span class="flex items-center gap-3 whitespace-nowrap text-[11px] text-[#646970]">
+                                ${google(r) ? 'Google ' + esc(google(r)) : ''}${r.bing != null ? (google(r) ? ' · ' : '') + 'Bing ' + esc(num(r.bing)) : ''}
+                                <button type="button" data-phrase="${esc(r.query)}" onclick="useFocusKeyword(this.dataset.phrase)" class="text-[#2271b1] hover:underline">Use</button>
+                            </span>
+                        </div>`).join('') + '</div>';
+                }
+                const sugg = d.suggestions || [];
+                if (sugg.length) {
+                    html += '<div class="text-[11px] font-bold text-[#2c3338] mt-2 mb-1">People also type into Google</div><div class="flex flex-wrap gap-1">';
+                    html += sugg.map(q => `<button type="button" data-phrase="${esc(q)}" onclick="fetchKeywordDemand(this.dataset.phrase)" class="text-[11px] px-2 py-0.5 rounded border border-[#dcdcde] hover:border-[#2271b1] hover:text-[#2271b1]">${esc(q)}</button>`).join('') + '</div>';
+                }
+                if (!related.length && !sugg.length && !(d.errors || []).length) {
+                    html += '<div class="text-[12px] text-[#646970]">No related searches found for this keyword.</div>';
+                }
+                box.innerHTML = html;
+            })
+            .catch(() => { box.innerHTML = '<div class="text-[12px] text-[#b32d2e]">Could not check. Try again.</div>'; });
     }
 
     function useFocusKeyword(phrase) {
