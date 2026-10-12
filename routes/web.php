@@ -27,6 +27,7 @@ use FalconCms\Core\Http\Controllers\Admin\PluginController;
 use FalconCms\Core\Http\Controllers\Admin\PostController;
 use FalconCms\Core\Http\Controllers\Admin\PostTypeController;
 use FalconCms\Core\Http\Controllers\Admin\RedirectController;
+use FalconCms\Core\Http\Controllers\Admin\BulkSeoController;
 use FalconCms\Core\Http\Controllers\Admin\SeoAuditController;
 use FalconCms\Core\Http\Controllers\Admin\RegisterController;
 use FalconCms\Core\Http\Controllers\Admin\RoleController;
@@ -320,6 +321,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('settings/seo', [DashboardController::class, 'seoSettings'])->name('settings.seo');
     Route::post('settings/seo', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
     Route::get('settings/seo-audit', [SeoAuditController::class, 'index'])->name('settings.seo-audit');
+    Route::get('settings/seo-bulk', [BulkSeoController::class, 'index'])->name('settings.seo-bulk');
+    Route::post('settings/seo-bulk', [BulkSeoController::class, 'update'])->name('settings.seo-bulk.update');
     Route::get('settings/activity-logs', [DashboardController::class, 'activityLogs'])->name('settings.activity-logs');
     Route::post('settings/activity-logs/bulk', [DashboardController::class, 'bulkDeleteLogs'])->name('settings.activity-logs.bulk');
     Route::get('settings/api', [DashboardController::class, 'apiSettings'])->name('settings.api');
