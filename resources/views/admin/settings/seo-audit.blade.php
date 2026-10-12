@@ -9,9 +9,12 @@
         $checks = collect($audit['checks'])->sortBy(fn ($c) => $order[$c['severity']] ?? 3)->values();
     @endphp
 
-    <div class="px-2 max-w-[1000px]">
+    <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">SEO Audit</h1>
         @include('falcon-cms::admin.settings.nav')
+
+        {{-- The tabs span the screen like every Settings tab; the audit itself keeps a readable width. --}}
+        <div class="max-w-[1000px]">
 
         <div class="wp-metabox mb-6">
             <div class="wp-metabox-content p-5 flex items-center gap-6 flex-wrap">
@@ -116,6 +119,7 @@
                     </form>
                 @endif
             </div>
+        </div>
         </div>
     </div>
 </x-falcon-cms::layouts.admin>
