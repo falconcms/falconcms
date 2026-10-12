@@ -63,6 +63,11 @@
 <meta name="robots" content="{{ ($noindex ? 'noindex' : 'index') }},{{ ($nofollow ? 'nofollow' : 'follow') }}">
 @endif
 <link rel="canonical" href="{{ $canonical }}">
+@unless($noindex)
+@foreach(falcon_hreflang_links($post ?? null) as $hreflang => $alternate)
+<link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $alternate }}">
+@endforeach
+@endunless
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="{{ $type }}">
