@@ -310,7 +310,8 @@
             var state = loadState();
             document.querySelectorAll('.wp-metabox-header.cursor-pointer').forEach(function (header) {
                 var box = header.closest('.wp-metabox');
-                if (!box || header.dataset.mbInit) return;
+                // A <details> summary opens and closes its own box; a second toggle here fought it.
+                if (!box || header.dataset.mbInit || header.tagName === 'SUMMARY') return;
                 header.dataset.mbInit = '1';
                 var key = keyFor(header);
                 if (state[key]) box.classList.add('is-collapsed');

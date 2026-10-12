@@ -84,5 +84,38 @@
         @empty
             <div class="wp-metabox"><div class="wp-metabox-content p-6 text-center text-[14px] text-[#00712a]">Everything checked looks good. 🎉</div></div>
         @endforelse
+
+        @php $plannerCount = \FalconCms\Core\Support\KeywordDemand::plannerCount(); @endphp
+        {{-- Search demand data for the editor's Keywords tab (Settings → SEO → Keyword research uses it). --}}
+        <div class="wp-metabox mt-8" id="keyword-planner-import">
+            <div class="wp-metabox-header"><span>Import Google Keyword Planner data</span></div>
+            <div class="wp-metabox-content p-4 space-y-3 text-[13px]">
+                @if(session('success'))
+                    <div class="bg-[#edfaef] border-l-4 border-[#46b450] p-2 text-[12px]">{{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="bg-[#fcf0f1] border-l-4 border-[#d63638] p-2 text-[12px]">{{ session('error') }}</div>
+                @endif
+                @error('keywords_file')
+                    <div class="bg-[#fcf0f1] border-l-4 border-[#d63638] p-2 text-[12px]">{{ $message }}</div>
+                @enderror
+                <ol class="list-decimal ml-5 text-[12px] text-[#646970] space-y-1">
+                    <li>Open <a href="https://ads.google.com/aw/keywordplanner/home" target="_blank" rel="noopener" class="text-[#2271b1]">Google Keyword Planner</a> (free with a Google Ads account; no ad needs to run).</li>
+                    <li>Choose "Discover new keywords" or "Get search volume", enter your topics and set the location and language.</li>
+                    <li>Press Download keyword ideas → .csv, and upload the file here. The editor's Keywords tab then shows how many people search for a keyword. Any keyword tool's CSV with a "Keyword" and a volume column works too.</li>
+                </ol>
+                <form method="POST" action="{{ route('admin.settings.seo.keywords-import') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
+                    @csrf
+                    <input type="file" name="keywords_file" accept=".csv,.tsv,.txt" required class="text-[12px]">
+                    <button type="submit" class="wp-btn-secondary h-8 py-0 px-3 text-[13px]">Import</button>
+                </form>
+                @if($plannerCount)
+                    <form method="POST" action="{{ route('admin.settings.seo.keywords-clear') }}" onsubmit="return confirm('Remove all imported keyword data?')">
+                        @csrf
+                        <button type="submit" class="text-[12px] text-[#b32d2e] hover:underline">Remove the {{ number_format($plannerCount) }} imported keywords</button>
+                    </form>
+                @endif
+            </div>
+        </div>
     </div>
 </x-falcon-cms::layouts.admin>

@@ -36,7 +36,8 @@
             </select>
             <input type="search" name="q" value="{{ $search }}" placeholder="Search titles..." class="wp-input h-8 text-[13px] w-[220px]">
             <button type="submit" class="wp-btn-secondary h-8 py-0 px-3 text-[13px]">Filter</button>
-            <span class="text-[12px] text-[#646970] ml-auto">{{ number_format($posts->total()) }} {{ $posts->total() === 1 ? 'item' : 'items' }}</span>
+            {{-- The same pagination as the Posts and Pages lists. --}}
+            <div class="ml-auto"><x-falcon-cms::admin.pagination :paginator="$posts" /></div>
         </form>
 
         <form method="POST" action="{{ route('admin.settings.seo-bulk.update') }}" id="bulk-seo-form" onsubmit="return bulkSeoSubmit()">
@@ -97,7 +98,7 @@
                     <button type="submit" class="wp-btn-primary h-8 py-0 px-4 text-[13px]">Save changes</button>
                     <span id="bulk-seo-dirty" class="text-[12px] text-[#646970]">No changes yet.</span>
                 </div>
-                <div>{{ $posts->links() }}</div>
+                <x-falcon-cms::admin.pagination :paginator="$posts" />
             </div>
         </form>
     </div>
