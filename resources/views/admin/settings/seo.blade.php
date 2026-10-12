@@ -67,6 +67,28 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                     </div>
                 </div>
 
+                {{-- AI crawlers: two plain choices, written into robots.txt --}}
+                <div class="wp-metabox">
+                    <div class="wp-metabox-header"><span>AI crawlers</span></div>
+                    <div class="wp-metabox-content p-4 space-y-3">
+                        <p class="text-[12px] text-[#646970]">Neither choice affects Google or Bing search. The rules are added to robots.txt for you; well-behaved crawlers follow them, though nothing can force a crawler to.</p>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" name="ai_block_training" value="1" @checked(($settings['ai_block_training'] ?? '0') === '1') class="rounded-sm border-[#8c8f94] mt-1">
+                            <span>
+                                <span class="text-[14px] font-semibold text-[#1d2327]">Don't let AI companies train on this site's content</span>
+                                <span class="block text-[12px] text-[#646970]">Blocks {{ implode(', ', array_keys(\FalconCms\Core\Support\AiCrawlers::TRAINING)) }}.</span>
+                            </span>
+                        </label>
+                        <label class="flex items-start gap-2">
+                            <input type="checkbox" name="ai_block_search" value="1" @checked(($settings['ai_block_search'] ?? '0') === '1') class="rounded-sm border-[#8c8f94] mt-1">
+                            <span>
+                                <span class="text-[14px] font-semibold text-[#1d2327]">Keep this site out of AI search answers</span>
+                                <span class="block text-[12px] text-[#646970]">Blocks {{ implode(', ', array_keys(\FalconCms\Core\Support\AiCrawlers::SEARCH)) }}. Usually best left off: these answers link to the sites they cite and send visitors.</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
                 {{-- IndexNow: instant notice to Bing, Yandex and the rest --}}
                 @php
                     $indexNowOn = ($settings['indexnow_enabled'] ?? '0') === '1';

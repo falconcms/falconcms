@@ -5,6 +5,7 @@ namespace FalconCms\Core\Http\Controllers;
 use App\Models\User;
 use FalconCms\Core\Http\Controllers\Concerns\ResolvesParentTheme;
 use FalconCms\Core\Models\Category;
+use FalconCms\Core\Support\AiCrawlers;
 use FalconCms\Core\Models\Comment;
 use FalconCms\Core\Models\CustomTaxonomy;
 use FalconCms\Core\Models\Form;
@@ -646,6 +647,7 @@ class FrontendController extends Controller
         if (!$content) {
             $content = "User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: ".url('/sitemap.xml');
         }
+        $content = rtrim($content).AiCrawlers::rules($content);
 
         return response($content, 200)->header('Content-Type', 'text/plain');
     }
