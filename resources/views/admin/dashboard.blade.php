@@ -204,6 +204,9 @@
             </div>
         </div>
 
+        {{-- Plugins add dashboard widgets here, e.g. Google Search Console. --}}
+        {!! do_falcon_action('falcon_dashboard_widgets') !!}
+
         @if($hasShop)
         <!-- Ecommerce KPI Cards -->
         @php

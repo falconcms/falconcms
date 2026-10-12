@@ -239,6 +239,8 @@
                             <div class="w-2.5 h-2.5 rounded-full {{ $score >= 70 ? 'bg-[#00a32a]' : ($score >= 40 ? 'bg-[#dba617]' : 'bg-[#d63638]') }}"></div>
                             <span class="text-[12px] font-medium">{{ $score }}%</span>
                         </div>
+                        {{-- Plugins add to the SEO cell here, e.g. Google index status and clicks. --}}
+                        {!! do_falcon_action('falcon_admin_list_seo_cell', $post) !!}
                     </td>
                     <td class="wp-table-cell text-[#2c3338] text-left">
                         @if($post->trashed())
