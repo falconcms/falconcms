@@ -190,7 +190,9 @@ class Sidebar extends Component
                     return false;
                 }
             }
-        } elseif (!str_starts_with($currentPath, $targetPath)) {
+        } elseif ($currentPath !== $targetPath && !str_starts_with($currentPath, $targetPath.'/')) {
+            // Whole segments only: SEO (admin/settings/seo) is not lit on SEO Audit
+            // (admin/settings/seo-audit).
             return false;
         }
 

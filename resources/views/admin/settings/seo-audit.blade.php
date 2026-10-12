@@ -30,12 +30,26 @@
             </div>
         </div>
 
+        @if($checks->isNotEmpty())
+            <div class="flex justify-end gap-3 mb-2 text-[12px]">
+                <button type="button" onclick="document.querySelectorAll('.seo-audit-check').forEach(d => d.open = true)" class="text-[#2271b1] hover:underline">Show all pages</button>
+                <button type="button" onclick="document.querySelectorAll('.seo-audit-check').forEach(d => d.open = false)" class="text-[#2271b1] hover:underline">Hide all</button>
+            </div>
+        @endif
+
         @forelse($checks as $check)
-            <details class="wp-metabox mb-4" @if($loop->first) open @endif>
-                <summary class="wp-metabox-header cursor-pointer flex items-center gap-2">
+            @php $count = count($check['items']); @endphp
+            {{-- Problems to fix open by default; the rest one click away. --}}
+            <details class="seo-audit-check group wp-metabox mb-4" @if($check['severity'] === 'error' || $loop->first) open @endif>
+                <summary class="wp-metabox-header cursor-pointer flex items-center gap-2 list-none [&::-webkit-details-marker]:hidden">
                     <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold uppercase {{ $badge[$check['severity']] ?? $badge['info'] }}">{{ $check['severity'] === 'error' ? 'Fix' : ($check['severity'] === 'warning' ? 'Important' : 'Tip') }}</span>
                     <span class="font-semibold">{{ $check['label'] }}</span>
-                    <span class="text-[#8c8f94] font-normal">({{ count($check['items']) }})</span>
+                    <span class="text-[#8c8f94] font-normal">({{ $count }})</span>
+                    <span class="ml-auto flex items-center gap-1 text-[12px] font-normal text-[#2271b1] whitespace-nowrap">
+                        <span class="group-open:hidden">Show {{ $count }} {{ $count === 1 ? 'page' : 'pages' }}</span>
+                        <span class="hidden group-open:inline">Hide</span>
+                        <svg class="w-3.5 h-3.5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </span>
                 </summary>
                 <div class="wp-metabox-content p-0">
                     <p class="px-4 py-3 text-[12px] text-[#646970] border-b border-[#f0f0f1]">{{ $check['help'] }}</p>
@@ -43,9 +57,21 @@
                         <tbody>
                             @foreach(array_slice($check['items'], 0, 100) as $item)
                                 <tr class="border-b border-[#f6f7f7] last:border-0">
-                                    <td class="px-4 py-2 font-medium text-[#1d2327] max-w-[320px] truncate">{{ $item['title'] }}</td>
+                                    <td class="px-4 py-2 max-w-[320px]">
+                                        @if(!empty($item['edit']))
+                                            <a href="{{ $item['edit'] }}" class="block font-medium text-[#2271b1] hover:underline truncate">{{ $item['title'] }}</a>
+                                        @else
+                                            <span class="block font-medium text-[#1d2327] truncate">{{ $item['title'] }}</span>
+                                        @endif
+                                        @if(!empty($item['url']))
+                                            <span class="block text-[11px] text-[#8c8f94] truncate">{{ preg_replace('#^https?://[^/]+#', '', $item['url']) ?: '/' }}</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-2 text-[#646970]">{{ $item['detail'] }}</td>
-                                    <td class="px-4 py-2 text-right whitespace-nowrap">@if(!empty($item['edit']))<a href="{{ $item['edit'] }}" class="text-[#2271b1] font-semibold">Fix</a>@endif</td>
+                                    <td class="px-4 py-2 text-right whitespace-nowrap space-x-3">
+                                        @if(!empty($item['url']))<a href="{{ $item['url'] }}" target="_blank" rel="noopener" class="text-[#646970] hover:text-[#2271b1]">View</a>@endif
+                                        @if(!empty($item['edit']))<a href="{{ $item['edit'] }}" class="text-[#2271b1] font-semibold">Fix</a>@endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

@@ -86,6 +86,7 @@ final class SeoAudit
             }
             $text = self::text((string) $row->content);
             $seoTitle = trim((string) ($seo['title'] ?? ''));
+            $permalink = get_falcon_permalink($row);
             $out[] = [
                 'id' => (int) $row->id,
                 'type' => (string) $row->type,
@@ -95,7 +96,8 @@ final class SeoAudit
                 'description' => trim((string) ($seo['description'] ?? '')) ?: trim(strip_tags((string) $row->excerpt)),
                 'content' => (string) $row->content,
                 'words' => $text === '' ? 0 : count(preg_split('/\s+/u', $text) ?: []),
-                'path' => self::path(get_falcon_permalink($row)),
+                'url' => $permalink,
+                'path' => self::path($permalink),
                 'featured' => !empty($row->featured_image),
                 'edit' => self::editUrl((int) $row->id, (string) $row->type),
             ];
@@ -135,7 +137,7 @@ final class SeoAudit
                 continue;
             }
             if ($p['words'] < 20 && !self::hasMedia($p['content']) && !self::hasOwnTemplate($p['path'])) {
-                $items[] = self::item($p, $p['words'] === 0 ? 'No content at all.' : 'Only '.$p['words'].' words.');
+                $items[] = self::item($p, $p['words'] === 0 ? 'No content at all.' : 'Only '.$p['words'].($p['words'] === 1 ? ' word.' : ' words.'));
             }
         }
 
@@ -323,7 +325,7 @@ final class SeoAudit
 
     private static function item(array $p, string $detail): array
     {
-        return ['id' => $p['id'], 'title' => $p['title'], 'detail' => $detail, 'edit' => $p['edit']];
+        return ['id' => $p['id'], 'title' => $p['title'], 'detail' => $detail, 'edit' => $p['edit'], 'url' => $p['url'] ?? null];
     }
 
     /** Text a reader sees: tags, builder shortcodes and JSON markup removed. */
