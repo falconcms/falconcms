@@ -16,7 +16,8 @@ if (!function_exists('get_falcon_shop_url')) {
         $pageId = get_shop_option('shop_shop_page_id');
         if ($pageId) {
             $page = Post::find($pageId);
-            if ($page) {
+            // Only a live page: a draft or deleted one would send the visitor to a 404.
+            if ($page && $page->status === 'published') {
                 return get_falcon_permalink($page);
             }
         }
@@ -31,7 +32,8 @@ if (!function_exists('get_falcon_checkout_url')) {
         $pageId = get_shop_option('shop_checkout_page_id');
         if ($pageId) {
             $page = Post::find($pageId);
-            if ($page) {
+            // Only a live page: a draft or deleted one would send the visitor to a 404.
+            if ($page && $page->status === 'published') {
                 return get_falcon_permalink($page);
             }
         }

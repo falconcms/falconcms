@@ -24,12 +24,13 @@ class AssignedShopPages
         $cartPageId = get_shop_option('shop_cart_page_id');
         $checkoutPageId = get_shop_option('shop_checkout_page_id');
         $accountPageId = get_shop_option('shop_account_page_id');
+        $wishlistPageId = (int) get_shop_option('shop_wishlist_page_id');
 
-        // Cart / checkout / account are the transactional storefront — a Pro feature that
+        // Cart / checkout / account / wishlist are the transactional storefront — a Pro feature that
         // locks the moment the freemium grace window ends (strict = license OR grace, so
         // grandfathering is ignored, mirroring EnsurePro:ecommerce,strict on the shop routes).
         if (!falcon_pro_editable('ecommerce')
-            && in_array($post->id, array_filter([$cartPageId, $checkoutPageId, $accountPageId]))) {
+            && in_array($post->id, array_filter([$cartPageId, $checkoutPageId, $accountPageId, $wishlistPageId]))) {
             return response()->view('falcon-cms::pro-required', [
                 'message' => 'This feature is available in the Pro version.',
             ], 200);
@@ -41,6 +42,11 @@ class AssignedShopPages
             return response()->view('falcon-cms::pro-required', [
                 'message' => 'This feature is available in the Pro version.',
             ], 200);
+        }
+
+        // The page assigned as the Wishlist shows the visitor's wishlist (it signs a guest in first).
+        if ($wishlistPageId && (int) $post->id === $wishlistPageId) {
+            return app(Controllers\WishlistController::class)->index();
         }
 
         if ($post->id == $shopPageId) {

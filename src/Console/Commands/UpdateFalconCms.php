@@ -4,7 +4,6 @@ namespace FalconCms\Core\Console\Commands;
 
 use App\Models\User;
 use FalconCms\Core\Console\Concerns\ReconcilesMigrations;
-use FalconCms\Core\Models\Post;
 use FalconCms\Core\Support\PluginManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -391,36 +390,16 @@ class UpdateFalconCms extends Command
         forget_cms_options_cache();
     }
 
+    /**
+     * The shop's pages belong to the shop plugin now: it makes them (once) through this hook,
+     * and only while it is on. The CMS no longer re-creates pages an owner deleted on purpose.
+     */
     protected function createEcommercePages()
     {
-        $pages = [
-            ['title' => 'Shop', 'slug' => 'product'],
-            ['title' => 'Cart', 'slug' => 'cart'],
-            ['title' => 'Checkout', 'slug' => 'checkout'],
-            ['title' => 'Account', 'slug' => 'account'],
-        ];
-
-        $adminId = User::first()->id ?? 1;
-
-        foreach ($pages as $page) {
-            try {
-                // Match on the FULL unique key (slug + type + lang_code) and drop any
-                // language global scope, so an existing shop page is found instead of
-                // re-inserted — otherwise firstOrCreate hits the unique constraint and
-                // the whole update reports "completed with errors".
-                Post::withoutGlobalScopes()->firstOrCreate(
-                    ['slug' => $page['slug'], 'type' => 'page', 'lang_code' => 'en'],
-                    [
-                        'title' => $page['title'],
-                        'status' => 'published',
-                        'user_id' => $adminId,
-                        'editor_type' => 'rich',
-                    ]
-                );
-            } catch (\Throwable $e) {
-                // Page already exists (or a benign race) — never fail the update for this.
-                Log::warning('createEcommercePages ['.$page['slug'].']: '.$e->getMessage());
-            }
+        try {
+            do_falcon_action('falcon_install_defaults');
+        } catch (\Throwable $e) {
+            Log::warning('falcon_install_defaults: '.$e->getMessage());
         }
     }
 }

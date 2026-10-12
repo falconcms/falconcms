@@ -249,6 +249,43 @@
                 <table class="w-full border-separate border-spacing-y-6">
                     <!-- Shop pages -->
                     <tr><td colspan="2"><h3 class="text-[16px] font-semibold text-[#1d2327] mb-2">Shop pages</h3></td></tr>
+                    {{-- Each page's state, and one button to bring back any that was deleted (FalconShop\StorefrontPages). --}}
+                    @php
+                        $spBadge = ['ok' => ['Live', 'bg-[#edfaef] text-[#00731a]'], 'draft' => ['Not published', 'bg-[#fcf9e8] text-[#8a6100]'],
+                            'trashed' => ['In the trash', 'bg-[#fcf0f1] text-[#b32d2e]'], 'missing' => ['Missing', 'bg-[#fcf0f1] text-[#b32d2e]']];
+                        $spProblems = collect($storefront ?? [])->filter(fn ($p) => $p['state'] !== 'ok')->count();
+                    @endphp
+                    <tr>
+                        <td colspan="2">
+                            <div class="border {{ $spProblems ? 'border-[#f0c33c] bg-[#fcf9e8]' : 'border-[#dcdcde] bg-white' }} rounded p-3">
+                                <div class="flex items-center justify-between gap-3 mb-2">
+                                    <p class="text-[13px] text-[#1d2327] m-0">
+                                        @if($spProblems)
+                                            <strong>{{ $spProblems }} shop {{ $spProblems === 1 ? 'page needs' : 'pages need' }} attention.</strong> Without them, buttons such as "View cart" or "My account" have nowhere to go.
+                                        @else
+                                            All shop pages are in place.
+                                        @endif
+                                    </p>
+                                    @if($spProblems)
+                                        <button type="submit" form="shop-pages-form" class="wp-btn-primary h-8 py-0 px-3 text-[13px] whitespace-nowrap">Create missing pages</button>
+                                    @endif
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                                    @foreach($storefront ?? [] as $sp)
+                                        <div class="border border-[#f0f0f1] bg-white rounded px-2 py-1.5">
+                                            <div class="text-[12px] font-semibold text-[#1d2327]">{{ $sp['title'] }}</div>
+                                            <span class="inline-block text-[11px] px-1.5 rounded {{ $spBadge[$sp['state']][1] }}">{{ $spBadge[$sp['state']][0] }}</span>
+                                            <div class="text-[11px] mt-0.5 space-x-2">
+                                                @if($sp['url'])<a href="{{ $sp['url'] }}" target="_blank" rel="noopener" class="text-[#2271b1]">View</a>@endif
+                                                @if($sp['edit'])<a href="{{ $sp['edit'] }}" class="text-[#2271b1]">Edit</a>@endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <p class="text-[11px] text-[#646970] mt-2 mb-0">"Create missing pages" restores a deleted page from the trash, publishes one that was unpublished, and creates any that is gone for good. It never changes a page's content.</p>
+                            </div>
+                        </td>
+                    </tr>
                     <tr>
                         <th scope="row" class="w-[200px] text-left align-top pt-2">
                             <label class="text-[14px] font-semibold text-[#1d2327]">Shop page</label>
@@ -300,6 +337,20 @@
                                     <option value="{{ $page->id }}" {{ get_shop_option('shop_account_page_id') == $page->id ? 'selected' : '' }}>{{ $page->title }}</option>
                                 @endforeach
                             </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">Wishlist page</label>
+                        </th>
+                        <td>
+                            <select name="wishlist_page_id" id="wishlist_page_id" class="wp-input w-[400px]">
+                                <option value="">Select a page...</option>
+                                @foreach($pages as $page)
+                                    <option value="{{ $page->id }}" {{ get_shop_option('shop_wishlist_page_id') == $page->id ? 'selected' : '' }}>{{ $page->title }}</option>
+                                @endforeach
+                            </select>
+                            <p class="text-[12px] text-[#646970] mt-1">Shows a signed-in customer's saved products.</p>
                         </td>
                     </tr>
 
@@ -1357,6 +1408,8 @@
                 <button type="submit" class="wp-btn-primary px-4 h-8 font-semibold">Save Changes</button>
             </div>
         </form>
+        {{-- Its own form (the "Create missing pages" button points at it with form=…). --}}
+        <form id="shop-pages-form" method="POST" action="{{ route('admin.shop.settings.pages') }}">@csrf</form>
     </div>
 
     @push('scripts')

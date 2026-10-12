@@ -988,8 +988,10 @@ class CustomizerController extends Controller
                     'perf_avif' => [
                         'type' => 'toggle',
                         'label' => 'Serve AVIF Images',
-                        'desc' => 'Library images also get an AVIF copy (usually 20-30% smaller than WebP), offered to browsers that support it; others keep the original. New uploads get one automatically; for images already in the library, press Media → Generate AVIF copies once (originals are not changed). Needs PHP GD with AVIF support'.(\FalconCms\Core\Support\AvifImages::supported() ? ' (available on this server).' : ' (NOT available on this server, so this has no effect).'),
+                        'desc' => 'Library images also get an AVIF copy (usually 20-30% smaller than WebP), offered to browsers that support it; others keep the original. New uploads get one automatically; for images already in the library, press Media → Generate AVIF copies once (originals are not changed). Needs PHP GD with AVIF support.',
                         'default' => '0',
+                        // Locked off where PHP's GD cannot write AVIF: it would be "on" and do nothing.
+                        'unavailable' => \FalconCms\Core\Support\AvifImages::supported() ? '' : 'Not available on this server: its PHP (GD) cannot write AVIF images. Ask your host to enable AVIF in GD.',
                     ],
                     'perf_speculative_loading' => [
                         'type' => 'toggle',
@@ -1232,6 +1234,10 @@ class CustomizerController extends Controller
                     continue;
                 }
                 $value = $request->input($key, '');
+                // A switch this server cannot support is saved off, whatever was posted.
+                if (($field['unavailable'] ?? '') !== '' && ($field['type'] ?? '') === 'toggle') {
+                    $value = '0';
+                }
                 DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value]);
             }
         }

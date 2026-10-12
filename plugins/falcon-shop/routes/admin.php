@@ -54,6 +54,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
         Route::post('orders/{id}/refund', [ShopController::class, 'orderRefund'])->name('orders.refund');
         Route::get('settings', [ShopController::class, 'settings'])->name('settings');
         Route::post('settings', [ShopController::class, 'saveSettings'])->name('settings.save');
+        Route::post('settings/pages', [ShopController::class, 'ensurePages'])->name('settings.pages');
 
         // Sales Reports
         Route::get('reports', [ShopReportController::class, 'index'])->name('reports.index');

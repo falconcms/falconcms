@@ -208,6 +208,13 @@
                                                 // turned on where it would do nothing.
                                                 $themeLocked = !empty($field['theme_only'])
                                                     && !in_array(get_cms_option('active_theme', 'falcon-theme'), ['falcon-theme', 'falcon-theme-child'], true);
+                                                // A field the server cannot support (e.g. AVIF without GD AVIF): locked off,
+                                                // with the reason, so it is never "on" while doing nothing.
+                                                $unavailable = (string) ($field['unavailable'] ?? '');
+                                                if ($unavailable !== '') {
+                                                    $themeLocked = true;
+                                                    $val = '0';
+                                                }
                                             @endphp
                                                  @if($type === 'heading')
                                                     <tr class="section-heading-row bg-[#f6f7f7] border-b border-[#c3c4c7]">
@@ -239,7 +246,12 @@
                                                     @if($desc)
                                                         <p class="text-[11px] text-[#646970] leading-relaxed m-0">{!! $desc !!}</p>
                                                     @endif
-                                                    @if($themeLocked)
+                                                    @if($unavailable !== '')
+                                                        <p class="text-[11px] text-[#996800] leading-relaxed m-0 mt-1 flex items-center gap-1">
+                                                            <span class="material-symbols-outlined" style="font-size:14px !important;">lock</span>
+                                                            {{ $unavailable }}
+                                                        </p>
+                                                    @elseif($themeLocked)
                                                         <p class="text-[11px] text-[#996800] leading-relaxed m-0 mt-1 flex items-center gap-1">
                                                             <span class="material-symbols-outlined" style="font-size:14px !important;">lock</span>
                                                             Works only with the Falcon theme — active theme: <strong>{{ get_cms_option('active_theme', 'falcon-theme') }}</strong>

@@ -90,6 +90,7 @@ $dormant = [
     'admin.shop.reviews.toggle-approve' => [['POST'], 'admin/shop/reviews/{review}/toggle-approve'],
     'admin.shop.settings' => [['GET', 'HEAD'], 'admin/shop/settings'],
     'admin.shop.settings.save' => [['POST'], 'admin/shop/settings'],
+    'admin.shop.settings.pages' => [['POST'], 'admin/shop/settings/pages'],
 ];
 
 foreach ($dormant as $name => [$methods, $uri]) {

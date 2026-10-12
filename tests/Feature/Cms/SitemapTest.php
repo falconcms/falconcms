@@ -171,7 +171,9 @@ class SitemapTest extends TestCase
         $first = $this->get('/sitemap-1.xml')->assertOk()->getContent();
         $second = $this->get('/sitemap-2.xml')->assertOk()->getContent();
         $this->assertSame(SitemapController::PER_FILE, substr_count($first, '<url>'));
-        $this->assertSame(6, substr_count($second, '<url>'), 'home + 1005 posts = 1006 addresses');
+        // Home + 1,005 posts: the first file holds home and 999 posts, the second the last six
+        // (plus whatever pages the site has, such as the shop's).
+        $this->assertSame(6, substr_count($second, '/post/post-'), 'home + 1005 posts = 1006 addresses');
         $this->get('/sitemap-3.xml')->assertNotFound();
     }
 

@@ -54,6 +54,11 @@ class ShopServiceProvider extends ServiceProvider
         // The pages assigned as Shop, Cart, Checkout and Account render the shop; with the
         // plugin off they are ordinary pages.
         add_falcon_filter('falcon_frontend_page_response', [Http\AssignedShopPages::class, 'respond']);
+        // The shop's pages (Shop, Cart, Checkout, Account, Wishlist): made the first time the CMS
+        // installs or updates with the shop on. Activating the plugin makes them too (Lifecycle).
+        add_falcon_action('falcon_install_defaults', [StorefrontPages::class, 'ensureOnce']);
+        // A fresh install may run before the plugin is loaded: the first admin screen catches up.
+        add_falcon_action('falcon_admin_menu', [StorefrontPages::class, 'ensureOnce']);
         // Cart, checkout and account are for one visitor, never a search result: noindex, and kept
         // out of the sitemap and the SEO Audit. (The shop listing itself stays indexable.)
         add_falcon_filter('falcon_seo_noindex', function ($noindex, $post = null) {
@@ -66,6 +71,7 @@ class ShopServiceProvider extends ServiceProvider
 
             return $noindex || ($id && in_array($id, array_map('intval', array_filter([
                 get_shop_option('shop_cart_page_id'), get_shop_option('shop_checkout_page_id'), get_shop_option('shop_account_page_id'),
+                get_shop_option('shop_wishlist_page_id'),
             ])), true));
         });
 
@@ -73,6 +79,7 @@ class ShopServiceProvider extends ServiceProvider
         add_falcon_filter('falcon_template_page_ids', fn ($ids) => array_merge((array) $ids, array_map('intval', array_filter([
             get_shop_option('shop_shop_page_id'), get_shop_option('shop_cart_page_id'),
             get_shop_option('shop_checkout_page_id'), get_shop_option('shop_account_page_id'),
+            get_shop_option('shop_wishlist_page_id'),
         ]))));
 
         $this->registerProductTemplates();

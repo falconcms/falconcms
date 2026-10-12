@@ -365,8 +365,31 @@ class ShopController extends Controller
         $this->syncOrderInventory($order, $oldStatus, $newStatus);
     }
 
+    /**
+     * Shop → Settings → Products → "Create missing pages": brings back a deleted shop page (from
+     * the trash when it is there), publishes an unpublished one, and creates any that is gone.
+     */
+    public function ensurePages()
+    {
+        $done = \FalconShop\StorefrontPages::ensure();
+        $names = \FalconShop\StorefrontPages::PAGES;
+        $words = ['created' => 'created', 'restored' => 'restored from the trash', 'linked' => 'found and assigned', 'failed' => 'could not be made'];
+        $changes = [];
+        foreach ($done as $key => $how) {
+            if (isset($words[$how])) {
+                $changes[] = $names[$key]['title'].' page '.$words[$how];
+            }
+        }
+
+        return redirect()->route('admin.shop.settings', ['tab' => 'products'])
+            ->with('success', $changes ? implode('; ', $changes).'.' : 'All shop pages are in place.');
+    }
+
     public function settings()
     {
+        // First visit on a site that never had them: make the shop pages before reading their state.
+        \FalconShop\StorefrontPages::ensureOnce();
+
         $countries = EcommerceData::getCountriesWithStates(false);
         $allowedCountries = EcommerceData::getCountriesWithStates(true);
         $currencies = EcommerceData::getCurrencies();
@@ -375,9 +398,12 @@ class ShopController extends Controller
         $cartPageId = get_shop_option('shop_cart_page_id');
         $checkoutPageId = get_shop_option('shop_checkout_page_id');
         $accountPageId = get_shop_option('shop_account_page_id');
+        $wishlistPageId = get_shop_option('shop_wishlist_page_id');
+        $storefront = \FalconShop\StorefrontPages::status();
 
         $pages = DB::table('posts')
             ->where('type', 'page')
+            ->whereNull('deleted_at') // a page in the trash cannot be the shop's page
             ->get(['id', 'title', 'status']);
 
         foreach ($pages as $page) {
@@ -397,6 +423,9 @@ class ShopController extends Controller
             if ($page->id == $accountPageId) {
                 $labels[] = 'Account Page';
             }
+            if ($page->id == $wishlistPageId) {
+                $labels[] = 'Wishlist Page';
+            }
             if ($page->status == 'draft') {
                 $labels[] = 'Draft';
             }
@@ -415,7 +444,7 @@ class ShopController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('falcon-shop::admin.shop.settings', compact('countries', 'allowedCountries', 'currencies', 'pages', 'products', 'categories'));
+        return view('falcon-shop::admin.shop.settings', compact('countries', 'allowedCountries', 'currencies', 'pages', 'products', 'categories', 'storefront'));
     }
 
     /**

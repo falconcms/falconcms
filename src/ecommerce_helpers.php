@@ -96,11 +96,13 @@ if (!function_exists('get_falcon_account_url')) {
         $id = (int) get_shop_option('shop_account_page_id');
         if ($id) {
             $post = Post::find($id);
-            if ($post) {
+            // Only a live page: a draft or deleted one would send the visitor to a 404.
+            if ($post && $post->status === 'published') {
                 return get_falcon_permalink($post);
             }
         }
 
-        return url('/page/account');
+        // The address the shop's Account page is created at (FalconShop\StorefrontPages).
+        return url('/account');
     }
 }

@@ -8,6 +8,7 @@
     "requires_cms": ">=2.7",
     "namespace": "FalconShop\\",
     "provider": "FalconShop\\ShopServiceProvider",
+    "lifecycle": "FalconShop\\Lifecycle",
     "default_active": true,
     "settings_route": "admin.shop.settings",
     "dependencies": []

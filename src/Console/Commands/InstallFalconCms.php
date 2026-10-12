@@ -221,28 +221,13 @@ class InstallFalconCms extends Command
         }
     }
 
+    /** The shop plugin makes its own pages (Shop, Cart, Checkout, Account, Wishlist) through this hook. */
     protected function createEcommercePages()
     {
-        $pages = [
-            ['title' => 'Shop', 'slug' => 'product'],
-            ['title' => 'Cart', 'slug' => 'cart'],
-            ['title' => 'Checkout', 'slug' => 'checkout'],
-            ['title' => 'Account', 'slug' => 'account'],
-        ];
-
-        $adminId = User::first()->id ?? 1;
-
-        foreach ($pages as $page) {
-            Post::firstOrCreate(
-                ['slug' => $page['slug'], 'type' => 'page'],
-                [
-                    'title' => $page['title'],
-                    'status' => 'published',
-                    'lang_code' => 'en',
-                    'user_id' => $adminId,
-                    'editor_type' => 'rich',
-                ]
-            );
+        try {
+            do_falcon_action('falcon_install_defaults');
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 

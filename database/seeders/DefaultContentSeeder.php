@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Seeds the default storefront pages (Shop, Cart, Checkout, Account), a sample blog post
- * and a Blog page, and links the shop page settings. Idempotent (firstOrCreate) so it is
+ * Seeds a sample blog post and a Blog page, and asks the shop plugin (if on) for its
+ * storefront pages. Idempotent (firstOrCreate) so it is
  * safe to run on every seed/update. Runs via `falcon:seed` and `falcon:install`.
  */
 class DefaultContentSeeder extends Seeder
@@ -29,48 +29,13 @@ class DefaultContentSeeder extends Seeder
             DB::table('cms_settings')->insert(['key' => 'timezone', 'value' => 'Asia/Dhaka', 'created_at' => now(), 'updated_at' => now()]);
         }
 
-        // ── Storefront pages (+ link them in shop settings) ──────────────────
-        $pages = [
-            ['title' => 'Shop',     'slug' => 'product',  'setting' => 'shop_shop_page_id'],
-            ['title' => 'Cart',     'slug' => 'cart',     'setting' => 'shop_cart_page_id'],
-            ['title' => 'Checkout', 'slug' => 'checkout', 'setting' => 'shop_checkout_page_id'],
-            ['title' => 'Account',  'slug' => 'account',  'setting' => 'shop_account_page_id'],
-        ];
-
-        foreach ($pages as $p) {
-            // Match on the FULL unique key (slug + type + lang_code) and drop global
-            // scopes — SoftDeletes hides a trashed page from the lookup while the unique
-            // index still counts it, so a plain firstOrCreate would hit the constraint and
-            // fatal the boot-seeder (container crash-loop). Restore a trashed storefront
-            // page so the shop always has a live page. try/catch never fails the seed.
-            try {
-                $page = Post::withoutGlobalScopes()->firstOrCreate(
-                    ['slug' => $p['slug'], 'type' => 'page', 'lang_code' => 'en'],
-                    [
-                        'title' => $p['title'],
-                        'status' => 'published',
-                        'user_id' => $adminId,
-                        'editor_type' => 'rich',
-                    ]
-                );
-                if ($page && method_exists($page, 'trashed') && $page->trashed()) {
-                    $page->restore();
-                }
-            } catch (\Throwable $e) {
-                Log::warning('DefaultContentSeeder ['.$p['slug'].']: '.$e->getMessage());
-                $page = Post::withoutGlobalScopes()
-                    ->where(['slug' => $p['slug'], 'type' => 'page', 'lang_code' => 'en'])
-                    ->first();
-            }
-
-            if ($page && !DB::table('cms_settings')->where('key', $p['setting'])->exists()) {
-                DB::table('cms_settings')->insert([
-                    'key' => $p['setting'],
-                    'value' => $page->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+        // ── Storefront pages: made by the shop plugin, only while it is on ─────
+        // (Shop, Cart, Checkout, Account, Wishlist — see FalconShop\StorefrontPages.) Once only:
+        // a page the owner deletes is not brought back on the next seed or update.
+        try {
+            do_falcon_action('falcon_install_defaults');
+        } catch (\Throwable $e) {
+            Log::warning('DefaultContentSeeder [storefront]: '.$e->getMessage());
         }
 
         // ── Sample blog post so the blog listing has content right after install ──
