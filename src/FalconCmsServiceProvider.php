@@ -40,6 +40,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use FalconCms\Core\Support\IndexNow;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -53,6 +54,9 @@ class FalconCmsServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             return ($user && method_exists($user, 'hasRole') && $user->hasRole('super-admin')) ? true : null;
         });
+
+        // Announce published, changed and removed pages to IndexNow (off unless turned on).
+        IndexNow::register();
 
         // Share activeTheme globally with all views
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');

@@ -67,6 +67,35 @@ Allow: /">{{ $settings['robots_txt'] ?? "User-agent: *\nDisallow: /admin/\nAllow
                     </div>
                 </div>
 
+                {{-- IndexNow: instant notice to Bing, Yandex and the rest --}}
+                @php
+                    $indexNowOn = ($settings['indexnow_enabled'] ?? '0') === '1';
+                    $indexNowLast = \FalconCms\Core\Support\IndexNow::last();
+                @endphp
+                <div class="wp-metabox">
+                    <div class="wp-metabox-header"><span>Instant indexing (IndexNow)</span></div>
+                    <div class="wp-metabox-content p-4 space-y-3">
+                        <label class="flex items-center gap-2 text-[14px] font-semibold text-[#1d2327]">
+                            <input type="checkbox" name="indexnow_enabled" value="1" @checked($indexNowOn) class="rounded-sm border-[#8c8f94]">
+                            Tell search engines the moment a page is published, updated or removed
+                        </label>
+                        <p class="text-[12px] text-[#646970]">
+                            Pings Bing, Yandex, Naver, Seznam and Yep through IndexNow, so changes are picked up in minutes instead of waiting for a crawl.
+                            Bing's index also feeds Copilot and ChatGPT search. Google does not use IndexNow; it finds changes through your sitemap.
+                        </p>
+                        @if($indexNowOn)
+                            <p class="text-[12px] text-[#50575e]">
+                                Key file: <a href="{{ \FalconCms\Core\Support\IndexNow::keyUrl() }}" target="_blank" rel="noopener" class="text-[#2271b1]">{{ \FalconCms\Core\Support\IndexNow::keyUrl() }}</a>
+                                @if($indexNowLast)
+                                    · last ping {{ \Carbon\Carbon::parse($indexNowLast['at'])->diffForHumans() }}: {{ $indexNowLast['urls'] }} URL(s), {{ \FalconCms\Core\Support\IndexNow::describe($indexNowLast['status']) }}
+                                @else
+                                    · nothing sent yet; the next published change goes out.
+                                @endif
+                            </p>
+                        @endif
+                    </div>
+                </div>
+
                 {{-- Global Meta --}}
                 <div class="wp-metabox">
                     <div class="wp-metabox-header"><span>Global SEO Defaults</span></div>

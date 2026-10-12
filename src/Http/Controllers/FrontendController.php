@@ -650,6 +650,14 @@ class FrontendController extends Controller
         return response($content, 200)->header('Content-Type', 'text/plain');
     }
 
+    /** The IndexNow key file: proves to the engines that pings for this host come from its owner. */
+    public function indexNowKey(string $indexnowKey)
+    {
+        abort_unless(\FalconCms\Core\Support\IndexNow::enabled() && hash_equals(\FalconCms\Core\Support\IndexNow::key(), $indexnowKey), 404);
+
+        return response($indexnowKey, 200)->header('Content-Type', 'text/plain; charset=utf-8');
+    }
+
     public function setLocale($locale)
     {
         $supportedLocales = Language::where('status', true)->pluck('code')->toArray();

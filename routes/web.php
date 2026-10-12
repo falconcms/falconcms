@@ -519,6 +519,8 @@ Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddl
     Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit')->middleware('throttle:5,1');
 
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
+    // IndexNow ownership key: answers only for this site's own key, and only while IndexNow is on.
+    Route::get('/{indexnowKey}.txt', [FrontendController::class, 'indexNowKey'])->name('frontend.indexnow-key')->where('indexnowKey', '[a-f0-9]{32}');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('frontend.sitemap');
     Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'single'])->name('frontend.show')->where('slug', '.*');
 });
