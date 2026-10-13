@@ -61,7 +61,7 @@ the copy exists, and whenever a download fails, the page keeps loading the fonts
 before; a failed download is retried an hour later. Pages served in the meantime are not kept in
 the page cache. When you change fonts in the Customizer, the new ones are copied the same way.
 
-### Compiled CSS <Badge type="tip" text="next release" />
+### Compiled CSS
 
 The compiled file holds the Tailwind classes written in the theme's templates. Content can bring
 others: imported HTML (`<h2 class="text-2xl md:text-3xl">`), or classes typed into a builder
@@ -76,11 +76,6 @@ element's **CSS Class** field. On every page, FalconCMS looks for such classes a
 
 Pages that need neither keep the compiled file alone. So a page looks the same with Compiled CSS
 on or off.
-
-::: info Until the next release
-Classes that come with the content are not covered yet. On a page that uses them, leave Compiled
-CSS off, or add the styles through **Customizer → Custom CSS**.
-:::
 
 ### Critical CSS
 

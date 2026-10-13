@@ -9,6 +9,11 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+## [2.8.0] — 2026-10-14
+
+SEO gets a menu and a plugin of its own, with a check-up for every page and, in Pro, AI writing,
+Google keyword data, one-click fixes and a weekly email.
+
 ### Added
 
 - **Falcon SEO, a bundled plugin (free, on by default).** The SEO and speed tools now live in
@@ -18,46 +23,59 @@ Full release notes, with the reasoning behind each change, live at
   the CMS keeps the basic SEO (title, description, canonical, Open Graph, sitemap, robots.txt,
   redirects), and no saved data is lost. Route names, settings and the old class names
   (`FalconCms\Core\Support\SeoAudit` and the rest, through aliases) are unchanged.
+- **SEO has its own menu**, with tabs like Settings: Settings, Site Analysis, SEO Audit, Bulk SEO,
+  Search Console (Pro) and Redirects, under `/admin/seo/...` (the old `/admin/settings/seo…`
+  addresses redirect). Each screen has its own permission in Users → Roles (`access_seo_settings`,
+  `access_seo_site_analysis`, `access_seo_audit`, `access_seo_bulk`, `access_seo_redirects`);
+  roles keep the SEO screens they had under Settings.
 - **Page analysis with a score** (editor → SEO → Analysis). Reads the published page as visitors
   get it, or the editor's content, and checks headings, the focus keyword, the title and
   description, images (alt text, size, dimensions), internal and external links, broken links,
-  structured data and more. It also suggests keywords worth considering, with search demand by
-  country.
-- **Site Analysis** (SEO → Site Analysis). Every page's check-up and score, kept up to date
-  in the background (ten pages an hour, again after a change and weekly), with every problem
-  listed across the site (broken links, images without alt text, missing H1s…) and each page's
-  score in the posts and pages lists. New table `cms_seo_page_scores`; command
-  `falcon:seo-scan`.
-- **Analysis: every country, several at once.** "Searchers in" lists every country with Select
-  all; with a Bing key each gets its own bar, fetched 20 at a time, and a clear note before many
-  requests and when Bing's limit is reached. With the Search Console plugin, Google's own figures
-  for the keyword by country appear too.
+  structured data and more, with keyword advice.
+- **Searchers in every country, several at once.** All countries, with Select all; with a Bing
+  key each gets its own bar, fetched 20 at a time, with a note before many requests and a clear
+  message when Bing's limit is reached. With the Search Console plugin, Google's own figures for
+  the keyword by country appear too.
+- **Site Analysis** (SEO → Site Analysis). Every page's check-up and score, kept up to date in the
+  background (ten pages an hour, again after a change and weekly), every problem listed across
+  the site with its pages, and each page's score in the posts and pages lists. New table
+  `cms_seo_page_scores`; command `falcon:seo-scan`.
 - **WordPress import keeps your rankings.** SEO titles, descriptions, focus keywords, canonical,
   noindex/nofollow and social fields come across from Yoast SEO, Rank Math, All in One SEO and
-  SEOPress, and every published post whose address changes gets a 301 redirect from its old
-  WordPress address. The import result shows both counts.
-- **SEO has its own menu.** SEO settings, Site Analysis, SEO Audit, Bulk SEO, Search Console and
-  Redirects move out of Settings into an SEO menu with tabs like Settings'
-  (`/admin/seo/...`; the old `/admin/settings/seo…` addresses redirect). Plugins add screens with
-  `falcon_add_submenu_page('seo', …)` and tabs with the `falcon_seo_tabs` filter. Each SEO
-  screen has its own permission in Users → Roles (`access_seo_settings`, `access_seo_site_analysis`,
-  `access_seo_audit`, `access_seo_bulk`, `access_seo_redirects`); roles keep the SEO screens they
-  had under Settings.
+  SEOPress, and every published post whose address changes gets a 301 from its old address.
+- **Pro tools in Falcon SEO** (licence feature `seo_pro`; every Pro licence includes it): AI
+  writing with Claude (SEO titles, meta descriptions, alt text; the site's own Anthropic key),
+  Google keyword numbers and difficulty by country through DataForSEO, one-click fixes in Site
+  Analysis (descriptions, titles, alt text, broken links; a revision is kept first), and a weekly
+  SEO email (`falcon:seo-report`, Mondays).
+- **Compiled CSS covers classes that come with the content.** Tailwind classes in imported HTML
+  or a builder element's CSS Class field are written on the server as a small stylesheet; the
+  in-browser build loads only on a page that still needs it.
+
+### Changed
+
+- New dependency: the official Anthropic PHP SDK (`anthropic-ai/sdk`), used by AI writing.
+- New core hooks, listed in the hooks reference: `falcon_robots_txt`, `falcon_seo_robots`,
+  `falcon_seo_head_links`, `falcon_seo_schema`, `falcon_optimize_html`, `falcon_customizer_sections`,
+  `falcon_seo_tabs`, `falcon_admin_path_access`, `falcon_keyword_countries` and others.
 
 ### Fixed
 
 - **The editor's SEO tabs work for editors, authors and contributors.** Keywords, Internal Linking
-  and Analysis answered only administrators (their requests belong to no menu, so every other role
-  got "Access denied"); anyone who can write posts or pages can use them now. New core filter
-  `falcon_admin_path_access` lets a plugin decide such paths.
-- **Pro tools in Falcon SEO** (licence feature `seo_pro`; any Pro licence includes it): AI writing
-  with Claude (SEO titles, meta descriptions, alt text; the site's own Anthropic key, through the
-  official `anthropic-ai/sdk`, now a dependency), Google keyword numbers and difficulty by country
-  through DataForSEO, one-click fixes in Site Analysis (descriptions, titles, alt text, broken
-  links; a revision is kept first), and a weekly SEO email (`falcon:seo-report`, Mondays).
-- New core hooks the plugin is built on, listed in the hooks reference: `falcon_robots_txt`,
-  `falcon_seo_robots`, `falcon_seo_head_links`, `falcon_seo_schema`, `falcon_optimize_html`,
-  `falcon_customizer_sections` and others.
+  and Analysis answered only administrators.
+- phpstan passes with no errors; 128 baseline suppressions made unnecessary were removed.
+
+## [2.7.11] — 2026-10-13
+
+The shop makes its own pages (with Wishlist) and can bring back deleted ones; Media → Generate
+AVIF copies; Minify CSS keeps `calc()` valid; compiled Tailwind loads where the runtime build
+does. Full notes: https://falconcms.github.io/falconcms/changelog#v2-7-11
+
+## [2.7.10] — 2026-10-13
+
+The SEO suite (structured data graph, hreflang, IndexNow, SEO Audit, Bulk SEO, 404 log, keyword
+research, AI crawler rules, AVIF, speculation rules, Web Vitals, Cloudflare purge). Full notes:
+https://falconcms.github.io/falconcms/changelog#v2-7-10
 
 ### Fixed
 

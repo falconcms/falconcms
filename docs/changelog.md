@@ -5,7 +5,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.7.11 <Badge type="tip" text="Latest" /> {#v2-7-11}
+## v2.8.0 <Badge type="tip" text="Latest" /> {#v2-8-0}
+
+**Released: 2026-10-14**
+
+SEO gets a menu and a plugin of its own, a check-up with a score for every page, and in Pro: AI
+writing, Google keyword data, one-click fixes and a weekly email. See the [SEO guide](/guide/seo).
+
+### Added
+
+- **The SEO menu.** SEO leaves Settings for a menu of its own with tabs: Settings, Site Analysis,
+  SEO Audit, Bulk SEO, Search Console (Pro) and Redirects. Old addresses redirect. Each screen
+  can be granted on its own in **Users → Roles → SEO**; roles keep what they had.
+- **Falcon SEO, a bundled plugin** (free, on by default) holds the SEO and speed tools. Switched
+  off, the CMS keeps the basics (title, description, canonical, Open Graph, sitemap, robots.txt,
+  redirects) and nothing saved is lost.
+- **Page analysis with a score** in the editor (SEO → Analysis): headings, the focus keyword,
+  title and description, images, internal and external links, broken links, structured data, and
+  keyword advice. It reads the published page as visitors get it, theme included.
+- **Every country, several at once**, for keyword demand, with Select all. With a Bing key each
+  country gets its own bar; with Search Console (Pro), Google's own figures by country.
+- **Site Analysis.** Every page checked in the background, with its score, every problem across
+  the site with the pages that have it (every broken link, every image without alt text…), and
+  each page's score in the Posts and Pages lists.
+- **WordPress import keeps your rankings:** SEO settings from Yoast SEO, Rank Math, All in One SEO
+  and SEOPress, and a 301 from each old address.
+- **Pro:** AI writing with Claude (titles, descriptions, alt text), Google keyword numbers and
+  difficulty by country through DataForSEO, one-click fixes in Site Analysis, and a weekly SEO
+  email.
+- **Compiled CSS covers classes that come with the content**, so a page looks the same with it on
+  or off.
+
+### Fixed
+
+- The editor's SEO tabs (Keywords, Internal Linking, Analysis) work for editors, authors and
+  contributors, not only administrators.
+
+### For developers
+
+- New hooks: `falcon_seo_tabs`, `falcon_admin_path_access`, `falcon_keyword_countries`,
+  `falcon_robots_txt`, `falcon_seo_robots`, `falcon_seo_head_links`, `falcon_seo_schema`,
+  `falcon_optimize_html`, `falcon_customizer_sections` and more ([hooks reference](/api/hooks)).
+  Plugins add SEO screens with `falcon_add_submenu_page('seo', …)`.
+- New dependency: `anthropic-ai/sdk`. Run `composer update` (the dashboard's Update does it).
+
+---
+
+## v2.7.11 {#v2-7-11}
 
 **Released: 2026-10-13**
 
