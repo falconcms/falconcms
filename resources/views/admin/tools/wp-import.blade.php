@@ -28,8 +28,8 @@
                     <h2 class="text-[14px] font-semibold text-[#1d2327]">Import Result</h2>
                 </div>
                 <div class="p-5">
-                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 text-center mb-4">
-                        @foreach(['posts'=>'Posts','pages'=>'Pages','cpt'=>'Custom','categories'=>'Categories','tags'=>'Tags','skipped'=>'Skipped'] as $k => $label)
+                    <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-3 text-center mb-4">
+                        @foreach(['posts'=>'Posts','pages'=>'Pages','cpt'=>'Custom','categories'=>'Categories','tags'=>'Tags','seo'=>'SEO kept','redirects'=>'Redirects','skipped'=>'Skipped'] as $k => $label)
                             <div class="border border-[#f0f0f1] rounded py-3">
                                 <div class="text-[22px] font-semibold text-[#1d2327]">{{ $s[$k] ?? 0 }}</div>
                                 <div class="text-[11px] text-[#646970] uppercase">{{ $label }}</div>

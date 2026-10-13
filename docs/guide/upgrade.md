@@ -99,6 +99,18 @@ Import content from a WordPress site:
 4. Optionally: import media files
 5. All posts, pages, categories, tags, and users are imported
 
+Your search rankings come along:
+
+- **SEO settings.** Each post's SEO title, meta description, focus keyword, canonical address,
+  noindex/nofollow and social title and image are read from **Yoast SEO**, **Rank Math**, **All in
+  One SEO** or **SEOPress**, whichever the site used. A title that is only the plugin's default
+  pattern (`%%title%% %%sep%% %%sitename%%`) is left out, so FalconCMS's own default applies.
+- **Old addresses keep working.** Each published post whose address changes (say
+  `/2024/05/hello-world/` becomes `/post/hello-world`) gets a permanent (301) redirect, listed under
+  **SEO → Redirects**. A redirect you made yourself for the same address is kept.
+
+Importing the same file again adds SEO settings a post does not have yet and never overwrites any.
+
 ## REST API
 
 Falcon CMS includes a REST API for headless use.

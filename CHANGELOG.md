@@ -32,6 +32,10 @@ Full release notes, with the reasoning behind each change, live at
   all; with a Bing key each gets its own bar, fetched 20 at a time, and a clear note before many
   requests and when Bing's limit is reached. With the Search Console plugin, Google's own figures
   for the keyword by country appear too.
+- **WordPress import keeps your rankings.** SEO titles, descriptions, focus keywords, canonical,
+  noindex/nofollow and social fields come across from Yoast SEO, Rank Math, All in One SEO and
+  SEOPress, and every published post whose address changes gets a 301 redirect from its old
+  WordPress address. The import result shows both counts.
 - New core hooks the plugin is built on, listed in the hooks reference: `falcon_robots_txt`,
   `falcon_seo_robots`, `falcon_seo_head_links`, `falcon_seo_schema`, `falcon_optimize_html`,
   `falcon_customizer_sections` and others.

@@ -7,6 +7,7 @@ use FalconCms\Core\Models\NavigationMenu;
 use FalconCms\Core\Models\NavigationMenuItem;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\ProductData;
+use FalconCms\Core\Models\Redirect;
 use FalconCms\Core\Models\Tag;
 use FalconCms\Core\Models\TaxonomyTerm;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -161,6 +162,8 @@ class WordPressImporter
 
             $out['items'][] = [
                 'wp_id' => (int) $wp->post_id,
+                // Its address on the old site: a redirect points it at the new one.
+                'link' => (string) $item->link,
                 'type' => $type,                                   // post | page | <cpt>
                 'title' => (string) $item->title,
                 'slug' => (string) $wp->post_name,
@@ -177,7 +180,10 @@ class WordPressImporter
                 'editor_type' => $meta['_falcon_editor_type'] ?? null,
                 'template' => $meta['_falcon_template'] ?? null,
                 'lang_code' => $meta['_falcon_lang_code'] ?? null,
-                'seo_meta' => self::decodeMeta($meta['_falcon_seo'] ?? null),
+                // FalconCMS's own export first; else whatever the WordPress SEO plugin stored
+                // (Yoast, Rank Math, All in One SEO, SEOPress), so rankings carry over.
+                'seo_meta' => self::decodeMeta($meta['_falcon_seo'] ?? null)
+                    ?: WordPressSeoMeta::fromMeta($meta, (string) $item->title, (string) ($out['site']['title'] ?? ''), (string) $item->children($excNs)->encoded),
                 'gallery' => self::decodeMeta($meta['_falcon_gallery'] ?? null),
                 'custom_fields' => self::decodeMeta($meta['_falcon_custom_fields'] ?? null),
                 'product' => self::decodeMeta($meta['_falcon_product'] ?? null),
@@ -225,8 +231,10 @@ class WordPressImporter
 
         $summary = [
             'categories' => 0, 'tags' => 0, 'posts' => 0, 'pages' => 0,
-            'cpt' => 0, 'menus' => 0, 'layouts' => 0, 'skipped' => 0, 'errors' => [],
+            'cpt' => 0, 'menus' => 0, 'layouts' => 0, 'skipped' => 0, 'seo' => 0, 'redirects' => 0, 'errors' => [],
         ];
+        // Old addresses keep working: each moved one redirects (301) to its new address.
+        $redirects = $opts['redirects'] ?? true;
 
         // 1) Categories (two pass for parents)
         $catIdBySlug = [];
@@ -313,6 +321,14 @@ class WordPressImporter
                     $this->restoreCustomFields($existing, $it['custom_fields'] ?? null);
                     $this->restoreProductData($existing, $type, $it['product'] ?? null);
                     $this->restoreTaxonomyTerms($existing, $it['taxonomies'] ?? [], $lang);
+                    // SEO the post has none of yet, and the old address, are topped up too.
+                    if (!empty($it['seo_meta']) && is_array($it['seo_meta']) && empty($existing->seo_meta) && Schema::hasColumn('posts', 'seo_meta')) {
+                        DB::table('posts')->where('id', $existing->id)->update(['seo_meta' => json_encode($it['seo_meta'])]);
+                        $summary['seo']++;
+                    }
+                    if ($redirects && $this->redirectOldAddress($existing, (string) ($it['link'] ?? ''))) {
+                        $summary['redirects']++;
+                    }
                     $summary['skipped']++;
 
                     continue;
@@ -364,6 +380,7 @@ class WordPressImporter
                 }
                 if (!empty($it['seo_meta']) && Schema::hasColumn('posts', 'seo_meta')) {
                     $extra['seo_meta'] = is_array($it['seo_meta']) ? json_encode($it['seo_meta']) : $it['seo_meta'];
+                    $summary['seo']++;
                 }
                 if (!empty($it['gallery']) && Schema::hasColumn('posts', 'gallery')) {
                     $extra['gallery'] = is_array($it['gallery']) ? json_encode($it['gallery']) : $it['gallery'];
@@ -408,6 +425,10 @@ class WordPressImporter
                     }
                 }
 
+                if ($redirects && $this->redirectOldAddress($post->fresh() ?? $post, (string) ($it['link'] ?? ''))) {
+                    $summary['redirects']++;
+                }
+
                 if ($isPage) {
                     $summary['pages']++;
                 } elseif ($type === 'post') {
@@ -421,6 +442,30 @@ class WordPressImporter
         }
 
         return $summary;
+    }
+
+    /**
+     * Point the post's address on the old WordPress site at its new one with a 301, when they
+     * differ (/2024/05/hello-world/ → /post/hello-world). Only for published posts, and never
+     * for the old home page or a ?p=123 address. Returns whether a redirect was recorded.
+     */
+    private function redirectOldAddress(Post $post, string $link): bool
+    {
+        if ($post->status !== 'published' || $link === '' || parse_url($link, PHP_URL_QUERY)) {
+            return false;
+        }
+        $old = '/'.trim(rawurldecode((string) parse_url($link, PHP_URL_PATH)), '/');
+        $new = '/'.trim(rawurldecode((string) parse_url((string) get_falcon_permalink($post), PHP_URL_PATH)), '/');
+        if ($old === '/' || $old === $new || str_starts_with($old, '/wp-')) {
+            return false;
+        }
+        // Someone may have set this one up by hand already: theirs stays.
+        if (Redirect::where('old_url', $old)->exists()) {
+            return false;
+        }
+        Redirect::recordMove($old, $new);
+
+        return true;
     }
 
     /**
