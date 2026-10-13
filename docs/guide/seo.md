@@ -14,6 +14,11 @@ Everything about search has its own menu in the sidebar, **SEO**, with tabs like
 plugin) and **Redirects**. The screens used to sit under Settings; their old addresses still lead
 to them.
 
+Each screen is granted on its own in **Users → Roles → SEO**, so an editor can be given Site
+Analysis and Redirects without the rest of the settings. A role that could open an SEO screen
+under Settings before keeps it after the update. The SEO tabs inside the post editor (Analysis,
+Keywords, Internal Linking) need no SEO permission: anyone who can write posts or pages uses them.
+
 ## The Falcon SEO plugin
 
 The SEO and speed tools come in **Falcon SEO**, a free plugin that ships with FalconCMS and is on

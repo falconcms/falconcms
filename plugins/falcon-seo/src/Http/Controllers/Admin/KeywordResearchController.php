@@ -35,7 +35,7 @@ class KeywordResearchController extends Controller
 
     public function import(Request $request)
     {
-        abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);
+        abort_unless(auth()->user()?->hasPermission('access_seo_settings'), 403);
         // By extension: Keyword Planner writes UTF-16, which content sniffing calls "octet-stream".
         $request->validate(['keywords_file' => 'required|file|max:20480|extensions:csv,tsv,txt']);
 
@@ -54,7 +54,7 @@ class KeywordResearchController extends Controller
 
     public function clear()
     {
-        abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);
+        abort_unless(auth()->user()?->hasPermission('access_seo_settings'), 403);
         DB::table('cms_keyword_volumes')->delete();
 
         return back()->with('success', 'Imported keyword data removed.');

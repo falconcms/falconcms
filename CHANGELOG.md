@@ -39,7 +39,17 @@ Full release notes, with the reasoning behind each change, live at
 - **SEO has its own menu.** SEO settings, Site Analysis, SEO Audit, Bulk SEO, Search Console and
   Redirects move out of Settings into an SEO menu with tabs like Settings'
   (`/admin/seo/...`; the old `/admin/settings/seo…` addresses redirect). Plugins add screens with
-  `falcon_add_submenu_page('seo', …)` and tabs with the `falcon_seo_tabs` filter.
+  `falcon_add_submenu_page('seo', …)` and tabs with the `falcon_seo_tabs` filter. Each SEO
+  screen has its own permission in Users → Roles (`access_seo_settings`, `access_seo_site_analysis`,
+  `access_seo_audit`, `access_seo_bulk`, `access_seo_redirects`); roles keep the SEO screens they
+  had under Settings.
+
+### Fixed
+
+- **The editor's SEO tabs work for editors, authors and contributors.** Keywords, Internal Linking
+  and Analysis answered only administrators (their requests belong to no menu, so every other role
+  got "Access denied"); anyone who can write posts or pages can use them now. New core filter
+  `falcon_admin_path_access` lets a plugin decide such paths.
 - New core hooks the plugin is built on, listed in the hooks reference: `falcon_robots_txt`,
   `falcon_seo_robots`, `falcon_seo_head_links`, `falcon_seo_schema`, `falcon_optimize_html`,
   `falcon_customizer_sections` and others.

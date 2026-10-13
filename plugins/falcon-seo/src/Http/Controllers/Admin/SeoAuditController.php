@@ -10,7 +10,7 @@ class SeoAuditController extends Controller
 {
     public function index()
     {
-        abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);
+        abort_unless(auth()->user()?->hasPermission('access_seo_audit'), 403);
 
         return view('falcon-seo::admin.seo-audit', ['audit' => SeoAudit::run()]);
     }

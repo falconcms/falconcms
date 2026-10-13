@@ -16,7 +16,7 @@ class SiteAnalysisController extends Controller
 
     public function index()
     {
-        abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);
+        abort_unless(auth()->user()?->hasPermission('access_seo_site_analysis'), 403);
 
         return view('falcon-seo::admin.site-analysis', ['summary' => SiteScan::summary()]);
     }
@@ -24,7 +24,7 @@ class SiteAnalysisController extends Controller
     /** "Scan now": the next few pages that are due; the screen calls again until none are left. */
     public function scan(Request $request)
     {
-        abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);
+        abort_unless(auth()->user()?->hasPermission('access_seo_site_analysis'), 403);
         // With "all", every page is due again: the first call clears the dates.
         if ($request->boolean('restart')) {
             DB::table(SiteScan::TABLE)->update(['analyzed_at' => null]);
@@ -38,7 +38,7 @@ class SiteAnalysisController extends Controller
     /** Check one page again now (the "Check again" link on a row). */
     public function rescan(Post $post)
     {
-        abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);
+        abort_unless(auth()->user()?->hasPermission('access_seo_site_analysis'), 403);
         SiteScan::analyze($post);
 
         return redirect()->back()->with('success', 'Checked "'.$post->title.'" again.');

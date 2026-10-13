@@ -501,15 +501,16 @@ class FalconCmsServiceProvider extends ServiceProvider
      * SEO in the sidebar, a menu of its own with tabs like Settings. The core brings its own
      * screens (settings, redirects); plugins add theirs as submenus of 'seo' (Falcon SEO: Site
      * Analysis, SEO Audit, Bulk SEO; Search Console) and as tabs through `falcon_seo_tabs`.
-     * Everything here is for whoever runs the site's settings, as the screens themselves check.
+     * Each screen has a permission of its own, granted in Users → Roles like any menu, and the
+     * screen checks the same one.
      */
     protected function registerSeoMenu(): void
     {
         add_falcon_action('falcon_admin_menu', function () {
             falcon_add_menu_page(['slug' => 'seo', 'menu_title' => 'SEO', 'route' => 'admin.settings.seo', 'icon' => 'manage_search',
-                'capability' => 'manage_settings', 'show_in_roles' => false, 'position' => 88, 'group' => 'System']);
-            falcon_add_submenu_page('seo', ['menu_title' => 'Settings', 'route' => 'admin.settings.seo', 'capability' => 'manage_settings', 'show_in_roles' => false, 'order' => 1]);
-            falcon_add_submenu_page('seo', ['menu_title' => 'Redirects', 'route' => 'admin.redirects.index', 'capability' => 'manage_settings', 'show_in_roles' => false, 'order' => 90]);
+                'capability' => 'access_seo', 'position' => 88, 'group' => 'System']);
+            falcon_add_submenu_page('seo', ['menu_title' => 'Settings', 'route' => 'admin.settings.seo', 'capability' => 'access_seo_settings', 'order' => 1]);
+            falcon_add_submenu_page('seo', ['menu_title' => 'Redirects', 'route' => 'admin.redirects.index', 'capability' => 'access_seo_redirects', 'order' => 90]);
         });
     }
 

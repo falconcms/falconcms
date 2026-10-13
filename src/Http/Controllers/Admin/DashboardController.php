@@ -768,7 +768,7 @@ class DashboardController extends Controller
 
     public function seoSettings()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->user()->hasPermission('access_seo_settings')) {
             abort(403);
         }
 
@@ -779,7 +779,7 @@ class DashboardController extends Controller
 
     public function updateSeoSettings(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->user()->hasPermission('access_seo_settings')) {
             abort(403);
         }
 

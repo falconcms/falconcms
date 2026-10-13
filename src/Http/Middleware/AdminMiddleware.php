@@ -133,6 +133,13 @@ class AdminMiddleware
             return $user->hasPermission($required);
         }
 
+        // A plugin may decide a path no menu owns (Falcon SEO: the editor's SEO helpers, for
+        // whoever can write posts or pages). true or false decides; null leaves it to the menus.
+        $decided = apply_falcon_filters('falcon_admin_path_access', null, $path, $user, $request);
+        if (is_bool($decided)) {
+            return $decided;
+        }
+
         // ── Dynamic, menu-driven access control ──────────────────────────────────
         // The required permission for any admin page is derived from the menu item that
         // "owns" the path (its getPermission slug — the SAME slug the Roles editor assigns).

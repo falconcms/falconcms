@@ -182,17 +182,27 @@ class SeoServiceProvider extends ServiceProvider
     {
         // The plugin's screens, in the SEO menu and its tabs (the core brings Settings and Redirects).
         $screens = [
-            ['label' => 'Site Analysis', 'route' => 'admin.settings.site-analysis', 'order' => 20],
-            ['label' => 'SEO Audit', 'route' => 'admin.settings.seo-audit', 'order' => 30],
-            ['label' => 'Bulk SEO', 'route' => 'admin.settings.seo-bulk', 'order' => 40],
+            ['label' => 'Site Analysis', 'route' => 'admin.settings.site-analysis', 'order' => 20, 'capability' => 'access_seo_site_analysis'],
+            ['label' => 'SEO Audit', 'route' => 'admin.settings.seo-audit', 'order' => 30, 'capability' => 'access_seo_audit'],
+            ['label' => 'Bulk SEO', 'route' => 'admin.settings.seo-bulk', 'order' => 40, 'capability' => 'access_seo_bulk'],
         ];
         add_falcon_action('falcon_admin_menu', function () use ($screens) {
             foreach ($screens as $screen) {
-                falcon_add_submenu_page('seo', ['menu_title' => $screen['label'], 'route' => $screen['route'], 'capability' => 'manage_settings',
-                    'show_in_roles' => false, 'order' => $screen['order']]);
+                falcon_add_submenu_page('seo', ['menu_title' => $screen['label'], 'route' => $screen['route'], 'capability' => $screen['capability'],
+                    'order' => $screen['order']]);
             }
         });
         add_falcon_filter('falcon_seo_tabs', fn ($tabs) => array_merge((array) $tabs, $screens));
+
+        // The editor's SEO tabs (Analysis, Keywords, Internal Linking) ask these; no menu owns
+        // them, so they are open to whoever can write posts or pages.
+        add_falcon_filter('falcon_admin_path_access', function ($decided, $path = '', $user = null) {
+            if ($decided !== null || !$user || !preg_match('#^admin/seo/(page-analysis|keyword-suggestions|keyword-demand|keyword-countries|related-posts)$#', (string) $path)) {
+                return $decided;
+            }
+
+            return $user->hasPermission('manage_posts') || $user->hasPermission('manage_pages');
+        });
 
         add_falcon_action('falcon_seo_settings_form_top', function () {
             echo view('falcon-seo::admin.partials.settings-visibility')->render();

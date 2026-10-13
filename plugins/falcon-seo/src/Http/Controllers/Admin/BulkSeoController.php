@@ -22,7 +22,7 @@ class BulkSeoController extends Controller
 
     public function index(Request $request)
     {
-        abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);
+        abort_unless(auth()->user()?->hasPermission('access_seo_bulk'), 403);
 
         $types = $this->types();
         $type = (string) $request->query('type', '');
@@ -49,7 +49,7 @@ class BulkSeoController extends Controller
 
     public function update(Request $request)
     {
-        abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);
+        abort_unless(auth()->user()?->hasPermission('access_seo_bulk'), 403);
 
         $data = $request->validate([
             'rows' => 'array|max:'.self::PER_PAGE,
