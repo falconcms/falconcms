@@ -122,8 +122,24 @@ class PageAnalysisTest extends TestCase
 
         $this->assertSame('bd', $res->json('keyword.country'), 'the first chosen is the main market');
         $this->assertSame(['bd', 'us', 'gb'], array_column($res->json('keyword.countries'), 'country'), 'an unknown code is dropped');
-        $this->assertSame([['us', 900], ['bd', 300], ['gb', 0]], array_map(fn ($r) => [$r['country'], $r['searches']], $res->json('keyword.by_country')));
-        $this->assertSame('Bangladesh', $res->json('keyword.by_country.1.name'));
+
+        // The editor then asks for the figures a batch at a time.
+        $rows = $this->postJson('/admin/seo/keyword-countries', ['q' => 'green tea', 'countries' => ['bd', 'us', 'gb']])->assertOk()->json('rows');
+        $this->assertSame([['us', 900], ['bd', 300], ['gb', 0]], array_map(fn ($r) => [$r['country'], $r['searches']], $rows));
+        $this->assertSame('Bangladesh', $rows[1]['name']);
+    }
+
+    public function test_every_country_can_be_chosen_and_figures_come_in_batches(): void
+    {
+        $this->actingAs($this->makeUser(['role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id')]));
+        $post = Post::forceCreate(['title' => 'Draft', 'slug' => 'draft', 'type' => 'post', 'status' => 'draft', 'content' => '<p>Tea.</p>', 'lang_code' => 'en']);
+        $all = array_keys(Countries::ALL);
+
+        $res = $this->postJson('/admin/seo/page-analysis', ['post_id' => $post->id, 'mode' => 'editor', 'keyword' => 'tea', 'countries' => $all, 'check_links' => false])->assertOk();
+        $this->assertCount(count($all), $res->json('keyword.countries'));
+
+        $this->postJson('/admin/seo/keyword-countries', ['q' => 'tea', 'countries' => array_slice($all, 0, KeywordDemand::COUNTRY_BATCH + 1)])
+            ->assertStatus(422);
     }
 
     public function test_countries_are_compared_only_with_a_bing_key(): void

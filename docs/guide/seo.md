@@ -157,13 +157,16 @@ included.
 Each finding says why it matters and lists the images or links concerned. Errors count fully
 against the score and warnings count half.
 
-**Searchers in** lists every country, with a search box. Tick as many as you like (up to 20). The
-first one ticked is the main market, and your choice is remembered for next time.
+**Searchers in** lists every country, with a search box, and **Select all**, **Popular** and
+**Clear** buttons. Tick as many as you like, all of them included. The first one ticked is the main
+market, and your choice is remembered for next time.
 
 Below the score, the **Keyword** box shows how often the focus keyword is searched in the main
 market (from Keyword Planner or Bing, see Search demand below). With more than one country ticked
 and a Bing key, it also shows a bar for each country, so you can see where people search for it
-most. It lists keywords worth considering too, each with the reason: searched more, already shown
+most. The countries are asked 20 at a time and the table fills in as they answer; the 25 with the
+most searches are shown, the rest and those with none are folded below. Each answer is kept for a
+week, so checking the same keyword again is instant. It lists keywords worth considering too, each with the reason: searched more, already shown
 by Google for this page, or what the page is most about. **Use as focus keyword** switches to one.
 
 ### Keywords

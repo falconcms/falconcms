@@ -25,7 +25,7 @@ class PageAnalysisController extends Controller
             'slug' => 'nullable|string|max:500',
             'content' => 'nullable|string|max:2000000',
             'country' => 'nullable|string|size:2',
-            'countries' => 'nullable|array|max:'.KeywordDemand::MAX_COUNTRIES,
+            'countries' => 'nullable|array|max:'.count(Countries::ALL),
             'countries.*' => 'string|size:2',
             'check_links' => 'nullable|boolean',
         ]);
@@ -59,7 +59,6 @@ class PageAnalysisController extends Controller
 
         $result['keyword'] = $this->keywordAdvice($keyword, $data, $post);
         $result['keyword']['countries'] = array_map(fn ($c) => ['country' => $c, 'name' => Countries::name($c)], $countries);
-        $result['keyword']['by_country'] = $keyword !== '' && count($countries) > 1 ? KeywordDemand::byCountry($keyword, $countries) : [];
 
         return response()->json($result);
     }

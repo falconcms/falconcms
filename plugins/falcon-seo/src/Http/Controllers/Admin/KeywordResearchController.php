@@ -21,6 +21,18 @@ class KeywordResearchController extends Controller
         return response()->json(KeywordDemand::lookup($data['q'], $data['country'] ?? null));
     }
 
+    /** Editor → SEO → Analysis: searches in each chosen country, one batch per request. */
+    public function countries(Request $request)
+    {
+        $data = $request->validate([
+            'q' => 'required|string|max:200',
+            'countries' => 'required|array|max:'.KeywordDemand::COUNTRY_BATCH,
+            'countries.*' => 'string|size:2',
+        ]);
+
+        return response()->json(['rows' => KeywordDemand::byCountry($data['q'], $data['countries'])]);
+    }
+
     public function import(Request $request)
     {
         abort_unless(auth()->user()?->hasPermission('manage_settings'), 403);

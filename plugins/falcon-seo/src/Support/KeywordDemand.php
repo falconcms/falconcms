@@ -35,8 +35,8 @@ final class KeywordDemand
 
     private const RELATED = 15;
 
-    /** Countries compared in one go: enough to choose markets, few enough to answer quickly. */
-    public const MAX_COUNTRIES = 20;
+    /** Countries asked per request: the editor asks for the rest batch by batch, so any number can be compared. */
+    public const COUNTRY_BATCH = 20;
 
     /** Which sources this site has set up. */
     public static function sources(): array
@@ -305,8 +305,9 @@ final class KeywordDemand
 
     /**
      * How often a keyword is searched on Bing in each of these countries (last 30 days), most
-     * first. Needs the Bing key; one call per country, remembered for a week. Keyword Planner
-     * figures cover one market only, so they are not split by country.
+     * first, for up to COUNTRY_BATCH countries. Needs the Bing key; one call per country,
+     * remembered for a week. Keyword Planner figures cover one market only, so they are not
+     * split by country.
      *
      * @param  list<string>  $countries
      * @return list<array{country: string, name: string, searches: ?int, error: ?string}>
@@ -321,7 +322,7 @@ final class KeywordDemand
         $language = self::market()[1];
 
         $rows = [];
-        foreach (array_slice($countries, 0, self::MAX_COUNTRIES) as $country) {
+        foreach (array_slice($countries, 0, self::COUNTRY_BATCH) as $country) {
             $row = ['country' => $country, 'name' => Countries::name($country), 'searches' => null, 'error' => null];
             try {
                 $row['searches'] = Cache::remember('falcon:kw:bing-country:'.sha1($query.'|'.$country.'|'.$language), now()->addDays(self::CACHE_DAYS), function () use ($query, $country, $language) {

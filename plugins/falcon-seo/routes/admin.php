@@ -32,6 +32,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('seo/related-posts', [SeoToolsController::class, 'relatedPosts'])->name('seo.related-posts');
     Route::post('seo/keyword-suggestions', [SeoToolsController::class, 'keywordSuggestions'])->name('seo.keyword-suggestions');
     Route::post('seo/keyword-demand', [KeywordResearchController::class, 'demand'])->name('seo.keyword-demand')->middleware('throttle:60,1');
+    Route::post('seo/keyword-countries', [KeywordResearchController::class, 'countries'])->name('seo.keyword-countries')->middleware('throttle:60,1');
     Route::post('seo/page-analysis', [PageAnalysisController::class, 'analyze'])->name('seo.page-analysis')->middleware('throttle:30,1');
     Route::post('settings/seo/keywords-import', [KeywordResearchController::class, 'import'])->name('settings.seo.keywords-import');
     Route::post('settings/seo/keywords-clear', [KeywordResearchController::class, 'clear'])->name('settings.seo.keywords-clear');
