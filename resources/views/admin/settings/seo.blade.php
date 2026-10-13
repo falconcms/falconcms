@@ -11,6 +11,11 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if (session('error'))
+            <div class="bg-[#fcf0f1] border-l-4 border-[#d63638] p-3 mb-6 text-[13px] text-[#1d2327]">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <form action="{{ route('admin.settings.seo.update') }}" method="POST" class="max-w-[800px]">
             @csrf

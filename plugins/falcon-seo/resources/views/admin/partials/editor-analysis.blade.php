@@ -184,6 +184,10 @@
         let html = `<div class="border border-[#dcdcde] rounded bg-white p-3 mb-4">
             <div class="text-[12px] font-bold text-[#2c3338] mb-2">Keyword: “${esc(k.keyword)}” · ${esc(countryName(k.country))}${(k.countries || []).length > 1 ? ` <span class="font-normal text-[#646970]">(+${k.countries.length - 1} more countries)</span>` : ''}</div>`;
         html += renderGoogleCountries(k.google_countries, k.countries || []);
+        // Pro: Google's numbers through DataForSEO, filled in after the render.
+        if (window.falconSeoPro) {
+            html += '<div id="falcon-seo-dfs" class="mb-3 pb-3 border-b border-[#f0f0f1]"></div>';
+        }
         if (!anySource) {
             html += `<p class="text-[12px] text-[#646970]">How often it is searched needs a free source: a Bing Webmaster API key or a Keyword Planner import, in SEO → Settings → Keyword research.</p>`;
         } else {
@@ -290,6 +294,12 @@
         }
     }
 
+    // Pro: a weak SEO title or description gets "Suggest with AI" right where it is reported.
+    function aiFix(c) {
+        if (!window.falconSeoPro || !['title', 'description'].includes(c.id) || !['warning', 'error'].includes(c.status)) return '';
+        return ` <button type="button" class="text-[11px] text-[#2271b1] hover:underline ml-1" onclick="switchSeoTab('general'); window.falconSeoPro.suggest('${c.id}')">✨ Suggest with AI</button>`;
+    }
+
     function render(d) {
         let html = `<div class="flex items-center gap-4 mb-4 p-3 border border-[#dcdcde] rounded bg-white">
             ${ring(d.score, d.grade)}
@@ -311,7 +321,7 @@
                 </summary><div class="px-3 pb-2">` +
                 g.checks.map(c => `<div class="flex gap-2 py-1.5 border-t border-[#f0f0f1] text-[12px]">
                     <div class="w-4 text-center">${icons[c.status] || ''}</div>
-                    <div class="min-w-0 flex-1"><div class="text-[#1d2327]">${esc(c.label)}</div>
+                    <div class="min-w-0 flex-1"><div class="text-[#1d2327]">${esc(c.label)}${aiFix(c)}</div>
                         ${c.detail ? `<div class="text-[11px] text-[#646970] break-words">${esc(c.detail)}</div>` : ''}
                         ${(c.items || []).length ? `<ul class="text-[11px] text-[#50575e] list-disc pl-4 mt-1 break-all">${c.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>` : ''}
                     </div></div>`).join('') + `</div></details>`;
@@ -340,7 +350,14 @@
         box.textContent = 'Analysing… (checking links can take a few seconds)';
         fetch(@json(route('admin.seo.page-analysis')), {method: 'POST', body, headers: {'Accept': 'application/json'}})
             .then(r => r.ok ? r.json() : Promise.reject(new Error('The analysis failed (' + r.status + ').')))
-            .then(d => { box.className = ''; box.innerHTML = render(d); loadCountries(); })
+            .then(d => {
+                box.className = '';
+                box.innerHTML = render(d);
+                loadCountries();
+                if (window.falconSeoPro && d.keyword && d.keyword.keyword) {
+                    window.falconSeoPro.metrics(d.keyword.keyword, (d.keyword.countries || []).map(c => c.country), document.getElementById('falcon-seo-dfs'));
+                }
+            })
             .catch(e => { box.className = 'text-[13px] text-[#b32d2e]'; box.textContent = e.message; })
             .finally(() => { btn.disabled = false; });
     };

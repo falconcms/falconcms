@@ -15,6 +15,7 @@ use FalconSeo\Http\Controllers\Admin\KeywordResearchController;
 use FalconSeo\Http\Controllers\Admin\MediaAvifController;
 use FalconSeo\Http\Controllers\Admin\PageAnalysisController;
 use FalconSeo\Http\Controllers\Admin\SeoAuditController;
+use FalconSeo\Http\Controllers\Admin\SeoProController;
 use FalconSeo\Http\Controllers\Admin\SeoToolsController;
 use FalconSeo\Http\Controllers\Admin\SiteAnalysisController;
 use FalconSeo\Http\Controllers\Admin\WebVitalsController;
@@ -37,6 +38,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('seo/keyword-suggestions', [SeoToolsController::class, 'keywordSuggestions'])->name('seo.keyword-suggestions');
     Route::post('seo/keyword-demand', [KeywordResearchController::class, 'demand'])->name('seo.keyword-demand')->middleware('throttle:60,1');
     Route::post('seo/keyword-countries', [KeywordResearchController::class, 'countries'])->name('seo.keyword-countries')->middleware('throttle:60,1');
+    // Pro: AI writing, Google keyword numbers, one-click fixes, the weekly email.
+    Route::post('seo/ai-suggest', [SeoProController::class, 'suggest'])->name('seo.ai-suggest')->middleware('throttle:20,1');
+    Route::post('seo/keyword-metrics', [SeoProController::class, 'metrics'])->name('seo.keyword-metrics')->middleware('throttle:12,1');
+    Route::post('seo/site-analysis/fix', [SeoProController::class, 'fix'])->name('seo.site-analysis.fix')->middleware('throttle:60,1');
+    Route::post('seo/settings/report-test', [SeoProController::class, 'testReport'])->name('seo.report-test')->middleware('throttle:5,1');
     Route::post('seo/page-analysis', [PageAnalysisController::class, 'analyze'])->name('seo.page-analysis')->middleware('throttle:30,1');
     Route::post('seo/settings/keywords-import', [KeywordResearchController::class, 'import'])->name('settings.seo.keywords-import');
     Route::post('seo/settings/keywords-clear', [KeywordResearchController::class, 'clear'])->name('settings.seo.keywords-clear');

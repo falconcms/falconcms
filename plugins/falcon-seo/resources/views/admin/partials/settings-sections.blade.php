@@ -178,4 +178,6 @@
         </div>
     </div>
 </div>
+
+@include('falcon-seo::admin.partials.settings-pro')
 </div>

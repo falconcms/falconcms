@@ -5,6 +5,7 @@ namespace FalconSeo\Support;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 /**
@@ -108,9 +109,16 @@ final class SiteScan
                 'analyzed_at' => now(),
                 'updated_at' => now(),
             ];
-            DB::table(self::TABLE)->where('post_id', $post->id)->exists()
-                ? DB::table(self::TABLE)->where('post_id', $post->id)->update($row)
-                : DB::table(self::TABLE)->insert($row + ['post_id' => $post->id, 'created_at' => now()]);
+            $before = DB::table(self::TABLE)->where('post_id', $post->id)->first(['score']);
+            if ($before) {
+                // The weekly email compares the two.
+                if (Schema::hasColumn(self::TABLE, 'previous_score')) {
+                    $row['previous_score'] = (int) $before->score;
+                }
+                DB::table(self::TABLE)->where('post_id', $post->id)->update($row);
+            } else {
+                DB::table(self::TABLE)->insert($row + ['post_id' => $post->id, 'created_at' => now()]);
+            }
         } catch (Throwable $e) {
             report($e); // no table yet (not migrated): the analysis itself still answered
         }

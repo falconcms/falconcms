@@ -15,7 +15,8 @@
         "illuminate/queue": "^13.0",
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
-        "illuminate/view": "^13.0"
+        "illuminate/view": "^13.0",
+        "anthropic-ai/sdk": "^0.57"
     },
     "conflict": {
         "laravel/framework": "<13.30.0",

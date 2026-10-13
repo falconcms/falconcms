@@ -7,6 +7,15 @@
         $tone = fn ($score) => $score >= 80 ? '#00a32a' : ($score >= 50 ? '#dba617' : '#d63638');
         $gradeName = ['good' => 'Good', 'ok' => 'Needs some work', 'poor' => 'Needs work'];
         $edit = fn ($row) => \FalconSeo\Support\SeoAudit::editUrl((int) $row['post_id'], (string) $row['type']);
+        $pro = \FalconSeo\Support\Pro::active();
+        $ai = \FalconSeo\Support\AiWriter::available();
+        // Pro one-click fixes: what each button does, by problem. [label, method, needs AI]
+        $fixes = [
+            'description' => [['Fill missing ones from the page text', 'auto', false], ['Write them with AI', 'ai', true]],
+            'title' => [['Rewrite them with AI', 'ai', true]],
+            'alt' => [['Name them from the file names', 'auto', false], ['Describe them with AI', 'ai', true]],
+            'broken_links' => [['Remove the broken links (keep the words)', 'auto', false]],
+        ];
     @endphp
 
     <div class="px-2">
@@ -65,6 +74,21 @@
                     <span class="ml-auto text-[12px] font-normal text-[#2271b1]"><span class="group-open:hidden">Show</span><span class="hidden group-open:inline">Hide</span></span>
                 </summary>
                 <div class="wp-metabox-content p-0">
+                    @isset($fixes[$problem['id']])
+                        <div class="px-4 py-2 bg-[#f6f7f7] border-b border-[#f0f0f1] flex flex-wrap items-center gap-2 text-[12px]">
+                            @if($pro)
+                                <span class="text-[#646970]">Fix all {{ $count }}:</span>
+                                @foreach($fixes[$problem['id']] as [$label, $method, $needsAi])
+                                    <button type="button" class="wp-btn-secondary h-7 py-0 px-2 text-[12px]" @disabled($needsAi && !$ai)
+                                            title="{{ $needsAi && !$ai ? 'Add a Claude API key in SEO → Settings first' : 'A revision is kept before any content changes' }}"
+                                            onclick="falconSiteFix(this, @js($problem['id']), @js($method), @js(array_column($problem['pages'], 'post_id')))">{{ $needsAi ? '✨ ' : '' }}{{ $label }}</button>
+                                @endforeach
+                                <span class="falcon-site-fix-out text-[#646970]"></span>
+                            @else
+                                <span class="text-[#646970]">Fix all of these in one click with <a href="{{ falcon_upgrade_url() }}" target="_blank" rel="noopener" class="text-[#2271b1] font-semibold">FalconCMS Pro</a>.</span>
+                            @endif
+                        </div>
+                    @endisset
                     <table class="w-full text-[13px]">
                         <tbody>
                         @foreach($problem['pages'] as $page)
@@ -140,6 +164,33 @@
     </div>
 
     <script>
+        // Pro "Fix all": the pages a few at a time; each result is listed, then the page reloads to show what is left.
+        function falconSiteFix(btn, check, method, ids) {
+            const bar = btn.parentNode;
+            const out = bar.querySelector('.falcon-site-fix-out');
+            const batch = {{ \FalconSeo\Http\Controllers\Admin\SeoProController::FIX_BATCH }};
+            let fixed = 0, skipped = [];
+            bar.querySelectorAll('button').forEach(b => b.disabled = true);
+            const step = (i) => {
+                if (i >= ids.length) {
+                    out.style.color = '#00731a';
+                    out.textContent = `Fixed ${fixed} page(s)` + (skipped.length ? `; ${skipped.length} left as they were (${skipped[0]})` : '') + '. Checking them again…';
+                    return fetch(@json(route('admin.seo.site-analysis.scan')), {method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token())}, body: JSON.stringify({links: 1})})
+                        .finally(() => window.location.reload());
+                }
+                out.textContent = `Fixing ${Math.min(i + batch, ids.length)} of ${ids.length}…`;
+                return fetch(@json(route('admin.seo.site-analysis.fix')), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token())},
+                    body: JSON.stringify({check, method, post_ids: ids.slice(i, i + batch)}),
+                }).then(r => r.json().then(d => r.ok ? d : Promise.reject(new Error(d.message || 'The fix stopped.')))).then(d => {
+                    (d.results || []).forEach(r => r.fixed ? fixed++ : skipped.push(r.title + ': ' + r.message));
+                    return step(i + batch);
+                });
+            };
+            step(0).catch(e => { out.style.color = '#b32d2e'; out.textContent = e.message; bar.querySelectorAll('button').forEach(b => b.disabled = false); });
+        }
+
         // "Check now": the next few pages per request until none are due, then the page reloads with the results.
         function falconSiteScan(all) {
             const btn = document.getElementById('site-scan-btn');

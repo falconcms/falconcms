@@ -10,6 +10,7 @@ use FalconSeo\Support\Cloudflare;
 use FalconSeo\Support\IndexNow;
 use FalconSeo\Support\KeywordDemand;
 use FalconSeo\Support\NotFoundLog;
+use FalconSeo\Support\Pro;
 use FalconSeo\Support\ScoreCell;
 use FalconSeo\Support\SearchVisibility;
 use FalconSeo\Support\SiteScan;
@@ -79,11 +80,13 @@ class SeoServiceProvider extends ServiceProvider
         add_falcon_action('falcon_admin_list_seo_cell', [ScoreCell::class, 'render']);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([Console\SeoScanCommand::class]);
+            $this->commands([Console\SeoScanCommand::class, Console\SeoReportCommand::class]);
         }
         // A few pages an hour: a large site fills in over a day without ever loading the server.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             $schedule->command('falcon:seo-scan --limit=10')->hourly()->withoutOverlapping()->runInBackground();
+            // Pro: Monday morning, after a week of checks (the command does nothing while it is off).
+            $schedule->command('falcon:seo-report')->weeklyOn(1, '08:30');
         });
     }
 
@@ -197,7 +200,7 @@ class SeoServiceProvider extends ServiceProvider
         // The editor's SEO tabs (Analysis, Keywords, Internal Linking) ask these; no menu owns
         // them, so they are open to whoever can write posts or pages.
         add_falcon_filter('falcon_admin_path_access', function ($decided, $path = '', $user = null) {
-            if ($decided !== null || !$user || !preg_match('#^admin/seo/(page-analysis|keyword-suggestions|keyword-demand|keyword-countries|related-posts)$#', (string) $path)) {
+            if ($decided !== null || !$user || !preg_match('#^admin/seo/(page-analysis|keyword-suggestions|keyword-demand|keyword-countries|keyword-metrics|ai-suggest|related-posts)$#', (string) $path)) {
                 return $decided;
             }
 
@@ -212,8 +215,10 @@ class SeoServiceProvider extends ServiceProvider
         });
         add_falcon_filter('falcon_seo_settings_checkboxes', fn ($boxes) => array_merge((array) $boxes, [
             'indexnow_enabled', 'seo_large_image_preview', 'ai_block_training', 'ai_block_search', 'seo_404_log', 'seo_hide_site', 'keyword_autocomplete',
+            Pro::REPORT_ENABLED,
         ]));
         add_falcon_filter('falcon_seo_settings_data', [self::class, 'encryptBingKey']);
+        add_falcon_filter('falcon_seo_settings_data', [Pro::class, 'encryptSecrets']);
 
         add_falcon_action('falcon_seo_metabox_tabs', function ($post = null) {
             echo view('falcon-seo::admin.partials.editor-tabs', ['post' => $post])->render();
@@ -221,6 +226,7 @@ class SeoServiceProvider extends ServiceProvider
         add_falcon_action('falcon_seo_metabox_panels', function ($post = null) {
             echo view('falcon-seo::admin.partials.editor-analysis', ['post' => $post])->render();
             echo view('falcon-seo::admin.partials.editor-panels', ['post' => $post])->render();
+            echo view('falcon-seo::admin.partials.editor-pro', ['post' => $post])->render();
         });
     }
 

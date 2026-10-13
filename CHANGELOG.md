@@ -50,6 +50,11 @@ Full release notes, with the reasoning behind each change, live at
   and Analysis answered only administrators (their requests belong to no menu, so every other role
   got "Access denied"); anyone who can write posts or pages can use them now. New core filter
   `falcon_admin_path_access` lets a plugin decide such paths.
+- **Pro tools in Falcon SEO** (licence feature `seo_pro`; any Pro licence includes it): AI writing
+  with Claude (SEO titles, meta descriptions, alt text; the site's own Anthropic key, through the
+  official `anthropic-ai/sdk`, now a dependency), Google keyword numbers and difficulty by country
+  through DataForSEO, one-click fixes in Site Analysis (descriptions, titles, alt text, broken
+  links; a revision is kept first), and a weekly SEO email (`falcon:seo-report`, Mondays).
 - New core hooks the plugin is built on, listed in the hooks reference: `falcon_robots_txt`,
   `falcon_seo_robots`, `falcon_seo_head_links`, `falcon_seo_schema`, `falcon_optimize_html`,
   `falcon_customizer_sections` and others.
