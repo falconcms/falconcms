@@ -14,7 +14,7 @@ class CustomizerController extends Controller
 {
     private function sections(): array
     {
-        return [
+        $sections = [
             'layout' => [
                 'title' => 'Layout',
                 'icon' => 'dashboard_customize',
@@ -985,26 +985,6 @@ class CustomizerController extends Controller
                         'desc' => 'Images below the fold load only as the reader scrolls to them, so the first screen appears faster. The first three images stay eager; the hero (the first image or section background after the site header) is preloaded and fetched first; and library images get their shape reserved so the page does not jump as they arrive. Works on every page, default theme or page builder.',
                         'default' => '0',
                     ],
-                    'perf_avif' => [
-                        'type' => 'toggle',
-                        'label' => 'Serve AVIF Images',
-                        'desc' => 'Library images also get an AVIF copy (usually 20-30% smaller than WebP), offered to browsers that support it; others keep the original. New uploads get one automatically; for images already in the library, press Media → Generate AVIF copies once (originals are not changed). Needs PHP GD with AVIF support.',
-                        'default' => '0',
-                        // Locked off where PHP's GD cannot write AVIF: it would be "on" and do nothing.
-                        'unavailable' => \FalconCms\Core\Support\AvifImages::supported() ? '' : 'Not available on this server: its PHP (GD) cannot write AVIF images. Ask your host to enable AVIF in GD.',
-                    ],
-                    'perf_speculative_loading' => [
-                        'type' => 'toggle',
-                        'label' => 'Instant Page Loads (Speculation Rules)',
-                        'desc' => 'The next page starts loading the moment a visitor presses a link, so it opens almost instantly in Chrome and Edge (other browsers are unaffected). Never for the admin, login, cart, checkout or account pages. The same feature WordPress ships in core.',
-                        'default' => '0',
-                    ],
-                    'perf_rum' => [
-                        'type' => 'toggle',
-                        'label' => 'Measure Real Visitor Speed (Web Vitals)',
-                        'desc' => 'Measures how fast each page loads and responds for your real visitors (LCP, INP, CLS) and shows it under Analytics → Web Vitals, by page, for mobile and desktop. A tiny script with no outside service; it reports as the visitor leaves the page, so it never slows the page down. No personal data is stored.',
-                        'default' => '0',
-                    ],
                     'perf_defer_js' => [
                         'type' => 'toggle',
                         'label' => 'Defer JavaScript',
@@ -1154,6 +1134,9 @@ class CustomizerController extends Controller
                 'fields' => [],
             ],
         ];
+
+        // Plugins add fields of their own (Falcon SEO: AVIF, speculative loading, Web Vitals under Performance).
+        return (array) apply_falcon_filters('falcon_customizer_sections', $sections);
     }
 
     public function index(Request $request)

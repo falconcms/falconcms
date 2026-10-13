@@ -4,8 +4,8 @@ namespace FalconCms\Core\Tests\Feature\Performance;
 
 use App\Models\User;
 use FalconCms\Core\Http\Middleware\HtmlOptimizeMiddleware;
-use FalconCms\Core\Support\AvifImages;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\AvifImages;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;

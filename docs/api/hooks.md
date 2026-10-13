@@ -1221,6 +1221,33 @@ and focus keyword (and, for keywords, the page's text, headings and description)
 Ids of pages drawn by templates rather than their own content (the shop adds its pages). The SEO
 Audit does not report them as empty.
 
+#### Hooks the core fires for Falcon SEO
+
+The Falcon SEO plugin does all its work through these. Another plugin can use them too.
+
+| Hook | Type | Args | What it is for |
+|---|---|---|---|
+| `falcon_site_hidden_from_search` | filter | `$hidden` | `true` keeps the whole site out of search engines: noindex everywhere, no sitemap. Ask it with `falcon_site_hidden_from_search()`. |
+| `falcon_robots_txt` | filter | `$content` | The robots.txt text before it is sent. |
+| `falcon_seo_robots` | filter | `$directives, $post` | The robots meta directives of an indexable page (empty: no tag). |
+| `falcon_seo_head_links` | action | `$post, $noindex` | Prints extra `<link>` tags after the canonical (hreflang). |
+| `falcon_seo_schema` | filter | `null, $page` | The page's JSON-LD. Nothing returned, no script. |
+| `falcon_optimize_html` | filter | `$html, $request` | Rewrites the finished page in the HTML optimizer, after images and before scripts are deferred. |
+| `falcon_response_sent` | action | `$request, $response` | Every web response (the 404 log). |
+| `falcon_redirect_saved` | action | `$from, $to` | A redirect was added in SEO → Redirects. |
+| `falcon_redirects_screen` | action | — | Prints a panel on the Redirects screen. |
+| `falcon_media_image_stored` | filter | `$made, $path` | An image was stored or replaced in the library. Return `true` if you made a copy. |
+| `falcon_media_file_deleted` | action | `$path` | A library file was deleted. |
+| `falcon_media_library_actions` | action | — | Prints a button next to the Media Library title. |
+| `falcon_page_cache_cleared` | action | — | The page cache was emptied. |
+| `falcon_customizer_sections` | filter | `$sections` | Add fields to the Customizer's sections. |
+| `falcon_seo_settings_sections` | action | `$settings` | Prints a section on Settings → SEO. Its fields save with the form. |
+| `falcon_seo_settings_checkboxes` | filter | `$names` | Names of your checkboxes on Settings → SEO, so an unticked one saves as `0`. |
+| `falcon_seo_settings_data` | filter | `$data, $request` | What Settings → SEO is about to save (encrypt a key here). |
+| `falcon_integrations_settings_after_form` | action | — | Prints after the Integrations form (a form of your own). |
+| `falcon_integrations_settings_saved` | action | `$request` | Settings → Integrations was saved. |
+| `falcon_seo_metabox_tabs` / `falcon_seo_metabox_panels` | action | `$post` | Add a tab to the editor's SEO box: a `.seo-tab-btn` with id `seo-tab-btn-{name}` and a `.seo-tab-content` with id `seo-tab-{name}`. Opening it fires the `falcon-seo-tab` DOM event with `detail.tab`. |
+
 ---
 
 ## Where to Register Hooks

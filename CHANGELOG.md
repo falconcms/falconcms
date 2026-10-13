@@ -9,6 +9,24 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+### Added
+
+- **Falcon SEO, a bundled plugin (free, on by default).** The SEO and speed tools now live in
+  `plugins/falcon-seo`: page analysis, SEO Audit, Bulk SEO, keyword research, internal link
+  suggestions, structured data, hreflang, IndexNow, AI crawler rules, the 404 log, search
+  visibility, AVIF images, speculative loading, Web Vitals and the Cloudflare purge. Switched off,
+  the CMS keeps the basic SEO (title, description, canonical, Open Graph, sitemap, robots.txt,
+  redirects), and no saved data is lost. Route names, settings and the old class names
+  (`FalconCms\Core\Support\SeoAudit` and the rest, through aliases) are unchanged.
+- **Page analysis with a score** (editor → SEO → Analysis). Reads the published page as visitors
+  get it, or the editor's content, and checks headings, the focus keyword, the title and
+  description, images (alt text, size, dimensions), internal and external links, broken links,
+  structured data and more. It also suggests keywords worth considering, with search demand by
+  country.
+- New core hooks the plugin is built on, listed in the hooks reference: `falcon_robots_txt`,
+  `falcon_seo_robots`, `falcon_seo_head_links`, `falcon_seo_schema`, `falcon_optimize_html`,
+  `falcon_customizer_sections` and others.
+
 ### Fixed
 
 - **"Load Assets Only When Needed" drops the Lucide library on pages with no Lucide icon.** The

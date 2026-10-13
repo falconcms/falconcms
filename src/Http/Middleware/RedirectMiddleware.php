@@ -4,7 +4,6 @@ namespace FalconCms\Core\Http\Middleware;
 
 use Closure;
 use FalconCms\Core\Models\Redirect;
-use FalconCms\Core\Support\NotFoundLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -61,8 +60,9 @@ class RedirectMiddleware
 
         $response = $next($request);
 
-        // 3. Remember addresses that turned out not to exist, for the Redirects screen.
-        NotFoundLog::observe($request, $response);
+        // 3. Plugins see every answer (Falcon SEO remembers addresses that turned out not to
+        //    exist, for the Redirects screen).
+        do_falcon_action('falcon_response_sent', $request, $response);
 
         return $response;
     }

@@ -16,17 +16,12 @@ use FalconCms\Core\Models\Product;
 use FalconCms\Core\Models\Role;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Services\EcommerceData;
-use FalconCms\Core\Support\Cloudflare;
-use FalconCms\Core\Support\KeywordDemand;
-use FalconCms\Core\Support\KeywordSuggestions;
-use FalconCms\Core\Support\LinkSuggestions;
 use FalconCms\Core\Support\SettingsExtension;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -791,16 +786,12 @@ class DashboardController extends Controller
         $data = $request->except('_token');
 
         // Handle Sitemap Checkboxes — all active post types + taxonomies
-        $checkboxes = ['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow', 'indexnow_enabled', 'seo_large_image_preview', 'ai_block_training', 'ai_block_search', 'seo_404_log', 'seo_hide_site', 'keyword_autocomplete'];
+        // Plugins name the checkboxes of the sections they add (an unticked box posts nothing).
+        $checkboxes = array_merge(['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow'],
+            (array) apply_falcon_filters('falcon_seo_settings_checkboxes', []));
 
-        // The Bing key is stored encrypted, and an empty field keeps the one already saved.
-        $bingKey = trim((string) ($data[KeywordDemand::BING_KEY] ?? ''));
-        unset($data[KeywordDemand::BING_KEY], $data['bing_webmaster_api_key_remove']);
-        if ($request->boolean('bing_webmaster_api_key_remove')) {
-            $data[KeywordDemand::BING_KEY] = '';
-        } elseif ($bingKey !== '') {
-            $data[KeywordDemand::BING_KEY] = Crypt::encryptString($bingKey);
-        }
+        // ...and may change what is saved (Falcon SEO stores its API key encrypted).
+        $data = (array) apply_falcon_filters('falcon_seo_settings_data', $data, $request);
 
         try {
             $slugs = PostType::where('is_active', true)->pluck('slug');
@@ -857,36 +848,6 @@ class DashboardController extends Controller
         }
 
         return redirect()->back()->with('success', 'SEO Settings updated successfully!');
-    }
-
-    /** Internal link suggestions for the post being edited: where to link out, and who should link in. */
-    public function getRelatedPosts(Request $request)
-    {
-        $title = (string) $request->query('s', '');
-        if (mb_strlen(trim($title)) < 3 && trim((string) $request->query('keyword', '')) === '') {
-            return response()->json(['outbound' => [], 'inbound' => []]);
-        }
-
-        return response()->json(LinkSuggestions::for($title, (string) $request->query('keyword', ''), (int) $request->query('exclude', 0)));
-    }
-
-    /**
-     * Keyword ideas for the page being edited (SEO → Keywords): from what it is unsaved in the
-     * editor, or what is saved when the editor sends no content (the page builder).
-     */
-    public function keywordSuggestions(Request $request)
-    {
-        $data = $request->validate([
-            'post_id' => 'nullable|integer',
-            'title' => 'nullable|string|max:500',
-            'seo_title' => 'nullable|string|max:500',
-            'description' => 'nullable|string|max:2000',
-            'slug' => 'nullable|string|max:500',
-            'content' => 'nullable|string|max:2000000',
-            'keyword' => 'nullable|string|max:200',
-        ]);
-
-        return response()->json(KeywordSuggestions::for(array_map(fn ($v) => (string) $v, $data) + ['post_id' => 0]));
     }
 
     public function activityLogs(Request $request)
@@ -966,17 +927,6 @@ class DashboardController extends Controller
         return redirect()->route('admin.settings.api')->with('success', 'API token revoked.');
     }
 
-    /** Settings → Integrations → Cloudflare → "Purge everything now". */
-    public function purgeCloudflare()
-    {
-        if (!auth()->user()->hasPermission('manage_settings')) {
-            abort(403);
-        }
-        $error = Cloudflare::purgeEverything();
-
-        return redirect()->back()->with($error ? 'error' : 'success', $error ?? 'Cloudflare cache purged.');
-    }
-
     public function integrationsSettings()
     {
         if (!auth()->user()->hasPermission('manage_settings')) {
@@ -1002,18 +952,8 @@ class DashboardController extends Controller
             );
         }
 
-        // Cloudflare cache purge. The token is stored encrypted, and an empty field keeps it.
-        $settings = [Cloudflare::ENABLED => $request->boolean(Cloudflare::ENABLED) ? '1' : '0',
-            Cloudflare::ZONE => trim((string) $request->input(Cloudflare::ZONE, ''))];
-        $token = trim((string) $request->input(Cloudflare::TOKEN, ''));
-        if ($request->boolean('cloudflare_api_token_remove')) {
-            $settings[Cloudflare::TOKEN] = '';
-        } elseif ($token !== '') {
-            $settings[Cloudflare::TOKEN] = Crypt::encryptString($token);
-        }
-        foreach ($settings as $key => $value) {
-            DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value, 'updated_at' => now()]);
-        }
+        // Plugins save the sections they add here (Falcon SEO: Cloudflare cache purge).
+        do_falcon_action('falcon_integrations_settings_saved', $request);
 
         // Persist any theme/plugin fields injected into this screen — this
         // controller only saves a fixed whitelist, so they need explicit saving.

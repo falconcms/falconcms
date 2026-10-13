@@ -4,8 +4,8 @@ namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
 use FalconCms\Core\Models\Post;
-use FalconCms\Core\Support\SeoAudit;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\SeoAudit;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -82,6 +82,7 @@ class SeoAuditTest extends TestCase
 
         $this->assertSame(1, DB::table('posts')->where('slug', 'alpha')->count(), 'nothing is changed');
     }
+
     public function test_published_pages_with_nothing_on_them_are_flagged_as_soft_404s(): void
     {
         $this->make('empty-page', ['type' => 'page', 'content' => null]);

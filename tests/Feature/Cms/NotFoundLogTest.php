@@ -3,8 +3,8 @@
 namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
-use FalconCms\Core\Support\NotFoundLog;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\NotFoundLog;
 use Illuminate\Support\Facades\DB;
 
 /**

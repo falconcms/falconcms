@@ -6,7 +6,6 @@ use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\Tag;
-use FalconCms\Core\Support\SearchVisibility;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
@@ -32,7 +31,7 @@ class SitemapController extends Controller
     public function index()
     {
         // A site hidden from search engines has nothing to offer them.
-        abort_if(SearchVisibility::hidden(), 404);
+        abort_if(falcon_site_hidden_from_search(), 404);
 
         $entries = $this->entries();
         if (count($entries) <= self::PER_FILE) {
@@ -51,7 +50,7 @@ class SitemapController extends Controller
     /** One file of a large site's sitemap: sitemap-2.xml holds addresses 1001 to 2000. */
     public function part(int $part)
     {
-        abort_if(SearchVisibility::hidden(), 404);
+        abort_if(falcon_site_hidden_from_search(), 404);
 
         $chunk = array_slice($this->entries(), ($part - 1) * self::PER_FILE, self::PER_FILE);
         abort_if($part < 1 || $chunk === [], 404);

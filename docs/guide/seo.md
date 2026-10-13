@@ -7,6 +7,19 @@ tells you what to fix and a bulk editor lets you fix it fast.
 
 Nothing here rewrites the SEO title, description or other SEO data you have entered.
 
+## The Falcon SEO plugin
+
+The SEO and speed tools come in **Falcon SEO**, a free plugin that ships with FalconCMS and is on
+by default (**Plugins**). It holds page analysis, the SEO Audit, Bulk SEO, keyword research,
+internal link suggestions, structured data, hreflang, IndexNow, AI crawler rules, the 404 log,
+"Hide this site from search engines", AVIF images, instant page loads, Web Vitals and the
+Cloudflare purge.
+
+Switching it off removes those tools and what they add to pages. The CMS itself keeps doing the
+basics: each page's title, description, canonical address and Open Graph tags, the sitemap,
+robots.txt and redirects. Nothing you have saved is deleted, so switching it on again brings
+everything back as it was.
+
 ## Settings → SEO
 
 ![Settings → SEO](/screenshots/seo-settings.webp)
@@ -118,9 +131,37 @@ page, post and product on one screen. It is the fastest way to fix what the audi
 
 ## In the editor
 
-The **SEO Settings** box under the editor has five tabs: **General** (focus keyword, title,
-description, search preview, analysis), **Social**, **Keywords**, **Internal Linking** and
-**Advanced** (canonical, noindex, nofollow).
+The **SEO Settings** box under the editor has six tabs: **General** (focus keyword, title,
+description, search preview, analysis), **Social**, **Analysis**, **Keywords**, **Internal Linking**
+and **Advanced** (canonical, noindex, nofollow). Analysis, Keywords and Internal Linking come with
+the Falcon SEO plugin.
+
+### Analysis
+
+A full check-up of the page with a score out of 100. **Analyse page** reads the published page as
+a visitor gets it, theme included, so a second H1 in the theme's header counts too. A page that is
+not published yet, or **What is in the editor**, is read from the editor, unsaved changes
+included.
+
+- **Focus keyword:** whether it is in the SEO title, the H1, the first 100 words, the meta
+  description, the address, a subheading and an image's alt text, and how often it is used.
+- **Content & headings:** the number of H1s, skipped heading levels (H2 → H4), how many H2/H3
+  there are, the word count, very long paragraphs and long sentences.
+- **Title, description & search appearance:** their lengths, noindex, canonical, the social share
+  image, structured data, the page language and the mobile viewport.
+- **Images:** missing alt text, images without a width and height (they make the page jump), and
+  images over 300 KB.
+- **Links:** internal and external links, links without text, and **broken links**. Each link is
+  checked once a day at most, up to 40 per page.
+
+Each finding says why it matters and lists the images or links concerned. Errors count fully
+against the score and warnings count half.
+
+Below the score, the **Keyword** box shows how often the focus keyword is searched in the country
+chosen under **Searchers in** (from Keyword Planner or Bing, see Search demand below). It also
+lists keywords worth considering, each with the reason: searched more, already shown by Google for
+this page, or what the page is most about. **Use as focus keyword** switches to one. With a Bing
+key, **Compare countries** shows how the keyword is searched in each country.
 
 ### Keywords
 

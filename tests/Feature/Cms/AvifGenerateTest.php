@@ -4,8 +4,8 @@ namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
 use FalconCms\Core\Models\Media;
-use FalconCms\Core\Support\AvifImages;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\AvifImages;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 

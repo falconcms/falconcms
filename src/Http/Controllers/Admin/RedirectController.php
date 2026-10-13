@@ -3,8 +3,6 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Redirect;
-use FalconCms\Core\Support\NotFoundLog;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
@@ -20,11 +18,10 @@ class RedirectController extends Controller
         }
 
         $redirects = $query->latest()->paginate(10);
-        $notFound = NotFoundLog::top(50);
         // "Redirect" on a 404 row opens the form with its address already in.
         $prefill = (string) $request->query('from', '');
 
-        return view('falcon-cms::admin.seo.redirects', compact('redirects', 'notFound', 'prefill'));
+        return view('falcon-cms::admin.seo.redirects', compact('redirects', 'prefill'));
     }
 
     public function store(Request $request)
@@ -43,22 +40,10 @@ class RedirectController extends Controller
             ['new_url' => $validated['new_url'], 'status_code' => $validated['status_code']]
         );
 
-        // A redirected address is no longer missing.
-        NotFoundLog::forget($validated['old_url']);
+        // Plugins hear of it (Falcon SEO: a redirected address is no longer missing).
+        do_falcon_action('falcon_redirect_saved', $validated['old_url'], $validated['new_url']);
 
         return redirect()->route('admin.redirects.index')->with('success', 'Redirect added successfully.');
-    }
-
-    /** Dismiss one 404 entry (by path), or all of them. */
-    public function forgetNotFound(Request $request)
-    {
-        if ($request->boolean('all')) {
-            DB::table('cms_not_found_log')->delete();
-        } else {
-            NotFoundLog::forget((string) $request->input('path', ''));
-        }
-
-        return redirect()->back()->with('success', '404 list updated.');
     }
 
     public function destroy(Redirect $redirect)

@@ -4,9 +4,9 @@ namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
 use FalconCms\Core\Models\Post;
-use FalconCms\Core\Support\IndexNow;
-use FalconCms\Core\Support\SeoAudit;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\IndexNow;
+use FalconSeo\Support\SeoAudit;
 use Illuminate\Support\Facades\DB;
 
 /**

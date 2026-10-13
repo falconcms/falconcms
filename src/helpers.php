@@ -42,6 +42,7 @@ foreach ([
     'theme',
     'menus',
     'i18n',
+    'seo',
     'shop-catalog',
     'shop-attributes',
     'shop-filters',

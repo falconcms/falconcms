@@ -1,0 +1,14 @@
+{
+    "name": "Falcon SEO",
+    "slug": "falcon-seo",
+    "version": "1.0.0",
+    "description": "Search and speed tools for every page: page analysis with a score, SEO Audit, Bulk SEO, keyword research, internal link suggestions, structured data, IndexNow, a 404 log, AVIF images, Web Vitals and Cloudflare purge.",
+    "author": "FalconCMS",
+    "requires_php": ">=8.3",
+    "requires_cms": ">=2.7",
+    "namespace": "FalconSeo\\",
+    "provider": "FalconSeo\\SeoServiceProvider",
+    "default_active": true,
+    "settings_route": "admin.settings.seo",
+    "dependencies": []
+}

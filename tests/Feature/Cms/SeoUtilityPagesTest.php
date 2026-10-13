@@ -4,8 +4,8 @@ namespace FalconCms\Core\Tests\Feature\Cms;
 
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Support\Breadcrumbs;
-use FalconCms\Core\Support\SeoAudit;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\SeoAudit;
 use Illuminate\Support\Facades\DB;
 
 /**

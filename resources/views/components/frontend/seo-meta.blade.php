@@ -63,8 +63,8 @@
     }
     $noindex = (bool) apply_falcon_filters('falcon_seo_noindex', $noindex, $post ?? null);
 
-    // Settings → SEO → "Hide this site from search engines" (demo, staging, under construction).
-    if (\FalconCms\Core\Support\SearchVisibility::hidden()) {
+    // Falcon SEO → "Hide this site from search engines" (demo, staging, under construction).
+    if (falcon_site_hidden_from_search()) {
         $noindex = true;
         $nofollow = true;
     }
@@ -80,18 +80,19 @@
 <meta name="description" content="{!! $meta($currentDesc) !!}">
 @if($noindex)
 <meta name="robots" content="noindex,{{ $nofollow ? 'nofollow' : 'follow' }}">
-@elseif(get_cms_option('seo_large_image_preview', '1') !== '0')
-{{-- Lets Google show a large image (Discover, results): it needs this and a 1200px+ image. --}}
-<meta name="robots" content="index,{{ $nofollow ? 'nofollow' : 'follow' }},max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-@elseif($nofollow)
-<meta name="robots" content="index,nofollow">
+@else
+@php
+    // An indexable page needs no robots tag; plugins add directives (Falcon SEO: large image
+    // previews for Discover).
+    $robots = (array) apply_falcon_filters('falcon_seo_robots', $nofollow ? ['index', 'nofollow'] : [], $post ?? null);
+@endphp
+@if($robots)
+<meta name="robots" content="{{ implode(',', $robots) }}">
+@endif
 @endif
 <link rel="canonical" href="{{ $canonical }}">
-@unless($noindex)
-@foreach(falcon_hreflang_links($post ?? null) as $hreflang => $alternate)
-<link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $alternate }}">
-@endforeach
-@endunless
+{{-- Plugins add links of their own here (Falcon SEO: hreflang alternates). --}}
+{!! do_falcon_action('falcon_seo_head_links', $post ?? null, $noindex) !!}
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="{{ $type }}">
@@ -118,9 +119,10 @@
 <meta property="twitter:site" content="{{ '@' . ltrim($twitterHandle, '@') }}">
 @endif
 
-<!-- JSON-LD: the site's organization, the site, this page and its author, as one linked graph -->
 @php
-    $schema = \FalconCms\Core\Support\StructuredData::graph([
+    // Structured data comes from plugins (Falcon SEO: the organization, the site, this page and
+    // its author as one linked graph). Nothing to say, no script.
+    $schema = !has_falcon_filter('falcon_seo_schema') ? null : apply_falcon_filters('falcon_seo_schema', null, [
         'site_title' => (string) $siteTitle,
         'title' => $metaText($currentTitle),
         'description' => $metaText($currentDesc),
@@ -130,6 +132,9 @@
         'breadcrumbs' => \FalconCms\Core\Support\Breadcrumbs::trail($post ?? null, $title ?? null),
     ]);
 @endphp
+@if($schema)
+<!-- JSON-LD -->
 <script type="application/ld+json">
 {!! json_encode($schema, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
 </script>
+@endif

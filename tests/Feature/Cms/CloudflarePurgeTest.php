@@ -3,8 +3,8 @@
 namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
-use FalconCms\Core\Support\Cloudflare;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\Cloudflare;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;

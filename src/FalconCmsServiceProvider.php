@@ -24,7 +24,6 @@ use FalconCms\Core\Http\Middleware\AuthenticateApiToken;
 use FalconCms\Core\Http\Middleware\BuilderShortcodeMiddleware;
 use FalconCms\Core\Http\Middleware\LocalizationMiddleware;
 use FalconCms\Core\Http\Middleware\RedirectMiddleware;
-use FalconCms\Core\Http\Middleware\SearchVisibilityMiddleware;
 use FalconCms\Core\Http\Middleware\TrackVisits;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Pro\LicenseGateway;
@@ -41,7 +40,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use FalconCms\Core\Support\IndexNow;
 use Illuminate\Support\ServiceProvider;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -55,9 +53,6 @@ class FalconCmsServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             return ($user && method_exists($user, 'hasRole') && $user->hasRole('super-admin')) ? true : null;
         });
-
-        // Announce published, changed and removed pages to IndexNow (off unless turned on).
-        IndexNow::register();
 
         // Share activeTheme globally with all views
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
@@ -83,7 +78,6 @@ class FalconCmsServiceProvider extends ServiceProvider
         $this->app['router']->pushMiddlewareToGroup('web', TrackVisits::class);
         $this->app['router']->pushMiddlewareToGroup('web', LocalizationMiddleware::class);
         $this->app['router']->pushMiddlewareToGroup('web', BuilderShortcodeMiddleware::class);
-        $this->app['router']->pushMiddlewareToGroup('web', SearchVisibilityMiddleware::class);
         $this->app['router']->aliasMiddleware('api.token', AuthenticateApiToken::class);
 
         // Not in booted(): a cached route table is loaded by a booted callback of its own that

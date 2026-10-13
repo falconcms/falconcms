@@ -27,10 +27,6 @@ use FalconCms\Core\Http\Controllers\Admin\PluginController;
 use FalconCms\Core\Http\Controllers\Admin\PostController;
 use FalconCms\Core\Http\Controllers\Admin\PostTypeController;
 use FalconCms\Core\Http\Controllers\Admin\RedirectController;
-use FalconCms\Core\Http\Controllers\Admin\BulkSeoController;
-use FalconCms\Core\Http\Controllers\Admin\KeywordResearchController;
-use FalconCms\Core\Http\Controllers\Admin\SeoAuditController;
-use FalconCms\Core\Http\Controllers\Admin\WebVitalsController;
 use FalconCms\Core\Http\Controllers\Admin\RegisterController;
 use FalconCms\Core\Http\Controllers\Admin\RoleController;
 use FalconCms\Core\Http\Controllers\Admin\SettingsTabController;
@@ -97,7 +93,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
     Route::get('media/upload', [MediaController::class, 'create'])->name('media.create');
     Route::post('media/bulk-optimize', [MediaController::class, 'bulkOptimize'])->name('media.bulk-optimize');
-    Route::post('media/avif-generate', [MediaController::class, 'generateAvif'])->name('media.avif-generate');
     Route::post('media', [MediaController::class, 'store'])->name('media.store');
     Route::put('media/{media}', [MediaController::class, 'update'])->name('media.update');
     Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
@@ -277,7 +272,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('analytics/realtime', [DashboardController::class, 'analyticsRealtime'])->name('analytics.realtime');
     Route::get('analytics/visitors', [DashboardController::class, 'analyticsVisitors'])->name('analytics.visitors');
-    Route::get('analytics/web-vitals', [WebVitalsController::class, 'index'])->name('analytics.vitals');
     Route::post('analytics/visitors/import', [DashboardController::class, 'analyticsVisitorsImport'])->name('analytics.visitors.import');
     Route::post('analytics/visitors/delete', [DashboardController::class, 'analyticsVisitorsDelete'])->name('analytics.visitors.delete');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
@@ -324,9 +318,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('settings', [DashboardController::class, 'updateSettings'])->name('settings.update');
     Route::get('settings/seo', [DashboardController::class, 'seoSettings'])->name('settings.seo');
     Route::post('settings/seo', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
-    Route::get('settings/seo-audit', [SeoAuditController::class, 'index'])->name('settings.seo-audit');
-    Route::get('settings/seo-bulk', [BulkSeoController::class, 'index'])->name('settings.seo-bulk');
-    Route::post('settings/seo-bulk', [BulkSeoController::class, 'update'])->name('settings.seo-bulk.update');
     Route::get('settings/activity-logs', [DashboardController::class, 'activityLogs'])->name('settings.activity-logs');
     Route::post('settings/activity-logs/bulk', [DashboardController::class, 'bulkDeleteLogs'])->name('settings.activity-logs.bulk');
     Route::get('settings/api', [DashboardController::class, 'apiSettings'])->name('settings.api');
@@ -334,7 +325,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::delete('settings/api/tokens/{id}', [DashboardController::class, 'revokeApiToken'])->name('settings.api.tokens.destroy');
     Route::get('settings/integrations', [DashboardController::class, 'integrationsSettings'])->name('settings.integrations');
     Route::post('settings/integrations', [DashboardController::class, 'updateIntegrationsSettings'])->name('settings.integrations.update');
-    Route::post('settings/integrations/cloudflare-purge', [DashboardController::class, 'purgeCloudflare'])->name('settings.integrations.cloudflare-purge');
     Route::get('settings/email-templates', [DashboardController::class, 'emailTemplates'])->name('settings.email-templates');
     Route::post('settings/email-templates', [DashboardController::class, 'updateEmailTemplate'])->name('settings.email-templates.update');
     Route::post('settings/email-templates/test', [DashboardController::class, 'testEmailTemplate'])->name('settings.email-templates.test');
@@ -373,12 +363,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('seo/redirects', [RedirectController::class, 'store'])->name('redirects.store');
     Route::delete('seo/redirects/{redirect}', [RedirectController::class, 'destroy'])->name('redirects.destroy');
     Route::post('seo/redirects/bulk', [RedirectController::class, 'bulk'])->name('redirects.bulk');
-    Route::post('seo/redirects/not-found/forget', [RedirectController::class, 'forgetNotFound'])->name('redirects.not-found.forget');
-    Route::get('seo/related-posts', [DashboardController::class, 'getRelatedPosts'])->name('seo.related-posts');
-    Route::post('seo/keyword-suggestions', [DashboardController::class, 'keywordSuggestions'])->name('seo.keyword-suggestions');
-    Route::post('seo/keyword-demand', [KeywordResearchController::class, 'demand'])->name('seo.keyword-demand')->middleware('throttle:60,1');
-    Route::post('settings/seo/keywords-import', [KeywordResearchController::class, 'import'])->name('settings.seo.keywords-import');
-    Route::post('settings/seo/keywords-clear', [KeywordResearchController::class, 'clear'])->name('settings.seo.keywords-clear');
 
     Route::get('update', [DashboardController::class, 'updateCheck'])->name('update');
     Route::post('update/run', [DashboardController::class, 'runUpdate'])->name('update.run');
@@ -534,13 +518,6 @@ Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddl
     Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit')->middleware('throttle:5,1');
 
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
-    // Real visitors' Core Web Vitals, sent with sendBeacon (no CSRF token: a plain beacon, rate-limited,
-    // and only ever adds a measurement). Both CSRF classes are named, as for the shop's gateway callbacks.
-    Route::post('/falcon-vitals', [WebVitalsController::class, 'store'])->name('frontend.web-vitals')
-        ->middleware('throttle:30,1')
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class, \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-    // IndexNow ownership key: answers only for this site's own key, and only while IndexNow is on.
-    Route::get('/{indexnowKey}.txt', [FrontendController::class, 'indexNowKey'])->name('frontend.indexnow-key')->where('indexnowKey', '[a-f0-9]{32}');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('frontend.sitemap');
     Route::get('/sitemap-{part}.xml', [SitemapController::class, 'part'])->name('frontend.sitemap.part')->where('part', '[0-9]+');
     Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'single'])->name('frontend.show')->where('slug', '.*');

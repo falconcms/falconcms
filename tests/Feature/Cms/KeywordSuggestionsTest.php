@@ -4,8 +4,8 @@ namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
 use FalconCms\Core\Models\Post;
-use FalconCms\Core\Support\KeywordSuggestions;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\KeywordSuggestions;
 use Illuminate\Support\Facades\DB;
 
 /**

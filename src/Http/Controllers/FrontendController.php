@@ -5,7 +5,6 @@ namespace FalconCms\Core\Http\Controllers;
 use App\Models\User;
 use FalconCms\Core\Http\Controllers\Concerns\ResolvesParentTheme;
 use FalconCms\Core\Models\Category;
-use FalconCms\Core\Support\AiCrawlers;
 use FalconCms\Core\Models\Comment;
 use FalconCms\Core\Models\CustomTaxonomy;
 use FalconCms\Core\Models\Form;
@@ -662,23 +661,11 @@ class FrontendController extends Controller
         if (!$content) {
             $content = "User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: ".url('/sitemap.xml');
         }
-        $content = rtrim($content).AiCrawlers::rules($content);
-
-        // Hidden from search engines: crawling stays allowed (Google has to fetch a page to see
-        // its noindex), only the sitemap pointer goes, since the sitemap is withdrawn.
-        if (\FalconCms\Core\Support\SearchVisibility::hidden()) {
-            $content = trim(preg_replace('/^\s*Sitemap:.*$\R?/mi', '', $content) ?? $content);
-        }
+        // Plugins add their rules (Falcon SEO: AI crawlers, and no sitemap line while the site
+        // is hidden from search engines).
+        $content = (string) apply_falcon_filters('falcon_robots_txt', $content);
 
         return response($content, 200)->header('Content-Type', 'text/plain');
-    }
-
-    /** The IndexNow key file: proves to the engines that pings for this host come from its owner. */
-    public function indexNowKey(string $indexnowKey)
-    {
-        abort_unless(\FalconCms\Core\Support\IndexNow::enabled() && hash_equals(\FalconCms\Core\Support\IndexNow::key(), $indexnowKey), 404);
-
-        return response($indexnowKey, 200)->header('Content-Type', 'text/plain; charset=utf-8');
     }
 
     public function setLocale($locale)

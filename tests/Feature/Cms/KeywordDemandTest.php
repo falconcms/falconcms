@@ -3,8 +3,8 @@
 namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
-use FalconCms\Core\Support\KeywordDemand;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\KeywordDemand;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;

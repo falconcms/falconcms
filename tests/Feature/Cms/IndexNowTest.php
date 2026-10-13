@@ -4,8 +4,8 @@ namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
 use FalconCms\Core\Models\Post;
-use FalconCms\Core\Support\IndexNow;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\IndexNow;
 use Illuminate\Support\Facades\Http;
 
 /**

@@ -236,8 +236,8 @@ if (!function_exists('falcon_refresh_route_cache')) {
 if (!function_exists('clear_page_cache')) {
     function clear_page_cache()
     {
-        // Cloudflare's copy goes too (Settings → Integrations), after the response is sent.
-        \FalconCms\Core\Support\Cloudflare::purgeSoon();
+        // Copies kept elsewhere go too (Falcon SEO: Cloudflare's, after the response is sent).
+        do_falcon_action('falcon_page_cache_cleared');
 
         try {
             Artisan::call('cache:clear');

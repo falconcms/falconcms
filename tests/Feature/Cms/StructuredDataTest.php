@@ -4,8 +4,8 @@ namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
 use FalconCms\Core\Models\Post;
-use FalconCms\Core\Support\StructuredData;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\StructuredData;
 use Illuminate\Support\ViewErrorBag;
 
 /**
@@ -121,6 +121,7 @@ class StructuredDataTest extends TestCase
         $post2 = Post::forceCreate(['title' => 'Hi2', 'slug' => 'hi2', 'type' => 'post', 'status' => 'published', 'content' => '', 'lang_code' => 'en', 'user_id' => $noBio->id]);
         $this->assertSame('', trim(view('falcon-cms::themes.falcon-theme.partials.single-author', ['post' => $post2->fresh()])->render()));
     }
+
     public function test_videos_in_a_post_become_video_objects(): void
     {
         $content = '[falcon_video url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"] <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ"></iframe>'
