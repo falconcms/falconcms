@@ -4,6 +4,18 @@ namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $product_id
+ * @property array<string, mixed>|null $attributes_data
+ * @property string|float|null $price
+ * @property string|float|null $sale_price
+ * @property string|null $sku
+ * @property int|null $stock_quantity
+ * @property string|null $stock_status
+ * @property bool|int|null $manage_stock
+ * @property string|null $image
+ */
 class ProductVariation extends Model
 {
     protected $table = 'shop_product_variations';

@@ -2,8 +2,26 @@
 
 namespace FalconCms\Core\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $post_id
+ * @property string|null $type
+ * @property string|null $product_type
+ * @property string|float|null $price
+ * @property string|float|null $sale_price
+ * @property string|null $sku
+ * @property int|null $stock_quantity
+ * @property string|null $stock_status
+ * @property bool|int|null $manage_stock
+ * @property string|null $tax_status
+ * @property string|null $backorders
+ * @property array<string, mixed>|null $attributes_data
+ * @property-read Collection<int, ProductVariation> $variations
+ */
 class ProductData extends Model
 {
     protected $table = 'shop_products';
@@ -257,7 +275,8 @@ class ProductData extends Model
         'is_downloadable' => 'boolean',
     ];
 
-    public function variations()
+    /** @return HasMany<ProductVariation, $this> */
+    public function variations(): HasMany
     {
         return $this->hasMany(ProductVariation::class, 'product_id');
     }

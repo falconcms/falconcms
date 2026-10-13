@@ -9,6 +9,7 @@ use FalconCms\Core\Models\Order;
 use FalconCms\Core\Services\EcommerceData;
 use FalconShop\Http\Controllers\Concerns\SyncsOrderInventory;
 use FalconShop\Mail\OrderNotificationMail;
+use FalconShop\StorefrontPages;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -371,8 +372,8 @@ class ShopController extends Controller
      */
     public function ensurePages()
     {
-        $done = \FalconShop\StorefrontPages::ensure();
-        $names = \FalconShop\StorefrontPages::PAGES;
+        $done = StorefrontPages::ensure();
+        $names = StorefrontPages::PAGES;
         $words = ['created' => 'created', 'restored' => 'restored from the trash', 'linked' => 'found and assigned', 'failed' => 'could not be made'];
         $changes = [];
         foreach ($done as $key => $how) {
@@ -388,7 +389,7 @@ class ShopController extends Controller
     public function settings()
     {
         // First visit on a site that never had them: make the shop pages before reading their state.
-        \FalconShop\StorefrontPages::ensureOnce();
+        StorefrontPages::ensureOnce();
 
         $countries = EcommerceData::getCountriesWithStates(false);
         $allowedCountries = EcommerceData::getCountriesWithStates(true);
@@ -399,7 +400,7 @@ class ShopController extends Controller
         $checkoutPageId = get_shop_option('shop_checkout_page_id');
         $accountPageId = get_shop_option('shop_account_page_id');
         $wishlistPageId = get_shop_option('shop_wishlist_page_id');
-        $storefront = \FalconShop\StorefrontPages::status();
+        $storefront = StorefrontPages::status();
 
         $pages = DB::table('posts')
             ->where('type', 'page')

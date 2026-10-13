@@ -90,7 +90,8 @@ class ShopFrontendController extends Controller
 
         $variation = null;
         if ($variationId) {
-            $variation = ProductVariation::find($variationId);
+            // One id: an array here would make find() return a collection.
+            $variation = is_scalar($variationId) ? ProductVariation::find((int) $variationId) : null;
         }
 
         // Inventory Check

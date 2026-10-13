@@ -5,7 +5,10 @@ namespace FalconCms\Core\Tests\Feature\Seo;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
+use FalconSeo\Support\Countries;
+use FalconSeo\Support\KeywordDemand;
 use FalconSeo\Support\PageAnalyzer;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -99,14 +102,48 @@ class PageAnalysisTest extends TestCase
         $this->assertSame('green tea', $res->json('keyword.keyword'));
     }
 
+    public function test_a_keyword_is_compared_across_the_chosen_countries(): void
+    {
+        $this->actingAs($this->makeUser(['role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id')]));
+        $this->setCmsOptions([KeywordDemand::BING_KEY => Crypt::encryptString('secret-key')]);
+        Http::fake(function ($request) {
+            if (!str_contains($request->url(), 'GetKeyword?')) {
+                return Http::response(['d' => []]);
+            }
+            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $q);
+
+            return Http::response(['d' => ['Query' => $q['q'], 'Impressions' => ['us' => 900, 'bd' => 300, 'gb' => 0][$q['country']] ?? 0]]);
+        });
+        $post = Post::forceCreate(['title' => 'Draft', 'slug' => 'draft', 'type' => 'post', 'status' => 'draft', 'content' => '<p>Green tea.</p>', 'lang_code' => 'en']);
+
+        $res = $this->postJson('/admin/seo/page-analysis', [
+            'post_id' => $post->id, 'mode' => 'editor', 'keyword' => 'green tea', 'countries' => ['bd', 'us', 'gb', 'zz'], 'check_links' => false,
+        ])->assertOk();
+
+        $this->assertSame('bd', $res->json('keyword.country'), 'the first chosen is the main market');
+        $this->assertSame(['bd', 'us', 'gb'], array_column($res->json('keyword.countries'), 'country'), 'an unknown code is dropped');
+        $this->assertSame([['us', 900], ['bd', 300], ['gb', 0]], array_map(fn ($r) => [$r['country'], $r['searches']], $res->json('keyword.by_country')));
+        $this->assertSame('Bangladesh', $res->json('keyword.by_country.1.name'));
+    }
+
+    public function test_countries_are_compared_only_with_a_bing_key(): void
+    {
+        Http::fake();
+
+        $this->assertSame([], KeywordDemand::byCountry('green tea', ['us', 'bd']));
+        Http::assertNothingSent();
+    }
+
     public function test_the_editor_shows_the_analysis_tab(): void
     {
         $this->actingAs($this->makeUser(['role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id')]));
         $post = Post::forceCreate(['title' => 'Draft', 'slug' => 'draft', 'type' => 'post', 'status' => 'draft', 'content' => '<p>x</p>', 'lang_code' => 'en']);
 
         $html = $this->get('/admin/posts/'.$post->id.'/edit')->assertOk()->getContent();
-        foreach (['seo-tab-btn-analysis', 'seo-tab-analysis', 'seo-tab-btn-keywords', 'seo-tab-keywords', 'seo-tab-internal'] as $id) {
+        foreach (['seo-tab-btn-analysis', 'seo-tab-analysis', 'seo-tab-btn-keywords', 'seo-tab-keywords', 'seo-tab-internal', 'falcon-seo-countries-list'] as $id) {
             $this->assertStringContainsString('id="'.$id.'"', $html);
         }
+        // Every country can be chosen, not a short list.
+        $this->assertSame(count(Countries::ALL), substr_count($html, 'onchange="falconSeoCountriesPick(this)"'));
     }
 }

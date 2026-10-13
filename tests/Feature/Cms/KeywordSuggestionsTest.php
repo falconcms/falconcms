@@ -92,7 +92,7 @@ class KeywordSuggestionsTest extends TestCase
             $result['google'] = [['query' => 'from a plugin', 'post' => $context['post_id']]];
 
             return $result;
-        }, 10, 2);
+        });
         $admin = User::forceCreate(['name' => 'Admin', 'email' => 'admin@example.test', 'password' => 'x',
             'role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id')]);
 

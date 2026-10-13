@@ -23,6 +23,15 @@ use Illuminate\Support\Carbon;
  * @property int|null $user_id
  * @property int|null $menu_order
  * @property Carbon|null $published_at
+ * @property string|null $content
+ * @property string|null $excerpt
+ * @property string|null $featured_image
+ * @property array<string, mixed>|null $seo_meta
+ * @property string|null $editor_type
+ * @property int|null $origin_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read ProductData|null $shopData
  */
 class Post extends Model
 {
@@ -195,6 +204,7 @@ class Post extends Model
     /**
      * eCommerce Relationship
      */
+    /** @return HasOne<ProductData, $this> */
     public function shopData(): HasOne
     {
         return $this->hasOne(ProductData::class, 'post_id');

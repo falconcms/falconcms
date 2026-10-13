@@ -3,6 +3,7 @@
 namespace FalconSeo\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Post;
+use FalconSeo\Support\Countries;
 use FalconSeo\Support\KeywordDemand;
 use FalconSeo\Support\KeywordSuggestions;
 use FalconSeo\Support\PageAnalyzer;
@@ -24,8 +25,16 @@ class PageAnalysisController extends Controller
             'slug' => 'nullable|string|max:500',
             'content' => 'nullable|string|max:2000000',
             'country' => 'nullable|string|size:2',
+            'countries' => 'nullable|array|max:'.KeywordDemand::MAX_COUNTRIES,
+            'countries.*' => 'string|size:2',
             'check_links' => 'nullable|boolean',
         ]);
+        // Several countries may be chosen; the first is the market the keyword advice is for.
+        $countries = array_values(array_filter(array_map('strtolower', (array) ($data['countries'] ?? [])), [Countries::class, 'valid']));
+        if ($countries === [] && !empty($data['country']) && Countries::valid($data['country'])) {
+            $countries = [strtolower($data['country'])];
+        }
+        $data['country'] = $countries[0] ?? null;
         $post = !empty($data['post_id']) ? Post::find($data['post_id']) : null;
         $keyword = trim((string) ($data['keyword'] ?? ''));
         $context = ['keyword' => $keyword, 'slug' => (string) ($data['slug'] ?? $post?->slug ?? ''), 'check_links' => (bool) ($data['check_links'] ?? true)];
@@ -49,6 +58,8 @@ class PageAnalysisController extends Controller
         }
 
         $result['keyword'] = $this->keywordAdvice($keyword, $data, $post);
+        $result['keyword']['countries'] = array_map(fn ($c) => ['country' => $c, 'name' => Countries::name($c)], $countries);
+        $result['keyword']['by_country'] = $keyword !== '' && count($countries) > 1 ? KeywordDemand::byCountry($keyword, $countries) : [];
 
         return response()->json($result);
     }

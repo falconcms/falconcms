@@ -3,7 +3,17 @@
 namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string|null $url
+ * @property string|null $referrer
+ * @property string|null $country
+ * @property string|null $country_code
+ * @property string|null $city
+ * @property Carbon|null $created_at
+ */
 class Analytics extends Model
 {
     protected $table = 'cms_analytics';

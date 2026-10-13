@@ -29,5 +29,9 @@ parameters:
         - src/helpers
 
     # A plugin's helpers are not autoloaded by Composer; the bootstrap declares them.
+    # The CMS's own user abilities on Laravel's base User (see the stub).
+    stubFiles:
+        - phpstan-stubs/User.stub
+
     bootstrapFiles:
         - phpstan-bootstrap.php

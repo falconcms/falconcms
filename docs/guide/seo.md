@@ -157,11 +157,14 @@ included.
 Each finding says why it matters and lists the images or links concerned. Errors count fully
 against the score and warnings count half.
 
-Below the score, the **Keyword** box shows how often the focus keyword is searched in the country
-chosen under **Searchers in** (from Keyword Planner or Bing, see Search demand below). It also
-lists keywords worth considering, each with the reason: searched more, already shown by Google for
-this page, or what the page is most about. **Use as focus keyword** switches to one. With a Bing
-key, **Compare countries** shows how the keyword is searched in each country.
+**Searchers in** lists every country, with a search box. Tick as many as you like (up to 20). The
+first one ticked is the main market, and your choice is remembered for next time.
+
+Below the score, the **Keyword** box shows how often the focus keyword is searched in the main
+market (from Keyword Planner or Bing, see Search demand below). With more than one country ticked
+and a Bing key, it also shows a bar for each country, so you can see where people search for it
+most. It lists keywords worth considering too, each with the reason: searched more, already shown
+by Google for this page, or what the page is most about. **Use as focus keyword** switches to one.
 
 ### Keywords
 

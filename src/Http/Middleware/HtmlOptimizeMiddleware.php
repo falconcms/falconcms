@@ -9,6 +9,7 @@ use FalconCms\Core\Support\LocalGoogleFonts;
 use FalconCms\Core\Support\LucideIcons;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Optional front-end HTML optimisations, each driven by a Customizer → Performance toggle and
@@ -125,7 +126,7 @@ class HtmlOptimizeMiddleware
         if (!$request->isMethod('get') || $request->is('admin*') || $request->is('api*')) {
             return false;
         }
-        if (!method_exists($response, 'getStatusCode') || $response->getStatusCode() !== 200) {
+        if (!$response instanceof Response || $response->getStatusCode() !== 200) {
             return false;
         }
         // Only real HTML — not a JSON payload, a file download or a redirect.

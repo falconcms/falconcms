@@ -1,13 +1,8 @@
 {{-- Editor → SEO panel → Analysis: the page's check-up and score (falcon_seo_metabox_panels). --}}
 @php
     $falconSeoCountry = strtolower((string) get_cms_option(\FalconSeo\Support\KeywordDemand::COUNTRY, 'us')) ?: 'us';
-    $falconSeoCountries = ['us' => 'United States', 'gb' => 'United Kingdom', 'ca' => 'Canada', 'au' => 'Australia', 'in' => 'India',
-        'bd' => 'Bangladesh', 'pk' => 'Pakistan', 'de' => 'Germany', 'fr' => 'France', 'es' => 'Spain', 'it' => 'Italy', 'nl' => 'Netherlands',
-        'br' => 'Brazil', 'mx' => 'Mexico', 'ae' => 'United Arab Emirates', 'sa' => 'Saudi Arabia', 'sg' => 'Singapore', 'my' => 'Malaysia',
-        'id' => 'Indonesia', 'ph' => 'Philippines', 'ng' => 'Nigeria', 'za' => 'South Africa', 'jp' => 'Japan'];
-    if (!isset($falconSeoCountries[$falconSeoCountry])) {
-        $falconSeoCountries = [$falconSeoCountry => strtoupper($falconSeoCountry)] + $falconSeoCountries;
-    }
+    $falconSeoCountry = \FalconSeo\Support\Countries::valid($falconSeoCountry) ? $falconSeoCountry : 'us';
+    $falconSeoBing = (bool) \FalconSeo\Support\KeywordDemand::sources()['bing'];
     $falconSeoPublished = ($post->status ?? null) === 'published';
 @endphp
 <div id="seo-tab-analysis" class="seo-tab-content hidden p-4">
@@ -19,13 +14,32 @@
                 <option value="editor" @selected(!$falconSeoPublished)>What is in the editor</option>
             </select>
         </div>
-        <div>
+        {{-- Searchers in: any number of countries (up to {{ \FalconSeo\Support\KeywordDemand::MAX_COUNTRIES }}); the first chosen is the main market. --}}
+        <div class="relative" id="falcon-seo-countries-picker">
             <label class="block text-[11px] font-bold text-[#646970] mb-1">Searchers in</label>
-            <select id="falcon-seo-analysis-country" class="wp-input h-8 py-0 text-[12px]">
-                @foreach($falconSeoCountries as $code => $name)
-                    <option value="{{ $code }}" @selected($code === $falconSeoCountry)>{{ $name }}</option>
-                @endforeach
-            </select>
+            <button type="button" onclick="falconSeoCountriesToggle()" class="wp-input h-8 py-0 px-2 text-[12px] min-w-[190px] max-w-[280px] text-left flex items-center justify-between gap-2 bg-white">
+                <span id="falcon-seo-countries-label" class="truncate"></span><span class="text-[#646970]">▾</span>
+            </button>
+            <div id="falcon-seo-countries-panel" class="hidden absolute z-50 mt-1 w-[300px] bg-white border border-[#c3c4c7] rounded shadow-lg">
+                <div class="p-2 border-b border-[#f0f0f1]">
+                    <input type="text" id="falcon-seo-countries-search" class="wp-input w-full h-7 text-[12px]" placeholder="Search {{ count(\FalconSeo\Support\Countries::ALL) }} countries…" oninput="falconSeoCountriesFilter(this.value)">
+                    <div class="flex justify-between mt-1.5 text-[11px]">
+                        <span class="text-[#646970]">The first one ticked is the main market.</span>
+                        <button type="button" onclick="falconSeoCountriesClear()" class="text-[#2271b1] hover:underline">Clear</button>
+                    </div>
+                </div>
+                <div class="max-h-[260px] overflow-y-auto py-1 text-[12px]" id="falcon-seo-countries-list">
+                    @foreach(array_merge(\FalconSeo\Support\Countries::POPULAR, array_diff(array_keys(\FalconSeo\Support\Countries::ALL), \FalconSeo\Support\Countries::POPULAR)) as $i => $code)
+                        @if($i === count(\FalconSeo\Support\Countries::POPULAR))
+                            <div class="border-t border-[#f0f0f1] my-1" data-divider></div>
+                        @endif
+                        <label class="flex items-center gap-2 px-3 py-1 hover:bg-[#f6f7f7] cursor-pointer" data-name="{{ strtolower(\FalconSeo\Support\Countries::name($code)) }} {{ $code }}">
+                            <input type="checkbox" value="{{ $code }}" class="rounded-sm border-[#8c8f94]" onchange="falconSeoCountriesPick(this)">
+                            <span>{{ \FalconSeo\Support\Countries::name($code) }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
         </div>
         <label class="flex items-center gap-1.5 text-[12px] text-[#2c3338] pb-1.5">
             <input type="checkbox" id="falcon-seo-analysis-links" checked class="rounded-sm border-[#8c8f94]"> Check links
@@ -46,7 +60,53 @@
         info: '<span class="text-[#72aee6] font-bold" title="Note">i</span>',
     };
     const gradeColour = {good: '#00a32a', ok: '#dba617', poor: '#d63638'};
-    const countryName = code => document.querySelector('#falcon-seo-analysis-country option[value="' + code + '"]')?.textContent || code.toUpperCase();
+    const countryName = code => document.querySelector('#falcon-seo-countries-list input[value="' + code + '"]')?.nextElementSibling?.textContent || code.toUpperCase();
+    const maxCountries = {{ \FalconSeo\Support\KeywordDemand::MAX_COUNTRIES }};
+    const storeKey = 'falconSeoCountries';
+
+    // The chosen countries, in the order they were ticked (the first is the main market).
+    let chosen = [];
+    try { chosen = JSON.parse(localStorage.getItem(storeKey) || '[]').filter(c => typeof c === 'string'); } catch (e) { chosen = []; }
+    if (!chosen.length) chosen = [@json($falconSeoCountry)];
+
+    function syncCountries() {
+        chosen = chosen.filter(c => document.querySelector('#falcon-seo-countries-list input[value="' + c + '"]'));
+        if (!chosen.length) chosen = [@json($falconSeoCountry)];
+        document.querySelectorAll('#falcon-seo-countries-list input').forEach(i => { i.checked = chosen.includes(i.value); });
+        const label = document.getElementById('falcon-seo-countries-label');
+        label.textContent = countryName(chosen[0]) + (chosen.length > 1 ? ' +' + (chosen.length - 1) : '');
+        label.title = chosen.map(countryName).join(', ');
+        try { localStorage.setItem(storeKey, JSON.stringify(chosen)); } catch (e) {}
+    }
+    window.falconSeoCountriesToggle = function () {
+        const panel = document.getElementById('falcon-seo-countries-panel');
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) document.getElementById('falcon-seo-countries-search').focus();
+    };
+    window.falconSeoCountriesPick = function (box) {
+        if (box.checked) {
+            if (chosen.length >= maxCountries) {
+                box.checked = false;
+                window.showToast?.('Up to ' + maxCountries + ' countries at a time.', 'error');
+                return;
+            }
+            chosen.push(box.value);
+        } else {
+            chosen = chosen.filter(c => c !== box.value);
+        }
+        syncCountries();
+    };
+    window.falconSeoCountriesClear = function () { chosen = []; syncCountries(); };
+    window.falconSeoCountriesFilter = function (q) {
+        q = q.trim().toLowerCase();
+        document.querySelectorAll('#falcon-seo-countries-list label').forEach(l => { l.style.display = !q || l.dataset.name.includes(q) ? '' : 'none'; });
+        document.querySelector('#falcon-seo-countries-list [data-divider]').style.display = q ? 'none' : '';
+    };
+    document.addEventListener('click', e => {
+        const picker = document.getElementById('falcon-seo-countries-picker');
+        if (picker && !picker.contains(e.target)) document.getElementById('falcon-seo-countries-panel').classList.add('hidden');
+    });
+    syncCountries();
 
     function editorContent() {
         if (window.tinymce && tinymce.get('wp-editor') && document.getElementById('editor_type')?.value !== 'builder') {
@@ -70,7 +130,7 @@
         }
         const anySource = k.sources && (k.sources.planner || k.sources.bing || k.sources.autocomplete);
         let html = `<div class="border border-[#dcdcde] rounded bg-white p-3 mb-4">
-            <div class="text-[12px] font-bold text-[#2c3338] mb-2">Keyword: “${esc(k.keyword)}” · ${esc(countryName(k.country))}</div>`;
+            <div class="text-[12px] font-bold text-[#2c3338] mb-2">Keyword: “${esc(k.keyword)}” · ${esc(countryName(k.country))}${(k.countries || []).length > 1 ? ` <span class="font-normal text-[#646970]">(+${k.countries.length - 1} more countries)</span>` : ''}</div>`;
         if (!anySource) {
             html += `<p class="text-[12px] text-[#646970]">How often it is searched needs a free source: a Bing Webmaster API key or a Keyword Planner import, in Settings → SEO → Keyword research.</p>`;
         } else {
@@ -81,10 +141,7 @@
             if (k.volume === 0 || (k.volume !== null && k.volume < 50)) {
                 html += `<p class="text-[12px] text-[#b32d2e] mb-2">Very few people search for this phrase here. A more common way of saying it may bring more visitors (see below).</p>`;
             }
-            if (k.sources.bing) {
-                html += `<button type="button" onclick="falconSeoCompareCountries(${esc(JSON.stringify(k.keyword))})" class="text-[11px] text-[#2271b1] hover:underline">Compare countries (Bing)</button>
-                    <div id="falcon-seo-countries" class="mt-2"></div>`;
-            }
+            html += renderCountries(k);
             if ((k.suggestions || []).length) {
                 html += `<div class="text-[11px] text-[#646970] mt-2">People also type: ${k.suggestions.slice(0, 8).map(esc).join(' · ')}</div>`;
             }
@@ -98,6 +155,25 @@
                 </div>`).join('') + `</div>`;
         }
         return html + `</div>`;
+    }
+
+    // Searches in each chosen country (Bing), as bars, most first.
+    function renderCountries(k) {
+        const many = (k.countries || []).length > 1;
+        if (!many) {
+            return `<p class="text-[11px] text-[#646970]">Tick more countries under "Searchers in" to compare how this keyword is searched in each.</p>`;
+        }
+        if (!k.sources.bing) {
+            return `<p class="text-[11px] text-[#646970]">Comparing countries needs the free Bing Webmaster API key (Settings → SEO → Keyword research). Keyword Planner figures cover one market only.</p>`;
+        }
+        const rows = k.by_country || [];
+        const max = Math.max(1, ...rows.map(r => r.searches || 0));
+        return `<div class="text-[11px] font-bold text-[#2c3338] mt-2 mb-1">Searches on Bing, last 30 days</div><table class="w-full text-[11px]">` +
+            rows.map(r => `<tr title="${esc(r.error || '')}">
+                <td class="py-0.5 pr-2 whitespace-nowrap">${esc(r.name)}</td>
+                <td class="w-full"><div class="h-2 rounded bg-[#2271b1]" style="width:${Math.round((r.searches || 0) / max * 100)}%"></div></td>
+                <td class="pl-2 text-right whitespace-nowrap">${r.error ? '<span class="text-[#b32d2e]">error</span>' : (r.searches === null ? '—' : num(r.searches))}</td></tr>`).join('') +
+            `</table><p class="text-[10px] text-[#8c8f94] mt-1">Bing's own searches: a guide to where demand is, smaller than Google's numbers.</p>`;
     }
 
     function render(d) {
@@ -136,7 +212,7 @@
         body.append('_token', document.querySelector('input[name="_token"]')?.value || '');
         body.append('post_id', "{{ $post->id ?? 0 }}");
         body.append('mode', document.getElementById('falcon-seo-analysis-mode').value);
-        body.append('country', document.getElementById('falcon-seo-analysis-country').value);
+        chosen.forEach(c => body.append('countries[]', c));
         body.append('check_links', document.getElementById('falcon-seo-analysis-links').checked ? '1' : '0');
         body.append('keyword', document.getElementById('seo-focus-keyword')?.value || '');
         body.append('title', document.querySelector('input[name="title"]')?.value || '');
@@ -153,29 +229,6 @@
             .then(d => { box.className = ''; box.innerHTML = render(d); })
             .catch(e => { box.className = 'text-[13px] text-[#b32d2e]'; box.textContent = e.message; })
             .finally(() => { btn.disabled = false; });
-    };
-
-    // How the keyword is searched across countries (Bing; cached a week per country).
-    window.falconSeoCompareCountries = function (keyword) {
-        const out = document.getElementById('falcon-seo-countries');
-        const codes = Array.from(document.querySelectorAll('#falcon-seo-analysis-country option')).map(o => o.value).slice(0, 12);
-        out.innerHTML = '<div class="text-[11px] text-[#646970] italic">Asking Bing…</div>';
-        const token = document.querySelector('input[name="_token"]')?.value || '';
-        Promise.all(codes.map(code => {
-            const body = new FormData();
-            body.append('_token', token);
-            body.append('q', keyword);
-            body.append('country', code);
-            return fetch(@json(route('admin.seo.keyword-demand')), {method: 'POST', body, headers: {'Accept': 'application/json'}})
-                .then(r => r.json()).then(d => ({code, n: d.bing ? d.bing.impressions : null})).catch(() => ({code, n: null}));
-        })).then(rows => {
-            rows.sort((a, b) => (b.n ?? -1) - (a.n ?? -1));
-            const max = Math.max(1, ...rows.map(r => r.n || 0));
-            out.innerHTML = '<table class="w-full text-[11px]">' + rows.map(r => `<tr>
-                <td class="py-0.5 pr-2 whitespace-nowrap">${esc(countryName(r.code))}</td>
-                <td class="w-full"><div class="h-2 rounded bg-[#2271b1]" style="width:${Math.round((r.n || 0) / max * 100)}%"></div></td>
-                <td class="pl-2 text-right whitespace-nowrap">${r.n === null ? '—' : num(r.n)}</td></tr>`).join('') + '</table>';
-        });
     };
 
     document.addEventListener('falcon-seo-tab', function (e) {

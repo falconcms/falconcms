@@ -80,7 +80,8 @@ class KeywordDemandTest extends TestCase
             ]]),
         ]);
 
-        $this->assertNull(KeywordDemand::lookup('laravel cms')['bing'], 'no key, no call');
+        $withoutKey = KeywordDemand::lookup('laravel cms');
+        $this->assertNull($withoutKey['bing'], 'no key, no call');
         Http::assertNothingSent();
 
         $this->setCmsOptions([KeywordDemand::BING_KEY => Crypt::encryptString('secret-key')]);

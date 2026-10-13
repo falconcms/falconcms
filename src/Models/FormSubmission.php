@@ -4,6 +4,12 @@ namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property int $form_id
+ * @property array<string, mixed>|null $data
+ * @property bool $is_read
+ */
 class FormSubmission extends Model
 {
     protected $table = 'cms_form_submissions';

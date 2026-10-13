@@ -35,6 +35,9 @@ final class KeywordDemand
 
     private const RELATED = 15;
 
+    /** Countries compared in one go: enough to choose markets, few enough to answer quickly. */
+    public const MAX_COUNTRIES = 20;
+
     /** Which sources this site has set up. */
     public static function sources(): array
     {
@@ -65,6 +68,7 @@ final class KeywordDemand
     /** The market asked for in this lookup, when it is not the site's own. */
     private static ?string $country = null;
 
+    /** @return array{query: string, country: string, sources: array<string, bool>, volume: ?array, bing: ?array, related: list<array>, suggestions: list<string>, errors: list<string>} */
     private static function find(string $query): array
     {
         $query = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $query) ?? $query));
@@ -297,6 +301,43 @@ final class KeywordDemand
         }
 
         return $response->json('d');
+    }
+
+    /**
+     * How often a keyword is searched on Bing in each of these countries (last 30 days), most
+     * first. Needs the Bing key; one call per country, remembered for a week. Keyword Planner
+     * figures cover one market only, so they are not split by country.
+     *
+     * @param  list<string>  $countries
+     * @return list<array{country: string, name: string, searches: ?int, error: ?string}>
+     */
+    public static function byCountry(string $query, array $countries): array
+    {
+        $query = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $query) ?? $query));
+        $countries = array_values(array_unique(array_filter(array_map(fn ($c) => strtolower(trim((string) $c)), $countries), [Countries::class, 'valid'])));
+        if ($query === '' || $countries === [] || self::bingKey() === '') {
+            return [];
+        }
+        $language = self::market()[1];
+
+        $rows = [];
+        foreach (array_slice($countries, 0, self::MAX_COUNTRIES) as $country) {
+            $row = ['country' => $country, 'name' => Countries::name($country), 'searches' => null, 'error' => null];
+            try {
+                $row['searches'] = Cache::remember('falcon:kw:bing-country:'.sha1($query.'|'.$country.'|'.$language), now()->addDays(self::CACHE_DAYS), function () use ($query, $country, $language) {
+                    $keyword = self::bingCall('GetKeyword', ['q' => $query, 'country' => $country, 'language' => $language,
+                        'startDate' => now()->subDays(31)->toDateString(), 'endDate' => now()->subDay()->toDateString(), 'apikey' => self::bingKey()]);
+
+                    return is_array($keyword) && isset($keyword['Impressions']) ? (int) $keyword['Impressions'] : 0;
+                });
+            } catch (Throwable $e) {
+                $row['error'] = $e->getMessage();
+            }
+            $rows[] = $row;
+        }
+        usort($rows, fn ($a, $b) => ($b['searches'] ?? -1) <=> ($a['searches'] ?? -1));
+
+        return $rows;
     }
 
     // ── Google search-box suggestions ────────────────────────────────────────

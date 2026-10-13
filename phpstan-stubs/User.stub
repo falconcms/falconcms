@@ -1,0 +1,16 @@
+<?php
+
+namespace Illuminate\Foundation\Auth;
+
+/**
+ * The signed-in user, as the CMS knows it.
+ *
+ * falcon:install adds the HasCmsPermissions trait to the site's App\Models\User, so every
+ * user the CMS authenticates can answer hasPermission(). PHPStan only sees Laravel's base
+ * class behind auth()->user(); this tells it about the trait's method.
+ *
+ * @method bool hasPermission(string $permission)
+ */
+class User extends \Illuminate\Database\Eloquent\Model
+{
+}
