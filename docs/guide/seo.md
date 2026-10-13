@@ -111,6 +111,25 @@ page, the shop's pages) are not reported as empty. Plugins add their own checks 
 The **Import Google Keyword Planner data** box at the bottom of this screen feeds
 [Search demand](#search-demand).
 
+## Site Analysis
+
+**Settings → Site Analysis** runs the editor's page check-up (see Analysis below) on every page of
+the site and keeps each page's score. Pages are checked in the background, ten an hour, as visitors
+get them and with every link checked. A page is checked again after you change it and once a week.
+**Check now** goes through the pages that are due right away, a few at a time with a progress line.
+**Check all again** starts over.
+
+The screen shows the average score and how many pages are good, need some work or need work. Under
+**Problems across the site**, each problem lists the pages that have it, with the images or links
+concerned: every broken link on the site, every image without alt text, every page with two H1s.
+Below that, every page with its score, lowest first, and **Check again** for one page.
+
+Each page's score also shows beside it in the **Posts** and **Pages** lists, and running the
+editor's Analysis on the published page updates it.
+
+The background check needs the site's scheduler (`php artisan schedule:run` every minute, as for
+the rest of FalconCMS) and a correct `APP_URL`, since the pages are fetched at their real address.
+
 ## Bulk SEO
 
 **Settings → Bulk SEO** shows the SEO title, meta description, focus keyword and noindex of every
@@ -162,7 +181,9 @@ against the score and warnings count half.
 market, and your choice is remembered for next time.
 
 Below the score, the **Keyword** box shows how often the focus keyword is searched in the main
-market (from Keyword Planner or Bing, see Search demand below). With more than one country ticked
+market (from Keyword Planner or Bing, see Search demand below). With the [Search Console](/guide/search-console) plugin connected, it first shows Google's own
+figures for the exact keyword in each chosen country: how often the site showed for it, the clicks
+and the average position over the last 90 days. With more than one country ticked
 and a Bing key, it also shows a bar for each country, so you can see where people search for it
 most. The countries are asked 20 at a time and the table fills in as they answer; the 25 with the
 most searches are shown, the rest and those with none are folded below. Each answer is kept for a

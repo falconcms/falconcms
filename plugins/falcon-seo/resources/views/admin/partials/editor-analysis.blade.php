@@ -145,6 +145,37 @@
             <text x="34" y="39" text-anchor="middle" font-size="17" font-weight="700" fill="${c}">${score}</text></svg>`;
     }
 
+    // Google's figures for this exact search, by country (Search Console, last 90 days): how often
+    // the site showed for it, the clicks and the average position.
+    function renderGoogleCountries(g, chosen) {
+        if (!g) {
+            return '';
+        }
+        let html = `<div class="mb-3 pb-3 border-b border-[#f0f0f1]"><div class="text-[11px] font-bold text-[#2c3338] mb-1">Google (Search Console), last ${g.days} days</div>`;
+        if (g.error) {
+            return html + `<p class="text-[11px] text-[#b32d2e]">${esc(g.error)}</p></div>`;
+        }
+        if (!g.rows.length) {
+            return html + `<p class="text-[11px] text-[#646970]">Google has not shown your site for this exact search${chosen.length ? ' in the chosen countries' : ''} yet.</p></div>`;
+        }
+        const max = Math.max(1, ...g.rows.map(r => r.impressions));
+        const shown = g.rows.slice(0, 15);
+        html += `<table class="w-full text-[11px]"><tr class="text-[#646970]"><th class="text-left font-normal pr-2">Country</th><th></th>
+            <th class="text-right font-normal px-2">Shown</th><th class="text-right font-normal px-2">Clicks</th><th class="text-right font-normal pl-2">Position</th></tr>` +
+            shown.map(r => `<tr>
+                <td class="py-0.5 pr-2 whitespace-nowrap">${esc(r.name)}</td>
+                <td class="w-full"><div class="h-2 rounded bg-[#00a32a]" style="width:${Math.round(r.impressions / max * 100)}%"></div></td>
+                <td class="px-2 text-right">${num(r.impressions)}</td><td class="px-2 text-right">${num(r.clicks)}</td>
+                <td class="pl-2 text-right ${r.position <= 10 ? 'text-[#00731a]' : (r.position <= 20 ? 'text-[#996800]' : '')}">${r.position}</td></tr>`).join('') + `</table>`;
+        if (g.rows.length > shown.length) {
+            html += `<p class="text-[10px] text-[#8c8f94] mt-1">${g.rows.length - shown.length} more countries with fewer.</p>`;
+        }
+        if (g.total) {
+            html += `<p class="text-[10px] text-[#8c8f94] mt-1">Worldwide: shown ${num(g.total.impressions)} times, ${num(g.total.clicks)} clicks. Position 1–10 is page one.</p>`;
+        }
+        return html + `</div>`;
+    }
+
     function renderKeyword(k) {
         if (!k || !k.keyword) {
             return '';
@@ -152,6 +183,7 @@
         const anySource = k.sources && (k.sources.planner || k.sources.bing || k.sources.autocomplete);
         let html = `<div class="border border-[#dcdcde] rounded bg-white p-3 mb-4">
             <div class="text-[12px] font-bold text-[#2c3338] mb-2">Keyword: “${esc(k.keyword)}” · ${esc(countryName(k.country))}${(k.countries || []).length > 1 ? ` <span class="font-normal text-[#646970]">(+${k.countries.length - 1} more countries)</span>` : ''}</div>`;
+        html += renderGoogleCountries(k.google_countries, k.countries || []);
         if (!anySource) {
             html += `<p class="text-[12px] text-[#646970]">How often it is searched needs a free source: a Bing Webmaster API key or a Keyword Planner import, in Settings → SEO → Keyword research.</p>`;
         } else {

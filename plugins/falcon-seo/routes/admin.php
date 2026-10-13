@@ -16,6 +16,7 @@ use FalconSeo\Http\Controllers\Admin\MediaAvifController;
 use FalconSeo\Http\Controllers\Admin\PageAnalysisController;
 use FalconSeo\Http\Controllers\Admin\SeoAuditController;
 use FalconSeo\Http\Controllers\Admin\SeoToolsController;
+use FalconSeo\Http\Controllers\Admin\SiteAnalysisController;
 use FalconSeo\Http\Controllers\Admin\WebVitalsController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('analytics/web-vitals', [WebVitalsController::class, 'index'])->name('analytics.vitals');
 
     Route::get('settings/seo-audit', [SeoAuditController::class, 'index'])->name('settings.seo-audit');
+    Route::get('settings/site-analysis', [SiteAnalysisController::class, 'index'])->name('settings.site-analysis');
+    Route::post('seo/site-analysis/scan', [SiteAnalysisController::class, 'scan'])->name('seo.site-analysis.scan');
+    Route::post('seo/site-analysis/{post}/rescan', [SiteAnalysisController::class, 'rescan'])->name('seo.site-analysis.rescan');
     Route::get('settings/seo-bulk', [BulkSeoController::class, 'index'])->name('settings.seo-bulk');
     Route::post('settings/seo-bulk', [BulkSeoController::class, 'update'])->name('settings.seo-bulk.update');
     Route::post('settings/integrations/cloudflare-purge', [SeoToolsController::class, 'purgeCloudflare'])->name('settings.integrations.cloudflare-purge');

@@ -2,6 +2,7 @@
 
 namespace FalconSeo;
 
+use FalconCms\Core\Models\Post;
 use FalconSeo\Http\Middleware\SearchVisibilityMiddleware;
 use FalconSeo\Support\AiCrawlers;
 use FalconSeo\Support\AvifImages;
@@ -9,10 +10,13 @@ use FalconSeo\Support\Cloudflare;
 use FalconSeo\Support\IndexNow;
 use FalconSeo\Support\KeywordDemand;
 use FalconSeo\Support\NotFoundLog;
+use FalconSeo\Support\ScoreCell;
 use FalconSeo\Support\SearchVisibility;
+use FalconSeo\Support\SiteScan;
 use FalconSeo\Support\SpeculativeLoading;
 use FalconSeo\Support\StructuredData;
 use FalconSeo\Support\WebVitals;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -64,6 +68,23 @@ class SeoServiceProvider extends ServiceProvider
         $this->bootSearchOutput();
         $this->bootSpeed();
         $this->bootAdmin();
+        $this->bootSiteScan();
+    }
+
+    /** Every page's score: checked in the background, shown in the posts list and in Site Analysis. */
+    private function bootSiteScan(): void
+    {
+        // A page that changed is checked again on the next run; its last score stays on show.
+        Post::saved(fn (Post $post) => SiteScan::markChanged((int) $post->id));
+        add_falcon_action('falcon_admin_list_seo_cell', [ScoreCell::class, 'render']);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([Console\SeoScanCommand::class]);
+        }
+        // A few pages an hour: a large site fills in over a day without ever loading the server.
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
+            $schedule->command('falcon:seo-scan --limit=10')->hourly()->withoutOverlapping()->runInBackground();
+        });
     }
 
     /** What search engines see: visibility, robots, hreflang, structured data, IndexNow, 404s. */

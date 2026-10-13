@@ -49,7 +49,7 @@ class SeoPluginOffTest extends TestCase
     {
         $this->assertFalse(falcon_plugin_active('falcon-seo'));
         foreach (['admin.settings.seo-audit', 'admin.settings.seo-bulk', 'admin.seo.page-analysis', 'admin.seo.keyword-demand',
-            'admin.analytics.vitals', 'admin.media.avif-generate', 'frontend.web-vitals', 'frontend.indexnow-key'] as $name) {
+            'admin.analytics.vitals', 'admin.media.avif-generate', 'admin.settings.site-analysis', 'frontend.web-vitals', 'frontend.indexnow-key'] as $name) {
             $this->assertFalse(Route::has($name), "{$name} is still registered");
         }
         $this->assertFalse(class_exists('FalconCms\\Core\\Support\\SeoAudit'));

@@ -1246,6 +1246,7 @@ The Falcon SEO plugin does all its work through these. Another plugin can use th
 | `falcon_seo_settings_data` | filter | `$data, $request` | What Settings → SEO is about to save (encrypt a key here). |
 | `falcon_integrations_settings_after_form` | action | — | Prints after the Integrations form (a form of your own). |
 | `falcon_integrations_settings_saved` | action | `$request` | Settings → Integrations was saved. |
+| `falcon_keyword_countries` | filter | `null, $keyword, $countries, $post` | Figures for a keyword by country for the Analysis tab: `['source', 'days', 'rows' => [['country', 'name', 'impressions', 'clicks', 'position']], 'total', 'error']`. The Search Console plugin answers it with Google's numbers. |
 | `falcon_seo_metabox_tabs` / `falcon_seo_metabox_panels` | action | `$post` | Add a tab to the editor's SEO box: a `.seo-tab-btn` with id `seo-tab-btn-{name}` and a `.seo-tab-content` with id `seo-tab-{name}`. Opening it fires the `falcon-seo-tab` DOM event with `detail.tab`. |
 
 ---

@@ -7,6 +7,7 @@ use FalconSeo\Support\Countries;
 use FalconSeo\Support\KeywordDemand;
 use FalconSeo\Support\KeywordSuggestions;
 use FalconSeo\Support\PageAnalyzer;
+use FalconSeo\Support\SiteScan;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
@@ -57,8 +58,17 @@ class PageAnalysisController extends Controller
                 : 'The editor\'s content was analysed (unsaved changes included). The theme\'s own heading, menus and footer are not included.';
         }
 
+        // A check of the published page is the page's score until the next one (Site Analysis,
+        // the posts list). The editor's unsaved version is not what visitors get, so it is not kept.
+        if ($post && $result['mode'] === 'live') {
+            SiteScan::store($post, $result);
+        }
+
         $result['keyword'] = $this->keywordAdvice($keyword, $data, $post);
         $result['keyword']['countries'] = array_map(fn ($c) => ['country' => $c, 'name' => Countries::name($c)], $countries);
+        // Google's own figures for the keyword by country, from a plugin that has them (Search Console).
+        $result['keyword']['google_countries'] = $keyword === '' ? null
+            : apply_falcon_filters('falcon_keyword_countries', null, mb_strtolower($keyword), $countries, $post);
 
         return response()->json($result);
     }

@@ -342,7 +342,8 @@ final class SeoAudit
         return '/'.trim(mb_strtolower(rawurldecode(is_string($path) ? $path : '')), '/');
     }
 
-    private static function editUrl(int $id, string $type): ?string
+    /** Where a post or page is edited. */
+    public static function editUrl(int $id, string $type): ?string
     {
         $name = $type === 'page' && Route::has('admin.pages.edit') ? 'admin.pages.edit' : 'admin.posts.edit';
 

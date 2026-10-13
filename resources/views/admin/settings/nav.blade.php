@@ -10,6 +10,11 @@
             SEO Audit
         </a>
     @endif
+    @if(\Illuminate\Support\Facades\Route::has('admin.settings.site-analysis'))
+        <a href="{{ route('admin.settings.site-analysis') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.site-analysis') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
+            Site Analysis
+        </a>
+    @endif
     @if(\Illuminate\Support\Facades\Route::has('admin.settings.seo-bulk'))
         <a href="{{ route('admin.settings.seo-bulk') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.seo-bulk') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
             Bulk SEO

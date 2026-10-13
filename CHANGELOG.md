@@ -23,6 +23,15 @@ Full release notes, with the reasoning behind each change, live at
   description, images (alt text, size, dimensions), internal and external links, broken links,
   structured data and more. It also suggests keywords worth considering, with search demand by
   country.
+- **Site Analysis** (Settings → Site Analysis). Every page's check-up and score, kept up to date
+  in the background (ten pages an hour, again after a change and weekly), with every problem
+  listed across the site (broken links, images without alt text, missing H1s…) and each page's
+  score in the posts and pages lists. New table `cms_seo_page_scores`; command
+  `falcon:seo-scan`.
+- **Analysis: every country, several at once.** "Searchers in" lists every country with Select
+  all; with a Bing key each gets its own bar, fetched 20 at a time, and a clear note before many
+  requests and when Bing's limit is reached. With the Search Console plugin, Google's own figures
+  for the keyword by country appear too.
 - New core hooks the plugin is built on, listed in the hooks reference: `falcon_robots_txt`,
   `falcon_seo_robots`, `falcon_seo_head_links`, `falcon_seo_schema`, `falcon_optimize_html`,
   `falcon_customizer_sections` and others.
