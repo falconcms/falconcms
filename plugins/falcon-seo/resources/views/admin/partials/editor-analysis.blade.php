@@ -30,6 +30,12 @@
                         <span class="ml-auto text-[#646970]" id="falcon-seo-countries-count"></span>
                     </div>
                     <p class="text-[10px] text-[#8c8f94] mt-1">The first one ticked is the main market.</p>
+                    {{-- Shown once more countries are ticked than one request covers. --}}
+                    <p id="falcon-seo-countries-note" class="hidden mt-2 p-2 rounded bg-[#fcf9e8] border border-[#dba617] text-[11px] text-[#1d2327] leading-snug">
+                        Each country is one request to Bing the first time a keyword is checked, so this one keyword costs up to <strong id="falcon-seo-countries-calls"></strong> requests.
+                        Bing limits how much its API can be used (it does not say how much). If the limit is reached, the countries not yet checked are marked and can be checked later.
+                        Answers are kept for a week: checking the same keyword again costs nothing.
+                    </p>
                 </div>
                 <div class="max-h-[260px] overflow-y-auto py-1 text-[12px]" id="falcon-seo-countries-list">
                     @foreach(array_merge(\FalconSeo\Support\Countries::POPULAR, array_diff(array_keys(\FalconSeo\Support\Countries::ALL), \FalconSeo\Support\Countries::POPULAR)) as $i => $code)
@@ -83,6 +89,9 @@
         label.textContent = chosen.length === total ? 'All ' + total + ' countries (' + countryName(chosen[0]) + ' first)'
             : countryName(chosen[0]) + (chosen.length > 1 ? ' +' + (chosen.length - 1) : '');
         document.getElementById('falcon-seo-countries-count').textContent = chosen.length + ' of ' + total;
+        const note = document.getElementById('falcon-seo-countries-note');
+        note.classList.toggle('hidden', chosen.length <= batchSize);
+        document.getElementById('falcon-seo-countries-calls').textContent = chosen.length;
         label.title = chosen.map(countryName).join(', ');
         try { localStorage.setItem(storeKey, JSON.stringify(chosen)); } catch (e) {}
     }
@@ -202,14 +211,26 @@
                 <td class="py-0.5 pr-2 whitespace-nowrap">${esc(r.name)}</td>
                 <td class="w-full"><div class="h-2 rounded bg-[#2271b1]" style="width:${Math.round((r.searches || 0) / max * 100)}%"></div></td>
                 <td class="pl-2 text-right whitespace-nowrap">${r.error ? '<span class="text-[#b32d2e]">error</span>' : num(r.searches)}</td></tr>`;
+            const limited = rows.filter(r => r.limited);
             let html = done ? '' : `<div class="text-[11px] text-[#646970] italic mb-1">Checked ${rows.length} of ${codes.length} countries…</div>`;
+            if (limited.length) {
+                html += `<div class="mb-2 p-2 rounded bg-[#fcf9e8] border border-[#dba617] text-[11px] text-[#1d2327]">
+                    <strong>Bing's usage limit is reached for now.</strong> ${limited.length} ${limited.length === 1 ? 'country was' : 'countries were'} not checked.
+                    The figures below are kept; press "Analyse page" again later (in an hour or so) to fill in the rest.</div>`;
+            }
             html += found.length ? `<table class="w-full text-[11px]">${found.slice(0, 25).map(row).join('')}</table>` : (done ? '<p class="text-[11px] text-[#646970]">No searches on Bing in these countries.</p>' : '');
             if (found.length > 25) {
                 html += `<details class="mt-1"><summary class="text-[11px] text-[#2271b1] cursor-pointer">${found.length - 25} more countries</summary><table class="w-full text-[11px]">${found.slice(25).map(row).join('')}</table></details>`;
             }
-            if (done && none.length) {
-                html += `<details class="mt-1"><summary class="text-[11px] text-[#646970] cursor-pointer">${none.length} ${none.length === 1 ? 'country' : 'countries'} with no searches</summary>
-                    <p class="text-[11px] text-[#646970] mt-1">${none.map(r => esc(r.name) + (r.error ? ' (error)' : '')).join(', ')}</p></details>`;
+            const unchecked = none.filter(r => r.limited);
+            const empty = none.filter(r => !r.limited);
+            if (done && unchecked.length) {
+                html += `<details class="mt-1"><summary class="text-[11px] text-[#996800] cursor-pointer">${unchecked.length} not checked yet (limit)</summary>
+                    <p class="text-[11px] text-[#646970] mt-1">${unchecked.map(r => esc(r.name)).join(', ')}</p></details>`;
+            }
+            if (done && empty.length) {
+                html += `<details class="mt-1"><summary class="text-[11px] text-[#646970] cursor-pointer">${empty.length} ${empty.length === 1 ? 'country' : 'countries'} with no searches</summary>
+                    <p class="text-[11px] text-[#646970] mt-1">${empty.map(r => esc(r.name) + (r.error ? ' (error)' : '')).join(', ')}</p></details>`;
             }
             box.innerHTML = html;
         };
@@ -227,6 +248,12 @@
                 rows = rows.concat(codes.slice(i, i + batchSize).map(c => ({country: c, name: countryName(c), searches: null, error: e.message})));
             }
             if (run !== countryRun) return; // a newer analysis started
+            // Bing said stop: mark the rest instead of asking for each of them.
+            if (rows.some(r => r.limited)) {
+                rows = rows.concat(codes.slice(i + batchSize).map(c => ({country: c, name: countryName(c), searches: null, error: 'limit', limited: true})));
+                draw(true);
+                return;
+            }
             draw(i + batchSize >= codes.length);
         }
     }

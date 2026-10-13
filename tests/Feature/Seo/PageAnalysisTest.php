@@ -129,6 +129,30 @@ class PageAnalysisTest extends TestCase
         $this->assertSame('Bangladesh', $rows[1]['name']);
     }
 
+    public function test_when_bing_says_stop_the_rest_are_not_asked_and_kept_answers_still_show(): void
+    {
+        $this->setCmsOptions([KeywordDemand::BING_KEY => Crypt::encryptString('secret-key')]);
+        $asked = [];
+        Http::fake(function ($request) use (&$asked) {
+            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $q);
+            $asked[] = $q['country'];
+
+            return $q['country'] === 'bd'
+                ? Http::response(['ErrorCode' => 'ThrottleUser', 'Message' => 'Quota exceeded'], 429)
+                : Http::response(['d' => ['Query' => $q['q'], 'Impressions' => 500]]);
+        });
+
+        KeywordDemand::byCountry('green tea', ['us']); // kept for a week
+        $rows = collect(KeywordDemand::byCountry('green tea', ['us', 'bd', 'gb', 'in']))->keyBy('country');
+
+        $this->assertSame(['us', 'bd'], $asked, 'after the limit nothing more is asked');
+        $this->assertSame(500, $rows['us']['searches'], 'an answer already kept still shows');
+        foreach (['bd', 'gb', 'in'] as $country) {
+            $this->assertTrue($rows[$country]['limited'], $country.' is marked as not checked');
+            $this->assertSame(KeywordDemand::LIMIT_MESSAGE, $rows[$country]['error']);
+        }
+    }
+
     public function test_every_country_can_be_chosen_and_figures_come_in_batches(): void
     {
         $this->actingAs($this->makeUser(['role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id')]));

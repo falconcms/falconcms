@@ -38,6 +38,16 @@ final class KeywordDemand
     /** Countries asked per request: the editor asks for the rest batch by batch, so any number can be compared. */
     public const COUNTRY_BATCH = 20;
 
+    /**
+     * Set when Bing says its usage limit is reached (it publishes no figure for the keyword
+     * API). Until it expires nothing new is asked: answers already kept still show.
+     */
+    public const LIMITED = 'falcon:kw:bing-limited';
+
+    private const LIMIT_PAUSE_MINUTES = 60;
+
+    public const LIMIT_MESSAGE = 'Bing\'s usage limit is reached for now. Figures already fetched still show; try the rest again later.';
+
     /** Which sources this site has set up. */
     public static function sources(): array
     {
@@ -295,6 +305,12 @@ final class KeywordDemand
         $response = Http::timeout(10)->acceptJson()->get(self::BING_API.$method, $params);
         if (!$response->successful()) {
             $message = (string) ($response->json('Message') ?? '');
+            // Too many calls: stop asking for a while instead of failing every remaining one.
+            if ($response->status() === 429 || preg_match('/throttl|quota|exceed/i', $message.' '.$response->json('ErrorCode'))) {
+                Cache::put(self::LIMITED, true, now()->addMinutes(self::LIMIT_PAUSE_MINUTES));
+
+                throw new \RuntimeException(self::LIMIT_MESSAGE);
+            }
             throw new \RuntimeException($response->status() === 401 || str_contains(strtolower($message), 'apikey')
                 ? 'the API key was not accepted. Check it in Settings → SEO.'
                 : 'no answer ('.$response->status().($message !== '' ? ': '.$message : '').').');
@@ -310,7 +326,7 @@ final class KeywordDemand
      * split by country.
      *
      * @param  list<string>  $countries
-     * @return list<array{country: string, name: string, searches: ?int, error: ?string}>
+     * @return list<array{country: string, name: string, searches: ?int, error: ?string, limited: bool}>
      */
     public static function byCountry(string $query, array $countries): array
     {
@@ -323,9 +339,15 @@ final class KeywordDemand
 
         $rows = [];
         foreach (array_slice($countries, 0, self::COUNTRY_BATCH) as $country) {
-            $row = ['country' => $country, 'name' => Countries::name($country), 'searches' => null, 'error' => null];
+            $row = ['country' => $country, 'name' => Countries::name($country), 'searches' => null, 'error' => null, 'limited' => false];
+            $key = 'falcon:kw:bing-country:'.sha1($query.'|'.$country.'|'.$language);
+            if (Cache::has(self::LIMITED) && !Cache::has($key)) {
+                $rows[] = ['error' => self::LIMIT_MESSAGE, 'limited' => true] + $row;
+
+                continue;
+            }
             try {
-                $row['searches'] = Cache::remember('falcon:kw:bing-country:'.sha1($query.'|'.$country.'|'.$language), now()->addDays(self::CACHE_DAYS), function () use ($query, $country, $language) {
+                $row['searches'] = Cache::remember($key, now()->addDays(self::CACHE_DAYS), function () use ($query, $country, $language) {
                     $keyword = self::bingCall('GetKeyword', ['q' => $query, 'country' => $country, 'language' => $language,
                         'startDate' => now()->subDays(31)->toDateString(), 'endDate' => now()->subDay()->toDateString(), 'apikey' => self::bingKey()]);
 
@@ -333,6 +355,7 @@ final class KeywordDemand
                 });
             } catch (Throwable $e) {
                 $row['error'] = $e->getMessage();
+                $row['limited'] = Cache::has(self::LIMITED);
             }
             $rows[] = $row;
         }
