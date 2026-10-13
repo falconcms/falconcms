@@ -177,9 +177,23 @@ class SeoServiceProvider extends ServiceProvider
         add_falcon_action('falcon_integrations_settings_saved', [self::class, 'saveCloudflare']);
     }
 
-    /** Settings → SEO sections and the editor's SEO tabs. */
+    /** SEO → Settings sections and the editor's SEO tabs. */
     private function bootAdmin(): void
     {
+        // The plugin's screens, in the SEO menu and its tabs (the core brings Settings and Redirects).
+        $screens = [
+            ['label' => 'Site Analysis', 'route' => 'admin.settings.site-analysis', 'order' => 20],
+            ['label' => 'SEO Audit', 'route' => 'admin.settings.seo-audit', 'order' => 30],
+            ['label' => 'Bulk SEO', 'route' => 'admin.settings.seo-bulk', 'order' => 40],
+        ];
+        add_falcon_action('falcon_admin_menu', function () use ($screens) {
+            foreach ($screens as $screen) {
+                falcon_add_submenu_page('seo', ['menu_title' => $screen['label'], 'route' => $screen['route'], 'capability' => 'manage_settings',
+                    'show_in_roles' => false, 'order' => $screen['order']]);
+            }
+        });
+        add_falcon_filter('falcon_seo_tabs', fn ($tabs) => array_merge((array) $tabs, $screens));
+
         add_falcon_action('falcon_seo_settings_form_top', function () {
             echo view('falcon-seo::admin.partials.settings-visibility')->render();
         });
@@ -201,7 +215,7 @@ class SeoServiceProvider extends ServiceProvider
     }
 
     /**
-     * Settings → SEO save: the Bing key is stored encrypted, and an empty field keeps the one
+     * SEO → Settings save: the Bing key is stored encrypted, and an empty field keeps the one
      * already saved.
      *
      * @param  array<string, mixed>  $data

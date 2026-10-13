@@ -1206,7 +1206,7 @@ The page's JSON-LD graph (a list of nodes) before it is printed. Add a node, or 
 #### `falcon_seo_audit_checks` (filter)
 **Args:** `$checks, $posts`
 
-Add a check to **Settings → SEO Audit**. Each check is
+Add a check to **SEO → SEO Audit**. Each check is
 `['key', 'label', 'severity' => 'error'|'warning'|'info', 'help', 'items' => [['id', 'title', 'detail', 'edit']]]`.
 
 #### `falcon_link_suggestions` / `falcon_keyword_suggestions` (filters)
@@ -1241,9 +1241,9 @@ The Falcon SEO plugin does all its work through these. Another plugin can use th
 | `falcon_media_library_actions` | action | — | Prints a button next to the Media Library title. |
 | `falcon_page_cache_cleared` | action | — | The page cache was emptied. |
 | `falcon_customizer_sections` | filter | `$sections` | Add fields to the Customizer's sections. |
-| `falcon_seo_settings_sections` | action | `$settings` | Prints a section on Settings → SEO. Its fields save with the form. |
-| `falcon_seo_settings_checkboxes` | filter | `$names` | Names of your checkboxes on Settings → SEO, so an unticked one saves as `0`. |
-| `falcon_seo_settings_data` | filter | `$data, $request` | What Settings → SEO is about to save (encrypt a key here). |
+| `falcon_seo_settings_sections` | action | `$settings` | Prints a section on SEO → Settings. Its fields save with the form. |
+| `falcon_seo_settings_checkboxes` | filter | `$names` | Names of your checkboxes on SEO → Settings, so an unticked one saves as `0`. |
+| `falcon_seo_settings_data` | filter | `$data, $request` | What SEO → Settings is about to save (encrypt a key here). |
 | `falcon_integrations_settings_after_form` | action | — | Prints after the Integrations form (a form of your own). |
 | `falcon_integrations_settings_saved` | action | `$request` | Settings → Integrations was saved. |
 | `falcon_keyword_countries` | filter | `null, $keyword, $countries, $post` | Figures for a keyword by country for the Analysis tab: `['source', 'days', 'rows' => [['country', 'name', 'impressions', 'clicks', 'position']], 'total', 'error']`. The Search Console plugin answers it with Google's numbers. |

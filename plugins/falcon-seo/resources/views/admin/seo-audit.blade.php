@@ -11,7 +11,7 @@
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">SEO Audit</h1>
-        @include('falcon-cms::admin.settings.nav')
+        @include('falcon-cms::admin.seo.nav')
 
         {{-- The tabs span the screen like every Settings tab; the audit itself keeps a readable width. --}}
         <div class="max-w-[1000px]">
@@ -89,7 +89,7 @@
         @endforelse
 
         @php $plannerCount = \FalconSeo\Support\KeywordDemand::plannerCount(); @endphp
-        {{-- Search demand data for the editor's Keywords tab (Settings → SEO → Keyword research uses it). --}}
+        {{-- Search demand data for the editor's Keywords tab (SEO → Settings → Keyword research uses it). --}}
         <div class="wp-metabox mt-8" id="keyword-planner-import">
             <div class="wp-metabox-header"><span>Import Google Keyword Planner data</span></div>
             <div class="wp-metabox-content p-4 space-y-3 text-[13px]">

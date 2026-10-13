@@ -11,7 +11,7 @@
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Site Analysis</h1>
-        @include('falcon-cms::admin.settings.nav')
+        @include('falcon-cms::admin.seo.nav')
 
         <div class="max-w-[1100px]">
         @if(session('success'))

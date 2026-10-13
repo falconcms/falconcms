@@ -10,7 +10,7 @@ use Throwable;
 
 /**
  * Search demand for the editor's Keywords tab, and the Keyword Planner import behind it
- * (Settings → SEO → Keyword research).
+ * (SEO → Settings → Keyword research).
  */
 class KeywordResearchController extends Controller
 {

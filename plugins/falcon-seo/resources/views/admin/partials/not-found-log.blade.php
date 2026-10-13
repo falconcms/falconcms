@@ -13,7 +13,7 @@
         </div>
         <div class="wp-metabox-content p-0">
             @if(!\FalconSeo\Support\NotFoundLog::enabled())
-                <p class="p-4 text-[13px] text-[#646970]">404 logging is turned off in Settings → SEO.</p>
+                <p class="p-4 text-[13px] text-[#646970]">404 logging is turned off in SEO → Settings.</p>
             @elseif(count($notFound) === 0)
                 <p class="p-4 text-[13px] text-[#646970]">No missing pages recorded in the last {{ \FalconSeo\Support\NotFoundLog::KEEP_DAYS }} days. Addresses visitors ask for that do not exist show up here, ready to redirect.</p>
             @else

@@ -316,8 +316,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
     Route::post('settings', [DashboardController::class, 'updateSettings'])->name('settings.update');
-    Route::get('settings/seo', [DashboardController::class, 'seoSettings'])->name('settings.seo');
-    Route::post('settings/seo', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
+    // SEO is a menu of its own (admin/seo/…); the names stay as they were. The old addresses
+    // under Settings send bookmarks and old links on.
+    Route::get('seo/settings', [DashboardController::class, 'seoSettings'])->name('settings.seo');
+    Route::post('seo/settings', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
+    foreach (['settings/seo' => 'seo/settings', 'settings/seo-audit' => 'seo/audit', 'settings/seo-bulk' => 'seo/bulk', 'settings/site-analysis' => 'seo/site-analysis'] as $was => $now) {
+        Route::get($was, fn () => redirect('/admin/'.$now, 301));
+    }
     Route::get('settings/activity-logs', [DashboardController::class, 'activityLogs'])->name('settings.activity-logs');
     Route::post('settings/activity-logs/bulk', [DashboardController::class, 'bulkDeleteLogs'])->name('settings.activity-logs.bulk');
     Route::get('settings/api', [DashboardController::class, 'apiSettings'])->name('settings.api');

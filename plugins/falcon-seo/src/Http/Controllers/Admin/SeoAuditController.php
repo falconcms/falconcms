@@ -5,7 +5,7 @@ namespace FalconSeo\Http\Controllers\Admin;
 use FalconSeo\Support\SeoAudit;
 use Illuminate\Routing\Controller;
 
-/** Settings → SEO Audit: a site-wide check-up with a link to fix each finding. */
+/** SEO → SEO Audit: a site-wide check-up with a link to fix each finding. */
 class SeoAuditController extends Controller
 {
     public function index()

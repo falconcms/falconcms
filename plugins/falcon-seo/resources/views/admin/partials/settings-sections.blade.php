@@ -1,4 +1,4 @@
-{{-- Settings → SEO: the plugin's sections (falcon_seo_settings_sections, given $settings). --}}
+{{-- SEO → Settings: the plugin's sections (falcon_seo_settings_sections, given $settings). --}}
 <div class="space-y-8">
 {{-- Who runs the site: Organization / LocalBusiness structured data --}}
 @php $orgType = $settings['seo_org_type'] ?? 'Organization'; @endphp

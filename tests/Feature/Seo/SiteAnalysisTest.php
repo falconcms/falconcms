@@ -97,11 +97,11 @@ class SiteAnalysisTest extends TestCase
         $pricing = $this->page('pricing');
         $this->actingAs($this->admin());
 
-        $this->get('/admin/settings/site-analysis')->assertOk()->assertSee('Check 1 page(s) now')->assertSee('No page has been checked yet');
+        $this->get('/admin/seo/site-analysis')->assertOk()->assertSee('Check 1 page(s) now')->assertSee('No page has been checked yet');
 
         $this->postJson('/admin/seo/site-analysis/scan', ['links' => 1])->assertOk()->assertJson(['done' => 1, 'due' => 0, 'checked' => 1]);
 
-        $this->get('/admin/settings/site-analysis')->assertOk()->assertSee('Broken links')->assertSee('Pricing')->assertSee('Up to date');
+        $this->get('/admin/seo/site-analysis')->assertOk()->assertSee('Broken links')->assertSee('Pricing')->assertSee('Up to date');
 
         // "Check all again" clears every date first.
         $this->postJson('/admin/seo/site-analysis/scan', ['restart' => 1])->assertOk()->assertJson(['done' => 1]);

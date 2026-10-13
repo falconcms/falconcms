@@ -63,6 +63,6 @@ final class AiCrawlers
             $groups[] = "# {$purpose}\nUser-agent: {$token}\nDisallow: /";
         }
 
-        return $groups === [] ? '' : "\n\n# AI crawlers (Settings → SEO)\n".implode("\n\n", $groups)."\n";
+        return $groups === [] ? '' : "\n\n# AI crawlers (SEO → Settings)\n".implode("\n\n", $groups)."\n";
     }
 }

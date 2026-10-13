@@ -51,7 +51,7 @@ after clearing cookies, nothing links back to it.
 
 ## SEO Settings
 
-Navigate to **Admin → Settings → SEO**.
+Navigate to **Admin → SEO → Settings**.
 
 | Setting | Key | Description |
 |---|---|---|

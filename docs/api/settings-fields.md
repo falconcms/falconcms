@@ -48,7 +48,7 @@ falcon_add_settings_field([
 | `screen` | Admin page |
 | --- | --- |
 | `general` *(default)* | Settings → General Settings |
-| `seo` | Settings → SEO Settings |
+| `seo` | SEO → Settings |
 | `api` | Settings → REST API |
 | `integrations` | Settings → Integrations |
 | `shop` | Shop → Settings |

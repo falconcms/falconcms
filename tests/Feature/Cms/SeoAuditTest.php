@@ -77,7 +77,7 @@ class SeoAuditTest extends TestCase
         $admin = User::forceCreate(['name' => 'Admin', 'email' => 'admin@example.test', 'password' => 'x',
             'role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id')]);
 
-        $this->actingAs($admin)->get('/admin/settings/seo-audit')
+        $this->actingAs($admin)->get('/admin/seo/audit')
             ->assertOk()->assertSee('SEO Audit')->assertSee('Missing meta descriptions')->assertSee('Alpha');
 
         $this->assertSame(1, DB::table('posts')->where('slug', 'alpha')->count(), 'nothing is changed');

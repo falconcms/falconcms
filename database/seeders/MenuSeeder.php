@@ -207,10 +207,6 @@ class MenuSeeder extends Seeder
         ]);
         $settingsMenu->children()->createMany([
             ['title' => 'General',         'route' => 'admin.settings.index',           'order' => 1],
-            ['title' => 'SEO',             'route' => 'admin.settings.seo',             'order' => 2],
-            ['title' => 'SEO Audit',       'route' => 'admin.settings.seo-audit',       'order' => 2],
-            ['title' => 'Bulk SEO',        'route' => 'admin.settings.seo-bulk',        'order' => 2],
-            ['title' => 'Redirects',       'route' => 'admin.redirects.index',          'order' => 3],
             ['title' => 'Activity Logs',   'route' => 'admin.settings.activity-logs',   'order' => 4],
             ['title' => 'REST API',        'route' => 'admin.settings.api',             'order' => 5],
             ['title' => 'Integrations',    'route' => 'admin.settings.integrations',    'order' => 6],

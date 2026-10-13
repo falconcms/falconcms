@@ -10,7 +10,7 @@ class SeoScanCommand extends Command
 {
     protected $signature = 'falcon:seo-scan {--limit=10 : Pages to check in this run} {--no-links : Skip the broken-link check}';
 
-    protected $description = 'Run the SEO check-up on pages that are due (Settings → Site Analysis)';
+    protected $description = 'Run the SEO check-up on pages that are due (SEO → Site Analysis)';
 
     public function handle(): int
     {

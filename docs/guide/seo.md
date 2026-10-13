@@ -7,6 +7,13 @@ tells you what to fix and a bulk editor lets you fix it fast.
 
 Nothing here rewrites the SEO title, description or other SEO data you have entered.
 
+## The SEO menu
+
+Everything about search has its own menu in the sidebar, **SEO**, with tabs like Settings:
+**Settings**, **Site Analysis**, **SEO Audit**, **Bulk SEO**, **Search Console** (with the Pro
+plugin) and **Redirects**. The screens used to sit under Settings; their old addresses still lead
+to them.
+
 ## The Falcon SEO plugin
 
 The SEO and speed tools come in **Falcon SEO**, a free plugin that ships with FalconCMS and is on
@@ -20,9 +27,9 @@ basics: each page's title, description, canonical address and Open Graph tags, t
 robots.txt and redirects. Nothing you have saved is deleted, so switching it on again brings
 everything back as it was.
 
-## Settings → SEO
+## SEO → Settings
 
-![Settings → SEO](/screenshots/seo-settings.webp)
+![SEO → Settings](/screenshots/seo-settings.webp)
 
 *Site-wide SEO settings: search engine visibility, permalinks, robots.txt, your organization, AI crawlers, IndexNow, the 404 log, Discover and keyword research.*
 
@@ -85,11 +92,11 @@ A post opened at its bare slug (`/my-post`) redirects permanently to its real ad
 
 ## SEO Audit
 
-**Settings → SEO Audit** checks every published page and post and gives the site a score. Each
+**SEO → SEO Audit** checks every published page and post and gives the site a score. Each
 kind of issue is listed with the pages that have it, most important first. **View** opens the page,
 **Fix** opens its editor.
 
-![Settings → SEO Audit](/screenshots/seo-audit.webp)
+![SEO → SEO Audit](/screenshots/seo-audit.webp)
 
 *The audit: a score, then every issue with the pages it affects. "Fix" issues open on their own; the rest open with "Show N pages".*
 
@@ -113,7 +120,7 @@ The **Import Google Keyword Planner data** box at the bottom of this screen feed
 
 ## Site Analysis
 
-**Settings → Site Analysis** runs the editor's page check-up (see Analysis below) on every page of
+**SEO → Site Analysis** runs the editor's page check-up (see Analysis below) on every page of
 the site and keeps each page's score. Pages are checked in the background, ten an hour, as visitors
 get them and with every link checked. A page is checked again after you change it and once a week.
 **Check now** goes through the pages that are due right away, a few at a time with a progress line.
@@ -132,10 +139,10 @@ the rest of FalconCMS) and a correct `APP_URL`, since the pages are fetched at t
 
 ## Bulk SEO
 
-**Settings → Bulk SEO** shows the SEO title, meta description, focus keyword and noindex of every
+**SEO → Bulk SEO** shows the SEO title, meta description, focus keyword and noindex of every
 page, post and product on one screen. It is the fastest way to fix what the audit finds.
 
-![Settings → Bulk SEO](/screenshots/bulk-seo.webp)
+![SEO → Bulk SEO](/screenshots/bulk-seo.webp)
 
 *Filter to what is missing, type, and save only the rows you changed.*
 
@@ -211,7 +218,7 @@ keyword** fills the General tab's field.
 
 ### Search demand
 
-How many people search for a keyword, from free sources only. Set them up under **Settings → SEO →
+How many people search for a keyword, from free sources only. Set them up under **SEO → Settings →
 Keyword research**:
 
 - **Google Keyword Planner:** free with a Google Ads account (no ad needs to run). Download the
@@ -235,7 +242,7 @@ it, each with the reason.
 
 ## Redirects and the 404 log
 
-**Settings → Redirects** holds your redirects, and below them the addresses visitors asked for that
+**SEO → Redirects** holds your redirects, and below them the addresses visitors asked for that
 do not exist. Each one shows how often it was hit and where the visitor came from. One click turns
 a broken address into a redirect.
 

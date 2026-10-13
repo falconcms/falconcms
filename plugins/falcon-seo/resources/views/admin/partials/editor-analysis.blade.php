@@ -185,7 +185,7 @@
             <div class="text-[12px] font-bold text-[#2c3338] mb-2">Keyword: “${esc(k.keyword)}” · ${esc(countryName(k.country))}${(k.countries || []).length > 1 ? ` <span class="font-normal text-[#646970]">(+${k.countries.length - 1} more countries)</span>` : ''}</div>`;
         html += renderGoogleCountries(k.google_countries, k.countries || []);
         if (!anySource) {
-            html += `<p class="text-[12px] text-[#646970]">How often it is searched needs a free source: a Bing Webmaster API key or a Keyword Planner import, in Settings → SEO → Keyword research.</p>`;
+            html += `<p class="text-[12px] text-[#646970]">How often it is searched needs a free source: a Bing Webmaster API key or a Keyword Planner import, in SEO → Settings → Keyword research.</p>`;
         } else {
             html += `<div class="flex flex-wrap gap-4 text-[12px] mb-2">
                 <span><span class="text-[#646970]">Google (Keyword Planner):</span> <strong>${k.planner ? num(k.planner.searches_low) + '–' + num(k.planner.searches_high) + '/mo' : '—'}</strong>${k.planner && k.planner.competition ? ' · competition ' + esc(k.planner.competition) : ''}</span>
@@ -217,7 +217,7 @@
             return `<p class="text-[11px] text-[#646970]">Tick more countries under "Searchers in" to compare how this keyword is searched in each.</p>`;
         }
         if (!k.sources.bing) {
-            return `<p class="text-[11px] text-[#646970]">Comparing countries needs the free Bing Webmaster API key (Settings → SEO → Keyword research). Keyword Planner figures cover one market only.</p>`;
+            return `<p class="text-[11px] text-[#646970]">Comparing countries needs the free Bing Webmaster API key (SEO → Settings → Keyword research). Keyword Planner figures cover one market only.</p>`;
         }
         return `<div class="text-[11px] font-bold text-[#2c3338] mt-2 mb-1">Searches on Bing, last 30 days</div>
             <div id="falcon-seo-country-rows" data-keyword="${esc(k.keyword)}" data-countries="${esc(k.countries.map(c => c.country).join(','))}"></div>

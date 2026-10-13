@@ -23,7 +23,7 @@ Full release notes, with the reasoning behind each change, live at
   description, images (alt text, size, dimensions), internal and external links, broken links,
   structured data and more. It also suggests keywords worth considering, with search demand by
   country.
-- **Site Analysis** (Settings → Site Analysis). Every page's check-up and score, kept up to date
+- **Site Analysis** (SEO → Site Analysis). Every page's check-up and score, kept up to date
   in the background (ten pages an hour, again after a change and weekly), with every problem
   listed across the site (broken links, images without alt text, missing H1s…) and each page's
   score in the posts and pages lists. New table `cms_seo_page_scores`; command
@@ -36,6 +36,10 @@ Full release notes, with the reasoning behind each change, live at
   noindex/nofollow and social fields come across from Yoast SEO, Rank Math, All in One SEO and
   SEOPress, and every published post whose address changes gets a 301 redirect from its old
   WordPress address. The import result shows both counts.
+- **SEO has its own menu.** SEO settings, Site Analysis, SEO Audit, Bulk SEO, Search Console and
+  Redirects move out of Settings into an SEO menu with tabs like Settings'
+  (`/admin/seo/...`; the old `/admin/settings/seo…` addresses redirect). Plugins add screens with
+  `falcon_add_submenu_page('seo', …)` and tabs with the `falcon_seo_tabs` filter.
 - New core hooks the plugin is built on, listed in the hooks reference: `falcon_robots_txt`,
   `falcon_seo_robots`, `falcon_seo_head_links`, `falcon_seo_schema`, `falcon_optimize_html`,
   `falcon_customizer_sections` and others.

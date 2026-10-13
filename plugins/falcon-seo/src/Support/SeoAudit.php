@@ -107,7 +107,7 @@ final class SeoAudit
         return $out;
     }
 
-    /** The whole site noindexed by Settings → SEO: right for a demo, fatal for a live site. */
+    /** The whole site noindexed by SEO → Settings: right for a demo, fatal for a live site. */
     private static function siteHidden(): ?array
     {
         if (!SearchVisibility::hidden()) {
@@ -115,7 +115,7 @@ final class SeoAudit
         }
 
         return self::check('site_hidden', 'The whole site is hidden from search engines', 'error',
-            'Settings → SEO → "Hide this site from search engines" is on, so no page can appear on Google. Right for a demo or staging copy; untick it before launch.',
+            'SEO → Settings → "Hide this site from search engines" is on, so no page can appear on Google. Right for a demo or staging copy; untick it before launch.',
             [['id' => 0, 'title' => 'Search engine visibility', 'detail' => 'Every page says noindex.',
                 'edit' => Route::has('admin.settings.seo') ? route('admin.settings.seo') : null]]);
     }

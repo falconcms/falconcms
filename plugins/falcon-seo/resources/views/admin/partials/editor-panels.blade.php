@@ -132,7 +132,7 @@
             .then(d => {
                 const s = d.sources || {};
                 if (!s.planner && !s.bing && !s.autocomplete) {
-                    box.innerHTML = `<div class="text-[12px] text-[#646970]">No source is set up yet. Add a free Bing key, import Google Keyword Planner data, or turn on search suggestions in <a href="{{ route('admin.settings.seo') }}#keyword-research" target="_blank" class="text-[#2271b1]">Settings → SEO → Keyword research</a>.</div>`;
+                    box.innerHTML = `<div class="text-[12px] text-[#646970]">No source is set up yet. Add a free Bing key, import Google Keyword Planner data, or turn on search suggestions in <a href="{{ route('admin.settings.seo') }}#keyword-research" target="_blank" class="text-[#2271b1]">SEO → Settings → Keyword research</a>.</div>`;
                     return;
                 }
                 let html = '<div class="flex flex-wrap gap-2 mb-2">';

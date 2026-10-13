@@ -2,11 +2,10 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Each page's latest SEO check-up (Falcon SEO → Site Analysis, the editor's Analysis tab and
+ * Each page's latest SEO check-up (SEO → Site Analysis, the editor's Analysis tab and
  * the score in the posts list): its score and the problems found. One row per post.
  */
 return new class extends Migration
@@ -28,22 +27,10 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-
-        $settings = DB::table('menus')->whereNull('parent_id')
-            ->where(fn ($q) => $q->where('route', 'admin.settings.index')->orWhere('title', 'Settings'))
-            ->first();
-        if ($settings && !DB::table('menus')->where('parent_id', $settings->id)->where('route', 'admin.settings.site-analysis')->exists()) {
-            DB::table('menus')->insert([
-                'title' => 'Site Analysis', 'route' => 'admin.settings.site-analysis', 'order' => 2, 'parent_id' => $settings->id,
-                'icon' => null, 'group' => null, 'permission' => null, 'params' => null,
-                'created_at' => now(), 'updated_at' => now(),
-            ]);
-        }
     }
 
     public function down(): void
     {
-        DB::table('menus')->where('route', 'admin.settings.site-analysis')->delete();
         Schema::dropIfExists('cms_seo_page_scores');
     }
 };

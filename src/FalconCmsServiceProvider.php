@@ -54,6 +54,8 @@ class FalconCmsServiceProvider extends ServiceProvider
             return ($user && method_exists($user, 'hasRole') && $user->hasRole('super-admin')) ? true : null;
         });
 
+        $this->registerSeoMenu();
+
         // Share activeTheme globally with all views
         $activeTheme = get_cms_option('active_theme', 'falcon-theme');
         view()->share('activeTheme', $activeTheme);
@@ -495,6 +497,22 @@ class FalconCmsServiceProvider extends ServiceProvider
      * the shop off. When they disagree, the cache file goes and the next request reads the
      * route files.
      */
+    /**
+     * SEO in the sidebar, a menu of its own with tabs like Settings. The core brings its own
+     * screens (settings, redirects); plugins add theirs as submenus of 'seo' (Falcon SEO: Site
+     * Analysis, SEO Audit, Bulk SEO; Search Console) and as tabs through `falcon_seo_tabs`.
+     * Everything here is for whoever runs the site's settings, as the screens themselves check.
+     */
+    protected function registerSeoMenu(): void
+    {
+        add_falcon_action('falcon_admin_menu', function () {
+            falcon_add_menu_page(['slug' => 'seo', 'menu_title' => 'SEO', 'route' => 'admin.settings.seo', 'icon' => 'manage_search',
+                'capability' => 'manage_settings', 'show_in_roles' => false, 'position' => 88, 'group' => 'System']);
+            falcon_add_submenu_page('seo', ['menu_title' => 'Settings', 'route' => 'admin.settings.seo', 'capability' => 'manage_settings', 'show_in_roles' => false, 'order' => 1]);
+            falcon_add_submenu_page('seo', ['menu_title' => 'Redirects', 'route' => 'admin.redirects.index', 'capability' => 'manage_settings', 'show_in_roles' => false, 'order' => 90]);
+        });
+    }
+
     protected function dropRouteCacheIfShopStateChanged(): void
     {
         if ($this->routeCacheChecked || !$this->app->routesAreCached()) {

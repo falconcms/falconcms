@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 
-/** Settings → Site Analysis: every page's score and the problems across the site. */
+/** SEO → Site Analysis: every page's score and the problems across the site. */
 class SiteAnalysisController extends Controller
 {
     /** Pages per "Scan now" request: each is fetched and its links checked, so a few at a time. */

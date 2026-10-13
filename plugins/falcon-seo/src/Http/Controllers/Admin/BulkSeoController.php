@@ -9,7 +9,7 @@ use Illuminate\Routing\Controller;
 use Throwable;
 
 /**
- * Settings → Bulk SEO: every page's SEO title, meta description, focus keyword and noindex on
+ * SEO → Bulk SEO: every page's SEO title, meta description, focus keyword and noindex on
  * one screen, filtered to what is missing. Only the rows changed are saved, through the model,
  * so whatever listens to a post being saved (IndexNow, Search Console's change log) still hears it.
  */

@@ -3,9 +3,8 @@
     <x-falcon-cms::admin.delete-modal />
 
     <div class="px-2">
-        <div class="flex items-center justify-between mb-6">
-            <h1 class="text-[23px] font-normal text-[#1d2327]">Redirection Manager</h1>
-        </div>
+        <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Redirects</h1>
+        @include('falcon-cms::admin.seo.nav')
 
         @if (session('success'))
             <div class="bg-[#edfaef] border-l-4 border-[#46b450] p-3 mb-6 text-[13px] text-[#1d2327]">

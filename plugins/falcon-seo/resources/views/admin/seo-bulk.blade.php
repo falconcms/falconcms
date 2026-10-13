@@ -8,7 +8,7 @@
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Bulk SEO</h1>
-        @include('falcon-cms::admin.settings.nav')
+        @include('falcon-cms::admin.seo.nav')
 
         @if (session('success'))
             <div class="bg-[#edfaef] border-l-4 border-[#46b450] p-3 mb-4 text-[13px] text-[#1d2327]">{{ session('success') }}</div>

@@ -1,4 +1,4 @@
-{{-- Settings → SEO: search engine visibility (falcon_seo_settings_form_top). --}}
+{{-- SEO → Settings: search engine visibility (falcon_seo_settings_form_top). --}}
 @php $settings = ['seo_hide_site' => get_cms_option('seo_hide_site', '0')]; @endphp
 <div class="mb-8">
 {{-- Search engine visibility: hide a demo, staging or unfinished site --}}

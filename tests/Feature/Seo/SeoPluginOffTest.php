@@ -79,7 +79,7 @@ class SeoPluginOffTest extends TestCase
         $this->actingAsAdmin();
         $post = Post::forceCreate(['title' => 'Draft', 'slug' => 'draft', 'type' => 'post', 'status' => 'draft', 'content' => '<p>x</p>', 'lang_code' => 'en']);
 
-        $seo = $this->get('/admin/settings/seo')->assertOk()->getContent();
+        $seo = $this->get('/admin/seo/settings')->assertOk()->getContent();
         $this->assertStringNotContainsString('seo_hide_site', $seo);
         $this->assertStringNotContainsString('IndexNow', $seo);
         $this->assertStringNotContainsString('SEO Audit', $seo);
@@ -98,7 +98,7 @@ class SeoPluginOffTest extends TestCase
     {
         $this->actingAsAdmin();
 
-        $this->post('/admin/settings/seo', ['seo_separator' => '|', 'sitemap_include_categories' => '1'])->assertRedirect();
+        $this->post('/admin/seo/settings', ['seo_separator' => '|', 'sitemap_include_categories' => '1'])->assertRedirect();
         $this->assertSame('|', DB::table('cms_settings')->where('key', 'seo_separator')->value('value'));
     }
 }

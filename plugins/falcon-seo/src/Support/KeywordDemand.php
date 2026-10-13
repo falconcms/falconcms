@@ -11,7 +11,7 @@ use Throwable;
 /**
  * How many people search for a keyword, and what else they search, from free sources only:
  *
- *  - Google Keyword Planner volumes the owner imported as a CSV (Settings → SEO).
+ *  - Google Keyword Planner volumes the owner imported as a CSV (SEO → Settings).
  *  - Bing Webmaster Tools' keyword research API, with the site's own free API key.
  *  - Google's search-box suggestions (optional, off by default: not an official API).
  *
@@ -60,7 +60,7 @@ final class KeywordDemand
 
     /**
      * A two-letter $country asks Bing and the suggestions about that market instead of the one in
-     * Settings → SEO. Keyword Planner figures are whatever market the imported file was for.
+     * SEO → Settings. Keyword Planner figures are whatever market the imported file was for.
      *
      * @return array{query: string, country: string, sources: array<string, bool>, volume: ?array, bing: ?array, related: list<array>, suggestions: list<string>, errors: list<string>}
      */
@@ -312,7 +312,7 @@ final class KeywordDemand
                 throw new \RuntimeException(self::LIMIT_MESSAGE);
             }
             throw new \RuntimeException($response->status() === 401 || str_contains(strtolower($message), 'apikey')
-                ? 'the API key was not accepted. Check it in Settings → SEO.'
+                ? 'the API key was not accepted. Check it in SEO → Settings.'
                 : 'no answer ('.$response->status().($message !== '' ? ': '.$message : '').').');
         }
 

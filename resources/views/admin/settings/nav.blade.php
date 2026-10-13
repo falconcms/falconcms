@@ -2,24 +2,6 @@
     <a href="{{ route('admin.settings.index') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.index') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
         General Settings
     </a>
-    <a href="{{ route('admin.settings.seo') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.seo') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
-        SEO Settings
-    </a>
-    @if(\Illuminate\Support\Facades\Route::has('admin.settings.seo-audit'))
-        <a href="{{ route('admin.settings.seo-audit') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.seo-audit') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
-            SEO Audit
-        </a>
-    @endif
-    @if(\Illuminate\Support\Facades\Route::has('admin.settings.site-analysis'))
-        <a href="{{ route('admin.settings.site-analysis') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.site-analysis') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
-            Site Analysis
-        </a>
-    @endif
-    @if(\Illuminate\Support\Facades\Route::has('admin.settings.seo-bulk'))
-        <a href="{{ route('admin.settings.seo-bulk') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.seo-bulk') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
-            Bulk SEO
-        </a>
-    @endif
     @if(falcon_activity_log_enabled())
         <a href="{{ route('admin.settings.activity-logs') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.activity-logs') ? 'text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7] border-b-white' : 'text-[#2271b1] hover:text-[#135e96]' }}">
             Activity Logs
