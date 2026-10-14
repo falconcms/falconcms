@@ -34,7 +34,7 @@ class SeoPermissionsTest extends TestCase
 
         $html = $this->get('/admin/roles/'.$editor.'/edit')->assertOk()->getContent();
 
-        foreach (['access_seo', 'access_seo_settings', 'access_seo_site_analysis', 'access_seo_audit', 'access_seo_bulk', 'access_seo_redirects'] as $slug) {
+        foreach (['access_seo', 'access_seo_settings', 'access_seo_site_analysis', 'access_seo_audit', 'access_seo_bulk', 'access_seo_redirects', 'access_seo_rank_tracker'] as $slug) {
             $this->assertStringContainsString('value="'.$slug.'"', $html, $slug.' can be granted');
         }
     }
@@ -48,6 +48,7 @@ class SeoPermissionsTest extends TestCase
         $this->get('/admin/seo/settings')->assertForbidden();
         $this->get('/admin/seo/bulk')->assertForbidden();
         $this->get('/admin/seo/site-analysis')->assertForbidden();
+        $this->get('/admin/seo/rank-tracker')->assertForbidden();
         $this->post('/admin/seo/settings', ['seo_separator' => '|'])->assertForbidden();
     }
 

@@ -24,7 +24,7 @@ class SeoMenuTest extends TestCase
 
         $this->assertNotNull($seo, 'SEO is in the sidebar');
         $this->assertSame('admin.settings.seo', $seo->route);
-        $this->assertSame(['Settings', 'Site Analysis', 'SEO Audit', 'Bulk SEO', 'Redirects'], $seo->children->pluck('title')->all());
+        $this->assertSame(['Settings', 'Site Analysis', 'Rank Tracker', 'SEO Audit', 'Bulk SEO', 'Redirects'], $seo->children->pluck('title')->all());
 
         (new MenuSeeder)->run();
         $settings = DB::table('menus')->whereNull('parent_id')->where('route', 'admin.settings.index')->first();

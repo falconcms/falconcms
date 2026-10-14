@@ -81,13 +81,15 @@ class SeoServiceProvider extends ServiceProvider
         add_falcon_action('falcon_admin_list_seo_cell', [ScoreCell::class, 'render']);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([Console\SeoScanCommand::class, Console\SeoReportCommand::class]);
+            $this->commands([Console\SeoScanCommand::class, Console\SeoReportCommand::class, Console\RankCheckCommand::class]);
         }
         // A few pages an hour: a large site fills in over a day without ever loading the server.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             $schedule->command('falcon:seo-scan --limit=10')->hourly()->withoutOverlapping()->runInBackground();
             // Pro: Monday morning, after a week of checks (the command does nothing while it is off).
             $schedule->command('falcon:seo-report')->weeklyOn(1, '08:30');
+            // Pro + DataForSEO: the tracked keywords that are due (nothing while it is not set up).
+            $schedule->command('falcon:seo-rank-check --limit=20')->hourly()->withoutOverlapping()->runInBackground();
         });
     }
 
@@ -187,6 +189,7 @@ class SeoServiceProvider extends ServiceProvider
         // The plugin's screens, in the SEO menu and its tabs (the core brings Settings and Redirects).
         $screens = [
             ['label' => 'Site Analysis', 'route' => 'admin.settings.site-analysis', 'order' => 20, 'capability' => 'access_seo_site_analysis'],
+            ['label' => 'Rank Tracker', 'route' => 'admin.seo.rank-tracker', 'order' => 25, 'capability' => 'access_seo_rank_tracker'],
             ['label' => 'SEO Audit', 'route' => 'admin.settings.seo-audit', 'order' => 30, 'capability' => 'access_seo_audit'],
             ['label' => 'Bulk SEO', 'route' => 'admin.settings.seo-bulk', 'order' => 40, 'capability' => 'access_seo_bulk'],
         ];

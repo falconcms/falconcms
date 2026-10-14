@@ -40,7 +40,7 @@ final class DataForSeo
         if ($keyword === '' || !self::available()) {
             return [];
         }
-        $language = strtolower(explode('-', (string) get_cms_option(KeywordDemand::LANGUAGE, 'en-US'))[0]) ?: 'en';
+        $language = self::language();
 
         $rows = [];
         foreach (array_slice(array_values(array_unique($countries)), 0, self::COUNTRY_BATCH) as $country) {
@@ -86,6 +86,132 @@ final class DataForSeo
         }
 
         return $out;
+    }
+
+    /**
+     * Where the site ranks in Google for a keyword right now, in one country on one device: its
+     * first result in the top 100, which address that is, the site in first place, and what
+     * else the page of results shows (featured snippet, People also ask, videos…).
+     * One billed request each time; the Rank Tracker decides how often.
+     *
+     * @return array{position: ?int, url: ?string, features: list<string>, snippet_owned: bool, leader: ?string}
+     */
+    public static function serp(string $keyword, string $country, string $device = 'desktop'): array
+    {
+        $location = Countries::adsLocation($country);
+        if ($location === null) {
+            throw new RuntimeException('Unknown country.');
+        }
+        $task = self::call('serp/google/organic/live/advanced', ['keyword' => $keyword, 'location_code' => $location,
+            'language_code' => self::language(), 'device' => $device === 'mobile' ? 'mobile' : 'desktop', 'depth' => 100]);
+
+        $own = self::ownDomain();
+        $out = ['position' => null, 'url' => null, 'features' => [], 'snippet_owned' => false, 'leader' => null];
+        $features = [];
+        foreach ((array) ($task['result'][0]['items'] ?? []) as $item) {
+            $type = (string) ($item['type'] ?? '');
+            $domain = (string) ($item['domain'] ?? '');
+            $mine = $domain !== '' && self::sameSite($domain, $own);
+            if ($type === 'organic') {
+                $out['leader'] ??= $domain !== '' ? $domain : null;
+                if ($mine && $out['position'] === null) {
+                    $out['position'] = (int) ($item['rank_group'] ?? 0) ?: null;
+                    $out['url'] = isset($item['url']) ? (string) $item['url'] : null;
+                }
+            } elseif ($type !== '') {
+                $features[$type] = true;
+                if ($type === 'featured_snippet' && $mine) {
+                    $out['snippet_owned'] = true;
+                    $out['url'] ??= isset($item['url']) ? (string) $item['url'] : null;
+                }
+            }
+        }
+        $out['features'] = array_keys($features);
+
+        return $out;
+    }
+
+    /**
+     * Keywords a competitor ranks for in Google and this site does not, most searched first,
+     * with the competitor's position and page. Kept a week: each look is billed.
+     *
+     * @return list<array{keyword: string, searches: ?int, difficulty: ?int, position: ?int, url: ?string}>
+     */
+    public static function keywordGap(string $competitor, string $country, int $limit = 100): array
+    {
+        $competitor = self::domain($competitor);
+        $location = Countries::adsLocation($country);
+        if ($competitor === '' || $location === null) {
+            throw new RuntimeException($competitor === '' ? 'Enter the competitor\'s domain, like example.com.' : 'Unknown country.');
+        }
+
+        return Cache::remember(self::gapKey($competitor, $country), now()->addDays(7), function () use ($competitor, $location, $limit) {
+            $task = self::call('dataforseo_labs/google/domain_intersection/live', [
+                'target1' => $competitor, 'target2' => self::ownDomain(), 'location_code' => $location, 'language_code' => self::language(),
+                // false: what the first ranks for and the second does not.
+                'intersections' => false, 'limit' => $limit, 'order_by' => ['keyword_data.keyword_info.search_volume,desc'],
+            ]);
+            $out = [];
+            foreach ((array) ($task['result'][0]['items'] ?? []) as $item) {
+                $keyword = (string) ($item['keyword_data']['keyword'] ?? '');
+                if ($keyword === '') {
+                    continue;
+                }
+                $serp = (array) ($item['first_domain_serp_element'] ?? []);
+                $out[] = [
+                    'keyword' => $keyword,
+                    'searches' => isset($item['keyword_data']['keyword_info']['search_volume']) ? (int) $item['keyword_data']['keyword_info']['search_volume'] : null,
+                    'difficulty' => isset($item['keyword_data']['keyword_properties']['keyword_difficulty']) ? (int) $item['keyword_data']['keyword_properties']['keyword_difficulty'] : null,
+                    'position' => isset($serp['rank_group']) ? (int) $serp['rank_group'] : null,
+                    'url' => isset($serp['url']) ? (string) $serp['url'] : null,
+                ];
+            }
+
+            return $out;
+        });
+    }
+
+    /** The last keyword gap fetched for a competitor and country, without asking again. */
+    public static function cachedGap(string $competitor, string $country): ?array
+    {
+        $competitor = self::domain($competitor);
+
+        return $competitor === '' ? null : Cache::get(self::gapKey($competitor, $country));
+    }
+
+    /** "https://www.Example.com/blog" → "example.com". */
+    public static function domain(string $input): string
+    {
+        $input = trim(mb_strtolower($input));
+        $host = parse_url(str_contains($input, '://') ? $input : 'http://'.$input, PHP_URL_HOST);
+        $host = is_string($host) ? preg_replace('/^www\./', '', $host) : '';
+
+        return preg_match('/^[a-z0-9.-]+\.[a-z]{2,}$/', (string) $host) ? (string) $host : '';
+    }
+
+    /** This site's domain, as DataForSEO knows it. */
+    public static function ownDomain(): string
+    {
+        return self::domain((string) config('app.url'));
+    }
+
+    /** The same site: the same domain, or a subdomain of it (blog.example.com). */
+    private static function sameSite(string $domain, string $own): bool
+    {
+        $domain = preg_replace('/^www\./', '', mb_strtolower($domain)) ?? '';
+
+        return $own !== '' && ($domain === $own || str_ends_with($domain, '.'.$own));
+    }
+
+    private static function gapKey(string $competitor, string $country): string
+    {
+        return 'falcon:dfs:gap:'.sha1($competitor.'|'.self::ownDomain().'|'.$country.'|'.self::language());
+    }
+
+    /** The site's keyword language (SEO → Settings), as DataForSEO's two-letter code. */
+    private static function language(): string
+    {
+        return strtolower(explode('-', (string) get_cms_option(KeywordDemand::LANGUAGE, 'en-US'))[0]) ?: 'en';
     }
 
     /** One Live task; returns the task (with its "result"). */

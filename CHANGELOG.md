@@ -9,6 +9,21 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+### Added
+
+- **SEO → Rank Tracker (Pro, with DataForSEO).** Follow keywords in Google, by country and on
+  desktop or mobile, checked once a week or once a day: the site's position in the top 100, the
+  page that ranks, the change since the last check, the best position, a small trend line,
+  Google's monthly searches and keyword difficulty. Each row also shows what else the results
+  page holds (featured snippet, AI overview, People also ask, videos…) and marks a featured
+  snippet that is the site's own. Checks run in the background (`falcon:seo-rank-check`,
+  hourly, only the keywords that are due); each one is a single DataForSEO request. Up to 200
+  keywords. It has its own permission in Users → Roles (SEO Rank Tracker).
+- **Competitor gap** (Rank Tracker tab): enter a competitor's domain and a country. It lists the
+  keywords they rank for in Google that this site does not, most searched first, with search
+  volume, difficulty, their position and their page. Any of them can be tracked in one click.
+  The answer is kept for a week, so looking again costs nothing.
+
 ### Fixed
 
 - **API keys on SEO → Settings (Claude, DataForSEO, Bing) are clear about being saved, and a

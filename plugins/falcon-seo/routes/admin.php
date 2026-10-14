@@ -14,6 +14,7 @@ use FalconSeo\Http\Controllers\Admin\BulkSeoController;
 use FalconSeo\Http\Controllers\Admin\KeywordResearchController;
 use FalconSeo\Http\Controllers\Admin\MediaAvifController;
 use FalconSeo\Http\Controllers\Admin\PageAnalysisController;
+use FalconSeo\Http\Controllers\Admin\RankTrackerController;
 use FalconSeo\Http\Controllers\Admin\SeoAuditController;
 use FalconSeo\Http\Controllers\Admin\SeoProController;
 use FalconSeo\Http\Controllers\Admin\SeoToolsController;
@@ -47,4 +48,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('seo/page-analysis', [PageAnalysisController::class, 'analyze'])->name('seo.page-analysis')->middleware('throttle:30,1');
     Route::post('seo/settings/keywords-import', [KeywordResearchController::class, 'import'])->name('settings.seo.keywords-import');
     Route::post('seo/settings/keywords-clear', [KeywordResearchController::class, 'clear'])->name('settings.seo.keywords-clear');
+    // Pro, with DataForSEO: tracked keywords in Google, and a competitor's keyword gap.
+    Route::get('seo/rank-tracker', [RankTrackerController::class, 'index'])->name('seo.rank-tracker');
+    Route::post('seo/rank-tracker', [RankTrackerController::class, 'store'])->name('seo.rank-tracker.store')->middleware('throttle:20,1');
+    Route::delete('seo/rank-tracker/{id}', [RankTrackerController::class, 'destroy'])->whereNumber('id')->name('seo.rank-tracker.destroy');
+    Route::post('seo/rank-tracker/check', [RankTrackerController::class, 'check'])->name('seo.rank-tracker.check')->middleware('throttle:10,1');
+    Route::post('seo/rank-tracker/settings', [RankTrackerController::class, 'settings'])->name('seo.rank-tracker.settings');
+    Route::post('seo/rank-tracker/gap', [RankTrackerController::class, 'gap'])->name('seo.rank-tracker.gap')->middleware('throttle:10,1');
 });
