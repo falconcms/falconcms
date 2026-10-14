@@ -12,7 +12,9 @@ Full release notes, with the reasoning behind each change, live at
 ### Fixed
 
 - **API keys on SEO → Settings (Claude, DataForSEO, Bing) are clear about being saved, and a
-  browser can no longer overwrite them.** A saved key shows as "✓ Saved …abcd" with **Test**
+  browser can no longer overwrite them.** A saved key shows in its field with the middle hidden
+  (`sk-ant-api03-a••••••••••••abcd`); clicking in empties it for a new key, and saving the page
+  unchanged keeps the saved one. Beside it are **Test**
   (a free call to the service: Claude checks the key and model, Bing lists the account's sites,
   DataForSEO reads the balance) and **Remove**. The fields tell password managers not to fill
   them; a browser used to put the admin password into the first one on every save, replacing the

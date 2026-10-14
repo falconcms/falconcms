@@ -26,6 +26,12 @@ use Throwable;
  */
 final class ApiKeys
 {
+    /** What hides the middle of a saved key in its field; a field still holding it is unchanged. */
+    public const MASK = '•';
+
+    /** How much of a saved key shows: [characters at the start, characters at the end]. */
+    private const VISIBLE = ['claude' => [14, 4], 'bing' => [4, 4], 'dataforseo' => [2, 2]];
+
     /** service => [option, label, the shape a real key has, what to do when it does not] */
     public const SERVICES = [
         'claude' => [Pro::CLAUDE_KEY, 'Claude API key', '/^sk-ant-[A-Za-z0-9_\-]{20,}$/', 'A Claude API key starts with "sk-ant-". Copy it again from console.anthropic.com → API keys.'],
@@ -49,7 +55,7 @@ final class ApiKeys
             unset($data[$option], $data[$option.'_remove']);
             if ($remove) {
                 $data[$option] = '';
-            } elseif ($value !== '') {
+            } elseif ($value !== '' && !str_contains($value, self::MASK)) {
                 if (preg_match($pattern, $value)) {
                     $data[$option] = Crypt::encryptString($value);
                 } else {
@@ -78,12 +84,23 @@ final class ApiKeys
         return $data;
     }
 
-    /** The saved key's last four characters ("…a1b2"), or null when none is saved. */
-    public static function hint(string $service): ?string
+    /**
+     * The saved key as its field shows it: the start and the end, the middle hidden
+     * ("sk-ant-api03-a••••••••••••VwAA"). Saving the field unchanged keeps the key.
+     */
+    public static function masked(string $service): ?string
     {
         $key = self::key($service);
+        if ($key === '') {
+            return null;
+        }
+        [$start, $end] = self::VISIBLE[$service] ?? [2, 2];
+        // A short key keeps most of itself hidden.
+        if (strlen($key) < ($start + $end) * 2) {
+            [$start, $end] = [min(2, $start), min(2, $end)];
+        }
 
-        return $key === '' ? null : '…'.substr($key, -4);
+        return substr($key, 0, $start).str_repeat(self::MASK, 12).substr($key, -$end);
     }
 
     public static function key(string $service): string

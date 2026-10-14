@@ -209,13 +209,18 @@ class SeoProTest extends TestCase
         $this->assertSame(self::CLAUDE, Pro::claudeKey());
         $this->assertSame(['me@site.test', 'Api-Password-123'], Pro::dataForSeo());
         $this->assertSame('claude-sonnet-5-5', Pro::claudeModel());
-        $this->assertSame('…6789', ApiKeys::hint('claude'));
+        $this->assertSame('sk-ant-api03-a••••••••••••6789', ApiKeys::masked('claude'));
+        $this->assertSame('0123••••••••••••cdef', ApiKeys::masked('bing'));
+        $this->assertSame('Ap••••••••••••23', ApiKeys::masked('dataforseo'));
         $this->assertSame(self::BING, ApiKeys::key('bing'));
 
-        // An empty field keeps the saved key; "Remove" clears it.
+        // An empty field, or one still showing the masked key, keeps the saved key; "Remove" clears it.
         $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY => ''])->assertRedirect();
+        $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY => ApiKeys::masked('claude'), 'bing_webmaster_api_key' => ApiKeys::masked('bing')])
+            ->assertRedirect()->assertSessionMissing('error');
         forget_cms_options_cache();
         $this->assertSame(self::CLAUDE, Pro::claudeKey());
+        $this->assertSame(self::BING, ApiKeys::key('bing'));
         $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY.'_remove' => '1'])->assertRedirect();
         forget_cms_options_cache();
         $this->assertSame('', Pro::claudeKey());
@@ -240,7 +245,7 @@ class SeoProTest extends TestCase
         $this->assertSame('|', get_cms_option('seo_separator'), 'the rest of the page still saves');
 
         $html = $this->get('/admin/seo/settings')->assertOk()->getContent();
-        $this->assertStringContainsString('✓ Saved <code class="font-normal text-[#50575e]">…6789</code>', $html);
+        $this->assertStringContainsString('value="sk-ant-api03-a••••••••••••6789" data-masked="sk-ant-api03-a••••••••••••6789"', $html);
         $this->assertStringContainsString('autocomplete="new-password"', $html);
         $this->assertStringNotContainsString(self::CLAUDE, $html, 'a saved key never goes back to the browser');
     }
