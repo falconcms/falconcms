@@ -23,6 +23,15 @@ Full release notes, with the reasoning behind each change, live at
   keywords they rank for in Google that this site does not, most searched first, with search
   volume, difficulty, their position and their page. Any of them can be tracked in one click.
   The answer is kept for a week, so looking again costs nothing.
+- **SEO Audit: redirects and canonical URLs.** New checks:
+  - **Redirect loops**, which never arrive anywhere.
+  - **Redirect chains**, with the address to send the first one straight to.
+  - **Pages hidden by a redirect**: the redirect answers first, so the page cannot be reached.
+  - **Links in content to an address that redirects.**
+  - **Canonical URLs that point the wrong way**: at an address that redirects, at a page hidden
+    from search, or at something that is not an address.
+  - **Pages that name another page as the original.** Listed as information, since that is
+    right for copies and syndicated posts.
 
 ### Fixed
 

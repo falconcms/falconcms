@@ -30,6 +30,7 @@ final class SeoAudit
     public static function run(): array
     {
         $posts = self::posts();
+        self::$redirects = null;
         $checks = array_values(array_filter([
             self::siteHidden(),
             self::emptyPages($posts),
@@ -40,6 +41,9 @@ final class SeoAudit
                 'Each page deserves a description of what is on it, not one shared across pages.'),
             self::longTitles($posts),
             self::orphans($posts),
+            ...self::redirectProblems($posts),
+            self::linksToRedirects($posts),
+            ...self::canonicalProblems($posts),
             self::thinContent($posts),
             self::imagesWithoutAlt($posts),
             self::missingFeaturedImage($posts),
@@ -65,7 +69,7 @@ final class SeoAudit
      * Published, indexable posts with what the checks need: title and description as Google
      * gets them, word count, and the path they live at.
      *
-     * @return list<array{id: int, type: string, title: string, seo_title: string, description: string, content: string, words: int, path: string, featured: bool, edit: ?string}>
+     * @return list<array{id: int, type: string, title: string, seo_title: string, description: string, canonical: string, content: string, words: int, path: string, featured: bool, edit: ?string}>
      */
     public static function posts(): array
     {
@@ -95,6 +99,7 @@ final class SeoAudit
                 'title' => (string) $row->title,
                 'seo_title' => $seoTitle !== '' ? $seoTitle : (string) $row->title,
                 'description' => trim((string) ($seo['description'] ?? '')) ?: trim(strip_tags((string) $row->excerpt)),
+                'canonical' => trim((string) ($seo['canonical_url'] ?? '')),
                 'content' => (string) $row->content,
                 'words' => $text === '' ? 0 : count(preg_split('/\s+/u', $text) ?: []),
                 'url' => $permalink,
@@ -219,11 +224,8 @@ final class SeoAudit
             $sources = DB::table('posts')->where('status', 'published')->whereNull('deleted_at')->pluck('content', 'id');
             foreach ($sources as $id => $content) {
                 // Builder content is JSON ("linkUrl":"https:\/\/…") as well as HTML (href="…") and shortcodes (link_url="…").
-                $content = str_replace('\\/', '/', (string) $content);
-                if (preg_match_all('#(?:href|url|link_url|link|linkUrl)"?\s*[=:]\s*\\\\?["\']([^"\'\\\\]+)#i', $content, $m)) {
-                    foreach ($m[1] as $url) {
-                        $linked[self::path($url)][] = (int) $id;
-                    }
+                foreach (self::links((string) $content) as $url) {
+                    $linked[self::path($url)][] = (int) $id;
                 }
             }
             foreach (DB::table('navigation_menu_items')->get(['url', 'type', 'object_id']) as $item) {
@@ -252,6 +254,136 @@ final class SeoAudit
 
         return self::check('orphan', 'Pages nothing links to', 'warning',
             'Search engines find and rank pages through links. Link to these from related posts or a menu so they are not left on their own.', $items);
+    }
+
+    /**
+     * The redirects themselves: loops (an address that never arrives), chains (two hops or more
+     * where one would do), and live pages a redirect sends visitors away from (the redirect
+     * answers first, so the page cannot be reached).
+     *
+     * @return list<?array>
+     */
+    private static function redirectProblems(array $posts): array
+    {
+        $map = self::redirectMap();
+        if ($map === []) {
+            return [];
+        }
+
+        $loops = [];
+        $chains = [];
+        $looped = [];
+        foreach ($map as $from => $to) {
+            if (isset($looped[$from])) {
+                continue;
+            }
+            $hops = [$from];
+            $at = $to;
+            while ($at !== null && isset($map[$at]) && !in_array($at, $hops, true) && count($hops) < 10) {
+                $hops[] = $at;
+                $at = $map[$at];
+            }
+            if ($at !== null && in_array($at, $hops, true)) {
+                // One finding per circle, not one per address in it.
+                $looped += array_fill_keys($hops, true);
+                $loops[] = self::redirectItem($from, implode(' → ', array_merge($hops, [$at])).': never arrives anywhere.');
+            } elseif (count($hops) > 1) {
+                $chains[] = self::redirectItem($from, implode(' → ', array_merge($hops, [$at ?? '…'])).': point '.$from.' straight at '.($at ?? 'the last one').'.');
+            }
+        }
+
+        $hidden = [];
+        foreach ($posts as $p) {
+            if ($p['path'] !== '/' && isset($map[$p['path']])) {
+                $hidden[] = self::item($p, 'A redirect sends '.$p['path'].' to '.($map[$p['path']] ?? 'another site').', so this page cannot be reached. Remove the redirect or change the page\'s address.');
+            }
+        }
+
+        return [
+            self::check('redirect_loop', 'Redirect loops', 'error',
+                'These addresses redirect in a circle: browsers give up with "too many redirects" and search engines drop them. Edit or remove one of the redirects.', $loops),
+            self::check('redirected_page', 'Pages hidden by a redirect', 'error',
+                'A redirect answers before the page does, so visitors and search engines never see these pages.', $hidden),
+            self::check('redirect_chain', 'Redirect chains', 'warning',
+                'Each extra hop slows visitors down and loses search engines along the way. Send the first address straight to the last.', $chains),
+        ];
+    }
+
+    /** Content that links to an address that redirects: link to where it ends up instead. */
+    private static function linksToRedirects(array $posts): ?array
+    {
+        $map = self::redirectMap();
+        if ($map === []) {
+            return null;
+        }
+        $items = [];
+        foreach ($posts as $p) {
+            $found = [];
+            foreach (self::links($p['content']) as $url) {
+                $path = self::internalPath($url);
+                if ($path !== null && $path !== $p['path'] && array_key_exists($path, $map)) {
+                    $found[$path] = $map[$path];
+                }
+            }
+            if ($found !== []) {
+                $list = array_map(fn ($from, $to) => $from.' (now '.($to ?? 'another site').')', array_keys($found), $found);
+                $items[] = self::item($p, 'Links to '.implode(', ', array_slice($list, 0, 3)).(count($list) > 3 ? ' and '.(count($list) - 3).' more' : '').'.');
+            }
+        }
+
+        return self::check('links_to_redirects', 'Links to redirected addresses', 'warning',
+            'Each of these links costs a redirect on every click and crawl. Point them at the page\'s current address.', $items);
+    }
+
+    /**
+     * A canonical URL set by hand that sends search engines somewhere it should not: a broken
+     * address, one that redirects, a page hidden from search. Pages that deliberately name
+     * another page as the original are listed too, as a reminder that they will not be shown.
+     *
+     * @return list<?array>
+     */
+    private static function canonicalProblems(array $posts): array
+    {
+        $map = null;
+        $noindexed = null;
+        $broken = [];
+        $elsewhere = [];
+        foreach ($posts as $p) {
+            $canonical = $p['canonical'];
+            if ($canonical === '') {
+                continue;
+            }
+            if (!preg_match('#^https?://[^\s/]+\.[^\s]+#i', $canonical) && !str_starts_with($canonical, '/')) {
+                $broken[] = self::item($p, '"'.$canonical.'" is not a full address (https://…).');
+
+                continue;
+            }
+            $path = self::internalPath($canonical);
+            if ($path === null) {
+                $elsewhere[] = self::item($p, 'Names '.$canonical.' (another site) as the original.');
+
+                continue;
+            }
+            if ($path === $p['path']) {
+                continue;
+            }
+            $map ??= self::redirectMap();
+            $noindexed ??= self::noindexedPaths();
+            if (array_key_exists($path, $map)) {
+                $broken[] = self::item($p, 'Its canonical '.$path.' redirects to '.($map[$path] ?? 'another site').'. Name the final address.');
+            } elseif (isset($noindexed[$path])) {
+                $broken[] = self::item($p, 'Its canonical '.$path.' is hidden from search (noindex), so neither page is shown.');
+            } else {
+                $elsewhere[] = self::item($p, 'Names '.$path.' as the original, so search engines show that page instead of this one.');
+            }
+        }
+
+        return [
+            self::check('canonical_broken', 'Canonical URLs that point the wrong way', 'error',
+                'The canonical URL tells search engines which address to show. These point at an address that redirects, is hidden from search, or is not an address at all. Fix or clear them in the page\'s SEO settings.', $broken),
+            self::check('canonical_elsewhere', 'Pages that name another page as the original', 'info',
+                'Right for copies and syndicated posts: search engines show the other page instead. A mistake for a page that should rank on its own.', $elsewhere),
+        ];
     }
 
     private static function thinContent(array $posts): ?array
@@ -318,6 +450,83 @@ final class SeoAudit
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
+
+    /** @var array<string, ?string>|null */
+    private static ?array $redirects = null;
+
+    /**
+     * Every redirect as source path => target path on this site (null: another site).
+     *
+     * @return array<string, ?string>
+     */
+    private static function redirectMap(): array
+    {
+        if (self::$redirects !== null) {
+            return self::$redirects;
+        }
+        $map = [];
+        try {
+            foreach (DB::table('cms_redirects')->limit(5000)->get(['old_url', 'new_url']) as $row) {
+                $map[self::path((string) $row->old_url)] = self::internalPath((string) $row->new_url);
+            }
+        } catch (Throwable $e) {
+            return [];
+        }
+
+        return self::$redirects = $map;
+    }
+
+    /** Paths of published pages hidden from search (noindex). */
+    private static function noindexedPaths(): array
+    {
+        $paths = [];
+        try {
+            foreach (DB::table('posts')->where('status', 'published')->whereNull('deleted_at')->where('seo_meta', 'like', '%"noindex":"1"%')
+                ->limit(500)->get(['id', 'slug', 'type', 'lang_code', 'origin_id']) as $row) {
+                $paths[self::path(get_falcon_permalink($row))] = true;
+            }
+        } catch (Throwable $e) {
+        }
+
+        return $paths;
+    }
+
+    /** The links in content: HTML, shortcodes and the builder's JSON. */
+    private static function links(string $content): array
+    {
+        $content = str_replace('\\/', '/', $content);
+        preg_match_all('#(?:href|url|link_url|link|linkUrl)"?\s*[=:]\s*\\\\?["\']([^"\'\\\\]+)#i', $content, $m);
+
+        return array_values(array_unique($m[1] ?? []));
+    }
+
+    /** A URL's path when it is on this site (relative, or this host with or without www), else null. */
+    private static function internalPath(string $url): ?string
+    {
+        $url = trim($url);
+        if ($url === '' || str_starts_with($url, '#') || preg_match('#^(mailto|tel|javascript|data):#i', $url)) {
+            return null;
+        }
+        $host = parse_url(str_starts_with($url, '//') ? 'https:'.$url : $url, PHP_URL_HOST);
+        if (is_string($host) && $host !== '') {
+            $own = parse_url((string) config('app.url'), PHP_URL_HOST);
+            $bare = fn ($h) => preg_replace('/^www\./', '', mb_strtolower((string) $h));
+            if ($bare($host) !== $bare($own)) {
+                return null;
+            }
+        } elseif (!str_starts_with($url, '/')) {
+            return null;
+        }
+
+        return self::path($url);
+    }
+
+    /** Where a redirect's source is edited: the Redirects screen, searched for it. */
+    private static function redirectItem(string $from, string $detail): array
+    {
+        return ['id' => 0, 'title' => $from, 'detail' => $detail,
+            'edit' => Route::has('admin.redirects.index') ? route('admin.redirects.index', ['s' => $from]) : null, 'url' => null];
+    }
 
     private static function check(string $key, string $label, string $severity, string $help, array $items): ?array
     {

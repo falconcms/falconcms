@@ -96,4 +96,73 @@ class SeoAuditTest extends TestCase
         $this->assertSame('error', $check['severity']);
         $this->assertSame(['Empty-page'], array_column($check['items'], 'title'), 'a slider page, the home and the blog page are not empty');
     }
+
+    private function redirect(string $from, string $to): void
+    {
+        DB::table('cms_redirects')->insert(['old_url' => $from, 'new_url' => $to, 'status_code' => 301, 'hits' => 0, 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    public function test_redirect_loops_chains_and_pages_a_redirect_hides(): void
+    {
+        config(['app.url' => 'https://mysite.test']);
+        $this->make('live-page');
+        $this->redirect('/a', '/b');
+        $this->redirect('/b', 'https://www.mysite.test/c');
+        $this->redirect('/c', '/d');
+        $this->redirect('/loop-1', '/loop-2');
+        $this->redirect('/loop-2', '/loop-1');
+        $this->redirect('/post/live-page', '/elsewhere');
+        $this->redirect('/gone', 'https://other.test/page');
+
+        $audit = SeoAudit::run();
+
+        $loops = $this->check($audit, 'redirect_loop');
+        $this->assertSame('error', $loops['severity']);
+        $this->assertCount(1, $loops['items'], 'one finding per circle');
+        $this->assertStringContainsString('/loop-1 → /loop-2 → /loop-1', $loops['items'][0]['detail']);
+        $this->assertSame(route('admin.redirects.index', ['s' => '/loop-1']), $loops['items'][0]['edit']);
+
+        $chains = collect($this->check($audit, 'redirect_chain')['items'])->keyBy('title');
+        $this->assertSame(['/a', '/b'], $chains->keys()->all());
+        $this->assertStringContainsString('/a → /b → /c → /d: point /a straight at /d', $chains['/a']['detail']);
+
+        $this->assertSame(['Live-page'], array_column($this->check($audit, 'redirected_page')['items'], 'title'));
+    }
+
+    public function test_links_to_redirected_addresses_are_found_in_content(): void
+    {
+        config(['app.url' => 'https://mysite.test']);
+        $this->redirect('/old-guide', '/post/new-guide');
+        $this->make('new-guide');
+        $this->make('linker', ['content' => '<p>'.str_repeat('word ', 400).'</p><a href="https://mysite.test/old-guide/">guide</a>'
+            .'<a href="https://other.test/old-guide">elsewhere</a>']);
+        // The builder's JSON escapes slashes.
+        $this->make('builder', ['content' => '{"linkUrl":"\/old-guide"} '.str_repeat('word ', 400)]);
+
+        $items = collect($this->check(SeoAudit::run(), 'links_to_redirects')['items'])->keyBy('title');
+
+        $this->assertSame(['Builder', 'Linker'], $items->keys()->sort()->values()->all());
+        $this->assertSame('Links to /old-guide (now /post/new-guide).', $items['Linker']['detail']);
+    }
+
+    public function test_canonical_urls_that_point_the_wrong_way(): void
+    {
+        config(['app.url' => 'https://mysite.test']);
+        $this->redirect('/moved', '/post/target');
+        $this->make('target');
+        $this->make('hidden', ['seo_meta' => ['noindex' => '1']]);
+        $this->make('self', ['seo_meta' => ['description' => 'x', 'canonical_url' => 'https://mysite.test/post/self/']]);
+        $this->make('to-redirect', ['seo_meta' => ['description' => 'x', 'canonical_url' => 'https://mysite.test/moved']]);
+        $this->make('to-hidden', ['seo_meta' => ['description' => 'x', 'canonical_url' => '/post/hidden']]);
+        $this->make('typo', ['seo_meta' => ['description' => 'x', 'canonical_url' => 'mysite.test/post/self']]);
+        $this->make('copy', ['seo_meta' => ['description' => 'x', 'canonical_url' => 'https://mysite.test/post/target']]);
+        $this->make('syndicated', ['seo_meta' => ['description' => 'x', 'canonical_url' => 'https://medium.test/story']]);
+
+        $audit = SeoAudit::run();
+
+        $broken = collect($this->check($audit, 'canonical_broken')['items'])->keyBy('title');
+        $this->assertSame(['To-hidden', 'To-redirect', 'Typo'], $broken->keys()->sort()->values()->all());
+        $this->assertStringContainsString('redirects to /post/target', $broken['To-redirect']['detail']);
+        $this->assertSame(['Copy', 'Syndicated'], collect($this->check($audit, 'canonical_elsewhere')['items'])->pluck('title')->sort()->values()->all());
+    }
 }
