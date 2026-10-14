@@ -20,6 +20,9 @@ final class DataForSeo
 
     private const CACHE_DAYS = 30;
 
+    /** A site Google cannot know by its address (localhost, an IP) has no rankings to find. */
+    public const NO_DOMAIN = 'This site\'s address (APP_URL in .env) is not a public domain, so Google results cannot be matched to it. Set APP_URL to the live address, like https://example.com.';
+
     /** Countries asked per call from the editor (each is one billed request, two with difficulty). */
     public const COUNTRY_BATCH = 5;
 
@@ -143,6 +146,9 @@ final class DataForSeo
         $location = Countries::adsLocation($country);
         if ($competitor === '' || $location === null) {
             throw new RuntimeException($competitor === '' ? 'Enter the competitor\'s domain, like example.com.' : 'Unknown country.');
+        }
+        if (self::ownDomain() === '') {
+            throw new RuntimeException(self::NO_DOMAIN);
         }
 
         return Cache::remember(self::gapKey($competitor, $country), now()->addDays(7), function () use ($competitor, $location, $limit) {

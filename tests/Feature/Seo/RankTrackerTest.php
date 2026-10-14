@@ -171,6 +171,18 @@ class RankTrackerTest extends TestCase
         $this->assertSame(0, DB::table(RankTracker::HISTORY)->count());
     }
 
+    public function test_a_site_without_a_public_domain_is_told_why_nothing_can_match(): void
+    {
+        $this->setUpDataForSeo();
+        config(['app.url' => 'http://localhost']);
+        $this->actingAs($this->admin());
+        Http::fake();
+
+        $this->get('/admin/seo/rank-tracker')->assertOk()->assertSee('is not a public domain');
+        $this->post('/admin/seo/rank-tracker/gap', ['competitor' => 'rival.test', 'country' => 'us'])->assertSessionHas('error', DataForSeo::NO_DOMAIN);
+        Http::assertNothingSent();
+    }
+
     public function test_domains_are_read_the_way_people_type_them(): void
     {
         $this->assertSame('example.com', DataForSeo::domain(' https://www.Example.com/blog?x=1 '));

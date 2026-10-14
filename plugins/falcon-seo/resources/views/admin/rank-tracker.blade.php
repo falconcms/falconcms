@@ -66,6 +66,9 @@
                 </div>
             </div>
         @else
+            @if($ownDomain === '')
+                <div class="bg-[#fcf9e8] border-l-4 border-[#dba617] p-3 mb-4 text-[13px] text-[#1d2327]">{{ \FalconSeo\Support\DataForSeo::NO_DOMAIN }}</div>
+            @endif
             {{-- Tabs --}}
             <div class="flex items-center gap-1 border-b border-[#c3c4c7] mb-4 text-[13px]">
                 @foreach(['tracked' => 'Tracked keywords', 'gap' => 'Competitor gap'] as $key => $label)
