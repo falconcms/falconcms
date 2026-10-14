@@ -5,6 +5,7 @@ namespace FalconSeo;
 use FalconCms\Core\Models\Post;
 use FalconSeo\Http\Middleware\SearchVisibilityMiddleware;
 use FalconSeo\Support\AiCrawlers;
+use FalconSeo\Support\ApiKeys;
 use FalconSeo\Support\AvifImages;
 use FalconSeo\Support\Cloudflare;
 use FalconSeo\Support\IndexNow;
@@ -217,8 +218,8 @@ class SeoServiceProvider extends ServiceProvider
             'indexnow_enabled', 'seo_large_image_preview', 'ai_block_training', 'ai_block_search', 'seo_404_log', 'seo_hide_site', 'keyword_autocomplete',
             Pro::REPORT_ENABLED,
         ]));
-        add_falcon_filter('falcon_seo_settings_data', [self::class, 'encryptBingKey']);
-        add_falcon_filter('falcon_seo_settings_data', [Pro::class, 'encryptSecrets']);
+        // Every outside service's key: encrypted, kept when the field is empty, refused when it is not a key.
+        add_falcon_filter('falcon_seo_settings_data', [ApiKeys::class, 'save']);
 
         add_falcon_action('falcon_seo_metabox_tabs', function ($post = null) {
             echo view('falcon-seo::admin.partials.editor-tabs', ['post' => $post])->render();
@@ -228,28 +229,6 @@ class SeoServiceProvider extends ServiceProvider
             echo view('falcon-seo::admin.partials.editor-panels', ['post' => $post])->render();
             echo view('falcon-seo::admin.partials.editor-pro', ['post' => $post])->render();
         });
-    }
-
-    /**
-     * SEO → Settings save: the Bing key is stored encrypted, and an empty field keeps the one
-     * already saved.
-     *
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    public static function encryptBingKey($data, ?Request $request = null): array
-    {
-        $data = (array) $data;
-        $bingKey = trim((string) ($data[KeywordDemand::BING_KEY] ?? ''));
-        $remove = $request ? $request->boolean('bing_webmaster_api_key_remove') : !empty($data['bing_webmaster_api_key_remove']);
-        unset($data[KeywordDemand::BING_KEY], $data['bing_webmaster_api_key_remove']);
-        if ($remove) {
-            $data[KeywordDemand::BING_KEY] = '';
-        } elseif ($bingKey !== '') {
-            $data[KeywordDemand::BING_KEY] = Crypt::encryptString($bingKey);
-        }
-
-        return $data;
     }
 
     /** Settings → Integrations save: Cloudflare purge. The token is stored encrypted, and an empty field keeps it. */

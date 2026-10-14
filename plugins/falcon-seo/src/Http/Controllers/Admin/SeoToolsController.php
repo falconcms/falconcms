@@ -2,6 +2,7 @@
 
 namespace FalconSeo\Http\Controllers\Admin;
 
+use FalconSeo\Support\ApiKeys;
 use FalconSeo\Support\Cloudflare;
 use FalconSeo\Support\KeywordSuggestions;
 use FalconSeo\Support\LinkSuggestions;
@@ -53,6 +54,15 @@ class SeoToolsController extends Controller
         }
 
         return redirect()->back()->with('success', '404 list updated.');
+    }
+
+    /** SEO → Settings → "Test" beside a saved key: does it work? (A call that costs nothing.) */
+    public function testKey(Request $request)
+    {
+        abort_unless(auth()->user()?->hasPermission('access_seo_settings'), 403);
+        $data = $request->validate(['service' => 'required|in:'.implode(',', array_keys(ApiKeys::SERVICES))]);
+
+        return response()->json(ApiKeys::test($data['service']));
     }
 
     /** Settings → Integrations → Cloudflare → "Purge everything now". */

@@ -16,7 +16,7 @@ class FakeClaudeTransport implements ClientInterface
     /** @var list<RequestInterface> */
     public array $requests = [];
 
-    /** @param  list<string|int>  $replies  text to answer with, or an HTTP status to fail with */
+    /** @param  list<string|int|array>  $replies  text to answer with, an HTTP status to fail with, or a whole JSON body */
     public function __construct(private array $replies) {}
 
     public function sendRequest(RequestInterface $request): ResponseInterface
@@ -24,6 +24,13 @@ class FakeClaudeTransport implements ClientInterface
         $this->requests[] = $request;
         $reply = array_shift($this->replies) ?? '{}';
 
+        // A whole response body (other endpoints than Messages, e.g. a model's details).
+        if (is_array($reply)) {
+            $status = (int) ($reply['__status'] ?? 200);
+            unset($reply['__status']);
+
+            return new Response($status, ['Content-Type' => 'application/json'], json_encode($reply));
+        }
         if (is_int($reply)) {
             return new Response($reply, ['Content-Type' => 'application/json'],
                 json_encode(['type' => 'error', 'error' => ['type' => $reply === 401 ? 'authentication_error' : 'api_error', 'message' => 'fake failure']]));

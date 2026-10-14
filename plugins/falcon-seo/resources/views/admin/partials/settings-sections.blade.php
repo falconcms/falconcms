@@ -133,7 +133,6 @@
 
 {{-- Keyword research: free sources for search demand in the editor's Keywords tab --}}
 @php
-    $bingSaved = ($settings['bing_webmaster_api_key'] ?? '') !== '';
     $plannerCount = \FalconSeo\Support\KeywordDemand::plannerCount();
 @endphp
 <div class="wp-metabox" id="keyword-research">
@@ -142,14 +141,7 @@
         <p class="text-[12px] text-[#646970]">How many people search for a keyword, shown in the editor (SEO → Keywords → Search demand). All three sources are free; use any of them.</p>
 
         <div>
-            <label class="block text-[13px] font-bold text-[#2c3338] mb-1">Bing Webmaster Tools API key</label>
-            <input type="password" name="bing_webmaster_api_key" autocomplete="off" class="wp-input w-[360px] max-w-full"
-                   placeholder="{{ $bingSaved ? 'Saved. Leave empty to keep it.' : 'Paste your API key' }}">
-            @if($bingSaved)
-                <label class="inline-flex items-center gap-1 text-[12px] text-[#646970] ml-2">
-                    <input type="checkbox" name="bing_webmaster_api_key_remove" value="1" class="rounded-sm border-[#8c8f94]"> Remove
-                </label>
-            @endif
+            @include('falcon-seo::admin.partials.api-key-field', ['service' => 'bing', 'label' => 'Bing Webmaster Tools API key', 'placeholder' => '32 letters and digits'])
             <p class="text-[12px] text-[#646970] mt-1">Searches on Bing for a keyword and related keywords. In <a href="https://www.bing.com/webmasters" target="_blank" rel="noopener" class="text-[#2271b1]">Bing Webmaster Tools</a> (add and verify this site; it can import it from Google Search Console), open Settings → API access → API key. Stored encrypted.</p>
         </div>
 

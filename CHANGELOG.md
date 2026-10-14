@@ -9,6 +9,18 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+### Fixed
+
+- **API keys on SEO → Settings (Claude, DataForSEO, Bing) are clear about being saved, and a
+  browser can no longer overwrite them.** A saved key shows as "✓ Saved …abcd" with **Test**
+  (a free call to the service: Claude checks the key and model, Bing lists the account's sites,
+  DataForSEO reads the balance) and **Remove**. The fields tell password managers not to fill
+  them; a browser used to put the admin password into the first one on every save, replacing the
+  Bing key. A value that cannot be that service's key is refused with a message, and the rest of
+  the page still saves.
+- **AI writing says plainly when the Anthropic account has no credit**, instead of showing the
+  API's raw error.
+
 ## [2.8.0] — 2026-10-14
 
 SEO gets a menu and a plugin of its own, with a check-up for every page and, in Pro, AI writing,

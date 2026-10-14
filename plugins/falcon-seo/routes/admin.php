@@ -42,6 +42,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('seo/ai-suggest', [SeoProController::class, 'suggest'])->name('seo.ai-suggest')->middleware('throttle:20,1');
     Route::post('seo/keyword-metrics', [SeoProController::class, 'metrics'])->name('seo.keyword-metrics')->middleware('throttle:12,1');
     Route::post('seo/site-analysis/fix', [SeoProController::class, 'fix'])->name('seo.site-analysis.fix')->middleware('throttle:60,1');
+    Route::post('seo/settings/test-key', [SeoToolsController::class, 'testKey'])->name('seo.test-key')->middleware('throttle:20,1');
     Route::post('seo/settings/report-test', [SeoProController::class, 'testReport'])->name('seo.report-test')->middleware('throttle:5,1');
     Route::post('seo/page-analysis', [PageAnalysisController::class, 'analyze'])->name('seo.page-analysis')->middleware('throttle:30,1');
     Route::post('seo/settings/keywords-import', [KeywordResearchController::class, 'import'])->name('settings.seo.keywords-import');

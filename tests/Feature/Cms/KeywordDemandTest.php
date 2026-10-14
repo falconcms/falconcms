@@ -122,13 +122,13 @@ class KeywordDemandTest extends TestCase
     {
         $admin = $this->admin();
 
-        $this->actingAs($admin)->post(route('admin.settings.seo.update'), ['bing_webmaster_api_key' => 'abc123'])->assertRedirect();
+        $this->actingAs($admin)->post(route('admin.settings.seo.update'), ['bing_webmaster_api_key' => '0123456789abcdef0123456789abcdef'])->assertRedirect();
         $stored = DB::table('cms_settings')->where('key', KeywordDemand::BING_KEY)->value('value');
-        $this->assertNotSame('abc123', $stored);
-        $this->assertSame('abc123', KeywordDemand::bingKey());
+        $this->assertNotSame('0123456789abcdef0123456789abcdef', $stored);
+        $this->assertSame('0123456789abcdef0123456789abcdef', KeywordDemand::bingKey());
 
         $this->actingAs($admin)->post(route('admin.settings.seo.update'), ['bing_webmaster_api_key' => ''])->assertRedirect();
-        $this->assertSame('abc123', KeywordDemand::bingKey(), 'an empty field keeps the saved key');
+        $this->assertSame('0123456789abcdef0123456789abcdef', KeywordDemand::bingKey(), 'an empty field keeps the saved key');
 
         $this->actingAs($admin)->post(route('admin.settings.seo.update'), ['bing_webmaster_api_key_remove' => '1'])->assertRedirect();
         $this->assertSame('', KeywordDemand::bingKey());

@@ -62,26 +62,6 @@ final class Pro
         return [trim((string) get_cms_option(self::DATAFORSEO_LOGIN, '')), self::secret(self::DATAFORSEO_PASSWORD)];
     }
 
-    /** Settings → SEO save: the secrets are stored encrypted, and an empty field keeps the one saved. */
-    public static function encryptSecrets(array $data, $request = null): array
-    {
-        foreach ([self::CLAUDE_KEY, self::DATAFORSEO_PASSWORD] as $key) {
-            $value = trim((string) ($data[$key] ?? ''));
-            $remove = $request ? $request->boolean($key.'_remove') : !empty($data[$key.'_remove']);
-            unset($data[$key], $data[$key.'_remove']);
-            if ($remove) {
-                $data[$key] = '';
-            } elseif ($value !== '') {
-                $data[$key] = Crypt::encryptString($value);
-            }
-        }
-        if (isset($data[self::DATAFORSEO_LOGIN])) {
-            $data[self::DATAFORSEO_LOGIN] = trim((string) $data[self::DATAFORSEO_LOGIN]);
-        }
-
-        return $data;
-    }
-
     private static function secret(string $key): string
     {
         $stored = (string) get_cms_option($key, '');

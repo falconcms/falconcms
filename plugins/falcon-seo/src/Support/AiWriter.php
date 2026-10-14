@@ -142,9 +142,12 @@ final class AiWriter
         } catch (RateLimitException $e) {
             throw new RuntimeException('Claude is busy or the account limit was reached. Try again in a minute.');
         } catch (BadRequestException $e) {
-            throw new RuntimeException('Claude could not take this request: '.$e->getMessage());
+            $reason = self::reason($e);
+            throw new RuntimeException(str_contains(strtolower($reason), 'credit balance')
+                ? 'The Anthropic account has no credit left. Add some at console.anthropic.com → Plans & Billing, then try again.'
+                : 'Claude could not take this request: '.$reason);
         } catch (APIStatusException $e) {
-            throw new RuntimeException('Claude did not answer ('.$e->getMessage().'). Try again shortly.');
+            throw new RuntimeException('Claude did not answer ('.self::reason($e).'). Try again shortly.');
         } catch (APIConnectionException $e) {
             throw new RuntimeException('Claude could not be reached from this server. Check its internet access.');
         }
@@ -162,6 +165,17 @@ final class AiWriter
         }
 
         throw new RuntimeException($message->stopReason === 'max_tokens' ? 'The answer was cut short. Try again.' : 'Claude gave no usable answer. Try again.');
+    }
+
+    /** The API's own sentence from an error ("Your credit balance is too low…"), not the raw response. */
+    private static function reason(Throwable $e): string
+    {
+        $text = $e->getMessage();
+        if (preg_match('/"message"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"/', $text, $m)) {
+            return (string) json_decode('"'.$m[1].'"');
+        }
+
+        return trim(strtok($text, "\n") ?: $text);
     }
 
     /** Short timeouts for an editor waiting on a button; tests swap the transport in. */
