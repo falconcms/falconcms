@@ -168,6 +168,7 @@
             </div>
 
             <div class="btn-funny-area">
+                {!! falcon_turnstile('register') !!}
                 <button type="submit" id="register-btn">Create Account</button>
             </div>
         </form>

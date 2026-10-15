@@ -74,7 +74,7 @@
                         @if($hasKeys)
                             <span class="inline-flex items-center gap-1.5 text-[13px] font-medium text-green-700">
                                 <span class="material-symbols-outlined text-[15px]">check_circle</span>
-                                Keys configured — enable Turnstile on any form from the Form Builder.
+                                Keys configured — choose the forms below; Form Builder forms switch it on in their own settings.
                             </span>
                         @else
                             <span class="inline-flex items-center gap-1.5 text-[13px] text-[#646970]">
@@ -82,6 +82,34 @@
                                 Keys not yet saved.
                             </span>
                         @endif
+                    </td>
+                </tr>
+
+                {{-- The site's own forms, each on or off. --}}
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-4">
+                        <span class="text-[14px] font-semibold text-[#1d2327]">Show on</span>
+                    </th>
+                    <td class="pt-4">
+                        <input type="hidden" name="turnstile_locations_present" value="1">
+                        <fieldset class="space-y-2 {{ $hasKeys ? '' : 'opacity-60' }}" @disabled(!$hasKeys)>
+                            @foreach(\FalconCms\Core\Support\Turnstile::locations() as $location => $label)
+                                @php $optionKey = \FalconCms\Core\Support\Turnstile::optionKey($location); @endphp
+                                <label class="flex items-start gap-2 text-[13px] text-[#1d2327] cursor-pointer">
+                                    <input type="checkbox" name="turnstile_on[{{ $location }}]" value="1" class="mt-0.5 rounded-sm border-[#8c8f94] text-[#2271b1]"
+                                           @checked(($settings[$optionKey] ?? '0') === '1')>
+                                    <span>{{ $label }}</span>
+                                </label>
+                            @endforeach
+                        </fieldset>
+                        <p class="text-[12px] text-[#646970] mt-2">
+                            @if($hasKeys)
+                                Visitors see the Turnstile check on the forms you tick; the answer is verified before anything else happens.
+                                If Cloudflare cannot be reached, the form goes through, so no one is locked out during an outage.
+                            @else
+                                Save your site key and secret key first; then choose the forms here.
+                            @endif
+                        </p>
                     </td>
                 </tr>
 

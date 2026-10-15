@@ -1,4 +1,4 @@
-{{-- @version 1.0.1 --}}
+{{-- @version 1.0.2 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', 'My Account')
@@ -584,6 +584,7 @@
                                 </div>
                                 <div id="magic-email-status" style="font-size:.76rem;font-weight:600;min-height:14px;margin-top:5px"></div>
                             </div>
+                            {!! falcon_turnstile('shop_account') !!}
                             <button type="submit" id="magic-send-btn"
                                     style="background:{{ $primaryColor }};color:#fff;padding:13px;border:none;border-radius:8px;font-weight:600;font-size:.9rem;width:100%;cursor:pointer;transition:opacity .2s,transform .1s;opacity:.45"
                                     disabled
@@ -634,6 +635,7 @@
                             <input type="checkbox" name="remember" value="1" style="width:15px;height:15px;accent-color:{{ $primaryColor }};border-radius:3px">
                             Keep me signed in
                         </label>
+                        {!! falcon_turnstile('shop_account') !!}
                         <button type="submit"
                                 style="background:{{ $primaryColor }};color:#fff;padding:13px;border:none;border-radius:8px;font-weight:600;font-size:.9rem;width:100%;cursor:pointer;transition:opacity .2s,transform .1s"
                                 onmouseover="this.style.opacity='.88';this.style.transform='translateY(-1px)'"

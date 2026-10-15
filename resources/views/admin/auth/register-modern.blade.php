@@ -120,6 +120,7 @@
                 <div style="font-size:.78rem;font-weight:600;min-height:16px;margin-top:5px" id="match-msg"></div>
             </div>
 
+            {!! falcon_turnstile('register') !!}
             <button type="submit" class="btn-submit">Create Account</button>
         </form>
     </div>

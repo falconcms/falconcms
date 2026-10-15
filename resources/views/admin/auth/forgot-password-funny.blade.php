@@ -144,6 +144,7 @@
                 <label class="lf-float-label" for="a_email">Email address</label>
             </div>
             <div class="btn-funny-area">
+                {!! falcon_turnstile('password_reset') !!}
                 <button type="submit" id="forgot-btn">Send Reset Link</button>
             </div>
         </form>

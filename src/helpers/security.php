@@ -1,11 +1,12 @@
 <?php
 
 /**
- * Uploads, import/export and sanitising.
+ * Uploads, import/export, sanitising and Turnstile on the site's forms.
  *
  * Loaded by src/helpers.php.
  */
 
+use FalconCms\Core\Support\Turnstile;
 use Illuminate\Http\Request;
 
 if (!function_exists('falcon_max_upload_bytes')) {
@@ -277,5 +278,28 @@ if (!function_exists('falcon_sanitized_upload_extensions')) {
     function falcon_sanitized_upload_extensions(): array
     {
         return apply_falcon_filters('falcon_sanitized_upload_extensions', ['svg']);
+    }
+}
+
+if (!function_exists('falcon_turnstile')) {
+    /**
+     * The Cloudflare Turnstile widget for one of the site's forms ('login', 'register',
+     * 'password_reset', 'shop_account', or a plugin's), or '' when that form does not ask for it
+     * (Settings → Integrations). Print it inside the <form>.
+     */
+    function falcon_turnstile(string $location): string
+    {
+        return Turnstile::widget($location);
+    }
+}
+
+if (!function_exists('falcon_turnstile_check')) {
+    /**
+     * Check the Turnstile answer a form sent. Null when it passes (or the form does not ask),
+     * else the message to show the visitor.
+     */
+    function falcon_turnstile_check(Request $request, string $location): ?string
+    {
+        return Turnstile::check($request, $location);
     }
 }

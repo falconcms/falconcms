@@ -131,6 +131,7 @@
                 </div>
                 <div class="email-status" id="email-status"></div>
             </div>
+            {!! falcon_turnstile('login') !!}
             <button type="submit" id="magic-btn" class="btn-magic" disabled>Send Magic Link</button>
         </form>
 
@@ -168,6 +169,7 @@
                 <input type="checkbox" name="remember">
                 Remember me
             </label>
+            {!! falcon_turnstile('login') !!}
             <div class="btn-funny-area">
                 <button type="submit" id="login-btn">Unlock Portal</button>
             </div>

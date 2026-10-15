@@ -1923,6 +1923,11 @@ class ShopFrontendController extends Controller
             'account_password.required' => 'Please enter your password.',
         ]);
 
+        // Cloudflare Turnstile, when switched on for the My Account sign-in (Settings → Integrations).
+        if (($turnstile = falcon_turnstile_check($request, 'shop_account')) !== null) {
+            return back()->withErrors(['account_email' => $turnstile])->onlyInput('account_email');
+        }
+
         $credentials = [
             'email' => $request->input('account_email'),
             'password' => $request->input('account_password'),
@@ -2170,6 +2175,10 @@ class ShopFrontendController extends Controller
             'magic_email.required' => 'Please enter your email address.',
             'magic_email.email' => 'Please enter a valid email address.',
         ]);
+
+        if (($turnstile = falcon_turnstile_check($request, 'shop_account')) !== null) {
+            return back()->withErrors(['magic_email' => $turnstile])->onlyInput('magic_email');
+        }
 
         $email = strtolower(trim($request->magic_email));
         $user = User::where('email', $email)->first();

@@ -11,6 +11,13 @@ Full release notes, with the reasoning behind each change, live at
 
 ### Added
 
+- **Cloudflare Turnstile on the site's forms.** Settings → Integrations → "Show on" switches it on
+  for the login page (password and magic link), registration, forgot password and the shop's My
+  Account sign-in, each on its own, once the keys are saved; plugins add their forms
+  (`falcon_turnstile_locations`). The answer is checked before the form does anything. If
+  Cloudflare cannot be reached the form goes through and the outage is logged, so no one is locked
+  out. The widget follows light/dark, stretches with its form and turns compact on a phone.
+  Themes and plugins use `falcon_turnstile('location')` and `falcon_turnstile_check($request, 'location')`.
 - **Shortcodes as pairs.** `[tag]content[/tag]` passes the content to the shortcode's callback as a
   second argument (callbacks that take one argument are unaffected).
 - **Users → filter by role** counts and lists people who hold a role as an extra one, not only as

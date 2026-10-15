@@ -104,6 +104,21 @@ add_falcon_shortcode('box', fn (array $atts, ?string $content = null) =>
     '<div class="'.e($atts['class'] ?? 'box').'">'.$content.'</div>');
 ```
 
+### Cloudflare Turnstile
+
+```php
+// In a form: the widget, or '' when that form is not switched on (Settings → Integrations)
+{!! falcon_turnstile('login') !!}
+
+// In its controller, before anything else: null means it passed
+if ($error = falcon_turnstile_check($request, 'login')) {
+    return back()->withErrors(['email' => $error]);
+}
+```
+
+The core's forms are `login`, `register`, `password_reset` and `shop_account`; a plugin adds its
+own through the `falcon_turnstile_locations` filter.
+
 Attributes may be written `key="value"`, `key='value'`, `key=value` (no spaces), or with the
 `&quot;` or curly quotes a visual editor leaves behind.
 

@@ -1221,6 +1221,18 @@ and focus keyword (and, for keywords, the page's text, headings and description)
 Ids of pages drawn by templates rather than their own content (the shop adds its pages). The SEO
 Audit does not report them as empty.
 
+#### `falcon_turnstile_locations` / `falcon_turnstile_enabled` / `falcon_turnstile_verified` (filters)
+**Args:** `array $locations` / `bool $enabled, string $location` / `bool $passed, string $location, Request $request`
+
+Cloudflare Turnstile on the site's forms. Add a form of your own to Settings → Integrations
+(`$locations[key] = 'Label'`), then print `falcon_turnstile('key')` inside it and check
+`falcon_turnstile_check($request, 'key')` (null: passed) before acting on it. The other two let
+you switch the check on or off for a request, or overrule Cloudflare's answer.
+
+```php
+add_falcon_filter('falcon_turnstile_locations', fn ($l) => $l + ['newsletter' => 'Newsletter sign-up']);
+```
+
 #### `falcon_customer_addresses` (filter)
 **Args:** `Collection $addresses, User $user`
 
@@ -1928,7 +1940,7 @@ return [
 | `falcon_admin_user_role_cell` | `$user` |
 | `falcon_cart_actions` | `$cart` |
 
-### Filters (78 total)
+### Filters (81 total)
 
 | Hook | Args |
 |---|---|
@@ -1978,6 +1990,9 @@ return [
 | `falcon_template_page_ids` | `$ids` |
 | `falcon_page_cache_is_personal` | `$personal, $request` |
 | `falcon_customer_addresses` | `$addresses, $user` |
+| `falcon_turnstile_locations` | `$locations` |
+| `falcon_turnstile_enabled` | `$enabled, $location` |
+| `falcon_turnstile_verified` | `$passed, $location, $request` |
 | `falcon_product_prices` | `$prices, $postId, $variationId, $quantity, $context` |
 | `falcon_product_is_in_stock` | `$inStock, $product` |
 | `falcon_add_to_cart_validation` | `$valid, $product, $variation, $quantity, $request` |

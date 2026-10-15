@@ -65,6 +65,11 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
+        // Cloudflare Turnstile, when switched on for the login page (Settings → Integrations).
+        if (($turnstile = falcon_turnstile_check($request, 'login')) !== null) {
+            return back()->withErrors(['email' => $turnstile])->onlyInput('email');
+        }
+
         $user = User::where('email', $request->email)->first();
 
         if ($user) {
@@ -221,6 +226,10 @@ class LoginController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
+        if (($turnstile = falcon_turnstile_check($request, 'password_reset')) !== null) {
+            return back()->withErrors(['email' => $turnstile])->onlyInput('email');
+        }
+
         $genericMessage = 'If that email is registered, you will receive a reset link shortly. Please check your inbox (and spam folder).';
 
         $user = User::where('email', $request->email)->first();
@@ -310,6 +319,10 @@ class LoginController extends Controller
         }
 
         $request->validate(['email' => ['required', 'email:rfc,dns']]);
+
+        if (($turnstile = falcon_turnstile_check($request, 'login')) !== null) {
+            return back()->withErrors(['email' => $turnstile])->onlyInput('email');
+        }
 
         $email = strtolower(trim($request->email));
         $user = User::where('email', $email)->first();

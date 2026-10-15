@@ -95,6 +95,7 @@
                 <input type="email" name="email" id="a_email" placeholder=" " class="lf-input" required autofocus value="{{ old('email') }}">
                 <label class="lf-float-label" for="a_email">Email address</label>
             </div>
+            {!! falcon_turnstile('password_reset') !!}
             <button type="submit" class="btn-submit">Send Reset Link</button>
         </form>
 

@@ -17,6 +17,7 @@ use FalconCms\Core\Models\Role;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Services\EcommerceData;
 use FalconCms\Core\Support\SettingsExtension;
+use FalconCms\Core\Support\Turnstile;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
@@ -950,6 +951,17 @@ class DashboardController extends Controller
                 ['key' => $key],
                 ['value' => $request->input($key, ''), 'updated_at' => now()]
             );
+        }
+
+        // Which of the site's forms ask for Turnstile (the core's and the plugins').
+        if ($request->has('turnstile_locations_present')) {
+            $on = (array) $request->input('turnstile_on', []);
+            foreach (array_keys(Turnstile::locations()) as $location) {
+                DB::table('cms_settings')->updateOrInsert(
+                    ['key' => Turnstile::optionKey($location)],
+                    ['value' => !empty($on[$location]) ? '1' : '0', 'updated_at' => now()]
+                );
+            }
         }
 
         // Plugins save the sections they add here (Falcon SEO: Cloudflare cache purge).

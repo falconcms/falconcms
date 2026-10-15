@@ -56,6 +56,10 @@ class RegisterController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
+        if (($turnstile = falcon_turnstile_check($request, 'register')) !== null) {
+            return back()->withErrors(['email' => $turnstile])->withInput($request->except('password', 'password_confirmation'));
+        }
+
         // Assign the role configured in Settings → "New User Default Role",
         // falling back to subscriber if it is unset or no longer exists.
         $defaultRoleSlug = get_cms_option('default_role', 'subscriber');
