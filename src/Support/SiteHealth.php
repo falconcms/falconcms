@@ -664,7 +664,10 @@ class SiteHealth
         ['critical', 'eval() on dynamic code', 'Runs whatever string it is given as PHP — the core of most web shells.', '/\beval\s*\(/i'],
         ['critical', 'Obfuscated payload', 'Decoded and executed data is how injected malware hides.', '/\b(eval|assert|create_function)\s*\(\s*(base64_decode|gzinflate|gzuncompress|str_rot13|hex2bin)\s*\(/i'],
         ['critical', 'Shell command from user input', 'Request data reaches a system command — remote command execution.', '/\b(exec|shell_exec|system|passthru|popen|proc_open)\s*\([^)]*(\$_(GET|POST|REQUEST|COOKIE)|request\(|\$request->)/i'],
-        ['critical', 'File include from user input', 'Request data decides which file PHP loads — remote/local file inclusion.', '/\b(include|require)(_once)?\b[^;]*(\$_(GET|POST|REQUEST|COOKIE)|request\(|\$request->)/i'],
+        // PHP's include/require anywhere on the statement; a Blade @include only when the view
+        // name itself comes from the request — `@include('a.view', ['x' => request('x')])`
+        // passes request data to a fixed view, which loads no file the visitor chose.
+        ['critical', 'File include from user input', 'Request data decides which file PHP loads — remote/local file inclusion.', '/(?<![@\w>:$])(include|require)(_once)?\b[^;]*(\$_(GET|POST|REQUEST|COOKIE)|request\(|\$request->)|@(include|includeIf|includeFirst|extends|each|component)\s*\(\s*(?:\'[^\']*\'|"[^"]*"|[^,\'"()])*?(\$_(GET|POST|REQUEST|COOKIE)|request\(|\$request->)/i'],
         ['critical', 'unserialize() on user input', 'Unserialising request data can run code through gadget chains.', '/\bunserialize\s*\([^)]*(\$_(GET|POST|REQUEST|COOKIE)|request\(|\$request->)/i'],
         ['high', 'SQL built from user input', 'Request data concatenated into SQL — SQL injection. Use bindings (?) instead.', '/(DB::(raw|select|statement|unprepared|insert|update|delete)|->(whereRaw|orderByRaw|selectRaw|havingRaw))\s*\(\s*["\'][^"\']*["\']\s*\.\s*(\$_(GET|POST|REQUEST)|request\(|\$request->)|(DB::(raw|select|statement|unprepared)|->(whereRaw|orderByRaw|selectRaw|havingRaw))\s*\(\s*"[^"]*\{?\$(request|_GET|_POST)/i'],
         ['high', 'Unescaped user input in a template', '{!! !!} prints request data as raw HTML — cross-site scripting.', '/\{!!\s*(\$_(GET|POST|REQUEST|COOKIE)|request\(|\$request->|old\()/i'],
@@ -832,6 +835,23 @@ class SiteHealth
         usort($groups, fn ($a, $b) => strcmp($b['last'], $a['last']));
         foreach ($groups as &$g) {
             $g['resolved'] = self::errorResolved($g);
+        }
+        unset($g);
+        // An error thrown while Laravel drew its own error page is the echo of the error that
+        // sent it there (seconds before), not a problem of its own: it is settled with that one.
+        foreach ($groups as &$g) {
+            if (!$g['resolved'] && str_contains(str_replace('\\', '/', (string) $g['source']), 'Illuminate/Foundation/Exceptions/views/')) {
+                $at = strtotime($g['last']);
+                foreach ($groups as $other) {
+                    if ($other !== $g && $other['resolved'] && abs(strtotime($other['last']) - $at) <= 5) {
+                        $g['resolved'] = true;
+                        break;
+                    }
+                }
+            }
+        }
+        unset($g);
+        foreach ($groups as &$g) {
             unset($g['source']);
         }
         unset($g);
@@ -879,6 +899,12 @@ class SiteHealth
             $name = $m[1];
 
             return view()->exists($name) || view()->exists('falcon-cms::'.$name);
+        }
+
+        // A file that was missing (a deploy or an update caught half-way) and is there now.
+        // Composer keeps the archive's own file times, so "changed after" cannot tell here.
+        if (preg_match('/\b(?:include|require)(?:_once)?\((.+?)\): Failed to open stream: No such file or directory/i', $g['message'], $m)) {
+            return is_file($m[1]);
         }
 
         $path = $g['source'] ?? null;

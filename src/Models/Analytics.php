@@ -7,8 +7,13 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property string|null $ip_address
  * @property string|null $url
  * @property string|null $referrer
+ * @property string|null $user_agent
+ * @property string|null $browser
+ * @property string|null $os
+ * @property string|null $device_type
  * @property string|null $country
  * @property string|null $country_code
  * @property string|null $city

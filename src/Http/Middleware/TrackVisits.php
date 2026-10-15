@@ -43,11 +43,14 @@ class TrackVisits
             return;
         }
 
+        // The column is a varchar(255), and some browsers and in-app webviews send more than
+        // that: the whole insert failed (SQLSTATE 22001) and the visit was lost. The parser
+        // still reads the full string; only the stored copy is cut.
         $row = Analytics::create([
             'ip_address' => $request->ip(),
             'url' => $request->fullUrl(),
             'referrer' => $request->header('referer'),
-            'user_agent' => $userAgent,
+            'user_agent' => mb_substr($userAgent, 0, 255),
             'browser' => UserAgentParser::browser($userAgent),
             'os' => UserAgentParser::os($userAgent),
             'device_type' => UserAgentParser::device($userAgent),

@@ -51,6 +51,19 @@ class VisitTrackingTest extends TestCase
         $this->assertSame(1, $this->visit());
     }
 
+    public function test_a_user_agent_longer_than_the_column_is_cut_not_lost(): void
+    {
+        // An in-app webview: the browser's own string with the app's details appended.
+        $long = self::HUMAN.' '.str_repeat('[FBAN/FBIOS;FBDV/iPhone15,3;FBMD/iPhone;FBSN/iOS] ', 6);
+        $this->assertGreaterThan(255, strlen($long));
+
+        $this->assertSame(1, $this->visit('/a-page', $long));
+
+        $row = Analytics::latest('id')->first();
+        $this->assertSame(255, mb_strlen($row->user_agent));
+        $this->assertSame('Chrome', $row->browser, 'the parser still reads the whole string');
+    }
+
     public function test_a_signed_in_visitor_is_not_counted(): void
     {
         $this->actingAs($this->someone());

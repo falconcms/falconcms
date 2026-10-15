@@ -1,12 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Analytics\:\:\$user_agent\.$#'
-			identifier: property.notFound
-			count: 3
-			path: database/migrations/2026_06_05_000002_reparse_analytics_user_agents.php
-
-		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\ProductCategory\:\:\$description\.$#'
 			identifier: property.notFound
 			count: 2
@@ -422,18 +416,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Analytics\:\:\$count\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/DashboardController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Analytics\:\:\$device_type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Http/Controllers/Admin/DashboardController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Analytics\:\:\$ip_address\.$#'
 			identifier: property.notFound
 			count: 2
 			path: src/Http/Controllers/Admin/DashboardController.php

@@ -205,6 +205,41 @@ class SiteHealthTest extends TestCase
         }
     }
 
+    public function test_a_file_missing_during_an_update_and_the_error_page_it_broke_count_as_fixed_once_it_is_back(): void
+    {
+        // What a half-finished composer install leaves in the log: the missing class file, and a
+        // second later Laravel failing to draw its 500 page because the app never booted.
+        $back = str_replace('\\', '/', base_path('app/SiteHealthBack.php'));
+        $gone = str_replace('\\', '/', base_path('app/SiteHealthGone.php'));
+        @mkdir(dirname($back), 0777, true);
+        file_put_contents($back, "<?php\n");
+        touch($back, now()->subDays(30)->getTimestamp());   // composer keeps the archive's old file time
+        $page = str_replace('\\', '/', base_path('vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/views/500.blade.php'));
+        $log = storage_path('logs/site-health-missing.log');
+        $t1 = now()->subHours(3)->format('Y-m-d H:i:s');
+        $t2 = now()->subHours(3)->addSecond()->format('Y-m-d H:i:s');
+        $t3 = now()->subHours(1)->format('Y-m-d H:i:s');
+        $t4 = now()->subHours(1)->addSecond()->format('Y-m-d H:i:s');
+        try {
+            file_put_contents($log,
+                "[$t1] production.ERROR: include($back): Failed to open stream: No such file or directory\n".
+                "[$t2] production.ERROR: Target class [translator] does not exist. (View: $page)\n".
+                "[$t3] production.ERROR: include($gone): Failed to open stream: No such file or directory\n".
+                "[$t4] production.ERROR: Target class [config] does not exist. (View: $page)\n");
+
+            $errors = collect(collect(SiteHealth::asyncTest('error_log'))->firstWhere('id', 'error_log')['details']['errors']);
+            $state = fn (string $start) => $errors->first(fn ($e) => str_starts_with($e['message'], $start))['resolved'];
+
+            $this->assertTrue($state("include($back)"), 'the file is there again');
+            $this->assertTrue($state('Target class [translator]'), 'settled with the error that caused it');
+            $this->assertFalse($state("include($gone)"), 'that file is still missing');
+            $this->assertFalse($state('Target class [config]'), 'its cause is still open');
+        } finally {
+            @unlink($log);
+            @unlink($back);
+        }
+    }
+
     public function test_only_fixed_errors_leave_the_check_green(): void
     {
         $log = storage_path('logs/site-health-green.log');
