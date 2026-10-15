@@ -234,7 +234,10 @@ class SeoServiceProvider extends ServiceProvider
         });
     }
 
-    /** Settings → Integrations save: Cloudflare purge. The token is stored encrypted, and an empty field keeps it. */
+    /**
+     * Settings → Integrations save: Cloudflare purge. The token is stored encrypted; an empty
+     * field, or the masked token the field shows, keeps the saved one.
+     */
     public static function saveCloudflare(Request $request): void
     {
         $settings = [Cloudflare::ENABLED => $request->boolean(Cloudflare::ENABLED) ? '1' : '0',
@@ -242,7 +245,7 @@ class SeoServiceProvider extends ServiceProvider
         $token = trim((string) $request->input(Cloudflare::TOKEN, ''));
         if ($request->boolean('cloudflare_api_token_remove')) {
             $settings[Cloudflare::TOKEN] = '';
-        } elseif ($token !== '') {
+        } elseif ($token !== '' && !str_contains($token, Cloudflare::MASK)) {
             $settings[Cloudflare::TOKEN] = Crypt::encryptString($token);
         }
         foreach ($settings as $key => $value) {

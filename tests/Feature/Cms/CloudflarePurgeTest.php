@@ -91,4 +91,38 @@ class CloudflarePurgeTest extends TestCase
         $this->actingAs($admin)->post(route('admin.settings.integrations.cloudflare-purge'))
             ->assertRedirect()->assertSessionHas('success', 'Cloudflare cache purged.');
     }
+
+    public function test_the_saved_token_shows_half_masked_and_saving_it_unchanged_keeps_it(): void
+    {
+        $admin = $this->admin();
+        $token = 'AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-Qq';   // 40 characters, like Cloudflare's
+        $this->setCmsOptions([Cloudflare::ZONE => 'zone9', Cloudflare::TOKEN => Crypt::encryptString($token)]);
+
+        $masked = 'AbCdEfGhIjKlMnOpQrSt'.str_repeat('*', 20);
+        $this->assertSame($masked, Cloudflare::maskedToken());
+
+        $page = $this->actingAs($admin)->get(route('admin.settings.integrations'))->assertOk();
+        $page->assertSee('value="'.$masked.'"', false);
+        $page->assertDontSee($token, false);
+
+        // The form posted as it was shown: the masked value comes back, the token stays.
+        $this->actingAs($admin)->post(route('admin.settings.integrations.update'), [
+            'cloudflare_zone_id' => 'zone9', 'cloudflare_api_token' => $masked,
+        ])->assertRedirect();
+        $this->assertSame($token, Cloudflare::token());
+
+        // A new token replaces it.
+        $this->actingAs($admin)->post(route('admin.settings.integrations.update'), [
+            'cloudflare_zone_id' => 'zone9', 'cloudflare_api_token' => 'NewToken123',
+        ])->assertRedirect();
+        $this->assertSame('NewToken123', Cloudflare::token());
+        $this->assertSame('NewTo******', Cloudflare::maskedToken());
+    }
+
+    public function test_without_a_token_the_field_is_empty(): void
+    {
+        $this->assertNull(Cloudflare::maskedToken());
+        $this->actingAs($this->admin())->get(route('admin.settings.integrations'))->assertOk()
+            ->assertSee('placeholder="Paste the token"', false);
+    }
 }

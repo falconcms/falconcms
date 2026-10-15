@@ -103,6 +103,24 @@ final class Cloudflare
         }
     }
 
+    /** What hides the rest of the saved token in its field. A Cloudflare token never contains it. */
+    public const MASK = '*';
+
+    /**
+     * The saved token as its field shows it: the first half, the second half masked. Enough to
+     * tell which token is saved; the whole token never goes back to the browser.
+     */
+    public static function maskedToken(): ?string
+    {
+        $token = self::token();
+        if ($token === '') {
+            return null;
+        }
+        $shown = intdiv(strlen($token), 2);
+
+        return substr($token, 0, $shown).str_repeat(self::MASK, strlen($token) - $shown);
+    }
+
     public static function zone(): string
     {
         return trim((string) get_cms_option(self::ZONE, ''));
