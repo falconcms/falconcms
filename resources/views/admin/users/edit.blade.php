@@ -80,6 +80,10 @@
                     </td>
                 </tr>
                 @endif
+
+                {{-- A plugin's own fields, as table rows (<tr><th>…</th><td>…</td></tr>). Saved in
+                     falcon_admin_user_saved. --}}
+                <?php do_falcon_action('falcon_admin_user_form_fields', $user); ?>
             </table>
 
             @include('falcon-cms::components.admin.dynamic-fields')

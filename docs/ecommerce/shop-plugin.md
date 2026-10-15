@@ -120,3 +120,6 @@ across. Keep the version line in your copy, and set it to the version you brough
   - `falcon_related_products()`, `falcon_linked_products()`, `falcon_cart_cross_sells()`
 - Plugin assets are served from `/plugin-assets/{slug}/{path}`. Build the URL with
   `falcon_plugin_asset('falcon-shop', 'frontend/css/wishlist.css')`.
+- To change how the shop works (wholesale prices, minimum quantities, your own payment gateway,
+  splitting orders per vendor), use the shop's logic hooks. See
+  [E-commerce Logic Hooks](../api/hooks.md#e-commerce-logic-hooks).

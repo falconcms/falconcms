@@ -108,6 +108,8 @@ class ProductCategoryController extends Controller
         ]);
 
         $category = ProductCategory::create($validated);
+        // A plugin's own category fields (falcon_admin_product_category_fields) are in $request.
+        do_falcon_action('falcon_admin_product_category_saved', $category, $request, 'create');
         falcon_log_activity('created', "Created a new product category: {$category->name}", $category);
 
         return redirect()->route('admin.product-categories.index')->with('success', 'Category added.');
@@ -174,6 +176,7 @@ class ProductCategoryController extends Controller
         ]);
 
         $category->update($validated);
+        do_falcon_action('falcon_admin_product_category_saved', $category, $request, 'update');
 
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
             foreach ($request->copy_to_languages as $targetLang) {

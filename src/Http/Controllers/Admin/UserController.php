@@ -26,9 +26,12 @@ class UserController extends Controller
             });
         }
 
+        // A user holds a role as their primary one or as an extra one (role_user).
         if ($request->filled('role')) {
-            $query->whereHas('role', function ($q) use ($request) {
-                $q->where('slug', $request->role);
+            $roleId = Role::where('slug', $request->role)->value('id');
+            $query->where(function ($q) use ($roleId) {
+                $q->where('role_id', $roleId)
+                    ->orWhereIn('id', DB::table('role_user')->select('user_id')->where('role_id', $roleId));
             });
         }
 
@@ -46,7 +49,10 @@ class UserController extends Controller
 
         $allCount = User::count();
         $roles = Role::all()->map(function ($role) {
-            $role->count = User::where('role_id', $role->id)->count();
+            $role->count = User::where(function ($q) use ($role) {
+                $q->where('role_id', $role->id)
+                    ->orWhereIn('id', DB::table('role_user')->select('user_id')->where('role_id', $role->id));
+            })->count();
 
             return $role;
         });
@@ -103,6 +109,8 @@ class UserController extends Controller
             'role_id' => $roles[0] ?? null,
         ]);
         $user->assignRoles($roles);
+        // A plugin's own user fields (falcon_admin_user_form_fields) are in $request.
+        do_falcon_action('falcon_admin_user_saved', $user, $request, 'create');
         falcon_log_activity('created', "Created a new user: {$user->name} ({$user->username})", $user);
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
@@ -175,6 +183,7 @@ class UserController extends Controller
         unset($validated['roles']);
         $user->update($validated);
         $user->assignRoles($roles);
+        do_falcon_action('falcon_admin_user_saved', $user, $request, 'update');
         falcon_log_activity('updated', "Updated user profile: {$user->name}", $user);
 
         return redirect()->route('admin.users.edit', $user)->with('success', 'User updated successfully.');

@@ -314,6 +314,9 @@
                 </div>
             @endif
 
+            {{-- A plugin's own box about this order (a deposit to confirm, a vendor's share). --}}
+            <?php do_falcon_action('falcon_admin_order_sidebar', $order); ?>
+
             <!-- Customer Details -->
             <div class="wp-metabox">
                 <div class="wp-metabox-header">Customer Details</div>

@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ShopFrontendController extends Controller
 {
@@ -82,7 +83,9 @@ class ShopFrontendController extends Controller
     public function addToCart(Request $request)
     {
         $productId = $request->input('product_id');
-        $quantity = $request->input('quantity', 1);
+        // A whole number of at least one. Arithmetic on the raw input let "abc" or "-3" into
+        // the cart, and the validation filter below needs a real quantity to judge.
+        $quantity = max(1, (int) $request->input('quantity', 1));
         $variationId = $request->input('variation_id');
 
         $product = Product::with('shopData')->findOrFail($productId);
@@ -92,6 +95,33 @@ class ShopFrontendController extends Controller
         if ($variationId) {
             // One id: an array here would make find() return a collection.
             $variation = is_scalar($variationId) ? ProductVariation::find((int) $variationId) : null;
+        }
+
+        // A price the visitor may not see is a product they may not buy (falcon_show_prices).
+        if (!falcon_can_see_prices($product)) {
+            $errorMsg = trim(strip_tags(falcon_hidden_price_html($product, 'cart'))) ?: 'This product is not available to buy.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $errorMsg], 403);
+            }
+
+            return redirect()->back()->with('error', $errorMsg);
+        }
+
+        // A plugin's say on whether this can go in the basket: a wholesale minimum, a
+        // customers-only product, a vendor on holiday. true lets it through; a string is the
+        // message the shopper sees. The quantity is the line's total once this is added.
+        $existingCart = Session::get('falcon_cart', []);
+        $existingKey = $variationId ? "{$productId}_{$variationId}" : $productId;
+        $lineQuantity = $quantity + (int) ($existingCart[$existingKey]['quantity'] ?? 0);
+        $verdict = apply_falcon_filters('falcon_add_to_cart_validation', true, $product, $variation, $lineQuantity, $request);
+        if ($verdict !== true) {
+            $errorMsg = is_string($verdict) && $verdict !== '' ? $verdict : 'This product cannot be added to your cart.';
+
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $errorMsg], 422);
+            }
+
+            return redirect()->back()->with('error', $errorMsg);
         }
 
         // Inventory Check
@@ -173,6 +203,13 @@ class ShopFrontendController extends Controller
 
         Session::put('falcon_cart', $cart);
 
+        // Price the line now rather than on the next cart view: falcon_product_prices may
+        // depend on the customer or on the quantity just reached, and the mini-cart subtotal
+        // in the response below must already be the real one.
+        falcon_refresh_cart_prices();
+
+        do_falcon_action('falcon_add_to_cart', (string) $cartKey, Session::get('falcon_cart', [])[$cartKey] ?? $cart[$cartKey], $product, $variation, $quantity);
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -194,11 +231,22 @@ class ShopFrontendController extends Controller
         $cart = Session::get('falcon_cart', []);
         $quantities = $request->input('quantity', []);
 
+        $rejected = [];
         foreach ($quantities as $key => $qty) {
             // Only process keys that genuinely exist in the session cart
             if (!isset($cart[$key])) {
                 continue;
             }
+
+            // Same say a plugin has when the item is first added (a wholesale minimum, a
+            // quantity step). A refused line keeps the quantity it had.
+            $verdict = apply_falcon_filters('falcon_update_cart_validation', true, (string) $key, $cart[$key], (int) $qty);
+            if ($verdict !== true) {
+                $rejected[] = is_string($verdict) && $verdict !== '' ? $verdict : 'That quantity is not available for '.($cart[$key]['name'] ?? 'this item').'.';
+
+                continue;
+            }
+
             $cart[$key]['quantity'] = (int) $qty;
         }
 
@@ -210,16 +258,40 @@ class ShopFrontendController extends Controller
         falcon_refresh_cart_prices();
         $this->revalidateCoupon();
 
+        // Re-read: the stock check and the price refresh above may both have changed lines,
+        // and a tiered price moves with the quantity just set.
+        $cart = Session::get('falcon_cart', []);
+        do_falcon_action('falcon_cart_updated', $cart);
+
+        if (!empty($rejected)) {
+            $message = implode(' ', array_unique($rejected));
+            if ($request->ajax()) {
+                return response()->json($this->cartTotalsPayload([
+                    'success' => false,
+                    'message' => $message,
+                    'reload' => true,
+                ]), 422);
+            }
+
+            return redirect()->back()->with('error', $message);
+        }
+
         if ($request->ajax()) {
             $item_subtotals = [];
+            $item_prices = [];
+            $item_fields = [];
             foreach ($cart as $key => $item) {
                 $price = $item['sale_price'] ?? $item['price'];
                 $item_subtotals[$key] = falcon_price_format($price * $item['quantity']);
+                $item_prices[$key] = falcon_price_format($price);
+                $item_fields[$key] = falcon_render_item_custom_fields($item, 'cart');
             }
 
             return response()->json($this->cartTotalsPayload([
                 'message' => 'Cart updated!',
                 'item_subtotals' => $item_subtotals,
+                'item_prices' => $item_prices,
+                'item_fields' => $item_fields,
             ]));
         }
 
@@ -316,6 +388,14 @@ class ShopFrontendController extends Controller
                 return $this->couponResponse(false, 'This coupon is not valid for the products in your cart.', $request);
             }
 
+            // 5. A plugin's own rules (no coupons for wholesale customers, first order only…).
+            // The same filter is asked again on every cart change, so a coupon that stops
+            // qualifying drops off rather than staying applied.
+            $verdict = apply_falcon_filters('falcon_coupon_is_valid', true, $coupon, $cart);
+            if ($verdict !== true) {
+                return $this->couponResponse(false, is_string($verdict) && $verdict !== '' ? $verdict : 'This coupon cannot be used for this order.', $request);
+            }
+
             // Success: Add to coupons array
             $appliedCoupons[] = [
                 'code' => $coupon['code'],
@@ -328,6 +408,8 @@ class ShopFrontendController extends Controller
             Session::put('falcon_coupons', $appliedCoupons);
             Session::save();
             Session::forget('falcon_coupon'); // Ensure old singular key is gone
+
+            do_falcon_action('falcon_coupon_applied', $coupon, $cart);
 
             return $this->couponResponse(true, 'Coupon applied successfully!', $request);
 
@@ -464,7 +546,15 @@ class ShopFrontendController extends Controller
                 'id' => $id,
                 'qty' => $qty,
                 'title' => $product->title ?? ($item['name'] ?? 'Product'),
+                'post_id' => (int) ($product->id ?? 0),
+                'variation_id' => $table === 'shop_product_variations' ? (int) $id : null,
             ];
+        }
+
+        // Announced only once every line is secured — a half-claimed cart is handed back below
+        // and never reported as sold.
+        foreach ($claimed as $claim) {
+            $this->announceStockChange($claim, -$claim['qty'], 'checkout');
         }
 
         return [true, '', $claimed];
@@ -481,6 +571,18 @@ class ShopFrontendController extends Controller
                     'updated_at' => now(),
                 ]);
         }
+    }
+
+    /**
+     * Fire `falcon_product_stock_changed` for one claimed row, with the quantity now on the shelf.
+     *
+     * @param  array{table: string, id: int, post_id?: int, variation_id?: int|null}  $claim
+     */
+    private function announceStockChange(array $claim, int $change, string $reason): void
+    {
+        $remaining = (int) DB::table($claim['table'])->where('id', $claim['id'])->value('stock_quantity');
+
+        do_falcon_action('falcon_product_stock_changed', (int) ($claim['post_id'] ?? 0), $claim['variation_id'] ?? null, $remaining, $change, $reason);
     }
 
     /**
@@ -532,19 +634,27 @@ class ShopFrontendController extends Controller
     public function removeCoupon(Request $request)
     {
         $code = $request->get('code');
+        $coupons = Session::get('falcon_coupons', []);
+        $removed = [];
         if ($code) {
-            $coupons = Session::get('falcon_coupons', []);
             $newCoupons = [];
             foreach ($coupons as $c) {
                 if (strtoupper($c['code']) !== strtoupper($code)) {
                     $newCoupons[] = $c;
+                } else {
+                    $removed[] = $c['code'];
                 }
             }
             Session::put('falcon_coupons', $newCoupons);
         } else {
+            $removed = array_column($coupons, 'code');
             Session::forget('falcon_coupons');
         }
         Session::forget('falcon_coupon');
+
+        foreach ($removed as $removedCode) {
+            do_falcon_action('falcon_coupon_removed', (string) $removedCode);
+        }
 
         return redirect()->back()->with('success', 'Coupon removed successfully!');
     }
@@ -562,8 +672,10 @@ class ShopFrontendController extends Controller
 
         $cart = Session::get('falcon_cart', []);
         if (isset($cart[$key])) {
+            $removedItem = $cart[$key];
             unset($cart[$key]);
             Session::put('falcon_cart', $cart);
+            do_falcon_action('falcon_cart_item_removed', (string) $key, $removedItem);
             // Prices first: the coupon rules below (minimum spend, and the totals themselves)
             // have to be judged against what the catalogue charges today, not what it charged
             // when the item went into the basket.
@@ -622,6 +734,10 @@ class ShopFrontendController extends Controller
             // Free Shipping coupons discount nothing off the cart by design — dropping them here
             // would silently un-apply them on the next page load.
             if ($discount <= 0 && ($couponData['type'] ?? '') !== 'free_shipping') {
+                continue;
+            }
+
+            if (apply_falcon_filters('falcon_coupon_is_valid', true, $couponData, $cart) !== true) {
                 continue;
             }
 
@@ -691,7 +807,9 @@ class ShopFrontendController extends Controller
             'billing_state' => 'required',
             'billing_postcode' => 'required',
             'billing_country' => 'required',
-            'payment_method' => 'required',
+            // Only a gateway that is actually on offer. Anything else used to be accepted and
+            // quietly treated as an offline payment.
+            'payment_method' => ['required', 'string', Rule::in(array_keys(falcon_enabled_payment_gateways()))],
         ];
 
         // Under "Mandatory shipping to the billing address" the shipping fields are not offered,
@@ -744,7 +862,24 @@ class ShopFrontendController extends Controller
             }
         }
 
+        // Add, loosen or tighten checkout rules (a VAT number for wholesale buyers, a company
+        // name for B2B). Labels for new fields go through falcon_checkout_validation_attributes.
+        $rules = apply_falcon_filters('falcon_checkout_validation_rules', $rules, $request);
+        $attributes = apply_falcon_filters('falcon_checkout_validation_attributes', $attributes, $request);
+
         $request->validate($rules, [], $attributes);
+
+        // A plugin's last word before anything is written — a minimum order value, a region it
+        // will not ship to. true continues; a string stops the order with that message.
+        $verdict = apply_falcon_filters('falcon_checkout_validation', true, $request, Session::get('falcon_cart', []));
+        if ($verdict !== true) {
+            $msg = is_string($verdict) && $verdict !== '' ? $verdict : 'Your order could not be placed. Please review your cart and try again.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+
+            return redirect()->back()->withInput()->with('error', $msg);
+        }
 
         // Handle guest checkout based on shop settings
         if (!auth()->check()) {
@@ -790,6 +925,8 @@ class ShopFrontendController extends Controller
                     'role_id' => $customerRole->id,
                 ]);
                 auth()->login($newUser);
+
+                do_falcon_action('falcon_customer_registered', $newUser, $request);
             }
         }
 
@@ -865,7 +1002,7 @@ class ShopFrontendController extends Controller
 
         $orderData = [
             'user_id' => auth()->id(),
-            'order_number' => 'ORD-'.strtoupper(Str::random(8)),
+            'order_number' => $this->newOrderNumber($request),
             'status' => 'pending',
             'subtotal' => $subtotal,
             'shipping_total' => $shipping,
@@ -936,6 +1073,14 @@ class ShopFrontendController extends Controller
             ]);
         }
 
+        // Anything a plugin wants on the order row — usually extra `meta` (a vendor id, a
+        // purchase-order number). The money columns were worked out above; change them here
+        // only if the payment side is changed to match.
+        $filteredOrderData = apply_falcon_filters('falcon_order_data', $orderData, $cart, $request);
+        if (is_array($filteredOrderData)) {
+            $orderData = $filteredOrderData;
+        }
+
         // Reserve stock *before* the order exists: if the last unit has gone, the customer gets a
         // clear message instead of a confirmed order the shop cannot fulfil.
         [$stockOk, $stockError, $claimedStock] = $this->claimCartStock($cart);
@@ -1002,7 +1147,7 @@ class ShopFrontendController extends Controller
             $itemMeta = $item['meta'] ?? [];
             $itemMeta = apply_falcon_filters('falcon_order_item_meta', $itemMeta, $item, $order);
 
-            OrderItem::create([
+            $itemData = [
                 'order_id' => $order->id,
                 'product_id' => $item['id'],
                 'variation_id' => $item['variation_id'] ?? null,
@@ -1011,7 +1156,14 @@ class ShopFrontendController extends Controller
                 'price' => $item['sale_price'] ?? $item['price'],
                 'subtotal' => ($item['sale_price'] ?? $item['price']) * $item['quantity'],
                 'meta' => !empty($itemMeta) ? $itemMeta : null,
-            ]);
+            ];
+            $filteredItemData = apply_falcon_filters('falcon_order_item_data', $itemData, $item, $order);
+            if (is_array($filteredItemData)) {
+                // The item always belongs to this order, whatever a callback returned.
+                $itemData = array_merge($filteredItemData, ['order_id' => $order->id]);
+            }
+
+            OrderItem::create($itemData);
 
             // Stock was already taken by claimCartStock(), atomically, before the order existed.
         }
@@ -1021,6 +1173,10 @@ class ShopFrontendController extends Controller
             $remaining = DB::table($claim['table'])->where('id', $claim['id'])->value('stock_quantity');
             $this->maybeNotifyStock($claim['title'], (int) $remaining);
         }
+
+        // The order and all its items exist, stock is taken, payment has not started. The
+        // place for a plugin to split the order per vendor, push it to an ERP, or record it.
+        do_falcon_action('falcon_order_created', $order, $cart, $request);
 
         // Nothing to collect — a fully-discounted cart, a free product, or a 100% coupon.
         // Card processors reject a zero-value charge, so sending this to a gateway would strand
@@ -1103,6 +1259,26 @@ class ShopFrontendController extends Controller
     }
 
     /**
+     * The number the customer sees on the order, through the `falcon_order_number` filter.
+     *
+     * The column is unique, so a callback's number that is empty or already taken falls back
+     * to the default random one rather than failing the checkout.
+     */
+    private function newOrderNumber(Request $request): string
+    {
+        $default = 'ORD-'.strtoupper(Str::random(8));
+        $number = apply_falcon_filters('falcon_order_number', $default, $request);
+
+        if (!is_string($number) || trim($number) === '' || mb_strlen($number) > 191) {
+            return $default;
+        }
+
+        $number = trim($number);
+
+        return Order::withTrashed()->where('order_number', $number)->exists() ? $default : $number;
+    }
+
+    /**
      * Send notification emails and clear the cart/coupons for a completed checkout.
      */
     private function finalizeOrder(Order $order): void
@@ -1113,10 +1289,17 @@ class ShopFrontendController extends Controller
             Log::error("Order #{$order->order_number} email failed: ".$e->getMessage());
         }
 
+        // Who gets the "new order" email: the configured address, plus whoever a plugin adds
+        // (a warehouse, an account manager). Anything that is not a valid address is dropped.
         $adminRecipient = get_shop_option('shop_email_admin_recipient');
-        if (!empty($adminRecipient)) {
+        $adminRecipients = apply_falcon_filters('falcon_order_admin_email_recipients', array_filter([(string) $adminRecipient]), $order);
+        $adminRecipients = array_values(array_unique(array_filter(
+            (array) $adminRecipients,
+            static fn ($email) => is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)
+        )));
+        if (!empty($adminRecipients)) {
             try {
-                Mail::to($adminRecipient)->send(new OrderNotificationMail($order, 'placed', 'New Order Received'));
+                Mail::to($adminRecipients)->send(new OrderNotificationMail($order, 'placed', 'New Order Received'));
             } catch (\Exception $e) {
                 Log::error("Order #{$order->order_number} admin email failed: ".$e->getMessage());
             }
@@ -1129,6 +1312,10 @@ class ShopFrontendController extends Controller
         Session::forget('falcon_coupons');
         // The next order starts from the shop's defaults rather than inheriting this one's choice.
         Session::forget('falcon_shipping_method');
+
+        // The order is confirmed: an offline one has just been placed, an online one paid.
+        // Runs once per order — markOrderPaid() lets only one caller through.
+        do_falcon_action('falcon_order_finalized', $order);
     }
 
     private function generateDownloadTokens(Order $order): void
@@ -1277,7 +1464,12 @@ class ShopFrontendController extends Controller
             return null;
         }
 
-        return null;
+        // A plugin's own online gateway: hand back the URL to send the customer to, or null if
+        // it could not start. The gateway must bring the customer back to
+        // route('shop.payment.return', $order->id) with ?gateway=<its id>.
+        $url = apply_falcon_filters('falcon_payment_redirect_url', null, $order, $method);
+
+        return is_string($url) && preg_match('#^https?://#i', $url) ? $url : null;
     }
 
     /**
@@ -1356,6 +1548,17 @@ class ShopFrontendController extends Controller
             // PayPal Standard cannot be verified server-side without IPN; mark as awaiting confirmation.
             return redirect()->route('shop.confirmation', $order->id)
                 ->with('success', 'Thank you! Your PayPal payment is being confirmed and your order will update shortly.');
+        } elseif (is_string($gateway) && $gateway === $order->payment_method) {
+            // A plugin's own gateway confirms its payment here, server-side, against the
+            // provider — never on the strength of query parameters alone. true (or the
+            // provider's transaction id) marks the order paid; anything else leaves it pending.
+            $verified = apply_falcon_filters('falcon_payment_return_verified', false, $order, $gateway, $request);
+            if ($verified === true || (is_string($verified) && $verified !== '')) {
+                $paid = true;
+                if (is_string($verified)) {
+                    $order->update(['transaction_id' => mb_substr($verified, 0, 191)]);
+                }
+            }
         }
 
         if ($paid) {
@@ -1387,12 +1590,21 @@ class ShopFrontendController extends Controller
             $updates['transaction_id'] = $transactionId;
         }
 
+        $oldStatus = (string) $order->status;
+
         if (Order::whereKey($order->getKey())->whereNull('paid_at')->update($updates) !== 1) {
             return false;
         }
 
         $order->refresh();
+
+        // The conditional UPDATE above skips model events, so the status hook is fired here,
+        // by the one caller that won the order.
+        Order::fireStatusChanged($order, $oldStatus, (string) $order->status);
+
         $this->finalizeOrder($order);
+
+        do_falcon_action('falcon_order_paid', $order);
 
         return true;
     }
@@ -1568,6 +1780,8 @@ class ShopFrontendController extends Controller
         $oldStatus = $order->status;
         $order->update(['status' => 'failed']);
         $this->syncOrderInventory($order, $oldStatus, 'failed');
+
+        do_falcon_action('falcon_order_payment_failed', $order, 'stripe');
     }
 
     /**
@@ -1619,6 +1833,8 @@ class ShopFrontendController extends Controller
 
         // Only a full refund returns stock to inventory, matching the admin refund screen.
         $this->syncOrderInventory($order, $oldStatus, $newStatus);
+
+        do_falcon_action('falcon_order_refunded', $order, round($refunded - $recorded, 2), 'stripe_webhook');
 
         try {
             Mail::to($order->customer_email)->send(
@@ -2218,7 +2434,10 @@ class ShopFrontendController extends Controller
             }
         }
 
-        Review::create([
+        // A plugin may approve on its own terms (verified buyers only) or hold everything back.
+        $isApproved = (bool) apply_falcon_filters('falcon_review_auto_approve', $isApproved, $validated, auth()->user());
+
+        $review = Review::create([
             'post_id' => $validated['post_id'],
             'parent_id' => $validated['parent_id'] ?? null,
             'user_id' => $userId,
@@ -2228,6 +2447,8 @@ class ShopFrontendController extends Controller
             'comment' => $validated['comment'],
             'is_approved' => $isApproved,
         ]);
+
+        do_falcon_action('falcon_review_created', $review);
 
         $message = $isApproved ? 'Review posted successfully.' : 'Your review is awaiting moderation.';
 

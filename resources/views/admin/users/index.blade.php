@@ -114,7 +114,7 @@
                             </td>
                             <td class="p-2">{{ $user->name }}</td>
                             <td class="p-2 "><a href="mailto:{{ $user->email }}" class="text-[#2271b1]">{{ $user->email }}</a></td>
-                            <td class="p-2 text-[#2c3338]">{{ $user->role ? $user->role->name : 'No Role' }}</td>
+                            <td class="p-2 text-[#2c3338]">{{ $user->role ? $user->role->name : 'No Role' }}<?php do_falcon_action('falcon_admin_user_role_cell', $user); ?></td>
                             <td class="p-2 text-[#2271b1]">
                                 <a href="{{ route('admin.posts.index', ['author' => $user->id]) }}" class="text-[#2271b1] hover:underline font-semibold">
                                     {{ \DB::table('posts')->where('user_id', $user->id)->count() }}

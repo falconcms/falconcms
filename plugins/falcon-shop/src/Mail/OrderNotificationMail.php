@@ -59,12 +59,20 @@ class OrderNotificationMail extends Mailable implements ShouldQueue
             $subjectTpl
         );
 
+        // The final subject, shop-name prefix included. Worked out when the mail is sent (in the
+        // queue worker, when mail is queued), so the callback must not depend on the request.
+        $subject = "[$shopName] ".$subject;
+        $filteredSubject = apply_falcon_filters('falcon_order_email_subject', $subject, $this->order, $this->notificationType, $this->recipientType);
+        if (is_string($filteredSubject) && trim($filteredSubject) !== '') {
+            $subject = $filteredSubject;
+        }
+
         return new Envelope(
             from: new Address(
                 get_shop_option('shop_email_from_address', 'store@'.request()->getHost()),
                 get_shop_option('shop_email_from_name', config('app.name', 'Lazy Panda Shop'))
             ),
-            subject: "[$shopName] ".$subject,
+            subject: $subject,
         );
     }
 

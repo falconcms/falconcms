@@ -1,12 +1,15 @@
 <?php
 
 /**
- * Shop: shop/cart/checkout URLs, price format, product schema and product type.
+ * Shop: shop/cart/checkout URLs, price format, product schema, product type and the
+ * `falcon_product_prices` filter every storefront price goes through.
  *
  * Loaded by src/helpers.php.
  */
 
 use FalconCms\Core\Models\Post;
+use FalconCms\Core\Models\ProductData;
+use FalconCms\Core\Models\ProductVariation;
 use FalconCms\Core\Services\EcommerceData;
 use Illuminate\Support\Str;
 
@@ -194,6 +197,11 @@ if (!function_exists('falcon_product_schema')) {
             // Ratings are a bonus; never let them cost the page its markup.
         }
 
+        // A price the visitor may not see must not be published to search engines either.
+        if (!falcon_can_see_prices($post)) {
+            unset($schema['offers']);
+        }
+
         return apply_falcon_filters('falcon_product_schema', $schema, $post);
     }
 }
@@ -208,5 +216,114 @@ if (!function_exists('falcon_is_variable_product')) {
         $sd = $product->shopData ?? null;
 
         return $sd ? $sd->isVariable() : false;
+    }
+}
+
+if (!function_exists('falcon_filter_product_prices')) {
+    /**
+     * Run a catalogue price pair through the `falcon_product_prices` filter.
+     *
+     * The one door every price the shopper sees or pays goes through: product cards, the
+     * single product page, variation prices, the cart and therefore the order. A wholesale or
+     * role-pricing plugin hooks here once and the figure on the page and the figure charged
+     * cannot disagree.
+     *
+     * Whatever a callback returns is normalised: a negative or non-numeric price becomes 0 and
+     * a sale price of zero or less becomes null, because the cart treats a present sale price
+     * as authoritative and a literal 0 would hand the item over for free.
+     *
+     * @param  string  $context  'display' (a page showing the price) or 'cart' (the cart line
+     *                           being priced, which is what the order is written from)
+     * @return array{price: float, sale_price: float|null}
+     */
+    function falcon_filter_product_prices($price, $salePrice, int $postId, ?int $variationId = null, int $quantity = 1, string $context = 'display'): array
+    {
+        $prices = [
+            'price' => (float) $price,
+            'sale_price' => ($salePrice !== null && $salePrice !== '' && (float) $salePrice > 0) ? (float) $salePrice : null,
+        ];
+
+        $filtered = apply_falcon_filters('falcon_product_prices', $prices, $postId, $variationId, max(1, $quantity), $context);
+        if (!is_array($filtered)) {
+            return $prices;
+        }
+
+        $outPrice = $filtered['price'] ?? $prices['price'];
+        $outSale = array_key_exists('sale_price', $filtered) ? $filtered['sale_price'] : $prices['sale_price'];
+
+        return [
+            'price' => is_numeric($outPrice) ? max(0.0, round((float) $outPrice, 4)) : 0.0,
+            'sale_price' => (is_numeric($outSale) && (float) $outSale > 0) ? round((float) $outSale, 4) : null,
+        ];
+    }
+}
+
+if (!function_exists('falcon_product_prices')) {
+    /**
+     * What the current shopper pays for a product (or one of its variations), after the
+     * `falcon_product_prices` filter.
+     *
+     * A variation's sale ends with its parent's sale_ends_at, the same rule the cart applies.
+     *
+     * @param  mixed  $product  a Post/Product, its ProductData row, or a post id
+     * @param  mixed  $variation  a ProductVariation, a variation id, or null
+     * @return array{price: float, sale_price: float|null}
+     */
+    function falcon_product_prices($product, $variation = null, int $quantity = 1, string $context = 'display'): array
+    {
+        if ($product instanceof ProductData) {
+            $shopData = $product;
+        } elseif (is_object($product)) {
+            $shopData = $product->shopData ?? null;
+        } else {
+            $shopData = ProductData::where('post_id', (int) $product)->first();
+        }
+
+        if (!$shopData) {
+            return ['price' => 0.0, 'sale_price' => null];
+        }
+
+        if ($variation !== null && !is_object($variation)) {
+            $variation = ProductVariation::find((int) $variation);
+        }
+
+        if ($variation) {
+            $sale = $variation->sale_price;
+            if (!empty($shopData->sale_ends_at) && !$shopData->sale_ends_at->isFuture()) {
+                $sale = null;
+            }
+
+            return falcon_filter_product_prices($variation->price, $sale, (int) $shopData->post_id, (int) $variation->id, $quantity, $context);
+        }
+
+        return falcon_filter_product_prices($shopData->price, $shopData->active_sale_price, (int) $shopData->post_id, null, $quantity, $context);
+    }
+}
+
+if (!function_exists('falcon_can_see_prices')) {
+    /**
+     * Whether the current visitor may see this product's price and buy it.
+     *
+     * Always true in the core. A plugin hides prices (from guests, from retail customers, for a
+     * B2B-only shop) through the `falcon_show_prices` filter. Templates then print
+     * falcon_hidden_price_html() in place of the price and the buy button, adding to the cart
+     * is refused, and the product's structured data leaves the price out.
+     *
+     * @param  mixed  $product  a Post/Product, or null for "prices in general"
+     */
+    function falcon_can_see_prices($product = null): bool
+    {
+        return (bool) apply_falcon_filters('falcon_show_prices', true, $product);
+    }
+}
+
+if (!function_exists('falcon_hidden_price_html')) {
+    /**
+     * What stands in for a hidden price ($context 'price') or a hidden buy button ('cart'),
+     * from the `falcon_hidden_price_html` filter. Empty in the core.
+     */
+    function falcon_hidden_price_html($product = null, string $context = 'price'): string
+    {
+        return (string) apply_falcon_filters('falcon_hidden_price_html', '', $product, $context);
     }
 }

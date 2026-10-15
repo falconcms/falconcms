@@ -102,7 +102,7 @@
                         @if($item->variation_details)
                             <div style="font-size: 11px; color: #6b7280;">{{ $item->variation_details }}</div>
                         @endif
-                        @foreach($item->meta['custom_fields'] ?? [] as $cfKey => $cfVal)
+                        @foreach(apply_falcon_filters('falcon_item_custom_fields_display', $item->meta['custom_fields'] ?? [], $item, 'invoice') as $cfKey => $cfVal)
                             @if($cfVal)
                             <div style="font-size: 11px; color: #6b7280;">
                                 {{ $invoiceLabels[$cfKey] ?? ucwords(str_replace('_', ' ', $cfKey)) }}: {{ $cfVal }}

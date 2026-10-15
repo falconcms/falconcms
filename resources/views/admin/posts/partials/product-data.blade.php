@@ -45,9 +45,26 @@
             'stock_quantity' => $v->stock_quantity,
             'stock_status' => $v->stock_status,
             'manage_stock' => $v->manage_stock,
-            'image' => $v->image
+            'image' => $v->image,
+            // An object even when empty, so a plugin's fields can bind to variation.meta.*
+            'meta' => (object) ($v->meta ?: []),
         ];
     }) : collect();
+    // Extra product-data tabs from plugins, cleaned so a bad entry cannot break the panel.
+    $productDataExtraTabs = [];
+    foreach ((array) apply_falcon_filters('falcon_admin_product_data_tabs', [], $post ?? null) as $extraTab) {
+        $extraId = is_array($extraTab) ? (string) ($extraTab['id'] ?? '') : '';
+        if (!preg_match('/^[a-z0-9_\-]{1,40}$/', $extraId) || in_array($extraId, ['general', 'inventory', 'attributes', 'shipping', 'variations', 'downloads', 'linked'], true)) {
+            continue;
+        }
+        $productDataExtraTabs[] = [
+            'id' => $extraId,
+            'label' => (string) ($extraTab['label'] ?? $extraId),
+            'icon' => preg_replace('/[^a-z0-9_]/', '', (string) ($extraTab['icon'] ?? 'extension')) ?: 'extension',
+            'show' => (string) ($extraTab['show'] ?? ''),
+        ];
+    }
+
     // Pre-load download files for Alpine (computed here to avoid complex expression inside @json directive)
     $dlInitialFiles = $post->shopData
         ? $post->shopData->downloads()->orderBy('sort_order')->get()->map(function($d) {
@@ -178,7 +195,7 @@
                     var vals = attr.values.split('|').map(function (v) { return v.trim(); }).filter(Boolean);
                     combo[attr.name] = vals[0] || '';
                 });
-                this.variations.push({ attributes_data: combo, price: '', sale_price: '', sku: '', weight: '', length: '', width: '', height: '', stock_quantity: 0, stock_status: 'instock', manage_stock: false, image: '' });
+                this.variations.push({ attributes_data: combo, price: '', sale_price: '', sku: '', weight: '', length: '', width: '', height: '', stock_quantity: 0, stock_status: 'instock', manage_stock: false, image: '', meta: {} });
                 this.activeTab = 'variations';
             },
 
@@ -199,7 +216,7 @@
                 var self = this;
                 combos.forEach(function (combo) {
                     if (!self.variations.some(function (v) { return JSON.stringify(v.attributes_data) === JSON.stringify(combo); })) {
-                        self.variations.push({ attributes_data: combo, price: '', sale_price: '', sku: '', weight: '', length: '', width: '', height: '', stock_quantity: 0, stock_status: 'instock', manage_stock: false, image: '' });
+                        self.variations.push({ attributes_data: combo, price: '', sale_price: '', sku: '', weight: '', length: '', width: '', height: '', stock_quantity: 0, stock_status: 'instock', manage_stock: false, image: '', meta: {} });
                     }
                 });
                 this.activeTab = 'variations';
@@ -337,6 +354,18 @@
                         <span>Linked Products</span>
                     </button>
                 </li>
+                {{-- Tabs a plugin adds: falcon_admin_product_data_tabs. Each is
+                     ['id' => …, 'label' => …, 'icon' => material symbol, 'show' => optional Alpine
+                     expression, e.g. "productType !== 'variable'"]. Its panel comes from the
+                     falcon_admin_product_data_panels action below. --}}
+                @foreach($productDataExtraTabs as $extraTab)
+                <li @if($extraTab['show'] !== '') x-show="{{ $extraTab['show'] }}" @endif>
+                    <button type="button" @click="activeTab = '{{ $extraTab['id'] }}'" :class="activeTab === '{{ $extraTab['id'] }}' ? 'bg-white border-y border-[#f0f0f1] border-r-transparent -mr-[1px] text-[#2271b1] font-semibold' : 'text-[#2271b1] hover:bg-white'" class="w-full text-left px-4 py-2.5 transition-colors flex items-center space-x-2">
+                        <span class="material-symbols-outlined text-[18px]">{{ $extraTab['icon'] }}</span>
+                        <span>{{ $extraTab['label'] }}</span>
+                    </button>
+                </li>
+                @endforeach
             </ul>
         </div>
 
@@ -706,6 +735,14 @@
                                              <input type="hidden" :name="'variations['+vIndex+'][stock_status]'" :value="variation.stock_status">
                                          </div>
                                                                     </div>
+
+                                     {{-- A plugin's own fields for each variation. Printed once inside
+                                          this x-for, so `variation` and `vIndex` are in scope. Bind to
+                                          variation.meta.<your key> and name the input
+                                          'variations['+vIndex+'][meta][<your key>]': it is saved into the
+                                          variation's meta column (falcon_admin_variation_meta). --}}
+                                     <input type="hidden" :name="'variations['+vIndex+'][meta_json]'" :value="JSON.stringify(variation.meta || {})">
+                                     <?php do_falcon_action('falcon_admin_variation_fields', $post ?? null); ?>
                             </div>
                         </div>
                     </template>
@@ -836,6 +873,12 @@
                 </div>
                 @endif
             </div>
+
+            {{-- Panels for the tabs above: a plugin prints
+                 <div x-show="activeTab === 'its-id'">…</div>. It is inside this form and this
+                 Alpine scope (productType, variations…), and its fields save with the product —
+                 read them in falcon_admin_after_save_product. --}}
+            <?php do_falcon_action('falcon_admin_product_data_panels', $post ?? null); ?>
         </div>
     </div>
 

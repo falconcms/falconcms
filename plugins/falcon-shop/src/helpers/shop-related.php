@@ -32,11 +32,13 @@ if (!function_exists('falcon_linked_products')) {
         }
 
         try {
-            $found = Post::whereIn('posts.id', array_slice($ids, 0, max(1, $limit) * 3))
+            $foundQuery = Post::whereIn('posts.id', array_slice($ids, 0, max(1, $limit) * 3))
                 ->where('posts.type', 'product')
                 ->where('posts.status', 'published')
-                ->with(['shopData.variations', 'productCategories'])
-                ->get();
+                ->with(['shopData.variations', 'productCategories']);
+            // The same narrowing as every other product listing (a product hidden from this shopper).
+            do_falcon_action('falcon_product_query', $foundQuery, []);
+            $found = $foundQuery->get();
 
             // Keep the order the shop owner chose rather than whatever the database returns.
             return $found->sortBy(fn ($p) => array_search($p->id, $ids, true))->take($limit)->values();
@@ -65,10 +67,15 @@ if (!function_exists('falcon_related_products')) {
         try {
             $categoryIds = $product->productCategories?->pluck('id')->all() ?? [];
 
-            $base = fn () => Post::where('posts.type', 'product')
-                ->where('posts.status', 'published')
-                ->where('posts.id', '!=', $product->id)
-                ->with(['shopData.variations', 'productCategories']);
+            $base = function () use ($product) {
+                $query = Post::where('posts.type', 'product')
+                    ->where('posts.status', 'published')
+                    ->where('posts.id', '!=', $product->id)
+                    ->with(['shopData.variations', 'productCategories']);
+                do_falcon_action('falcon_product_query', $query, []);
+
+                return $query;
+            };
 
             $related = collect();
             if (!empty($categoryIds)) {
@@ -137,12 +144,14 @@ if (!function_exists('falcon_cart_cross_sells')) {
         }
 
         try {
-            return Post::whereIn('posts.id', $ids)
+            $query = Post::whereIn('posts.id', $ids)
                 ->where('posts.type', 'product')
                 ->where('posts.status', 'published')
                 ->with(['shopData.variations', 'productCategories'])
-                ->limit($limit)
-                ->get();
+                ->limit($limit);
+            do_falcon_action('falcon_product_query', $query, []);
+
+            return $query->get();
         } catch (Throwable $e) {
             Log::error('Cross-sell lookup failed: '.$e->getMessage());
 

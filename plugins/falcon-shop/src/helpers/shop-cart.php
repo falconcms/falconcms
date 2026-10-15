@@ -18,7 +18,15 @@ if (!function_exists('get_falcon_cart_subtotal')) {
             $subtotal += $price * $item['quantity'];
         }
 
-        return $subtotal;
+        // Shipping thresholds, coupon minimums, tax and the order row all read this figure, so
+        // a change made here reaches every one of them. Per-item prices belong in
+        // falcon_product_prices instead, so the cart lines still add up to it.
+        if (!has_falcon_filter('falcon_cart_subtotal')) {
+            return $subtotal;
+        }
+        $filtered = apply_falcon_filters('falcon_cart_subtotal', $subtotal, $cart);
+
+        return is_numeric($filtered) ? max(0.0, (float) $filtered) : $subtotal;
     }
 }
 
@@ -111,9 +119,20 @@ if (!function_exists('falcon_refresh_cart_prices')) {
             if ($sale !== null && $endsAt && strtotime((string) $endsAt) < time()) {
                 $sale = null;
             }
-            if ($sale !== null && $sale <= 0) {
-                $sale = null;
-            }
+
+            // The same filter the product pages price through, told the line's quantity so a
+            // tiered (wholesale) price follows the quantity as it changes. Zero-or-less sale
+            // prices come back as null from here.
+            $pair = falcon_filter_product_prices(
+                $price,
+                $sale,
+                (int) ($item['id'] ?? 0),
+                !empty($item['variation_id']) ? (int) $item['variation_id'] : null,
+                max(1, (int) ($item['quantity'] ?? 1)),
+                'cart'
+            );
+            $price = round($pair['price'], 2);
+            $sale = $pair['sale_price'] !== null ? round($pair['sale_price'], 2) : null;
 
             $oldPrice = round((float) ($item['price'] ?? 0), 2);
             $oldSale = isset($item['sale_price']) && $item['sale_price'] !== null && $item['sale_price'] !== ''
@@ -247,6 +266,19 @@ if (!function_exists('get_falcon_cart_total')) {
             $total += $tax;
         }
 
-        return max(0, $total);
+        // The figure the customer is charged. The parts travel with it so a callback adding a
+        // surcharge or a credit can see what the total was built from.
+        if (!has_falcon_filter('falcon_cart_total')) {
+            return max(0, $total);
+        }
+        $filtered = apply_falcon_filters('falcon_cart_total', $total, [
+            'subtotal' => (float) $subtotal,
+            'shipping' => (float) $shipping,
+            'tax' => (float) $tax,
+            'discount' => (float) $totalDiscount,
+            'cart' => $cart,
+        ]);
+
+        return max(0, is_numeric($filtered) ? (float) $filtered : $total);
     }
 }

@@ -13,6 +13,21 @@ use FalconShop\Templates;
  */
 class AssignedShopPages
 {
+    /** This request is drawing one of the visitor's own pages. */
+    public static function markPersonal(): void
+    {
+        falcon_request_memo('shop_personal_page')['served'] = true;
+    }
+
+    /**
+     * `falcon_page_cache_is_personal`: asked again once the page has run, so a cart, checkout,
+     * account or wishlist page is known by what it drew, not by its address.
+     */
+    public static function personal($personal, $request = null): bool
+    {
+        return (bool) $personal || falcon_request_memo('shop_personal_page')->offsetExists('served');
+    }
+
     public static function respond($response, Post $post)
     {
         if ($response !== null) {
@@ -25,6 +40,12 @@ class AssignedShopPages
         $checkoutPageId = get_shop_option('shop_checkout_page_id');
         $accountPageId = get_shop_option('shop_account_page_id');
         $wishlistPageId = (int) get_shop_option('shop_wishlist_page_id');
+
+        // Cart, checkout, account and wishlist belong to one visitor (a basket, a sign-in form and
+        // its CSRF token): never stored by the page cache, at whatever address the owner gave them.
+        if (in_array((int) $post->id, array_map('intval', array_filter([$cartPageId, $checkoutPageId, $accountPageId, $wishlistPageId])), true)) {
+            self::markPersonal();
+        }
 
         // Cart / checkout / account / wishlist are the transactional storefront — a Pro feature that
         // locks the moment the freemium grace window ends (strict = license OR grace, so
@@ -101,6 +122,9 @@ class AssignedShopPages
                         ->orWhere('status', 'like', "%{$s}%");
                 });
             }
+            // Narrow or extend the customer's order list (hide a vendor's sub-orders, say).
+            do_falcon_action('falcon_account_orders_query', $ordersQuery, auth()->user());
+
             $orders = $ordersQuery->latest()->paginate(8)->withQueryString();
 
             return view(Templates::view('ecommerce.account'), compact('orders', 'post'));

@@ -82,7 +82,7 @@
                         @else
                             <img src="{{ falcon_placeholder_image() }}" alt="Placeholder" class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-70">
                         @endif
-                        @if($product->shopData && $product->shopData->active_sale_price)
+                        @if($product->shopData && $product->shopData->current_sale_price && falcon_can_see_prices($product))
                             <span class="absolute top-3 left-3 bg-sky-100 text-sky-700 text-[13px] font-bold px-3 py-1 rounded-full shadow uppercase tracking-wide z-10">Sale!</span>
                         @endif
                     </a>
@@ -98,19 +98,30 @@
                             <a href="{{ get_falcon_permalink($product) }}">{{ $product->title }}</a>
                         </h2>
                         <div class="text-heading font-bold text-[14px] mb-3">
-                            {{-- A variable product is priced by its variations, so it shows a range;
-                                 price_range is null for everything else and the single price stands. --}}
-                            @if($product->shopData && $product->shopData->price_range)
-                                <span>{{ $product->shopData->price_range }}</span>
-                            @elseif($product->shopData && $product->shopData->active_sale_price)
-                                <span class="line-through text-[#a5a5a5] font-normal mr-1.5">{{ falcon_price_format(falcon_display_price($product->shopData->price, $product->id)) }}</span>
-                                <span>{{ falcon_price_format(falcon_display_price($product->shopData->active_sale_price, $product->id)) }}</span>
+                            @if(falcon_can_see_prices($product))
+                                {{-- A variable product is priced by its variations, so it shows a range;
+                                     price_range is null for everything else and the single price stands. --}}
+                                @if($product->shopData && $product->shopData->price_range)
+                                    <span>{{ $product->shopData->price_range }}</span>
+                                @elseif($product->shopData && $product->shopData->current_sale_price)
+                                    <span class="line-through text-[#a5a5a5] font-normal mr-1.5">{{ falcon_price_format(falcon_display_price($product->shopData->current_price, $product->id)) }}</span>
+                                    <span>{{ falcon_price_format(falcon_display_price($product->shopData->current_sale_price, $product->id)) }}</span>
+                                @else
+                                    <span>{{ falcon_price_format(falcon_display_price($product->shopData->current_price ?? 0, $product->id)) }}</span>
+                                @endif
                             @else
-                                <span>{{ falcon_price_format(falcon_display_price($product->shopData->price ?? 0, $product->id)) }}</span>
+                                {!! falcon_hidden_price_html($product, 'price') !!}
                             @endif
                         </div>
                         <div class="mt-auto flex flex-wrap gap-2">
-                            @if(falcon_is_variable_product($product))
+                            @if(!falcon_can_see_prices($product))
+                                @php $hiddenCart = falcon_hidden_price_html($product, 'cart'); @endphp
+                                @if($hiddenCart !== '')
+                                    {!! $hiddenCart !!}
+                                @else
+                                    <a href="{{ get_falcon_permalink($product) }}" class="w-full text-center bg-white text-primary border border-primary px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-gray-50 transition-colors duration-200">See Detail</a>
+                                @endif
+                            @elseif(falcon_is_variable_product($product))
                                 <a href="{{ get_falcon_permalink($product) }}" class="w-full text-center bg-primary text-white px-4 py-2.5 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition-colors duration-200">
                                     Select Options
                                 </a>

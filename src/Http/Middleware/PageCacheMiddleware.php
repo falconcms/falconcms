@@ -121,6 +121,8 @@ class PageCacheMiddleware
             }
         }
 
-        return false;
+        // A plugin's own personal pages — a CMS page carrying a login form, say, whose CSRF
+        // token must never be served to the next visitor.
+        return (bool) apply_falcon_filters('falcon_page_cache_is_personal', false, $request);
     }
 }

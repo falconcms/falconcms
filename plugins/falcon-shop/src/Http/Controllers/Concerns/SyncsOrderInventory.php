@@ -46,6 +46,15 @@ trait SyncsOrderInventory
             $restock
                 ? $target->increment('stock_quantity', $item->quantity)
                 : $target->decrement('stock_quantity', $item->quantity);
+
+            do_falcon_action(
+                'falcon_product_stock_changed',
+                (int) $item->product_id,
+                $item->variation ? (int) $item->variation->id : null,
+                (int) $target->stock_quantity,
+                $restock ? (int) $item->quantity : -(int) $item->quantity,
+                $restock ? 'order_restocked' : 'order_reduced'
+            );
         }
     }
 }

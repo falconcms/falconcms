@@ -130,6 +130,9 @@ class ShopController extends Controller
                 ->orWhere('last_name', 'like', '%'.$request->s.'%');
         }
 
+        // Narrow or extend the admin order list (a vendor seeing only their own orders).
+        do_falcon_action('falcon_admin_orders_query', $query, $request);
+
         $orders = $query->latest()->paginate(10)->withQueryString();
 
         return view('falcon-shop::admin.shop.orders.index', compact('orders'));
@@ -300,6 +303,8 @@ class ShopController extends Controller
                 'refunded_amount' => round($alreadyRefunded + $refundAmount, 2),
                 'refund_log' => $log,
             ]);
+
+            do_falcon_action('falcon_order_refunded', $order, round($refundAmount, 2), 'admin');
 
             return [true, 'Refunded '.falcon_price_format($refundAmount, $order).' via Stripe.'];
         }

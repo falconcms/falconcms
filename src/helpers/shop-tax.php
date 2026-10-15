@@ -34,7 +34,7 @@ if (!function_exists('falcon_display_prices_including_tax')) {
     }
 }
 
-if (!function_exists('falcon_tax_rate_for')) {
+if (!function_exists('falcon_configured_tax_rate')) {
     /**
      * The tax rate that applies to a country, or null if none does.
      *
@@ -44,7 +44,7 @@ if (!function_exists('falcon_tax_rate_for')) {
      *
      * @return array{rate: float, name: string, shipping: bool}|null
      */
-    function falcon_tax_rate_for(?string $country): ?array
+    function falcon_configured_tax_rate(?string $country): ?array
     {
         if (!falcon_tax_enabled()) {
             return null;
@@ -87,6 +87,36 @@ if (!function_exists('falcon_tax_rate_for')) {
             'rate' => (float) ($match['rate'] ?? 0),
             'name' => trim((string) ($match['name'] ?? '')) ?: 'Tax',
             'shipping' => (string) ($match['shipping'] ?? '0') === '1',
+        ];
+    }
+}
+
+if (!function_exists('falcon_tax_rate_for')) {
+    /**
+     * The tax rate for a country: the configured one (falcon_configured_tax_rate()) after the
+     * `falcon_tax_rate` filter.
+     *
+     * The filter is how a plugin makes a customer tax-exempt (return null) or supplies a rate of
+     * its own. It is not consulted while tax is switched off — off means off.
+     *
+     * @return array{rate: float, name: string, shipping: bool}|null
+     */
+    function falcon_tax_rate_for(?string $country): ?array
+    {
+        if (!falcon_tax_enabled()) {
+            return null;
+        }
+
+        $rate = apply_falcon_filters('falcon_tax_rate', falcon_configured_tax_rate($country), $country);
+
+        if (!is_array($rate) || !isset($rate['rate']) || !is_numeric($rate['rate'])) {
+            return null;
+        }
+
+        return [
+            'rate' => (float) $rate['rate'],
+            'name' => trim((string) ($rate['name'] ?? '')) ?: 'Tax',
+            'shipping' => !empty($rate['shipping']),
         ];
     }
 }

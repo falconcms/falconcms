@@ -4,7 +4,9 @@ namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -20,7 +22,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $tax_status
  * @property string|null $backorders
  * @property array<string, mixed>|null $attributes_data
+ * @property Carbon|null $sale_ends_at
+ * @property bool|int|null $is_downloadable
+ * @property int|null $download_expiry_days
  * @property-read Collection<int, ProductVariation> $variations
+ * @property-read Collection<int, ProductDownload> $downloads
+ * @property-read Post|null $post
  */
 class ProductData extends Model
 {
@@ -137,9 +144,12 @@ class ProductData extends Model
 
         $prices = [];
         foreach ($variations as $variation) {
-            // What the shopper would actually pay for that variation.
-            $sale = $variation->sale_price !== null ? (float) $variation->sale_price : 0.0;
-            $effective = $sale > 0 ? $sale : (float) $variation->price;
+            // What the shopper would actually pay for that variation — through the
+            // falcon_product_prices filter, so a wholesale price shows in the range too.
+            $pair = function_exists('falcon_filter_product_prices')
+                ? falcon_filter_product_prices($variation->price, $variation->sale_price, (int) $this->post_id, (int) $variation->id)
+                : ['price' => (float) $variation->price, 'sale_price' => $variation->sale_price !== null ? (float) $variation->sale_price : null];
+            $effective = ($pair['sale_price'] ?? 0) > 0 ? (float) $pair['sale_price'] : (float) $pair['price'];
 
             if ($effective > 0) {
                 // Through the same tax conversion as every other price on the page.
@@ -190,6 +200,33 @@ class ProductData extends Model
     }
 
     /**
+     * The regular price the current shopper is shown, after the falcon_product_prices filter.
+     *
+     * Storefront templates read this and current_sale_price; `price` and `active_sale_price`
+     * stay the catalogue's own figures, which is what the admin form edits.
+     */
+    public function getCurrentPriceAttribute(): float
+    {
+        return $this->currentPrices()['price'];
+    }
+
+    /** The sale price the current shopper pays, after the filter; null when there is none. */
+    public function getCurrentSalePriceAttribute(): ?float
+    {
+        return $this->currentPrices()['sale_price'];
+    }
+
+    /** @return array{price: float, sale_price: float|null} */
+    public function currentPrices(): array
+    {
+        if (!function_exists('falcon_filter_product_prices')) {
+            return ['price' => (float) ($this->attributes['price'] ?? 0), 'sale_price' => $this->active_sale_price];
+        }
+
+        return falcon_filter_product_prices($this->attributes['price'] ?? 0, $this->active_sale_price, (int) $this->post_id);
+    }
+
+    /**
      * Can anything under this product actually be bought right now?
      *
      * A variable product is only as available as its variations: sell the last one of every size
@@ -199,6 +236,18 @@ class ProductData extends Model
      * through the shop kept advertising itself until it was edited by hand.
      */
     public function isInStock(): bool
+    {
+        $inStock = $this->catalogueInStock();
+
+        // A plugin may take a product off sale (a vendor on holiday, a wholesale-only item)
+        // or keep one buyable; the filter sees the catalogue's own answer first.
+        return function_exists('apply_falcon_filters')
+            ? (bool) apply_falcon_filters('falcon_product_is_in_stock', $inStock, $this)
+            : $inStock;
+    }
+
+    /** The stock answer from the catalogue alone, before any plugin has a say. */
+    protected function catalogueInStock(): bool
     {
         // An explicit "out of stock" on the parent wins over everything below it.
         if ($this->stock_status === 'outofstock') {
@@ -262,7 +311,8 @@ class ProductData extends Model
         return true;
     }
 
-    public function downloads()
+    /** @return HasMany<ProductDownload, $this> */
+    public function downloads(): HasMany
     {
         return $this->hasMany(ProductDownload::class, 'product_id');
     }
@@ -281,7 +331,8 @@ class ProductData extends Model
         return $this->hasMany(ProductVariation::class, 'product_id');
     }
 
-    public function post()
+    /** @return BelongsTo<Post, $this> */
+    public function post(): BelongsTo
     {
         return $this->belongsTo(Post::class, 'post_id');
     }

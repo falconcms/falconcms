@@ -111,6 +111,10 @@
                         <p class="text-[12px] text-[#646970] mt-1">The description is not prominent by default; however, some themes may show it.</p>
                     </td>
                 </tr>
+
+                {{-- A plugin's own fields, as table rows (<tr><th>…</th><td>…</td></tr>). Saved in
+                     falcon_admin_product_category_saved. --}}
+                <?php do_falcon_action('falcon_admin_product_category_fields', $category, 'edit'); ?>
             </table>
 
             <div class="mt-6 flex items-center space-x-4">

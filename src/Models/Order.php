@@ -3,7 +3,10 @@
 namespace FalconCms\Core\Models;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -16,12 +19,21 @@ use Illuminate\Support\Carbon;
  * @property string $order_number
  * @property string $status
  * @property float $subtotal
+ * @property float $shipping_total
+ * @property float $tax_total
+ * @property float $discount_total
  * @property float $total
  * @property string|null $customer_email
+ * @property string|null $customer_phone
+ * @property string|null $first_name
+ * @property string|null $last_name
  * @property string|null $payment_method
  * @property string|null $transaction_id
+ * @property string|null $shipping_method
+ * @property array<string, mixed>|null $meta
  * @property Carbon|null $paid_at
  * @property bool $is_read
+ * @property-read Collection<int, OrderItem> $items
  */
 class Order extends Model
 {
@@ -66,7 +78,30 @@ class Order extends Model
             if ($order->wasChanged('paid_at') && $order->paid_at !== null) {
                 $order->statusHistory()->create(['status' => 'payment', 'note' => 'Your order is paid.']);
             }
+
+            // On the model rather than in each controller, so every path that moves an order —
+            // the admin screen, bulk actions, the Stripe webhook, a plugin's own code — fires it.
+            // A query-builder update skips model events; markOrderPaid() fires it by hand.
+            if ($order->wasChanged('status')) {
+                static::fireStatusChanged($order, (string) $order->getOriginal('status'), (string) $order->status);
+            }
         });
+    }
+
+    /**
+     * Fire `falcon_order_status_changed` and the status-specific `falcon_order_status_{status}`.
+     *
+     * Public so a writer that bypasses Eloquent (a conditional UPDATE used as a lock) can still
+     * announce the change once it has won.
+     */
+    public static function fireStatusChanged(Order $order, string $oldStatus, string $newStatus): void
+    {
+        if ($oldStatus === $newStatus || !function_exists('do_falcon_action')) {
+            return;
+        }
+
+        do_falcon_action('falcon_order_status_changed', $order, $oldStatus, $newStatus);
+        do_falcon_action('falcon_order_status_'.$newStatus, $order, $oldStatus);
     }
 
     // Call this manually after every status change to record it with an optional note.
@@ -75,12 +110,14 @@ class Order extends Model
         $this->statusHistory()->create(['status' => $status, 'note' => $note ?: null]);
     }
 
-    public function items()
+    /** @return HasMany<OrderItem, $this> */
+    public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'order_id');
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

@@ -87,6 +87,33 @@ if (!function_exists('falcon_shipping_methods')) {
             ];
         }
 
+        // Plugins add, reprice or remove methods here — before the free-shipping coupon and
+        // "hide paid options" rules below, so those rules treat a plugin's methods exactly like
+        // the built-in ones. Costs are re-derived on every call and never read from a request.
+        $filtered = apply_falcon_filters('falcon_shipping_methods', $methods, $country, session()->get('falcon_cart', []));
+        if (is_array($filtered)) {
+            $clean = [];
+            foreach ($filtered as $key => $method) {
+                if (!is_array($method)) {
+                    continue;
+                }
+                $id = (string) ($method['id'] ?? $key);
+                if ($id === '') {
+                    continue;
+                }
+                $clean[$id] = [
+                    'id' => $id,
+                    'label' => (string) ($method['label'] ?? $id),
+                    'cost' => max(0.0, (float) ($method['cost'] ?? 0)),
+                ];
+            }
+            // A callback that removes everything would leave nothing to pick; keep the
+            // built-in list rather than a checkout that cannot be completed.
+            if (!empty($clean)) {
+                $methods = $clean;
+            }
+        }
+
         // A Free Shipping coupon zeroes every method rather than discounting the cart, so the
         // saving lands on the shipping line where the customer expects to see it.
         if (falcon_cart_has_free_shipping_coupon()) {

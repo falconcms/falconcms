@@ -1221,6 +1221,24 @@ and focus keyword (and, for keywords, the page's text, headings and description)
 Ids of pages drawn by templates rather than their own content (the shop adds its pages). The SEO
 Audit does not report them as empty.
 
+#### `falcon_customer_addresses` (filter)
+**Args:** `Collection $addresses, User $user`
+
+The signed-in customer's saved addresses, for the checkout's "Use a saved address" picker and the
+pre-filled defaults. Add addresses they may also use (a company's shared delivery addresses).
+
+#### `falcon_admin_order_sidebar` (action)
+**Args:** `Order $order`
+
+Prints a box in the admin order screen's sidebar, above Customer Details. Use the `wp-metabox`
+markup to match.
+
+#### `falcon_page_cache_is_personal` (filter)
+**Args:** `$personal, $request`
+
+Return `true` to keep a page out of the static page cache: one that belongs to the visitor, or
+carries a form whose CSRF token must not be served to the next visitor (the wholesale login page).
+
 #### Hooks the core fires for Falcon SEO
 
 The Falcon SEO plugin does all its work through these. Another plugin can use them too.
@@ -1249,6 +1267,484 @@ The Falcon SEO plugin does all its work through these. Another plugin can use th
 | `falcon_admin_path_access` | filter | `null, $path, $user, $request` | Decide an admin path no menu owns: `true` lets the user in, `false` denies, `null` leaves it to the menus. |
 | `falcon_keyword_countries` | filter | `null, $keyword, $countries, $post` | Figures for a keyword by country for the Analysis tab: `['source', 'days', 'rows' => [['country', 'name', 'impressions', 'clicks', 'position']], 'total', 'error']`. The Search Console plugin answers it with Google's numbers. |
 | `falcon_seo_metabox_tabs` / `falcon_seo_metabox_panels` | action | `$post` | Add a tab to the editor's SEO box: a `.seo-tab-btn` with id `seo-tab-btn-{name}` and a `.seo-tab-content` with id `seo-tab-{name}`. Opening it fires the `falcon-seo-tab` DOM event with `detail.tab`. |
+
+---
+
+## E-commerce Logic Hooks
+
+The hooks above change how the shop **looks**. These change what it **does**: prices, the cart,
+coupons, shipping, tax, checkout, payment, orders and stock. They are what a wholesale,
+role-pricing, B2B or multi-vendor plugin is built on.
+
+Rules that apply to all of them:
+
+- **No hook registered, no change.** Every figure is exactly what it was without the hook.
+- **What a filter returns is checked.** A wrong type is ignored and the shop's own value is kept.
+  A price below zero becomes 0. A sale price of 0 or less becomes "no sale".
+- **Validation filters** (`*_validation`, `falcon_coupon_is_valid`) take `true`. Return `true` to
+  allow. Return a string to refuse: the string is the message the shopper sees.
+- Money is always recalculated on the server. No hook value is ever read from the browser.
+
+### Prices and catalogue
+
+#### `falcon_product_prices` (filter)
+**Args:** `array $prices, int $postId, ?int $variationId, int $quantity, string $context`
+
+`$prices` is `['price' => float, 'sale_price' => float|null]`. `$context` is `'display'` (a page
+showing the price) or `'cart'` (a cart line being priced; the order is written from it).
+
+Every storefront price goes through this one filter: product cards, the single product page,
+the variable product's price range and its variation prices, the wishlist, the builder Product
+Meta element, the cart, and therefore the order. The page and the charge cannot disagree.
+
+In the cart, `$quantity` is the line's quantity. The cart is re-priced every time it changes, so
+a tiered price follows the quantity.
+
+```php
+// Wholesale: 20% off for the "wholesale" role, 30% off from 50 pieces.
+add_falcon_filter('falcon_product_prices', function ($prices, $postId, $variationId, $quantity, $context) {
+    if (!auth()->check() || auth()->user()->role?->slug !== 'wholesale') {
+        return $prices;
+    }
+    $off = ($context === 'cart' && $quantity >= 50) ? 0.30 : 0.20;
+
+    // Show the retail price struck through and the wholesale price as the "sale" price.
+    return ['price' => $prices['price'], 'sale_price' => round($prices['price'] * (1 - $off), 2)];
+});
+```
+
+Storefront templates read `$product->shopData->current_price` and `current_sale_price`, which go
+through this filter. `price` and `active_sale_price` stay the catalogue's own numbers (the admin
+edits those). In PHP, use `falcon_product_prices($product, $variation = null, $quantity = 1)`.
+
+> **Page cache:** signed-in visitors never get a cached page, so prices that depend on the
+> customer are safe. Do not change guest prices based on something only in the session. The
+> cached page would show it to every guest.
+
+> **Theme copies:** a theme that copied the shop templates before this release still shows the
+> catalogue price. The cart still charges the filtered price. Run `php artisan shop:template` to
+> see which copies are behind (their `@version` is lower).
+
+#### `falcon_product_is_in_stock` (filter)
+**Args:** `bool $inStock, ProductData $product`
+
+Whether a product can be bought. Used by the stock badge and by `$post->is_in_stock`. Use it to
+take products off sale while a vendor is on holiday, or to hide wholesale-only items from retail
+customers.
+
+#### `falcon_product_query` (action)
+**Args:** `Builder $query, array $filters`
+
+Runs on every storefront product listing: the shop archive, category and tag archives, and the
+assigned Shop page. Change the query in place.
+
+```php
+// A vendor's store page: /product?vendor=12
+add_falcon_action('falcon_product_query', function ($query, $filters) {
+    if ($vendor = (int) request('vendor')) {
+        $query->whereIn('posts.id', VendorProduct::where('vendor_id', $vendor)->pluck('post_id'));
+    }
+});
+```
+
+### Cart
+
+#### `falcon_add_to_cart_validation` (filter)
+**Args:** `true $valid, Product $product, ?ProductVariation $variation, int $quantity, Request $request`
+
+Allow or refuse an add to cart. `$quantity` is what the line will hold once this is added
+(already in the cart plus what is being added). Return a string to refuse with that message.
+
+```php
+add_falcon_filter('falcon_add_to_cart_validation', function ($valid, $product, $variation, $quantity) {
+    return is_wholesale_customer() && $quantity < 10 ? 'Wholesale orders start at 10 pieces.' : $valid;
+});
+```
+
+#### `falcon_update_cart_validation` (filter)
+**Args:** `true $valid, string $cartKey, array $item, int $newQuantity`
+
+The same, for a quantity change on the cart page. A refused line keeps its old quantity, and the
+cart page reloads to show what the basket really holds.
+
+#### `falcon_add_to_cart` (action)
+**Args:** `string $cartKey, array $item, Product $product, ?ProductVariation $variation, int $quantityAdded`
+
+After an item is added and priced.
+
+#### `falcon_cart_updated` (action)
+**Args:** `array $cart`
+
+After the cart page saves new quantities. The cart has already been re-priced.
+
+#### `falcon_cart_item_removed` (action)
+**Args:** `string $cartKey, array $item`
+
+#### `falcon_cart_subtotal` (filter)
+**Args:** `float $subtotal, array $cart`
+
+The cart subtotal. Free-shipping thresholds, coupon minimums, tax and the order all use it. To
+change a line's price, use `falcon_product_prices` instead, so the lines still add up to the
+subtotal.
+
+#### `falcon_cart_total` (filter)
+**Args:** `float $total, array $parts`
+
+The amount charged. `$parts` holds `subtotal`, `shipping`, `tax`, `discount` and `cart`. Use it
+for a surcharge or a credit. The order is written with this total.
+
+### Coupons and promotions
+
+#### `falcon_coupon_is_valid` (filter)
+**Args:** `true $valid, array $coupon, array $cart`
+
+Asked when a coupon is applied **and again on every cart change**. A coupon that stops
+qualifying is removed. Return a string to refuse with that message.
+
+#### `falcon_coupon_discount_amount` (filter)
+**Args:** `float $discount, array $coupon, array $cart, ?float $base`
+
+What one coupon takes off. The result is never negative and never more than the amount it is
+taken from.
+
+#### `falcon_coupon_applied` / `falcon_coupon_removed` (actions)
+**Args:** `array $coupon, array $cart` / `string $code`
+
+#### `falcon_cart_promotions` (filter)
+**Args:** `array $promotions, array $cart`
+
+The automatic promotions the cart has earned. Each entry is
+`['id', 'name', 'summary', 'discount', 'applications', 'units']`. Return `[]` to turn
+promotions off (for example for wholesale customers). Entries without a positive `discount`
+are dropped.
+
+### Shipping and tax
+
+#### `falcon_shipping_methods` (filter)
+**Args:** `array $methods, ?string $country, array $cart`
+
+The shipping methods on offer, keyed by id: `['id' => …, 'label' => …, 'cost' => float]`. Add
+your own (freight, vendor shipping), change prices, or remove methods. The free-shipping coupon
+and "hide paid options when free" rules run after this filter, so they apply to your methods
+too. If the filter removes every method, the built-in list is kept.
+
+#### `falcon_tax_rate` (filter)
+**Args:** `?array $rate, ?string $country`
+
+The rate for a country: `['rate' => float, 'name' => string, 'shipping' => bool]`, or `null`.
+Return `null` for a tax-exempt customer. Not called while tax is turned off.
+
+#### `falcon_cart_tax` (filter)
+**Args:** `float $tax, array $cart`
+
+The cart's tax. The tax line, the total and the order all use it.
+
+### Checkout and orders
+
+#### `falcon_checkout_validation_rules` / `falcon_checkout_validation_attributes` (filters)
+**Args:** `array $rules, Request $request` / `array $labels, Request $request`
+
+The Laravel validation rules for placing an order, and the field names used in error messages.
+
+```php
+add_falcon_filter('falcon_checkout_validation_rules', function ($rules) {
+    if (is_wholesale_customer()) {
+        $rules['company_vat'] = 'required|string|max:30';
+    }
+    return $rules;
+});
+```
+
+#### `falcon_checkout_validation` (filter)
+**Args:** `true $valid, Request $request, array $cart`
+
+Last check before anything is saved: no account, no stock taken, no order. Return a string to
+stop the order with that message (for example a minimum order value).
+
+#### `falcon_payment_gateways` (filter)
+**Args:** `array $gateways`
+
+The payment methods on offer: `['id', 'title', 'desc', 'type' => 'offline'|'online']`. Checkout
+only accepts a method that is in this list.
+
+- An **offline** gateway places the order right away, like Cash on Delivery.
+- An **online** gateway of your own needs the two filters below.
+
+#### `falcon_payment_redirect_url` (filter)
+**Args:** `null $url, Order $order, string $method`
+
+Start a payment for your own online gateway. Return the provider's `https://` payment URL, or
+`null` if it could not start (the order stays pending). The provider must send the customer
+back to `route('shop.payment.return', $order->id)` with `?gateway=<your id>`.
+
+#### `falcon_payment_return_verified` (filter)
+**Args:** `false $verified, Order $order, string $gateway, Request $request`
+
+The customer has come back from your gateway. **Check the payment with the provider from the
+server.** Never trust the query string alone. Return `true`, or the provider's transaction id, to
+mark the order paid. Anything else leaves it pending. An order is marked paid only once, however
+often the customer comes back.
+
+```php
+add_falcon_filter('falcon_payment_gateways', function ($g) {
+    $g['bkash'] = ['id' => 'bkash', 'title' => 'bKash', 'desc' => 'Pay with bKash', 'type' => 'online'];
+    return $g;
+});
+add_falcon_filter('falcon_payment_redirect_url', function ($url, $order, $method) {
+    return $method === 'bkash' ? Bkash::createPayment($order)->redirectUrl : $url;
+});
+add_falcon_filter('falcon_payment_return_verified', function ($ok, $order, $gateway, $request) {
+    if ($gateway !== 'bkash') return $ok;
+    $payment = Bkash::execute($request->query('paymentID'));
+    return $payment->completed && $payment->amount >= $order->total ? $payment->trxID : false;
+});
+```
+
+#### `falcon_order_number` (filter)
+**Args:** `string $number, Request $request`
+
+The order number the customer sees. If the number is empty or already used, the default random
+number is used instead.
+
+#### `falcon_order_data` (filter)
+**Args:** `array $orderData, array $cart, Request $request`
+
+The order row before it is saved. Usually you add to `meta`. The money columns are already
+calculated. Change them only if you change the payment side to match.
+
+#### `falcon_order_item_data` (filter)
+**Args:** `array $itemData, array $cartItem, Order $order`
+
+Each order item row before it is saved (for example `meta.vendor_id`). The item always belongs to
+the order being placed.
+
+#### `falcon_order_created` (action)
+**Args:** `Order $order, array $cart, Request $request`
+
+The order and all its items are saved and the stock is taken. Payment has not started yet. Use
+it to split an order per vendor, send it to an ERP, or record commission.
+
+```php
+// Multi-vendor: one sub-order per vendor.
+add_falcon_action('falcon_order_created', function ($order) {
+    $order->items->groupBy(fn ($i) => $i->meta['vendor_id'] ?? 0)
+        ->each(fn ($items, $vendorId) => VendorOrder::createFrom($order, $vendorId, $items));
+});
+```
+
+#### `falcon_order_finalized` (action)
+**Args:** `Order $order`
+
+The order is confirmed: an offline order was just placed, or an online order was paid. Order
+emails are sent and the cart is cleared. Runs once per order.
+
+#### `falcon_order_paid` (action)
+**Args:** `Order $order`
+
+An online or zero-total order was paid. Runs once per order, from whichever arrives first: the
+browser coming back or the Stripe webhook.
+
+#### `falcon_order_status_changed` (action) and `falcon_order_status_{status}` (action)
+**Args:** `Order $order, string $oldStatus, string $newStatus` / `Order $order, string $oldStatus`
+
+Runs on **every** status change, wherever it comes from: the admin order screen, bulk actions,
+refunds, the Stripe webhook, payment, or your own `$order->update(['status' => …])`. Only runs
+when the status really changes. Example: `falcon_order_status_completed`.
+
+#### `falcon_order_refunded` (action)
+**Args:** `Order $order, float $amount, string $source`
+
+A refund was recorded. `$amount` is this refund only. `$source` is `'admin'` or `'stripe_webhook'`.
+
+#### `falcon_order_payment_failed` (action)
+**Args:** `Order $order, string $gateway`
+
+#### `falcon_product_stock_changed` (action)
+**Args:** `int $postId, ?int $variationId, int $newQuantity, int $change, string $reason`
+
+Stock moved. `$reason` is `'checkout'` (taken when an order is placed), `'order_restocked'`
+(cancelled, failed or refunded) or `'order_reduced'` (an order moved back to an active status).
+
+#### `falcon_customer_registered` (action)
+**Args:** `User $user, Request $request`
+
+A customer account was created at checkout.
+
+### Emails
+
+#### `falcon_order_admin_email_recipients` (filter)
+**Args:** `array $emails, Order $order`
+
+Who gets the "new order" email. Starts with the address in Shop settings. Invalid addresses are
+dropped.
+
+#### `falcon_order_email_subject` (filter)
+**Args:** `string $subject, Order $order, string $type, string $recipientType`
+
+The full subject of an order email. `$type` is `'placed'` or `'status_updated'`, and
+`$recipientType` is `'customer'` or `'admin'`. Order emails can be queued, so this may run in the
+queue worker. Do not rely on the current request.
+
+### Account, reviews, wishlist, admin
+
+#### `falcon_account_tabs` (filter) and `falcon_account_tab_content` (action)
+**Args:** `array $tabs, ?User $user` / `string $tab, User $user`
+
+Add a tab to My Account. A tab is `[slug, label, lucide icon]`, and the slug may use `a-z 0-9 _ -`.
+Print the tab's content from the action. The action only runs for tabs that are not built in.
+
+```php
+add_falcon_filter('falcon_account_tabs', fn ($tabs) => [...$tabs, ['vendor', 'My store', 'store']]);
+add_falcon_action('falcon_account_tab_content', function ($tab, $user) {
+    if ($tab === 'vendor') echo view('my-plugin::vendor-dashboard', compact('user'))->render();
+});
+```
+
+#### `falcon_account_orders_query` (action)
+**Args:** `Builder $query, User $user`
+
+The customer's order list on My Account.
+
+#### `falcon_admin_orders_query` (action)
+**Args:** `Builder $query, Request $request`
+
+The order list in Shop → Orders (for example to show a vendor only their own orders).
+
+#### `falcon_review_auto_approve` (filter) and `falcon_review_created` (action)
+**Args:** `bool $approve, array $data, ?User $user` / `Review $review`
+
+#### `falcon_wishlist_item_added` / `falcon_wishlist_item_removed` (actions)
+**Args:** `int $productId, int $userId`
+
+### Hiding prices, and listing by a plugin's own prices
+
+#### `falcon_show_prices` (filter) and `falcon_hidden_price_html` (filter)
+**Args:** `bool $show, $product` / `string $html, $product, string $context`
+
+Whether the visitor may see a product's price and buy it. `falcon_can_see_prices($product)` asks
+the first filter. It is always true unless a plugin says otherwise. When it is false:
+
+- product cards, the shop archive, the product pages, the wishlist and the builder's Product Meta
+  element print `falcon_hidden_price_html($product, 'price')` in place of the price, and
+  `falcon_hidden_price_html($product, 'cart')` in place of the buy button (a "See Detail" link
+  when that is empty);
+- a variable product's variation prices are left out of the page source;
+- adding to the cart is refused (403). The message is the text of the `'cart'` HTML;
+- the product's structured data leaves out `offers`, so search engines do not get the price.
+
+```php
+// Prices for signed-in customers only.
+add_falcon_filter('falcon_show_prices', fn ($show) => $show && auth()->check());
+add_falcon_filter('falcon_hidden_price_html', fn ($html, $product, $context) => $context === 'cart'
+    ? '<a href="/account" class="btn">Log in to buy</a>'
+    : '<a href="/account">Log in to see prices</a>');
+```
+
+Guests share cached pages, so decide for all guests alike. Do not decide by something only in the
+session.
+
+#### `falcon_product_price_filter` and `falcon_product_price_sort` (filters)
+**Args:** `bool $handled, Builder $query, ?float $min, ?float $max` / `bool $handled, Builder $query, string $direction`
+
+The shop's price filter and price sort read the catalogue prices in SQL. A plugin that prices
+some shoppers differently can apply the range or the order itself: change `$query` and return
+`true`, and the catalogue version is skipped. Return `$handled` unchanged to leave it alone.
+`$direction` is `ASC` or `DESC`.
+
+#### `falcon_product_filter_options` (filter)
+**Args:** `array $options, array $productIds`
+
+The filter sidebar's options. A plugin with its own prices replaces `min_price` and `max_price`
+(the price band). `$productIds` are the products in the listing.
+
+#### Product listings
+`falcon_product_query` (above) now also runs for related products, upsells, cross-sells and
+promotion reward suggestions. A product a plugin hides is hidden everywhere.
+
+#### `falcon_cart_actions` (action)
+**Args:** `array $cart`
+
+Below the cart page's "Proceed to checkout" button. Print another way forward, for example
+"Request a quote".
+
+#### `falcon_admin_after_save_product` with mode `'variations'`
+The editor's "Save All Variations" button now fires `falcon_admin_after_save_product` too, with
+`$mode = 'variations'`. Data derived from the variations (a price index) stays current.
+
+### Admin screens for shop plugins
+
+These let a plugin add its own fields to the product editor, to each variation, to product
+categories and to users, and save them. Falcon Wholesale is built on them.
+
+#### `falcon_admin_product_data_tabs` (filter) and `falcon_admin_product_data_panels` (action)
+**Args:** `array $tabs, ?Post $post` / `?Post $post`
+
+Add a tab to the product editor's Product Data box. A tab is
+`['id' => 'my-tab', 'label' => 'My tab', 'icon' => 'storefront', 'show' => "productType !== 'variable'"]`.
+`icon` is a Material Symbols name. `show` is optional: an Alpine expression that decides when the
+tab is visible. The id may use `a-z 0-9 _ -` and cannot be one of the built-in tabs.
+
+Print the panel from the action as `<div x-show="activeTab === 'my-tab'">…</div>`. It is inside
+the product form and its Alpine scope (`productType`, `variations`…). Its fields are posted with the
+product, so save them in `falcon_admin_after_save_product`.
+
+```php
+add_falcon_filter('falcon_admin_product_data_tabs', fn ($tabs) => [...$tabs, ['id' => 'supplier', 'label' => 'Supplier', 'icon' => 'local_shipping']]);
+add_falcon_action('falcon_admin_product_data_panels', function ($post) {
+    echo '<div x-show="activeTab === \'supplier\'"><input type="hidden" name="supplier_panel" value="1">'
+       . '<input name="supplier_code" value="'.e(supplier_code($post)).'"></div>';
+});
+add_falcon_action('falcon_admin_after_save_product', function ($post, $shopData, $request) {
+    if ($request->has('supplier_panel')) {
+        save_supplier_code($post, $request->input('supplier_code'));
+    }
+});
+```
+
+Add a hidden marker field, as above, and save only when it is present. Then a save from a screen
+without your panel never clears your data.
+
+#### `falcon_admin_variation_fields` (action) and `falcon_admin_variation_meta` (filter)
+**Args:** `?Post $post` / `array $meta, array $input, ProductData $shopData`
+
+Variations are deleted and recreated every time a product is saved, so their ids change. Store
+per-variation data in the variation's own **`meta`** column (`ProductVariation::$meta`, an array),
+not in a table keyed by variation id.
+
+The action prints once inside the editor's variation loop, where `variation` and `vIndex` are in
+scope. Bind your field to `variation.meta.<your key>` and name it
+`'variations['+vIndex+'][meta][<your key>]'`:
+
+```php
+add_falcon_action('falcon_admin_variation_fields', function () {
+    echo '<div class="md:col-span-2" x-init="variation.meta = variation.meta || {}">'
+       . '<input x-model="variation.meta.supplier_code" :name="\'variations[\'+vIndex+\'][meta][supplier_code]\'">'
+       . '</div>';
+});
+```
+
+Both the Save button and the editor's "Save All Variations" button save it. The editor sends each
+variation's whole `meta` back on every save, so a key whose field is not on the page (for example
+because its plugin is turned off) is kept. Use the filter to check or clean what is stored. Return
+the array. An empty array is stored as `null`.
+
+#### `falcon_admin_product_category_fields` (action) and `falcon_admin_product_category_saved` (action)
+**Args:** `?ProductCategory $category, string $context` / `ProductCategory $category, Request $request, string $mode`
+
+Fields on the product category screens. `$context` is `'add'` (the "Add New Category" form: print
+`<div class="mb-4">` blocks) or `'edit'` (print `<tr><th>…</th><td>…</td></tr>` rows). `$mode` is
+`'create'` or `'update'`.
+
+#### `falcon_admin_user_form_fields` (action) and `falcon_admin_user_saved` (action)
+**Args:** `?User $user` / `User $user, Request $request, string $mode`
+
+Rows (`<tr><th>…</th><td>…</td></tr>`) on the Add User and Edit User screens (`$user` is `null` on
+Add User), and the save after the user is created or updated. `$mode` is `'create'` or `'update'`.
+
+#### `falcon_admin_user_role_cell` (action)
+**Args:** `User $user`
+
+Print a badge after the role in the Users list.
 
 ---
 
@@ -1307,7 +1803,7 @@ return [
 
 ## Complete Hook List
 
-### Actions (90 total)
+### Actions (120 total)
 
 | Hook | Args |
 |---|---|
@@ -1332,6 +1828,7 @@ return [
 | `falcon_admin_before_delete_product` | `$post` |
 | `falcon_admin_after_delete_product` | `$postId, $title` |
 | `falcon_admin_order_item_meta` | `$item` |
+| `falcon_admin_order_sidebar` | `$order` |
 | `falcon_before_single_product` | `$post` |
 | `falcon_after_single_product` | `$post` |
 | `falcon_before_product_images` | `$post` |
@@ -1401,8 +1898,37 @@ return [
 | `falcon_admin_list_seo_cell` | `$post` |
 | `falcon_dashboard_widgets` | — |
 | `falcon_install_defaults` | — |
+| `falcon_product_query` | `$query, $filters` |
+| `falcon_add_to_cart` | `$cartKey, $item, $product, $variation, $quantity` |
+| `falcon_cart_updated` | `$cart` |
+| `falcon_cart_item_removed` | `$cartKey, $item` |
+| `falcon_coupon_applied` | `$coupon, $cart` |
+| `falcon_coupon_removed` | `$code` |
+| `falcon_customer_registered` | `$user, $request` |
+| `falcon_order_created` | `$order, $cart, $request` |
+| `falcon_order_finalized` | `$order` |
+| `falcon_order_paid` | `$order` |
+| `falcon_order_status_changed` | `$order, $oldStatus, $newStatus` |
+| `falcon_order_status_{status}` | `$order, $oldStatus` |
+| `falcon_order_refunded` | `$order, $amount, $source` |
+| `falcon_order_payment_failed` | `$order, $gateway` |
+| `falcon_product_stock_changed` | `$postId, $variationId, $newQuantity, $change, $reason` |
+| `falcon_account_tab_content` | `$tab, $user` |
+| `falcon_account_orders_query` | `$query, $user` |
+| `falcon_admin_orders_query` | `$query, $request` |
+| `falcon_review_created` | `$review` |
+| `falcon_wishlist_item_added` | `$productId, $userId` |
+| `falcon_wishlist_item_removed` | `$productId, $userId` |
+| `falcon_admin_product_data_panels` | `$post` |
+| `falcon_admin_variation_fields` | `$post` |
+| `falcon_admin_product_category_fields` | `$category, $context` |
+| `falcon_admin_product_category_saved` | `$category, $request, $mode` |
+| `falcon_admin_user_form_fields` | `$user` |
+| `falcon_admin_user_saved` | `$user, $request, $mode` |
+| `falcon_admin_user_role_cell` | `$user` |
+| `falcon_cart_actions` | `$cart` |
 
-### Filters (44 total)
+### Filters (78 total)
 
 | Hook | Args |
 |---|---|
@@ -1450,3 +1976,37 @@ return [
 | `falcon_link_suggestions` | `$result, $context` |
 | `falcon_keyword_suggestions` | `$result, $context` |
 | `falcon_template_page_ids` | `$ids` |
+| `falcon_page_cache_is_personal` | `$personal, $request` |
+| `falcon_customer_addresses` | `$addresses, $user` |
+| `falcon_product_prices` | `$prices, $postId, $variationId, $quantity, $context` |
+| `falcon_product_is_in_stock` | `$inStock, $product` |
+| `falcon_add_to_cart_validation` | `$valid, $product, $variation, $quantity, $request` |
+| `falcon_update_cart_validation` | `$valid, $cartKey, $item, $quantity` |
+| `falcon_cart_subtotal` | `$subtotal, $cart` |
+| `falcon_cart_total` | `$total, $parts` |
+| `falcon_coupon_is_valid` | `$valid, $coupon, $cart` |
+| `falcon_coupon_discount_amount` | `$discount, $coupon, $cart, $base` |
+| `falcon_cart_promotions` | `$promotions, $cart` |
+| `falcon_shipping_methods` | `$methods, $country, $cart` |
+| `falcon_tax_rate` | `$rate, $country` |
+| `falcon_cart_tax` | `$tax, $cart` |
+| `falcon_checkout_validation_rules` | `$rules, $request` |
+| `falcon_checkout_validation_attributes` | `$labels, $request` |
+| `falcon_checkout_validation` | `$valid, $request, $cart` |
+| `falcon_payment_gateways` | `$gateways` |
+| `falcon_payment_redirect_url` | `$url, $order, $method` |
+| `falcon_payment_return_verified` | `$verified, $order, $gateway, $request` |
+| `falcon_order_number` | `$number, $request` |
+| `falcon_order_data` | `$orderData, $cart, $request` |
+| `falcon_order_item_data` | `$itemData, $cartItem, $order` |
+| `falcon_order_admin_email_recipients` | `$emails, $order` |
+| `falcon_order_email_subject` | `$subject, $order, $type, $recipientType` |
+| `falcon_account_tabs` | `$tabs, $user` |
+| `falcon_review_auto_approve` | `$approve, $data, $user` |
+| `falcon_admin_product_data_tabs` | `$tabs, $post` |
+| `falcon_admin_variation_meta` | `$meta, $input, $shopData` |
+| `falcon_show_prices` | `$show, $product` |
+| `falcon_hidden_price_html` | `$html, $product, $context` |
+| `falcon_product_price_filter` | `$handled, $query, $min, $max` |
+| `falcon_product_price_sort` | `$handled, $query, $direction` |
+| `falcon_product_filter_options` | `$options, $productIds` |

@@ -1,4 +1,4 @@
-{{-- @version 1.0.1 --}}
+{{-- @version 1.0.3 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', $post->title)
@@ -27,13 +27,26 @@
     // not in the template, because the price is painted by JavaScript after the page loads —
     // leaving it raw would show a tax-free price the moment a shopper picks a variation, while
     // every other card on the site shows the converted one.
-    $variationsForJs = $variations->map(function ($v) use ($post) {
+    $pricesVisible = falcon_can_see_prices($post);
+    $variationsForJs = $variations->map(function ($v) use ($post, $pricesVisible) {
         $row = is_array($v) ? $v : $v->toArray();
 
-        $row['price'] = falcon_display_price((float) ($row['price'] ?? 0), $post->id);
-        if (!empty($row['sale_price'])) {
-            $row['sale_price'] = falcon_display_price((float) $row['sale_price'], $post->id);
+        // Hidden prices stay out of the page source too, not just off the screen.
+        if (!$pricesVisible) {
+            $row['price'] = null;
+            $row['sale_price'] = null;
+
+            return $row;
         }
+
+        // Through falcon_product_prices first, so a customer-specific (wholesale) price is the
+        // one painted when a variation is picked — the cart charges the same figure.
+        // A variation's sale ends with its parent's sale_ends_at, as it does in the cart.
+        $saleOver = !empty($post->shopData->sale_ends_at) && !$post->shopData->sale_ends_at->isFuture();
+        $pair = falcon_filter_product_prices($row['price'] ?? 0, $saleOver ? null : ($row['sale_price'] ?? null), (int) $post->id, isset($row['id']) ? (int) $row['id'] : null);
+
+        $row['price'] = falcon_display_price($pair['price'], $post->id);
+        $row['sale_price'] = $pair['sale_price'] !== null ? falcon_display_price($pair['sale_price'], $post->id) : null;
 
         return $row;
     })->values();
@@ -122,6 +135,9 @@
                 <?php do_falcon_action('falcon_variable_after_product_title', $post); ?>
                 
                 <?php do_falcon_action('falcon_variable_before_product_price', $post); ?>
+                @if(!$pricesVisible)
+                <div class="mb-6 text-[15px]">{!! falcon_hidden_price_html($post, 'price') !!}</div>
+                @else
                 <div class="text-[28px] font-medium text-gray-900 mb-6 flex items-center gap-3">
                     <template x-if="selectedVariation && selectedVariation.price">
                         <div class="flex items-center gap-3">
@@ -137,9 +153,10 @@
                         </div>
                     </template>
                     <template x-if="!selectedVariation">
-                        <span class="text-gray-900 font-bold">{{ $post->shopData->price_range ?? falcon_price_format(falcon_display_price($post->shopData->price ?? 0, $post->id)) }}</span>
+                        <span class="text-gray-900 font-bold">{{ $post->shopData->price_range ?? falcon_price_format(falcon_display_price($post->shopData->current_price ?? 0, $post->id)) }}</span>
                     </template>
                 </div>
+                @endif
                 <?php do_falcon_action('falcon_variable_after_product_price', $post); ?>
 
                 <!-- Dynamic Stock Status for Variations -->
@@ -253,6 +270,9 @@
                 <!-- Simple & Reliable Interaction Area -->
                 <?php do_falcon_action('falcon_variable_before_add_to_cart_form', $post); ?>
                 <div class="space-y-6 pt-6 border-t border-gray-100 mb-10 pb-8 border-b border-gray-100">
+                    @if(!$pricesVisible)
+                    {!! falcon_hidden_price_html($post, 'cart') !!}
+                    @else
                     <form id="add-to-cart-form" action="{{ route('shop.cart.add') }}" method="POST" class="w-full">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $post->id }}">
@@ -281,6 +301,7 @@
                         </div>
                         <?php do_falcon_action('falcon_variable_add_to_cart_form_bottom', $post); ?>
                     </form>
+                    @endif
                 </div>
                 <?php do_falcon_action('falcon_variable_after_add_to_cart_form', $post); ?>
 

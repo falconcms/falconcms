@@ -40,6 +40,8 @@ class WishlistController extends Controller
             $added = true;
         }
 
+        do_falcon_action($added ? 'falcon_wishlist_item_added' : 'falcon_wishlist_item_removed', $productId, $userId);
+
         return response()->json([
             'success' => true,
             'added' => $added,
@@ -87,7 +89,10 @@ class WishlistController extends Controller
             return redirect(get_falcon_account_url());
         }
         $request->validate(['product_id' => 'required|integer']);
-        Wishlist::where('user_id', auth()->id())->where('product_id', (int) $request->product_id)->delete();
+        $deleted = Wishlist::where('user_id', auth()->id())->where('product_id', (int) $request->product_id)->delete();
+        if ($deleted > 0) {
+            do_falcon_action('falcon_wishlist_item_removed', (int) $request->product_id, (int) auth()->id());
+        }
 
         return redirect()->route('shop.wishlist')->with('success', 'Removed from your wishlist.');
     }

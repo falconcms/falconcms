@@ -3,8 +3,11 @@
 namespace FalconCms\Core\Tests\Feature\Security;
 
 use App\Models\User;
+use FalconCms\Core\Core\HookManager;
+use FalconCms\Core\Models\Post;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
+use Illuminate\Support\Facades\DB;
 
 /**
  * What the static page cache is allowed to keep.
@@ -165,6 +168,58 @@ class PageCacheTest extends TestCase
         foreach (['/', '/search?q=anything'] as $url) {
             $this->get($url)->assertOk()->assertHeader('X-Lazy-Cache', 'MISS');
             $this->get($url)->assertOk()->assertHeader('X-Lazy-Cache', 'HIT');
+        }
+    }
+
+    /** A page assigned as one of the shop's own, at an address the owner chose. */
+    private function assignShopPage(string $option, string $slug): void
+    {
+        $page = Post::withoutGlobalScopes()->forceCreate([
+            'title' => ucfirst($slug), 'slug' => $slug, 'type' => 'page', 'status' => 'published',
+            'lang_code' => 'en', 'user_id' => $this->makeUser()->id, 'content' => '',
+        ]);
+        DB::table('cms_settings')->updateOrInsert(['key' => $option], ['value' => (string) $page->id]);
+        forget_cms_options_cache();
+    }
+
+    public function test_the_account_page_and_its_sign_in_form_are_never_stored(): void
+    {
+        $this->enableStaticCaching();
+        $this->assignShopPage('shop_account_page_id', 'my-account');
+
+        // A guest sees the sign-in form. A stored copy hands the next guest this visitor's CSRF
+        // token, and their sign-in fails with 419 "Page expired".
+        $this->get('/my-account')->assertOk()->assertSee('name="_token"', false)->assertHeaderMissing('X-Lazy-Cache');
+        $this->get('/my-account')->assertOk()->assertHeaderMissing('X-Lazy-Cache');
+    }
+
+    public function test_cart_checkout_and_wishlist_pages_at_their_own_addresses_are_never_stored(): void
+    {
+        $this->enableStaticCaching();
+        $this->assignShopPage('shop_cart_page_id', 'basket');
+        $this->assignShopPage('shop_checkout_page_id', 'pay');
+        $this->assignShopPage('shop_wishlist_page_id', 'saved');
+
+        foreach (['/basket', '/pay', '/saved'] as $url) {
+            $this->get($url)->assertHeaderMissing('X-Lazy-Cache');
+            $this->get($url)->assertHeaderMissing('X-Lazy-Cache');
+        }
+    }
+
+    public function test_a_plugin_can_mark_a_page_personal(): void
+    {
+        $this->enableStaticCaching();
+        $snapshot = HookManager::snapshot();
+
+        try {
+            // A page carrying a login form: its CSRF token belongs to one visitor.
+            add_falcon_filter('falcon_page_cache_is_personal', fn ($personal, $request) => $personal || $request->is('search'));
+
+            $this->get('/search?q=a')->assertOk()->assertHeaderMissing('X-Lazy-Cache');
+            $this->get('/search?q=a')->assertOk()->assertHeaderMissing('X-Lazy-Cache');
+            $this->get('/')->assertOk()->assertHeader('X-Lazy-Cache', 'MISS');
+        } finally {
+            HookManager::restore($snapshot);
         }
     }
 }

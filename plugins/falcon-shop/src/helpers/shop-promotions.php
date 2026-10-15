@@ -222,6 +222,8 @@ if (!function_exists('falcon_promotion_reward_products')) {
                 }
             }
 
+            do_falcon_action('falcon_product_query', $query, []);
+
             return $query->distinct()
                 ->orderBy('shop_products.price')
                 ->limit($limit)
@@ -351,7 +353,24 @@ if (!function_exists('falcon_evaluate_promotions')) {
             ];
         }
 
-        return $results;
+        // Last word on which promotions apply — e.g. none for wholesale customers, who already
+        // have their own prices. Entries are re-shaped so a callback cannot break the totals.
+        $filtered = apply_falcon_filters('falcon_cart_promotions', $results, $cart);
+        if (!is_array($filtered)) {
+            return $results;
+        }
+
+        $clean = [];
+        foreach ($filtered as $promo) {
+            if (!is_array($promo) || !is_numeric($promo['discount'] ?? null) || (float) $promo['discount'] <= 0) {
+                continue;
+            }
+            $clean[] = array_merge([
+                'id' => 0, 'name' => '', 'summary' => '', 'applications' => 1, 'units' => 0,
+            ], $promo, ['discount' => round((float) $promo['discount'], 2)]);
+        }
+
+        return $clean;
     }
 }
 
@@ -398,7 +417,32 @@ if (!function_exists('falcon_find_coupon')) {
 }
 
 if (!function_exists('get_falcon_coupon_discount_amount')) {
+    /**
+     * What one coupon takes off the cart: the built-in rules, then the
+     * `falcon_coupon_discount_amount` filter. Never negative, never more than the base it is
+     * measured against.
+     */
     function get_falcon_coupon_discount_amount($coupon, $cart, $calcBaseSubtotal = null)
+    {
+        $discount = falcon_coupon_rule_discount($coupon, $cart, $calcBaseSubtotal);
+        if (!has_falcon_filter('falcon_coupon_discount_amount')) {
+            return $discount;
+        }
+
+        $filtered = apply_falcon_filters('falcon_coupon_discount_amount', $discount, $coupon, $cart, $calcBaseSubtotal);
+        if (!is_numeric($filtered)) {
+            return $discount;
+        }
+
+        $ceiling = (float) ($calcBaseSubtotal ?? get_falcon_cart_subtotal());
+
+        return max(0.0, min((float) $filtered, max($ceiling, (float) $discount)));
+    }
+}
+
+if (!function_exists('falcon_coupon_rule_discount')) {
+    /** A coupon's discount from its own settings alone, before any plugin has a say. */
+    function falcon_coupon_rule_discount($coupon, $cart, $calcBaseSubtotal = null)
     {
         $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
         $couponType = $coupon['type'] ?? 'percent';

@@ -11,6 +11,16 @@ Full release notes, with the reasoning behind each change, live at
 
 ### Added
 
+- **Shortcodes as pairs.** `[tag]content[/tag]` passes the content to the shortcode's callback as a
+  second argument (callbacks that take one argument are unaffected).
+- **Users → filter by role** counts and lists people who hold a role as an extra one, not only as
+  their primary role.
+- **`falcon_customer_addresses` filter and `falcon_admin_order_sidebar` action.** A plugin can
+  offer more saved addresses at checkout (a company's delivery addresses), and print a box of its
+  own on the admin order screen's sidebar (a deposit to confirm).
+- **`falcon_page_cache_is_personal` filter.** A plugin can keep a page out of the static page
+  cache: one that belongs to the visitor, or carries a form whose CSRF token must not be served to
+  the next visitor (the wholesale login page).
 - **SEO → Rank Tracker (Pro, with DataForSEO).** Follow keywords in Google, by country and on
   desktop or mobile, checked once a week or once a day: the site's position in the top 100, the
   page that ranks, the change since the last check, the best position, a small trend line,
@@ -32,9 +42,71 @@ Full release notes, with the reasoning behind each change, live at
     from search, or at something that is not an address.
   - **Pages that name another page as the original.** Listed as information, since that is
     right for copies and syndicated posts.
+- **Shop: logic hooks for wholesale, B2B and multi-vendor plugins.** 46 new hooks for prices,
+  the cart, coupons, promotions, shipping, tax, checkout, payment gateways, the order lifecycle,
+  stock, order emails, My Account, reviews, the wishlist and the admin order list. They include:
+  - `falcon_product_prices`: one filter for every price shown and charged (cards, product page,
+    variations, cart, order), with the line quantity for tiered prices;
+  - `falcon_add_to_cart_validation` and `falcon_checkout_validation`, to enforce minimum
+    quantities or order values;
+  - `falcon_payment_gateways` with `falcon_payment_redirect_url` and
+    `falcon_payment_return_verified`, to add a payment gateway (bKash, Nagad, pay on invoice);
+  - `falcon_order_created`, `falcon_order_paid` and `falcon_order_status_changed`. The status hook
+    runs on every status change, from any screen or the Stripe webhook.
+
+  With nothing hooked, the shop behaves exactly as before. Full list with examples:
+  docs/api/hooks.md → "E-commerce Logic Hooks". Updated shop templates (theme copies older than
+  these versions still work but show the catalogue price): `single-product` 1.0.1,
+  `single-product-variable` 1.0.2, `archive-product` 1.0.1, `cart` 1.0.1, `account` 1.0.1,
+  `wishlist` 1.0.1.
+- **Shop: admin hooks for plugins.** A plugin can now add a tab to the product editor
+  (`falcon_admin_product_data_tabs` / `falcon_admin_product_data_panels`), fields to each variation
+  (`falcon_admin_variation_fields`), fields to product categories and users, and save them
+  (`falcon_admin_product_category_saved`, `falcon_admin_user_saved`). It can also add a badge in the
+  Users list (`falcon_admin_user_role_cell`).
+- **Variations have a `meta` column** for data a plugin keeps per variation. Variations are rebuilt
+  on every save, so that data has to live on the variation itself. The editor sends it back on
+  every save, so it is kept even when its plugin's field is not on the page. Needs `php artisan migrate`.
+- **Shop: plugins can hide prices.** `falcon_show_prices` / `falcon_hidden_price_html`. Product
+  cards, the shop, product pages, the wishlist and the builder's Product Meta element show the
+  plugin's text (for example "Log in to see prices") instead of the price and the buy button. The
+  product cannot be added to the cart, and its structured data leaves the price out.
+- **Shop: plugins can list by their own prices.** `falcon_product_price_filter`,
+  `falcon_product_price_sort` and `falcon_product_filter_options` let a plugin apply the shop's
+  price filter, price sort and price band in its own prices. `falcon_product_query` now also runs
+  for related products, upsells, cross-sells and promotion suggestions. "Save All Variations"
+  fires `falcon_admin_after_save_product` with mode `variations`.
+- Shop: `falcon_cart_actions` below the cart's checkout button.
+- Shop: an item's fields (custom fields, and what a plugin adds through
+  `falcon_item_custom_fields_display`) now also show in the order email and the admin invoice. On
+  the cart page, changing a quantity refreshes the line's unit price and fields as well as its
+  subtotal.
+- Shop templates updated (theme copies older than these still work but do not hide prices):
+  `single-product` 1.0.2, `single-product-variable` 1.0.3, `archive-product` 1.0.2, `wishlist` 1.0.2,
+  `cart` 1.0.3.
 
 ### Fixed
 
+- **Security: administrators are known by their role's slug, never by its id.** Role ids 1 and 6
+  were treated as administrator and super-admin without looking at the role. Where those seeded
+  rows were missing, the next role created (a plugin's customer role, say) could take id 1 or 6,
+  and everyone given it became an administrator. The administrator and super-admin roles now keep
+  their slugs when edited (their name can still change).
+- **Shortcode attributes with spaces.** `title="Trade login"` arrived as `Trade`; quoted values now
+  keep their spaces, and curly quotes from a visual editor work.
+- **The page cache stored the My Account page, and cart, checkout and wishlist pages at addresses
+  of their own.** With static caching on, a guest could be served another guest's copy of the
+  sign-in form, whose CSRF token then failed ("Page expired"); a cart or checkout page assigned at
+  its own address (say `/basket`) could show one visitor's basket to the next. These pages are now
+  never stored. Clear the page cache once after updating.
+- **Shop checkout only accepts a payment method that is turned on.** Before, any value was
+  accepted and the order was placed as an offline payment.
+- **Shop: adding to the cart with a quantity that is not a whole number above zero** (for example
+  `abc` or `-3`) now adds one item.
+- **Shop cart page: line subtotals after a quantity change** now show the price the line was
+  re-priced to, not the price from before the change.
+- **Variable products: a variation with a sale price of 0** no longer shows a struck-through price.
+  A variation's sale also ends when the product's sale end date passes, as it does in the cart.
 - **API keys on SEO → Settings (Claude, DataForSEO, Bing) are clear about being saved, and a
   browser can no longer overwrite them.** A saved key shows in its field with the middle hidden
   (`sk-ant-api03-a••••••••••••abcd`); clicking in empties it for a new key, and saving the page

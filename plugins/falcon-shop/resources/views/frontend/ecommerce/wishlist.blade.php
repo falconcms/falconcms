@@ -1,4 +1,4 @@
-{{-- @version 1.0.0 --}}
+{{-- @version 1.0.2 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', 'My Wishlist')
@@ -33,7 +33,7 @@
                             ? (str_starts_with($product->featured_image, 'http') ? $product->featured_image : asset('storage/'.$product->featured_image))
                             : null;
                         $sd = $product->shopData;
-                        $hasSale = $sd && $sd->active_sale_price;
+                        $hasSale = $sd && $sd->current_sale_price;
                     @endphp
                     <div class="bg-white rounded-sm border border-gray-100 overflow-hidden group flex flex-col">
                         <div class="relative">
@@ -55,14 +55,18 @@
                                 <a href="{{ get_falcon_permalink($product) }}">{{ $product->title }}</a>
                             </h3>
                             <div class="text-sm font-bold mb-4">
-                                @if($hasSale)
-                                    <span class="line-through text-slate-400 font-normal mr-1.5">{{ falcon_price_format($sd->price) }}</span>
-                                    <span class="text-primary">{{ falcon_price_format($sd->active_sale_price) }}</span>
+                                @if(!falcon_can_see_prices($product))
+                                    {!! falcon_hidden_price_html($product, 'price') !!}
+                                @elseif($hasSale)
+                                    <span class="line-through text-slate-400 font-normal mr-1.5">{{ falcon_price_format($sd->current_price) }}</span>
+                                    <span class="text-primary">{{ falcon_price_format($sd->current_sale_price) }}</span>
                                 @else
-                                    <span class="text-heading">{{ falcon_price_format($sd->price ?? 0) }}</span>
+                                    <span class="text-heading">{{ falcon_price_format($sd->current_price ?? 0) }}</span>
                                 @endif
                             </div>
-                            @if(falcon_is_variable_product($product))
+                            @if(!falcon_can_see_prices($product))
+                                <div class="mt-auto">{!! falcon_hidden_price_html($product, 'cart') !!}</div>
+                            @elseif(falcon_is_variable_product($product))
                                 <a href="{{ get_falcon_permalink($product) }}" class="mt-auto block w-full text-center bg-primary text-white px-4 py-2 rounded-[3px] text-[13px] font-semibold hover:bg-primary-hover transition">Select Options</a>
                             @else
                                 <form action="{{ route('shop.cart.add') }}" method="POST" class="mt-auto">

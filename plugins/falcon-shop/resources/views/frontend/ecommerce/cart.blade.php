@@ -1,4 +1,4 @@
-{{-- @version 1.0.0 --}}
+{{-- @version 1.0.3 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', 'Cart')
@@ -85,7 +85,7 @@
                                         {!! apply_falcon_filters('falcon_cart_item_name',
                                             '<a href="' . get_falcon_permalink($item) . '">' . e($item['name']) . '</a>',
                                             $item, $key) !!}
-                                        {!! falcon_render_item_custom_fields($item, 'cart') !!}
+                                        <div class="item-fields">{!! falcon_render_item_custom_fields($item, 'cart') !!}</div>
                                         @php
                                             // Looked up live: stock can run out between adding to the
                                             // cart and checking out, and the customer should see that
@@ -97,7 +97,7 @@
                                         @endif
                                         <?php do_falcon_action('falcon_cart_item_meta', $item, $key); ?>
                                     </td>
-                                    <td class="p-4 border border-gray-100">
+                                    <td class="p-4 border border-gray-100 item-price">
                                         {{ falcon_price_format($item['sale_price'] ?: $item['price']) }}
                                     </td>
                                     <td class="p-4 border border-gray-100">
@@ -279,6 +279,8 @@
                         </tbody>
                     </table>
                     <a href="{{ get_falcon_checkout_url() }}" class="block w-full bg-primary text-white text-center py-4 font-bold rounded-sm hover:opacity-90 hover:text-white transition-all uppercase shadow-md shadow-primary/20">Proceed to checkout</a>
+                    {{-- Under the checkout button: another way on from the cart (request a quote, save the cart…). --}}
+                    <?php do_falcon_action('falcon_cart_actions', $cart); ?>
                 </div>
             </div>
 
@@ -401,6 +403,15 @@
             });
         }
 
+        // A quantity can change the unit price (quantity tiers) and what the line says about itself.
+        [['item_prices', '.item-price'], ['item_fields', '.item-fields']].forEach(function ([field, selector]) {
+            if (!data[field] || typeof data[field] !== 'object') return;
+            Object.entries(data[field]).forEach(function ([key, value]) {
+                const cell = document.querySelector('.cart-item-row[data-key="' + CSS.escape(key) + '"] ' + selector);
+                if (cell) cell.innerHTML = value;
+            });
+        });
+
         syncMiniCart(data.cart_count ?? 0);
     }
 
@@ -440,6 +451,9 @@
                 showCartToast(data.message || 'Cart updated!', false);
             } else {
                 showCartToast(data.message || 'Could not update cart.', true);
+                // A line the shop refused keeps its old quantity while the others changed, so
+                // the inputs on screen no longer match the basket — reload to show the truth.
+                if (data.reload) setTimeout(() => location.reload(), 1500);
             }
         })
         .catch(() => showCartToast('Could not update cart.', true))

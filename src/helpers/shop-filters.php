@@ -132,7 +132,13 @@ if (!function_exists('falcon_apply_product_filters')) {
         // variable product from any price filter. Both bounds are applied to the *same* row so
         // "1000-2000" means one variation actually costs that, not that the range merely
         // overlaps the product's spread.
-        if ($filters['min_price'] !== null || $filters['max_price'] !== null) {
+        // A plugin that prices some shoppers differently (wholesale) can apply the price range
+        // itself: return true from falcon_product_price_filter and the catalogue range below is
+        // skipped.
+        $priceHandled = ($filters['min_price'] !== null || $filters['max_price'] !== null)
+            && apply_falcon_filters('falcon_product_price_filter', false, $query, $filters['min_price'], $filters['max_price']) === true;
+
+        if (!$priceHandled && ($filters['min_price'] !== null || $filters['max_price'] !== null)) {
             $priceBounds = static function ($q) use ($filters) {
                 $expr = 'COALESCE(NULLIF(sale_price, 0), price)';
 
@@ -260,6 +266,11 @@ if (!function_exists('falcon_apply_product_filters')) {
             });
         }
 
+        // Every storefront product listing passes through here — the shop archive, category
+        // and tag archives, the assigned Shop page — so a plugin can narrow all of them at once
+        // (hide wholesale-only products from retail shoppers, show one vendor's store).
+        do_falcon_action('falcon_product_query', $query, $filters);
+
         return $query;
     }
 }
@@ -277,6 +288,12 @@ if (!function_exists('falcon_apply_product_sorting')) {
             case 'price':
             case 'price-desc':
                 $direction = $orderby === 'price' ? 'ASC' : 'DESC';
+
+                // The same for sorting: true from falcon_product_price_sort means a plugin has
+                // ordered the query by its own prices.
+                if (apply_falcon_filters('falcon_product_price_sort', false, $query, $direction) === true) {
+                    break;
+                }
 
                 // Sort a variable product by the cheapest variation when going low-to-high and
                 // by the dearest when going high-to-low — matching the range a shopper sees.
@@ -383,12 +400,17 @@ if (!function_exists('falcon_product_filter_options')) {
                 }
             }
 
-            return [
+            $options = [
                 'categories' => $categories,
                 'attributes' => array_values($attributes),
                 'min_price' => $bounds && $bounds->min_price !== null ? (float) $bounds->min_price : 0.0,
                 'max_price' => $bounds && $bounds->max_price !== null ? (float) $bounds->max_price : 0.0,
             ];
+
+            // The price band in particular: a plugin with its own prices supplies its own range.
+            $filtered = apply_falcon_filters('falcon_product_filter_options', $options, $ids->map(fn ($id) => (int) $id)->all());
+
+            return is_array($filtered) ? array_merge($options, $filtered) : $options;
         } catch (Throwable $e) {
             Log::error('Product filter options failed: '.$e->getMessage());
 

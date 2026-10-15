@@ -88,6 +88,9 @@
                         @error('roles')<p class="text-[11px] text-[#d63638] mt-1">{{ $message }}</p>@enderror
                     </td>
                 </tr>
+
+                {{-- A plugin's own fields, as table rows. Saved in falcon_admin_user_saved. --}}
+                <?php do_falcon_action('falcon_admin_user_form_fields', null); ?>
             </table>
 
             <div class="mt-8 pt-6 border-t border-[#c3c4c7]">

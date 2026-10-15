@@ -1,4 +1,4 @@
-{{-- @version 1.0.0 --}}
+{{-- @version 1.0.2 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', $post->title)
@@ -55,7 +55,7 @@
                     @if(!$post->is_in_stock)
                         <span class="absolute top-4 right-4 bg-red-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-sm uppercase tracking-wider shadow-lg z-10">Out of Stock</span>
                     @endif
-                    @if($post->shopData && $post->shopData->active_sale_price)
+                    @if($post->shopData && $post->shopData->current_sale_price)
                         <span class="absolute top-4 left-4 bg-sky-100 text-sky-700 text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow uppercase tracking-wide z-10">Sale!</span>
                     @endif
                 </div>
@@ -83,13 +83,17 @@
                 <?php do_falcon_action('falcon_simple_after_product_title', $post); ?>
                 
                 <?php do_falcon_action('falcon_simple_before_product_price', $post); ?>
+                @if(!falcon_can_see_prices($post))
+                    {{-- Prices are hidden for this visitor (falcon_show_prices). --}}
+                    <div class="mb-6 text-[15px]">{!! falcon_hidden_price_html($post, 'price') !!}</div>
+                @else
                 <?php
                     ob_start();
-                    if ($post->shopData && $post->shopData->active_sale_price):
+                    if ($post->shopData && $post->shopData->current_sale_price):
                 ?>
                 <div class="text-[24px] font-medium text-heading mb-6 flex items-center gap-3">
-                    <span class="line-through text-gray-300 font-normal">{{ falcon_price_format(falcon_display_price($post->shopData->price, $post->id)) }}</span>
-                    <span class="text-heading font-bold">{{ falcon_price_format(falcon_display_price($post->shopData->active_sale_price, $post->id)) }}</span>
+                    <span class="line-through text-gray-300 font-normal">{{ falcon_price_format(falcon_display_price($post->shopData->current_price, $post->id)) }}</span>
+                    <span class="text-heading font-bold">{{ falcon_price_format(falcon_display_price($post->shopData->current_sale_price, $post->id)) }}</span>
                 </div>
 
                 @if($post->shopData->sale_ends_at && $post->shopData->sale_ends_at->isFuture())
@@ -144,12 +148,13 @@
                 @endif
                 <?php else: ?>
                 <div class="text-[24px] font-medium text-heading mb-6 flex items-center gap-3">
-                    <span class="text-heading font-bold">{{ falcon_price_format(falcon_display_price($post->shopData->price ?? 0, $post->id)) }}</span>
+                    <span class="text-heading font-bold">{{ falcon_price_format(falcon_display_price($post->shopData->current_price ?? 0, $post->id)) }}</span>
                 </div>
                 <?php endif;
                     $priceHtml = ob_get_clean();
                     echo apply_falcon_filters('falcon_simple_product_price', $priceHtml, $post);
                 ?>
+                @endif
                 <?php do_falcon_action('falcon_simple_after_product_price', $post); ?>
 
                 @php
@@ -195,7 +200,9 @@
                 <?php do_falcon_action('falcon_simple_after_short_description', $post); ?>
 
                 <?php do_falcon_action('falcon_simple_before_add_to_cart_form', $post); ?>
-                @if(!$post->is_in_stock)
+                @if(!falcon_can_see_prices($post))
+                <div class="mb-10 pb-8 border-b border-gray-100">{!! falcon_hidden_price_html($post, 'cart') !!}</div>
+                @elseif(!$post->is_in_stock)
                 <div class="mb-10 pb-8 border-b border-gray-100">
                     @if(has_falcon_action('falcon_simple_out_of_stock_button'))
                         <?php do_falcon_action('falcon_simple_out_of_stock_button', $post); ?>

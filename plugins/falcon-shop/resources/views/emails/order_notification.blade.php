@@ -350,6 +350,15 @@
                             <td>
                                 <div class="product-name">{{ $item->product_name }}</div>
                                 <div class="product-qty">Qty: {{ $item->quantity }}</div>
+                                @php
+                                    $emailFields = apply_falcon_filters('falcon_item_custom_fields_display', (array) ($item->meta['custom_fields'] ?? []), $item, 'email');
+                                    $emailLabels = apply_falcon_filters('falcon_custom_field_labels', [], 'email');
+                                @endphp
+                                @foreach((array) $emailFields as $cfKey => $cfVal)
+                                    @if((string) $cfVal !== '')
+                                        <div class="product-qty">{{ $emailLabels[$cfKey] ?? ucwords(str_replace('_', ' ', $cfKey)) }}: {{ $cfVal }}</div>
+                                    @endif
+                                @endforeach
                             </td>
                             <td class="text-right">
                                 @php

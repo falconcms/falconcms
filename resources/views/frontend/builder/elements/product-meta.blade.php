@@ -54,11 +54,25 @@
 
     $rows = [];
     if ($shopData) {
-        if ($showPrice) {
-            $regular    = (float) ($shopData->price ?? 0);
-            $sale       = $shopData->sale_price;
-            $saleActive = ($sale !== null && $sale !== '' &&
-                (empty($shopData->sale_ends_at) || \Carbon\Carbon::parse($shopData->sale_ends_at)->isFuture()));
+        if ($showPrice && !falcon_can_see_prices($post)) {
+            $hidden = falcon_hidden_price_html($post, 'price');
+            if ($hidden !== '') {
+                $rows[] = ['label' => $priceLabel, 'html' => $hidden];
+            }
+        } elseif ($showPrice) {
+            // What this shopper pays, through the falcon_product_prices filter — the same figure
+            // the product card and the cart use. currentPrices() also drops an ended sale.
+            if ($shopData instanceof \FalconCms\Core\Models\ProductData) {
+                $current    = $shopData->currentPrices();
+                $regular    = $current['price'];
+                $sale       = $current['sale_price'];
+                $saleActive = $sale !== null;
+            } else {
+                $regular    = (float) ($shopData->price ?? 0);
+                $sale       = $shopData->sale_price;
+                $saleActive = ($sale !== null && $sale !== '' &&
+                    (empty($shopData->sale_ends_at) || \Carbon\Carbon::parse($shopData->sale_ends_at)->isFuture()));
+            }
             if ($saleActive) {
                 $valueHtml = '<span style="text-decoration:line-through;opacity:.55;margin-right:6px;">' . e($priceFmt($regular)) . '</span>'
                            . '<span style="color:' . e($saleColor) . ';font-weight:700;">' . e($priceFmt($sale)) . '</span>';

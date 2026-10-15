@@ -7,6 +7,7 @@
  */
 
 use FalconCms\Core\Models\CustomerAddress;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -24,11 +25,16 @@ if (!function_exists('falcon_customer_addresses')) {
         }
 
         try {
-            return CustomerAddress::where('user_id', auth()->id())
+            $addresses = CustomerAddress::where('user_id', auth()->id())
                 ->orderByDesc('is_default_billing')
                 ->orderByDesc('is_default_shipping')
                 ->orderBy('id')
                 ->get();
+
+            // Add addresses the customer may also ship to (a company's shared delivery addresses).
+            $filtered = apply_falcon_filters('falcon_customer_addresses', $addresses, auth()->user());
+
+            return $filtered instanceof Collection ? $filtered : $addresses;
         } catch (Throwable $e) {
             Log::error('Customer address lookup failed: '.$e->getMessage());
 

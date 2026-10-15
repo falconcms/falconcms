@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $stock_status
  * @property bool|int|null $manage_stock
  * @property string|null $image
+ * @property array<string, mixed>|null $meta
  */
 class ProductVariation extends Model
 {
@@ -23,11 +24,13 @@ class ProductVariation extends Model
     protected $fillable = [
         'product_id', 'attributes_data', 'price', 'sale_price', 'sku',
         'weight', 'length', 'width', 'height',
-        'stock_quantity', 'stock_status', 'manage_stock', 'image',
+        'stock_quantity', 'stock_status', 'manage_stock', 'image', 'meta',
     ];
 
     protected $casts = [
         'attributes_data' => 'array',
+        // Per-variation data a plugin keeps (see falcon_admin_variation_meta).
+        'meta' => 'array',
     ];
 
     public function product()

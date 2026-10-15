@@ -432,6 +432,7 @@ class PostController extends Controller
                         'stock_quantity' => $vData['stock_quantity'] ?? 0,
                         'manage_stock' => $vData['manage_stock'] ?? false,
                         'image' => $vData['image'] ?? null,
+                        'meta' => $this->variationMeta($vData, $shopData),
                     ]);
                 }
             }
@@ -445,6 +446,10 @@ class PostController extends Controller
             // This endpoint rewrites attributes_data and the variations, so the archive filter
             // index has to be rebuilt here too — not only from store()/update().
             falcon_sync_product_attribute_index($shopData->fresh());
+
+            // The variations changed without a full product save; a plugin keeping data derived
+            // from them (a price index) hears about it the same way, with mode 'variations'.
+            do_falcon_action('falcon_admin_after_save_product', $post, $shopData->fresh(), $request, 'variations');
 
             clear_page_cache();
 
@@ -784,6 +789,28 @@ class PostController extends Controller
     }
 
     /**
+     * What a variation stores in its `meta` column: whatever the editor sent under
+     * variations[i][meta], after the `falcon_admin_variation_meta` filter.
+     *
+     * Variations are deleted and recreated on every save, so their ids change; anything a plugin
+     * keeps per variation (a wholesale price, a supplier code) has to travel with the row itself.
+     * The editor sends each variation's meta back, so it survives the rebuild: the whole of it
+     * as JSON in variations[i][meta_json] (so a key whose plugin printed no field this time, or
+     * is switched off, is not lost), with any field a plugin did print on top.
+     */
+    private function variationMeta(array $vData, $shopData): ?array
+    {
+        $kept = is_string($vData['meta_json'] ?? null) ? json_decode($vData['meta_json'], true) : null;
+        $meta = is_array($kept) ? $kept : [];
+        if (is_array($vData['meta'] ?? null)) {
+            $meta = array_replace_recursive($meta, $vData['meta']);
+        }
+        $meta = apply_falcon_filters('falcon_admin_variation_meta', $meta, $vData, $shopData);
+
+        return is_array($meta) && $meta !== [] ? $meta : null;
+    }
+
+    /**
      * A variable product carries no price of its own — each variation is priced — but
      * shop_products.price is NOT NULL, and the shop lists and sorts on it. So the parent takes
      * the cheapest variation's price, which is also the "from" figure a shopper expects to see.
@@ -1014,6 +1041,7 @@ class PostController extends Controller
                         'stock_quantity' => $vData['stock_quantity'] ?? 0,
                         'manage_stock' => ($vData['stock_quantity'] ?? 0) > 0,
                         'image' => $vData['image'] ?? null,
+                        'meta' => $this->variationMeta($vData, $shopData),
                     ]);
                 }
             }
@@ -1627,6 +1655,7 @@ class PostController extends Controller
                             'stock_quantity' => $vData['stock_quantity'] ?? 0,
                             'manage_stock' => ($vData['stock_quantity'] ?? 0) > 0,
                             'image' => $vData['image'] ?? null,
+                            'meta' => $this->variationMeta($vData, $shopData),
                         ]);
                     }
                 }

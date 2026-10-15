@@ -165,6 +165,32 @@ if (!function_exists('falcon_enabled_payment_gateways')) {
             ];
         }
 
-        return $gateways;
+        // Add a gateway (bKash, Nagad, a B2B "pay on invoice"), or hide one for some customers.
+        // An 'online' gateway of a plugin's own is started through falcon_payment_redirect_url
+        // and confirmed through falcon_payment_return_verified; an 'offline' one simply places
+        // the order. Entries are re-shaped so the checkout template can always render them.
+        $filtered = apply_falcon_filters('falcon_payment_gateways', $gateways);
+        if (!is_array($filtered)) {
+            return $gateways;
+        }
+
+        $clean = [];
+        foreach ($filtered as $key => $gateway) {
+            if (!is_array($gateway)) {
+                continue;
+            }
+            $id = (string) ($gateway['id'] ?? $key);
+            if ($id === '' || !preg_match('/^[a-zA-Z0-9_\-]{1,64}$/', $id)) {
+                continue;
+            }
+            $clean[$id] = array_merge($gateway, [
+                'id' => $id,
+                'title' => (string) ($gateway['title'] ?? $id),
+                'desc' => (string) ($gateway['desc'] ?? ''),
+                'type' => ($gateway['type'] ?? 'offline') === 'online' ? 'online' : 'offline',
+            ]);
+        }
+
+        return $clean;
     }
 }

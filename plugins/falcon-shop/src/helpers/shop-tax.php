@@ -66,6 +66,23 @@ if (!function_exists('get_falcon_cart_tax')) {
      */
     function get_falcon_cart_tax()
     {
+        $tax = falcon_calculate_cart_tax();
+        if (!has_falcon_filter('falcon_cart_tax')) {
+            return $tax;
+        }
+
+        // A tax-exempt customer, a per-line tax engine, a rounding rule: whatever a callback
+        // returns is what the tax line, the total and the order row all use.
+        $filtered = apply_falcon_filters('falcon_cart_tax', $tax, session()->get('falcon_cart', []));
+
+        return is_numeric($filtered) ? max(0.0, (float) $filtered) : $tax;
+    }
+}
+
+if (!function_exists('falcon_calculate_cart_tax')) {
+    /** The cart tax from the configured rates alone, before the falcon_cart_tax filter. */
+    function falcon_calculate_cart_tax(): float
+    {
         if (!falcon_tax_enabled()) {
             return 0.0;
         }

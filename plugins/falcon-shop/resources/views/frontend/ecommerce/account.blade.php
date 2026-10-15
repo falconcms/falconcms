@@ -1,4 +1,4 @@
-{{-- @version 1.0.0 --}}
+{{-- @version 1.0.1 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', 'My Account')
@@ -46,9 +46,19 @@
         </div>
 
         {{-- Tab Navigation --}}
-        @php $tabBase = strtok(url()->current(), '?'); @endphp
-        <div class="flex gap-1 border-b border-gray-200 mb-6">
-            @foreach([['orders','My Orders','package'],['downloads','Downloads','download'],['addresses','Addresses','map-pin'],['profile','Profile','user'],['password','Password','lock']] as [$slug,$label,$icon])
+        @php
+            $tabBase = strtok(url()->current(), '?');
+            // falcon_account_tabs: add a tab ([slug, label, lucide icon]) and render its body
+            // from the falcon_account_tab_content action, which fires for any slug not built in.
+            $accountTabs = [['orders','My Orders','package'],['downloads','Downloads','download'],['addresses','Addresses','map-pin'],['profile','Profile','user'],['password','Password','lock']];
+            $accountTabs = array_values(array_filter(
+                (array) apply_falcon_filters('falcon_account_tabs', $accountTabs, auth()->user()),
+                fn ($t) => is_array($t) && count($t) >= 2 && preg_match('/^[a-z0-9_\-]+$/', (string) $t[0])
+            ));
+            $accountTabs = array_map(fn ($t) => [(string) $t[0], (string) $t[1], (string) ($t[2] ?? 'circle')], $accountTabs);
+        @endphp
+        <div class="flex flex-wrap gap-1 border-b border-gray-200 mb-6">
+            @foreach($accountTabs as [$slug,$label,$icon])
             <a href="{{ $tabBase }}?tab={{ $slug }}"
                class="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold border-b-2 transition
                       {{ $activeTab === $slug
@@ -489,6 +499,9 @@
             pwd2.addEventListener('input', checkMatch);
         })();
         </script>
+        @elseif(in_array($activeTab, array_column($accountTabs, 0), true))
+        {{-- A tab a plugin added through falcon_account_tabs. --}}
+        <?php do_falcon_action('falcon_account_tab_content', $activeTab, auth()->user()); ?>
         @endif
 
 @else
