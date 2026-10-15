@@ -92,6 +92,21 @@ the_falcon_loop(array $args = [], ?string $view = null): void
 the_falcon_pagination(LengthAwarePaginator $items, ?string $view = null): void
 ```
 
+### Shortcodes
+
+```php
+// [hello name="Rahim Uddin"] — quoted values keep their spaces
+add_falcon_shortcode('hello', fn (array $atts) => 'Hello '.e($atts['name'] ?? 'you'));
+
+// Written as a pair, the content comes as a second argument:
+// [box class="note"]Anything, <b>HTML</b> too[/box]
+add_falcon_shortcode('box', fn (array $atts, ?string $content = null) =>
+    '<div class="'.e($atts['class'] ?? 'box').'">'.$content.'</div>');
+```
+
+Attributes may be written `key="value"`, `key='value'`, `key=value` (no spaces), or with the
+`&quot;` or curly quotes a visual editor leaves behind.
+
 ## Categories & Tags
 
 ```php
