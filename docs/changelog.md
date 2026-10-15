@@ -5,7 +5,61 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.0 <Badge type="tip" text="Latest" /> {#v2-8-0}
+## v2.8.1 <Badge type="tip" text="Latest" /> {#v2-8-1}
+
+**Released: 2026-10-15**
+
+Cloudflare Turnstile on the site's own forms (free), a security fix for administrator roles, the
+shop hooks the new Pro Wholesale plugin is built on, and a Rank Tracker in SEO (Pro).
+
+### Added
+
+- **Cloudflare Turnstile on the site's forms** (free). Settings → Integrations → **Show on**
+  switches it on for the login page (password and magic link), registration, forgot password and
+  the shop's My Account sign-in, each on its own, once the keys are saved. The answer is checked
+  before anything else happens; if Cloudflare cannot be reached the form goes through, so no one
+  is locked out. The widget follows light/dark and turns compact on a phone. Plugins add their
+  own forms (the Pro Wholesale plugin adds its login and application forms).
+- **SEO → Rank Tracker (Pro, with DataForSEO).** Follow keywords in Google by country and device,
+  checked weekly or daily: position, ranking page, change, best position, trend, monthly searches
+  and difficulty. **Competitor gap** lists the keywords a competitor ranks for that you do not.
+- **SEO Audit** finds redirect loops and chains, pages hidden by a redirect, links to redirected
+  addresses and canonical problems.
+- **Users → filter by role** counts and lists people who hold a role as an extra one.
+- **Shortcodes as pairs:** `[tag]content[/tag]` passes the content to the shortcode.
+
+### Fixed
+
+- **Security: administrators are known by their role's slug, never by its id.** Role ids 1 and 6
+  were treated as administrator without looking at the role, so where those rows were missing a
+  later role (a plugin's customer role) could make everyone given it an administrator. The
+  administrator and super-admin roles now keep their slugs when edited (their names can change).
+- **The page cache no longer stores the My Account page** (its sign-in failed with "Page expired"
+  for the next guest) **or cart, checkout and wishlist pages at addresses of their own** (one
+  visitor's basket shown to the next). Clear the page cache once after updating.
+- Shortcode attributes keep their spaces (`title="Trade login"` arrived as `Trade`).
+- Checkout only accepts a payment method that is turned on; a cart quantity must be a whole number
+  above zero; line subtotals update after a quantity change; a variation with a sale price of 0 is
+  no longer free.
+- SEO API keys (Claude, DataForSEO, Bing) are clear about being saved, can be tested, and are no
+  longer overwritten by a browser filling in the admin password; AI writing says when the
+  Anthropic account has no credit.
+
+### For developers
+
+- **E-commerce logic hooks** through pricing (`falcon_product_prices`, one door for every price),
+  cart, coupons, promotions, shipping, tax, checkout, payment gateways and the order lifecycle,
+  and **admin hooks** for the product editor, variations (a new `meta` column), categories, users
+  and orders. See the [hooks reference](/api/hooks).
+- New hooks: `falcon_turnstile_locations`, `falcon_turnstile_enabled`, `falcon_turnstile_verified`,
+  `falcon_page_cache_is_personal`, `falcon_customer_addresses`, `falcon_admin_order_sidebar`,
+  `falcon_show_prices`, `falcon_product_price_filter` / `_sort`. Helpers `falcon_turnstile()` and
+  `falcon_turnstile_check()`.
+- New migrations (variation `meta`, Rank Tracker tables): the dashboard's Update runs them.
+
+---
+
+## v2.8.0 {#v2-8-0}
 
 **Released: 2026-10-14**
 

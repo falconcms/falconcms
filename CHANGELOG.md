@@ -7,7 +7,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
-## [Unreleased]
+## [2.8.1] — 2026-10-15
 
 ### Added
 
