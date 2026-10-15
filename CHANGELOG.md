@@ -7,6 +7,31 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.8.2] — 2026-10-16
+
+### Added
+
+- **Cloudflare cache: the saved API token shows half masked.** Settings → Integrations shows the
+  token's first half with the rest masked, so you can tell which token is in use; the whole token
+  never goes back to the browser. Saving the field as shown keeps it.
+- **`falcon_pending_promotion_offers` filter.** The cart's "You qualify: free X" prompt now goes
+  through a filter, so a plugin that turns a customer's promotions off can turn the prompt off too.
+- **`falcon_show_sale_badge()` and the `falcon_product_sale_badge` filter.** The "Sale!" badge on the
+  product page, the shop and product cards (and each variation) asks first, so a customer price
+  that arrives as a sale price (a wholesale price) is not called a sale.
+
+### Fixed
+
+- **Analytics lost visits from browsers with a long user agent.** In-app browsers send more than
+  the column holds (255 characters); the insert failed and the visit was not counted. The stored
+  copy is cut to 255; the browser, system and device are still read from the whole string.
+- **Site Health no longer reports a fixed view given request data as a file-inclusion hole.**
+  `@include('a.view', ['x' => request('x')])` loads no file the visitor chooses. The rule still
+  fires when the view name itself comes from the request, and for PHP `include`/`require`.
+- **Site Health: errors from an update caught half-way count as fixed.** A "Failed to open
+  stream" for a file that is there again, and the error Laravel hits drawing its own error page
+  because of it, no longer stay open for a week.
+
 ## [2.8.1] — 2026-10-15
 
 ### Added

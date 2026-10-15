@@ -5,7 +5,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.1 <Badge type="tip" text="Latest" /> {#v2-8-1}
+## v2.8.2 <Badge type="tip" text="Latest" /> {#v2-8-2}
+
+**Released: 2026-10-16**
+
+Fixes from the week after 2.8.1: analytics visits that were lost, two Site Health false alarms,
+the Cloudflare token you can now recognise, and two hooks the Pro Wholesale plugin uses.
+
+### Added
+
+- **Cloudflare cache: the saved API token shows half masked.** Settings → Integrations →
+  Cloudflare cache shows the first half of the saved token and masks the rest, so you can see
+  which token is in use without the whole token ever going back to the browser. Save the form as
+  it is and the token is kept; click into the field to paste a new one.
+- **`falcon_pending_promotion_offers` filter.** The cart's "You qualify: free X" prompt goes through
+  a filter, like the promotions themselves (`falcon_cart_promotions`). A plugin that switches a
+  customer's promotions off now switches the prompt off too — the Pro Wholesale plugin does, so
+  wholesale customers are no longer told they qualify for a gift they will not get.
+- **`falcon_show_sale_badge()` and the `falcon_product_sale_badge` filter.** The "Sale!" badge on the
+  product page, the shop, product cards and each variation asks first. A customer's own price
+  arrives as a sale price (so it reads "was / now"), but it is not a sale; the Pro Wholesale plugin
+  keeps the badge only when the retail product is on sale itself.
+
+### Fixed
+
+- **Analytics lost visits from browsers with a long user agent.** Some in-app browsers (Facebook,
+  Instagram and others) send a user agent longer than the 255 characters the analytics table
+  holds. The insert failed with *Data too long for column 'user_agent'*, and the visit was not
+  counted. The stored copy is cut to 255; the browser, system and device are still read from the
+  whole string.
+- **Site Health: no false file-inclusion finding for a fixed view.** The code scan reported
+  `@include('a.view', ['x' => request('x')])` as *File include from user input* (critical). A fixed
+  view handed a value from the request loads no file the visitor chooses. The rule still fires
+  when the view name itself comes from the request, and for PHP `include`/`require` as before.
+- **Site Health: errors from an update caught half-way count as fixed.** For a few seconds during
+  an update, files can be missing. The *Failed to open stream* errors that leaves count as fixed
+  once the file is there again, and so does the error Laravel hits drawing its own error page
+  because of them (*Target class [translator] does not exist*). They no longer sit in the
+  error list for a week.
+
+---
+
+## v2.8.1 {#v2-8-1}
 
 **Released: 2026-10-15**
 
