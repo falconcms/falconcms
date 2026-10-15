@@ -55,7 +55,7 @@
                     @if(!$post->is_in_stock)
                         <span class="absolute top-4 right-4 bg-red-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-sm uppercase tracking-wider shadow-lg z-10">Out of Stock</span>
                     @endif
-                    @if($post->shopData && $post->shopData->current_sale_price)
+                    @if($post->shopData && falcon_show_sale_badge((bool) $post->shopData->current_sale_price, (int) $post->id))
                         <span class="absolute top-4 left-4 bg-sky-100 text-sky-700 text-[13px] font-bold px-3.5 py-1.5 rounded-full shadow uppercase tracking-wide z-10">Sale!</span>
                     @endif
                 </div>

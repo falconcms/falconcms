@@ -195,7 +195,11 @@ if (!function_exists('falcon_pending_promotion_offers')) {
             ];
         }
 
-        return $offers;
+        // The same say a plugin has over falcon_cart_promotions: a customer who would not get
+        // the reward must not be told they qualify for it.
+        $filtered = apply_falcon_filters('falcon_pending_promotion_offers', $offers, $cart);
+
+        return is_array($filtered) ? $filtered : $offers;
     }
 }
 

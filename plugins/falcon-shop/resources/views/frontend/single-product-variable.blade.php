@@ -35,6 +35,7 @@
         if (!$pricesVisible) {
             $row['price'] = null;
             $row['sale_price'] = null;
+            $row['sale_badge'] = false;
 
             return $row;
         }
@@ -47,6 +48,7 @@
 
         $row['price'] = falcon_display_price($pair['price'], $post->id);
         $row['sale_price'] = $pair['sale_price'] !== null ? falcon_display_price($pair['sale_price'], $post->id) : null;
+        $row['sale_badge'] = falcon_show_sale_badge($row['sale_price'] !== null, (int) $post->id, isset($row['id']) ? (int) $row['id'] : null);
 
         return $row;
     })->values();
@@ -577,7 +579,7 @@
 
                 if (match) {
                     this.selectedVariation = match;
-                    this.onSale = !!match.sale_price;
+                    this.onSale = !!match.sale_badge;
                     if (match.image) {
                         this.currentImage = '/storage/' + match.image;
                     } else {

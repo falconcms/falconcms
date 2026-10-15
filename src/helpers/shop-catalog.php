@@ -300,6 +300,22 @@ if (!function_exists('falcon_product_prices')) {
     }
 }
 
+if (!function_exists('falcon_show_sale_badge')) {
+    /**
+     * Whether the "Sale!" badge goes on a product (or one of its variations).
+     *
+     * A struck-through price is not always a sale: a plugin's customer price (a wholesale
+     * price) arrives as a sale price too, so the price reads "was / now" correctly. The
+     * `falcon_product_sale_badge` filter lets that plugin say the badge does not belong.
+     *
+     * @param  bool  $hasSale  whether the price shown has a sale price
+     */
+    function falcon_show_sale_badge(bool $hasSale, int $postId, ?int $variationId = null): bool
+    {
+        return (bool) apply_falcon_filters('falcon_product_sale_badge', $hasSale, $postId, $variationId);
+    }
+}
+
 if (!function_exists('falcon_can_see_prices')) {
     /**
      * Whether the current visitor may see this product's price and buy it.

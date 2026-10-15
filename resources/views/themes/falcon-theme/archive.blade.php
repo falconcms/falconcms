@@ -82,7 +82,7 @@
                         @else
                             <img src="{{ falcon_placeholder_image() }}" alt="Placeholder" class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-70">
                         @endif
-                        @if($product->shopData && $product->shopData->current_sale_price && falcon_can_see_prices($product))
+                        @if($product->shopData && falcon_show_sale_badge((bool) $product->shopData->current_sale_price, (int) $product->id) && falcon_can_see_prices($product))
                             <span class="absolute top-3 left-3 bg-sky-100 text-sky-700 text-[13px] font-bold px-3 py-1 rounded-full shadow uppercase tracking-wide z-10">Sale!</span>
                         @endif
                     </a>
