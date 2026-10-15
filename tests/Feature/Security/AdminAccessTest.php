@@ -301,16 +301,30 @@ class AdminAccessTest extends TestCase
     }
 
     /**
-     * Role ids 1 and 6 are treated as admin without consulting the roles table at all.
-     * Pinned because it is load-bearing and surprising: it is what keeps the seeded
-     * administrator working, and it means those two ids cannot safely be reused for
-     * anything else on an install whose roles were created in a different order.
+     * Role ids 1 and 6 used to be admin without consulting the roles table, which made any role
+     * that happened to get one of those ids an administrator (see AdminByRoleIdTest). Admin is
+     * now decided by slug only, and the system roles cannot be re-slugged, so the seeded
+     * administrator keeps working without the shortcut.
      */
-    public function test_the_seeded_admin_role_ids_are_a_deliberate_shortcut(): void
+    public function test_admin_is_decided_by_slug_not_by_id(): void
     {
         DB::table('roles')->where('id', 1)->update(['slug' => 'not-an-admin-slug']);
 
-        $this->assertTrue($this->makeUser(['role_id' => 1])->isAdmin(),
-            'role id 1 is hardcoded as an admin role');
+        $this->assertFalse($this->makeUser(['role_id' => 1])->isAdmin(), 'role id 1 alone is not admin');
+    }
+
+    public function test_the_system_roles_keep_their_slugs(): void
+    {
+        $adminRole = Role::where('slug', 'administrator')->firstOrFail();
+        $admin = $this->makeUser(['role_id' => $adminRole->id]);
+
+        $this->actingAs($admin)->put(route('admin.roles.update', $adminRole), [
+            'name' => 'Site Owner', 'slug' => 'site-owner', 'permissions' => [],
+        ])->assertRedirect();
+
+        $adminRole->refresh();
+        $this->assertSame('Site Owner', $adminRole->name, 'renaming is fine');
+        $this->assertSame('administrator', $adminRole->slug, 'the slug stays');
+        $this->assertTrue($this->makeUser(['role_id' => $adminRole->id])->isAdmin());
     }
 }

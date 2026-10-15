@@ -91,8 +91,9 @@ class AdminMiddleware
         if (!$userRoleSlug && $user->role_id) {
             $userRoleSlug = DB::table('roles')->where('id', $user->role_id)->value('slug');
         }
-        $isAdmin = in_array($userRoleSlug, ['super-admin', 'administrator', 'admin'])
-                || in_array($user->role_id, [1, 6]);
+        // By slug, not by id: a role that merely has id 1 or 6 is not an administrator.
+        $isAdmin = in_array($userRoleSlug, ['super-admin', 'administrator', 'admin'], true)
+                || (method_exists($user, 'isAdmin') && $user->isAdmin());
 
         if (!$isAdmin) {
             if (!$this->canUserAccessUrl($request, $user)) {

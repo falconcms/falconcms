@@ -72,6 +72,11 @@ class RoleController extends Controller
         ]);
 
         $validated['slug'] = Str::slug($validated['slug']);
+        // Administrators are known by these slugs (never by a role's id), so the system roles
+        // keep theirs: renaming one is fine, re-slugging it would take every admin's access.
+        if (in_array($role->slug, ['administrator', 'super-admin'], true)) {
+            $validated['slug'] = $role->slug;
+        }
         $role->update($validated);
 
         if ($request->has('permissions')) {

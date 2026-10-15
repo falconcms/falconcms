@@ -72,11 +72,9 @@ trait HasCmsPermissions
             return false;
         }
 
-        // Fast path: seeded admin roles (1 = administrator, 6 = super-admin).
-        if (array_intersect([1, 6], $ids)) {
-            return true;
-        }
-
+        // Decided by the roles' slugs, never by their ids: the seeded administrator and
+        // super-admin are usually 1 and 6, but where those rows are missing a role created
+        // later (by a plugin, say) can be given either id and would become an admin.
         // Memoised on the container, never in a static. The key is a set of role ids, and
         // role ids are small integers that get reused — across an Octane request, a queue
         // worker, or a restored backup. A static therefore answers "yes, admin" for an id
