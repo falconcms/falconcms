@@ -80,6 +80,8 @@
                                     @click="fcTblMoveRow(editingElement, r, -1)">▲</button>
                             <button type="button" title="Move down" class="text-[#666] hover:text-[#111] leading-none"
                                     @click="fcTblMoveRow(editingElement, r, 1)">▼</button>
+                            <button type="button" title="Duplicate row" class="text-[#666] hover:text-[#2271b1] leading-none"
+                                    @click="fcTblDuplicateRow(editingElement, r)"><i class="fa fa-copy text-[10px]"></i></button>
                             <button type="button" title="Delete row" class="text-[#b32d2e] leading-none"
                                     @click="fcTblRemoveRow(editingElement, r)">×</button>
                         </div>

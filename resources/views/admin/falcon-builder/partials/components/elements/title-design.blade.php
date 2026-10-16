@@ -44,7 +44,9 @@
         <div class="flex justify-between items-center mb-3">
             <label class="text-[12px] font-bold text-[#333]">HTML Heading Tag</label>
         </div>
-        <select v-model="editingElement.settings.htmlTag"
+        {{-- No tag saved means H2 (what the canvas and the front end render), so show H2 rather than a blank box. --}}
+        <select :value="editingElement.settings.htmlTag || 'h2'"
+                @change="editingElement.settings.htmlTag = $event.target.value"
                 class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
             <option value="h1">H1</option>
             <option value="h2">H2</option>

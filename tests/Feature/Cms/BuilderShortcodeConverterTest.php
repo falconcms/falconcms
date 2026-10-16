@@ -86,6 +86,35 @@ class BuilderShortcodeConverterTest extends TestCase
         $this->assertStringContainsString('[falcon_title', $shortcode);
     }
 
+    public function test_a_rich_title_and_its_heading_tag_survive_the_round_trip(): void
+    {
+        // What the Title's rich editor now writes: inline formatting, a link with attributes,
+        // a colour span and a line break. And the H1 a new title starts with.
+        $html = '<strong>Fast</strong> <em>Laravel</em> <a href="https://example.com/a?b=1&amp;c=2" target="_blank">CMS</a><br><span style="color: #e03e2d;">for teams</span>';
+        $layout = $this->sampleLayout();
+        $layout[0]['columns'][0]['elements'][0]['settings']['title'] = $html;
+        $layout[0]['columns'][0]['elements'][0]['settings']['htmlTag'] = 'h1';
+        unset($layout[0]['columns'][0]['elements'][1]);
+
+        $once = json_decode(C::shortcodesToJson(C::jsonToShortcodes(json_encode($layout))), true);
+        $twice = json_decode(C::shortcodesToJson(C::jsonToShortcodes(json_encode($once))), true);
+
+        foreach ([$once, $twice] as $back) {
+            $title = $back[0]['columns'][0]['elements'][0]['settings'];
+            $this->assertSame($html, $title['title']);
+            $this->assertSame('h1', $title['htmlTag']);
+        }
+    }
+
+    public function test_a_title_saved_without_a_tag_stays_without_one(): void
+    {
+        // Titles from before the H1 default carry no tag and render as H2; a save must not
+        // invent one for them.
+        $back = json_decode(C::shortcodesToJson(C::jsonToShortcodes(json_encode($this->sampleLayout()))), true);
+
+        $this->assertEmpty($back[0]['columns'][0]['elements'][0]['settings']['htmlTag'] ?? null);
+    }
+
     public function test_round_trip_is_idempotent_once_defaults_are_filled(): void
     {
         // The very first serialize is intentionally minimal; parsing fills in defaults

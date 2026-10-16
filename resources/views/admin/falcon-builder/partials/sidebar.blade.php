@@ -509,7 +509,7 @@
                                             <i class="fa fa-database text-[10px]"></i>
                                         </button>
                                     </div>
-                                    <div v-if="editingElement.settings.dynamic_source"
+                                    <div v-show="editingElement.settings.dynamic_source"
                                          class="flex items-center justify-between px-3 py-2.5 bg-[#2271b1]/8 border border-[#0091ea]/25 rounded-lg cursor-pointer select-none"
                                          @click.stop="openDynSrcMenu(editingElement.settings, 'dynamic_source', 'text', $event)">
                                         <div class="flex items-center gap-2">
@@ -521,10 +521,14 @@
                                             <i class="fa fa-times text-[10px]"></i>
                                         </button>
                                     </div>
-                                    <textarea v-else v-model="editingElement.settings.title"
-                                              rows="4"
-                                              placeholder="Enter your title here..."
-                                              class="w-full border border-slate-200 rounded p-3 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/10 transition-all resize-none"></textarea>
+                                    {{-- Rich editor, like the Text Block's (initRichEditors turns this textarea into it).
+                                         v-show, not v-if: the editor is attached to this node, and a dynamic source
+                                         switched on and off again must find it still there. --}}
+                                    <div v-show="!editingElement.settings.dynamic_source" class="builder-rich-editor-wrapper border border-slate-200 rounded overflow-hidden focus-within:border-[#0091ea] transition-all">
+                                        <textarea :id="'rich-editor-' + editingElement.id + '-title'"
+                                                  class="builder-rich-editor w-full p-3 text-[13px] min-h-[120px] focus:outline-none"
+                                                  v-model="editingElement.settings.title"></textarea>
+                                    </div>
                                 </div>
 
                                 <!-- Title Link Toggle -->
@@ -1919,6 +1923,10 @@
                                                 <i :class="item.icon || editingElement.settings.defaultIcon || 'fa fa-check'"
                                                    :style="{color: item.iconColor || editingElement.settings.iconColor || '#2271b1', fontSize:'12px'}"></i>
                                                 <span class="flex-1 text-[12px] text-slate-600 truncate">@{{ item.text || 'Item ' + (idx+1) }}</span>
+                                                <button @click.stop="duplicateIconListItem(editingElement, idx)" title="Duplicate"
+                                                        class="text-slate-300 hover:text-[#0091ea] transition-colors">
+                                                    <i class="fa fa-copy text-[10px]"></i>
+                                                </button>
                                                 <button @click.stop="editingElement.settings.items.splice(idx,1); if(activeIconListItem===idx) activeIconListItem=null;"
                                                         class="text-slate-300 hover:text-red-400 transition-colors">
                                                     <i class="fa fa-trash-alt text-[10px]"></i>
