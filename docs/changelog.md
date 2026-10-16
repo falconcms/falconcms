@@ -5,7 +5,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.3 <Badge type="tip" text="Latest" /> {#v2-8-3}
+## v2.8.4 <Badge type="tip" text="Latest" /> {#v2-8-4}
+
+**Released: 2026-10-16**
+
+What updating to 2.8.3 turned up on falconcms.com and the demo: a plugin update that never
+finished, a config cache that was still dropped, and Site Health errors from the update itself
+that stayed critical. Plus a roomier Title editor and documentation for the new builder tools.
+
+### Fixed
+
+- **Plugin updates that arrived with Pro but never finished.** Pro copies its bundled plugins
+  (Falcon Wholesale, Slider, Search Console) in as the site boots, which during an update happens
+  inside Composer's own run, and finishes their update there. When that step failed, nothing
+  showed it and nothing tried again: on the next boot the files already matched. On the demo,
+  Falcon Wholesale's files were 1.0.1 while the site still recorded 1.0.0 and kept offering the
+  update. `falcon:update` now finishes every active plugin whose files are newer than its
+  recorded version (new migrations, its upgrade step, the new version) in a clean process after
+  Composer, and prints the outcome.
+- **The config cache was still lost on update.** 2.8.3 rebuilt the caches a site had before the
+  update cleared them, but Composer deletes the cached config even earlier, while it installs, so
+  only the route cache came back. The dashboard updater now notes whether the config was cached
+  before it runs Composer and passes that to `falcon:update`. From a shell, a route cache that
+  survived counts for both.
+- **Site Health: errors logged during the update itself stayed critical.** While Composer swaps
+  the files, Laravel can fail to set up its logger and log *Unable to create configured logger*.
+  The real cause, a file missing for a moment, is inside the exception behind that line, which
+  Site Health did not read. It does now, so the error counts as fixed once the file is back.
+- **Site Health: OPcache read "off" when the checks ran from the command line.** OPcache is
+  normally off for the CLI (`opcache.enable_cli`), which says nothing about the web server. From
+  the CLI the web setting now decides.
+
+### Changed
+
+- **Title element: a taller editor.** The toolbar wraps to two rows in the settings panel, which
+  left room for one line of text; a two-line title was cut off. The editor is now 260px tall.
+
+### Documentation
+
+- **Builder Elements:** the Title section describes the rich editor and the H1 default (it
+  wrongly said the element always shows the current page's title); the Item List section covers
+  duplicating and reordering items; and there is a new Table section with pasting, the Cells
+  grid and the row controls. With screenshots from the demo.
+- **Upgrade Guide:** what `falcon:update` now does with plugins and caches, and why errors logged
+  during an update clear themselves in Site Health.
+- **Media:** changing a file's title no longer renames the file.
+
+---
+
+## v2.8.3 {#v2-8-3}
 
 **Released: 2026-10-16**
 

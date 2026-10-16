@@ -20,7 +20,8 @@ The Media Library handles all file uploads: images, videos, and documents.
 
 Click any file to:
 - Edit **Alt text** (important for SEO and accessibility)
-- Edit **Title** and **Caption**
+- Edit **Title** and **Caption**. The title is a label: changing it does not rename the file
+  or change its address, so every page that shows the image keeps working.
 - Get the **direct URL**
 - **Delete** the file
 

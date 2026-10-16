@@ -7,6 +7,30 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.8.4] — 2026-10-16
+
+### Fixed
+
+- **Plugin updates that arrived with Pro but never finished.** `falcon:update` now finishes every
+  active plugin whose files are newer than the version the site recorded (migrations, upgrade
+  step, version). A failed reconcile during Composer's run used to leave the old version
+  recorded with nothing retrying it.
+- **The config cache survives an update.** Composer deletes the cached config before
+  `falcon:update` runs; the dashboard updater now tells it the config was cached, and from a
+  shell a surviving route cache counts for both.
+- **Site Health reads the cause behind "Unable to create configured logger"**, so errors logged
+  while an update swaps the files clear once the file is back.
+- **Site Health no longer reports OPcache off when run from the CLI.**
+
+### Changed
+
+- **Title element: the editor is 260px tall**, so a two-line title is not cut off.
+
+### Documentation
+
+- Builder Elements (Title, Item List, new Table section, with screenshots), Upgrade Guide
+  (plugins and caches on update), Media (titles do not rename files).
+
 ## [2.8.3] — 2026-10-16
 
 ### Added

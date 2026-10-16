@@ -44,6 +44,22 @@ const VIEWPORT = { width: 1440, height: 900 };
  */
 const BUILDER_PAGE_ID = 47;
 
+/**
+ * The About page: it carries a Title and an Item List, which the element captures open.
+ * Same caveat as BUILDER_PAGE_ID.
+ */
+const ELEMENTS_PAGE_ID = 48;
+
+/**
+ * Open an element's settings from the Navigator, which names every element by type —
+ * steadier than aiming at the canvas, where toolbars overlap the content.
+ */
+const openFromNavigator = async (page, label) => {
+  await page.locator('.builder-sidebar, aside, body').first()
+    .locator(`text=/^${label}$/`).first().click();
+  await page.waitForTimeout(2500);
+};
+
 /** Likewise for the slider the Falcon Slider captures open. */
 const SLIDER_ID = 1;
 
@@ -193,6 +209,52 @@ const TARGETS = [
     },
   },
   {
+    // The Title's rich editor (2.8.3).
+    name: 'builder-title-editor',
+    url: `/admin/falcon-builder/${ELEMENTS_PAGE_ID}`,
+    settle: 6000,
+    steps: async (page) => {
+      await openFromNavigator(page, 'Title');
+      // 260px is the editor's height from 2.8.4 on (it was 180, which cut off a second
+      // line). Harmless once the demo runs that version.
+      await page.evaluate(() => {
+        const ed = (window.tinymce?.get() || []).find((e) => /-title$/.test(e.id));
+        if (ed) ed.getContainer().style.height = '260px';
+      });
+      await page.waitForTimeout(600);
+    },
+  },
+  {
+    // Item List items with their duplicate and delete buttons.
+    name: 'builder-item-list',
+    url: `/admin/falcon-builder/${ELEMENTS_PAGE_ID}`,
+    settle: 6000,
+    steps: async (page) => openFromNavigator(page, 'Item List'),
+  },
+  {
+    // The Table's Cells grid: drag grip, duplicate and delete on each row. The demo has
+    // no table, so one is added below the Item List from its "Add Below" button. It is
+    // never saved — the demo refuses saves anyway.
+    name: 'builder-table-rows',
+    url: `/admin/falcon-builder/${ELEMENTS_PAGE_ID}`,
+    settle: 6000,
+    steps: async (page) => {
+      const list = page.locator('[data-fc-node^="element-"]', { hasText: 'MSc in Clinical Nutrition' }).last();
+      await list.scrollIntoViewIfNeeded();
+      await list.hover();
+      await list.locator('.falcon-tooltip-v2', { hasText: /^Add Below$/ }).first().locator('xpath=..').click({ force: true });
+      await page.waitForTimeout(1500);
+      await page.locator('text=/^Table$/').first().click({ force: true });
+      await page.waitForTimeout(2000);
+      await openFromNavigator(page, 'Table');
+      // Bring the Cells grid to the top of the settings panel so its rows are in view.
+      await page.locator('text=/^Cells$/').first().evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await page.waitForTimeout(600);
+      await page.locator('button[title="Duplicate row"]').nth(1).hover();
+      await page.waitForTimeout(800);
+    },
+  },
+  {
     name: 'builder-responsive',
     url: `/admin/falcon-builder/${BUILDER_PAGE_ID}`,
     settle: 6000,
@@ -255,6 +317,18 @@ for (const target of targets) {
     await page.addStyleTag({ content: NO_SCROLLBARS });
     await page.waitForTimeout(target.settle ?? 1800);
     if (target.steps) await target.steps(page);
+
+    // The demo is read-only and pins a "Demo mode · changes are not saved" badge (and a
+    // save notice) on every admin page, the builder's canvas frame included. They are the
+    // demo's, not the product's, so they stay out of the documentation.
+    for (const frame of page.frames()) {
+      await frame.evaluate(() => {
+        document.getElementById('demo-save-notice')?.remove();
+        document.querySelectorAll('body div').forEach((el) => {
+          if (el.childElementCount === 0 && el.textContent.trim() === 'Demo mode · changes are not saved') el.remove();
+        });
+      }).catch(() => {});
+    }
 
     const png = resolve(TMP, `${target.name}.png`);
     await page.screenshot({ path: png });

@@ -31,10 +31,30 @@ php artisan falcon:update
 - Runs new database migrations
 - Syncs permissions and roles
 - Refreshes admin assets (CSS, JS)
+- Finishes plugin updates: an active plugin whose files are newer than the version the site
+  recorded gets its new migrations and upgrade step, and the new version is recorded. This
+  covers the plugins bundled with Pro, which arrive with a Pro update.
 - Refreshes the default theme
 - Publishes child theme skeleton (non-destructive — never overwrites your customizations)
-- Clears application cache
+- Clears application cache, then rebuilds the config and route caches if the site had them
+- Tells queue workers to restart on the new code
 - Auto-creates any missing e-commerce pages
+
+::: tip Cached sites stay cached
+Composer itself deletes Laravel's cached config while it installs, before `falcon:update`
+runs. The dashboard updater notes beforehand whether the config was cached and passes that on,
+so the update rebuilds it. When you update from a shell, a route cache that is still there
+counts as "this site caches", and both caches are rebuilt. A site that never cached stays
+uncached.
+:::
+
+::: tip Errors logged during an update
+For a few seconds while Composer swaps the files, a request or a queue job can find a file
+missing and log an error (*Failed to open stream*, or *Unable to create configured logger*).
+**Settings → Site Health** marks these fixed once the file is back or newer code has been
+installed, so they do not hold the error-log check at critical. One that happens again after the
+update shows as open again.
+:::
 
 ::: tip Child theme safety
 `falcon:update` will **never** overwrite files in your child theme. Your customizations in `resources/views/themes/my-child-theme/` are always preserved.

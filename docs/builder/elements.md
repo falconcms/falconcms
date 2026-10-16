@@ -15,12 +15,38 @@ covers the settings behind them.
 ## Text Elements
 
 ### Title
-A dynamic post/page title element — automatically pulls the current content's title. Useful in templates, header builder, and single post layouts.
+A heading. Type it yourself, or pick a [dynamic value](#dynamic-values) (the database icon
+next to the field) to fill it from the current post, page or product — useful in templates,
+the header builder and single-post layouts.
+
+![The Title element's rich editor in the settings panel](/screenshots/builder-title-editor.webp)
+
+*The Title field is a rich editor with the formatting a heading can hold.*
+
+**The Title field** is the same editor as the Text Block's, with the tools that make sense inside
+a heading: **bold**, *italic*, underline, strikethrough, text colour, background colour, link,
+clear formatting, and the code view for HTML. Press **Enter** to start a new line inside the
+heading. Paragraphs, lists and tables are left out on purpose, because a heading cannot contain
+them.
+
+Titles written before the editor existed open exactly as they were saved. A title is only
+rewritten when you edit it.
 
 **Settings:**
-- Tag (H1–H6)
-- Font size, weight, color
-- Text alignment
+- **HTML Heading Tag** (Design tab): H1–H6, `div` or `p`. A new Title starts as **H1**.
+  A Title saved before 2.8.3 has no tag stored and renders as **H2**, as it always has, so
+  adding the H1 default changed no existing page.
+- Font family, size, weight, line height, letter spacing, text transform
+- Colour, hover colour, or a gradient
+- Text alignment (per device)
+- Separator line under the heading
+- Text shadow and text stroke
+- Title link
+
+::: tip One H1 per page
+Search engines read the H1 as the page's main heading. If you add a second Title to a page,
+switch it to H2 or lower under **Design → HTML Heading Tag**.
+:::
 
 ### Text Block
 A rich-text paragraph block with a WYSIWYG editor.
@@ -181,11 +207,51 @@ An icon paired with a title and description.
 ### Item List <Badge type="warning" text="Pro" />
 A styled list with icons.
 
+![Item List items, each with drag, duplicate and delete controls](/screenshots/builder-item-list.webp)
+
+*Each item has a drag grip, a duplicate button and a delete button.*
+
+**Items:**
+- **Add Item** adds a new item at the end.
+- **Duplicate** (the copy icon) copies the whole item — icon, icon colour, text and link —
+  right below the original. Handy when items differ by a word or two.
+- **Drag** an item by its grip to reorder the list.
+- Click an item to open it and change its icon, colour, text or link.
+
 **Settings:**
 - Items (icon + text pairs)
 - Icon color
 - Text size, color
 - Gap between items
+
+### Table <Badge type="warning" text="Pro" />
+A data table with an optional header row and column, sortable columns and a sticky header.
+
+![The Table element's Cells grid, with drag, duplicate and delete on each row](/screenshots/builder-table-rows.webp)
+
+*Every row in the Cells grid has a drag grip, a duplicate button and a delete button.*
+
+**Filling it in:**
+- **Paste a table** — Markdown, CSV, or a paste from a spreadsheet. A Markdown alignment row
+  (`:---:`) sets the column alignments. Importing replaces the grid.
+- **Cells grid** — type into each cell. Cells take `` `code` ``, `**bold**`, `*italic*`,
+  `[text](url)` and `<br>`; anything else is shown as written, so a cell can never carry script.
+- **+ Row** / **+ Column** add one at the end. Each column has its alignment, a width, arrows to
+  move it, and × to delete it.
+
+**Rows:**
+- **Drag** a row by its grip (⋮⋮) and drop it where it should go. The row under the pointer is
+  outlined. Only the grip starts a drag, so selecting text inside a cell works as usual.
+- **Duplicate** copies the row right below the original. Duplicating the header row gives a
+  body row with the same text; the header itself stays first.
+- **Delete** removes the row. A table always keeps at least one row.
+
+**Settings:**
+- First row is a header / First column is a header
+- Caption, shown under the table
+- Readers can sort by clicking a header; the header can stay visible while scrolling
+- Max height (0 shows the whole table; above that it scrolls)
+- On small screens: scroll sideways, or stack each row as a card
 
 ---
 

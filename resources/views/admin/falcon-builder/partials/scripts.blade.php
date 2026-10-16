@@ -1665,7 +1665,9 @@
                     convert_urls: false, relative_urls: false, remove_script_host: false,
                     selector: selector,
                     menubar: false,
-                    height: 180,
+                    // The toolbar wraps to two rows in the sidebar; at 180 that left one line of
+                    // text showing, and a two-line title was cut off.
+                    height: 260,
                     plugins: 'link code',
                     // Inline formatting only: a heading cannot hold paragraphs, lists or tables.
                     toolbar1: 'bold italic underline strikethrough | forecolor backcolor | link | removeformat | code',
