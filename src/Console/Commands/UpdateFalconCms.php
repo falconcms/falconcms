@@ -88,7 +88,13 @@ class UpdateFalconCms extends Command
 
         // 6. Clear Cache
         $this->info('Step 6: Clearing cache...');
+        // optimize:clear drops the config and route caches along with the rest, and nothing
+        // put them back: every update left a cached production site booting uncached, and
+        // Site Health reporting it, until someone ran `php artisan optimize` by hand.
+        $configWasCached = $this->laravel->configurationIsCached();
+        $routesWereCached = $this->laravel->routesAreCached();
         $this->call('optimize:clear');
+        $this->recache($configWasCached, $routesWereCached);
         if (function_exists('opcache_reset')) {
             opcache_reset();
             $this->info('Step 6b: OPcache cleared.');
@@ -109,6 +115,31 @@ class UpdateFalconCms extends Command
         $this->info('---------------------------------------');
         $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
+    }
+
+    /**
+     * Rebuild the config and route caches the site had before Step 6 cleared them.
+     *
+     * Only what was cached — a site that never cached stays uncached, as its owner set it up.
+     * A failed rebuild clears that cache again: uncached is slower but correct, and a
+     * half-written cache is neither.
+     */
+    protected function recache(bool $config, bool $routes): void
+    {
+        foreach (array_filter(['config' => $config, 'route' => $routes]) as $what => $_) {
+            try {
+                $failed = $this->callSilently($what.':cache') !== 0 ? 'the command failed' : null;
+            } catch (\Throwable $e) {
+                $failed = $e->getMessage();
+            }
+            if ($failed === null) {
+                $this->info("Step 6a: Rebuilt the {$what} cache.");
+
+                continue;
+            }
+            $this->callSilently($what.':clear');
+            $this->warn("Step 6a: Could not rebuild the {$what} cache ({$failed}); left it cleared.");
+        }
     }
 
     /**

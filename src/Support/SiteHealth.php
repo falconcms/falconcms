@@ -860,7 +860,7 @@ class SiteHealth
         $fixed = count($groups) - count($open);
         $openCount = array_sum(array_column($open, 'count'));
         $open24 = count(array_filter($open, fn ($g) => $g['last'] > now()->subDay()->format('Y-m-d H:i:s')));
-        $fixedNote = $fixed ? ' '.$fixed.' older problem(s) look fixed — the file behind each was changed after it last happened, so they no longer count.' : '';
+        $fixedNote = $fixed ? ' '.$fixed.' older problem(s) look fixed — the file behind each, or the installed code, was changed after it last happened, so they no longer count.' : '';
 
         if (!$open) {
             $out[] = self::result('error_log', 'No open errors — '.$fixed.' recent problem(s) have been fixed', self::GOOD, 'Site',
@@ -883,8 +883,9 @@ class SiteHealth
     /**
      * Has a logged error been dealt with since? Yes when the file it points at was changed
      * after it last happened (the template named in "(View: …)", or the file in " at …:line"),
-     * when it named a view that now exists, or when it pointed into a compiled view that has
-     * since been cleared. An error that happens again after the change shows up as open again,
+     * when it named a view that now exists, when it pointed into a compiled view that has
+     * since been cleared, or — for an error that surfaced in the framework or a file that went
+     * missing — when Composer installed new code after it. An error that happens again after the change shows up as open again,
      * because its last-seen time moves past the file's.
      */
     private static function errorResolved(array $g): bool
@@ -903,8 +904,10 @@ class SiteHealth
 
         // A file that was missing (a deploy or an update caught half-way) and is there now.
         // Composer keeps the archive's own file times, so "changed after" cannot tell here.
+        // Gone for good counts too: the update that finished may have moved the class elsewhere
+        // (NotFoundLog went from core into the SEO plugin), so the old path never comes back.
         if (preg_match('/\b(?:include|require)(?:_once)?\((.+?)\): Failed to open stream: No such file or directory/i', $g['message'], $m)) {
-            return is_file($m[1]);
+            return is_file($m[1]) || self::codeUpdatedSince($last);
         }
 
         $path = $g['source'] ?? null;
@@ -916,10 +919,22 @@ class SiteHealth
             return !is_file($path); // compiled copy gone: views were rebuilt from fixed source
         }
         if (str_contains($path, '/vendor/laravel/') || str_contains($path, '/vendor/symfony/')) {
-            return false; // the framework is where it surfaced, not where it was caused
+            // The framework is where it surfaced, not where it was caused, so its file time says
+            // nothing. An update since does: the cause was most likely in the code it replaced
+            // (a too-long user agent hitting the analytics insert, fixed in 2.8.2), and if not,
+            // the error happens again and is open again.
+            return self::codeUpdatedSince($last);
         }
 
         return is_file($path) && filemtime($path) > $last;
+    }
+
+    /** Was anything installed or updated through Composer after this moment? */
+    private static function codeUpdatedSince(int $timestamp): bool
+    {
+        $installed = base_path('vendor/composer/installed.json');
+
+        return is_file($installed) && filemtime($installed) > $timestamp;
     }
 
     private static function updates(): array

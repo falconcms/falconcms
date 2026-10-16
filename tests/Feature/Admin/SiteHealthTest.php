@@ -216,6 +216,7 @@ class SiteHealthTest extends TestCase
         touch($back, now()->subDays(30)->getTimestamp());   // composer keeps the archive's old file time
         $page = str_replace('\\', '/', base_path('vendor/laravel/framework/src/Illuminate/Foundation/Exceptions/views/500.blade.php'));
         $log = storage_path('logs/site-health-missing.log');
+        $restore = $this->composerInstalledAt(now()->subDays(30)->getTimestamp());   // no update since
         $t1 = now()->subHours(3)->format('Y-m-d H:i:s');
         $t2 = now()->subHours(3)->addSecond()->format('Y-m-d H:i:s');
         $t3 = now()->subHours(1)->format('Y-m-d H:i:s');
@@ -237,7 +238,55 @@ class SiteHealthTest extends TestCase
         } finally {
             @unlink($log);
             @unlink($back);
+            $restore();
         }
+    }
+
+    public function test_an_update_since_settles_framework_surfaced_errors_and_files_that_moved_away(): void
+    {
+        // The main site's log after updating to 2.8.2: an analytics insert that failed inside
+        // Laravel's Connection (fixed by the update), and a class file the update moved into a
+        // plugin. Neither file's own time can say it was fixed; the update can.
+        $gone = str_replace('\\', '/', base_path('vendor/falconcms/falconcms/src/Support/SiteHealthMoved.php'));
+        $conn = str_replace('\\', '/', base_path('vendor/laravel/framework/src/Illuminate/Database/Connection.php'));
+        $log = storage_path('logs/site-health-updated.log');
+        $before = now()->subHours(3)->format('Y-m-d H:i:s');
+        $restore = $this->composerInstalledAt(now()->subHours(2)->getTimestamp());
+        try {
+            file_put_contents($log,
+                "[$before] production.ERROR: SQLSTATE[22001]: Data too long for column 'user_agent' {\"exception\":\"x at $conn:864)\"}\n".
+                "[$before] production.ERROR: include($gone): Failed to open stream: No such file or directory\n");
+            $errors = collect(collect(SiteHealth::asyncTest('error_log'))->firstWhere('id', 'error_log')['details']['errors']);
+            $state = fn (string $start) => $errors->first(fn ($e) => str_starts_with($e['message'], $start))['resolved'];
+            $this->assertTrue($state('SQLSTATE[22001]'));
+            $this->assertTrue($state("include($gone)"));
+
+            // Happening again after the update → open again.
+            $after = now()->format('Y-m-d H:i:s');
+            file_put_contents($log, "[$after] production.ERROR: SQLSTATE[22001]: Data too long for column 'user_agent' {\"exception\":\"x at $conn:864)\"}\n", FILE_APPEND);
+            $errors = collect(collect(SiteHealth::asyncTest('error_log'))->firstWhere('id', 'error_log')['details']['errors']);
+            $this->assertFalse($errors->first(fn ($e) => str_starts_with($e['message'], 'SQLSTATE[22001]'))['resolved']);
+        } finally {
+            @unlink($log);
+            $restore();
+        }
+    }
+
+    /** Pretend Composer last ran at $timestamp; returns the undo. */
+    private function composerInstalledAt(int $timestamp): \Closure
+    {
+        $file = base_path('vendor/composer/installed.json');
+        if (!is_file($file)) {
+            @mkdir(dirname($file), 0777, true);
+            file_put_contents($file, '{"packages":[]}');
+            touch($file, $timestamp);
+
+            return fn () => @unlink($file);
+        }
+        $was = filemtime($file);
+        touch($file, $timestamp);
+
+        return fn () => touch($file, $was);
     }
 
     public function test_only_fixed_errors_leave_the_check_green(): void
