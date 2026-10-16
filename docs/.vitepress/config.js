@@ -66,6 +66,7 @@ export default defineConfig({
       { text: 'Builder', link: '/builder/overview' },
       { text: 'Slider', link: '/slider/overview' },
       { text: 'E-commerce', link: '/ecommerce/overview' },
+      { text: 'Wholesale', link: '/wholesale/overview' },
       { text: 'Plugins', link: '/guide/plugins' },
       { text: 'Hooks API', link: '/api/hooks' },
       { text: 'Changelog', link: '/changelog' },
@@ -166,6 +167,21 @@ export default defineConfig({
             { text: 'Coupons', link: '/ecommerce/coupons' },
             { text: 'Promotions', link: '/ecommerce/promotions' },
             { text: 'Shop Plugin & Templates', link: '/ecommerce/shop-plugin' },
+            { text: 'Wholesale & B2B (Pro)', link: '/wholesale/overview' },
+          ]
+        },
+      ],
+      '/wholesale/': [
+        {
+          text: 'Falcon Wholesale',
+          items: [
+            { text: 'Overview', link: '/wholesale/overview' },
+            { text: 'Customers & Levels', link: '/wholesale/customers' },
+            { text: 'Prices', link: '/wholesale/pricing' },
+            { text: 'Ordering & Checkout', link: '/wholesale/ordering' },
+            { text: 'Login & Portal', link: '/wholesale/portal' },
+            { text: 'Settings & Tools', link: '/wholesale/settings' },
+            { text: 'For Developers', link: '/wholesale/developers' },
           ]
         },
       ],

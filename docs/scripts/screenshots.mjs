@@ -60,6 +60,18 @@ const openFromNavigator = async (page, label) => {
   await page.waitForTimeout(2500);
 };
 
+/**
+ * Falcon Wholesale (Pro). The demo has an approved wholesale buyer (BrightMart Electronics)
+ * and a product with wholesale prices and quantity tiers; the captures marked `as: 'buyer'`
+ * sign in as that buyer, and `as: 'guest'` ones are taken signed out.
+ */
+const BUYER_EMAIL = process.env.DEMO_BUYER_EMAIL || 'nadia.rahman@example.com';
+const BUYER_PASSWORD = process.env.DEMO_BUYER_PASSWORD || 'BrightMart-2026';
+const WHOLESALE_PRODUCT_ID = 17;
+const WHOLESALE_PRODUCT_URL = '/product/sony-wh-1000xm5';
+const WHOLESALE_CUSTOMER_ID = 3;
+const WHOLESALE_LEVEL_ID = 4;
+
 /** Likewise for the slider the Falcon Slider captures open. */
 const SLIDER_ID = 1;
 
@@ -254,6 +266,42 @@ const TARGETS = [
       await page.waitForTimeout(800);
     },
   },
+  // Falcon Wholesale. Nothing here is saved: the demo refuses writes, and none of these
+  // steps submit a form.
+  { name: 'wholesale-settings',       url: '/admin/wholesale/settings' },
+  { name: 'wholesale-level',          url: `/admin/wholesale/levels/${WHOLESALE_LEVEL_ID}` },
+  { name: 'wholesale-customers',      url: '/admin/wholesale/customers' },
+  { name: 'wholesale-customer',       url: `/admin/wholesale/customers/${WHOLESALE_CUSTOMER_ID}` },
+  {
+    name: 'wholesale-product-tab',
+    url: `/admin/posts/${WHOLESALE_PRODUCT_ID}/edit`,
+    steps: async (page) => {
+      const tab = page.locator('button:has(span.material-symbols-outlined:text-is("storefront"))').first();
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+      await page.waitForTimeout(1200);
+      await tab.evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      // The Wholesale tab sits low in the tab list; its panel starts at the top of the box.
+      await page.mouse.wheel(0, -340);
+      await page.waitForTimeout(800);
+    },
+  },
+  { name: 'wholesale-prices',         url: '/admin/wholesale/prices' },
+  { name: 'wholesale-reports',        url: '/admin/wholesale/reports' },
+  { name: 'wholesale-login',          url: '/wholesale-login', as: 'guest' },
+  { name: 'wholesale-apply',          url: '/wholesale/apply', as: 'guest' },
+  {
+    name: 'wholesale-product-page',
+    url: WHOLESALE_PRODUCT_URL,
+    as: 'buyer',
+    steps: async (page) => {
+      await page.mouse.wheel(0, 110);
+      await page.waitForTimeout(1200);
+    },
+  },
+  { name: 'wholesale-portal',         url: '/wholesale/portal', as: 'buyer' },
+  { name: 'wholesale-quick-order',    url: '/wholesale/portal?tab=quick-order', as: 'buyer' },
+  { name: 'wholesale-portal-prices',  url: '/wholesale/portal?tab=prices', as: 'buyer' },
   {
     name: 'builder-responsive',
     url: `/admin/falcon-builder/${BUILDER_PAGE_ID}`,
@@ -308,11 +356,37 @@ if (!page.url().includes('/admin')) {
   process.exit(1);
 }
 
+// --- other visitors --------------------------------------------------------------
+// A signed-out visitor and the wholesale buyer each get their own browser context, made
+// only when a target needs it, so the admin session above is never signed out.
+const pages = { admin: page };
+const pageFor = async (as = 'admin') => {
+  if (pages[as]) return pages[as];
+  const ctx = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 2 });
+  const p = await ctx.newPage();
+  if (as === 'buyer') {
+    await p.goto(`${BASE}/wholesale/login`, { waitUntil: 'networkidle' });
+    // Enter in the password box submits the login form itself; the page has other,
+    // hidden submit buttons (the header search) that a "first button" would hit.
+    await p.locator('input[type=email]:visible').first().fill(BUYER_EMAIL);
+    const pw = p.locator('input[type=password]:visible').first();
+    await pw.fill(BUYER_PASSWORD);
+    await Promise.all([p.waitForNavigation({ waitUntil: 'networkidle' }).catch(() => {}), pw.press('Enter')]);
+    await p.waitForLoadState('networkidle');
+    if (!p.url().includes('/wholesale/portal')) {
+      throw new Error(`buyer sign-in failed — on ${p.url()}`);
+    }
+  }
+  pages[as] = p;
+  return p;
+};
+
 // --- capture -------------------------------------------------------------------
 const captured = [];
 
 for (const target of targets) {
   try {
+    const page = await pageFor(target.as);
     await page.goto(BASE + target.url, { waitUntil: 'networkidle', timeout: 60000 });
     await page.addStyleTag({ content: NO_SCROLLBARS });
     await page.waitForTimeout(target.settle ?? 1800);

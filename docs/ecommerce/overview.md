@@ -13,6 +13,12 @@ theme.
 As of **v2.2**, the full e-commerce system is part of the **free core** — no Pro license required. Build and run a complete store on any FalconCMS site.
 :::
 
+::: info Selling to businesses too?
+**Falcon Wholesale** (Pro) adds trade accounts with approval, prices per customer level and
+quantity tier, minimum quantities, a wholesale portal, buying on account and quotes, alongside your
+retail shop. See [Falcon Wholesale](/wholesale/overview).
+:::
+
 ## Features
 
 - **Products** with images, pricing, inventory, SKU, weight and dimensions

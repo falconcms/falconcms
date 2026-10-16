@@ -14,6 +14,7 @@ part of the free core.
 - **Advanced login** — multi-device & magic login
 - **Falcon Slider** — the layer-based slider builder ([docs](/slider/overview))
 - **Falcon Search Console** — Google Search Console inside the admin, with opportunities, a content plan and each page's numbers in its editor ([docs](/guide/search-console))
+- **Falcon Wholesale** — wholesale and B2B selling in the shop: applications with approval, customer levels, prices per level and quantity tier, a trade portal, buying on account, quotes and company accounts ([docs](/wholesale/overview))
 
 Pro ships as a separate, proprietary package — `falconcms/pro` — delivered from a
 **private repository**. It is never bundled in the free download, so you install it
