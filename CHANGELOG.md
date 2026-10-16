@@ -7,6 +7,32 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.8.3] — 2026-10-16
+
+### Added
+
+- **Title element: a rich editor** (bold, italic, underline, strikethrough, colours, link, code
+  view). Enter adds a line break inside the heading. Existing titles open as saved and are only
+  rewritten when edited.
+- **Title element: new titles start as H1.** Titles saved earlier keep rendering as H2, and their
+  tag box now shows H2 instead of a blank.
+- **Item List: duplicate an item**, copied right below the original.
+- **Table: duplicate a row**, copied right below the original; the header row stays first.
+
+### Changed
+
+- **Table: rows are sorted by dragging a grip** instead of up/down arrows; the grip, duplicate and
+  delete controls are matching icons.
+
+### Fixed
+
+- **Retitling a media item no longer renames its file.** The rename moved the image to a new
+  address and broke every page that showed it.
+- **Updates keep the config and route caches.** The update cleared them and nothing rebuilt them;
+  it now rebuilds the ones the site had.
+- **Site Health: errors an update fixed no longer stay open** — one that surfaced inside Laravel,
+  or a file the update moved away, counts as fixed once new code is installed after it.
+
 ## [2.8.2] — 2026-10-16
 
 ### Added

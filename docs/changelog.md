@@ -5,7 +5,56 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.2 <Badge type="tip" text="Latest" /> {#v2-8-2}
+## v2.8.3 <Badge type="tip" text="Latest" /> {#v2-8-3}
+
+**Released: 2026-10-16**
+
+A rich editor for the Title element, duplicate buttons for list items and table rows, and three
+fixes found on falconcms.com: images that broke when a file was renamed, the config cache that
+every update dropped, and Site Health errors that stayed open after an update had fixed them.
+
+### Added
+
+- **Title element: a rich editor.** The Title field is the same editor as the Text Block's, with
+  the tools a heading can hold: bold, italic, underline, strikethrough, text and background
+  colour, link, clear formatting and the code view. Enter starts a new line inside the heading.
+  Paragraphs, lists and tables are left out on purpose, because a heading cannot contain them.
+  Existing titles open exactly as they were saved; a title is only rewritten when you edit it.
+- **Title element: new titles start as H1.** The HTML Heading Tag of a newly added Title is H1.
+  Titles saved before this release keep rendering as H2, as they always have, so no existing page
+  changes its heading outline. Their tag box now says H2 instead of being blank.
+- **Item List: duplicate an item.** A copy button next to delete duplicates the whole item (icon,
+  colour, text, link) right below the original.
+- **Table: duplicate a row.** Each row of the Cells grid has a copy button; the copy lands right
+  below the original, and the header row stays first.
+
+### Changed
+
+- **Table: drag to sort rows.** The up and down arrows in the Cells grid are replaced by a grip:
+  drag a row by it and drop it where it should go; the row under the pointer is outlined. The
+  grip, duplicate and delete controls are now one clean column of matching icons. Only the grip
+  starts a drag, so selecting text inside a cell works as before.
+
+### Fixed
+
+- **Renaming a media item's title broke the images that used it.** Changing the title in the Media
+  Library also renamed the file, so its address changed, and every page, section or setting that
+  showed the image kept pointing at the old address and showed a broken image. The title is now
+  only a label and the file keeps its name, as in WordPress. Files already renamed by an earlier
+  version keep their new name; re-pick the image where it shows as broken.
+- **Every update dropped the config and route caches.** The update's last step cleared all caches
+  and nothing rebuilt them, so a cached production site ran uncached after each update (and Site
+  Health said *Configuration is not cached*) until someone ran `php artisan optimize`. The update
+  now rebuilds the config and route caches the site had before. A site that never cached stays
+  uncached, and a rebuild that fails is cleared rather than left half-written.
+- **Site Health: errors an update fixed no longer stay open.** An error that surfaced inside
+  Laravel itself (a database insert, for example) or a file that an update moved away was never
+  counted as fixed, because the file it named never changes. It now counts as fixed when new code
+  was installed after it last happened. If it happens again, it is open again.
+
+---
+
+## v2.8.2 {#v2-8-2}
 
 **Released: 2026-10-16**
 
