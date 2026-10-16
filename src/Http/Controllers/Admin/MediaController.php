@@ -289,36 +289,15 @@ class MediaController extends Controller
 
     public function update(Request $request, Media $media)
     {
-        $oldTitle = $media->title;
-        $newTitle = $request->input('title');
-
+        // The title is a label; the file keeps its name. Renaming the file to match it used to
+        // move it to a new URL while every page, section and setting that embedded the old one
+        // kept pointing there — on falconcms.com retitling "dashboard-1.svg" broke the hero
+        // image on four pages. The path is the file's address, as a form's slug is (WordPress
+        // does the same).
         $media->alt_text = $request->input('alt_text');
-        $media->title = $newTitle;
+        $media->title = $request->input('title');
         $media->caption = $request->input('caption');
         $media->description = $request->input('description');
-
-        // Rename file if title changed and it's not empty
-        if ($newTitle && $newTitle !== $oldTitle) {
-            $extension = pathinfo($media->path, PATHINFO_EXTENSION);
-            $slug = Str::slug($newTitle);
-
-            // Generate unique filename — preserve existing year/month directory
-            $dir = dirname($media->path);
-            $newFilename = $slug.'.'.$extension;
-            $newPath = $dir.'/'.$newFilename;
-
-            if (Storage::disk('public')->exists($newPath)) {
-                $newFilename = $slug.'-'.time().'.'.$extension;
-                $newPath = $dir.'/'.$newFilename;
-            }
-
-            // Move the file
-            if (Storage::disk('public')->exists($media->path)) {
-                Storage::disk('public')->move($media->path, $newPath);
-                $media->path = $newPath;
-                $media->filename = $newFilename;
-            }
-        }
 
         $media->save();
 
