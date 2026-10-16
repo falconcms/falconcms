@@ -4992,6 +4992,38 @@
                 el.settings.rows = rows;
             }
 
+            // Drag-to-sort for the Cells grid. Only the grip starts a drag (a draggable row
+            // would steal text selection from its cells); the row under the pointer shows
+            // where it will land.
+            const fcTblDrag = ref({ from: null, over: null });
+
+            function fcTblDragStart(e, r) {
+                fcTblDrag.value = { from: r, over: null };
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', String(r));
+                const row = e.target.closest('tr');
+                if (row) e.dataTransfer.setDragImage(row, 12, 12);
+            }
+
+            function fcTblDragOver(r) {
+                if (fcTblDrag.value.from !== null) fcTblDrag.value.over = r;
+            }
+
+            function fcTblDrop(el, to) {
+                const from = fcTblDrag.value.from;
+                fcTblDrag.value = { from: null, over: null };
+                if (from === null || from === to) return;
+                fcTblEnsure(el);
+                const rows = el.settings.rows.slice();
+                const [moved] = rows.splice(from, 1);
+                rows.splice(to, 0, moved);
+                el.settings.rows = rows;
+            }
+
+            function fcTblDragEnd() {
+                fcTblDrag.value = { from: null, over: null };
+            }
+
             function fcTblRemoveRow(el, i) {
                 fcTblEnsure(el);
                 if (el.settings.rows.length <= 1) return;
@@ -7425,6 +7457,7 @@
                 fcTblOuterStyle, fcTblScrollStyle, fcTblTableStyle,
                 fcTblHeadCellStyle, fcTblCellStyle, fcTblCaptionStyle,
                 fcTblEnsure, fcTblAddRow, fcTblDuplicateRow, fcTblRemoveRow, fcTblMoveRow,
+                fcTblDrag, fcTblDragStart, fcTblDragOver, fcTblDrop, fcTblDragEnd,
                 fcTblAddCol, fcTblRemoveCol, fcTblMoveCol, fcTblSetCell, fcTblSetAlign,
                 fcTblImport, fcTblImportText, fcTblImportNote,
                 fcCodeLines, fcCodeCanvasLines, fcCodeLineNo, fcCodeLangName,

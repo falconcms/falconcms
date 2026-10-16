@@ -73,17 +73,30 @@
             </thead>
             <tbody>
                 <tr v-for="(row, r) in (editingElement.settings.rows || [])" :key="'r' + r"
-                    :class="r === 0 && editingElement.settings.headerRow !== false ? 'bg-[#f6f7f7]' : ''">
-                    <td class="align-top p-1 border-b border-[#f0f0f1] text-center">
-                        <div class="flex flex-col items-center gap-0.5">
-                            <button type="button" title="Move up" class="text-[#666] hover:text-[#111] leading-none"
-                                    @click="fcTblMoveRow(editingElement, r, -1)">▲</button>
-                            <button type="button" title="Move down" class="text-[#666] hover:text-[#111] leading-none"
-                                    @click="fcTblMoveRow(editingElement, r, 1)">▼</button>
-                            <button type="button" title="Duplicate row" class="text-[#666] hover:text-[#2271b1] leading-none"
-                                    @click="fcTblDuplicateRow(editingElement, r)"><i class="fa fa-copy text-[10px]"></i></button>
-                            <button type="button" title="Delete row" class="text-[#b32d2e] leading-none"
-                                    @click="fcTblRemoveRow(editingElement, r)">×</button>
+                    :class="[
+                        r === 0 && editingElement.settings.headerRow !== false ? 'bg-[#f6f7f7]' : '',
+                        fcTblDrag.from === r ? 'opacity-40' : ''
+                    ]"
+                    :style="fcTblDrag.over === r && fcTblDrag.from !== r ? { outline: '2px solid #0091ea', outlineOffset: '-2px' } : {}"
+                    @dragover.prevent="fcTblDragOver(r)"
+                    @drop.prevent="fcTblDrop(editingElement, r)">
+                    <td class="align-middle py-1 px-0.5 border-b border-[#f0f0f1]">
+                        <div class="flex flex-col items-center gap-1.5">
+                            <span draggable="true" title="Drag to reorder"
+                                  class="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-slate-500 hover:bg-slate-100 cursor-grab active:cursor-grabbing transition-colors"
+                                  @dragstart="fcTblDragStart($event, r)" @dragend="fcTblDragEnd()">
+                                <i class="fa fa-grip-vertical text-[11px]"></i>
+                            </span>
+                            <button type="button" title="Duplicate row"
+                                    class="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-[#0091ea] hover:bg-slate-100 transition-colors"
+                                    @click="fcTblDuplicateRow(editingElement, r)">
+                                <i class="fa fa-copy text-[10px]"></i>
+                            </button>
+                            <button type="button" title="Delete row"
+                                    class="w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-red-500 hover:bg-slate-100 transition-colors"
+                                    @click="fcTblRemoveRow(editingElement, r)">
+                                <i class="fa fa-trash-alt text-[10px]"></i>
+                            </button>
                         </div>
                     </td>
                     <td v-for="(cell, c) in row" :key="'c' + c" class="p-1 border-b border-[#f0f0f1]">
