@@ -216,6 +216,11 @@ class SiteHealth
     private static function opcache(): array
     {
         $on = function_exists('opcache_get_status') && ($s = @opcache_get_status(false)) && !empty($s['opcache_enabled']);
+        // From the command line (the scheduler, a weekly report) OPcache is off unless
+        // opcache.enable_cli is set, which says nothing about the web server. Its setting does.
+        if (!$on && PHP_SAPI === 'cli' && extension_loaded('Zend OPcache') && filter_var(ini_get('opcache.enable'), FILTER_VALIDATE_BOOLEAN)) {
+            $on = true;
+        }
         if ($on) {
             return [self::result('opcache', 'OPcache is on', self::GOOD, 'Performance', 'Compiled PHP is kept in memory between requests.')];
         }
@@ -813,7 +818,11 @@ class SiteHealth
                 // "(View: …)", which beats the compiled copy in storage/framework/views.
                 $source = preg_match('/\(View: ([^)]+)\)/', $message, $v) ? $v[1] : ($loc[1] ?? null);
                 $key = md5($level.Str::limit($msg, 160, ''));
-                $g = $groups[$key] ?? ['level' => $level, 'message' => Str::limit($msg, 300), 'where' => $where, 'count' => 0, 'last' => $at, 'file' => basename($file), 'source' => $source];
+                // What actually went wrong, when the logged line only says what it led to. Laravel's
+                // "Unable to create configured logger" names no cause of its own; the exception
+                // behind it does (on falconcms.com, a framework file missing mid-update).
+                $cause = preg_match('/"exception":"\[object\] \([^(]+\(code: \d+\): (.+?) at \S+:\d+\)/', $message, $c) ? stripslashes($c[1]) : null;
+                $g = $groups[$key] ?? ['level' => $level, 'message' => Str::limit($msg, 300), 'where' => $where, 'count' => 0, 'last' => $at, 'file' => basename($file), 'source' => $source, 'cause' => $cause];
                 $g['count']++;
                 if ($at > $g['last']) {
                     $g['last'] = $at;
@@ -852,7 +861,7 @@ class SiteHealth
         }
         unset($g);
         foreach ($groups as &$g) {
-            unset($g['source']);
+            unset($g['source'], $g['cause']);
         }
         unset($g);
 
@@ -906,8 +915,11 @@ class SiteHealth
         // Composer keeps the archive's own file times, so "changed after" cannot tell here.
         // Gone for good counts too: the update that finished may have moved the class elsewhere
         // (NotFoundLog went from core into the SEO plugin), so the old path never comes back.
-        if (preg_match('/\b(?:include|require)(?:_once)?\((.+?)\): Failed to open stream: No such file or directory/i', $g['message'], $m)) {
-            return is_file($m[1]) || self::codeUpdatedSince($last);
+        // The logged line itself, or the exception behind a line that only reports the fallout.
+        foreach ([$g['message'], $g['cause'] ?? ''] as $text) {
+            if (preg_match('/\b(?:include|require)(?:_once)?\((.+?)\): Failed to open stream: No such file or directory/i', $text, $m)) {
+                return is_file($m[1]) || self::codeUpdatedSince($last);
+            }
         }
 
         $path = $g['source'] ?? null;

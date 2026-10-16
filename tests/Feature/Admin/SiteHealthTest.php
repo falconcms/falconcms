@@ -272,6 +272,35 @@ class SiteHealthTest extends TestCase
         }
     }
 
+    public function test_a_logger_failure_is_judged_by_the_exception_behind_it(): void
+    {
+        // falconcms.com during the 2.8.3 update: Laravel could not build its logger because a
+        // framework file was missing for a moment, and logged only that it fell back. The cause
+        // is in the exception, not the message.
+        $back = str_replace('\\', '/', base_path('app/SiteHealthLoggerBack.php'));
+        $gone = str_replace('\\', '/', base_path('app/SiteHealthLoggerGone.php'));
+        @mkdir(dirname($back), 0777, true);
+        file_put_contents($back, "<?php\n");
+        $restore = $this->composerInstalledAt(now()->subDays(30)->getTimestamp());   // no update since
+        $log = storage_path('logs/site-health-logger.log');
+        $at = now()->subHour()->format('Y-m-d H:i:s');
+        $line = fn (string $file) => "[$at] laravel.EMERGENCY: Unable to create configured logger. Using emergency logger. {\"exception\":\"[object] (ErrorException(code: 0): include($file): Failed to open stream: No such file or directory at /var/www/html/vendor/composer/ClassLoader.php:576)\n";
+        try {
+            file_put_contents($log, $line($back));
+            $errors = collect(collect(SiteHealth::asyncTest('error_log'))->firstWhere('id', 'error_log')['details']['errors']);
+            $this->assertTrue($errors->firstWhere('level', 'EMERGENCY')['resolved'], 'the missing file is back');
+            $this->assertArrayNotHasKey('cause', $errors->first(), 'internal only');
+
+            file_put_contents($log, $line($gone));
+            $errors = collect(collect(SiteHealth::asyncTest('error_log'))->firstWhere('id', 'error_log')['details']['errors']);
+            $this->assertFalse($errors->firstWhere('level', 'EMERGENCY')['resolved'], 'still missing, nothing installed since');
+        } finally {
+            @unlink($log);
+            @unlink($back);
+            $restore();
+        }
+    }
+
     /** Pretend Composer last ran at $timestamp; returns the undo. */
     private function composerInstalledAt(int $timestamp): \Closure
     {
