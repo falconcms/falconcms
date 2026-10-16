@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Tests\Feature\Cms;
 
 use FalconCms\Core\Console\Commands\UpdateFalconCms;
+use FalconCms\Core\Models\Plugin;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Console\OutputStyle;
 use ReflectionMethod;
@@ -62,6 +63,31 @@ class UpdateKeepsCachesTest extends TestCase
 
         $source = (string) file_get_contents(dirname(__DIR__, 3).'/src/Http/Controllers/Admin/DashboardController.php');
         $this->assertSame(2, substr_count($source, "falcon:update --no-ansi'.\$recacheFlag"), 'both the core and the Pro update pass it');
+    }
+
+    public function test_an_active_plugin_whose_files_moved_ahead_is_finished(): void
+    {
+        // The demo after the Pro 1.3.1 update: Falcon Wholesale's files were 1.0.1, the site
+        // still recorded 1.0.0, and the reconcile that should have run had failed unseen.
+        $dir = resource_path('views/plugins/zz-reconcile');
+        try {
+            @mkdir($dir, 0777, true);
+            file_put_contents($dir.'/plugin.json', json_encode(['name' => 'ZZ Reconcile', 'slug' => 'zz-reconcile', 'version' => '1.0.1']));
+            Plugin::forceCreate(['slug' => 'zz-reconcile', 'version' => '1.0.0', 'is_active' => true]);
+            Plugin::forceCreate(['slug' => 'zz-off', 'version' => '0.1.0', 'is_active' => false]);
+
+            $cmd = new UpdateFalconCms;
+            $cmd->setLaravel($this->app);
+            $out = new BufferedOutput;
+            $cmd->setOutput(new OutputStyle(new ArrayInput([]), $out));
+            (new ReflectionMethod(UpdateFalconCms::class, 'reconcilePluginUpdates'))->invoke($cmd);
+
+            $this->assertSame('1.0.1', Plugin::where('slug', 'zz-reconcile')->value('version'));
+            $this->assertStringContainsString('ZZ Reconcile updated to 1.0.1', $out->fetch());
+        } finally {
+            @unlink($dir.'/plugin.json');
+            @rmdir($dir);
+        }
     }
 
     public function test_a_failed_rebuild_is_cleared_again(): void

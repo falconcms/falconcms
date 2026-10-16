@@ -53,6 +53,9 @@ class UpdateFalconCms extends Command
         $published = app(PluginManager::class)->syncPublishedAssets();
         $this->info('Step 3b: Published plugin assets'.($published ? ' ('.implode(', ', $published).')' : '').'.');
 
+        // 3c. Finish plugin updates whose files arrived but whose upgrade never ran.
+        $this->reconcilePluginUpdates();
+
         // 4. Publish Themes (Force) — parent theme only
         $this->info('Step 4: Refreshing themes...');
         $this->call('vendor:publish', [
@@ -122,6 +125,42 @@ class UpdateFalconCms extends Command
         $this->info('---------------------------------------');
         $this->info('Falcon CMS updated successfully!');
         $this->info('---------------------------------------');
+    }
+
+    /**
+     * Run PluginManager::update() for every active plugin whose files are newer than the
+     * version it last recorded — its new migrations, its upgrade() hook, the new version.
+     *
+     * Pro copies its bundled plugins in while the app boots, which during an update means
+     * inside Composer's own run, and reconciles them there. When that reconcile failed, the
+     * failure went unseen and was never retried: on the next boot the files already matched,
+     * so nothing looked out of date except the database. On the demo, Falcon Wholesale's
+     * files were 1.0.1 while the site still recorded 1.0.0 and offered the update. Here, in
+     * a clean process after Composer, every such plugin is finished, and the result is shown.
+     */
+    protected function reconcilePluginUpdates(): void
+    {
+        try {
+            // A fresh manager, not the singleton: that one listed the plugins while the app
+            // booted, which can be before Pro copied the new files in during this same boot.
+            $plugins = new PluginManager;
+            $pending = array_filter($plugins->all(), fn ($p) => !empty($p['active']) && !empty($p['update_available']));
+        } catch (\Throwable $e) {
+            $this->warn('Step 3c: Could not check plugin versions: '.$e->getMessage());
+
+            return;
+        }
+        if (!$pending) {
+            $this->info('Step 3c: Plugins are up to date.');
+
+            return;
+        }
+        foreach (array_keys($pending) as $slug) {
+            $result = $plugins->update($slug);
+            $result['ok']
+                ? $this->info('Step 3c: '.$result['message'])
+                : $this->warn('Step 3c: '.$slug.': '.$result['message'].' Run it again from Plugins.');
+        }
     }
 
     /**
