@@ -13,7 +13,8 @@ class UpdateFalconCms extends Command
 {
     use ReconcilesMigrations;
 
-    protected $signature = 'falcon:update';
+    protected $signature = 'falcon:update
+        {--config-cached : The config was cached before Composer ran (the dashboard passes this)}';
 
     protected $description = 'Update Falcon CMS: run migrations, sync system data, and refresh assets/themes.';
 
@@ -91,8 +92,14 @@ class UpdateFalconCms extends Command
         // optimize:clear drops the config and route caches along with the rest, and nothing
         // put them back: every update left a cached production site booting uncached, and
         // Site Health reporting it, until someone ran `php artisan optimize` by hand.
-        $configWasCached = $this->laravel->configurationIsCached();
+        //
+        // The config cache is usually gone before this command even starts: Composer's
+        // post-autoload-dump (Laravel's ComposerScripts) deletes bootstrap/cache/config.php,
+        // while it leaves the route cache alone. So the dashboard tells us what it saw before
+        // running Composer, and from a shell a surviving route cache stands for both — a site
+        // that caches its routes caches its config too.
         $routesWereCached = $this->laravel->routesAreCached();
+        $configWasCached = $this->laravel->configurationIsCached() || $this->option('config-cached') || $routesWereCached;
         $this->call('optimize:clear');
         $this->recache($configWasCached, $routesWereCached);
         if (function_exists('opcache_reset')) {

@@ -315,6 +315,9 @@ class DashboardController extends Controller
 
         $steps = [];
         $hasError = false;
+        // Seen before Composer runs, because Composer deletes the cached config (see
+        // falcon:update), and handed to falcon:update so it can rebuild it.
+        $recacheFlag = app()->configurationIsCached() ? ' --config-cached' : '';
 
         // Step 0: pre-flight writability check. In containerised installs the vendor
         // tree is often owned by root (created at image build) while php-fpm serves
@@ -372,7 +375,7 @@ class DashboardController extends Controller
         // loaded before composer update ran, causing "command does not exist".
         $phpBin = $this->findPhpCli();
         $artisan = base_path('artisan');
-        $falconCmd = escapeshellarg($phpBin).' '.escapeshellarg($artisan).' falcon:update --no-ansi 2>&1';
+        $falconCmd = escapeshellarg($phpBin).' '.escapeshellarg($artisan).' falcon:update --no-ansi'.$recacheFlag.' 2>&1';
         exec($falconCmd, $falconOut, $falconExit);
         $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $falconOut)), 'ok' => $falconExit === 0];
         if ($falconExit !== 0) {
@@ -407,6 +410,7 @@ class DashboardController extends Controller
         set_time_limit(300);
         $steps = [];
         $hasError = false;
+        $recacheFlag = app()->configurationIsCached() ? ' --config-cached' : '';   // see runUpdate()
 
         // Gate the UPDATE (not the features): Pro features are perpetual, but pulling new
         // releases needs a licence whose update window is still open. Distinguish "not
@@ -479,7 +483,7 @@ class DashboardController extends Controller
         // routes/views register (mirrors the core updater).
         $phpBin = $this->findPhpCli();
         $artisan = base_path('artisan');
-        exec(escapeshellarg($phpBin).' '.escapeshellarg($artisan).' falcon:update --no-ansi 2>&1', $falconOut, $falconExit);
+        exec(escapeshellarg($phpBin).' '.escapeshellarg($artisan).' falcon:update --no-ansi'.$recacheFlag.' 2>&1', $falconOut, $falconExit);
         $steps[] = ['label' => 'php artisan falcon:update', 'output' => trim(implode("\n", $falconOut)), 'ok' => $falconExit === 0];
         if ($falconExit !== 0) {
             $hasError = true;

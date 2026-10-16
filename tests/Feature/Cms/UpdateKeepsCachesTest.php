@@ -54,6 +54,16 @@ class UpdateKeepsCachesTest extends TestCase
         $this->assertSame([], $this->recache(false, false));
     }
 
+    public function test_the_dashboard_can_say_the_config_was_cached_before_composer_ran(): void
+    {
+        // Composer deletes bootstrap/cache/config.php before falcon:update starts, so the
+        // dashboard reports what it saw; the option must exist or the update would fail.
+        $this->assertTrue((new UpdateFalconCms)->getDefinition()->hasOption('config-cached'));
+
+        $source = (string) file_get_contents(dirname(__DIR__, 3).'/src/Http/Controllers/Admin/DashboardController.php');
+        $this->assertSame(2, substr_count($source, "falcon:update --no-ansi'.\$recacheFlag"), 'both the core and the Pro update pass it');
+    }
+
     public function test_a_failed_rebuild_is_cleared_again(): void
     {
         $this->assertSame(['config:cache', 'route:cache', 'route:clear'], $this->recache(true, true, ['route:cache']));
