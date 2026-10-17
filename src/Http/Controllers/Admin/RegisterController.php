@@ -183,11 +183,11 @@ class RegisterController extends Controller
      */
     protected function sendVerificationLink(User $user): bool
     {
-        $verifyUrl = URL::temporarySignedRoute(
+        $verifyUrl = falcon_with_site_root(fn () => URL::temporarySignedRoute(
             'admin.verify.email',
             now()->addMinutes($this->verifyTtl),
             ['id' => $user->id, 'hash' => sha1($user->email)]
-        );
+        ));
 
         try {
             Mail::to($user->email)->send(new EmailVerificationMail($verifyUrl, $user->name ?? '', $this->verifyTtl));

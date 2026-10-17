@@ -303,3 +303,78 @@ if (!function_exists('falcon_turnstile_check')) {
         return Turnstile::check($request, $location);
     }
 }
+
+if (!function_exists('falcon_site_host')) {
+    /**
+     * The site's own host, read from APP_URL, lowercased and without a leading "www.".
+     *
+     * Null when APP_URL names no real address (unset, or localhost / a loopback IP — the
+     * Laravel default many local installs never change while browsing at site.test). Every
+     * caller treats null as "nothing to compare against" and leaves the request alone, so
+     * a local install is never mistaken for a foreign one.
+     */
+    function falcon_site_host(): ?string
+    {
+        $host = strtolower((string) parse_url((string) config('app.url'), PHP_URL_HOST));
+        $host = preg_replace('/^www\./', '', trim($host, '[]'));
+
+        if ($host === '' || $host === 'localhost' || str_ends_with($host, '.localhost') || in_array($host, ['127.0.0.1', '::1', '0.0.0.0'], true)) {
+            return null;
+        }
+
+        return $host;
+    }
+}
+
+if (!function_exists('falcon_is_site_host')) {
+    /**
+     * Whether $host is this site, rather than a name someone typed into the Host header.
+     *
+     * A web server with no catch-all block hands every unknown Host — the bare IP, or any
+     * domain a scanner cares to send — to the first site it knows. Laravel then builds
+     * fullUrl(), route() and url() from that name. Sites served under more than one domain
+     * add the others through the `falcon_site_hosts` filter.
+     */
+    function falcon_is_site_host(?string $host): bool
+    {
+        $site = falcon_site_host();
+        if ($site === null) {
+            return true;
+        }
+
+        $host = preg_replace('/^www\./', '', strtolower(trim((string) $host, '[]')));
+        $allowed = array_map(
+            fn ($h) => preg_replace('/^www\./', '', strtolower((string) $h)),
+            (array) apply_falcon_filters('falcon_site_hosts', [$site])
+        );
+
+        return in_array($host, $allowed, true);
+    }
+}
+
+if (!function_exists('falcon_with_site_root')) {
+    /**
+     * Run $build with absolute URLs rooted at APP_URL instead of the request's Host.
+     *
+     * For links that carry a secret — password reset, magic login, email verification. Built
+     * from the Host header, a request sent with "Host: evil.example" mails the victim a
+     * genuine token on the attacker's domain, and one click hands it over. Signed routes
+     * must be built inside $build, not rewritten afterwards: the signature covers the host.
+     */
+    function falcon_with_site_root(callable $build): mixed
+    {
+        if (falcon_site_host() === null || falcon_is_site_host(request()->getHost())) {
+            return $build();
+        }
+
+        $url = app('url');
+        $previous = (fn () => $this->forcedRoot)->call($url);
+        $url->forceRootUrl(rtrim((string) config('app.url'), '/'));
+
+        try {
+            return $build();
+        } finally {
+            $url->forceRootUrl($previous);
+        }
+    }
+}

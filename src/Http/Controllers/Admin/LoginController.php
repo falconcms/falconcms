@@ -248,7 +248,7 @@ class LoginController extends Controller
             ]
         );
 
-        $resetUrl = route('admin.password.reset', ['token' => $token, 'email' => $request->email]);
+        $resetUrl = falcon_with_site_root(fn () => route('admin.password.reset', ['token' => $token, 'email' => $request->email]));
 
         try {
             Mail::to($request->email)->send(new PasswordResetMail($resetUrl, $user->name ?? ''));
@@ -345,7 +345,7 @@ class LoginController extends Controller
                 'updated_at' => now(),
             ]);
 
-            $magicUrl = route('admin.magic.verify', ['token' => $rawToken]);
+            $magicUrl = falcon_with_site_root(fn () => route('admin.magic.verify', ['token' => $rawToken]));
 
             try {
                 Mail::to($email)->send(new MagicLoginMail($magicUrl, $user->name));

@@ -36,6 +36,13 @@ class TrackVisits
             return;
         }
 
+        // A Host that is not this site — the bare IP, or a domain a scanner put in the
+        // header — reached us only because the web server has no catch-all block. On the
+        // demo these were 60% of all rows, each shown on Recent Visits as a foreign domain.
+        if (!falcon_is_site_host($request->getHost())) {
+            return;
+        }
+
         $userAgent = (string) $request->header('User-Agent');
 
         // Skip bots/crawlers/monitors so analytics reflect real human traffic.

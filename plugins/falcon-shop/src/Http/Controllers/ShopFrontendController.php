@@ -2202,7 +2202,7 @@ class ShopFrontendController extends Controller
                 'updated_at' => now(),
             ]);
 
-            $magicUrl = route('shop.magic.verify', ['token' => $rawToken]);
+            $magicUrl = falcon_with_site_root(fn () => route('shop.magic.verify', ['token' => $rawToken]));
 
             Mail::to($email)->send(
                 new MagicLoginMail($magicUrl, $user->name)
