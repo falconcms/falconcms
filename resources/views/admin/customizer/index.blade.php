@@ -919,6 +919,13 @@ function customizerApp(initialSection) {
                 // in the admin layout has no submit to learn from and would still warn on
                 // close after a successful save.
                 if (data.success && window.falconMarkSaved) window.falconMarkSaved();
+                // A pasted Instagram token is used once: never sent again with the next save.
+                const igToken = document.getElementById('field_instagram_access_token');
+                if (igToken && data.success) igToken.value = '';
+                // A new connection changes what the section shows (account, posts saved).
+                if (data.reload) {
+                    setTimeout(() => { window.location.href = '{{ route('admin.customizer.index') }}?section=' + encodeURIComponent(this.activeSection); }, 900);
+                }
             } catch {
                 this.showToast('Error saving settings. Please try again.', 'error');
             } finally {
@@ -932,8 +939,15 @@ function customizerApp(initialSection) {
             // Clearing a cache throws away copies, not work: everything it drops is rebuilt on
             // the next visit. Asking "are you sure" about that trains people to click through
             // the prompts that do matter, like the one below.
-            if (action === 'clearCaches') {
+            if (action === 'clearCaches' || action === 'instagramSync') {
                 confirmed = true;
+            } else if (action === 'instagramDisconnect') {
+                confirmed = await window.falconConfirm({
+                    title: 'Disconnect Instagram',
+                    message: 'The token and the saved posts and pictures are removed, and Instagram Feed elements showing this account go empty. Continue?',
+                    confirmText: 'Disconnect',
+                    isDanger: true
+                });
             } else if (action === 'optimizeImages') {
                 confirmed = await window.falconConfirm({
                     title: 'Optimize Images',
@@ -968,6 +982,9 @@ function customizerApp(initialSection) {
                 });
                 const data = await res.json();
                 this.showToast(data.message || 'Action completed.', data.success ? 'success' : 'error');
+                if (data.reload) {
+                    setTimeout(() => { window.location.href = '{{ route('admin.customizer.index') }}?section=' + encodeURIComponent(this.activeSection); }, 900);
+                }
             } catch (err) {
                 this.showToast('Error executing action: ' + err.message, 'error');
             } finally {

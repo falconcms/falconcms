@@ -92,11 +92,21 @@
                 'product_price','product_regular_price','product_sale_price','product_sku','product_stock_status','product_stock_quantity',
                 'feature_image','author_avatar','logo',
             ];
+            // Sources a plugin adds (Falcon News: Post Views) get a picker entry and a real preview too.
+            $__extraDynSources = function_exists('falcon_extra_dynamic_sources') ? falcon_extra_dynamic_sources() : [];
+            foreach ($__extraDynSources as $__dynCtx => $__dynDefs) {
+                foreach ($__dynDefs as $__dynDef) {
+                    $__dynKeys[] = $__dynDef['key'];
+                }
+            }
             $__dynPreview = [];
             foreach ($__dynKeys as $__dk) {
                 try { $__dynPreview[$__dk] = (string) (function_exists('falcon_resolve_dynamic_value') ? falcon_resolve_dynamic_value($__dk, $post, []) : ''); }
                 catch (\Throwable $e) { $__dynPreview[$__dk] = ''; }
             }
+            // So the canvas can redo Reading Time live when its label or speed is changed.
+            try { $__dynPreview['__reading_words'] = (string) (function_exists('falcon_word_count') ? falcon_word_count(falcon_post_plain_text($post)) : 0); }
+            catch (\Throwable $e) { $__dynPreview['__reading_words'] = '0'; }
             // When editing a Layout template (PTB/Header/Footer/Content) or a post with no
             // featured image, the Feature Image source resolves to empty — so the canvas can't
             // preview the image layer (e.g. a gradient layered over the feature image). Rather
@@ -114,6 +124,7 @@
             }
         @endphp
         window.builderDynPreview = {!! json_encode($__dynPreview, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) !!};
+        window.falconExtraDynSources = {!! json_encode($__extraDynSources, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) !!};
 
         @php
             try {

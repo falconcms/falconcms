@@ -104,6 +104,8 @@ export default defineConfig({
             { text: 'Multi-language', link: '/guide/multilang' },
             { text: 'SEO', link: '/guide/seo' },
             { text: 'Search Console (Pro)', link: '/guide/search-console' },
+            { text: 'News Sites (Pro)', link: '/guide/news' },
+            { text: 'Instagram Feed (Pro)', link: '/guide/instagram-feed' },
             { text: 'Analytics', link: '/guide/analytics' },
             { text: 'Performance', link: '/guide/performance' },
           ]

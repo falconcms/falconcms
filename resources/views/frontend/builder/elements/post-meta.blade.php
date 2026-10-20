@@ -164,11 +164,11 @@
             : \Carbon\Carbon::parse($ctxPublished)->format($dateFormat);
     }
 
-    // Reading time (200 wpm)
+    // Reading time (200 wpm). Counted in any script and from builder content as well as HTML —
+    // str_word_count() saw a Bangla article, or any builder post, as "1 min read".
     $readingTimeStr = '';
     if ($showReadingTime && $ctxContent) {
-        $wordCount      = str_word_count(strip_tags($ctxContent));
-        $readingTimeStr = max(1, (int) ceil($wordCount / 200)) . ' min read';
+        $readingTimeStr = falcon_reading_time((object) ['content' => $ctxContent]) . ' min read';
     }
 
     // Build meta item map — resolved content per key

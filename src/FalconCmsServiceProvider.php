@@ -5,6 +5,7 @@ namespace FalconCms\Core;
 use FalconCms\Core\Console\Commands\CancelHeldOrders;
 use FalconCms\Core\Console\Commands\ExpireSalePrices;
 use FalconCms\Core\Console\Commands\FalconList;
+use FalconCms\Core\Console\Commands\InstagramSync;
 use FalconCms\Core\Console\Commands\InstallFalconCms;
 use FalconCms\Core\Console\Commands\MakeDashboardPage;
 use FalconCms\Core\Console\Commands\MakePlugin;
@@ -230,6 +231,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             ReindexProductAttributes::class,
             PruneAnalytics::class,
             PruneActivityLogs::class,
+            InstagramSync::class,
             PluginList::class,
             PluginActivate::class,
             PluginDeactivate::class,
@@ -245,6 +247,9 @@ class FalconCmsServiceProvider extends ServiceProvider
             // Hourly, because the shortest retention this offers is 24 hours — a daily
             // sweep would let entries outlive their window by most of a day.
             $schedule->command('falcon:prune-activity-logs')->hourly()->withoutOverlapping();
+            // Instagram Feed: new posts when the saved copy is older than its cache time, and a
+            // token renewed before it lapses. Does nothing without a connected account.
+            $schedule->command('falcon:instagram-sync')->hourly()->withoutOverlapping();
         });
 
         // Cron-independent fallback: many hosts (and local dev) never run `schedule:run`,

@@ -168,6 +168,33 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
             return response()->json(['success' => false, 'html' => '']);
         }
     })->name('falcon-builder.card-preview');
+    // Canvas preview for a plugin's builder element that asks for one ('preview' => 'server' in
+    // its falcon_builder_elements definition): its own front-end template, rendered with the
+    // settings being edited, so the canvas shows what the page will.
+    Route::post('falcon-builder/element-preview', function (Request $r) {
+        $type = (string) $r->input('type', '');
+        $def = falcon_builder_element_defs(true)[$type] ?? null;
+        $template = is_array($def) ? (string) ($def['template'] ?? '') : '';
+        if (($def['preview'] ?? null) !== 'server' || $template === '' || !view()->exists($template)) {
+            return response()->json(['success' => false, 'html' => ''], 404);
+        }
+        $s = $r->input('settings', []);
+        $s = is_array($s) ? $s : [];
+        try {
+            $html = view($template, [
+                'el' => ['id' => (string) $r->input('id', 'preview'), 'type' => $type, 'settings' => $s],
+                's' => $s,
+                'previewDevice' => $r->input('device'),
+                'builderPreview' => true,
+            ])->render();
+
+            return response()->json(['success' => true, 'html' => $html]);
+        } catch (Throwable $e) {
+            report($e);
+
+            return response()->json(['success' => false, 'html' => '']);
+        }
+    })->name('falcon-builder.element-preview');
     Route::get('falcon-builder/{id}', [PostController::class, 'builder'])->name('falcon-builder');
     Route::get('falcon-builder/{id}/frame/{part}', [PostController::class, 'framePreview'])->name('falcon-builder.frame');
     Route::post('falcon-builder/{id}/save', [PostController::class, 'saveBuilder'])->name('falcon-builder.save');

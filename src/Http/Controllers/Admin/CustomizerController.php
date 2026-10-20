@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Media;
+use FalconCms\Core\Support\Instagram;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Artisan;
@@ -1079,6 +1080,11 @@ class CustomizerController extends Controller
                     ],
                 ],
             ],
+            'instagram' => [
+                'title' => 'Instagram',
+                'icon' => 'photo_camera',
+                'fields' => $this->instagramFields(),
+            ],
             'custom_css' => [
                 'title' => 'Custom CSS',
                 'icon' => 'code',
@@ -1137,6 +1143,90 @@ class CustomizerController extends Controller
 
         // Plugins add fields of their own (Falcon SEO: AVIF, speculative loading, Web Vitals under Performance).
         return (array) apply_falcon_filters('falcon_customizer_sections', $sections);
+    }
+
+    /**
+     * Customizer → Instagram: the account the Instagram Feed element (Pro) shows. The token
+     * field is never filled back in and never saved as a setting: a pasted token is checked
+     * with Instagram and kept encrypted (see save()).
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function instagramFields(): array
+    {
+        $connected = Instagram::connected();
+        $guide = '<a href="https://falconcms.github.io/falconcms/guide/instagram-feed" target="_blank" rel="noopener" class="underline font-semibold">Setup guide</a>';
+
+        if ($connected) {
+            $account = Instagram::account();
+            $parts = ['Connected to <strong>@'.e((string) ($account['username'] ?? '')).'</strong>'];
+            if (isset($account['followers_count'])) {
+                $parts[] = e(number_format((int) $account['followers_count'])).' followers';
+            }
+            $parts[] = count(Instagram::media()).' posts saved';
+            if ($synced = Instagram::syncedAt()) {
+                $parts[] = 'last checked '.e($synced->diffForHumans());
+            }
+            $status = implode(' · ', $parts).'.';
+            if (($error = Instagram::lastError()) !== '') {
+                $status .= '<br><span class="text-red-700"><strong>Last attempt failed:</strong> '.e($error).'</span> The posts saved before keep showing; if the token has expired, paste a new one below.';
+            }
+        } else {
+            $status = 'Show your latest Instagram posts with the <strong>Instagram Feed</strong> builder element (Pro). '
+                .'Instagram lets websites read <strong>Business</strong> and <strong>Creator</strong> accounts only:<br>'
+                .'1. Switch the account to Business or Creator in the Instagram app (<a href="https://help.instagram.com/502981923235522" target="_blank" rel="noopener" class="underline">how</a>).<br>'
+                .'2. At <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener" class="underline">developers.facebook.com/apps</a>, create an app of type <em>Business</em> and add the <strong>Instagram</strong> product with <em>API setup with Instagram login</em> (<a href="https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/get-started" target="_blank" rel="noopener" class="underline">Meta\'s guide</a>).<br>'
+                .'3. Under <em>Generate access tokens</em>, add your account and click <strong>Generate token</strong>.<br>'
+                .'4. Paste the token below and press <strong>Save Changes</strong>. '.$guide.'.';
+        }
+
+        $fields = [
+            'instagram_status' => ['type' => 'info', 'desc' => $status],
+            'instagram_access_token' => [
+                'type' => 'text',
+                'label' => $connected ? 'Replace access token' : 'Access token',
+                'desc' => 'A long-lived token, starting with IG. Checked with Instagram when you save, stored encrypted and renewed every week. Leave empty to keep the current one.',
+                'default' => '',
+                'placeholder' => $connected ? 'Paste a new token to replace the current one' : 'IGAA…',
+                // Not a setting: save() connects with it instead of storing it.
+                'secret' => true,
+            ],
+            'instagram_cache_minutes' => [
+                'type' => 'select',
+                'label' => 'Check for new posts every',
+                'desc' => 'Pages never wait for Instagram: they show the saved posts, and new ones are fetched in the background.',
+                'default' => '60',
+                'options' => ['15' => '15 minutes', '30' => '30 minutes', '60' => 'Hour', '180' => '3 hours', '360' => '6 hours', '720' => '12 hours', '1440' => 'Day'],
+            ],
+            'instagram_local_images' => [
+                'type' => 'toggle',
+                'label' => 'Save pictures on this site',
+                'desc' => 'Faster, keeps working when Instagram\'s picture links expire, and readers\' browsers do not contact Meta.',
+                'default' => '1',
+            ],
+        ];
+
+        if ($connected) {
+            $fields['instagram_sync'] = ['type' => 'action_button', 'label' => 'Fetch now', 'action' => 'instagramSync', 'text' => 'Fetch latest posts',
+                'desc' => 'Fetch the latest posts now instead of waiting for the next check.'];
+            $fields['instagram_disconnect'] = ['type' => 'action_button', 'label' => 'Disconnect', 'action' => 'instagramDisconnect', 'text' => 'Disconnect Instagram',
+                'desc' => 'Removes the token and the saved posts and pictures. Instagram Feed elements showing this account go empty.'];
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Give a slow request (fetching Instagram posts and their pictures) at least $seconds.
+     * Only ever raises the limit: set_time_limit() sets it outright, so on the command line,
+     * where there is no limit, a plain call would impose one on the whole process.
+     */
+    private static function allowTime(int $seconds): void
+    {
+        $current = (int) ini_get('max_execution_time');
+        if ($current !== 0 && $current < $seconds) {
+            @set_time_limit($seconds);
+        }
     }
 
     public function index(Request $request)
@@ -1213,7 +1303,7 @@ class CustomizerController extends Controller
                 continue;
             }
             foreach ($sec['fields'] as $key => $field) {
-                if (in_array($field['type'] ?? '', $nonDataTypes)) {
+                if (in_array($field['type'] ?? '', $nonDataTypes) || !empty($field['secret'])) {
                     continue;
                 }
                 $value = $request->input($key, '');
@@ -1227,12 +1317,33 @@ class CustomizerController extends Controller
 
         forget_cms_options_cache();
 
+        // A pasted Instagram token: checked with Instagram, kept encrypted, posts fetched.
+        $ok = true;
+        $message = 'Settings saved successfully.';
+        $token = trim((string) $request->input('instagram_access_token', ''));
+        if ($token !== '') {
+            // Connecting fetches the latest posts and saves their pictures, which can take a while.
+            self::allowTime(180);
+            try {
+                $account = Instagram::connect($token);
+                $error = Instagram::lastError();
+                $message = $error === ''
+                    ? 'Settings saved. Connected to Instagram as @'.$account['username'].'.'
+                    : 'Settings saved and connected as @'.$account['username'].', but its posts could not be fetched: '.$error;
+                $ok = $error === '';
+            } catch (\Throwable $e) {
+                $ok = false;
+                $message = 'Settings saved, but Instagram did not accept the token: '.$e->getMessage();
+            }
+        }
+
         if ($request->ajax()) {
-            return response()->json(['success' => true, 'message' => 'Settings saved successfully.']);
+            // The section's status line changes with a new connection, so the page reloads it.
+            return response()->json(['success' => $ok, 'message' => $message, 'reload' => $token !== '' && $ok]);
         }
 
         return redirect()->route('admin.customizer.index', ['section' => $activeSection])
-            ->with('success', 'Settings saved successfully.');
+            ->with($ok ? 'success' : 'error', $message);
     }
 
     public function resetSection(Request $request)
@@ -1251,7 +1362,7 @@ class CustomizerController extends Controller
         if ($request->input('all') === '1') {
             foreach ($sections as $sec) {
                 foreach ($sec['fields'] as $key => $field) {
-                    if (in_array($field['type'] ?? '', $nonDataTypes)) {
+                    if (in_array($field['type'] ?? '', $nonDataTypes) || !empty($field['secret'])) {
                         continue;
                     }
                     DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $field['default'] ?? '']);
@@ -1268,7 +1379,7 @@ class CustomizerController extends Controller
 
         if (isset($sections[$section])) {
             foreach ($sections[$section]['fields'] as $key => $field) {
-                if (in_array($field['type'] ?? '', $nonDataTypes)) {
+                if (in_array($field['type'] ?? '', $nonDataTypes) || !empty($field['secret'])) {
                     continue;
                 }
                 DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $field['default'] ?? '']);
@@ -1403,6 +1514,24 @@ class CustomizerController extends Controller
 
             if ($action === 'clearCaches') {
                 return $this->clearCaches();
+            }
+
+            if ($action === 'instagramSync') {
+                if (!Instagram::connected()) {
+                    return response()->json(['success' => false, 'message' => 'No Instagram account is connected.']);
+                }
+                self::allowTime(180);
+                $ok = Instagram::sync();
+
+                return response()->json(['success' => $ok, 'reload' => true, 'message' => $ok
+                    ? 'Fetched '.count(Instagram::media()).' Instagram posts.'
+                    : 'Could not fetch the posts: '.Instagram::lastError()]);
+            }
+
+            if ($action === 'instagramDisconnect') {
+                Instagram::disconnect();
+
+                return response()->json(['success' => true, 'reload' => true, 'message' => 'Instagram disconnected. Its saved posts and pictures were removed.']);
             }
 
             return response()->json([

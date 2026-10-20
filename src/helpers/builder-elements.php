@@ -11,6 +11,7 @@
 
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Support\InstagramFeedElement;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -581,3 +582,8 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
 
     return $elements;
 });
+
+/**
+ * Register the Instagram Feed element (Pro), connected under Appearance → Customizer → Instagram.
+ */
+add_falcon_filter('falcon_builder_elements', [InstagramFeedElement::class, 'register']);

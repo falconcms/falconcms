@@ -1014,6 +1014,76 @@ add_falcon_filter('falcon_builder_elements', function($elements) {
 });
 ```
 
+An element that draws data the browser does not have (posts from an API, figures from the
+database) can ask for its canvas preview to be its real output: add `'preview' => 'server'` and a
+`'template'`. The builder then renders that template with the settings being edited, refetching
+as they change, so the canvas shows what the page will. The template receives `$el`, `$s` (the
+settings), `$previewDevice` and `$builderPreview = true`.
+
+---
+
+## Posts, Loops and Dynamic Content
+
+These let a plugin order and annotate the posts the CMS lists, and add its own dynamic sources.
+The [Falcon News plugin](/guide/news) is built on them.
+
+#### `falcon_posts_orderby` (filter)
+**Args:** `$handled, $query, $orderby, $order, $args`
+
+Lets a plugin answer an `orderby` value of its own in `get_falcon_posts()` (and so in the Card
+element). Order `$query` and return `true`; return `$handled` unchanged for orders that are not
+yours. An order nobody answers falls back to the date.
+
+```php
+add_falcon_filter('falcon_posts_orderby', function ($handled, $query, $orderby, $order) {
+    if ($orderby !== 'comment_count') {
+        return $handled;
+    }
+    $query->withCount('comments')->orderBy('comments_count', $order);
+
+    return true;
+});
+```
+
+#### `falcon_post_orderby_options` (filter)
+**Args:** `$options`
+
+Extra choices for the Card element's **Order By** list, as `value => label`.
+
+#### `falcon_posts_fetched` (action)
+**Args:** `$posts, $args`
+
+Fired with every result of `get_falcon_posts()` (a collection, or a paginator). Use it to load
+something you show per post for the whole set in one query, instead of one query per card.
+
+#### `falcon_dynamic_sources` (filter)
+**Args:** `$sources`
+
+Adds sources to the builder's dynamic-content picker. `$sources` has `text`, `link` and `image`
+lists; each source is `key`, `label`, `icon`, `group`, an optional `sample` shown on the canvas,
+and `subFields` (its options, each with `key`, `label`, `type` text/number/select and `options`).
+Answer the source with `falcon_dynamic_value`.
+
+#### `falcon_dynamic_value` (filter)
+**Args:** `$value, $source, $post, $config`
+
+The value of a dynamic source the core does not know, for the post being rendered. The values
+of your sub-fields are in `$config['settings']` under their keys. Also answers the
+`{lazy:your_key}` token, with an empty `$config`. Return `$value` unchanged for sources that are
+not yours.
+
+#### `falcon_admin_list_columns` (action)
+**Args:** `$type, $posts, $where`
+
+Prints extra `<th>` cells in the Posts list of each post type, once for the header
+(`$where = 'head'`, with the page's `$posts`, so you can load their data at once) and once for
+the footer (`'foot'`).
+
+#### `falcon_admin_list_cells` (action)
+**Args:** `$post, $type`
+
+Prints the matching `<td>` for each row.
+
 ---
 
 ### Settings Filters
@@ -1815,7 +1885,7 @@ return [
 
 ## Complete Hook List
 
-### Actions (120 total)
+### Actions (123 total)
 
 | Hook | Args |
 |---|---|
@@ -1939,8 +2009,11 @@ return [
 | `falcon_admin_user_saved` | `$user, $request, $mode` |
 | `falcon_admin_user_role_cell` | `$user` |
 | `falcon_cart_actions` | `$cart` |
+| `falcon_posts_fetched` | `$posts, $args` |
+| `falcon_admin_list_columns` | `$type, $posts, $where` |
+| `falcon_admin_list_cells` | `$post, $type` |
 
-### Filters (81 total)
+### Filters (85 total)
 
 | Hook | Args |
 |---|---|
@@ -2025,3 +2098,7 @@ return [
 | `falcon_product_price_filter` | `$handled, $query, $min, $max` |
 | `falcon_product_price_sort` | `$handled, $query, $direction` |
 | `falcon_product_filter_options` | `$options, $productIds` |
+| `falcon_posts_orderby` | `$handled, $query, $orderby, $order, $args` |
+| `falcon_post_orderby_options` | `$options` |
+| `falcon_dynamic_sources` | `$sources` |
+| `falcon_dynamic_value` | `$value, $source, $post, $config` |

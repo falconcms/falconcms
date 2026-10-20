@@ -11,6 +11,7 @@ use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\ProductCategory;
 use FalconCms\Core\Models\TaxonomyTerm;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -260,15 +261,25 @@ if (!function_exists('get_falcon_posts')) {
             }
         }
 
+        if (!empty($args['meta_key'])) {
+            falcon_posts_where_custom_field($query, (string) $args['meta_key'], $args['meta_value']);
+        }
+
+        $order = strtolower((string) $args['order']) === 'asc' ? 'asc' : 'desc';
+
         if ($args['orderby'] === 'rand') {
             $query->inRandomOrder();
-        } else {
+        } elseif (!apply_falcon_filters('falcon_posts_orderby', false, $query, (string) $args['orderby'], $order, $args)) {
+            // An order a plugin answers above (most viewed, say) never reaches here. One nobody
+            // answers falls back to the date: `views` was offered by the Card element long before
+            // any table had such a column, and ordering by it threw on the front end.
+            //
             // published_at belongs here: it is the date the admin shows and the one a theme
             // means by "latest". Left out, orderby => 'published_at' silently became created_at,
             // so back-dated and scheduled posts came out in the wrong order with no error.
-            $safeOrderby = in_array($args['orderby'], ['created_at', 'updated_at', 'published_at', 'title', 'views', 'menu_order', 'id'])
+            $safeOrderby = in_array($args['orderby'], ['created_at', 'updated_at', 'published_at', 'title', 'menu_order', 'id'])
                 ? $args['orderby'] : 'created_at';
-            $query->orderBy($safeOrderby, $args['order']);
+            $query->orderBy($safeOrderby, $order);
         }
 
         // Eager-load what a card or loop row reads for every post — author, categories, tags,
@@ -282,11 +293,57 @@ if (!function_exists('get_falcon_posts')) {
             // it every other parameter — a search term, a filter, a sort — is dropped from the
             // page links, so the reader silently lands on the unfiltered list. The archive
             // controller has always done this; a theme paginating its own loop did not.
-            return $query->paginate($args['limit'], ['*'], $args['page_name'] ?? 'page')
+            $posts = $query->paginate($args['limit'], ['*'], $args['page_name'] ?? 'page')
                 ->withQueryString();
+        } else {
+            $posts = $query->limit($args['limit'])->offset((int) $args['offset'])->get();
         }
 
-        return $query->limit($args['limit'])->offset((int) $args['offset'])->get();
+        // For plugins that show something per post in a loop (a view count) to load it for the
+        // whole set in one query, instead of one query per card.
+        do_falcon_action('falcon_posts_fetched', $posts, $args);
+
+        return $posts;
+    }
+}
+
+if (!function_exists('falcon_posts_where_custom_field')) {
+    /**
+     * Narrow a posts query to those whose custom field `$name` has `$value`.
+     *
+     * Values live in post_custom_field_values, one row per post and field. A field that holds
+     * several choices (checkboxes, a multi-select) is stored as a JSON list, so a value also
+     * matches when it is one of the list's items. With no value, any post where the field is
+     * filled in matches.
+     *
+     * @param  Builder<Post>  $query
+     */
+    function falcon_posts_where_custom_field($query, string $name, $value = null): void
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return;
+        }
+        $value = is_scalar($value) ? trim((string) $value) : '';
+
+        $query->whereExists(function ($q) use ($name, $value) {
+            $q->select(DB::raw(1))
+                ->from('post_custom_field_values as pcfv')
+                ->join('custom_fields as cf', 'cf.id', '=', 'pcfv.field_id')
+                ->whereColumn('pcfv.post_id', 'posts.id')
+                ->where('cf.name', $name);
+
+            if ($value === '') {
+                $q->whereNotNull('pcfv.value')->where('pcfv.value', '!=', '')->where('pcfv.value', '!=', '[]');
+
+                return;
+            }
+
+            $q->where(function ($w) use ($value) {
+                $w->where('pcfv.value', $value)
+                    ->orWhere('pcfv.value', 'like', '%'.json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).'%');
+            });
+        });
     }
 }
 
@@ -306,6 +363,101 @@ if (!function_exists('the_falcon_loop')) {
     {
         $posts = get_falcon_posts($args);
         echo view($view, ['posts' => $posts])->render();
+    }
+}
+
+if (!function_exists('falcon_post_plain_text')) {
+    /**
+     * The words a reader sees in a post, as plain text: HTML without its tags, or — for a post
+     * made in the builder — the text of its headings, text blocks, tabs, accordions and so on.
+     * Builder JSON read as HTML is mostly settings (colours, sizes, ids), which is why a
+     * builder post used to come out at "1 min read" whatever its length.
+     */
+    function falcon_post_plain_text($post): string
+    {
+        $content = is_object($post) ? ($post->content ?? '') : (string) $post;
+        if (!is_string($content) || trim($content) === '') {
+            return '';
+        }
+
+        $trimmed = ltrim($content);
+        if (BuilderShortcodeConverter::isBuilderShortcode($content)) {
+            try {
+                $content = BuilderShortcodeConverter::shortcodesToJson($content);
+                $trimmed = ltrim($content);
+            } catch (Throwable $e) {
+                return trim(preg_replace('/\s+/u', ' ', strip_tags(preg_replace('/\[[^\]]*\]/', ' ', $content))));
+            }
+        }
+
+        if ($trimmed !== '' && ($trimmed[0] === '[' || $trimmed[0] === '{')) {
+            $layout = json_decode($content, true);
+            if (is_array($layout)) {
+                // Only the settings people type words into; everything else is design.
+                $textKeys = ['content', 'title', 'text', 'subtitle', 'description', 'caption', 'html',
+                    'question', 'answer', 'label', 'quote', 'heading', 'body', 'excerpt'];
+                $parts = [];
+                $walk = function ($node, ?string $key = null) use (&$walk, &$parts, $textKeys) {
+                    if (is_array($node)) {
+                        foreach ($node as $k => $v) {
+                            $walk($v, is_string($k) ? $k : $key);
+                        }
+                    } elseif (is_string($node) && $key !== null && in_array($key, $textKeys, true)) {
+                        $parts[] = $node;
+                    }
+                };
+                $walk($layout);
+                $content = implode(' ', $parts);
+            }
+        }
+
+        $text = html_entity_decode(strip_tags(str_replace(['<br', '</p>', '</li>', '</h'], [' <br', ' </p>', ' </li>', ' </h'], $content)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim(preg_replace('/\s+/u', ' ', $text));
+    }
+}
+
+if (!function_exists('falcon_word_count')) {
+    /**
+     * Words in a text, in any script. str_word_count() only knows the Latin alphabet: a Bangla,
+     * Arabic or Hindi article counted as a handful of words (its digits and stray English), so
+     * every one of them said "1 min read".
+     */
+    function falcon_word_count(string $text): int
+    {
+        if ($text === '') {
+            return 0;
+        }
+
+        // A word: letters, combining marks (the vowel signs of Indic scripts) and digits, with
+        // an apostrophe or hyphen allowed inside it ("don't", "well-known").
+        return (int) preg_match_all('/[\p{L}\p{M}\p{N}]+(?:[\'’\-][\p{L}\p{M}\p{N}]+)*/u', $text);
+    }
+}
+
+if (!function_exists('falcon_reading_time')) {
+    /**
+     * Minutes it takes to read a post (at least 1). $wordsPerMinute defaults to 200, the usual
+     * figure for reading on screen; the Reading Time dynamic source lets a site set its own.
+     */
+    function falcon_reading_time($post, int $wordsPerMinute = 200): int
+    {
+        $wordsPerMinute = max(50, min(1000, $wordsPerMinute));
+        $cacheKey = is_object($post) && isset($post->id)
+            ? $post->id.'|'.($post->updated_at ?? '').'|'.strlen((string) ($post->content ?? ''))
+            : null;
+
+        $memo = falcon_request_memo('reading_time_words');
+        if ($cacheKey !== null && $memo->offsetExists($cacheKey)) {
+            $words = $memo[$cacheKey];
+        } else {
+            $words = falcon_word_count(falcon_post_plain_text($post));
+            if ($cacheKey !== null) {
+                $memo[$cacheKey] = $words;
+            }
+        }
+
+        return max(1, (int) ceil($words / $wordsPerMinute));
     }
 }
 

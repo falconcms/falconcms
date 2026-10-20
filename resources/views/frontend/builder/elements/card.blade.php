@@ -52,6 +52,14 @@
         case 'author':  if ($postsByVal) $queryArgs['author']  = $postsByVal; break;
         case 'search':  if ($postsByVal) $queryArgs['search']  = $postsByVal; break;
         case 'post_id': if ($postsByVal) $queryArgs['post_id'] = $postsByVal; break;
+        // A custom field and the value it must have ("featured" = 1): lead stories, an editor's
+        // pick. An empty value means the field is filled in at all.
+        case 'custom_field':
+            if (trim($s['posts_by_cf_key'] ?? '') !== '') {
+                $queryArgs['meta_key']   = trim($s['posts_by_cf_key']);
+                $queryArgs['meta_value'] = $s['posts_by_cf_value'] ?? '';
+            }
+            break;
     }
 
     // Taxonomy filter (content_source = terms)

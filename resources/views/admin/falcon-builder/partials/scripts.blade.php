@@ -159,7 +159,18 @@
                         { key: 'dynamic_after',       label: 'After',     type: 'text', placeholder: 'Text after value' },
                         { key: 'dynamic_fallback',    label: 'Fallback',  type: 'text', placeholder: 'Fallback value' },
                     ]},
-                    { key: 'post_reading_time',  label: 'Reading Time',    icon: 'fa-clock',         group: 'Post',   subFields: [] },
+                    { key: 'post_reading_time',  label: 'Reading Time',    icon: 'fa-clock',         group: 'Post',   subFields: [
+                        { key: 'dynamic_reading_label', label: 'Label',            type: 'text',   placeholder: 'min read  (or e.g. {min} minute read)' },
+                        { key: 'dynamic_reading_wpm',   label: 'Words per minute', type: 'number', placeholder: '200' },
+                        { key: 'dynamic_digits',        label: 'Digits',           type: 'select', options: [
+                            { value: '',           label: '0123 (Latin)' },
+                            { value: 'bengali',    label: '০১২৩ (Bangla)' },
+                            { value: 'devanagari', label: '०१२३ (Devanagari)' },
+                            { value: 'arabic',     label: '٠١٢٣ (Arabic)' },
+                        ]},
+                        { key: 'dynamic_before',   label: 'Before',   type: 'text', placeholder: 'Text before value' },
+                        { key: 'dynamic_after',    label: 'After',    type: 'text', placeholder: 'Text after value' },
+                    ]},
                     { key: 'post_id',            label: 'Post ID',         icon: 'fa-hashtag',       group: 'Post',   subFields: [] },
                     { key: 'post_type',          label: 'Post Type',       icon: 'fa-tag',           group: 'Post',   subFields: [] },
                     // Taxonomy: pick a post type, then one of ITS taxonomies. The terms render only
@@ -244,6 +255,21 @@
                     { key: 'logo',          label: 'Site Logo',     icon: 'fa-star',         group: 'Site',   subFields: [] },
                 ],
             };
+            // Sources a plugin registered (falcon_dynamic_sources), each in its own context.
+            const dynSrcExtraSamples = {};
+            Object.entries(window.falconExtraDynSources || {}).forEach(([ctx, defs]) => {
+                if (!dynSrcDefs[ctx] || !Array.isArray(defs)) return;
+                defs.forEach(d => {
+                    if (!d || !d.key || dynSrcDefs[ctx].some(x => x.key === d.key)) return;
+                    dynSrcDefs[ctx].push({ key: d.key, label: d.label || d.key, icon: d.icon || 'fa-bolt', group: d.group || 'Other', subFields: d.subFields || [] });
+                    if (d.sample) dynSrcExtraSamples[d.key] = d.sample;
+                });
+            });
+            const dynLocalizeDigits = (str, digits) => {
+                const sets = { bengali: '০১২৩৪৫৬৭৮৯', devanagari: '०१२३४५६७८९', arabic: '٠١٢٣٤٥٦٧٨٩' };
+                const set = sets[digits];
+                return set ? String(str).replace(/[0-9]/g, d => set[+d]) : String(str);
+            };
             // Live preview value per dynamic source. Prefer the REAL resolved value for the
             // post being edited (window.builderDynPreview, computed server-side); fall back to a
             // representative sample when the post has no value for that source (e.g. a product
@@ -260,7 +286,7 @@
                 product_price: '$49.00', product_regular_price: '$59.00', product_sale_price: '$49.00',
                 product_sku: 'SAMPLE-SKU-001', product_stock_status: 'In stock', product_stock_quantity: '25',
                 offcanvas_open: '#offcanvas', offcanvas_close: '#offcanvas-close',
-            }[key] || String(key).replace(/_/g, ' '));
+            }[key] || dynSrcExtraSamples[key] || String(key).replace(/_/g, ' '));
             const dynSrcSample = (key) => {
                 const real = (window.builderDynPreview && window.builderDynPreview[key]) || '';
                 return real !== '' ? real : dynSrcGenericSample(key);
@@ -277,6 +303,15 @@
                     const body  = names.length ? names.join(s.dynamic_tax_separator || ', ')
                                                : (s.dynamic_fallback || 'Taxonomy');
                     return (s.dynamic_before || '') + body + (s.dynamic_after || '');
+                }
+                // Reading Time: follow the label, speed and digits chosen, from the real word count.
+                if (s.dynamic_source === 'post_reading_time') {
+                    const words = parseInt((window.builderDynPreview || {}).__reading_words, 10) || 0;
+                    const wpm   = Math.min(1000, Math.max(50, parseInt(s.dynamic_reading_wpm, 10) || 200));
+                    const mins  = words > 0 ? Math.max(1, Math.ceil(words / wpm)) : 3;
+                    const label = String(s.dynamic_reading_label || '').trim() || 'min read';
+                    const text  = label.includes('{min}') ? label.split('{min}').join(String(mins)) : mins + ' ' + label;
+                    return (s.dynamic_before || '') + dynLocalizeDigits(text, s.dynamic_digits) + (s.dynamic_after || '');
                 }
                 return (s.dynamic_before || '') + dynSrcSample(s.dynamic_source) + (s.dynamic_after || '');
             };
@@ -853,7 +888,7 @@
                 return known ? known.name : String(type).replace(/_/g, ' ');
             };
 
-            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc', 'prev_next'];
+            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc', 'prev_next', 'instagram_feed'];
             const isElementPro   = (type) => proElementTypes.includes(type);
             const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
 
@@ -1119,12 +1154,52 @@
                 return null;
             };
 
+            // ── Server-rendered canvas preview ('preview' => 'server' in a plugin's element
+            // definition): the element's own front-end template, fetched with the settings being
+            // edited — so an element that draws real data (an Instagram feed) looks the same here
+            // as on the page. Refetched, debounced, whenever its settings or the device change.
+            const ceServerPreview = reactive({});   // el.id → { sig, html }
+            const _ceServerPending = {};            // el.id → sig being fetched (not reactive on purpose)
+            const _ceServerTimers = {};
+            const fetchCeServerPreview = async (el, sig) => {
+                try {
+                    const res = await fetch('{{ route("admin.falcon-builder.element-preview") }}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+                        body: JSON.stringify({ id: el.id, type: el.type, settings: el.settings || {}, device: device.value })
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (_ceServerPending[el.id] !== sig) return; // settings moved on while this was in flight
+                    const parts = data.success ? splitCardPreviewCss(data.html) : { html: '', css: '' };
+                    applyCardPreviewCss('ce-' + el.id, parts.css);
+                    ceServerPreview[el.id] = { sig, html: parts.html || '<div style="padding:18px;text-align:center;color:#94a3b8;font-size:13px;">Preview unavailable</div>' };
+                } catch (e) {
+                    if (_ceServerPending[el.id] === sig) ceServerPreview[el.id] = { sig, html: '<div style="padding:18px;text-align:center;color:#94a3b8;font-size:13px;">Preview unavailable</div>' };
+                }
+            };
+            const ceServerPreviewHtml = (el) => {
+                const sig = JSON.stringify(el.settings || {}) + '|' + device.value;
+                const cur = ceServerPreview[el.id];
+                if ((!cur || cur.sig !== sig) && _ceServerPending[el.id] !== sig) {
+                    _ceServerPending[el.id] = sig;
+                    clearTimeout(_ceServerTimers[el.id]);
+                    _ceServerTimers[el.id] = setTimeout(() => fetchCeServerPreview(el, sig), cur ? 450 : 0);
+                }
+                if (cur && cur.html) return cur.html;
+                return '<div style="padding:22px;text-align:center;color:#94a3b8;font-size:13px;"><i class="fa fa-spinner fa-spin"></i> Loading preview…</div>';
+            };
+
             // Returns { wrapperStyle, items, hoverCss } for live canvas rendering.
             const getCustomElementRender = (el) => {
                 const def = customElements[el.type];
                 if (!def) return { wrapperStyle: {}, items: [], hoverCss: '' };
                 const s = el.settings || {};
                 const elId = el.id || 'x';
+
+                if (def.preview === 'server') {
+                    return { wrapperStyle: { width: '100%' }, wrapperHoverClass: '', hoverCss: '',
+                             items: [{ kind: 'html', value: ceServerPreviewHtml(el), style: { width: '100%' }, hoverClass: '' }] };
+                }
 
                 // Falcon Slider: show a tidy placeholder card with the chosen slider's name
                 // (the real slider renders on the front-end) instead of the raw ID.

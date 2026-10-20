@@ -1220,6 +1220,10 @@
                                         <option value="created_at">Date</option>
                                         <option value="title">Title</option>
                                         <option value="views">Views</option>
+                                        {{-- Orders a plugin answers through falcon_posts_orderby (Falcon News: most viewed today, this week…). --}}
+                                        @foreach((array) apply_falcon_filters('falcon_post_orderby_options', []) as $__orderValue => $__orderLabel)
+                                        <option value="{{ $__orderValue }}">{{ $__orderLabel }}</option>
+                                        @endforeach
                                         <option value="updated_at">Modified</option>
                                         <option value="rand">Random</option>
                                         <option value="menu_order">Menu Order</option>

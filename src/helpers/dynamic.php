@@ -42,7 +42,92 @@ if (!function_exists('falcon_dynamic_config')) {
             'tax_slug' => $s['dynamic_tax_slug'] ?? '',
             'tax_separator' => $s['dynamic_tax_separator'] ?? '',
             'tax_limit' => (int) ($s['dynamic_tax_limit'] ?? 0),
+            'reading_wpm' => (int) ($s['dynamic_reading_wpm'] ?? 200),
+            'reading_label' => $s['dynamic_reading_label'] ?? '',
+            'digits' => $s['dynamic_digits'] ?? '',
+            // Every dynamic_* setting as stored, for sources a plugin adds (falcon_dynamic_value)
+            // whose options the keys above do not know about.
+            'settings' => array_filter($s, fn ($v, $k) => is_string($k) && str_starts_with($k, 'dynamic_'), ARRAY_FILTER_USE_BOTH),
         ];
+    }
+}
+
+if (!function_exists('falcon_extra_dynamic_sources')) {
+    /**
+     * Dynamic sources added by plugins, for the builder's source picker, grouped by where they
+     * can be used: 'text', 'link' or 'image'. A plugin adds one on the falcon_dynamic_sources
+     * filter and answers it on falcon_dynamic_value:
+     *
+     *   add_falcon_filter('falcon_dynamic_sources', function (array $sources) {
+     *       $sources['text'][] = ['key' => 'post_views', 'label' => 'Post Views', 'icon' => 'fa-eye',
+     *           'group' => 'Post', 'sample' => '1.2K views', 'subFields' => [
+     *               ['key' => 'dynamic_views_period', 'label' => 'Period', 'type' => 'select',
+     *                'options' => [['value' => 'all', 'label' => 'All time']]],
+     *           ]];
+     *       return $sources;
+     *   });
+     *
+     * Every sub-field's value reaches falcon_dynamic_value in $config['settings'], under its key.
+     *
+     * @return array<string, list<array<string, mixed>>>
+     */
+    function falcon_extra_dynamic_sources(): array
+    {
+        $sources = apply_falcon_filters('falcon_dynamic_sources', ['text' => [], 'link' => [], 'image' => []]);
+        $out = ['text' => [], 'link' => [], 'image' => []];
+        foreach (is_array($sources) ? $sources : [] as $ctx => $defs) {
+            if (!isset($out[$ctx]) || !is_array($defs)) {
+                continue;
+            }
+            foreach ($defs as $def) {
+                $key = is_array($def) ? (string) ($def['key'] ?? '') : '';
+                if ($key === '' || !preg_match('/^[a-z0-9_]+$/', $key)) {
+                    continue;
+                }
+                $out[$ctx][] = [
+                    'key' => $key,
+                    'label' => (string) ($def['label'] ?? $key),
+                    'icon' => (string) ($def['icon'] ?? 'fa-bolt'),
+                    'group' => (string) ($def['group'] ?? 'Other'),
+                    'sample' => (string) ($def['sample'] ?? ''),
+                    'subFields' => array_values(array_filter((array) ($def['subFields'] ?? []), 'is_array')),
+                ];
+            }
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('falcon_localize_digits')) {
+    /**
+     * Write the digits 0-9 of a string in another script: 'bengali' (০১২), 'devanagari' (०१२)
+     * or 'arabic' (٠١٢). Anything else leaves the string as it is.
+     */
+    function falcon_localize_digits(string $value, ?string $digits): string
+    {
+        $sets = [
+            'bengali' => ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'],
+            'devanagari' => ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'],
+            'arabic' => ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'],
+        ];
+
+        return isset($sets[$digits]) ? str_replace(range(0, 9), $sets[$digits], $value) : $value;
+    }
+}
+
+if (!function_exists('falcon_reading_time_label')) {
+    /** "4 min read", or in a site's own words and digits: "৪ মিনিট". */
+    function falcon_reading_time_label($post, array $config = []): string
+    {
+        $minutes = falcon_reading_time($post, (int) ($config['reading_wpm'] ?? 200) ?: 200);
+        $label = trim((string) ($config['reading_label'] ?? ''));
+        if ($label === '') {
+            $label = 'min read';
+        }
+        $text = str_contains($label, '{min}') ? str_replace('{min}', (string) $minutes, $label) : $minutes.' '.$label;
+
+        return falcon_localize_digits($text, $config['digits'] ?? '');
     }
 }
 
@@ -119,8 +204,7 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
                 if (!$post) {
                     break;
                 }
-                $words = str_word_count(strip_tags($post->content ?? ''));
-                $val = max(1, (int) ceil($words / 200)).' min read';
+                $val = falcon_reading_time_label($post, $config);
                 break;
             case 'post_id':
                 $val = $post ? (string) ($post->id ?? '') : '';
@@ -302,6 +386,10 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
                         $acptVal = get_acpt_field($post->id ?? null, $acptSlug);
                         $val = is_string($acptVal) ? $acptVal : '';
                     }
+                } else {
+                    // A source a plugin registered (falcon_dynamic_sources) is answered by it.
+                    $val = apply_falcon_filters('falcon_dynamic_value', '', $source, $post, $config);
+                    $val = is_scalar($val) ? (string) $val : '';
                 }
                 break;
         }
@@ -394,7 +482,7 @@ if (!function_exists('falcon_resolve_token')) {
                     return '';
                 }
 
-                return max(1, (int) ceil(str_word_count(strip_tags($post->content ?? '')) / 200)).' min read';
+                return falcon_reading_time_label($post);
             case 'site_title':
                 return function_exists('get_cms_option') ? (string) get_cms_option('site_title', config('app.name', '')) : config('app.name', '');
             case 'site_tagline':
@@ -418,9 +506,14 @@ if (!function_exists('falcon_resolve_token')) {
                         }
                     } catch (Throwable $e) {
                     }
+
+                    return '';
                 }
 
-                return '';
+                // A token a plugin registered ({lazy:post_views}) is answered by it.
+                $val = apply_falcon_filters('falcon_dynamic_value', '', $token, $post, []);
+
+                return is_scalar($val) ? (string) $val : '';
         }
     }
 }
