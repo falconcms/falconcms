@@ -1464,36 +1464,7 @@ class DashboardController extends Controller
         $channels = collect($channelCounts)->map(fn ($v, $k) => ['label' => $k, 'count' => $v])->values();
 
         // ── Named traffic sources (Google / Facebook / Instagram / … / Direct / other site) ──
-        $sourceOf = function (?string $ref) use ($siteHost) {
-            if (!$ref) {
-                return ['Direct', null];
-            }
-            $h = strtolower((string) parse_url($ref, PHP_URL_HOST));
-            if ($h === '' || $h === $siteHost) {
-                return ['Direct', null];
-            }
-            $h = preg_replace('/^www\./', '', $h);
-            $named = [
-                'google' => ['Google', 'google.com'], 'bing' => ['Bing', 'bing.com'],
-                'yahoo' => ['Yahoo', 'yahoo.com'], 'duckduckgo' => ['DuckDuckGo', 'duckduckgo.com'],
-                'yandex' => ['Yandex', 'yandex.com'], 'baidu' => ['Baidu', 'baidu.com'], 'ecosia' => ['Ecosia', 'ecosia.org'],
-                'instagram' => ['Instagram', 'instagram.com'], 'facebook' => ['Facebook', 'facebook.com'],
-                'fb.com' => ['Facebook', 'facebook.com'], 'fb.me' => ['Facebook', 'facebook.com'],
-                'youtube' => ['YouTube', 'youtube.com'], 'youtu.be' => ['YouTube', 'youtube.com'],
-                'twitter' => ['X (Twitter)', 'x.com'], 'x.com' => ['X (Twitter)', 'x.com'], 't.co' => ['X (Twitter)', 'x.com'],
-                'linkedin' => ['LinkedIn', 'linkedin.com'], 'lnkd.in' => ['LinkedIn', 'linkedin.com'],
-                'pinterest' => ['Pinterest', 'pinterest.com'], 'reddit' => ['Reddit', 'reddit.com'],
-                'tiktok' => ['TikTok', 'tiktok.com'], 'whatsapp' => ['WhatsApp', 'whatsapp.com'], 'wa.me' => ['WhatsApp', 'whatsapp.com'],
-                'telegram' => ['Telegram', 'telegram.org'], 't.me' => ['Telegram', 'telegram.org'],
-            ];
-            foreach ($named as $needle => $pair) {
-                if (strpos($h, $needle) !== false) {
-                    return $pair;
-                }
-            }
-
-            return [$h, $h]; // any other site — show its domain
-        };
+        $sourceOf = fn (?string $ref) => falcon_referrer_source($ref, $siteHost);
         $sourceIps = [];
         foreach (Analytics::select('referrer', 'ip_address', DB::raw("{$localDate} as d"))->whereBetween('created_at', [$start, $end])->distinct()->toBase()->get() as $rr) {
             [$label, $domain] = $sourceOf($rr->referrer);

@@ -495,6 +495,7 @@
                             <th class="px-4 py-2.5 font-semibold">Browser</th>
                             <th class="px-4 py-2.5 font-semibold">OS</th>
                             <th class="px-4 py-2.5 font-semibold">IP</th>
+                            <th class="px-4 py-2.5 font-semibold">Referrer</th>
                             <th class="px-4 py-2.5 font-semibold text-right">When</th>
                         </tr>
                     </thead>
@@ -517,10 +518,29 @@
                                         <span class="text-[#9ca3af] text-[11px]">({{ $v->country }})</span>
                                     @endif
                                 </td>
+                                {{-- The source by name (Google, Facebook…), the previous page for a visit
+                                     from inside the site, Direct for none; the full URL on hover. --}}
+                                @php
+                                    [$refLabel, $refDomain] = falcon_referrer_source($v->referrer ?? null);
+                                    // The referrer is whatever the visitor's browser sent: only a web address
+                                    // becomes a link (a javascript: one would run in this admin page).
+                                    $refHref = preg_match('#^https?://#i', (string) ($v->referrer ?? '')) ? $v->referrer : null;
+                                @endphp
+                                <td class="px-4 py-2.5 whitespace-nowrap truncate max-w-[220px]" title="{{ $v->referrer ?: 'Direct — no referrer' }}">
+                                    @if($refDomain && $refHref)
+                                        <a href="{{ $refHref }}" target="_blank" rel="noopener noreferrer nofollow" class="text-[#2271b1] hover:underline">{{ $refLabel }}</a>
+                                    @elseif($refDomain)
+                                        <span class="text-[#646970]">{{ $refLabel }}</span>
+                                    @elseif(!empty($v->referrer))
+                                        <span class="text-[#646970]">{{ falcon_visit_page($v->referrer) }}</span>
+                                    @else
+                                        <span class="text-[#9ca3af]">{{ $refLabel }}</span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-2.5 text-[#646970] text-right whitespace-nowrap">{{ $v->created_at ? \Illuminate\Support\Carbon::parse($v->created_at)->diffForHumans() : '—' }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="px-4 py-6 text-center text-[#646970]">No visits recorded yet.</td></tr>
+                            <tr><td colspan="7" class="px-4 py-6 text-center text-[#646970]">No visits recorded yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

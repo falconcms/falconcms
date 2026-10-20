@@ -138,6 +138,68 @@ if (!function_exists('falcon_visit_page')) {
     }
 }
 
+if (!function_exists('falcon_referrer_source')) {
+    /**
+     * Where an analytics visit came from, as [label, domain]: a named source (Google, Facebook,
+     * X (Twitter)…) with its domain, any other site as its own domain twice, and no referrer
+     * — or one from this site — as ['Direct', null].
+     *
+     * Traffic Sources and the Recent Visits table both read it, so a visit is credited to the
+     * same source in each.
+     *
+     * @return array{0:string,1:string|null}
+     */
+    function falcon_referrer_source(?string $referrer, ?string $siteHost = null): array
+    {
+        if (!$referrer) {
+            return ['Direct', null];
+        }
+
+        if ($siteHost === null) {
+            try {
+                $siteHost = strtolower(request()->getHost());
+            } catch (Throwable $e) {
+                $siteHost = '';
+            }
+        }
+
+        $host = strtolower((string) parse_url($referrer, PHP_URL_HOST));
+        if ($host === '' || $host === $siteHost) {
+            return ['Direct', null];
+        }
+        $host = preg_replace('/^www\./', '', $host);
+
+        $named = [
+            'google' => ['Google', 'google.com'], 'bing' => ['Bing', 'bing.com'],
+            'yahoo' => ['Yahoo', 'yahoo.com'], 'duckduckgo' => ['DuckDuckGo', 'duckduckgo.com'],
+            'yandex' => ['Yandex', 'yandex.com'], 'baidu' => ['Baidu', 'baidu.com'], 'ecosia' => ['Ecosia', 'ecosia.org'],
+            'instagram' => ['Instagram', 'instagram.com'], 'facebook' => ['Facebook', 'facebook.com'],
+            'fb.com' => ['Facebook', 'facebook.com'], 'fb.me' => ['Facebook', 'facebook.com'],
+            'youtube' => ['YouTube', 'youtube.com'], 'youtu.be' => ['YouTube', 'youtube.com'],
+            'twitter' => ['X (Twitter)', 'x.com'], 'x.com' => ['X (Twitter)', 'x.com'], 't.co' => ['X (Twitter)', 'x.com'],
+            'linkedin' => ['LinkedIn', 'linkedin.com'], 'lnkd.in' => ['LinkedIn', 'linkedin.com'],
+            'pinterest' => ['Pinterest', 'pinterest.com'], 'reddit' => ['Reddit', 'reddit.com'],
+            'tiktok' => ['TikTok', 'tiktok.com'], 'whatsapp' => ['WhatsApp', 'whatsapp.com'], 'wa.me' => ['WhatsApp', 'whatsapp.com'],
+            'telegram' => ['Telegram', 'telegram.org'], 't.me' => ['Telegram', 'telegram.org'],
+        ];
+        // Matched on whole name parts, not anywhere in the host: as a plain substring, "t.co"
+        // credited fast.company.com to X and "x.com" did the same for fox.com. A domain needle
+        // (t.co) is the host or a subdomain of it; a name needle (google) is one label of the
+        // host, so google.com.bd, news.google.com and the Google app (com.google.android…)
+        // count and mygoogleblog.com does not.
+        foreach ($named as $needle => $pair) {
+            $match = str_contains($needle, '.')
+                ? ($host === $needle || str_ends_with($host, '.'.$needle))
+                : (bool) preg_match('/(^|\.)'.preg_quote($needle, '/').'(\.|$)/', $host);
+            if ($match) {
+                return $pair;
+            }
+        }
+
+        return [$host, $host]; // any other site — show its domain
+    }
+}
+
 if (!function_exists('the_falcon_post_content')) {
     function the_falcon_post_content($content)
     {
