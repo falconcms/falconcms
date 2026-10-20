@@ -136,16 +136,18 @@ final class SiteScan
     /** @return array<int, object> post id => its stored row, for the posts list (loaded once per request) */
     public static function scores(): array
     {
-        static $scores = null;
-        if ($scores === null) {
+        // Once per request, not once per process: a static kept the first list's scores for
+        // the life of a worker, so a long-running one (and the test suite) showed stale ones.
+        $memo = falcon_request_memo('seo_site_scan_scores');
+        if (!$memo->offsetExists('scores')) {
             try {
-                $scores = DB::table(self::TABLE)->get(['post_id', 'score', 'grade', 'errors', 'warnings', 'analyzed_at'])->keyBy('post_id')->all();
+                $memo['scores'] = DB::table(self::TABLE)->get(['post_id', 'score', 'grade', 'errors', 'warnings', 'analyzed_at'])->keyBy('post_id')->all();
             } catch (Throwable $e) {
-                $scores = [];
+                $memo['scores'] = [];
             }
         }
 
-        return $scores;
+        return $memo['scores'];
     }
 
     /**
