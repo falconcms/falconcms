@@ -745,12 +745,6 @@ parameters:
 			path: src/Http/Controllers/Admin/PostController.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasRole\(\)\.$#'
-			identifier: method.notFound
-			count: 12
-			path: src/Http/Controllers/Admin/PostController.php
-
-		-
 			message: '#^Relation ''user'' is not found in FalconCms\\Core\\Models\\Revision model\.$#'
 			identifier: larastan.relationExistence
 			count: 2

@@ -85,8 +85,11 @@ class Sidebar extends Component
      * Whether a menu item's target route is available. Items without a named route
      * (blank, '#', or a raw URL/path) are always shown; an item pointing at a named
      * route is shown only when that route is actually registered.
+     *
+     * Public because Users → Roles asks the same question: a menu a switched-off plugin owns
+     * (Shop, Products without falcon-shop) is neither shown here nor offered as a permission.
      */
-    protected function routeAvailable($menu): bool
+    public function routeAvailable($menu): bool
     {
         $route = $menu->route ?? null;
         if (!$route || $route === '#' || str_starts_with($route, '/') || str_starts_with($route, 'http')) {
@@ -538,7 +541,36 @@ class Sidebar extends Component
             return true;
         }
 
-        return $user->hasPermission($this->getPermission($menu));
+        return $this->allows($user, $menu);
+    }
+
+    /**
+     * Whether the user holds the permission this menu item asks for — the one test the
+     * sidebar and AdminMiddleware share, so a menu that is shown is a menu that opens.
+     *
+     * A submenu item whose capability was shared with its siblings has its own permission
+     * now ({@see AdminMenu::separateSharedCapabilities()}). A role saved before that holds
+     * only the shared one and none of the new ones, which is read as the whole section it
+     * used to grant; once the role is saved with any sub-option, the sub-options decide.
+     */
+    public function allows($user, $menu): bool
+    {
+        if ($user->hasPermission($this->getPermission($menu))) {
+            return true;
+        }
+
+        $inherits = is_object($menu) ? ($menu->inherits ?? null) : null;
+        if (!$inherits || !$user->hasPermission($inherits)) {
+            return false;
+        }
+
+        foreach ($menu->siblings ?? [] as $sibling) {
+            if ($user->hasPermission($sibling)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function render()

@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $order
  * @property string|null $permission
  * @property Collection<int, Menu> $children
+ * @property-read int|null $children_count with withCount('children')
  */
 class Menu extends Model
 {

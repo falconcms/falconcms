@@ -3,6 +3,8 @@
 namespace FalconCms\Core\Tests\Feature\Shop;
 
 use FalconCms\Core\Database\Seeders\MenuSeeder;
+use FalconCms\Core\Models\Permission;
+use FalconCms\Core\Models\Role;
 use FalconCms\Core\Support\PluginManager;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
@@ -234,6 +236,38 @@ class ShopPluginOffTest extends TestCase
         $this->assertNotContains('Shop', $titles);
         $this->assertNotContains('Products', $titles);
         $this->assertContains('Pages', $titles);
+    }
+
+    public function test_the_roles_screen_does_not_offer_shop_or_products(): void
+    {
+        $this->seed(MenuSeeder::class);
+        $this->actingAsAdmin();
+        $role = Role::create(['name' => 'Staff', 'slug' => 'staff']);
+
+        $this->get("/admin/roles/{$role->id}/edit")->assertOk()
+            ->assertDontSee('value="access_shop"', false)
+            ->assertDontSee('value="access_all_products_products"', false)
+            ->assertSee('value="access_all_pages_pages"', false);
+    }
+
+    public function test_saving_a_role_while_the_shop_is_off_keeps_its_shop_grants(): void
+    {
+        // The form no longer carries them, so a save that only kept what came back would take
+        // the role's shop access away for good, long after the shop was switched on again.
+        $this->seed(MenuSeeder::class);
+        $this->actingAsAdmin();
+        $role = Role::create(['name' => 'Staff', 'slug' => 'staff']);
+        $role->permissions()->sync([
+            Permission::firstOrCreate(['slug' => 'access_orders_shop'], ['name' => 'Orders'])->id,
+            Permission::firstOrCreate(['slug' => 'access_all_pages_pages'], ['name' => 'All Pages'])->id,
+        ]);
+
+        $this->put("/admin/roles/{$role->id}", [
+            'name' => 'Staff', 'slug' => 'staff', 'permissions' => ['manage_pages'],
+        ])->assertRedirect();
+
+        $held = $role->fresh()->permissions->pluck('slug')->sort()->values()->all();
+        $this->assertSame(['access_orders_shop', 'manage_pages'], $held);
     }
 
     /** The shop's settings page is a dormant twin while it is off: no Settings link to it. */

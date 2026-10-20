@@ -16,6 +16,7 @@ use FalconCms\Core\Models\Revision;
 use FalconCms\Core\Models\Tag;
 use FalconCms\Core\Models\TaxonomyTerm;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use FalconCms\Core\Support\MenuAccess;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -395,6 +396,7 @@ class PostController extends Controller
     public function ajaxSaveVariations(Request $request, $id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
         $request->validate([
             'variations' => 'nullable|array',
             'variations.*.price' => 'required|numeric|min:0',
@@ -585,16 +587,24 @@ class PostController extends Controller
     {
         $this->checkTypeActive($post->type);
 
-        if (!$this->userCanManageType($post->type)) {
+        if (!$this->userCanWriteType($post->type)) {
             abort(403, "You do not have permission to {$verb} ".Str::plural($post->type).'.');
         }
+    }
 
-        // Authors and contributors own only their own work.
-        $user = auth()->user();
-        if ($user && ($user->hasRole('author') || $user->hasRole('contributor'))
-            && (int) $post->user_id !== (int) $user->id) {
-            abort(403, "You can only {$verb} your own posts.");
-        }
+    /**
+     * Whether the current user may create, edit and delete content of this type — the
+     * permission of the type's Add New menu item. The list item (All Posts, All Products,
+     * All Books…) without it is read-only: the list is shown, nothing in it can be changed.
+     * A type that has no Add New item keeps the single test it always had.
+     *
+     * Permissions alone decide, for every role alike. Authors and contributors used to be held
+     * to their own posts by role name, so an author granted Add New still could not edit a
+     * single row of a list they did not write.
+     */
+    private function userCanWriteType(string $type): bool
+    {
+        return (new MenuAccess)->canWriteType(auth()->user(), $type) ?? $this->userCanManageType($type);
     }
 
     public function index(Request $request)
@@ -674,10 +684,8 @@ class PostController extends Controller
             $query->where('user_id', $request->author);
         }
 
-        // Ownership Check: Author and Contributor can only see their own posts
-        if (auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) {
-            $query->where('user_id', auth()->id());
-        }
+        // Every role that may open the list sees all of it. Authors and contributors used to
+        // see only their own rows, so one given All Posts met an empty list.
 
         $posts = $query->latest()->paginate(10)->withQueryString();
         $categories = Category::orderBy('name')->get();
@@ -709,7 +717,10 @@ class PostController extends Controller
 
         $overriddenTaxonomies = $assignedTaxonomies->whereIn('slug', ['categories', 'tags'])->pluck('slug')->toArray();
 
-        return view('falcon-cms::admin.posts.index', compact('posts', 'type', 'categories', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount', 'postType', 'assignedTaxonomies', 'overriddenTaxonomies'));
+        // Without Add New the list is read-only: the view hides every control that changes something.
+        $canWrite = $this->userCanWriteType($type);
+
+        return view('falcon-cms::admin.posts.index', compact('posts', 'type', 'categories', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount', 'postType', 'assignedTaxonomies', 'overriddenTaxonomies', 'canWrite'));
     }
 
     /**
@@ -740,8 +751,7 @@ class PostController extends Controller
         $type = $request->query('type', 'post');
         $this->checkTypeActive($type);
 
-        // Dynamic permission check
-        if (!$this->userCanManageType($type, ['access_add_new_'.Str::slug($type, '_'), 'access_add_new_'.Str::plural($type), 'access_add_new'])) {
+        if (!$this->userCanWriteType($type)) {
             $label = Str::plural($type);
             abort(403, "You do not have permission to create {$label}.");
         }
@@ -851,8 +861,7 @@ class PostController extends Controller
         $type = $request->input('type', 'post');
         $this->checkTypeActive($type);
 
-        // Dynamic permission check
-        if (!$this->userCanManageType($type, ['access_add_new_'.Str::slug($type, '_'), 'access_add_new_'.Str::plural($type), 'access_add_new'])) {
+        if (!$this->userCanWriteType($type)) {
             $label = Str::plural($type);
             abort(403, "You do not have permission to store {$label}.");
         }
@@ -1237,18 +1246,7 @@ class PostController extends Controller
 
     public function edit(Post $post)
     {
-        $type = $post->type;
-        $this->checkTypeActive($post->type);
-
-        if (!$this->userCanManageType($type)) {
-            $label = Str::plural($type);
-            abort(403, "You do not have permission to edit {$label}.");
-        }
-
-        // Ownership Check: Author and Contributor can only edit their own posts
-        if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
-            abort(403, 'You can only edit your own posts.');
-        }
+        $this->authorizePostAction($post, 'edit');
 
         $locale = request('locale');
         if ($locale && $locale !== app()->getLocale()) {
@@ -1350,6 +1348,7 @@ class PostController extends Controller
     public function revisionsPage(Request $request, $id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
 
         $revs = Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
@@ -1397,19 +1396,7 @@ class PostController extends Controller
     public function update(Request $request, Post $post)
     {
         $type = $post->type;
-        $this->checkTypeActive($post->type);
-
-        if (!$this->userCanManageType($type)) {
-            $label = Str::plural($type);
-            abort(403, "You do not have permission to update {$label}.");
-        }
-
-        // Ownership Check: Author and Contributor can only update their own posts
-        if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
-            abort(403, 'You can only update your own posts.');
-        }
-
-        $this->checkTypeActive($post->type);
+        $this->authorizePostAction($post, 'update');
 
         $this->validateCustomFields($request);
 
@@ -1798,18 +1785,7 @@ class PostController extends Controller
 
     public function destroy(Post $post)
     {
-        $type = $post->type;
-        $this->checkTypeActive($post->type);
-
-        if (!$this->userCanManageType($type)) {
-            $label = Str::plural($type);
-            abort(403, "You do not have permission to delete {$label}.");
-        }
-
-        // Ownership Check: Author and Contributor can only delete their own posts
-        if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
-            abort(403, 'You can only delete your own posts.');
-        }
+        $this->authorizePostAction($post, 'delete');
 
         $type = $post->type;
         $title = $post->title;
@@ -1869,19 +1845,7 @@ class PostController extends Controller
         $ids = Post::withTrashed()
             ->whereIn('id', (array) $ids)
             ->get()
-            ->filter(function (Post $post) {
-                $user = auth()->user();
-                if (!$user || !$this->userCanManageType($post->type)) {
-                    return false;
-                }
-
-                if (($user->hasRole('author') || $user->hasRole('contributor'))
-                    && (int) $post->user_id !== (int) $user->id) {
-                    return false;
-                }
-
-                return true;
-            })
+            ->filter(fn (Post $post) => $this->userCanWriteType($post->type))
             ->pluck('id')
             ->all();
 

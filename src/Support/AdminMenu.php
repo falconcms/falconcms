@@ -136,7 +136,10 @@ class AdminMenu
                     ->sortBy('order')
                     ->values();
 
-                return $this->toItem($page, $children);
+                $item = $this->toItem($page, $children);
+                $this->separateSharedCapabilities($item);
+
+                return $item;
             })
             ->sortBy('order')
             ->groupBy(fn (object $item) => $item->group);
@@ -194,12 +197,39 @@ class AdminMenu
         return $tree;
     }
 
+    /**
+     * The submenu permissions a role saved before {@see separateSharedCapabilities()} holds
+     * in effect: every sub-option of a section whose shared capability it has, when it has
+     * none of that section's own. The Roles screen ticks them, so saving such a role keeps
+     * what it could reach instead of silently dropping the section.
+     *
+     * @param  array<int,string>  $held
+     * @return array<int,string>
+     */
+    public function impliedPermissions(array $held): array
+    {
+        $implied = [];
+
+        foreach ($this->grouped()->flatten(1) as $item) {
+            foreach ($item->children as $child) {
+                if (empty($child->inherits) || !in_array($child->inherits, $held, true)
+                    || array_intersect($child->siblings ?? [], $held)) {
+                    continue;
+                }
+                $implied[] = $child->permission;
+            }
+        }
+
+        return $implied;
+    }
+
     /** Normalise a registration array into a sidebar item object (children as a Collection). */
     protected function toItem(array $a, ?Collection $children = null, ?string $parentSlug = null): object
     {
         $title = $a['menu_title'] ?? $a['title'] ?? 'Menu';
 
         return (object) [
+            'slug' => $a['slug'] ?? Str::slug($title),
             'title' => $title,
             'route' => $a['route'] ?? '#',
             'icon' => $a['icon'] ?? '',
@@ -219,6 +249,48 @@ class AdminMenu
             'show_in_roles' => (bool) ($a['show_in_roles'] ?? true),
             'children' => $children ?? collect(),
         ];
+    }
+
+    /**
+     * Give every submenu item a permission of its own.
+     *
+     * A package that passes one capability to its page and to every submenu item (Wholesale
+     * did: manage_wholesale throughout) put the same checkbox value in Users → Roles six times
+     * over, so ticking one sub-option ticked them all and no section could be granted alone.
+     * A child that repeats its parent's or a sibling's capability is given the derived
+     * `access_<parent>_<title>` instead. The shared capability stays on the parent, which the
+     * Roles screen keeps checked whenever any child is, so a package still testing it in its
+     * own controllers keeps working for every role that holds any of its sections.
+     *
+     * A role saved before this held only the shared capability. `inherits` and `siblings`
+     * record that, so {@see Sidebar::allows()} can read such a role as the whole section it
+     * used to mean until an administrator saves it again.
+     */
+    protected function separateSharedCapabilities(object $item): void
+    {
+        $counts = [];
+        foreach ($item->children as $child) {
+            $counts[$child->permission] = ($counts[$child->permission] ?? 0) + 1;
+        }
+
+        $separated = false;
+        foreach ($item->children as $child) {
+            $shared = $child->permission;
+            if ($shared === $item->permission || $counts[$shared] > 1) {
+                $child->permission = $this->derivedPermission([], $child->title, $item->slug);
+                $child->inherits = $shared;
+                $separated = true;
+            }
+        }
+
+        if ($separated) {
+            $siblings = $item->children->pluck('permission')->all();
+            foreach ($item->children as $child) {
+                if (isset($child->inherits)) {
+                    $child->siblings = $siblings;
+                }
+            }
+        }
     }
 
     /** `access_<slug>` for a page, `access_<parent>_<title>` for a submenu item. */

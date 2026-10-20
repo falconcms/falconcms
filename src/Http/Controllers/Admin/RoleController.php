@@ -58,6 +58,14 @@ class RoleController extends Controller
         $data = $this->getDynamicPermissions();
         $data['role'] = $role;
         $data['rolePermissions'] = $role->permissions->pluck('slug')->toArray();
+        try {
+            $data['rolePermissions'] = array_merge(
+                $data['rolePermissions'],
+                app(AdminMenu::class)->impliedPermissions($data['rolePermissions'])
+            );
+        } catch (\Throwable $e) {
+            // A package throwing while registering must not take the Roles screen down with it.
+        }
 
         return view('falcon-cms::admin.roles.edit', $data);
     }
@@ -79,13 +87,41 @@ class RoleController extends Controller
         }
         $role->update($validated);
 
-        if ($request->has('permissions')) {
-            $this->syncPermissions($role, $request->permissions);
-        } else {
-            $role->permissions()->detach();
-        }
+        // Grants for a switched-off plugin's menus are not on the form, so they never come back
+        // in the request; carry them over, or saving a role while the shop is off would take
+        // its shop access away for good.
+        $this->syncPermissions($role, array_merge(
+            (array) $request->input('permissions', []),
+            array_intersect($role->permissions->pluck('slug')->all(), $this->unavailableMenuPermissions())
+        ));
 
         return redirect()->route('admin.roles.edit', $role)->with('success', 'Role updated successfully.');
+    }
+
+    /**
+     * The permissions of menus the Roles screen leaves out because their plugin is switched
+     * off — the same menus the sidebar drops.
+     *
+     * @return array<int,string>
+     */
+    protected function unavailableMenuPermissions(): array
+    {
+        $sidebar = new Sidebar;
+        $slugs = [];
+
+        foreach (Menu::with('children')->whereNull('parent_id')->get() as $menu) {
+            $children = $menu->children;
+            $available = $children->filter(fn ($child) => $sidebar->routeAvailable($child));
+
+            foreach ($children->diff($available) as $child) {
+                $slugs[] = $child->permission ?: $this->generatePermissionSlug($child, $menu);
+            }
+            if (!$sidebar->routeAvailable($menu) && $available->isEmpty()) {
+                $slugs[] = $menu->permission ?: $this->generatePermissionSlug($menu);
+            }
+        }
+
+        return $slugs;
     }
 
     protected function syncPermissions(Role $role, array $permissionSlugs)
@@ -113,11 +149,18 @@ class RoleController extends Controller
         // 2. Format into a structured array for the view
         $dynamicPermissions = [];
 
-        foreach ($menuGroups as $groupName => $menus) {
-            $groupKey = Str::slug($groupName ?: 'Main');
-            $dynamicPermissions[$groupName] = [];
+        // The sidebar's own availability test, so the two screens list the same menus: one
+        // whose plugin is switched off (Shop and Products without falcon-shop) is not offered
+        // as a permission any more than it is shown in the sidebar.
+        $sidebar = new Sidebar;
 
+        foreach ($menuGroups as $groupName => $menus) {
             foreach ($menus as $menu) {
+                $children = $menu->children->filter(fn ($child) => $sidebar->routeAvailable($child));
+                if (!$sidebar->routeAvailable($menu) && $children->isEmpty()) {
+                    continue;
+                }
+
                 $slug = $menu->permission ?: $this->generatePermissionSlug($menu);
 
                 $item = [
@@ -126,7 +169,7 @@ class RoleController extends Controller
                     'children' => [],
                 ];
 
-                foreach ($menu->children as $child) {
+                foreach ($children as $child) {
                     $childSlug = $child->permission ?: $this->generatePermissionSlug($child, $menu);
                     $item['children'][] = [
                         'title' => $child->title,

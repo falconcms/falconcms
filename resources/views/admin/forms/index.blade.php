@@ -1,6 +1,8 @@
 <x-falcon-cms::layouts.admin>
     <x-slot name="title">Forms - FalconCMS</x-slot>
     <x-falcon-cms::admin.delete-modal />
+    {{-- Without Forms → Add New the list is read-only: nothing that changes a form is offered. --}}
+    @php $canWrite = falcon_admin_can_write(); @endphp
 
     <div class="px-6 py-4">
         <div class="flex items-center justify-between mb-6">
@@ -9,6 +11,7 @@
                 <p class="text-gray-500 text-sm mt-1">Create and manage your contact forms.</p>
             </div>
             <div class="flex items-center gap-2">
+                @if($canWrite)
                 <form action="{{ route('admin.forms.import') }}" method="POST" enctype="multipart/form-data" id="form-import-form" class="inline">
                     @csrf
                     <input type="file" name="form_file" id="form_file" accept=".json,application/json" class="hidden"
@@ -23,6 +26,7 @@
                     <span class="material-symbols-outlined text-[18px]">add</span>
                     New Form
                 </a>
+                @endif
             </div>
         </div>
 
@@ -37,10 +41,12 @@
             <div class="bg-white border border-gray-200 rounded-xl p-16 text-center shadow-sm">
                 <span class="material-symbols-outlined text-6xl text-gray-300">wysiwyg</span>
                 <h3 class="text-lg font-bold text-gray-600 mt-4">No forms yet</h3>
+                @if($canWrite)
                 <p class="text-gray-400 text-sm mt-2">Create your first form to get started.</p>
                 <a href="{{ route('admin.forms.create') }}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold mt-6 hover:bg-blue-700 transition-colors">
                     <span class="material-symbols-outlined text-[18px]">add</span> Create Form
                 </a>
+                @endif
             </div>
         @else
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -69,21 +75,25 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center justify-end gap-2">
+                                        @if($canWrite)
                                         <a href="{{ route('admin.forms.builder', $form->id) }}" class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
                                             <span class="material-symbols-outlined text-[14px]">build</span> Builder
                                         </a>
+                                        @endif
                                         <a href="{{ route('admin.forms.submissions', $form->id) }}" class="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
                                             <span class="material-symbols-outlined text-[14px]">inbox</span> Entries
                                         </a>
                                         <a href="{{ route('admin.forms.export', $form->id) }}" class="inline-flex items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors" title="Export this form as a .json file">
                                             <span class="material-symbols-outlined text-[14px]">download</span> Export
                                         </a>
+                                        @if($canWrite)
                                         <form id="delete-form-{{ $form->id }}" method="POST" action="{{ route('admin.forms.destroy', $form) }}">
                                             @csrf @method('DELETE')
                                             <button type="button" onclick="confirmFormDelete({{ $form->id }})" class="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
                                                 <span class="material-symbols-outlined text-[14px]">delete</span>
                                             </button>
                                         </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

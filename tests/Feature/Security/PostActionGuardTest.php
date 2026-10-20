@@ -229,26 +229,26 @@ class PostActionGuardTest extends TestCase
     /** A bulk action over a mixed selection still does its job on the permitted rows. */
     public function test_a_bulk_action_over_a_mixed_selection_acts_on_what_it_may(): void
     {
-        // The seeded author role holds no permissions of its own, so grant the one this
-        // test is about: an author who may manage posts, but only their own.
-        $authorRole = Role::where('slug', 'author')->firstOrFail();
-        $permission = Permission::firstOrCreate(['slug' => 'manage_posts'], ['name' => 'Manage Posts']);
-        $authorRole->permissions()->syncWithoutDetaching([$permission->id]);
+        // Permissions decide per row, never role names: a role that may manage pages and not
+        // posts, sent a selection holding one of each, trashes the page and leaves the post.
+        $role = Role::create(['name' => 'Page Editor', 'slug' => 'page-editor']);
+        $permission = Permission::firstOrCreate(['slug' => 'manage_pages'], ['name' => 'Manage Pages']);
+        $role->permissions()->syncWithoutDetaching([$permission->id]);
 
-        $author = $this->makeUser(['role_id' => $authorRole->id]);
+        $editor = $this->makeUser(['role_id' => $role->id]);
 
-        $theirs = Post::create([
-            'user_id' => $author->id, 'title' => 'Mine', 'slug' => 'mine',
-            'type' => 'post', 'status' => 'published', 'lang_code' => 'en', 'content' => 'x',
+        $page = Post::create([
+            'user_id' => $editor->id, 'title' => 'A page', 'slug' => 'a-page',
+            'type' => 'page', 'status' => 'published', 'lang_code' => 'en', 'content' => 'x',
         ]);
 
-        $this->actingAs($author)->post('/admin/posts/bulk', [
+        $this->actingAs($editor)->post('/admin/posts/bulk', [
             'action' => 'trash',
-            'post_ids' => [$this->post->id, $theirs->id],
+            'post_ids' => [$this->post->id, $page->id],
         ]);
 
-        $this->assertNull(Post::find($theirs->id), 'their own post should have been trashed');
-        $this->assertNotNull(Post::find($this->post->id), "someone else's post was trashed anyway");
+        $this->assertNull(Post::find($page->id), 'the page it may manage should have been trashed');
+        $this->assertNotNull(Post::find($this->post->id), 'a post it may not manage was trashed anyway');
     }
 
     private function admin(): User

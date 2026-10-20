@@ -2,7 +2,9 @@
     <x-falcon-cms::admin.delete-modal />
     <div class="mb-4 flex items-center">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">{{ ucfirst($type ?? 'Posts') }}</h1>
-        <a href="{{ route('admin.posts.create', ['type' => $type ?? 'post']) }}" class="wp-btn-outline">Add New</a>
+        @if($canWrite ?? true)
+            <a href="{{ route('admin.posts.create', ['type' => $type ?? 'post']) }}" class="wp-btn-outline">Add New</a>
+        @endif
     </div>
 
     @if(session('success'))
@@ -52,6 +54,7 @@
     
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-2">
         <div class="flex flex-wrap items-center gap-2">
+            @if($canWrite ?? true)
             <div class="flex items-center space-x-1">
                 <select name="action" class="wp-input py-0 h-[30px] text-[13px]">
                     <option value="-1">Bulk actions</option>
@@ -66,6 +69,7 @@
                 </select>
                 <button type="button" onclick="handleBulkAction('posts-filter')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
             </div>
+            @endif
 
             @if(request('status') !== 'trash')
             <div class="flex items-center space-x-1 ml-0 md:ml-4">
@@ -98,7 +102,7 @@
     <table class="w-full bg-[#fff] border border-[#c3c4c7] shadow-[0_1px_1px_rgba(0,0,0,.04)] mb-4">
         <thead>
             <tr>
-                <th class="wp-table-header w-8 text-center pb-0"><input type="checkbox" id="cb-select-all-1" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></th>
+                <th class="wp-table-header w-8 text-center pb-0">@if($canWrite ?? true)<input type="checkbox" id="cb-select-all-1" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]">@endif</th>
                 <th class="wp-table-header text-left">Title</th>
                 <th class="wp-table-header text-left">Author</th>
                 <th class="wp-table-header text-left">Slug</th>
@@ -140,11 +144,17 @@
         </thead>
         <tbody>
             @forelse($posts as $idx => $post)
+                @php
+                    // Read-only rows (no Add New) link to the post itself.
+                    $rowCanChange = $canWrite ?? true;
+                    $isViewable = !isset($postType) || $postType->is_public;
+                    $titleUrl = $post->trashed() ? '#' : ($rowCanChange ? route('admin.posts.edit', $post) : ($isViewable ? get_falcon_permalink($post) : '#'));
+                @endphp
                 <tr class="{{ $idx % 2 === 0 ? 'bg-[#f6f7f7]' : 'bg-[#fff]' }} group">
-                    <td class="wp-table-cell text-center"><input type="checkbox" name="post_ids[]" value="{{ $post->id }}" class="cb-select-item rounded-sm border-[#8c8f94] text-[#2271b1]"></td>
+                    <td class="wp-table-cell text-center">@if($rowCanChange)<input type="checkbox" name="post_ids[]" value="{{ $post->id }}" class="cb-select-item rounded-sm border-[#8c8f94] text-[#2271b1]">@endif</td>
                     <td class="wp-table-cell align-top text-[14px] text-left">
                         <strong>
-                            <a href="{{ $post->trashed() ? '#' : route('admin.posts.edit', $post) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $post->title }}</a>
+                            <a href="{{ $titleUrl }}" @if(!$rowCanChange && $titleUrl !== '#') target="_blank" @endif class="text-[#2271b1] hover:text-[#135e96]">{{ $post->title }}</a>
                             @if($post->status === 'draft' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif 
                             @if($post->status === 'scheduled' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif
                             @if(is_falcon_homepage($post)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
@@ -152,16 +162,20 @@
                         </strong>
                         <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">
                             @if($post->trashed())
+                                @if($rowCanChange)
                                 <button form="restore-form-{{ $post->id }}" type="submit" class="text-[#2271b1] hover:underline cursor-pointer">Restore</button>
                                 <span class="text-[#c3c4c7]">|</span>
                                 <button type="button" onclick="confirmForceDelete({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Delete Permanently</button>
+                                @endif
                             @else
+                                @if($rowCanChange)
                                 <a href="{{ route('admin.posts.edit', $post) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                 <button type="button" onclick="moveToTrash({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button>
                                 <span class="text-[#c3c4c7]">|</span>
                                 <button type="submit" form="clone-form-{{ $post->id }}" class="text-[#2271b1] hover:underline cursor-pointer">Clone</button>
-                                @if(!isset($postType) || $postType->is_public)
-                                <span class="text-[#c3c4c7]">|</span>
+                                @endif
+                                @if($isViewable)
+                                @if($rowCanChange)<span class="text-[#c3c4c7]">|</span>@endif
                                 <a href="{{ get_falcon_permalink($post) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
                                 @endif
                             @endif
@@ -263,7 +277,7 @@
         </tbody>
         <tfoot>
             <tr>
-                <th class="wp-table-header w-8 text-center pb-0 border-t"><input type="checkbox" id="cb-select-all-2" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></th>
+                <th class="wp-table-header w-8 text-center pb-0 border-t">@if($canWrite ?? true)<input type="checkbox" id="cb-select-all-2" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]">@endif</th>
                 <th class="wp-table-header text-left border-t">Title</th>
                 <th class="wp-table-header text-left border-t">Author</th>
                 <th class="wp-table-header text-left border-t">Slug</th>
@@ -305,6 +319,7 @@
     
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
         <div class="flex items-center space-x-2">
+            @if($canWrite ?? true)
             <select name="action2" class="wp-input py-0 h-[30px] text-[13px]">
                 <option value="-1">Bulk actions</option>
                 @if(request('status') === 'trash')
@@ -317,6 +332,7 @@
                 @endif
             </select>
             <button type="button" onclick="handleBulkAction('posts-filter', 'action2')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
+            @endif
         </div>
         
         <x-falcon-cms::admin.pagination :paginator="$posts" />

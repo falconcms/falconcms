@@ -31,6 +31,7 @@ foreach ([
     'plugins',
     'licensing',
     'security',
+    'permissions',
     'datetime',
     'activity-log',
     'icons-fonts',

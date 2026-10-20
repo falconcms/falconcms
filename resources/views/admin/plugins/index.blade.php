@@ -82,6 +82,13 @@
                                         <span class="text-[#c3c4c7]">|</span>
                                     @endif
                                     <a href="#" onclick="event.preventDefault();submitSingle('{{ route('admin.plugins.deactivate', $slug) }}')" class="text-[#2271b1] hover:underline">Deactivate</a>
+                                @elseif(!empty($p['missing_dependencies']))
+                                    {{-- Activating would only be refused: say what it needs instead. --}}
+                                    <span class="text-[#996800]">Requires {{ implode(', ', $p['missing_dependencies']) }} (install and activate it first)</span>
+                                    @if(empty($p['bundled']))
+                                        <span class="text-[#c3c4c7]">|</span>
+                                        <a href="#" onclick="event.preventDefault();confirmDelete('{{ route('admin.plugins.destroy', $slug) }}', '{{ $p['name'] ?? $slug }}')" class="text-[#b32d2e] hover:underline">Delete</a>
+                                    @endif
                                 @else
                                     <a href="#" onclick="event.preventDefault();submitSingle('{{ route('admin.plugins.activate', $slug) }}')" class="text-[#2271b1] hover:underline">Activate</a>
                                     @if(empty($p['bundled']))

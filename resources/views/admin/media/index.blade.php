@@ -1,9 +1,18 @@
 <x-falcon-cms::layouts.admin title="Media Library">
     <x-falcon-cms::admin.delete-modal />
+    {{-- Without Media → Add New the library is read-only. The controls the script below looks
+         up by id stay in the page, hidden inline (a class toggle cannot bring them back), and
+         the details panel opens with its fields read-only. --}}
+    @php
+        $canWrite = falcon_admin_can_write();
+        $writeOnly = $canWrite ? '' : 'style="display:none"';
+    @endphp
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-4">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Media Library</h1>
-            <a href="{{ route('admin.media.create') }}" class="wp-btn-secondary px-2 py-0.5 text-[13px]">Add Media File</a>
+            @if($canWrite)
+                <a href="{{ route('admin.media.create') }}" class="wp-btn-secondary px-2 py-0.5 text-[13px]">Add Media File</a>
+            @endif
         </div>
         {{-- Plugins add tools here (Falcon SEO: "Generate AVIF copies"). --}}
         {!! do_falcon_action('falcon_media_library_actions') !!}
@@ -47,13 +56,13 @@
 
     <!-- Top Bulk Actions & Pagination -->
     <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2" {!! $writeOnly !!}>
             <select id="bulk-action-selector-top" class="wp-input h-7 text-[13px] py-0 w-32">
                 <option value="">Bulk actions</option>
                 <option value="delete">Delete permanently</option>
             </select>
             <button id="apply-bulk-action-top" class="wp-btn-secondary h-7 px-3 text-[13px]">Apply</button>
-            <button id="bulk-select-btn" class="wp-btn-secondary h-7 px-3 text-[13px] hidden">Bulk Select</button>
+            <button id="bulk-select-btn" class="wp-btn-secondary h-7 px-3 text-[13px] hidden" {!! $writeOnly !!}>Bulk Select</button>
         </div>
         <div id="pagination-top" class="flex items-center gap-4 text-[13px] text-[#646970]">
             <span>{{ $media->total() }} items</span>
@@ -108,7 +117,7 @@
         <table class="wp-list-table w-full text-left text-[13px] border-collapse">
             <thead>
                 <tr class="border-b border-[#c3c4c7] bg-[#f9f9f9]">
-                    <th class="p-2 w-8"><input type="checkbox" id="select-all-media" class="w-4 h-4"></th>
+                    <th class="p-2 w-8"><input type="checkbox" id="select-all-media" class="w-4 h-4" {!! $writeOnly !!}></th>
                     <th class="p-2 w-20">File</th>
                     <th class="p-2 font-semibold">Title</th>
                     <th class="p-2 font-semibold">Author</th>
@@ -120,7 +129,7 @@
                 @forelse($media as $index => $item)
                     <tr class="border-b border-[#f0f0f1] hover:bg-[#f6f7f7] group" data-id="{{ $item->id }}" data-index="{{ $index }}">
                         <td class="p-2 text-center align-top pt-3">
-                            <input type="checkbox" value="{{ $item->id }}" class="media-checkbox w-4 h-4">
+                            @if($canWrite)<input type="checkbox" value="{{ $item->id }}" class="media-checkbox w-4 h-4">@endif
                         </td>
                         <td class="p-2 align-top">
                             <div class="w-16 h-16 bg-[#f0f0f1] border border-[#c3c4c7] overflow-hidden cursor-pointer media-item flex items-center justify-center" data-item='@json($item)' data-index="{{ $index }}">
@@ -144,10 +153,12 @@
                             <div class="text-[11px] text-[#646970] mt-1 media-display-filename">{{ $item->filename }}</div>
                             <!-- Row Actions -->
                             <div class="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity text-[12px]">
-                                <a href="#" class="text-[#2271b1] hover:text-[#135e96] media-item" data-item='@json($item)' data-index="{{ $index }}">Edit</a>
+                                <a href="#" class="text-[#2271b1] hover:text-[#135e96] media-item" data-item='@json($item)' data-index="{{ $index }}">{{ $canWrite ? 'Edit' : 'Details' }}</a>
                                 <span class="text-[#c3c4c7]">|</span>
+                                @if($canWrite)
                                 <button class="text-[#b32d2e] hover:text-[#8a2424]" onclick="confirmDelete('{{ $item->id }}')">Delete Permanently</button>
                                 <span class="text-[#c3c4c7]">|</span>
+                                @endif
                                 <a href="{{ asset('storage/'.$item->path) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
                             </div>
                         </td>
@@ -174,7 +185,7 @@
 
     <!-- Bottom Bulk Actions & Pagination -->
     <div id="pagination-bottom-container" class="flex items-center justify-between mt-4">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2" {!! $writeOnly !!}>
             <select id="bulk-action-selector-bottom" class="wp-input h-7 text-[13px] py-0 w-32">
                 <option value="">Bulk actions</option>
                 <option value="delete">Delete permanently</option>
@@ -234,21 +245,21 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Alternative Text</label><textarea id="modal-meta-alt" class="wp-input w-full text-[13px] h-16"></textarea></div>
-                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Title</label><input type="text" id="modal-meta-title" class="wp-input w-full text-[13px] h-8"></div>
-                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Caption</label><textarea id="modal-meta-caption" class="wp-input w-full text-[13px] h-16"></textarea></div>
-                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Description</label><textarea id="modal-meta-desc" class="wp-input w-full text-[13px] h-16"></textarea></div>
+                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Alternative Text</label><textarea id="modal-meta-alt" @unless($canWrite) readonly @endunless class="wp-input w-full text-[13px] h-16"></textarea></div>
+                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Title</label><input type="text" id="modal-meta-title" @unless($canWrite) readonly @endunless class="wp-input w-full text-[13px] h-8"></div>
+                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Caption</label><textarea id="modal-meta-caption" @unless($canWrite) readonly @endunless class="wp-input w-full text-[13px] h-16"></textarea></div>
+                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Description</label><textarea id="modal-meta-desc" @unless($canWrite) readonly @endunless class="wp-input w-full text-[13px] h-16"></textarea></div>
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">File URL:</label><div class="flex gap-1"><input type="text" id="modal-meta-url" readonly class="wp-input grow text-[11px] h-8 bg-[#f6f7f7]"><button onclick="document.getElementById('modal-meta-url').select();document.execCommand('copy');window.showToast('Copied to clipboard!', 'success')" class="wp-btn-secondary h-8 px-2 text-[11px]">Copy</button></div></div>
                     </div>
 
                     <div class="mt-6 pt-4 border-t border-[#c3c4c7] space-y-4">
                         <div class="flex justify-between items-center">
-                            <button id="modal-update-btn" class="wp-btn-primary h-8 px-6 text-[13px] font-semibold">Update</button>
+                            <button id="modal-update-btn" class="wp-btn-primary h-8 px-6 text-[13px] font-semibold" {!! $writeOnly !!}>Update</button>
                             <span id="update-status-msg" class="text-[12px] text-green-600 font-medium hidden">Saved!</span>
                         </div>
                         <div class="flex flex-wrap gap-4 text-[13px]">
                             <a href="#" id="modal-view-file" target="_blank" class="text-[#2271b1] hover:underline">View media file</a>
-                            <button id="modal-delete-btn" class="text-[#b32d2e] hover:underline">Delete permanently</button>
+                            <button id="modal-delete-btn" class="text-[#b32d2e] hover:underline" {!! $writeOnly !!}>Delete permanently</button>
                         </div>
                     </div>
                 </div>
@@ -658,7 +669,7 @@
             // Auto-save on blur
             ['alt', 'title', 'caption', 'desc'].forEach(meta => {
                 const el = document.getElementById(`modal-meta-${meta}`);
-                if (el) {
+                if (el && !el.readOnly) {
                     el.addEventListener('blur', function() {
                         if (currentIndex === -1) return;
                         const item = items[currentIndex];

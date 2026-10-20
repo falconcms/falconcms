@@ -1,10 +1,14 @@
 <x-falcon-cms::layouts.admin>
     <x-slot name="title">Users - FalconCMS</x-slot>
+    {{-- Without Users → Add New the list is read-only; everyone may still edit their own profile. --}}
+    @php $canWrite = falcon_admin_can_write(); @endphp
 
     <div class="px-2">
         <div class="flex items-baseline gap-2 mb-6">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Users</h1>
-            <a href="{{ route('admin.users.create') }}" class="border border-[#2271b1] text-[#2271b1] px-2 py-0.5 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Add New</a>
+            @if($canWrite)
+                <a href="{{ route('admin.users.create') }}" class="border border-[#2271b1] text-[#2271b1] px-2 py-0.5 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Add New</a>
+            @endif
         </div>
 
         @if(session('success'))
@@ -49,6 +53,7 @@
 
         <div class="flex justify-between items-center mb-2">
             <div class="flex gap-1 items-center">
+                @if($canWrite)
                 <select name="action" form="user-bulk-form" class="wp-input h-8 text-[13px]">
                     <option>Bulk Actions</option>
                     <option value="delete">Delete</option>
@@ -56,6 +61,7 @@
                     <option value="unblock">Unblock</option>
                 </select>
                 <button type="submit" form="user-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
+                @endif
             </div>
             
             <x-falcon-cms::admin.pagination :paginator="$users" size="small" />
@@ -65,7 +71,7 @@
             <table class="w-full text-left text-[13px] border-collapse">
                 <thead>
                     <tr class="border-b border-[#c3c4c7] bg-[#f9f9f9]">
-                        <th class="p-2 w-10 text-center"><input type="checkbox" id="select-all"></th>
+                        <th class="p-2 w-10 text-center">@if($canWrite)<input type="checkbox" id="select-all">@endif</th>
                         <th class="p-2 font-semibold">Username</th>
                         <th class="p-2 font-semibold">Name</th>
                         <th class="p-2 font-semibold">Email</th>
@@ -75,8 +81,9 @@
                 </thead>
                 <tbody>
                     @forelse($users as $user)
+                        @php $isSelf = auth()->id() == $user->id; @endphp
                         <tr class="border-b border-[#f0f0f1] hover:bg-[#f6f7f7] group">
-                            <td class="p-2 text-center"><input type="checkbox" name="ids[]" value="{{ $user->id }}" form="user-bulk-form" class="user-checkbox"></td>
+                            <td class="p-2 text-center">@if($canWrite)<input type="checkbox" name="ids[]" value="{{ $user->id }}" form="user-bulk-form" class="user-checkbox">@endif</td>
                             <td class="p-2 font-semibold">
                                 <div class="flex items-center gap-2">
                                     <img src="https://secure.gravatar.com/avatar/{{ md5($user->email) }}?s=32&d=mm" class="w-8 h-8 rounded">
@@ -85,29 +92,35 @@
                                             $isBlocked = $user->is_blocked || ($user->blocked_until && $user->blocked_until->isFuture());
                                         @endphp
                                         <div class="flex items-center gap-2">
-                                            <a href="{{ route('admin.users.edit', $user) }}" class="text-[#2271b1] font-semibold">{{ $user->username ?: $user->name }}</a>
+                                            @if($canWrite || $isSelf)
+                                                <a href="{{ route('admin.users.edit', $user) }}" class="text-[#2271b1] font-semibold">{{ $user->username ?: $user->name }}</a>
+                                            @else
+                                                <span class="text-[#1d2327] font-semibold">{{ $user->username ?: $user->name }}</span>
+                                            @endif
                                             @if($isBlocked)
                                                 <span class="bg-[#f87171] text-white text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Blocked</span>
                                             @endif
                                         </div>
                                         <div class="flex gap-2 opacity-0 group-hover:opacity-100 text-[12px] mt-1 pr-4 items-center">
+                                            @if($canWrite || $isSelf)
                                             <a href="{{ route('admin.users.edit', $user) }}" class="text-[#2271b1]">Edit</a>
+                                            @endif
+                                            {{-- Nobody deletes or blocks their own account from this list. --}}
+                                            @if($canWrite && !$isSelf)
                                             <span class="text-[#c3c4c7]">|</span>
-                                            <button type="button" 
+                                            <button type="button"
                                                     onclick="openDeleteModal('{{ $user->id }}', '{{ $user->name }}')"
-                                                    class="text-[#b32d2e] {{ auth()->id() == $user->id ? 'hidden' : '' }}">
+                                                    class="text-[#b32d2e]">
                                                 Delete
                                             </button>
-                                            <span class="text-[#c3c4c7] {{ auth()->id() == $user->id ? 'hidden' : '' }}">|</span>
-                                            
+                                            <span class="text-[#c3c4c7]">|</span>
                                             <form action="{{ route('admin.users.toggle-block', $user) }}" method="POST" class="inline">
                                                 @csrf
-                                                <button type="submit" class="{{ $isBlocked ? 'text-[#00a32a]' : 'text-[#b32d2e]' }} {{ auth()->id() == $user->id ? 'hidden' : '' }}">
+                                                <button type="submit" class="{{ $isBlocked ? 'text-[#00a32a]' : 'text-[#b32d2e]' }}">
                                                     {{ $isBlocked ? 'Unblock' : 'Block' }}
                                                 </button>
                                             </form>
-                                            <span class="text-[#c3c4c7] {{ auth()->id() == $user->id ? 'hidden' : '' }}">|</span>
-                                            <a href="#" class="text-[#2271b1]">View</a>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -132,6 +145,7 @@
 
         <div class="mt-4 flex justify-between items-center text-[13px] text-[#2c3338]">
             <div class="flex items-center space-x-2">
+                @if($canWrite)
                 <select name="action2" form="user-bulk-form" class="wp-input h-8 text-[13px]">
                     <option>Bulk Actions</option>
                     <option value="delete">Delete</option>
@@ -139,6 +153,7 @@
                     <option value="unblock">Unblock</option>
                 </select>
                 <button type="submit" form="user-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
+                @endif
                 <span class="ml-2 text-[#2c3338]">{{ $users->total() }} items</span>
             </div>
             <x-falcon-cms::admin.pagination :paginator="$users" />

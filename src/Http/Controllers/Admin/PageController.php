@@ -8,6 +8,7 @@ use FalconCms\Core\Models\Page;
 use FalconCms\Core\Models\Redirect;
 use FalconCms\Core\Models\Revision;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use FalconCms\Core\Support\MenuAccess;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,30 @@ class PageController extends Controller
         }
 
         return $slug;
+    }
+
+    /**
+     * Whether the current user may create, edit and delete pages — the Pages → Add New
+     * permission. All Pages alone is read-only: the list is shown, nothing in it changes.
+     */
+    protected function userCanWritePages(): bool
+    {
+        $user = auth()->user();
+
+        return (new MenuAccess)->canWriteType($user, 'page')
+            ?? ($user && ($user->hasPermission('manage_pages') || $user->hasPermission('access_add_new_pages')));
+    }
+
+    /**
+     * The guard for every action that changes a page. AdminMiddleware sends everything under
+     * /admin/pages except the list and the create screen straight here, since only the
+     * controller sees the row, so each of those actions has to call it.
+     */
+    protected function authorizePageWrite(?Page $page, string $verb): void
+    {
+        if (!$this->userCanWritePages()) {
+            abort(403, "You do not have permission to {$verb} pages.");
+        }
     }
 
     public function index(Request $request)
@@ -103,11 +128,16 @@ class PageController extends Controller
         $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
         $trashCount = (clone $countQuery)->onlyTrashed()->count();
 
-        return view('falcon-cms::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount'));
+        // Without Add New the list is read-only: the view hides every control that changes something.
+        $canWrite = $this->userCanWritePages();
+
+        return view('falcon-cms::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount', 'canWrite'));
     }
 
     public function create()
     {
+        $this->authorizePageWrite(null, 'create');
+
         $allPages = Page::orderBy('title')->get();
 
         // Fetch applicable custom field groups for pages
@@ -124,6 +154,8 @@ class PageController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorizePageWrite(null, 'create');
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
@@ -217,6 +249,8 @@ class PageController extends Controller
 
     public function edit(Page $page)
     {
+        $this->authorizePageWrite($page, 'edit');
+
         $allPages = Page::where('id', '!=', $page->id)->orderBy('title')->get();
 
         // Fetch applicable custom field groups for pages
@@ -261,6 +295,7 @@ class PageController extends Controller
     public function revisionsPage(Request $request, $id)
     {
         $page = Page::findOrFail($id);
+        $this->authorizePageWrite($page, 'edit');
         $revs = Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())
             ->orderByDesc('id')->with('user:id,name')->limit(80)->get();
@@ -294,6 +329,7 @@ class PageController extends Controller
     public function autosaveClassic(Request $request, $id)
     {
         $page = Page::findOrFail($id);
+        $this->authorizePageWrite($page, 'edit');
         $draft = clone $page;
         $draft->title = $request->input('title', $page->title);
         $draft->content = $request->input('content', $page->content);
@@ -306,6 +342,7 @@ class PageController extends Controller
     public function restoreRevisionClassic(Request $request, $id, $revisionId)
     {
         $page = Page::findOrFail($id);
+        $this->authorizePageWrite($page, 'edit');
         $rev = Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->findOrFail($revisionId);
         Revision::snapshot($page, 'revision');
@@ -320,6 +357,7 @@ class PageController extends Controller
     public function deleteRevision(Request $request, $id, $revisionId)
     {
         $page = Page::findOrFail($id);
+        $this->authorizePageWrite($page, 'edit');
         Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->where('id', $revisionId)->delete();
 
@@ -330,6 +368,7 @@ class PageController extends Controller
     public function clearRevisions(Request $request, $id)
     {
         $page = Page::findOrFail($id);
+        $this->authorizePageWrite($page, 'edit');
         Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->delete();
 
@@ -338,6 +377,8 @@ class PageController extends Controller
 
     public function update(Request $request, Page $page)
     {
+        $this->authorizePageWrite($page, 'update');
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
@@ -460,6 +501,8 @@ class PageController extends Controller
 
     public function destroy(Page $page)
     {
+        $this->authorizePageWrite($page, 'delete');
+
         $title = $page->title;
         $page->delete();
         falcon_log_activity('deleted', "Moved page to trash: {$title}", $page);
@@ -470,6 +513,7 @@ class PageController extends Controller
     public function restore($id)
     {
         $page = Page::onlyTrashed()->findOrFail($id);
+        $this->authorizePageWrite($page, 'restore');
         $page->restore();
 
         return back()->with('success', 'Page restored successfully.');
@@ -478,6 +522,7 @@ class PageController extends Controller
     public function forceDelete($id)
     {
         $page = Page::onlyTrashed()->findOrFail($id);
+        $this->authorizePageWrite($page, 'delete');
         $page->forceDelete();
 
         return back()->with('success', 'Page deleted permanently.');
@@ -490,7 +535,16 @@ class PageController extends Controller
             return back()->with('error', 'Please select an action and at least one item.');
         }
 
-        $ids = $request->input('post_ids');
+        // Changing pages takes Add New; the ids are re-read so only real pages are touched.
+        $ids = Page::withTrashed()
+            ->whereIn('id', (array) $request->input('post_ids'))
+            ->get()
+            ->pluck('id')
+            ->all();
+
+        if (empty($ids) || !$this->userCanWritePages()) {
+            return back()->with('error', 'You do not have permission to change the selected items.');
+        }
 
         if ($action === 'trash') {
             $pages = Page::whereIn('id', $ids)->get();

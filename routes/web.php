@@ -110,7 +110,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('posts/{id}/revisions/{revision}/restore', [PostController::class, 'restoreRevisionClassic'])->name('posts.revisions.restore');
     Route::delete('posts/{id}/revisions/{revision}', [PostController::class, 'deleteRevision'])->name('posts.revisions.delete');
     Route::delete('posts/{id}/revisions', [PostController::class, 'clearRevisions'])->name('posts.revisions.clear');
-    Route::resource('posts', PostController::class);
+    // No show(): a post is viewed on the site or opened in the editor; the address only 500'd.
+    Route::resource('posts', PostController::class)->except(['show']);
     // Library — Pro (builder_pro), "browse but locked": the page and every read route stay open
     // so users can look around; EnsureProEditable (method-aware) gates only the write methods.
     Route::middleware(EnsureProEditable::class.':builder_pro')->group(function () {
@@ -215,7 +216,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('pages/{id}/revisions/{revision}/restore', [PageController::class, 'restoreRevisionClassic'])->name('pages.revisions.restore');
     Route::delete('pages/{id}/revisions/{revision}', [PageController::class, 'deleteRevision'])->name('pages.revisions.delete');
     Route::delete('pages/{id}/revisions', [PageController::class, 'clearRevisions'])->name('pages.revisions.clear');
-    Route::resource('pages', PageController::class);
+    Route::resource('pages', PageController::class)->except(['show']);
 
     // Categories
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');

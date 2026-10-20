@@ -151,17 +151,74 @@ class PluginManager
      * that updates the CMS keeps its shop even before (or without) running migrations, and
      * turning it off is what writes the row.
      */
-    protected function isActive(string $slug, array $rows): bool
+    protected function isActive(string $slug, array $rows, array $seen = []): bool
     {
         // The config switch beats everything (see falcon-options.disabled_plugins).
         if (in_array($slug, (array) config('falcon-options.disabled_plugins', []), true)) {
             return false;
         }
-        if (array_key_exists($slug, $rows)) {
-            return (bool) $rows[$slug];
+
+        $on = array_key_exists($slug, $rows)
+            ? (bool) $rows[$slug]
+            : (bool) ($this->manifest($slug)['default_active'] ?? false);
+
+        // A plugin runs only while everything it depends on runs. activate() already refuses
+        // to switch Wholesale on without the shop, but the shop can still go off underneath
+        // it — the config switch, a restored database, a bundled default — and Wholesale
+        // would then load against a shop that is not there.
+        return $on && $this->dependenciesActive($slug, $rows, $seen);
+    }
+
+    /** Whether every dependency of $slug is installed and active (a cycle does not count against it). */
+    protected function dependenciesActive(string $slug, array $rows, array $seen = []): bool
+    {
+        $seen[] = $slug;
+
+        foreach ($this->dependencySlugs($slug) as $dep) {
+            if (in_array($dep, $seen, true)) {
+                continue;
+            }
+            if (!$this->manifest($dep) || !$this->isActive($dep, $rows, $seen)) {
+                return false;
+            }
         }
 
-        return (bool) ($this->manifest($slug)['default_active'] ?? false);
+        return true;
+    }
+
+    /**
+     * The plugin slugs a plugin declares in its manifest's "dependencies".
+     *
+     * @return list<string>
+     */
+    protected function dependencySlugs(string $slug): array
+    {
+        $deps = array_map(
+            fn ($dep) => preg_replace('/[^A-Za-z0-9_\-]/', '', (string) $dep),
+            (array) ($this->manifest($slug)['dependencies'] ?? [])
+        );
+
+        return array_values(array_filter($deps, fn ($dep) => $dep !== ''));
+    }
+
+    /**
+     * The names of the dependencies keeping a plugin from being activated — not installed,
+     * or not active. Empty when it can be switched on.
+     *
+     * @return list<string>
+     */
+    public function missingDependencies(string $slug): array
+    {
+        $active = $this->activeSlugs();
+        $missing = [];
+
+        foreach ($this->dependencySlugs($slug) as $dep) {
+            if (!in_array($dep, $active, true)) {
+                $missing[] = $this->manifest($dep)['name'] ?? $dep;
+            }
+        }
+
+        return $missing;
     }
 
     /** A single discovered manifest, or null. */
@@ -195,6 +252,7 @@ class PluginManager
                 'installed_version' => $rec->version ?? null,
                 'update_available' => $updateAvailable,
                 'settings_url' => $active ? $this->settingsUrl($manifest) : null,
+                'missing_dependencies' => $active ? [] : $this->missingDependencies($slug),
             ];
         }
 
@@ -731,11 +789,7 @@ class PluginManager
             }
         }
 
-        foreach ((array) ($manifest['dependencies'] ?? []) as $dep) {
-            $dep = preg_replace('/[^A-Za-z0-9_\-]/', '', (string) $dep);
-            if ($dep === '') {
-                continue;
-            }
+        foreach ($this->dependencySlugs((string) ($manifest['slug'] ?? '')) as $dep) {
             if (!$this->manifest($dep)) {
                 return "Missing dependency: {$dep}.";
             }
@@ -822,8 +876,7 @@ class PluginManager
     protected function activeDependent(string $slug): ?string
     {
         foreach ($this->activeSlugs() as $active) {
-            $deps = (array) ($this->manifest($active)['dependencies'] ?? []);
-            if (in_array($slug, array_map(fn ($d) => preg_replace('/[^A-Za-z0-9_\-]/', '', (string) $d), $deps), true)) {
+            if (in_array($slug, $this->dependencySlugs($active), true)) {
                 return $active;
             }
         }
