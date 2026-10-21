@@ -106,6 +106,7 @@ export default defineConfig({
             { text: 'Search Console (Pro)', link: '/guide/search-console' },
             { text: 'News Sites (Pro)', link: '/guide/news' },
             { text: 'Instagram Feed (Pro)', link: '/guide/instagram-feed' },
+            { text: 'Security (Pro)', link: '/guide/security' },
             { text: 'Analytics', link: '/guide/analytics' },
             { text: 'Performance', link: '/guide/performance' },
           ]
