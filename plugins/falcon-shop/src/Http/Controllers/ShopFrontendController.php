@@ -16,6 +16,7 @@ use FalconCms\Core\Models\Promotion;
 use FalconCms\Core\Models\Review;
 use FalconCms\Core\Models\Role;
 use FalconCms\Core\Services\EcommerceData;
+use FalconCms\Core\Support\LoginGuard;
 use FalconShop\Http\Controllers\Concerns\SyncsOrderInventory;
 use FalconShop\Mail\OrderNotificationMail;
 use FalconShop\Templates;
@@ -1914,6 +1915,16 @@ class ShopFrontendController extends Controller
      */
     public function accountLogin(Request $request)
     {
+        // The same lockout as the dashboard login (LoginGuard): this form signs in any account,
+        // administrators included, so it must not be a way around it.
+        $ip = (string) $request->ip();
+        if (LoginGuard::ipBlocked($ip) || ($wait = LoginGuard::addressWait($ip)) > 0) {
+            $minutes = max(1, (int) ceil(($wait ?? LoginGuard::LOCK_MINUTES * 60) / 60));
+
+            return back()->withErrors(['account_email' => "Too many failed sign-in attempts from your network. Please try again in {$minutes} minutes."])
+                ->onlyInput('account_email');
+        }
+
         $request->validate([
             'account_email' => 'required|email',
             'account_password' => 'required',
@@ -1933,12 +1944,25 @@ class ShopFrontendController extends Controller
             'password' => $request->input('account_password'),
         ];
 
+        $user = User::where('email', $credentials['email'])->first();
+        if ($refusal = LoginGuard::refusal($user)) {
+            return back()->withErrors(['account_email' => $refusal])->onlyInput('account_email');
+        }
+
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            LoginGuard::succeeded(Auth::user(), $ip);
             $request->session()->regenerate();
             $raw = $request->input('redirect_to') ?: url('/');
             $redirect = $this->safeRedirectUrl($raw);
 
             return redirect($redirect);
+        }
+
+        // One message whether or not the email has an account, until the account locks.
+        LoginGuard::addressFailed($ip);
+        if ($user && LoginGuard::failed($user, $ip) === 0) {
+            return back()->withErrors(['account_email' => 'Too many failed attempts. Your account is locked for '.LoginGuard::LOCK_MINUTES.' minutes.'])
+                ->onlyInput('account_email');
         }
 
         return back()

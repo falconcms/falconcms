@@ -55,7 +55,7 @@ Route::middleware(['web', SecurityHeadersMiddleware::class, MaintenanceModeMiddl
             ->withoutMiddleware([EnsurePro::class.':ecommerce,strict']);
 
         // Account page login / logout / profile / password
-        Route::post('/account-login', [ShopFrontendController::class, 'accountLogin'])->name('shop.account.login');
+        Route::post('/account-login', [ShopFrontendController::class, 'accountLogin'])->name('shop.account.login')->middleware('throttle:10,1');
         Route::post('/account-logout', [ShopFrontendController::class, 'accountLogout'])->name('shop.account.logout');
         Route::post('/account-profile-update', [ShopFrontendController::class, 'updateProfile'])->name('shop.account.profile.update');
         Route::post('/account-password-update', [ShopFrontendController::class, 'updatePassword'])->name('shop.account.password.update');

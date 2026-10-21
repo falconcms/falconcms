@@ -499,19 +499,7 @@ parameters:
 			path: src/Http/Controllers/Admin/LicenseController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\User\:\:\$blocked_until\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/LoginController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\User\:\:\$is_blocked\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Http/Controllers/Admin/LoginController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\User\:\:\$login_attempts\.$#'
 			identifier: property.notFound
 			count: 2
 			path: src/Http/Controllers/Admin/LoginController.php

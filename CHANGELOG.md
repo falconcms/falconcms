@@ -16,6 +16,12 @@ Full release notes, with the reasoning behind each change, live at
   without the sign-in form's five-try lockout, so passwords could be guessed without limit and
   registered emails listed. The endpoint is gone; the theme's running button now only waits for
   both fields to be filled in.
+- **The shop's My Account sign-in is locked like the dashboard's.** It signs in any account,
+  administrators included, but had no lockout or rate limit. Both forms now share one lockout
+  (`LoginGuard`): five wrong passwords lock the account for 30 minutes whichever form they were
+  typed into, an address the dashboard blocked is refused, too many failures from one address
+  make it wait, and the form is limited to 10 tries a minute. It no longer says whether an email
+  has an account.
 
 ## [2.8.4] — 2026-10-16
 

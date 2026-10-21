@@ -6,6 +6,7 @@ use App\Models\User;
 use FalconCms\Core\Mail\MagicLoginMail;
 use FalconCms\Core\Mail\PasswordResetMail;
 use FalconCms\Core\Models\BlockedIp;
+use FalconCms\Core\Support\LoginGuard;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
@@ -41,7 +42,7 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         // Check IP Block
-        if (BlockedIp::where('ip_address', $request->ip())->where('attempts', '>=', 5)->exists()) {
+        if (LoginGuard::ipBlocked((string) $request->ip())) {
             abort(403, 'You do not have permission to access this page. Your IP has been blocked.');
         }
 
@@ -57,28 +58,9 @@ class LoginController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if ($user) {
-            // Check manual permanent block
-            if ($user->is_blocked && !$user->blocked_until) {
-                return back()->withErrors(['email' => 'Your account has been permanently blocked.'])->onlyInput('email');
-            }
-
-            // Check temporary block
-            if ($user->blocked_until) {
-                if ($user->blocked_until->isFuture()) {
-                    $diffInSeconds = now()->diffInSeconds($user->blocked_until);
-                    if ($diffInSeconds > 0) {
-                        $minutes = ceil($diffInSeconds / 60);
-
-                        return back()->withErrors([
-                            'email' => "Too many failed attempts. Your account is temporarily blocked. Please try again after {$minutes} minutes.",
-                        ])->onlyInput('email');
-                    }
-                } else {
-                    // Block expired, reset attempts but keep log
-                    $user->update(['login_attempts' => 0, 'blocked_until' => null]);
-                }
-            }
+        // A permanent block, or a lock from too many wrong passwords on any login form.
+        if ($refusal = LoginGuard::refusal($user)) {
+            return back()->withErrors(['email' => $refusal])->onlyInput('email');
         }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
@@ -101,15 +83,8 @@ class LoginController extends Controller
                     ->with('error', 'Please verify your email address before signing in. You can resend the link below.');
             }
 
-            // Reset attempts on successful login
-            $user->update([
-                'login_attempts' => 0,
-                'blocked_until' => null,
-                'last_failed_login_ip' => null,
-            ]);
-
-            // Clear IP attempts if any
-            BlockedIp::where('ip_address', $request->ip())->delete();
+            // Reset the account's attempts and the address's
+            LoginGuard::succeeded($user, (string) $request->ip());
 
             $request->session()->regenerate();
 
@@ -151,15 +126,9 @@ class LoginController extends Controller
 
         // On Failure
         if ($user) {
-            $user->increment('login_attempts');
-            $attemptsLeft = 5 - $user->login_attempts;
+            $attemptsLeft = LoginGuard::failed($user, (string) $request->ip());
 
-            if ($user->login_attempts >= 5) {
-                $user->update([
-                    'blocked_until' => now()->addMinutes(30),
-                    'last_failed_login_ip' => $request->ip(),
-                ]);
-
+            if ($attemptsLeft === 0) {
                 return back()->withErrors(['email' => 'Too many failed attempts. Your account and IP have been blocked for 30 minutes.'])->onlyInput('email');
             }
 
