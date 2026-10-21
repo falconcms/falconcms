@@ -139,7 +139,8 @@ The firewall checks every request before the site handles it, and refuses:
   the like, which only attackers ask for on a FalconCMS site. Three probes in ten minutes ban the
   address;
 - **floods** — more than 40 "not found" pages, or 10 sign-in attempts (the dashboard login, the
-  shop's My Account sign-in and magic-link requests), a minute from one address earn a ban;
+  shop's My Account sign-in, the wholesale login, passkeys and magic-link requests), a minute
+  from one address earn a ban;
 - **attacks** — SQL injection, cross-site scripting, path traversal, file inclusion, command
   injection and Log4Shell payloads in the address or a form (the admin area is not inspected).
   Repeat offenders are banned like probes; switch it off in **Security → Firewall**;

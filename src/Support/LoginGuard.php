@@ -8,7 +8,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
- * The sign-in lockout every login form shares: the dashboard's and the shop's My Account.
+ * The sign-in lockout every login form shares: the dashboard's, the shop's My Account and
+ * plugins' own (the wholesale login).
  *
  * Per account: five wrong passwords lock it for 30 minutes (`users.login_attempts` /
  * `blocked_until`) whichever form they were typed into, so switching forms does not buy an
