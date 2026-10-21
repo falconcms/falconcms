@@ -7,7 +7,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
-## [Unreleased]
+## [2.8.5] — 2026-10-21
 
 ### Security
 
@@ -16,17 +16,49 @@ Full release notes, with the reasoning behind each change, live at
   without the sign-in form's five-try lockout, so passwords could be guessed without limit and
   registered emails listed. The endpoint is gone; the theme's running button now only waits for
   both fields to be filled in.
-- **The shop's My Account sign-in is locked like the dashboard's.** It signs in any account,
-  administrators included, but had no lockout or rate limit. Both forms now share one lockout
-  (`LoginGuard`): five wrong passwords lock the account for 30 minutes whichever form they were
+- **One sign-in lockout for every login form.** The shop's My Account sign-in signs in any
+  account, administrators included, but had no lockout or rate limit. The dashboard's lock now
+  lives in `LoginGuard`, shared by the dashboard, the shop and plugins' own login forms (the
+  wholesale login): five wrong passwords lock the account for 30 minutes whichever form they were
   typed into, an address the dashboard blocked is refused, too many failures from one address
-  make it wait, and the form is limited to 10 tries a minute. It no longer says whether an email
-  has an account.
+  make it wait, and the shop form is limited to 10 tries a minute and no longer says whether an
+  email has an account.
+- **Foreign Host headers.** Password-reset, magic-login and email-verification links are built
+  on APP_URL, so a request sent with another site's name can no longer mail a real token on that
+  domain; analytics skips requests for host names that are not the site's (extra domains via
+  `falcon_site_hosts`).
+- **Analytics referrers:** only an http(s) referrer is shown as a link (a `javascript:` one would
+  have run in the admin's session).
 
 ### Added
 
-- **`falcon_login_form_after` action** on both login pages (modern and funny), under the form:
-  where a plugin adds another way to sign in (Falcon Security's passkey button).
+- **Roles: read and write per menu.** A section with a list and an "Add New" (posts, pages, every
+  post type, products, media, users, forms, plugin menus shaped the same way) is read with the
+  list's permission and changed with Add New's; a role with the list alone sees no Add New,
+  checkboxes or edit links. Each submenu gets its own permission; menus of switched-off plugins
+  are left out of Roles and keep their grants. A plugin runs only while its dependencies run.
+- **Instagram Feed** builder element (Pro, builder_pro): the connected Business or Creator
+  account (Customizer → Instagram), public post links, or pictures chosen by hand; kept on the
+  site and refreshed in the background (`falcon:instagram-sync`).
+- **Posts loop:** `meta_key` / `meta_value` now filter `get_falcon_posts()` (the Card element's
+  "Posts By: Custom Field"); new hooks `falcon_posts_orderby`, `falcon_post_orderby_options`,
+  `falcon_posts_fetched`.
+- **Reading time** counts words in any script (a Bangla article read as "1 min") and reads builder
+  content; label, reading speed and digits (Bangla, Devanagari, Arabic) are settings.
+- **Plugin hooks:** `falcon_dynamic_sources` / `falcon_dynamic_value` (dynamic content),
+  `falcon_admin_list_columns` / `falcon_admin_list_cells`, server-previewed builder elements, and
+  `falcon_login_form_after` on both login pages (Falcon Security's passkey button).
+- **Analytics:** a Referrer column in the visitor log (Google, Facebook, X, a site by domain,
+  Direct), names matched on whole host parts.
+
+### Fixed
+
+- Ordering a posts loop by `views` threw on the front end; an order nobody answers falls back to
+  the date.
+- Admin menus loaded a count per menu on every request (~80 queries); the admin posts/pages
+  "show" routes answered 500.
+- SEO page scores were kept for the whole process, so a long-running worker showed the first
+  list's scores ever after.
 
 ## [2.8.4] — 2026-10-16
 

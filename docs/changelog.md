@@ -5,7 +5,83 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.4 <Badge type="tip" text="Latest" /> {#v2-8-4}
+## v2.8.5 <Badge type="tip" text="Latest" /> {#v2-8-5}
+
+**Released: 2026-10-21**
+
+A security release first: every login form now shares one lockout, an endpoint that let anyone
+check passwords is gone, and emailed links can no longer be pointed at another domain. Plus
+read/write permissions per menu, the Instagram Feed element, a working custom-field filter for
+post loops, reading time in any language, and the hooks Falcon News and Falcon Security build on.
+
+### Security
+
+- **No more password checking without a lockout.** `POST admin/login/check` told any visitor
+  whether an email and password matched — the "funny" login theme asked it on every keystroke —
+  without the sign-in form's five-try lockout: unlimited password guessing, and a list of which
+  emails have accounts. The endpoint is gone; the theme's running button now waits only for both
+  fields to be filled in.
+- **One sign-in lockout for every login form.** The shop's My Account sign-in signs in any
+  account, administrators included, but had no lockout and no rate limit. The dashboard's lock
+  now lives in `LoginGuard`, which the dashboard, the shop and plugins' own login forms (the
+  wholesale login) share: five wrong passwords lock the account for 30 minutes whichever form
+  they were typed into, so switching forms buys no extra guesses; an address the dashboard
+  blocked is refused everywhere; too many failures from one address make it wait; the shop form
+  takes 10 tries a minute and gives one message whether or not the email has an account.
+- **Emailed links stay on your domain.** Password-reset, magic-login and email-verification links
+  are built on `APP_URL`, so a request sent with another site's name in its Host header can no
+  longer mail a real token on that domain. Analytics also skips requests for host names that are
+  not the site's (scanners and bots on the bare IP were 60% of the demo's visits); add extra
+  domains with the `falcon_site_hosts` filter.
+- **Analytics referrers** become links only when they are http(s): a `javascript:` referrer,
+  which any visitor can send, would have run in the admin's session.
+
+### Added
+
+- **Read and write, per menu.** In **Users → Roles**, a section with a list and an "Add New" —
+  posts, pages, every post type, products, media, users, forms, and any plugin menu shaped the
+  same way — is now read with the list's permission and changed with Add New's. A role with the
+  list alone sees the rows but no Add New, checkboxes or edit and delete links. Every submenu has
+  its own permission (ticking one Wholesale screen no longer ticks them all), roles saved before
+  keep working, switched-off plugins' menus are left out and keep their grants, and a plugin runs
+  only while the plugins it depends on run.
+- **Instagram Feed element** (Pro): show the connected Business or Creator account's posts
+  (**Customizer → Instagram**: the token is checked, stored encrypted and renewed weekly), public
+  posts by link from any account, or pictures you choose. Everything is kept on your site and
+  refreshed in the background, so pages never wait on Instagram. See
+  [Instagram Feed](/guide/instagram-feed).
+- **Post loops by custom field.** `get_falcon_posts()` now applies `meta_key` / `meta_value` — the
+  Card element's "Posts By: Custom Field" — and plugins can add orderings
+  (`falcon_posts_orderby`, `falcon_post_orderby_options`) and preload data for a whole loop
+  (`falcon_posts_fetched`).
+- **Reading time in any language.** Words are counted in every script (a Bangla article used to
+  read as "1 min") and in builder content; the Reading Time source takes a label, a reading speed
+  and digits (Bangla, Devanagari, Arabic).
+- **Analytics: Referrer column** in the visitor log — Google, Facebook, X, another site by domain,
+  or Direct — matched on whole host parts (as a substring, "t.co" credited fast.company.com to X).
+- **Hooks for plugins:** dynamic content sources (`falcon_dynamic_sources`,
+  `falcon_dynamic_value`), admin list columns (`falcon_admin_list_columns`,
+  `falcon_admin_list_cells`), builder elements previewed from their own template, and
+  `falcon_login_form_after` under both login forms. See the [hooks reference](/api/hooks).
+
+### Fixed
+
+- A posts loop ordered by `views` threw on the front end; an order nobody answers now falls back
+  to the date.
+- The admin loaded a count per menu on every request (about 80 queries); the admin posts and
+  pages "show" routes answered with a server error.
+- SEO page scores were kept for the whole process, so a long-running worker kept showing the
+  first list's scores.
+
+### Pro: Falcon News and Falcon Security
+
+Released with Pro 1.3.2: **Falcon News** (view counter, Most Viewed, RSS, Google News sitemap)
+and **Falcon Security** (two-factor and passkeys, firewall, malware scanner, temporary access,
+lockdown, security log and more). See [News sites](/guide/news) and [Security](/guide/security).
+
+---
+
+## v2.8.4 {#v2-8-4}
 
 **Released: 2026-10-16**
 
