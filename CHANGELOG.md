@@ -23,6 +23,11 @@ Full release notes, with the reasoning behind each change, live at
   make it wait, and the form is limited to 10 tries a minute. It no longer says whether an email
   has an account.
 
+### Added
+
+- **`falcon_login_form_after` action** on both login pages (modern and funny), under the form:
+  where a plugin adds another way to sign in (Falcon Security's passkey button).
+
 ## [2.8.4] — 2026-10-16
 
 ### Fixed

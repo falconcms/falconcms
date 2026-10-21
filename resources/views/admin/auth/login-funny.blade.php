@@ -176,6 +176,9 @@
         </form>
 @endif
 
+        {{-- Plugins add other ways to sign in here (a passkey button, say). --}}
+        @php do_falcon_action('falcon_login_form_after', 'admin') @endphp
+
         @if(get_cms_option('users_can_register', '0') == '1')
         <p style="margin-top:1.25rem;font-size:.875rem;color:#6b7280;text-align:center">
             Don't have an account?

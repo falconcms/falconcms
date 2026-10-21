@@ -162,6 +162,9 @@
         </form>
 @endif
 
+        {{-- Plugins add other ways to sign in here (a passkey button, say). --}}
+        @php do_falcon_action('falcon_login_form_after', 'admin') @endphp
+
     </div>{{-- /form-card --}}
 
     @if(get_cms_option('users_can_register', '0') == '1')
