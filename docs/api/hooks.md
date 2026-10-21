@@ -161,6 +161,21 @@ See the [Admin Menu API](/api/admin-menu).
 
 ---
 
+#### `falcon_login_form_after`
+**Args:** `$where` (`'admin'`)
+
+Fires inside the login card, under the sign-in form, on both login pages (modern and funny).
+Echo another way to sign in — Falcon Security prints its "Sign in with a passkey" button here.
+*(Since v2.8.5.)*
+
+```php
+add_falcon_action('falcon_login_form_after', function ($where) {
+    echo '<a href="/sso/start" class="btn-submit" style="display:block;text-align:center;margin-top:1rem">Sign in with SSO</a>';
+});
+```
+
+---
+
 ### Frontend
 
 #### `falcon_head`
@@ -1163,6 +1178,24 @@ add_falcon_filter('falcon_site_health_checks', function($checks) {
 
 ---
 
+#### `falcon_site_hosts`
+**Args:** `array $hosts` (APP_URL's host)
+
+The host names that count as this site. Analytics skips requests for any other host (scanners
+sending another site's name, bots on the bare IP), and the firewall's host check uses the same
+list. `www.` is ignored on both sides. Add the extra domains a site really answers on:
+*(Since v2.8.5.)*
+
+```php
+add_falcon_filter('falcon_site_hosts', function (array $hosts) {
+    $hosts[] = 'shop.example.com';
+
+    return $hosts;
+});
+```
+
+---
+
 ### Plugin Routing Filters
 
 A plugin uses these filters to take over rendering of its own content. Each one starts as `null`, which tells the CMS to render as usual. Return something else to replace the CMS's choice.
@@ -1885,13 +1918,14 @@ return [
 
 ## Complete Hook List
 
-### Actions (123 total)
+### Actions (124 total)
 
 | Hook | Args |
 |---|---|
 | `falcon_admin_head` | — |
 | `falcon_admin_footer` | — |
 | `falcon_admin_bar_right_before` | — |
+| `falcon_login_form_after` | `$where` |
 | `falcon_head` | — |
 | `falcon_footer` | — |
 | `falcon_settings_form_top` | — |
@@ -2013,10 +2047,11 @@ return [
 | `falcon_admin_list_columns` | `$type, $posts, $where` |
 | `falcon_admin_list_cells` | `$post, $type` |
 
-### Filters (85 total)
+### Filters (86 total)
 
 | Hook | Args |
 |---|---|
+| `falcon_site_hosts` | `array $hosts` |
 | `falcon_the_content` | `$content, $post` |
 | `site_title` | `$title` |
 | `falcon_builder_elements` | `$elements` |

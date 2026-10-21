@@ -35,6 +35,21 @@ Go to **Admin → Roles** to:
 
 *The built-in roles, with how many users hold each. Open one to see and edit its permissions, or add your own role.*
 
+### Reading and changing are separate
+
+A section with a list and an **Add New** beside it — Posts, Pages, every post type, Products,
+Media, Users, Forms, and any plugin menu built the same way — has two permissions *(since
+v2.8.5)*:
+
+- the **list** lets a role **see** the items;
+- **Add New** lets it **create, edit and delete** them.
+
+A role with the list alone sees every row but no Add New button, no checkboxes and no Edit or
+Delete links, and a change sent another way is refused. Every submenu has its own permission, so
+ticking one screen of a plugin no longer ticks all of them; roles saved before keep the access
+they had. Menus of plugins that are switched off are left out of the screen and keep their
+grants for when the plugin comes back.
+
 Two rules are enforced on this screen:
 
 - **Administrator**, **Super Admin** and **Subscriber** cannot be deleted — they are system roles.
@@ -122,7 +137,27 @@ $user->revokePermission('manage_posts');
 
 ## Content Ownership
 
-Authors and Contributors can only see and edit **their own content**. This isolation is enforced at the controller level — they cannot access or modify other users' posts even if they try to navigate directly to the URL.
+Access follows the role's permissions, not its name: since v2.8.5 every role — Authors and
+Contributors included — sees every row of a list it may read, and with that section's **Add New**
+permission can edit any item in it. To keep someone to reading, give their role the list without
+Add New.
+
+## Sign-in Lockout
+
+Every login form — the dashboard's, the shop's **My Account** and plugins' own (the wholesale
+login) — shares one lockout *(since v2.8.5)*:
+
+- **five wrong passwords** lock the account for **30 minutes**, counted across all the forms, so
+  switching forms buys no extra guesses;
+- an address that tried five **unknown** emails at the dashboard login is blocked, on every form;
+- a storefront form makes an address that fails too often wait, and takes at most 10 tries a
+  minute;
+- the shop and wholesale forms say "Invalid email or password" whether or not the email has an
+  account.
+
+Locked accounts and blocked addresses are listed — with **Unblock** — under **Security →
+Firewall** when Falcon Security is active, and you can add a bot check to each form under
+**Settings → Integrations → Cloudflare Turnstile**.
 
 ## IP Blacklist
 

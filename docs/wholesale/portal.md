@@ -17,6 +17,9 @@ the `[falcon_wholesale_login]` shortcode.
 - Edit it like any page: write what you like around the form, or change its address.
 - To use another page, pick it in **Settings → Login page**. Leave it on *Built-in screen* to use
   the plugin's own screen at `/wholesale/login`.
+- The form shares the CMS's [sign-in lockout](/guide/rbac#sign-in-lockout) *(FalconCMS 2.8.5+)*:
+  five wrong passwords lock the account for 30 minutes, counted together with the dashboard and
+  shop logins, so it cannot be used to guess an administrator's password.
 - **`/wholesale/login`** always works: it forwards to the page you chose. Every "please sign in"
   link in the plugin goes there.
 - A page deleted by mistake comes back with **Settings → Create the login page**. Settings warns
