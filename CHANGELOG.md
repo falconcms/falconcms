@@ -7,6 +7,16 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [Unreleased]
+
+### Security
+
+- **No more password checking without a lockout.** `POST admin/login/check` told any visitor
+  whether an email and password matched — the "funny" login theme asked it on every keystroke —
+  without the sign-in form's five-try lockout, so passwords could be guessed without limit and
+  registered emails listed. The endpoint is gone; the theme's running button now only waits for
+  both fields to be filled in.
+
 ## [2.8.4] — 2026-10-16
 
 ### Fixed

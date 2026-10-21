@@ -45,7 +45,7 @@ class AdminMiddleware
         $register_slug = get_cms_option('register_url', 'falcon-registration');
 
         if ($request->is('admin/login*') || $request->is('admin/register*') ||
-            $request->is('admin/login/check') || $request->is('admin/email/check') ||
+            $request->is('admin/email/check') ||
             $request->is($login_slug.'*') || $request->is($register_slug.'*')) {
             return $next($request);
         }

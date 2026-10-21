@@ -211,19 +211,13 @@
         var pwdInput   = document.getElementById('password');
         var isValidCreds = false;
 
-        async function verify() {
-            var email = emailInput.value, password = pwdInput.value;
-            if (email.length < 5 || password.length < 3) { isValidCreds = false; return; }
-            try {
-                var res  = await fetch("{{ route('admin.login.check') }}", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ email: email, password: password })
-                });
-                var data = await res.json();
-                isValidCreds = data.valid;
-                if (isValidCreds) { btn.style.transform = 'translate(0,0)'; btn.textContent = 'Unlock Portal'; btn.style.background = 'linear-gradient(135deg,#f83a3a 0%,#ff007a 100%)'; }
-            } catch (e) {}
+        // The button stops running away once both fields are filled in. It is checked here in
+        // the browser only: asking the server whether a password is right on every keystroke
+        // would let anyone try passwords without ever hitting the sign-in lockout.
+        function verify() {
+            var email = emailInput.value.trim(), password = pwdInput.value;
+            isValidCreds = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) && password.length >= 6;
+            if (isValidCreds) { btn.style.transform = 'translate(0,0)'; btn.textContent = 'Unlock Portal'; btn.style.background = 'linear-gradient(135deg,#f83a3a 0%,#ff007a 100%)'; }
         }
 
         emailInput.addEventListener('input', function () { isValidCreds = false; verify(); });

@@ -8,6 +8,7 @@ use FalconCms\Core\Models\Role;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Who can reach the dashboard, and what of it.
@@ -53,6 +54,23 @@ class AdminAccessTest extends TestCase
     public function test_the_real_login_url_still_serves_the_login_screen(): void
     {
         $this->get(route('admin.login'))->assertOk();
+    }
+
+    public function test_there_is_no_endpoint_that_tells_a_guest_whether_a_password_is_right(): void
+    {
+        // The funny login theme used to ask admin/login/check on every keystroke whether the
+        // email and password matched. It answered any guest, without the sign-in form's
+        // lockout — unlimited password guessing, and a list of which emails have accounts.
+        $user = $this->userWithRole('administrator');
+        foreach (['/admin/login/check', '/admin/admin/login/check'] as $path) {
+            $response = $this->postJson($path, ['email' => $user->getAttribute('email'), 'password' => 'password']);
+            $this->assertContains($response->status(), [404, 405], $path.' must not answer');
+            $this->assertArrayNotHasKey('valid', (array) $response->json());
+        }
+        $this->assertFalse(Route::has('admin.login.check'));
+
+        update_cms_option('login_theme', 'funny');
+        $this->get(route('admin.login'))->assertOk()->assertDontSee('login/check');
     }
 
     public function test_an_administrator_reaches_the_dashboard(): void

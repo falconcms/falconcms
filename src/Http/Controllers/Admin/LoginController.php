@@ -38,21 +38,6 @@ class LoginController extends Controller
         return view('falcon-cms::admin.auth.login-modern');
     }
 
-    public function checkCredentials(Request $request)
-    {
-        $credentials = [
-            'email' => $request->email,
-            'password' => $request->password,
-        ];
-
-        $isValid = Auth::validate($credentials);
-
-        return response()->json([
-            'valid' => $isValid,
-            'email_exists' => User::where('email', $request->email)->exists(),
-        ]);
-    }
-
     public function login(Request $request)
     {
         // Check IP Block

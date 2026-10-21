@@ -408,8 +408,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('comments/bulk', [CommentController::class, 'bulk'])->name('comments.bulk');
 
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
-    Route::post('login/check', [LoginController::class, 'checkCredentials'])->name('login.check');
-    Route::post('admin/login/check', [LoginController::class, 'checkCredentials'])->name('admin.login.check');
     Route::post('email/check', [RegisterController::class, 'checkEmail'])->name('email.check');
     Route::post('admin/email/check', [RegisterController::class, 'checkEmail'])->name('admin.email.check');
 
