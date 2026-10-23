@@ -46,6 +46,25 @@ class MiddlewareStackTest extends TestCase
         $this->assertStringContainsString('camera=()', $response->headers->get('Permissions-Policy'));
     }
 
+    public function test_a_baseline_content_security_policy_is_sent(): void
+    {
+        $csp = $this->get('/')->headers->get('Content-Security-Policy');
+
+        $this->assertStringContainsString("frame-ancestors 'self'", $csp);
+        $this->assertStringContainsString("object-src 'none'", $csp);
+        // The builder's inline scripts must keep working, so the baseline restricts no scripts.
+        $this->assertStringNotContainsString('script-src', $csp);
+    }
+
+    public function test_the_content_security_policy_can_be_replaced_or_turned_off(): void
+    {
+        add_falcon_filter('falcon_content_security_policy', fn () => "default-src 'self'");
+        $this->get('/')->assertHeader('Content-Security-Policy', "default-src 'self'");
+
+        add_falcon_filter('falcon_content_security_policy', fn () => '', 20);
+        $this->get('/')->assertHeaderMissing('Content-Security-Policy');
+    }
+
     public function test_the_server_does_not_announce_what_it_is_running(): void
     {
         $this->get('/')->assertHeaderMissing('X-Powered-By');
