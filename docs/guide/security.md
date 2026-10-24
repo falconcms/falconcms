@@ -1,6 +1,8 @@
 # Falcon Security <Badge type="warning" text="Pro" />
 
-The **Falcon Security** plugin adds two-factor sign-in, sign-in alerts, a password policy, a
+The **Falcon Security** plugin adds two-factor sign-in (an app, a passkey, or codes by SMS and
+WhatsApp), sign-in with a phone code, phone confirmation on cash-on-delivery orders, "confirm it's
+you" before risky changes, sign-in alerts (email, Telegram, WhatsApp), a password policy, a
 firewall, a malware scanner and a security audit. It ships
 with [FalconCMS Pro](/guide/pro). Activate it under **Plugins**, then open **Security** in the
 admin menu.
@@ -34,6 +36,107 @@ up for yourself first.
 
 **Lost phone** — sign in with a recovery code, or ask an administrator to **Reset** your
 two-factor in **Security → Sign-in**; you then sign in with your password and set it up again.
+
+**Codes by SMS or WhatsApp instead of an app** — once the site can send messages (see
+[Text and WhatsApp messages](#text-and-whatsapp-messages)), verify your number under
+**Security → My security → My phone**, then press **Turn on with my phone**. After the password
+the site sends the code to your phone (**Send a new code** if it does not arrive). It is weaker
+than an app — a number can be moved to another SIM — so a site can keep chosen roles (say
+Administrator) to an app or a passkey: **Security → Messaging → Not for these roles**. **Use an
+authenticator app instead** moves you over at any time, even when your role must use two-factor.
+
+## Text and WhatsApp messages
+
+**Security → Messaging** connects the site to a service that sends text messages and WhatsApp
+messages. They carry one-time codes — the two-factor step, signing in without a password,
+confirming the phone on a cash-on-delivery order — and, if you like, security alerts.
+
+**Text messages (SMS)** — choose **Twilio**, or **an SMS provider's web API** for local
+providers, which are usually far cheaper and deliver better: pick **BulkSMSBD**,
+**sms.net.bd (Alpha SMS)**, **Greenweb** or **SSL Wireless** to fill the fields from the
+provider's documentation, then add your API key and sender ID. **Another provider** works with
+any service that takes a web request: write its fields as `name=value` lines with placeholders
+(`{to}`, `{to_digits}`, `{to_local}`, `{message}`, `{code}`, `{api_key}`, `{sender}`). Many
+providers answer "OK" even when they refused a message, so set **A good answer contains** to the
+text their success reply holds.
+
+**WhatsApp** — choose **WhatsApp Cloud API** (Meta's own, from your WhatsApp Business account:
+the phone number ID and a permanent access token) or **Twilio**. WhatsApp only lets a business
+start a chat with a template it approved: make an **Authentication** template for codes and a
+**Utility** template whose body is just <code v-pre>{{1}}</code> for alerts, then name them here.
+
+**Test mode** writes every message to the application log instead of sending it, so you can try
+everything before paying for a provider. **Send a test** sends one real message and, if it fails,
+shows the provider's own reason.
+
+**Limits** — set your country's calling code (880 for Bangladesh) so numbers typed as
+`01712 345678` work, and the calling codes the site may send to: bots fill code forms with
+premium-rate numbers abroad and share what you are charged ("SMS pumping"). Codes last 5 minutes
+and allow 5 tries; there is a wait between codes, a number of codes per number and per address
+in an hour, and a cap for the whole site in a day, after which nothing more is sent until
+tomorrow and the administrators are told. **Recent messages** lists what was sent and why
+anything failed (numbers are masked).
+
+## Sign in with a code to your phone
+
+Tick **Sign in with a code to your phone** in **Security → Messaging** and choose the roles that
+may (Customer, by default). Each person then turns it on for their own verified number — in the
+shop's account page under **Phone** (customers never see the admin), or under
+**Security → My security**. The login page and the shop's sign-in show **Sign in with a code to
+your phone**: type the number, then the code. The answer is the same whether or not the number
+has an account, so the form cannot be used to find out who is a customer. An account with
+two-factor still takes its second step after the code, and an account whose two-factor codes go
+to that same phone cannot use it (the phone alone would then open it).
+
+## Cash on delivery: confirm the phone
+
+Most fake cash-on-delivery orders carry a number nobody answers, and each one costs a courier
+trip. Tick **Confirm the phone on cash-on-delivery orders** in **Security → Messaging** and pick
+the payment methods. At checkout, a box under the payment methods asks the shopper to press
+**Send code** and type the code sent to the order's phone number; the order is not placed until
+they do. A browser that confirmed a number is not asked again for 30 days, and a signed-in
+customer's own verified phone needs no code. Each order then shows **Phone number — Confirmed
+with a code** in its sidebar. A checkout page without the box (a theme's own checkout that lacks
+the `falcon_before_place_order_button` hook) is never blocked: orders go through as before.
+
+## Fake orders: risk score, courier history, blocklist
+
+Tick **Score every order** in **Security → Orders**. Each order then gets a risk score from 0 to
+100, with its reasons on the order screen:
+
+- **Courier history** — how many parcels the couriers (Pathao, Steadfast, RedX…) delivered to
+  the number and how many came back. The couriers do not share this with shops directly, so it
+  comes from a checking service you have an account with: pick **BD Courier** (the preset follows
+  its documentation — check it against your account) or **Another service** that answers JSON,
+  add the API key, and if needed say where the totals are in its answer. A service that is slow
+  or down never holds up a checkout.
+- **This shop's own orders** to the number — cancelled, refunded or failed ones count against
+  it, completed ones in its favour. Numbers typed any way (`01712-345678`, `+880 1712 345678`)
+  match.
+- **Bursts of orders** — many orders from one number, several numbers ordering to one address or
+  from one browser, many orders from one network, in the hours you choose.
+- A phone **confirmed with a code** counts in its favour.
+
+On the payment methods you pick (cash on delivery, by default) choose what happens: medium risk
+(30–59) is **flagged** or **put on hold**; high risk (60+) is flagged, held, **asked to pay online
+first** (cash on delivery refused for that order) or **refused**. A held order waits for you to
+call before it is sent. **Risky orders** lists them.
+
+**Blocklist** — on any order, **Block** its phone number, email, network address or browser:
+no more orders are taken from it, whatever the payment method (browsing the shop still works).
+Add numbers, emails or address ranges by hand under **Blocked from ordering**, and unblock there
+or on the order. No code is ever sent to a blocked number.
+
+## Confirm it's you
+
+Installing, switching or removing plugins and themes, adding administrators, changing someone's
+email, password or roles, the licence, backups, imports, updates and the security settings ask
+for your password — or a two-factor code — again before they run, so a browser left signed in, or
+a stolen session, is not enough to take the site over. You are taken back to the form, filled in
+as you left it, to send it once more; a confirmation lasts 15 minutes, and signing in counts as
+one. Five wrong answers in a row sign that browser out. Switch it off or change the minutes in
+**Security → Sign-in**. Plugins add their own risky routes with the `falcon_security_sudo_routes`
+filter.
 
 ## Shop checkout: card testing
 
@@ -118,6 +221,14 @@ administrator.
 sessions are kept in the database) and signs you out of every other one. An administrator can do
 it for any user from **Security → Sign-in** — use it when an account may be in the wrong hands.
 Remember-me cookies and trusted browsers stop working too.
+
+**Alerts in Telegram and WhatsApp** — every alert the administrators get by email (a new
+administrator, an administrator signing in from a new place, wrong two-factor codes, malware
+found, card testing, a lockdown, a plugin installed…) can arrive in a chat too, within seconds.
+For Telegram, make a bot with @BotFather, paste its token in **Security → Messaging → Alerts in
+chat apps**, send the bot a message (or add it to a group), then press **Find my chat** and pick
+the chat. For WhatsApp, list the numbers; the alerts go through the WhatsApp gateway and its alert
+template. **Send a test → Telegram alert** checks the setup.
 
 ## Password policy
 

@@ -162,14 +162,18 @@ See the [Admin Menu API](/api/admin-menu).
 ---
 
 #### `falcon_login_form_after`
-**Args:** `$where` (`'admin'`)
+**Args:** `$where` (`'admin'` or `'shop'`)
 
-Fires inside the login card, under the sign-in form, on both login pages (modern and funny).
-Echo another way to sign in — Falcon Security prints its "Sign in with a passkey" button here.
-*(Since v2.8.5.)*
+Fires inside the login card, under the sign-in form, on both login pages (modern and funny) with
+`'admin'`, and under the shop account page's sign-in with `'shop'`. Echo another way to sign in —
+Falcon Security prints its "Sign in with a passkey" button (admin) and "Sign in with a code to
+your phone" (both) here. *(Since v2.8.5; `'shop'` since the next release.)*
 
 ```php
 add_falcon_action('falcon_login_form_after', function ($where) {
+    if ($where !== 'admin') {
+        return;
+    }
     echo '<a href="/sso/start" class="btn-submit" style="display:block;text-align:center;margin-top:1rem">Sign in with SSO</a>';
 });
 ```

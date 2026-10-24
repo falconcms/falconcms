@@ -7,6 +7,14 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [Unreleased]
+
+### Added
+
+- **Other ways to sign in on the shop's account page.** Its sign-in form now fires
+  `falcon_login_form_after` with `'shop'`, as the dashboard's login does with `'admin'`, so a
+  plugin can offer another way in there — Falcon Security's "Sign in with a code to your phone".
+
 ## [2.8.5] — 2026-10-21
 
 ### Security

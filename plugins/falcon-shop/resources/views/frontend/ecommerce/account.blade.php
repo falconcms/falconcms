@@ -647,6 +647,9 @@
             </div>
 @endif
 
+            {{-- Plugins add other ways to sign in here (a code to your phone, say). --}}
+            <?php do_falcon_action('falcon_login_form_after', 'shop'); ?>
+
             <p class="text-center text-sm text-body mt-6">
                 Don't have an account?
                 <a href="{{ route('shop.checkout') }}" style="color:{{ $primaryColor }};font-weight:600;text-decoration:none">Create one at checkout</a>
