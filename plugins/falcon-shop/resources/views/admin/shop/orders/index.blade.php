@@ -10,7 +10,9 @@
     @endif
 
     <!-- Search Section (Above everything) -->
-    <div class="mb-4 flex justify-end">
+    <div class="mb-4 flex flex-wrap justify-end items-center gap-3">
+        {{-- Plugins add their own tools beside the search (a phone number check, say). --}}
+        <?php do_falcon_action('falcon_admin_orders_toolbar'); ?>
         <form action="" method="GET" class="flex items-center space-x-2">
             <input type="hidden" name="status" value="{{ request('status') }}">
             <input type="text" name="s" value="{{ request('s') }}" class="wp-input h-8 text-[13px] w-64" placeholder="Search orders...">
@@ -60,6 +62,8 @@
                         <th class="wp-table-header">Status</th>
                         <th class="wp-table-header">Total</th>
                         <th class="wp-table-header">Refunded</th>
+                        {{-- falcon_admin_orders_columns / falcon_admin_orders_column: a plugin's own column. --}}
+                        <?php do_falcon_action('falcon_admin_orders_columns'); ?>
                         <th class="wp-table-header text-right">Actions</th>
                     </tr>
                 </thead>
@@ -108,6 +112,7 @@
                                     <span class="text-[#c3c4c7]">—</span>
                                 @endif
                             </td>
+                            <?php do_falcon_action('falcon_admin_orders_column', $order); ?>
                             <td class="wp-table-cell text-right">
                                 <div class="flex justify-end space-x-3">
                                     <a href="{{ route('admin.shop.orders.show', $order->id) }}" class="text-[#2271b1] hover:text-[#135e96]" title="View Order">
@@ -123,7 +128,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="wp-table-cell text-center py-10 text-[#646970] italic">
+                            <td colspan="20" class="wp-table-cell text-center py-10 text-[#646970] italic">
                                 No orders found.
                             </td>
                         </tr>

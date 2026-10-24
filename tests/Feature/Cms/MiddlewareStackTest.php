@@ -56,6 +56,13 @@ class MiddlewareStackTest extends TestCase
         $this->assertStringNotContainsString('script-src', $csp);
     }
 
+    public function test_requests_are_upgraded_to_https_only_on_an_https_site(): void
+    {
+        // Over plain http there is nothing to upgrade to: every fetch() would go to a dead address.
+        $this->assertStringNotContainsString('upgrade-insecure-requests', (string) $this->get('/')->headers->get('Content-Security-Policy'));
+        $this->assertStringContainsString('upgrade-insecure-requests', (string) $this->get('https://localhost/')->headers->get('Content-Security-Policy'));
+    }
+
     public function test_the_content_security_policy_can_be_replaced_or_turned_off(): void
     {
         add_falcon_filter('falcon_content_security_policy', fn () => "default-src 'self'");

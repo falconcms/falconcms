@@ -1,9 +1,11 @@
 # Falcon Security <Badge type="warning" text="Pro" />
 
 The **Falcon Security** plugin adds two-factor sign-in (an app, a passkey, or codes by SMS and
-WhatsApp), sign-in with a phone code, phone confirmation on cash-on-delivery orders, "confirm it's
-you" before risky changes, sign-in alerts (email, Telegram, WhatsApp), a password policy, a
-firewall, a malware scanner and a security audit. It ships
+WhatsApp), sign-in with a phone code, phone confirmation and a fake-order risk score for
+cash-on-delivery orders, "confirm it's you" before risky changes, impossible-travel checks, alerts
+(email, Telegram, WhatsApp), a password policy, a firewall, a Content Security Policy builder, a
+spam guard, a malware scanner checked against the signed release, known-vulnerability alerts, a
+security score with monthly reports, and an agency dashboard. It ships
 with [FalconCMS Pro](/guide/pro). Activate it under **Plugins**, then open **Security** in the
 admin menu.
 
@@ -42,12 +44,12 @@ two-factor in **Security → Sign-in**; you then sign in with your password and 
 **Security → My security → My phone**, then press **Turn on with my phone**. After the password
 the site sends the code to your phone (**Send a new code** if it does not arrive). It is weaker
 than an app — a number can be moved to another SIM — so a site can keep chosen roles (say
-Administrator) to an app or a passkey: **Security → Messaging → Not for these roles**. **Use an
+Administrator) to an app or a passkey: **Security → OTP & Alerts → Not for these roles**. **Use an
 authenticator app instead** moves you over at any time, even when your role must use two-factor.
 
 ## Text and WhatsApp messages
 
-**Security → Messaging** connects the site to a service that sends text messages and WhatsApp
+**Security → OTP & Alerts** connects the site to a service that sends text messages and WhatsApp
 messages. They carry one-time codes — the two-factor step, signing in without a password,
 confirming the phone on a cash-on-delivery order — and, if you like, security alerts.
 
@@ -79,7 +81,7 @@ anything failed (numbers are masked).
 
 ## Sign in with a code to your phone
 
-Tick **Sign in with a code to your phone** in **Security → Messaging** and choose the roles that
+Tick **Sign in with a code to your phone** in **Security → OTP & Alerts** and choose the roles that
 may (Customer, by default). Each person then turns it on for their own verified number — in the
 shop's account page under **Phone** (customers never see the admin), or under
 **Security → My security**. The login page and the shop's sign-in show **Sign in with a code to
@@ -91,7 +93,7 @@ to that same phone cannot use it (the phone alone would then open it).
 ## Cash on delivery: confirm the phone
 
 Most fake cash-on-delivery orders carry a number nobody answers, and each one costs a courier
-trip. Tick **Confirm the phone on cash-on-delivery orders** in **Security → Messaging** and pick
+trip. Tick **Confirm the phone on cash-on-delivery orders** in **Security → OTP & Alerts** and pick
 the payment methods. At checkout, a box under the payment methods asks the shopper to press
 **Send code** and type the code sent to the order's phone number; the order is not placed until
 they do. A browser that confirmed a number is not asked again for 30 days, and a signed-in
@@ -106,10 +108,16 @@ Tick **Score every order** in **Security → Orders**. Each order then gets a ri
 
 - **Courier history** — how many parcels the couriers (Pathao, Steadfast, RedX…) delivered to
   the number and how many came back. The couriers do not share this with shops directly, so it
-  comes from a checking service you have an account with: pick **BD Courier** (the preset follows
-  its documentation — check it against your account) or **Another service** that answers JSON,
-  add the API key, and if needed say where the totals are in its answer. A service that is slow
-  or down never holds up a checkout.
+  comes from a checking service you have an account with:
+  - **Steadfast (merchant API)** — Steadfast's own fraud check. Paste the **API key** and the
+    **Secret key** from Steadfast's API settings; both are sent as Steadfast's `Api-Key` and
+    `Secret-Key` headers, and the reports other merchants made about the number count too.
+  - **BD Courier** — one answer for several couriers (the preset follows its documentation —
+    check it against your account).
+  - **Another service** that answers JSON: add its address (`{phone}` marks where the number
+    goes), its key, and if needed where the totals are in its answer.
+
+  A service that is slow or down never holds up a checkout.
 - **This shop's own orders** to the number — cancelled, refunded or failed ones count against
   it, completed ones in its favour. Numbers typed any way (`01712-345678`, `+880 1712 345678`)
   match.
@@ -122,10 +130,86 @@ On the payment methods you pick (cash on delivery, by default) choose what happe
 first** (cash on delivery refused for that order) or **refused**. A held order waits for you to
 call before it is sent. **Risky orders** lists them.
 
+**Check a number** — before you send a parcel, or when a customer calls, see how the couriers'
+parcels to a number went and this shop's own orders to it: in **Security → Orders → Check a
+number**, beside the search on **Shop → Orders** (and **Check** on each order's row), or with
+**Check this number** on an order's screen.
+
 **Blocklist** — on any order, **Block** its phone number, email, network address or browser:
 no more orders are taken from it, whatever the payment method (browsing the shop still works).
 Add numbers, emails or address ranges by hand under **Blocked from ordering**, and unblock there
 or on the order. No code is ever sent to a blocked number.
+
+## Content Security Policy
+
+**Security → CSP** tells visitors' browsers which sites the public pages may load code and
+content from, and send data to. An injected `<script src>`, a card skimmer, a hidden iframe or a
+leak to an unknown server is then refused by the browser itself.
+
+1. Choose **Learning** and save. Nothing is blocked: browsers report every outside source the
+   pages use. Open the home page, a post, the shop and the checkout, and let it run a few days.
+2. Under **Sources the pages use**, **Allow** what the site needs (your fonts, analytics, payment
+   provider, video embeds) and **Ignore** what it does not. **Allow all listed** takes them all.
+3. Choose **Enforcing**. Anything new that is blocked still appears in the list.
+
+Inline scripts and styles stay allowed — the page builder and themes are built on them — so the
+policy stops code and data going to and from other sites, not every kind of injection. The admin
+keeps the CMS's baseline policy.
+
+## Spam on comments and forms
+
+**Security → Firewall → Spam on comments and forms** stops spam bots without a puzzle for people
+to solve. Every comment form and builder form gets a hidden field that only bots fill in and a
+signed time stamp; a message sent back within a few seconds of the page loading was not typed.
+There is also a limit on comments and form messages from one address in ten minutes, a limit on
+links in a comment, and the same comment posted twice is refused. A bot is told it worked, so it
+learns nothing; a person over a limit is told why.
+
+## Impossible travel
+
+When an account signs in from one country and then, a short while later (three hours by default),
+from another, one of the two is someone else. An account with two-factor has just proved itself,
+so the administrators are only told. One without it is held — signed in, but unable to open
+anything — until it types a 6-digit code sent to its email; five wrong codes sign it out. Choose
+**Only tell the administrators** instead in **Security → Sign-in**. The country comes from
+Cloudflare, or from the CMS's own visitor lookups.
+
+## Known security holes
+
+Once a day the site fetches the list of known security holes FalconCMS publishes — signed, so a
+forged list is ignored — and matches it against the installed versions of FalconCMS, Pro, every
+plugin and every theme. A match is shown on the dashboard and on **Security → Overview**, with the
+version that fixes it, and the administrators are told once, by email and in their chat apps.
+
+## Is this FalconCMS's own code?
+
+For FalconCMS and Pro (their bundled plugins included), the malware scanner compares every file
+with the signed list of file hashes published for the installed version. A file that differs is
+reported as **Differs from the official FalconCMS release**; a PHP file the release does not have,
+as **not part of the official release**. Reinstall that version to restore them. After an update,
+FalconCMS's own files are compared with the new release, so they are not reported as "changed since
+the baseline". **Security → Scanner** shows whether the list was found. A development copy (a git
+checkout) is compared with the baseline instead.
+
+## Security score and the monthly report
+
+**Security → Overview** shows the site's security score (0–100, graded A to F) from the audit,
+and what would raise it. **See the report** opens the last 30 days on one printable page: the
+score, attacks stopped, sign-ins and failed ones, sign-ins from new places, impossible travel,
+spam, risky orders, the malware scan and known security holes. **Print / save as PDF** makes a
+copy for a client. Tick **Monthly report** to email it on the first of every month — to the
+administrators, or to the addresses you give (a client's, say).
+
+## Agency: many sites on one screen
+
+On each client site, open **Security → Sites** and press **Make a connection key**. It reads a
+summary only — score, known security holes, malware findings, attacks, lockdown — and cannot
+change anything; **Remove the key** shuts it off.
+
+On the agency's own site (Agency plan), **Security → Sites → Your sites** adds each client site
+with its address and key. Every site is checked every hour and listed side by side, and you are
+told by email and in your chat apps when one gets a new security hole, a serious malware finding,
+a falling score or a lockdown, or stops answering.
 
 ## Confirm it's you
 
@@ -225,7 +309,7 @@ Remember-me cookies and trusted browsers stop working too.
 **Alerts in Telegram and WhatsApp** — every alert the administrators get by email (a new
 administrator, an administrator signing in from a new place, wrong two-factor codes, malware
 found, card testing, a lockdown, a plugin installed…) can arrive in a chat too, within seconds.
-For Telegram, make a bot with @BotFather, paste its token in **Security → Messaging → Alerts in
+For Telegram, make a bot with @BotFather, paste its token in **Security → OTP & Alerts → Alerts in
 chat apps**, send the bot a message (or add it to a group), then press **Find my chat** and pick
 the chat. For WhatsApp, list the numbers; the alerts go through the WhatsApp gateway and its alert
 template. **Send a test → Telegram alert** checks the setup.
@@ -315,7 +399,9 @@ and says how to fix each one: debug mode left on, the `.env` file, `.git` folder
 from the web, no HTTPS, an insecure session cookie, a wrong APP_URL, Cloudflare not trusted, an
 outdated FalconCMS or PHP, administrators without two-factor, a default `admin@admin.com` account,
 the default sign-in address, the firewall switched off, no bot check on the sign-in form, storage
-folders the site cannot write to, no password policy, and malware findings or a scan long overdue.
+folders the site cannot write to, no password policy, malware findings or a scan long overdue,
+known security holes, FalconCMS files that differ from the release, no Content Security Policy,
+"confirm it's you", the spam guard and impossible travel switched off.
 
 **Security → Overview** shows the firewall, two-factor use among administrators, the malware
 scanner, the audit score and the latest firewall events at a glance.

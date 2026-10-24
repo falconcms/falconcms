@@ -25,10 +25,16 @@ class SecurityHeadersMiddleware
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-        if (! $response->headers->has('Content-Security-Policy')) {
+        if (!$response->headers->has('Content-Security-Policy')) {
+            // upgrade-insecure-requests only where there is https to upgrade to: on a plain-http
+            // site (a local install) it sends every script request and fetch() to an https
+            // address that does not answer, and the admin's buttons stop working.
+            $baseline = $request->isSecure()
+                ? self::CONTENT_SECURITY_POLICY
+                : trim(str_replace('upgrade-insecure-requests;', '', self::CONTENT_SECURITY_POLICY));
             $csp = function_exists('apply_falcon_filters')
-                ? (string) apply_falcon_filters('falcon_content_security_policy', self::CONTENT_SECURITY_POLICY, $request)
-                : self::CONTENT_SECURITY_POLICY;
+                ? (string) apply_falcon_filters('falcon_content_security_policy', $baseline, $request)
+                : $baseline;
 
             if ($csp !== '') {
                 $response->headers->set('Content-Security-Policy', $csp);
@@ -38,7 +44,7 @@ class SecurityHeadersMiddleware
         // PHP adds X-Powered-By itself (expose_php) outside the response object, so removing
         // it from the Symfony headers alone never took it off the wire.
         $response->headers->remove('X-Powered-By');
-        if (! headers_sent()) {
+        if (!headers_sent()) {
             header_remove('X-Powered-By');
         }
 

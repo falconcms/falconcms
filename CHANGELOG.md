@@ -7,13 +7,32 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
-## [Unreleased]
+## [2.8.6] — 2026-10-24
+
+### Security
+
+- **A baseline Content Security Policy on every page.** It blocks nothing the builder relies on
+  (inline scripts and styles, fonts, embeds) but stops framing by other sites, `<base>` hijacking
+  and plugin objects; on an https site it also upgrades plain-http requests. Replace it or turn it
+  off with the `falcon_content_security_policy` filter (`''` sends none).
+- **`X-Powered-By` is really gone.** PHP adds it itself, outside the response, so removing it
+  from the response never took it off the wire; it is now removed from PHP's own headers too.
 
 ### Added
 
+- **Plugin hooks on the admin orders list:** `falcon_admin_orders_toolbar` (beside the search),
+  `falcon_admin_orders_columns` and `falcon_admin_orders_column` (a column of the plugin's own) —
+  Falcon Security's "Check a number" and Risk column use them.
 - **Other ways to sign in on the shop's account page.** Its sign-in form now fires
   `falcon_login_form_after` with `'shop'`, as the dashboard's login does with `'admin'`, so a
   plugin can offer another way in there — Falcon Security's "Sign in with a code to your phone".
+
+### Changed
+
+- **Signing in lands on the page you asked for.** An admin page opened without a session still
+  answers 404 (the sign-in address stays hidden), but the page is remembered: signing in at the
+  address you know then opens it, instead of the dashboard — a link opened after the session
+  lapsed works once you sign in again.
 
 ## [2.8.5] — 2026-10-21
 

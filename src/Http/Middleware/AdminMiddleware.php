@@ -66,6 +66,12 @@ class AdminMiddleware
         // panel goes to the address in Settings → Login URL, which is the address they
         // chose.
         if (!auth()->check()) {
+            // Still a 404 — but the page is remembered, so signing in (at the address the admin
+            // knows) lands on it rather than on the dashboard. A link opened after the session
+            // lapsed works once its owner signs in again.
+            if ($request->isMethod('GET') && !$request->expectsJson() && $request->hasSession()) {
+                $request->session()->put('url.intended', $request->fullUrl());
+            }
             abort(404);
         }
 

@@ -167,7 +167,7 @@ See the [Admin Menu API](/api/admin-menu).
 Fires inside the login card, under the sign-in form, on both login pages (modern and funny) with
 `'admin'`, and under the shop account page's sign-in with `'shop'`. Echo another way to sign in —
 Falcon Security prints its "Sign in with a passkey" button (admin) and "Sign in with a code to
-your phone" (both) here. *(Since v2.8.5; `'shop'` since the next release.)*
+your phone" (both) here. *(Since v2.8.5; `'shop'` since v2.8.6.)*
 
 ```php
 add_falcon_action('falcon_login_form_after', function ($where) {
@@ -1352,6 +1352,17 @@ pre-filled defaults. Add addresses they may also use (a company's shared deliver
 Prints a box in the admin order screen's sidebar, above Customer Details. Use the `wp-metabox`
 markup to match.
 
+#### `falcon_admin_orders_toolbar` (action)
+Prints beside the search on the admin orders list (Falcon Security's "Check a number").
+*(Since v2.8.6.)*
+
+#### `falcon_admin_orders_columns` / `falcon_admin_orders_column` (actions)
+**Args:** none / `Order $order`
+
+A column of your own in the admin orders list: print its `<th class="wp-table-header">` in the
+first, and its `<td class="wp-table-cell">` for each order in the second — always both, so the
+rows line up. Falcon Security's Risk column uses them. *(Since v2.8.6.)*
+
 #### `falcon_page_cache_is_personal` (filter)
 **Args:** `$personal, $request`
 
@@ -1949,6 +1960,9 @@ return [
 | `falcon_admin_after_delete_product` | `$postId, $title` |
 | `falcon_admin_order_item_meta` | `$item` |
 | `falcon_admin_order_sidebar` | `$order` |
+| `falcon_admin_orders_toolbar` | — |
+| `falcon_admin_orders_columns` | — |
+| `falcon_admin_orders_column` | `$order` |
 | `falcon_before_single_product` | `$post` |
 | `falcon_after_single_product` | `$post` |
 | `falcon_before_product_images` | `$post` |

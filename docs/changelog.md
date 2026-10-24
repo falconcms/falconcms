@@ -5,7 +5,51 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.5 <Badge type="tip" text="Latest" /> {#v2-8-5}
+## v2.8.6 <Badge type="tip" text="Latest" /> {#v2-8-6}
+
+**Released: 2026-10-24**
+
+The core side of Falcon Security 1.1 (FalconCMS Pro 1.4.0): a baseline Content Security Policy,
+plugin hooks on the orders list and the shop's sign-in form, and signing in that lands on the
+page you asked for.
+
+### Security
+
+- **A baseline Content Security Policy on every page.** It blocks nothing the builder relies on
+  (inline scripts and styles, fonts, embeds) but stops framing by other sites, `<base>` hijacking
+  and plugin objects; on an https site it also upgrades plain-http requests. Replace it or turn it
+  off with the `falcon_content_security_policy` filter (`''` sends none). A site on plain http
+  (a local install) is not told to upgrade, so its admin buttons keep working.
+- **`X-Powered-By` is really gone.** PHP adds it itself, outside the response; it is now removed
+  from PHP's own headers too.
+
+### Added
+
+- **Hooks on the admin orders list** — `falcon_admin_orders_toolbar` beside the search, and
+  `falcon_admin_orders_columns` / `falcon_admin_orders_column` for a column of a plugin's own.
+  Falcon Security's **Check a number** and **Risk** column use them.
+- **Other ways to sign in on the shop's account page** — its sign-in form fires
+  `falcon_login_form_after` with `'shop'`, so a plugin can offer one there (Falcon Security's
+  "Sign in with a code to your phone").
+
+### Changed
+
+- **Signing in lands on the page you asked for.** An admin page opened without a session still
+  answers 404 — the sign-in address stays hidden — but the page is remembered, and signing in
+  opens it instead of the dashboard.
+
+### Pro: Falcon Security 1.1
+
+Two-factor by SMS and WhatsApp, OTP gateways (Twilio, WhatsApp Cloud API, Bangladeshi SMS
+providers), sign-in with a phone code, cash-on-delivery phone confirmation, a fake-order risk
+score with courier history (Steadfast, BD Courier) and an order blocklist, "confirm it's you",
+impossible travel, a Content Security Policy builder, a spam guard, known-vulnerability alerts,
+signed release integrity in the malware scanner, a security score and monthly report, Telegram
+and WhatsApp alerts, and an agency dashboard. See [Falcon Security](/guide/security).
+
+---
+
+## v2.8.5 {#v2-8-5}
 
 **Released: 2026-10-21**
 
