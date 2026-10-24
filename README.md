@@ -10,7 +10,7 @@
 <p align="center">
   <b>Build your application. Not your CMS.</b><br>
   An open-source CMS foundation for Laravel — visual page builder, custom post types,<br>
-  media, menus, SEO, e-commerce, themes, plugins, and a WordPress-like hook system.
+  media, menus, SEO, e-commerce, security, themes, plugins, and a WordPress-like hook system.
 </p>
 
 <p align="center">
@@ -194,6 +194,63 @@ tablet and mobile to set per-device values and visibility.
 
 ---
 
+## 🛡️ Falcon Security — Laravel CMS security in one plugin (Pro)
+
+**Falcon Security** is the security suite that ships with FalconCMS Pro: two-factor
+authentication, passkeys, OTP by SMS and WhatsApp, a web application firewall, a malware
+scanner with signed release integrity, a Content Security Policy builder, spam protection,
+fake-order protection for cash on delivery, and an agency dashboard — configured from the
+admin, no code.
+
+| | |
+| :--- | :--- |
+| **Sign-in security** | Two-factor sign-in (authenticator app, passkeys / WebAuthn, or codes by SMS and WhatsApp), recovery codes, roles that must use it, "confirm it's you" before risky changes, impossible-travel checks, sign-in alerts, session management, a breached-password policy. |
+| **OTP by SMS & WhatsApp** | Twilio, Meta's WhatsApp Cloud API or any SMS provider's web API (presets for Bangladesh's BulkSMSBD, sms.net.bd, Greenweb and SSL Wireless), sign-in with a phone code, and limits against SMS pumping. |
+| **Firewall & WAF** | IP, range and country rules, attack patterns (SQL injection, XSS, path traversal), probe and flood bans, fake search-engine bots, an admin allowlist, live traffic, lockdown. |
+| **Malware scanner** | Web shells, PHP in uploads, injected scripts in the database, files changed since the baseline — and FalconCMS's own files checked against the signed release, so an update never looks like a hack. |
+| **Content Security Policy** | Learns which outside sources the site uses from browsers' reports, then enforces them: an injected script or a card skimmer is refused by the browser. |
+| **Fake-order protection** | A 0–100 risk score per order from courier delivery history (Steadfast and BD Courier for Bangladesh, or any JSON service), the shop's own history and bursts of orders; hold, ask to pay online or refuse; phone confirmation by OTP on cash-on-delivery orders; an order blocklist. |
+| **Alerts & reports** | Email, Telegram and WhatsApp alerts; known-vulnerability alerts for FalconCMS, plugins and themes; a security score (A–F) with a printable monthly report. |
+| **Agency dashboard** | Every client site's score, security holes, malware and attacks on one screen (Agency plan). |
+
+<p align="center">
+  <img alt="Falcon Security overview for Laravel: security score and grade, firewall status, two-factor adoption, malware scanner and monthly security report" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/security-overview.webp" width="900">
+</p>
+
+<table>
+<tr>
+<td width="50%"><img alt="Falcon Security fake-order check: courier history service, risk actions and a phone number check" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/security-fake-orders.webp"></td>
+<td width="50%"><img alt="The shop orders list with a Risk column and a courier delivery-rate check for a customer's phone number" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/security-orders-risk.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Fake-order check &amp; courier history</b></td>
+<td align="center"><b>Risk on the orders list</b></td>
+</tr>
+<tr>
+<td width="50%"><img alt="OTP and alerts settings: SMS and WhatsApp gateways for one-time codes" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/security-otp-alerts.webp"></td>
+<td width="50%"><img alt="Sign-in security: two-factor roles, trusted devices, confirm-it's-you and impossible travel" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/security-sign-in.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>OTP by SMS &amp; WhatsApp</b></td>
+<td align="center"><b>Sign-in security</b></td>
+</tr>
+<tr>
+<td width="50%"><img alt="Content Security Policy builder learning the sources a site uses before enforcing" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/security-csp.webp"></td>
+<td width="50%"><img alt="An order's phone check: delivery rate, returned parcels and merchant reports" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/security-order-check.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Content Security Policy builder</b></td>
+<td align="center"><b>Phone check on an order</b></td>
+</tr>
+</table>
+
+These screens are from the live [demo](https://demo.falconcms.com). The demo has no courier
+account, so the delivery figures in the phone checks are sample data.
+
+🛡️ [Falcon Security guide](https://falconcms.github.io/falconcms/guide/security)
+
+---
+
 ## 💎 Core vs Pro
 
 FalconCMS is **open-core**. The core above is MIT-licensed and stays free. **Pro** is a
@@ -213,6 +270,9 @@ separate, proprietary package (`falconcms/pro`) that unlocks the commercial feat
 | Falcon Slider — layered slider builder | — | ✓ | ✓ |
 | Analytics — live visitor map & real-time users | — | ✓ | ✓ |
 | Multi-device & passwordless (magic) login | — | ✓ | ✓ |
+| Falcon Security — 2FA, passkeys, OTP by SMS/WhatsApp, firewall, malware scanner | — | ✓ | ✓ |
+| Fake-order protection — courier history, risk score, COD phone OTP | — | ✓ | ✓ |
+| Agency security dashboard — all client sites on one screen | — | — | ✓ |
 | Sites per license | 1 | 1 | Unlimited |
 | White-label branding | — | — | ✓ |
 | Support | Community | Standard | Priority |

@@ -1,3 +1,12 @@
+---
+title: Falcon Security — Laravel 2FA, OTP, firewall, malware scanner and fake-order check
+description: Laravel CMS security from the admin — 2FA with passkeys or SMS and WhatsApp OTP, a firewall, a malware scanner, a CSP builder and fake-order checks for cash on delivery.
+head:
+  - - meta
+    - property: og:image
+      content: https://falconcms.github.io/falconcms/screenshots/security-overview.webp
+---
+
 # Falcon Security <Badge type="warning" text="Pro" />
 
 The **Falcon Security** plugin adds two-factor sign-in (an app, a passkey, or codes by SMS and
@@ -10,6 +19,8 @@ with [FalconCMS Pro](/guide/pro). Activate it under **Plugins**, then open **Sec
 admin menu.
 
 ## Two-factor sign-in
+
+![Security → Sign-in: two-factor roles, trusted devices, confirm-it's-you and impossible travel](/screenshots/security-sign-in.webp)
 
 After the password, the site asks for a 6-digit code from an authenticator app on your phone, so
 a stolen password is not enough to get in. Any app works: Google Authenticator, Microsoft
@@ -48,6 +59,8 @@ Administrator) to an app or a passkey: **Security → OTP & Alerts → Not for t
 authenticator app instead** moves you over at any time, even when your role must use two-factor.
 
 ## Text and WhatsApp messages
+
+![Security → OTP & Alerts: the SMS and WhatsApp gateways for one-time codes](/screenshots/security-otp-alerts.webp)
 
 **Security → OTP & Alerts** connects the site to a service that sends text messages and WhatsApp
 messages. They carry one-time codes — the two-factor step, signing in without a password,
@@ -103,6 +116,8 @@ the `falcon_before_place_order_button` hook) is never blocked: orders go through
 
 ## Fake orders: risk score, courier history, blocklist
 
+![Security → Orders: the fake-order check, courier history and a phone number check](/screenshots/security-fake-orders.webp)
+
 Tick **Score every order** in **Security → Orders**. Each order then gets a risk score from 0 to
 100, with its reasons on the order screen:
 
@@ -135,12 +150,18 @@ parcels to a number went and this shop's own orders to it: in **Security → Ord
 number**, beside the search on **Shop → Orders** (and **Check** on each order's row), or with
 **Check this number** on an order's screen.
 
+![An order's Phone & fake order check box: the courier delivery rate, returned parcels and merchant reports](/screenshots/security-order-check.webp)
+
+![Shop → Orders: the Risk column, with a number's courier delivery rate](/screenshots/security-orders-risk.webp)
+
 **Blocklist** — on any order, **Block** its phone number, email, network address or browser:
 no more orders are taken from it, whatever the payment method (browsing the shop still works).
 Add numbers, emails or address ranges by hand under **Blocked from ordering**, and unblock there
 or on the order. No code is ever sent to a blocked number.
 
 ## Content Security Policy
+
+![Security → CSP: learning the sources the public pages use](/screenshots/security-csp.webp)
 
 **Security → CSP** tells visitors' browsers which sites the public pages may load code and
 content from, and send data to. An injected `<script src>`, a card skimmer, a hidden iframe or a
@@ -192,6 +213,8 @@ the baseline". **Security → Scanner** shows whether the list was found. A deve
 checkout) is compared with the baseline instead.
 
 ## Security score and the monthly report
+
+![Security → Overview: the security score and grade, what would raise it, and the monthly report](/screenshots/security-overview.webp)
 
 **Security → Overview** shows the site's security score (0–100, graded A to F) from the audit,
 and what would raise it. **See the report** opens the last 30 days on one printable page: the
