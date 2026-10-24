@@ -122,7 +122,7 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function statusHistory()
+    public function statusHistory(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class, 'order_id')->orderBy('created_at');
     }

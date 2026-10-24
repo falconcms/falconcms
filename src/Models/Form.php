@@ -4,6 +4,7 @@ namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A form built in the form builder.
@@ -39,7 +40,7 @@ class Form extends Model
         'status' => 'boolean',
     ];
 
-    public function submissions()
+    public function submissions(): HasMany
     {
         return $this->hasMany(FormSubmission::class, 'form_id')->latest();
     }

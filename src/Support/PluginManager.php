@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Support;
 
+use Composer\Autoload\ClassLoader;
 use FalconCms\Core\Http\Controllers\DormantPluginController;
 use FalconCms\Core\Http\Controllers\PluginAssetController;
 use FalconCms\Core\Models\Plugin;
@@ -510,7 +511,11 @@ class PluginManager
     protected function registerPsr4(string $namespace, string $path): void
     {
         if ($this->composer === null) {
-            $this->composer = require base_path('vendor/autoload.php');
+            // The loader already running, not base_path's: when the CMS is not installed in the
+            // app's vendor (the package's own test suite runs from a testbench skeleton), the
+            // app has no vendor/autoload.php at all.
+            $loaders = ClassLoader::getRegisteredLoaders();
+            $this->composer = $loaders ? reset($loaders) : require base_path('vendor/autoload.php');
         }
         $namespace = rtrim($namespace, '\\').'\\';
         $this->composer->addPsr4($namespace, $path);

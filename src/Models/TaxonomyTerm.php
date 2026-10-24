@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
 class TaxonomyTerm extends Model
@@ -24,7 +25,7 @@ class TaxonomyTerm extends Model
         return $this->hasMany(TaxonomyTerm::class, 'parent_id');
     }
 
-    public function posts()
+    public function posts(): BelongsToMany
     {
         return $this->belongsToMany(Post::class, 'post_taxonomy_term', 'taxonomy_term_id', 'post_id');
     }

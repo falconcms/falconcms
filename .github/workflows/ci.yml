@@ -94,6 +94,13 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      # The suite's app is testbench's skeleton, which has no vendor of its own; a real site
+      # does. Site Health reads base_path('vendor/...'), so give the skeleton the package's.
+      - name: Link vendor into the testbench app
+        run: |
+          rm -rf vendor/orchestra/testbench-core/laravel/vendor
+          ln -s "$PWD/vendor" vendor/orchestra/testbench-core/laravel/vendor
+
       - run: composer test
 
   syntax:

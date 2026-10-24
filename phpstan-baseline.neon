@@ -1375,12 +1375,6 @@ parameters:
 			path: src/Support/ExportManager.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Menu\>\:\:\$children\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/View/Components/Admin/Sidebar.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isAdmin\(\)\.$#'
 			identifier: method.notFound
 			count: 1
