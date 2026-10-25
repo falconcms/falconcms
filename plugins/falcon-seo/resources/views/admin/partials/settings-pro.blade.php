@@ -65,7 +65,7 @@
                     <input type="text" name="{{ \FalconSeo\Support\Pro::REPORT_TO }}" value="{{ $settings[\FalconSeo\Support\Pro::REPORT_TO] ?? '' }}" class="wp-input w-[420px] max-w-full"
                            placeholder="Who gets it (empty: {{ get_cms_option('admin_email') ?: 'the admin email' }}), separated by commas">
                     @if($falconSeoPro)
-                        <button type="submit" formaction="{{ route('admin.seo.report-test') }}" formmethod="post" class="ml-2 wp-btn-secondary h-8 py-0 px-3 text-[12px]" title="Sends to the saved addresses: save first if you changed them">Send a test now</button>
+                        <button type="submit" formaction="{{ route('admin.seo.report-test') }}" formmethod="post" class="ml-2 wp-btn-secondary h-8 py-0 px-3 text-[12px]" title="Saves the addresses in the field and sends to them">Send a test now</button>
                     @endif
                 </div>
             </div>

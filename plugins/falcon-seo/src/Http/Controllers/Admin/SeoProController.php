@@ -10,6 +10,7 @@ use FalconSeo\Support\SeoFixer;
 use FalconSeo\Support\SeoReport;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /** The Pro tools: AI writing, Google keyword numbers, one-click fixes, the weekly email. */
@@ -95,10 +96,17 @@ class SeoProController extends Controller
     }
 
     /** SEO → Settings → Weekly SEO email → "Send a test now". */
-    public function testReport()
+    public function testReport(Request $request)
     {
         if ($locked = $this->locked()) {
             return redirect()->back()->with('error', 'The weekly SEO email is part of FalconCMS Pro.');
+        }
+        // The button submits the settings form, so the addresses typed beside it come along:
+        // keep them, or the test goes to the old ones and the field comes back empty.
+        if ($request->has(Pro::REPORT_TO) && auth()->user()?->hasPermission('access_seo_settings')) {
+            DB::table('cms_settings')->updateOrInsert(['key' => Pro::REPORT_TO],
+                ['value' => trim((string) $request->input(Pro::REPORT_TO, '')), 'updated_at' => now()]);
+            forget_cms_options_cache();
         }
         $sent = SeoReport::send();
 

@@ -191,6 +191,24 @@ class SeoProTest extends TestCase
         $this->assertSame(['owner@site.test'], SeoReport::recipients());
     }
 
+    public function test_send_a_test_keeps_the_addresses_typed_beside_it(): void
+    {
+        $this->withProLicensed();
+        Mail::fake();
+        $this->actingAs($this->admin());
+        $post = $this->makePost();
+        DB::table(SiteScan::TABLE)->insert(['post_id' => $post->id, 'score' => 80, 'grade' => 'good', 'analyzed_at' => now(),
+            'created_at' => now(), 'updated_at' => now(), 'url' => 'https://site.test/post/green-tea-guide', 'issues' => '[]']);
+
+        // The button submits the whole settings form to the test route, never to the save route.
+        $this->post('/admin/seo/settings/report-test', [Pro::REPORT_TO => ' seo@site.test '])
+            ->assertRedirect()->assertSessionHas('success', 'Test email sent to 1 address(es).');
+
+        Mail::assertSent(SeoReportMail::class, fn (SeoReportMail $mail) => $mail->hasTo('seo@site.test'));
+        $this->assertSame('seo@site.test', get_cms_option(Pro::REPORT_TO));
+        $this->get('/admin/seo/settings')->assertOk()->assertSee('value="seo@site.test"', false);
+    }
+
     private const CLAUDE = 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789';
 
     private const BING = '0123456789abcdef0123456789abcdef';
