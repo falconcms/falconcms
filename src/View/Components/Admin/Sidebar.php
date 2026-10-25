@@ -48,7 +48,7 @@ class Sidebar extends Component
 
                         return $menu;
                     })
-                    ->filter(function ($menu) {
+                    ->filter(function (Menu $menu) {
                         return $this->routeAvailable($menu)
                             || ($menu->children && $menu->children->isNotEmpty());
                     })
