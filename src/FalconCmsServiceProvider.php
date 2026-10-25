@@ -180,6 +180,15 @@ class FalconCmsServiceProvider extends ServiceProvider
                 echo view('falcon-cms::components.frontend.to-top')->render();
             }, 20);
 
+            // Smooth scrolling for every link to a section of the page (buttons, text links),
+            // not only the menu's. On the footer hook so every theme gets it.
+            add_falcon_action('falcon_footer', function () {
+                if (request()->routeIs('admin.*')) {
+                    return;
+                }
+                echo view('falcon-cms::components.frontend.anchor-scroll')->render();
+            }, 20);
+
             // Off-canvas panels from the Builder Library. The footer hook fires inside the
             // layout's own output buffer, so everything the page has drawn above it — header,
             // content, footer — is already in that buffer, and only the panels it links to

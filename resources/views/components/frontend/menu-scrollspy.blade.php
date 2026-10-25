@@ -147,7 +147,13 @@
             });
         }
 
+        // The same scroll as every other section link on the page (components/frontend/
+        // anchor-scroll), so a menu item and a button to one section move the page alike.
         function scrollToTarget(target, smooth) {
+            if (window.falconScrollTo) {
+                window.falconScrollTo(target, { smooth: smooth });
+                return;
+            }
             target.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
         }
 
@@ -166,7 +172,8 @@
 
                     // The address bar should still say which section this is, without the
                     // jump that assigning location.hash would cause.
-                    var hash = '#' + item.target.id;
+                    // With the slash before the fragment (/pricing/#plans), as the links are written.
+                    var hash = window.falconSectionUrl ? window.falconSectionUrl(item.target.id) : '#' + item.target.id;
                     if (window.history && window.history.pushState) window.history.pushState(null, '', hash);
 
                     // Marked at once: the scroll is smooth and takes a moment, and a menu
