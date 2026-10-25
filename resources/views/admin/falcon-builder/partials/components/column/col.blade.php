@@ -134,6 +134,10 @@
             </div>
         </div>
 
+        {{-- Motion Visual (Extra tab): the real front-end layer; its handles show while this column is being edited. --}}
+        <falcon-mv-preview v-if="column.settings.mv_preset && column.settings.mv_enabled !== false" :settings="column.settings" where="column" :device="device"
+                           :editing="!isPreview && editingContext.type === 'column' && editingContext.ci === ci && editingContext.coli === coli"></falcon-mv-preview>
+
         {{-- Add Element Button: ABSOLUTE CENTER while the column is still empty.
              A column holding a nested row is no longer "empty" for this purpose — the
              button sat dead centre and landed on top of the nested row's own closed bar

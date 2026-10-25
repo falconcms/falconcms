@@ -27,6 +27,9 @@
      @dragover="onDragOver($event, 'container', ci)"
      @drop="onDrop($event, 'container', ci)">
 @endif
+    {{-- Motion Visual (Extra tab): across the whole section, as on the page; its handles show while the container is being edited. --}}
+    <falcon-mv-preview v-if="container.settings.mv_preset && container.settings.mv_enabled !== false" :settings="container.settings" where="container" :device="device"
+                       :editing="!isPreview && editingContext.type === 'container' && editingContext.ci === ci"></falcon-mv-preview>
     
     @if(!$pcMode)
     <!-- Container Overlays (Margin/Padding) -->

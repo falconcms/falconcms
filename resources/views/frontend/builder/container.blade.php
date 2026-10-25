@@ -412,8 +412,13 @@
     }
 @endphp
 @if($status === 'published' && $showByCondition)
-    @php $ctnAnimType = $s['anim_type'] ?? ''; @endphp
-    <{{ $htmlTag }} id="{{ $s['menuAnchor'] ?? '' }}" class="lazy-container {{ $cid }} {{ $hoverClass }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }} {{ !empty($s['sticky']) ? 'lazy-sticky-col' : '' }}{{ $ctnAnimType ? ' lz-anim lz-anim-' . $ctnAnimType : '' }}{{ $ctnBgLazyUrl ? ' lz-lazy-bg' : '' }}" style="{{ implode('; ', $containerStyles) }}"@if($ctnAnimType) data-anim-duration="{{ $s['anim_duration'] ?? 600 }}" data-anim-delay="{{ $s['anim_delay'] ?? 0 }}" data-anim-easing="{{ $s['anim_easing'] ?? 'ease' }}"@endif @if($ctnBgLazyUrl) data-bg="{{ $ctnBgLazyUrl }}"@endif>
+    @php
+        $ctnAnimType = $s['anim_type'] ?? '';
+        // Motion Visual: a layer across the whole section, not only its site-width inner box.
+        $ctnMotionVisual = \FalconCms\Core\Support\MotionVisual\MotionVisuals::render($s, 'container');
+    @endphp
+    <{{ $htmlTag }} id="{{ $s['menuAnchor'] ?? '' }}" class="lazy-container{{ $ctnMotionVisual !== '' ? ' falcon-mv-host' : '' }} {{ $cid }} {{ $hoverClass }} {{ $s['cssClass'] ?? '' }} {{ $visibilityClasses }} {{ !empty($s['sticky']) ? 'lazy-sticky-col' : '' }}{{ $ctnAnimType ? ' lz-anim lz-anim-' . $ctnAnimType : '' }}{{ $ctnBgLazyUrl ? ' lz-lazy-bg' : '' }}" style="{{ implode('; ', $containerStyles) }}"@if($ctnAnimType) data-anim-duration="{{ $s['anim_duration'] ?? 600 }}" data-anim-delay="{{ $s['anim_delay'] ?? 0 }}" data-anim-easing="{{ $s['anim_easing'] ?? 'ease' }}"@endif @if($ctnBgLazyUrl) data-bg="{{ $ctnBgLazyUrl }}"@endif>
+        {!! $ctnMotionVisual !!}
         @if($link)
             <a href="{{ $link }}" target="{{ $linkTarget }}" style="text-decoration: none; color: inherit; display: flex; flex-direction: column; flex-grow: 1; width: 100%;">
         @endif

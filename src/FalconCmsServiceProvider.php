@@ -30,6 +30,7 @@ use FalconCms\Core\Models\Post;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Pro\NullLicenseGateway;
 use FalconCms\Core\Support\AdminMenu;
+use FalconCms\Core\Support\MotionVisual\MotionVisuals;
 use FalconCms\Core\Support\OffCanvas;
 use FalconCms\Core\Support\PluginManager;
 use FalconCms\Core\Support\SettingsExtension;
@@ -188,6 +189,15 @@ class FalconCmsServiceProvider extends ServiceProvider
                 }
                 echo view('falcon-cms::components.frontend.anchor-scroll')->render();
             }, 20);
+
+            // Motion Visuals: their script, once, and only on a page that has one. Like the
+            // off-canvas panels, it reads what the page has drawn above it in this buffer.
+            add_falcon_action('falcon_footer', function () {
+                if (request()->routeIs('admin.*')) {
+                    return;
+                }
+                echo MotionVisuals::assetsForPage((string) ob_get_contents());
+            }, 16);
 
             // Off-canvas panels from the Builder Library. The footer hook fires inside the
             // layout's own output buffer, so everything the page has drawn above it — header,

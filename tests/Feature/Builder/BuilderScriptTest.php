@@ -40,7 +40,16 @@ class BuilderScriptTest extends TestCase
         $this->assertSame(1, preg_match_all('/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/', $source, $m),
             'the builder script is no longer one inline block; the extraction below needs updating');
 
-        $js = $this->toJavaScript($m[1][0]);
+        // Partials included into the script (Motion Visual's components) are part of it: they
+        // are checked in place, so a mistake in one fails here too.
+        $body = preg_replace_callback("/^[ \\t]*@include\\('falcon-cms::admin\\.falcon-builder\\.partials\\.([\\w.-]+)'\\)[ \\t]*$/m", function ($inc) {
+            $file = __DIR__.'/../../../resources/views/admin/falcon-builder/partials/'.str_replace('.', '/', $inc[1]).'.blade.php';
+            $this->assertFileExists($file, 'the builder script includes a partial that does not exist');
+
+            return (string) file_get_contents($file);
+        }, $m[1][0]) ?? $m[1][0];
+
+        $js = $this->toJavaScript($body);
 
         $tmp = tempnam(sys_get_temp_dir(), 'fcjs').'.js';
         file_put_contents($tmp, $js);

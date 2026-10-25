@@ -7762,5 +7762,7 @@
         `
     });
 
+    @include('falcon-cms::admin.falcon-builder.partials.motion-visual.components')
+
     __builderApp.mount('#lazy-builder-app');
 </script>

@@ -1216,6 +1216,8 @@
         <!-- ══ EXTRA TAB ══ -->
         <div v-show="activeColPanelTab === 'extra'" class="space-y-5">
 
+            <falcon-mv-panel :settings="editingColumn.settings" where="column"></falcon-mv-panel>
+
             <!-- Sticky Section -->
             <div>
                 <div class="flex justify-between items-center mb-2">

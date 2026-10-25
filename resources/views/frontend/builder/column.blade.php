@@ -631,7 +631,9 @@
          radius and padding all live here, so this element IS the visible card — putting the
          effect on the outer drew the hover shadow as a square around a rounded card, and
          made the whole column area hover-sensitive even where the card does not reach. --}}
-    <div class="lazy-column-inner {{ $hoverClass }}{{ $colBgLazyUrl ? ' lz-lazy-bg' : '' }}" style="{{ implode('; ', $innerStyles) }}"@if($colBgLazyUrl) data-bg="{{ $colBgLazyUrl }}"@endif>
+    @php $colMotionVisual = \FalconCms\Core\Support\MotionVisual\MotionVisuals::render($s, 'column'); @endphp
+    <div class="lazy-column-inner {{ $hoverClass }}{{ $colBgLazyUrl ? ' lz-lazy-bg' : '' }}{{ $colMotionVisual !== '' ? ' falcon-mv-host' : '' }}" style="{{ implode('; ', $innerStyles) }}"@if($colBgLazyUrl) data-bg="{{ $colBgLazyUrl }}"@endif>
+        {!! $colMotionVisual !!}
         @if(!empty($column['elements']))
             @php $__customBuilderDefs = falcon_builder_element_defs(); @endphp
             @foreach($column['elements'] as $el)

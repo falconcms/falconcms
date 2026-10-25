@@ -262,6 +262,11 @@
                     </div>
                 </div>
 
+                {{-- Motion Visual (Extra tab), as on a top-level column (column/col.blade.php): the
+                     real front-end layer, with its handles while this nested column is being edited. --}}
+                <falcon-mv-preview v-if="ncol.settings.mv_preset && ncol.settings.mv_enabled !== false" :settings="ncol.settings" where="column" :device="device"
+                                   :editing="!isPreview && editingContext.type === 'nested-column' && editingContext.ci === ci && editingContext.coli === coli && editingContext.eli === eli && editingContext.ncoli === ncoli"></falcon-mv-preview>
+
                 <div v-if="nestedChrome(el, ci, coli, eli) && ncol.elements.length === 0" class="text-center w-full flex flex-col items-center py-10">
                     <button @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli)" class="w-8 h-8 bg-[#ff9800] text-white rounded shadow-lg flex items-center justify-center hover:scale-110 transition-all relative group/nadd pointer-events-auto">
                         <i class="fa fa-plus text-base pointer-events-none"></i>

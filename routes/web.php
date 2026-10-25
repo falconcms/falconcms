@@ -48,6 +48,7 @@ use FalconCms\Core\Http\Middleware\PageCacheMiddleware;
 use FalconCms\Core\Http\Middleware\SecurityHeadersMiddleware;
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Language;
+use FalconCms\Core\Support\MotionVisual\MotionVisuals;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -169,6 +170,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
             return response()->json(['success' => false, 'html' => '']);
         }
     })->name('falcon-builder.card-preview');
+    // Canvas preview of a column's or container's Motion Visual, drawn by its real template.
+    Route::post('falcon-builder/motion-visual-preview', function (Request $r) {
+        $settings = array_filter((array) $r->input('settings', []), fn ($v, $k) => is_string($k) && str_starts_with($k, 'mv_') && is_scalar($v), ARRAY_FILTER_USE_BOTH);
+        $where = $r->input('where') === 'container' ? 'container' : 'column';
+
+        return response()->json(['html' => MotionVisuals::render($settings, $where, true)]);
+    })->name('falcon-builder.motion-visual-preview');
     // Canvas preview for a plugin's builder element that asks for one ('preview' => 'server' in
     // its falcon_builder_elements definition): its own front-end template, rendered with the
     // settings being edited, so the canvas shows what the page will.

@@ -1307,6 +1307,8 @@
         <!-- Extra Tab -->
         <div v-if="{{ isset($isNestedRow) && $isNestedRow ? 'false' : 'true' }}" v-show="activePanelTab === 'extra'" class="space-y-5">
 
+            <falcon-mv-panel :settings="{{ $base }}.settings" where="container"></falcon-mv-panel>
+
             <!-- Sticky Section -->
             <div>
                 <div class="flex justify-between items-center mb-2">
