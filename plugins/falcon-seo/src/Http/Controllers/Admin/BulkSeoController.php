@@ -92,6 +92,10 @@ class BulkSeoController extends Controller
                 $saved++;
             }
         }
+        // Cached copies of those pages still carry the old title and description.
+        if ($saved > 0) {
+            clear_page_cache();
+        }
 
         return back()->with('success', $saved === 1 ? '1 page saved.' : $saved.' pages saved.');
     }

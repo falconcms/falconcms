@@ -852,6 +852,10 @@ class DashboardController extends Controller
             Artisan::call('route:cache');
         }
 
+        // Every page's head is built from these (default share image, separator, schema, robots),
+        // and cached pages would keep serving the old head until something else cleared them.
+        clear_page_cache();
+
         return redirect()->back()->with('success', 'SEO Settings updated successfully!');
     }
 

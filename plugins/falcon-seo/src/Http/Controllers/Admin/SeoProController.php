@@ -86,6 +86,10 @@ class SeoProController extends Controller
         foreach (Post::whereIn('id', $data['post_ids'])->get() as $post) {
             $results[] = ['post_id' => $post->id, 'title' => (string) $post->title] + SeoFixer::fix($post, $data['check'], $method);
         }
+        // Once for the whole batch: cached copies of the fixed pages still show the old head and content.
+        if (in_array(true, array_column($results, 'fixed'), true)) {
+            clear_page_cache();
+        }
 
         return response()->json(['results' => $results]);
     }
