@@ -48,7 +48,7 @@
                 <div class="falcon-mv__shape{{ $item['random'] ? ' falcon-mv__shape--random' : '' }}" style="rotate:{{ $item['rot'] }}deg;color:{{ $item['color'] }};opacity:{{ $item['opacity'] / 100 }};@if($item['blur'] > 0)filter:blur({{ $item['blur'] }}px);@endif @if($item['random'])animation-duration:{{ $item['rdur'] }}s;animation-delay:-{{ $item['rdelay'] }}s;animation-direction:{{ $item['rreverse'] ? 'reverse' : 'normal' }};@endif">
                     @if($isText)
                         <span class="falcon-mv__text falcon-mv__text--{{ $item['style'] }}"
-                              style="font-family:{{ \FalconCms\Core\Support\MotionVisual\MotionVisuals::FONTS[$item['font']] }};font-weight:{{ $item['weight'] }};letter-spacing:{{ $item['spacing'] }}em;@if($item['upper'])text-transform:uppercase;@endif--mv-c1:{{ $item['color'] }};--mv-c2:{{ $item['color2'] }}">{{ $item['text'] }}</span>
+                              style="font-family:{{ \FalconCms\Core\Support\MotionVisual\MotionVisuals::FONTS[$item['font']] ?? \FalconCms\Core\Support\CustomFonts\CustomFonts::stack($item['font']) }};font-weight:{{ $item['weight'] }};letter-spacing:{{ $item['spacing'] }}em;@if($item['upper'])text-transform:uppercase;@endif--mv-c1:{{ $item['color'] }};--mv-c2:{{ $item['color2'] }}">{{ $item['text'] }}</span>
                     @elseif($item['kind'] === 'image')
                         @if($item['src'] !== '')<img src="{{ $item['src'] }}" alt="" loading="lazy" decoding="async" draggable="false">@endif
                     @else

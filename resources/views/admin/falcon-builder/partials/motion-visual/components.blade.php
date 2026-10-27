@@ -342,6 +342,9 @@
                         <div class="grid grid-cols-2 gap-2">
                             <select :value="itemVal('font', 'inherit')" @change="setItem('font', $event.target.value)" class="w-full border border-slate-200 rounded px-1.5 py-1 text-[11px]">
                                 <option value="inherit">Page font</option><option value="sans">Sans</option><option value="serif">Serif</option><option value="mono">Mono</option>
+                                <optgroup v-if="(cfg.customFonts || []).length" label="Custom Fonts">
+                                    <option v-for="f in cfg.customFonts" :key="f" :value="f">{{ f }}</option>
+                                </optgroup>
                             </select>
                             <select :value="itemVal('weight', 800)" @change="setItem('weight', Number($event.target.value))" class="w-full border border-slate-200 rounded px-1.5 py-1 text-[11px]">
                                 <option v-for="w in [300,400,500,600,700,800,900]" :key="w" :value="w">Weight {{ w }}</option>

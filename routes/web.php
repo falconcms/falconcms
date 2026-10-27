@@ -9,6 +9,7 @@ use FalconCms\Core\Http\Controllers\Admin\BuilderLibraryController;
 use FalconCms\Core\Http\Controllers\Admin\CategoryController;
 use FalconCms\Core\Http\Controllers\Admin\CommentController;
 use FalconCms\Core\Http\Controllers\Admin\CustomFieldController;
+use FalconCms\Core\Http\Controllers\Admin\CustomFontsController;
 use FalconCms\Core\Http\Controllers\Admin\CustomizerController;
 use FalconCms\Core\Http\Controllers\Admin\CustomOptionsController;
 use FalconCms\Core\Http\Controllers\Admin\DashboardController;
@@ -433,6 +434,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('/customizer/export', [CustomizerController::class, 'export'])->name('customizer.export');
     Route::post('/customizer/import', [CustomizerController::class, 'import'])->name('customizer.import');
     Route::post('/customizer/action/{action}', [CustomizerController::class, 'runAction'])->name('customizer.action');
+    // Customizer → Typography → Custom Font
+    Route::post('/customizer/custom-fonts', [CustomFontsController::class, 'upload'])->name('customizer.custom-fonts.upload');
+    Route::post('/customizer/custom-fonts/{font}', [CustomFontsController::class, 'update'])->name('customizer.custom-fonts.update')->where('font', '[a-z0-9]+');
+    Route::post('/customizer/custom-fonts/{font}/{variant}', [CustomFontsController::class, 'updateVariant'])->name('customizer.custom-fonts.variant')->where(['font' => '[a-z0-9]+', 'variant' => '[a-z0-9]+']);
+    Route::delete('/customizer/custom-fonts/{font}/{variant?}', [CustomFontsController::class, 'destroy'])->name('customizer.custom-fonts.delete')->where(['font' => '[a-z0-9]+', 'variant' => '[a-z0-9]+']);
 
     // Themes
     Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');

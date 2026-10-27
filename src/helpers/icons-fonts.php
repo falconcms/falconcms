@@ -6,6 +6,7 @@
  * Loaded by src/helpers.php.
  */
 
+use FalconCms\Core\Support\CustomFonts\CustomFonts;
 use FalconCms\Core\Support\LucideIcons;
 use Illuminate\Support\Facades\Cache;
 
@@ -532,6 +533,11 @@ if (!function_exists('falcon_google_font_url')) {
         foreach ($families as $family) {
             $family = trim(trim((string) $family), " '\"");
             if ($family === '') {
+                continue;
+            }
+            // An uploaded font (Customizer → Typography → Custom Font) is served by the site,
+            // even when it carries the name of a Google font.
+            if (CustomFonts::isCustom($family)) {
                 continue;
             }
             $canonical = $known[mb_strtolower($family)] ?? null;

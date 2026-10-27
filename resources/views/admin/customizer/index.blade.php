@@ -237,6 +237,16 @@
                                                     @continue
                                                  @endif
 
+                                                 @if($type === 'custom_fonts')
+                                                    {{-- Typography → Custom Font: a screen of its own, saved through its own endpoints. --}}
+                                                    <tr class="field-row border-b border-[#f0f0f1]" data-label="{{ strtolower($label . ' ' . $desc . ' custom font upload woff woff2 ttf otf') }}">
+                                                        <td colspan="2" class="px-5 py-4">
+                                                            @include('falcon-cms::admin.customizer.custom-fonts', ['field' => $field])
+                                                        </td>
+                                                    </tr>
+                                                    @continue
+                                                 @endif
+
                                                  <tr class="field-row border-b border-[#f0f0f1] hover:bg-[#f6f7f7]/60 transition-colors"
                                                 @if(!empty($field['depends'])) data-depends="{{ $field['depends'] }}" @endif
                                                 @if(!empty($field['depends_on'])) data-depends-on="{{ $field['depends_on'] }}" data-depends-value="{{ $field['depends_value'] ?? '' }}" @endif

@@ -731,8 +731,10 @@
             // "Default/Inherit" actually renders as on the real site for the Menu element.
             const themeNavFont     = @json($themeNavFont ?? $themeBodyFont ?? null);
 
-            // Google Fonts database (mirrors customizer list)
-            const BUILDER_FONTS = @json(falcon_google_fonts());
+            // Uploaded fonts first, under "Custom Fonts" (Customizer → Typography → Custom Font),
+            // then the Google Fonts database (mirrors the Customizer list).
+            const BUILDER_FONTS = @json(array_merge(\FalconCms\Core\Support\CustomFonts\CustomFonts::catalog(), falcon_google_fonts()));
+            const CUSTOM_FONT_FAMILIES = new Set(BUILDER_FONTS.filter(f => f.fallback).map(f => f.family.toLowerCase()));
 
             const builderFontGroups = BUILDER_FONTS.reduce((acc, font) => {
                 if (!acc[font.category]) acc[font.category] = [];
@@ -831,6 +833,9 @@
                 const match = fontFamily.match(/['"]?([^'",$]+)/);
                 const name = match ? match[1].trim() : fontFamily.trim();
                 if (!name || name === 'inherit') return;
+                // An uploaded font is already declared on this screen (builder-data); Google does
+                // not have it and would answer 400.
+                if (CUSTOM_FONT_FAMILIES.has(name.toLowerCase())) return;
                 const linkId = 'bfont-' + name.replace(/\s+/g, '-').toLowerCase();
                 if (document.getElementById(linkId)) return;
                 const link = document.createElement('link');
@@ -7667,7 +7672,7 @@
         methods: {
             toggle() { this.open = !this.open; if (this.open) this.$nextTick(() => this.$refs.q && this.$refs.q.focus()); },
             close() { this.open = false; this.q = ''; },
-            fbOf(f) { return f.category === 'Monospace' ? 'monospace' : (f.category === 'Serif' ? 'serif' : 'sans-serif'); },
+            fbOf(f) { return f.fallback || (f.category === 'Monospace' ? 'monospace' : (f.category === 'Serif' ? 'serif' : 'sans-serif')); },
             pick(f) { const val = f.family + ', ' + this.fbOf(f); this.$emit('update:modelValue', val); this.$emit('change', val); this.close(); },
             pickDefault() { this.$emit('update:modelValue', 'inherit'); this.$emit('change', 'inherit'); this.close(); }
         },

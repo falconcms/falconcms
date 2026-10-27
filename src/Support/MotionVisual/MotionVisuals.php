@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Support\MotionVisual;
 
+use FalconCms\Core\Support\CustomFonts\CustomFonts;
 use Throwable;
 
 /**
@@ -195,7 +196,7 @@ final class MotionVisuals
 
         return [
             'text' => $text !== '' ? $text : 'Text',
-            'font' => isset(self::FONTS[$font]) ? $font : 'inherit',
+            'font' => isset(self::FONTS[$font]) ? $font : (CustomFonts::isCustom($font) ? CustomFonts::find($font)['family'] : 'inherit'),
             'weight' => $weight - $weight % 100,
             'style' => in_array($style, self::TEXT_STYLES, true) ? $style : 'fill',
             'spacing' => $num($i['spacing'] ?? null, -0.1, 0.6, 0),
@@ -234,6 +235,8 @@ final class MotionVisuals
             'shared' => self::SHARED,
             'animations' => self::ANIMATIONS,
             'fonts' => array_keys(self::FONTS),
+            // Uploaded fonts (Customizer → Typography → Custom Font), by family name.
+            'customFonts' => array_column(CustomFonts::catalog(), 'family'),
             'textStyles' => self::TEXT_STYLES,
             'siteTitle' => (string) get_cms_option('site_title', ''),
             'maxItems' => self::MAX_ITEMS,

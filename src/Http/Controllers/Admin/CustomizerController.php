@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Media;
+use FalconCms\Core\Support\CustomFonts\CustomFonts;
 use FalconCms\Core\Support\Instagram;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -203,9 +204,12 @@ class CustomizerController extends Controller
                     ],
                 ],
             ],
+            // ── Typography (grouped: "General" — the theme's fonts — and "Custom Font") ──
             'typography' => [
-                'title' => 'Typography',
+                'title' => 'General',
                 'icon' => 'text_fields',
+                'parent' => 'Typography',
+                'parent_icon' => 'text_fields',
                 'fields' => [
                     // Body Typography
                     'theme_typography_body' => [
@@ -266,6 +270,21 @@ class CustomizerController extends Controller
                         'label' => 'Navigation',
                         'desc' => 'Styles for main navigation menu items.',
                         'default' => ['family' => 'Inter', 'variant' => '500', 'size' => '14px', 'line_height' => '1', 'letter_spacing' => '0px', 'text_transform' => 'none', 'text_decoration' => 'none', 'font_style' => 'normal'],
+                    ],
+                ],
+            ],
+            // Fonts the site owner uploads. Kept by CustomFonts in an option of their own and
+            // changed only through its own endpoints, never by Save or Reset here.
+            'typography_custom_fonts' => [
+                'title' => 'Custom Font',
+                'icon' => 'font_download',
+                'parent' => 'Typography',
+                'parent_icon' => 'text_fields',
+                'fields' => [
+                    'custom_fonts_manager' => [
+                        'type' => 'custom_fonts',
+                        'label' => 'Custom Fonts',
+                        'desc' => 'Upload your own fonts. They appear under "Custom Fonts" in every font list: Typography, the page builder and Motion Visual text.',
                     ],
                 ],
             ],
@@ -1268,6 +1287,11 @@ class CustomizerController extends Controller
         if (!$googleFonts) {
             $googleFonts = ['Sans-serif' => [['family' => 'Inter', 'variants' => ['400', '700']]]];
         }
+        // Uploaded fonts first, in a group of their own (Typography → Custom Font).
+        $customFonts = CustomFonts::catalog();
+        if ($customFonts) {
+            $googleFonts = [CustomFonts::CATEGORY => array_map(fn ($f) => ['family' => $f['family'], 'variants' => $f['variants']], $customFonts)] + $googleFonts;
+        }
 
         return view('falcon-cms::admin.customizer.index', compact('section', 'sections', 'settings', 'builderHeaderActive', 'builderFooterActive', 'googleFonts'));
     }
@@ -1297,7 +1321,7 @@ class CustomizerController extends Controller
             $lockedSections[] = 'footer';
         }
 
-        $nonDataTypes = ['heading', 'info', 'action_button'];
+        $nonDataTypes = ['heading', 'info', 'action_button', 'custom_fonts'];
         foreach ($this->sections() as $sectionKey => $sec) {
             if (in_array($sectionKey, $lockedSections)) {
                 continue;
@@ -1358,7 +1382,7 @@ class CustomizerController extends Controller
         $section = $request->input('section', '');
         $sections = $this->sections();
 
-        $nonDataTypes = ['heading', 'info', 'action_button'];
+        $nonDataTypes = ['heading', 'info', 'action_button', 'custom_fonts'];
         if ($request->input('all') === '1') {
             foreach ($sections as $sec) {
                 foreach ($sec['fields'] as $key => $field) {

@@ -6,6 +6,8 @@
     screen forgot one of these globals, controls that read it (card query filters, the
     Taxonomy dynamic source) silently fell back to "post + category only" on that screen.
 --}}
+{{-- Uploaded fonts, so the canvas draws text set in them (Customizer → Typography → Custom Font). --}}
+{!! \FalconCms\Core\Support\CustomFonts\CustomFonts::styleTag() !!}
 @php
     // Built-ins are declared outside the try so they survive any DB exception.
     $__bdTaxonomies = [

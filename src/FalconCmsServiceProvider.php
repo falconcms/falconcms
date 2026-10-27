@@ -30,6 +30,7 @@ use FalconCms\Core\Models\Post;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Pro\NullLicenseGateway;
 use FalconCms\Core\Support\AdminMenu;
+use FalconCms\Core\Support\CustomFonts\CustomFonts;
 use FalconCms\Core\Support\MotionVisual\MotionVisuals;
 use FalconCms\Core\Support\OffCanvas;
 use FalconCms\Core\Support\PluginManager;
@@ -171,6 +172,12 @@ class FalconCmsServiceProvider extends ServiceProvider
         if (function_exists('add_falcon_action')) {
             add_falcon_action('falcon_head', function () {
                 echo view('falcon-cms::components.frontend.rich-text-styles')->render();
+            }, 1);
+
+            // Uploaded fonts (Customizer → Typography → Custom Font): declared on every page, so
+            // any typography can use them. A browser downloads a file only when text uses it.
+            add_falcon_action('falcon_head', function () {
+                echo CustomFonts::styleTag();
             }, 1);
 
             // Back to top, from Customizer → Performance. On the footer hook for the same
