@@ -1,0 +1,56 @@
+name: Bug report
+description: Something in FalconCMS does not work as it should.
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. A security problem? **Do not report it here** —
+        see [SECURITY.md](https://github.com/falconcms/falconcms/blob/main/SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: FalconCMS version
+      description: Dashboard → Updates, or `composer show falconcms/falconcms`.
+      placeholder: 2.8.7
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: PHP and Laravel versions
+      placeholder: PHP 8.3, Laravel 13
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Errors or logs
+      description: The error message, or the relevant lines of storage/logs/laravel.log. Remove passwords, keys and personal data first.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I am on the latest version, or the bug is still there after updating.
+          required: true
+        - label: This is not a security problem (those go to SECURITY.md).
+          required: true

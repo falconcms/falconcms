@@ -1,0 +1,22 @@
+name: Feature idea
+description: Suggest something FalconCMS could do.
+labels: ['idea']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The problem or the task, not the solution yet.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could FalconCMS help?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you do it today?
+      description: A workaround, another tool, a plugin…

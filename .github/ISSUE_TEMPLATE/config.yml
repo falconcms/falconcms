@@ -1,0 +1,12 @@
+# Issues are for bugs in FalconCMS; everything else has a better home.
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and support
+    url: https://falconcms.com/contact
+    about: How-to questions, help with your site, licences and Pro — ask us here.
+  - name: Documentation
+    url: https://falconcms.github.io/falconcms/
+    about: Guides for installing, building pages, themes, plugins and hooks.
+  - name: Report a security problem privately
+    url: https://github.com/falconcms/falconcms/security/advisories/new
+    about: Never in a public issue — see SECURITY.md.

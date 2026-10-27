@@ -1,0 +1,29 @@
+# Weekly pull requests for outdated dependencies. Security fixes come as soon as GitHub knows
+# of them, once "Dependabot security updates" is on in the repository's settings.
+version: 2
+updates:
+  # The workflows' actions are pinned to commit SHAs (with the version in a comment);
+  # Dependabot moves the SHA and the comment together.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # The documentation site (VitePress).
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      docs:
+        patterns: ['*']
