@@ -430,6 +430,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::get('/customizer', [CustomizerController::class, 'index'])->name('customizer.index');
     Route::post('/customizer', [CustomizerController::class, 'save'])->name('customizer.save');
     Route::post('/customizer/reset', [CustomizerController::class, 'resetSection'])->name('customizer.reset');
+    Route::get('/customizer/font-info', [CustomizerController::class, 'fontInfo'])->name('customizer.font-info');
     Route::get('/customizer/export', [CustomizerController::class, 'export'])->name('customizer.export');
     Route::post('/customizer/import', [CustomizerController::class, 'import'])->name('customizer.import');
     Route::post('/customizer/action/{action}', [CustomizerController::class, 'runAction'])->name('customizer.action');

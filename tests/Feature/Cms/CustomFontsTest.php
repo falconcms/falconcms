@@ -70,13 +70,36 @@ class CustomFontsTest extends TestCase
         return (string) file_get_contents($weight === 800 ? self::OUTFIT_800 : self::OUTFIT_300);
     }
 
+    /**
+     * Outfit made a variable font: the same tables plus an fvar with a wght axis (and a wdth
+     * axis before it, so the weight axis has to be found, not assumed first).
+     */
+    private function variable(float $min, float $max): string
+    {
+        $tables = FontFile::tables($this->outfit());
+        $axis = fn (string $tag, float $lo, float $hi) => $tag.pack('NNNnn', (int) ($lo * 65536), (int) ($lo * 65536), (int) ($hi * 65536), 0, 256);
+        $tables['fvar'] = pack('nnnnnnnn', 1, 0, 16, 2, 2, 20, 0, 12).$axis('wdth', 75, 100).$axis('wght', $min, $max);
+        ksort($tables, SORT_STRING);
+        $offset = 12 + 16 * count($tables);
+        $dir = '';
+        $body = '';
+        foreach ($tables as $tag => $data) {
+            $dir .= pack('a4NNN', $tag, 0, $offset, strlen($data));
+            $data .= str_repeat("\0", (4 - strlen($data) % 4) % 4);
+            $body .= $data;
+            $offset += strlen($data);
+        }
+
+        return "\x00\x01\x00\x00".pack('nnnn', count($tables), 0, 0, 0).$dir.$body;
+    }
+
     // ── FontFile ─────────────────────────────────────────────────────────────
 
     public function test_a_font_is_known_by_its_bytes_and_read_for_its_name_and_weight(): void
     {
         $this->assertSame('ttf', FontFile::format($this->outfit(800)));
         $this->assertNull(FontFile::format('<?php echo 1;'));
-        $this->assertSame(['family' => 'Outfit', 'weight' => 800, 'italic' => false], FontFile::describe($this->outfit(800)));
+        $this->assertSame(['family' => 'Outfit', 'weight' => 800, 'italic' => false, 'weights' => null], FontFile::describe($this->outfit(800)));
         $this->assertSame(['family' => 'Open Sans', 'weight' => 600, 'italic' => true], FontFile::fromName('OpenSans-SemiBoldItalic.woff2'));
     }
 
@@ -87,6 +110,14 @@ class CustomFontsTest extends TestCase
         $this->assertSame('woff', FontFile::format($woff));
         $this->assertLessThan(strlen($this->outfit()), strlen($woff));
         $this->assertSame(FontFile::tables($this->outfit()), FontFile::tables($woff), 'every table survives the compression unchanged');
+    }
+
+    public function test_a_variable_fonts_weight_range_is_read_from_its_axis(): void
+    {
+        $this->assertSame([100, 900], FontFile::describe($this->variable(100, 900))['weights']);
+        // kept inside the axis: 250–780 offers 300–700, never a weight the font does not have
+        $this->assertSame([300, 700], FontFile::describe($this->variable(250, 780))['weights']);
+        $this->assertSame([100, 900], FontFile::describe((string) FontFile::toWoff($this->variable(100, 900)))['weights'], 'and from the WOFF made of it');
     }
 
     // ── Media Library ────────────────────────────────────────────────────────
@@ -184,6 +215,48 @@ class CustomFontsTest extends TestCase
 
         $this->assertSame([['family' => 'Outfit Custom', 'category' => 'Custom Fonts', 'variants' => ['300', '800'], 'fallback' => 'sans-serif']], CustomFonts::catalog());
         $this->assertSame("'Outfit Custom', sans-serif", CustomFonts::stack('OUTFIT CUSTOM'));
+    }
+
+    public function test_a_variable_face_declares_its_range_and_offers_every_weight_in_it(): void
+    {
+        $v = $this->media($this->variable(200, 800), 'brand-vf.ttf');
+        $one = $this->media($this->outfit(800), 'o8.ttf');
+        CustomFonts::save([
+            ['family' => 'Brand', 'weight' => 200, 'weight_to' => 800, 'files' => ['ttf' => $v]],
+            ['family' => 'Brand', 'weight' => 900, 'style' => 'italic', 'files' => ['ttf' => $one]],
+            // a range the wrong way round, or of one weight, is just a weight
+            ['family' => 'Other', 'weight' => 700, 'weight_to' => 300, 'files' => ['ttf' => $one]],
+        ]);
+
+        $this->assertStringContainsString("font-family:'Brand';src:", CustomFonts::css());
+        $this->assertStringContainsString(';font-weight:200 800;font-style:normal;', CustomFonts::css());
+        $this->assertStringContainsString(';font-weight:700;font-style:normal;', CustomFonts::css());
+        $this->assertSame(['200', '300', '400', '500', '600', '700', '800', '900'], CustomFonts::catalog()[0]['variants']);
+        $this->assertSame(0, CustomFonts::all()[2]['weight_to']);
+    }
+
+    public function test_the_screen_is_told_what_a_library_font_says_about_itself(): void
+    {
+        $admin = $this->admin();
+        $v = $this->media($this->variable(100, 900), 'brand-vf.ttf');
+        $bold = $this->media($this->outfit(800), 'outfit-800.ttf');
+        $w2 = $this->media('wOF2'.str_repeat("\0", 40), 'OpenSans-SemiBoldItalic.woff2');
+        $route = fn (string $p) => route('admin.customizer.font-info', ['path' => $p]);
+
+        $this->actingAs($admin)->getJson($route($bold))->assertOk()
+            ->assertExactJson(['family' => 'Outfit', 'weight' => 800, 'weight_to' => 0, 'style' => 'normal', 'from' => 'font']);
+        $this->actingAs($admin)->getJson($route($v))->assertOk()->assertJson(['weight' => 100, 'weight_to' => 900, 'from' => 'font']);
+        // a WOFF2 cannot be opened here: its name is what there is
+        $this->actingAs($admin)->getJson($route($w2))->assertOk()
+            ->assertExactJson(['family' => 'Open Sans', 'weight' => 600, 'weight_to' => 0, 'style' => 'italic', 'from' => 'name']);
+
+        // only library fonts, and only for someone who can change settings
+        Storage::disk('public')->put('media/2026/10/stray.ttf', $this->outfit());
+        $this->actingAs($admin)->getJson($route('media/2026/10/stray.ttf'))->assertNotFound();
+        $this->actingAs($admin)->getJson($route('../.env'))->assertNotFound();
+        $editor = User::forceCreate(['name' => 'Ed', 'email' => 'fonts-ed@example.test', 'password' => 'secret-password',
+            'role_id' => (int) DB::table('roles')->where('slug', 'editor')->value('id')]);
+        $this->actingAs($editor)->getJson($route($bold))->assertForbidden();
     }
 
     public function test_a_made_woff_goes_when_its_font_does(): void

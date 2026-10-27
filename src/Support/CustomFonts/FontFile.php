@@ -48,7 +48,9 @@ final class FontFile
     /**
      * What the font says about itself, where it can be read.
      *
-     * @return array{family: string, weight: int, italic: bool}|null null when the tables cannot be read
+     * weights is [min, max] of a variable font's weight axis, null for a font of one weight.
+     *
+     * @return array{family: string, weight: int, italic: bool, weights: array{0: int, 1: int}|null}|null null when the tables cannot be read
      */
     public static function describe(string $bytes): ?array
     {
@@ -67,7 +69,9 @@ final class FontFile
             $italic = (bool) (unpack('n', $tables['head'], 44)[1] & 2);
         }
 
-        return ['family' => $family, 'weight' => $weight, 'italic' => $italic];
+        $weights = isset($tables['fvar']) ? self::weightAxis($tables['fvar']) : null;
+
+        return ['family' => $family, 'weight' => $weight, 'italic' => $italic, 'weights' => $weights];
     }
 
     /**
@@ -227,6 +231,35 @@ final class FontFile
         }
 
         return '';
+    }
+
+    /**
+     * The wght axis of a variable font's fvar table as [min, max], rounded to the hundreds
+     * inside the axis; null when it has no weight axis (a width-only variable font, say).
+     */
+    private static function weightAxis(string $fvar): ?array
+    {
+        if (strlen($fvar) < 16) {
+            return null;
+        }
+        $h = unpack('nmajor/nminor/naxes/nreserved/ncount/nsize', $fvar);
+        for ($i = 0; $i < $h['count']; $i++) {
+            $rec = substr($fvar, $h['axes'] + $h['size'] * $i, 20);
+            if (strlen($rec) < 20) {
+                break;
+            }
+            if (substr($rec, 0, 4) !== 'wght') {
+                continue;
+            }
+            // 16.16 fixed, signed
+            $fixed = fn (int $at) => (($v = unpack('N', $rec, $at)[1]) >= 0x80000000 ? $v - 0x100000000 : $v) / 65536;
+            $min = max(100, min(900, (int) ceil($fixed(4) / 100) * 100));
+            $max = max(100, min(900, (int) floor($fixed(12) / 100) * 100));
+
+            return $max > $min ? [$min, $max] : null;
+        }
+
+        return null;
     }
 
     private static function roundWeight(int $w): int

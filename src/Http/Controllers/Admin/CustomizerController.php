@@ -1431,6 +1431,17 @@ class CustomizerController extends Controller
             ->with('success', 'Section reset to defaults.');
     }
 
+    /** What a Media Library font says about itself (weight, italic, variable range), for the Custom Font screen. */
+    public function fontInfo(Request $request)
+    {
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
+        $info = CustomFonts::inspect((string) $request->query('path', ''));
+
+        return $info ? response()->json($info) : response()->json(['message' => 'Not a font from the Media Library.'], 404);
+    }
+
     public function export()
     {
         if (!auth()->user()->hasPermission('manage_settings')) {

@@ -14,7 +14,10 @@ use Throwable;
  * list, under "Custom Fonts".
  *
  * Each entry is one font face: a name, a weight, a style, and a file per format, picked from
- * the Media Library. Entries that share a name are one family with several weights. Files are
+ * the Media Library. Entries that share a name are one family with several weights. A variable
+ * font carries a range of weights in one file: its entry has weight_to above weight, and its
+ *
+ * @font-face declares the range, so every weight in it is the font's own, not a faux bold. Files are
  * never taken on trust: a file is used only if it is in the Media Library and its own bytes
  * are the format of the slot it was picked for. Where a TTF / OTF has no WOFF beside it, one is
  * made (FontFile::toWoff), so every browser has a compact file to load.
@@ -47,7 +50,7 @@ final class CustomFonts
     /**
      * Every saved font face, checked as it is read back.
      *
-     * @return list<array{id: string, family: string, weight: int, style: string, files: array<string, string>, made: array<string, string>}>
+     * @return list<array{id: string, family: string, weight: int, weight_to: int, style: string, files: array<string, string>, made: array<string, string>}>
      */
     public static function all(): array
     {
@@ -70,7 +73,7 @@ final class CustomFonts
             $out[] = [
                 'id' => (string) $e['id'],
                 'family' => $family,
-                'weight' => self::weight($e['weight'] ?? 400),
+                ...self::weights($e),
                 'style' => ($e['style'] ?? '') === 'italic' ? 'italic' : 'normal',
                 'files' => $files,
                 'made' => $made,
@@ -95,7 +98,8 @@ final class CustomFonts
                 continue;
             }
             $found ??= ['family' => $e['family'], 'fallback' => self::fallbackFor($e['family']), 'weights' => []];
-            $found['weights'][] = $e['weight'];
+            // a variable face offers every hundred in its range
+            array_push($found['weights'], ...($e['weight_to'] ? range($e['weight'], $e['weight_to'], 100) : [$e['weight']]));
         }
         if ($found) {
             $found['weights'] = array_values(array_unique($found['weights']));
@@ -155,7 +159,7 @@ final class CustomFonts
             }
             if ($src) {
                 $css .= "@font-face{font-family:'".$e['family']."';src:".implode(',', $src)
-                    .';font-weight:'.$e['weight'].';font-style:'.$e['style'].';font-display:swap}';
+                    .';font-weight:'.$e['weight'].($e['weight_to'] ? ' '.$e['weight_to'] : '').';font-style:'.$e['style'].';font-display:swap}';
             }
         }
 
@@ -214,7 +218,7 @@ final class CustomFonts
             $keep[] = [
                 'id' => $id,
                 'family' => $family,
-                'weight' => self::weight($e['weight'] ?? 400),
+                ...self::weights($e),
                 'style' => ($e['style'] ?? '') === 'italic' ? 'italic' : 'normal',
                 'files' => $files,
                 'made' => self::makeWoff($id, $files),
@@ -239,6 +243,37 @@ final class CustomFonts
 
             return $e;
         }, self::all());
+    }
+
+    /**
+     * What a Media Library font says about itself, for the Custom Font screen: read from its
+     * own tables (TTF, OTF, WOFF), or guessed from its name (WOFF2 needs Brotli to read).
+     * Null unless it is a library font of its extension's format.
+     *
+     * @return array{family: string, weight: int, weight_to: int, style: string, from: string}|null
+     */
+    public static function inspect(string $path): ?array
+    {
+        $format = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        if (!isset(self::CSS_FORMATS[$format]) || !self::verify($path, $format)) {
+            return null;
+        }
+        try {
+            $meta = FontFile::describe((string) Storage::disk('public')->get($path));
+        } catch (Throwable $e) {
+            $meta = null;
+        }
+        $from = $meta ? 'font' : 'name';
+        $meta ??= FontFile::fromName(basename($path)) + ['weights' => null];
+        $range = $meta['weights'] ?? null;
+
+        return [
+            'family' => self::cleanFamily($meta['family']) ?: self::cleanFamily(FontFile::fromName(basename($path))['family']),
+            'weight' => $range ? $range[0] : $meta['weight'],
+            'weight_to' => $range ? $range[1] : 0,
+            'style' => $meta['italic'] ? 'italic' : 'normal',
+            'from' => $from,
+        ];
     }
 
     /** Where a stored file is served: the site's own /storage, relative, so APP_URL cannot misdirect it. */
@@ -352,6 +387,15 @@ final class CustomFonts
             (bool) preg_match('/script|hand|brush|marker/', $f) => 'cursive',
             default => 'sans-serif',
         };
+    }
+
+    /** weight, and weight_to — above weight for a variable font's range, else 0. */
+    private static function weights(array $e): array
+    {
+        $from = self::weight($e['weight'] ?? 400);
+        $to = empty($e['weight_to']) ? 0 : self::weight($e['weight_to']);
+
+        return $to > $from ? ['weight' => $from, 'weight_to' => $to] : ['weight' => $from, 'weight_to' => 0];
     }
 
     private static function weight($w): int
