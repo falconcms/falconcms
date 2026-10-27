@@ -2,6 +2,8 @@
 
 namespace FalconCms\Core\Models;
 
+use FalconCms\Core\Support\CustomFonts\FontFile;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -26,5 +28,20 @@ class Media extends Model
     public function getUrlAttribute()
     {
         return asset('storage/'.$this->path);
+    }
+
+    /**
+     * Fonts in the library: of one format ('woff2', 'woff', 'ttf', 'otf'), or of any of them.
+     * Used by the Media Library's font mode (Customizer → Typography → Custom Font).
+     */
+    public function scopeFonts(Builder $query, string $format = ''): Builder
+    {
+        $exts = in_array($format, FontFile::FORMATS, true) ? [$format] : FontFile::FORMATS;
+
+        return $query->where(function ($q) use ($exts) {
+            foreach ($exts as $ext) {
+                $q->orWhere('path', 'like', '%.'.$ext);
+            }
+        });
     }
 }

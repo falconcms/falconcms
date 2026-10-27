@@ -18,6 +18,9 @@ final class FontFile
 {
     public const FORMATS = ['woff2', 'woff', 'ttf', 'otf'];
 
+    /** The media type each is stored and served as. */
+    public const MIME = ['woff2' => 'font/woff2', 'woff' => 'font/woff', 'ttf' => 'font/ttf', 'otf' => 'font/otf'];
+
     /** Largest font accepted, in bytes. A full CJK font is about this size. */
     public const MAX_BYTES = 12 * 1024 * 1024;
 

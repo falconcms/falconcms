@@ -2,47 +2,53 @@
 
 namespace FalconCms\Core\Support\CustomFonts;
 
-use Illuminate\Http\UploadedFile;
+use FalconCms\Core\Models\Media;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Fonts the site owner uploads (Customizer → Typography → Custom Font), offered wherever a
- * font is picked — the theme's typography, the page builder, Motion Visual text — next to
- * the Google list, under "Custom Fonts".
+ * Fonts the site owner adds (Customizer → Typography → Custom Font), offered wherever a font is
+ * picked — the theme's typography, the page builder, Motion Visual text — next to the Google
+ * list, under "Custom Fonts".
  *
- * Each font is a family with variants (weight + normal/italic); each variant holds the files
- * uploaded for it, one per format. They are declared with @font-face on every page, in the
- * builder and in the Customizer; a browser downloads a file only when text uses it.
+ * Each entry is one font face: a name, a weight, a style, and a file per format, picked from
+ * the Media Library. Entries that share a name are one family with several weights. Files are
+ * never taken on trust: a file is used only if it is in the Media Library and its own bytes
+ * are the format of the slot it was picked for. Where a TTF / OTF has no WOFF beside it, one is
+ * made (FontFile::toWoff), so every browser has a compact file to load.
  *
  * Kept apart from falcon_google_fonts() on purpose: that list decides what is requested from
  * Google, and Google answers 400 for the whole request when one family is unknown to it.
  *
- * Stored as JSON in the cms option custom_fonts; the files in the public disk under
- * fonts/<font id>/<variant id>.<format>, named by us, never by the upload.
+ * Stored as JSON in the cms option custom_fonts, saved with the Customizer's Save.
  */
 final class CustomFonts
 {
     public const OPTION = 'custom_fonts';
 
-    public const DIR = 'fonts';
-
     public const CATEGORY = 'Custom Fonts';
 
-    /** What text falls back to while the font loads, or if it never does. */
+    /** Made WOFF copies live here, named by us; media files stay where the library put them. */
+    public const DIR = 'fonts';
+
+    /** What text falls back to while a font loads, or if it never does. */
     public const FALLBACKS = ['sans-serif', 'serif', 'monospace', 'cursive', 'system-ui'];
 
     /** CSS format() names, in the order browsers should try them: smallest first. */
-    private const CSS_FORMATS = ['woff2' => 'woff2', 'woff' => 'woff', 'ttf' => 'truetype', 'otf' => 'opentype'];
+    public const CSS_FORMATS = ['woff2' => 'woff2', 'woff' => 'woff', 'ttf' => 'truetype', 'otf' => 'opentype'];
 
-    public const MAX_FONTS = 60;
+    public const MAX_FONTS = 100;
 
-    /** @var array<int, array>|null */
+    /** @var list<array>|null */
     private static ?array $cache = null;
 
-    /** @return list<array{id: string, family: string, fallback: string, variants: list<array{id: string, weight: int, style: string, files: array<string, string>, generated?: list<string>}>}> */
+    /**
+     * Every saved font face, checked as it is read back.
+     *
+     * @return list<array{id: string, family: string, weight: int, style: string, files: array<string, string>, made: array<string, string>}>
+     */
     public static function all(): array
     {
         if (self::$cache !== null) {
@@ -50,36 +56,28 @@ final class CustomFonts
         }
         $raw = function_exists('get_cms_option') ? get_cms_option(self::OPTION, '[]') : '[]';
         $list = is_array($raw) ? $raw : json_decode((string) $raw, true);
-        $fonts = [];
-        foreach (is_array($list) ? $list : [] as $f) {
-            $family = self::cleanFamily((string) ($f['family'] ?? ''));
-            if ($family === '' || !self::validId((string) ($f['id'] ?? ''))) {
+        $out = [];
+        foreach (is_array($list) ? $list : [] as $e) {
+            if (!is_array($e) || !self::validId((string) ($e['id'] ?? ''))) {
                 continue;
             }
-            $variants = [];
-            foreach ((array) ($f['variants'] ?? []) as $v) {
-                $files = array_filter((array) ($v['files'] ?? []), fn ($p, $fmt) => isset(self::CSS_FORMATS[$fmt]) && self::validPath((string) $p), ARRAY_FILTER_USE_BOTH);
-                if (!$files || !self::validId((string) ($v['id'] ?? ''))) {
-                    continue;
-                }
-                $variants[] = [
-                    'id' => (string) $v['id'],
-                    'weight' => self::weight($v['weight'] ?? 400),
-                    'style' => ($v['style'] ?? '') === 'italic' ? 'italic' : 'normal',
-                    'files' => $files,
-                    'generated' => array_values(array_intersect((array) ($v['generated'] ?? []), array_keys($files))),
-                ];
+            $family = self::cleanFamily((string) ($e['family'] ?? ''));
+            $files = array_filter((array) ($e['files'] ?? []), fn ($p, $fmt) => isset(self::CSS_FORMATS[$fmt]) && self::mediaPath((string) $p, (string) $fmt), ARRAY_FILTER_USE_BOTH);
+            $made = array_filter((array) ($e['made'] ?? []), fn ($p, $fmt) => $fmt === 'woff' && self::madePath((string) $p), ARRAY_FILTER_USE_BOTH);
+            if ($family === '' || (!$files && !$made)) {
+                continue;
             }
-            usort($variants, fn ($a, $b) => [$a['weight'], $a['style']] <=> [$b['weight'], $b['style']]);
-            $fonts[] = [
-                'id' => (string) $f['id'],
+            $out[] = [
+                'id' => (string) $e['id'],
                 'family' => $family,
-                'fallback' => in_array($f['fallback'] ?? '', self::FALLBACKS, true) ? $f['fallback'] : 'sans-serif',
-                'variants' => $variants,
+                'weight' => self::weight($e['weight'] ?? 400),
+                'style' => ($e['style'] ?? '') === 'italic' ? 'italic' : 'normal',
+                'files' => $files,
+                'made' => $made,
             ];
         }
 
-        return self::$cache = $fonts;
+        return self::$cache = $out;
     }
 
     public static function flush(): void
@@ -87,16 +85,24 @@ final class CustomFonts
         self::$cache = null;
     }
 
+    /** A family by name (any case): its name as saved, fallback and weights. */
     public static function find(string $family): ?array
     {
         $key = mb_strtolower(trim(trim($family), "'\""));
-        foreach (self::all() as $f) {
-            if (mb_strtolower($f['family']) === $key) {
-                return $f;
+        $found = null;
+        foreach (self::all() as $e) {
+            if (mb_strtolower($e['family']) !== $key) {
+                continue;
             }
+            $found ??= ['family' => $e['family'], 'fallback' => self::fallbackFor($e['family']), 'weights' => []];
+            $found['weights'][] = $e['weight'];
+        }
+        if ($found) {
+            $found['weights'] = array_values(array_unique($found['weights']));
+            sort($found['weights']);
         }
 
-        return null;
+        return $found;
     }
 
     public static function isCustom(string $family): bool
@@ -104,7 +110,7 @@ final class CustomFonts
         return self::find($family) !== null;
     }
 
-    /** A full font-family value: the family, then its own fallback. */
+    /** A full font-family value: the family, then a fallback. */
     public static function stack(string $family): string
     {
         $f = self::find($family);
@@ -113,42 +119,43 @@ final class CustomFonts
     }
 
     /**
-     * The fonts in the shape every font picker already reads (falcon_google_fonts()):
+     * The families in the shape every font picker already reads (falcon_google_fonts()):
      * family, category, variants (weights) — plus the fallback, for the value it writes.
      *
      * @return list<array{family: string, category: string, variants: list<string>, fallback: string}>
      */
     public static function catalog(): array
     {
+        $seen = [];
         $out = [];
-        foreach (self::all() as $f) {
-            if (!$f['variants']) {
+        foreach (self::all() as $e) {
+            $key = mb_strtolower($e['family']);
+            if (isset($seen[$key])) {
                 continue;
             }
-            $weights = array_values(array_unique(array_map(fn ($v) => (string) $v['weight'], $f['variants'])));
-            sort($weights);
-            $out[] = ['family' => $f['family'], 'category' => self::CATEGORY, 'variants' => $weights, 'fallback' => $f['fallback']];
+            $seen[$key] = true;
+            $f = self::find($e['family']);
+            $out[] = ['family' => $f['family'], 'category' => self::CATEGORY, 'variants' => array_map('strval', $f['weights']), 'fallback' => $f['fallback']];
         }
 
         return $out;
     }
 
-    /** The @font-face rules for every uploaded variant ('' when there are none). */
+    /** The @font-face rules ('' when there are none). */
     public static function css(): string
     {
         $css = '';
-        foreach (self::all() as $f) {
-            foreach ($f['variants'] as $v) {
-                $src = [];
-                foreach (self::CSS_FORMATS as $fmt => $name) {
-                    if (!empty($v['files'][$fmt])) {
-                        $src[] = "url('".self::url($v['files'][$fmt])."') format('".$name."')";
-                    }
+        foreach (self::all() as $e) {
+            $src = [];
+            foreach (self::CSS_FORMATS as $fmt => $name) {
+                $path = $e['files'][$fmt] ?? $e['made'][$fmt] ?? null;
+                if ($path) {
+                    $src[] = "url('".self::url($path)."') format('".$name."')";
                 }
-                if ($src) {
-                    $css .= "@font-face{font-family:'".$f['family']."';src:".implode(',', $src)
-                        .';font-weight:'.$v['weight'].';font-style:'.$v['style'].';font-display:swap}';
-                }
+            }
+            if ($src) {
+                $css .= "@font-face{font-family:'".$e['family']."';src:".implode(',', $src)
+                    .';font-weight:'.$e['weight'].';font-style:'.$e['style'].';font-display:swap}';
             }
         }
 
@@ -163,197 +170,74 @@ final class CustomFonts
     }
 
     /**
-     * Uploaded files, sorted into fonts: each file is read for its family, weight and style
-     * (the font's own tables, else its name), and joins the variant it belongs to — a WOFF2
-     * and a TTF of the same weight become one variant with two formats.
+     * Save what the Customizer's Custom Font screen sent. Every file is checked again here —
+     * the screen is not trusted: it must be a Media Library font of the slot's format. An entry
+     * with nothing usable is dropped with a note. Returns the notes (empty when all was kept).
      *
-     * $into: add every file to this font instead of the one its name says.
-     *
-     * @param  list<UploadedFile>  $uploads
-     * @return array{added: list<string>, errors: list<string>}
+     * @return list<string>
      */
-    public static function upload(array $uploads, ?string $into = null): array
+    public static function save(array $entries): array
     {
-        $fonts = self::all();
-        $added = [];
-        $errors = [];
-        foreach ($uploads as $file) {
-            $name = $file instanceof UploadedFile ? $file->getClientOriginalName() : 'file';
-            try {
-                if (!$file instanceof UploadedFile || !$file->isValid()) {
-                    throw new \RuntimeException('the upload did not arrive');
-                }
-                if ($file->getSize() > FontFile::MAX_BYTES) {
-                    throw new \RuntimeException('it is larger than '.(FontFile::MAX_BYTES / 1024 / 1024).' MB');
-                }
-                $bytes = (string) file_get_contents($file->getRealPath());
-                $format = FontFile::format($bytes);
-                if ($format === null) {
-                    throw new \RuntimeException('it is not a WOFF2, WOFF, TTF or OTF font');
-                }
-                $meta = FontFile::describe($bytes);
-                $byName = FontFile::fromName($name);
-                $family = self::cleanFamily($meta['family'] ?? '') ?: self::cleanFamily($byName['family']) ?: 'Custom Font';
-                $weight = $meta ? $meta['weight'] : $byName['weight'];
-                $style = ($meta ? $meta['italic'] : $byName['italic']) ? 'italic' : 'normal';
-
-                $fi = null;
-                foreach ($fonts as $i => $f) {
-                    if ($into !== null ? $f['id'] === $into : mb_strtolower($f['family']) === mb_strtolower($family)) {
-                        $fi = $i;
-                        break;
-                    }
-                }
-                if ($fi === null) {
-                    if (count($fonts) >= self::MAX_FONTS) {
-                        throw new \RuntimeException('there are already '.self::MAX_FONTS.' custom fonts');
-                    }
-                    $fonts[] = ['id' => self::newId(), 'family' => $family, 'fallback' => self::guessFallback($family), 'variants' => []];
-                    $fi = array_key_last($fonts);
-                }
-                $vi = null;
-                foreach ($fonts[$fi]['variants'] as $j => $v) {
-                    if ($v['weight'] === $weight && $v['style'] === $style) {
-                        $vi = $j;
-                        break;
-                    }
-                }
-                if ($vi === null) {
-                    $fonts[$fi]['variants'][] = ['id' => self::newId(), 'weight' => $weight, 'style' => $style, 'files' => [], 'generated' => []];
-                    $vi = array_key_last($fonts[$fi]['variants']);
-                }
-                $v = &$fonts[$fi]['variants'][$vi];
-                $base = self::DIR.'/'.$fonts[$fi]['id'].'/'.$v['id'];
-                self::put($base.'.'.$format, $bytes);
-                $v['files'][$format] = $base.'.'.$format;
-                $v['generated'] = array_values(array_diff($v['generated'] ?? [], [$format]));
-                // A TTF / OTF without a WOFF: make one, so every browser has a compact file.
-                if (in_array($format, ['ttf', 'otf'], true) && (empty($v['files']['woff']) || in_array('woff', $v['generated'], true))) {
-                    $woff = FontFile::toWoff($bytes);
-                    if ($woff !== null) {
-                        self::put($base.'.woff', $woff);
-                        $v['files']['woff'] = $base.'.woff';
-                        $v['generated'][] = 'woff';
-                        $v['generated'] = array_values(array_unique($v['generated']));
-                    }
-                }
-                unset($v);
-                $added[] = $fonts[$fi]['family'].' '.$weight.($style === 'italic' ? ' italic' : '').' ('.strtoupper($format).')';
-            } catch (Throwable $e) {
-                $errors[] = $name.': '.$e->getMessage();
+        $notes = [];
+        $keep = [];
+        foreach (array_slice(array_values($entries), 0, self::MAX_FONTS) as $n => $e) {
+            if (!is_array($e)) {
+                continue;
             }
-        }
-        self::store($fonts);
+            $label = 'Font '.($n + 1);
+            $family = self::cleanFamily((string) ($e['family'] ?? ''));
+            $files = [];
+            foreach (self::CSS_FORMATS as $fmt => $_) {
+                $path = trim((string) ($e['files'][$fmt] ?? ''));
+                if ($path === '') {
+                    continue;
+                }
+                if (!self::verify($path, $fmt)) {
+                    $notes[] = $label.': the '.strtoupper($fmt).' file is not a '.strtoupper($fmt).' font from the Media Library, so it was left out.';
 
-        return ['added' => $added, 'errors' => $errors];
-    }
+                    continue;
+                }
+                $files[$fmt] = $path;
+            }
+            if (!$files) {
+                if ($family !== '') {
+                    $notes[] = $label.' ('.$family.'): it has no font file yet, so it was not saved.';
+                }
 
-    /** Rename a font (joining another of the same name), or change its fallback. */
-    public static function update(string $id, ?string $family, ?string $fallback): ?string
-    {
-        $fonts = self::all();
-        $at = self::indexOf($fonts, $id);
-        if ($at === null) {
-            return 'That font is gone.';
-        }
-        if ($fallback !== null && in_array($fallback, self::FALLBACKS, true)) {
-            $fonts[$at]['fallback'] = $fallback;
-        }
-        if ($family !== null) {
-            $family = self::cleanFamily($family);
+                continue;
+            }
             if ($family === '') {
-                return 'A font needs a name: letters, numbers, spaces or dashes.';
+                $family = self::familyFromFile(reset($files));
+                $notes[] = $label.': it had no name; "'.$family.'" was read from its file.';
             }
-            foreach ($fonts as $i => $f) {
-                if ($i !== $at && mb_strtolower($f['family']) === mb_strtolower($family)) {
-                    // Same name as another font: they are one family now. Its variants come over,
-                    // and where both have the same weight and style, the one being renamed wins.
-                    foreach ($f['variants'] as $v) {
-                        $clash = false;
-                        foreach ($fonts[$at]['variants'] as $mine) {
-                            $clash = $clash || ($mine['weight'] === $v['weight'] && $mine['style'] === $v['style']);
-                        }
-                        if ($clash) {
-                            self::deleteFiles($v['files']);
-                        } else {
-                            $fonts[$at]['variants'][] = $v;
-                        }
-                    }
-                    unset($fonts[$i]);
-                }
-            }
-            $fonts[$at]['family'] = $family;
+            $id = self::validId((string) ($e['id'] ?? '')) ? (string) $e['id'] : strtolower(Str::random(10));
+            $keep[] = [
+                'id' => $id,
+                'family' => $family,
+                'weight' => self::weight($e['weight'] ?? 400),
+                'style' => ($e['style'] ?? '') === 'italic' ? 'italic' : 'normal',
+                'files' => $files,
+                'made' => self::makeWoff($id, $files),
+            ];
         }
-        self::store(array_values($fonts));
 
-        return null;
+        self::store($keep);
+        self::sweep($keep);
+        // Every page declares the fonts in its <head>, so cached pages are out of date.
+        if (function_exists('clear_page_cache')) {
+            clear_page_cache();
+        }
+
+        return $notes;
     }
 
-    /** Give a variant another weight or style; it takes the place of one already there. */
-    public static function updateVariant(string $fontId, string $variantId, int $weight, string $style): ?string
-    {
-        $fonts = self::all();
-        $at = self::indexOf($fonts, $fontId);
-        if ($at === null) {
-            return 'That font is gone.';
-        }
-        $weight = self::weight($weight);
-        $style = $style === 'italic' ? 'italic' : 'normal';
-        foreach ($fonts[$at]['variants'] as $j => $v) {
-            if ($v['id'] !== $variantId && $v['weight'] === $weight && $v['style'] === $style) {
-                self::deleteFiles($v['files']);
-                unset($fonts[$at]['variants'][$j]);
-            }
-        }
-        foreach ($fonts[$at]['variants'] as &$v) {
-            if ($v['id'] === $variantId) {
-                $v['weight'] = $weight;
-                $v['style'] = $style;
-            }
-        }
-        unset($v);
-        $fonts[$at]['variants'] = array_values($fonts[$at]['variants']);
-        self::store($fonts);
-
-        return null;
-    }
-
-    /** Delete one variant, or the whole font when $variantId is null. Files go too. */
-    public static function delete(string $fontId, ?string $variantId = null): void
-    {
-        $fonts = self::all();
-        $at = self::indexOf($fonts, $fontId);
-        if ($at === null) {
-            return;
-        }
-        foreach ($fonts[$at]['variants'] as $j => $v) {
-            if ($variantId === null || $v['id'] === $variantId) {
-                self::deleteFiles($v['files']);
-                unset($fonts[$at]['variants'][$j]);
-            }
-        }
-        $fonts[$at]['variants'] = array_values($fonts[$at]['variants']);
-        if ($variantId === null || !$fonts[$at]['variants']) {
-            try {
-                Storage::disk('public')->deleteDirectory(self::DIR.'/'.$fontId);
-            } catch (Throwable $e) {
-            }
-            unset($fonts[$at]);
-        }
-        self::store(array_values($fonts));
-    }
-
-    /** What the Customizer's Custom Font screen shows: the fonts with file addresses. */
+    /** What the Custom Font screen starts from: the saved entries, with addresses for previews. */
     public static function forEditor(): array
     {
-        return array_map(function ($f) {
-            $f['variants'] = array_map(function ($v) {
-                $v['urls'] = array_map([self::class, 'url'], $v['files']);
+        return array_map(function ($e) {
+            $e['names'] = array_map(fn ($p) => basename($p), $e['files']);
 
-                return $v;
-            }, $f['variants']);
-
-            return $f;
+            return $e;
         }, self::all());
     }
 
@@ -363,53 +247,7 @@ final class CustomFonts
         return '/storage/'.ltrim($path, '/');
     }
 
-    private static function store(array $fonts): void
-    {
-        DB::table('cms_settings')->updateOrInsert(['key' => self::OPTION], ['value' => json_encode(array_values($fonts), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
-        self::flush();
-        if (function_exists('forget_cms_options_cache')) {
-            forget_cms_options_cache();
-        }
-        // Every page declares the fonts in its <head>, so cached pages are out of date.
-        if (function_exists('clear_page_cache')) {
-            clear_page_cache();
-        }
-    }
-
-    private static function put(string $path, string $bytes): void
-    {
-        if (!Storage::disk('public')->put($path, $bytes)) {
-            throw new \RuntimeException('the file could not be saved');
-        }
-    }
-
-    private static function deleteFiles(array $files): void
-    {
-        foreach ($files as $path) {
-            if (self::validPath((string) $path)) {
-                try {
-                    Storage::disk('public')->delete($path);
-                } catch (Throwable $e) {
-                }
-            }
-        }
-    }
-
-    private static function indexOf(array $fonts, string $id): ?int
-    {
-        foreach ($fonts as $i => $f) {
-            if ($f['id'] === $id) {
-                return $i;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Letters and their marks in any script (the vowel signs of Bangla, Hindi, Arabic are marks),
-     * numbers, spaces, dashes, dots: safe inside a quoted CSS family name.
-     */
+    /** Letters and their marks in any script (Bangla, Hindi and Arabic vowel signs are marks), numbers, spaces, dashes, dots. */
     public static function cleanFamily(string $family): string
     {
         $family = preg_replace('/[^\p{L}\p{M}\p{N} \-_.]/u', '', $family) ?? '';
@@ -417,7 +255,94 @@ final class CustomFonts
         return trim(mb_substr(preg_replace('/\s+/', ' ', $family) ?? '', 0, 60));
     }
 
-    private static function guessFallback(string $family): string
+    /** A Media Library font whose own bytes are the slot's format (TTF and OTF are both sfnt). */
+    public static function verify(string $path, string $format): bool
+    {
+        if (!self::mediaPath($path, $format)) {
+            return false;
+        }
+        try {
+            if (!Media::where('path', $path)->exists() || !Storage::disk('public')->exists($path)) {
+                return false;
+            }
+            $head = (string) Storage::disk('public')->get($path);
+        } catch (Throwable $e) {
+            return false;
+        }
+        $actual = FontFile::format($head);
+
+        return $actual === $format || (in_array($actual, ['ttf', 'otf'], true) && in_array($format, ['ttf', 'otf'], true));
+    }
+
+    /** A WOFF made from the TTF / OTF when no WOFF was picked; ['woff' => path] or []. */
+    private static function makeWoff(string $id, array $files): array
+    {
+        if (!empty($files['woff'])) {
+            return [];
+        }
+        $source = $files['ttf'] ?? $files['otf'] ?? null;
+        if (!$source) {
+            return [];
+        }
+        try {
+            $disk = Storage::disk('public');
+            // Named after the source, so a different file makes a new copy and the old one is swept.
+            $path = self::DIR.'/'.$id.'-'.substr(sha1($source.'|'.$disk->size($source)), 0, 10).'.woff';
+            if (!$disk->exists($path)) {
+                $woff = FontFile::toWoff((string) $disk->get($source));
+                if ($woff === null || !$disk->put($path, $woff)) {
+                    return [];
+                }
+            }
+
+            return ['woff' => $path];
+        } catch (Throwable $e) {
+            report($e);
+
+            return [];
+        }
+    }
+
+    /** Made copies no entry uses any more. Only our own folder is touched — never the library. */
+    private static function sweep(array $entries): void
+    {
+        $used = [];
+        foreach ($entries as $e) {
+            foreach ($e['made'] as $p) {
+                $used[$p] = true;
+            }
+        }
+        try {
+            foreach (Storage::disk('public')->files(self::DIR) as $file) {
+                if (self::madePath($file) && !isset($used[$file])) {
+                    Storage::disk('public')->delete($file);
+                }
+            }
+        } catch (Throwable $e) {
+        }
+    }
+
+    private static function store(array $entries): void
+    {
+        DB::table('cms_settings')->updateOrInsert(['key' => self::OPTION], ['value' => json_encode(array_values($entries), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)]);
+        self::flush();
+        if (function_exists('forget_cms_options_cache')) {
+            forget_cms_options_cache();
+        }
+    }
+
+    private static function familyFromFile(string $path): string
+    {
+        try {
+            $meta = FontFile::describe((string) Storage::disk('public')->get($path));
+        } catch (Throwable $e) {
+            $meta = null;
+        }
+
+        return self::cleanFamily($meta['family'] ?? '') ?: self::cleanFamily(FontFile::fromName(basename($path))['family']) ?: 'Custom Font';
+    }
+
+    private static function fallbackFor(string $family): string
     {
         $f = mb_strtolower($family);
 
@@ -434,18 +359,19 @@ final class CustomFonts
         return max(100, min(900, (int) round(((int) $w ?: 400) / 100) * 100));
     }
 
-    private static function newId(): string
-    {
-        return strtolower(Str::random(10));
-    }
-
     private static function validId(string $id): bool
     {
         return (bool) preg_match('/^[a-z0-9]{6,24}$/', $id);
     }
 
-    private static function validPath(string $p): bool
+    /** media/…/name.<format>, no way out of the folder. */
+    private static function mediaPath(string $p, string $format): bool
     {
-        return (bool) preg_match('#^'.self::DIR.'/[a-z0-9]{6,24}/[a-z0-9]{6,24}\.(woff2|woff|ttf|otf)$#', $p);
+        return (bool) preg_match('#^media/[A-Za-z0-9_\-/.]+\.'.preg_quote($format, '#').'$#', $p) && !str_contains($p, '..');
+    }
+
+    private static function madePath(string $p): bool
+    {
+        return (bool) preg_match('#^'.self::DIR.'/[a-z0-9]{6,24}-[a-f0-9]{10}\.woff$#', $p);
     }
 }

@@ -1,180 +1,152 @@
 {{--
-    Customizer → Typography → Custom Font.
+    Customizer → Typography → Custom Font: one box per font face (name, weight, style, a file per
+    format), files picked from the Media Library, saved with the Customizer's Save Changes.
 
-    Uploads go straight to Admin\CustomFontsController (not through the Customizer's Save):
-    each answer brings back the whole list and its @font-face CSS, which this screen puts in
-    the page at once, so every preview below is drawn in its own font.
+    The list travels in the hidden input "custom_fonts"; CustomFonts::save() checks every file
+    again on the server (a Media Library font whose bytes are the slot's format), so nothing
+    here is trusted. EOT and SVG fonts are not offered: no current browser needs them, and an
+    SVG font is a document that can carry script.
 --}}
 @php
     $cfInitial = \FalconCms\Core\Support\CustomFonts\CustomFonts::forEditor();
-    $cfCss = \FalconCms\Core\Support\CustomFonts\CustomFonts::css();
 @endphp
-<style id="falcon-custom-fonts-live">{!! $cfCss !!}</style>
-<div x-data="falconCustomFonts(@js($cfInitial))" class="space-y-5 max-w-[900px]">
+<style id="falcon-custom-fonts-live"></style>
+<div x-data="falconCustomFonts(@js($cfInitial))" x-init="init()" class="space-y-3 max-w-[460px]">
+    <input type="hidden" name="custom_fonts" :value="payload()">
 
-    {{-- Upload --}}
-    <div class="rounded-lg border-2 border-dashed transition-colors p-6 text-center"
-         :class="dragging ? 'border-[#2271b1] bg-[#f0f6fc]' : 'border-[#c3c4c7] bg-[#fbfbfc]'"
-         @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false" @drop.prevent="dragging = false; send($event.dataTransfer.files)">
-        <span class="material-symbols-outlined text-[#2271b1]" style="font-size:34px !important;">font_download</span>
-        <p class="text-[14px] font-semibold text-[#1d2327] mt-1">Drop font files here, or
-            <label class="text-[#2271b1] underline cursor-pointer">choose files
-                <input type="file" class="hidden" multiple accept=".woff2,.woff,.ttf,.otf" @change="send($event.target.files); $event.target.value = ''">
-            </label>
-        </p>
-        <p class="text-[12px] text-[#646970] mt-1">WOFF2, WOFF, TTF or OTF — several at once is fine. The name, weight and italic are read from each file.</p>
-        <p x-show="busy" x-cloak class="text-[12px] text-[#2271b1] mt-2">Uploading…</p>
-    </div>
-
-    <template x-if="added.length">
-        <div class="rounded border border-[#00a32a]/40 bg-[#edfaef] px-3 py-2 text-[12px] text-[#1d2327]">
-            <strong>Added:</strong> <span x-text="added.join(', ')"></span>
-        </div>
-    </template>
-    <template x-if="errors.length">
-        <div class="rounded border border-[#d63638]/40 bg-[#fcf0f1] px-3 py-2 text-[12px] text-[#1d2327] space-y-0.5">
-            <template x-for="e in errors" :key="e"><div x-text="e"></div></template>
-        </div>
-    </template>
-
-    {{-- The fonts --}}
-    <template x-if="!fonts.length">
-        <p class="text-[13px] text-[#646970]">No custom fonts yet.</p>
-    </template>
-    <template x-for="font in fonts" :key="font.id">
-        <div class="rounded-lg border border-[#dcdcde] bg-white overflow-hidden">
-            <div class="flex flex-wrap items-center gap-3 px-4 py-3 bg-[#f6f7f7] border-b border-[#dcdcde]">
-                <input type="text" :value="font.family" @change="save(font, { family: $event.target.value })" maxlength="60"
-                       class="wp-input h-8 text-[13px] font-semibold w-[220px]" title="Font name — the name shown in every font list">
-                <label class="text-[12px] text-[#646970] flex items-center gap-1.5">Fallback
-                    <select :value="font.fallback" @change="save(font, { fallback: $event.target.value })" class="wp-input h-8 text-[12px]">
-                        @foreach(\FalconCms\Core\Support\CustomFonts\CustomFonts::FALLBACKS as $fb)
-                            <option value="{{ $fb }}">{{ $fb }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="text-[12px] text-[#2271b1] cursor-pointer ml-auto flex items-center gap-1" title="Add more files to this font">
-                    <span class="material-symbols-outlined" style="font-size:16px !important;">upload</span> Add files
-                    <input type="file" class="hidden" multiple accept=".woff2,.woff,.ttf,.otf" @change="send($event.target.files, font.id); $event.target.value = ''">
-                </label>
-                <button type="button" @click="remove(font)" class="text-[12px] text-[#d63638] hover:underline flex items-center gap-1">
-                    <span class="material-symbols-outlined" style="font-size:16px !important;">delete</span> Delete font
-                </button>
+    <template x-for="(font, i) in fonts" :key="font.key">
+        <div class="border border-[#dcdcde] rounded bg-white overflow-hidden">
+            <div class="flex items-center gap-2 px-3 h-10 bg-[#f0f0f1] border-b border-[#dcdcde] cursor-pointer select-none" @click="font.open = !font.open">
+                <span class="text-[16px] font-bold text-[#1d2327] w-4 text-center" x-text="font.open ? '–' : '+'"></span>
+                <span class="text-[13px] text-[#1d2327] truncate" x-show="!font.open"
+                      x-text="(font.family || 'Untitled font') + ' · ' + font.weight + (font.style === 'italic' ? ' italic' : '')"></span>
             </div>
-            <div class="px-4 py-3 text-[26px] leading-snug text-[#1d2327] truncate" :style="'font-family:\'' + font.family + '\', ' + font.fallback"
-                 x-text="sample"></div>
-            <table class="w-full text-[12px] border-t border-[#f0f0f1]">
-                <tbody>
-                    <template x-for="v in font.variants" :key="v.id">
-                        <tr class="border-b border-[#f0f0f1] last:border-0">
-                            <td class="px-4 py-2 w-[150px]">
-                                <select :value="v.weight" @change="reweigh(font, v, { weight: +$event.target.value })" class="wp-input h-7 text-[12px]">
-                                    <template x-for="w in [100,200,300,400,500,600,700,800,900]" :key="w">
-                                        <option :value="w" x-text="w + ' — ' + weightName(w)" :selected="v.weight === w"></option>
-                                    </template>
-                                </select>
-                            </td>
-                            <td class="px-2 py-2 w-[110px]">
-                                <select :value="v.style" @change="reweigh(font, v, { style: $event.target.value })" class="wp-input h-7 text-[12px]">
-                                    <option value="normal" :selected="v.style === 'normal'">Normal</option>
-                                    <option value="italic" :selected="v.style === 'italic'">Italic</option>
-                                </select>
-                            </td>
-                            <td class="px-2 py-2 text-[15px] truncate max-w-[260px]"
-                                :style="'font-family:\'' + font.family + '\', ' + font.fallback + ';font-weight:' + v.weight + ';font-style:' + v.style">The quick brown fox</td>
-                            <td class="px-2 py-2">
-                                <div class="flex flex-wrap gap-1">
-                                    <template x-for="fmt in ['woff2','woff','ttf','otf']" :key="fmt">
-                                        <span x-show="v.files[fmt]" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"
-                                              :class="(v.generated || []).includes(fmt) ? 'bg-[#f0f6fc] text-[#2271b1] border border-dashed border-[#2271b1]/50' : 'bg-[#f0f0f1] text-[#3c434a]'"
-                                              :title="(v.generated || []).includes(fmt) ? 'Made automatically from the TTF / OTF, for every browser' : 'Uploaded'"
-                                              x-text="fmt + ((v.generated || []).includes(fmt) ? ' · auto' : '')"></span>
-                                    </template>
-                                </div>
-                            </td>
-                            <td class="px-4 py-2 text-right">
-                                <button type="button" @click="removeVariant(font, v)" class="text-[#a7aaad] hover:text-[#d63638]" title="Delete this weight">
+            <div x-show="font.open" class="px-4 py-4 space-y-4">
+                <div>
+                    <label class="block text-[13px] text-[#1d2327] mb-1.5">Font Name</label>
+                    <input type="text" x-model="font.family" maxlength="60" class="wp-input w-full h-9 text-[13px]" placeholder="e.g. Brand Sans">
+                </div>
+                <div>
+                    <label class="block text-[13px] text-[#1d2327] mb-1.5">Font Weight</label>
+                    <select x-model.number="font.weight" class="wp-input w-full h-9 text-[13px]">
+                        <template x-for="w in weights" :key="w[0]">
+                            <option :value="w[0]" x-text="w[1] + ' ' + w[0]" :selected="font.weight === w[0]"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[13px] text-[#1d2327] mb-1.5">Font Style</label>
+                    <select x-model="font.style" class="wp-input w-full h-9 text-[13px]">
+                        <option value="normal" :selected="font.style === 'normal'">Normal</option>
+                        <option value="italic" :selected="font.style === 'italic'">Italic</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2.5">
+                    <template x-for="fmt in formats" :key="fmt">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-12 text-[12px] text-[#1d2327] uppercase" x-text="fmt"></span>
+                                <input type="text" readonly :value="font.names[fmt] || ''" :placeholder="fmt === 'woff' && autoWoff(font) ? 'Made from the ' + autoWoff(font) + ' on save' : ''"
+                                       class="wp-input flex-1 min-w-0 h-8 text-[12px] bg-white" :title="font.files[fmt] || ''">
+                                <button type="button" @click="pick(font, fmt)" :title="'Choose a ' + fmt.toUpperCase() + ' font from the Media Library'"
+                                        class="w-9 h-8 rounded bg-[#5cb85c] hover:bg-[#4cae4c] text-white flex items-center justify-center">
+                                    <span class="material-symbols-outlined" style="font-size:17px !important;">upload</span>
+                                </button>
+                                <button type="button" @click="clear(font, fmt)" :title="'Remove the ' + fmt.toUpperCase() + ' file'"
+                                        class="w-9 h-8 rounded bg-[#d63638] hover:bg-[#b32d2e] text-white flex items-center justify-center">
                                     <span class="material-symbols-outlined" style="font-size:17px !important;">close</span>
                                 </button>
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                     </template>
-                </tbody>
-            </table>
+                </div>
+
+                <div x-show="hasFile(font)" class="rounded bg-[#f6f7f7] px-3 py-2 text-[20px] leading-snug text-[#1d2327] truncate"
+                     :style="'font-family:\'' + (font.family || '__cf' + font.key) + '\', sans-serif;font-weight:' + font.weight + ';font-style:' + font.style">
+                    The quick brown fox jumps over the lazy dog
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" @click="remove(i)" class="px-4 h-8 rounded border border-[#dcdcde] text-[13px] text-[#d63638] hover:border-[#d63638] bg-white">Delete</button>
+                </div>
+            </div>
         </div>
     </template>
 
-    {{-- How it works --}}
-    <div class="rounded border border-[#c3c4c7] bg-[#f6f7f7] px-4 py-3 text-[12px] text-[#3c434a] leading-relaxed space-y-1">
-        <p><strong>Where to use it:</strong> pick it under <em>Custom Fonts</em> in Typography → General, in the page builder's Font Family, or for Motion Visual text.</p>
-        <p><strong>Every browser:</strong> WOFF2 is the smallest and works in all current browsers; WOFF works in every browser, old ones too. Upload a TTF or OTF and a WOFF copy is made for you. Fonts load with <code>font-display: swap</code>, so text is never hidden while they arrive.</p>
-        <p><strong>Weights:</strong> upload one file per weight and style (Regular, Bold, Italic…). Only the files a page actually uses are downloaded.</p>
-        <p class="text-[#996800]"><strong>Licence:</strong> make sure the font's licence allows using it on a website.</p>
+    <div class="flex justify-end">
+        <button type="button" @click="add()" class="px-5 h-9 rounded bg-[#2271b1] hover:bg-[#135e96] text-white text-[13px] font-semibold">Add</button>
     </div>
+    <p class="text-[11px] text-[#646970]">Changes are kept when you press <strong>Save Changes</strong>. Make sure each font's licence allows using it on a website.</p>
 </div>
 
 <script>
 function falconCustomFonts(initial) {
-    // Built from the real routes (the admin path can be renamed), with placeholder ids swapped in.
-    const fontUrl = @json(route('admin.customizer.custom-fonts.update', ['font' => 'fontid0']));
-    const variantUrl = @json(route('admin.customizer.custom-fonts.variant', ['font' => 'fontid0', 'variant' => 'variantid0']));
-    const routes = {
-        upload: @json(route('admin.customizer.custom-fonts.upload')),
-        font: (id) => fontUrl.replace('fontid0', id),
-        variant: (id, v) => variantUrl.replace('fontid0', id).replace('variantid0', v),
-    };
-    const token = @json(csrf_token());
+    const WEIGHT_WORDS = { thin: 100, hairline: 100, extralight: 200, ultralight: 200, light: 300, regular: 400, normal: 400, book: 400,
+        medium: 500, semibold: 600, demibold: 600, bold: 700, extrabold: 800, ultrabold: 800, black: 900, heavy: 900 };
+    let seq = 0;
+    const entry = (e = {}) => ({
+        key: ++seq, id: e.id || '', family: e.family || '', weight: e.weight || 400, style: e.style || 'normal',
+        files: Object.assign({}, e.files || {}), names: Object.assign({}, e.names || {}), open: !e.id,
+    });
     return {
-        fonts: initial || [], errors: [], added: [], busy: false, dragging: false,
-        sample: 'The quick brown fox jumps over the lazy dog 0123456789',
-        weightName(w) {
-            return { 100: 'Thin', 200: 'Extra Light', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Semi Bold', 700: 'Bold', 800: 'Extra Bold', 900: 'Black' }[w] || '';
+        fonts: (initial || []).map(entry),
+        formats: ['woff2', 'woff', 'ttf', 'otf'],
+        weights: [[100, 'Thin'], [200, 'Extra Light'], [300, 'Light'], [400, 'Normal'], [500, 'Medium'], [600, 'Semi Bold'], [700, 'Bold'], [800, 'Extra Bold'], [900, 'Black']],
+        init() {
+            if (!this.fonts.length) this.add();
+            // Previews use the fonts as they are being set up, before anything is saved.
+            this.$watch('fonts', () => this.paint(), { deep: true });
+            this.paint();
         },
-        async call(url, method, body) {
-            this.busy = true;
-            try {
-                const res = await fetch(url, { method, body, headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok && !data.fonts) {
-                    this.errors = [data.message || ('The server answered ' + res.status + '.')];
+        payload() {
+            return JSON.stringify(this.fonts.map(f => ({ id: f.id, family: f.family, weight: f.weight, style: f.style, files: f.files })));
+        },
+        hasFile(f) { return this.formats.some(x => f.files[x]); },
+        autoWoff(f) { return !f.files.woff && (f.files.ttf ? 'TTF' : (f.files.otf ? 'OTF' : '')); },
+        add() { this.fonts.push(entry()); },
+        remove(i) {
+            const f = this.fonts[i];
+            if (this.hasFile(f) && !confirm('Remove “' + (f.family || 'this font') + '”? The files stay in the Media Library.')) return;
+            this.fonts.splice(i, 1);
+        },
+        clear(f, fmt) { delete f.files[fmt]; delete f.names[fmt]; },
+        pick(f, fmt) {
+            if (typeof window.openMediaModal !== 'function') { alert('The Media Library is not available on this page.'); return; }
+            window.openMediaModal((m) => {
+                const path = String(m.path || '');
+                if (!path.toLowerCase().endsWith('.' + fmt)) {
+                    alert('That is not a ' + fmt.toUpperCase() + ' file. Pick a .' + fmt + ' font for this slot.');
                     return;
                 }
-                this.fonts = data.fonts || [];
-                this.errors = data.errors || [];
-                this.added = data.added || [];
-                // The fonts in the page now, so every preview here uses them at once.
-                document.getElementById('falcon-custom-fonts-live').textContent = data.css || '';
-            } catch (e) {
-                this.errors = ['The request did not get through: ' + e.message];
-            } finally {
-                this.busy = false;
+                f.files[fmt] = path;
+                f.names[fmt] = m.filename || path.split('/').pop();
+                if (!f.family) this.guess(f, m.title || f.names[fmt]);
+            }, { fontFormat: fmt });
+        },
+        // "OpenSans-SemiBoldItalic" → Open Sans, 600, italic — only into fields still empty / default.
+        guess(f, name) {
+            const words = String(name).replace(/\.[a-z0-9]+$/i, '').replace(/([a-z])([A-Z])/g, '$1 $2').split(/[\s_\-.]+/).filter(Boolean);
+            const keep = [];
+            for (let i = 0; i < words.length; i++) {
+                const w = words[i].toLowerCase(), pair = w + (words[i + 1] || '').toLowerCase();
+                if (WEIGHT_WORDS[pair]) { f.weight = WEIGHT_WORDS[pair]; i++; }
+                else if (WEIGHT_WORDS[w]) f.weight = WEIGHT_WORDS[w];
+                else if (w === 'italic' || w === 'oblique') f.style = 'italic';
+                else if (/^[1-9]00$/.test(w)) f.weight = +w;
+                else if (!['webfont', 'web', 'font', 'variable', 'vf'].includes(w)) keep.push(words[i]);
             }
+            f.family = keep.join(' ').replace(/\b\w/g, c => c.toUpperCase()).slice(0, 60);
         },
-        send(files, into) {
-            if (!files || !files.length) return;
-            const fd = new FormData();
-            Array.from(files).forEach(f => fd.append('fonts[]', f));
-            if (into) fd.append('into', into);
-            this.call(routes.upload, 'POST', fd);
-        },
-        save(font, fields) {
-            const fd = new FormData();
-            Object.keys(fields).forEach(k => fd.append(k, fields[k]));
-            this.call(routes.font(font.id), 'POST', fd);
-        },
-        reweigh(font, v, change) {
-            const fd = new FormData();
-            fd.append('weight', change.weight !== undefined ? change.weight : v.weight);
-            fd.append('style', change.style !== undefined ? change.style : v.style);
-            this.call(routes.variant(font.id, v.id), 'POST', fd);
-        },
-        remove(font) {
-            if (!confirm('Delete “' + font.family + '” and all its files? Text set in it falls back to ' + font.fallback + '.')) return;
-            this.call(routes.font(font.id), 'DELETE');
-        },
-        removeVariant(font, v) {
-            if (!confirm('Delete ' + font.family + ' ' + v.weight + (v.style === 'italic' ? ' italic' : '') + '?')) return;
-            this.call(routes.variant(font.id, v.id), 'DELETE');
+        paint() {
+            const order = { woff2: 'woff2', woff: 'woff', ttf: 'truetype', otf: 'opentype' };
+            const css = this.fonts.filter(f => this.hasFile(f)).map(f => {
+                const name = (f.family || '__cf' + f.key).replace(/['\\<>]/g, '');
+                const src = Object.keys(order).filter(x => f.files[x]).map(x => "url('/storage/" + f.files[x].replace(/['\\\s]/g, '') + "') format('" + order[x] + "')");
+                return "@font-face{font-family:'" + name + "';src:" + src.join(',') + ';font-weight:' + f.weight + ';font-style:' + f.style + ';font-display:swap}';
+            }).join('');
+            const el = document.getElementById('falcon-custom-fonts-live');
+            if (el) el.textContent = css;
         },
     };
 }

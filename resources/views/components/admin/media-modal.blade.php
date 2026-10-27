@@ -152,10 +152,22 @@
         let currentCallback = null;
 
         // Global opener
+        // Font mode (Customizer → Typography → Custom Font): openMediaModal(cb, { fontFormat: 'woff2' })
+        // shows only fonts of that format, uploads only that format, and tells the server the
+        // upload is a font for the site's settings (it is checked by its contents there).
+        let fontFormat = '';
+        let defaultAccept = null;
+
         window.openMediaModal = function(callback, options = {}) {
             modal.classList.remove('hidden');
             currentCallback = callback;
             isMultiple = options.multiple || false;
+            const input = document.getElementById('media-upload-input');
+            if (defaultAccept === null) defaultAccept = input.getAttribute('accept') || '';
+            fontFormat = /^(woff2|woff|ttf|otf)$/.test(options.fontFormat || '') ? options.fontFormat : '';
+            if (fontFormat) input.setAttribute('accept', '.' + fontFormat);
+            else if (defaultAccept) input.setAttribute('accept', defaultAccept);
+            else input.removeAttribute('accept');
             selectedMediaItems = [];
             resetUI();
             loadLibrary();
@@ -226,6 +238,7 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('_token', '{{ csrf_token() }}');
+                if (fontFormat) formData.append('purpose', 'font');
 
                 try {
                     const res = await fetch("{{ route('admin.media.store') }}", {
@@ -242,6 +255,10 @@
                     
                     if (!res.ok || !data || !data.success) {
                         console.error('Upload Error:', data || await res.text());
+                        // Say why, rather than leaving the file silently missing from the grid.
+                        const msg = file.name + ': ' + ((data && data.message) || 'the upload was refused.');
+                        if (typeof window.showToast === 'function') window.showToast(msg, 'error');
+                        else alert(msg);
                     }
                 } catch (err) {
                     console.error('Fetch Error:', err);
@@ -275,6 +292,10 @@
         });
 
         // Video helpers
+        function isFontFile(path) {
+            return /\.(woff2|woff|ttf|otf)$/i.test(path || '');
+        }
+
         function isVideoFile(path) {
             return /\.(mp4|webm|ogg|mov|avi|mkv|m4v|flv|wmv)$/i.test(path);
         }
@@ -304,7 +325,7 @@
         // Library Logic
         function loadLibrary() {
             document.getElementById('media-loading-spinner').classList.remove('hidden');
-            fetch("{{ route('admin.media.index') }}", {
+            fetch("{{ route('admin.media.index') }}" + (fontFormat ? '?type=font&font_format=' + fontFormat : ''), {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
@@ -317,7 +338,12 @@
                     const div = document.createElement('div');
                     div.className = `relative aspect-square border-2 border-transparent bg-gray-100 cursor-pointer overflow-hidden group item-media-${item.id}`;
                     const isVid = isVideoFile(item.path);
-                    const mediaTpl = isVid
+                    const mediaTpl = isFontFile(item.path)
+                        ? `<div class="w-full h-full bg-white flex flex-col items-center justify-center gap-1">
+                               <span class="text-[26px] leading-none text-[#1d2327] pointer-events-none" style="font-family:serif">Aa</span>
+                               <span class="text-[#646970] text-[9px] font-bold uppercase tracking-wider pointer-events-none">${item.path.split('.').pop()}</span>
+                           </div>`
+                        : isVid
                         ? `<div class="w-full h-full bg-[#0d1117] flex flex-col items-center justify-center gap-1 vid-placeholder-${item.id}">
                                <i class="fa fa-film text-white/35 text-xl pointer-events-none"></i>
                                <span class="text-white/25 text-[9px] font-bold uppercase tracking-wider pointer-events-none">${item.path.split('.').pop()}</span>
@@ -413,7 +439,11 @@
             // Fill details
             const thumbEl = document.getElementById('detail-thumb');
             const videoThumbEl = document.getElementById('detail-video-thumb');
-            if (isVideoFile(item.path)) {
+            if (isFontFile(item.path)) {
+                thumbEl.style.display = 'none';
+                videoThumbEl.style.display = 'flex';
+                document.getElementById('detail-video-ext').innerText = item.path.split('.').pop().toUpperCase() + ' font';
+            } else if (isVideoFile(item.path)) {
                 thumbEl.style.display = 'none';
                 videoThumbEl.style.display = 'flex';
                 document.getElementById('detail-video-ext').innerText = item.path.split('.').pop().toUpperCase();

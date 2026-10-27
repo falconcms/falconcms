@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Media;
+use FalconCms\Core\Support\CustomFonts\FontFile;
 use FalconCms\Core\Support\SvgSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -33,6 +34,9 @@ class MediaController extends Controller
                 $query->where('mime_type', 'like', 'video/%');
             } elseif ($request->type === 'pdf') {
                 $query->where('mime_type', 'application/pdf');
+            } elseif ($request->type === 'font') {
+                // One format (font_format=woff2) or every font.
+                $query->fonts((string) $request->input('font_format', ''));
             }
         }
 
@@ -107,11 +111,31 @@ class MediaController extends Controller
                 ], 422);
             }
 
+            // A font is kept only if its bytes really are that font (a renamed file is refused),
+            // and is stored with the type the browser expects for it.
+            $isFont = in_array($extension, FontFile::FORMATS, true);
+            if ($isFont) {
+                $actual = FontFile::format((string) @file_get_contents($file->getRealPath(), false, null, 0, 8));
+                $fits = $actual === $extension || (in_array($actual, ['ttf', 'otf'], true) && in_array($extension, ['ttf', 'otf'], true));
+                if (!$fits) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "That .{$extension} file is not a {$extension} font.",
+                    ], 422);
+                }
+                $mimeType = FontFile::MIME[$extension];
+            }
+
             // Validate allowed formats
             $allowedRaw = get_cms_option('performance_allowed_formats', '[]');
             $allowedFormats = is_array($allowedRaw) ? $allowedRaw : json_decode($allowedRaw, true);
 
-            if (!empty($allowedFormats) && !in_array($extension, $allowedFormats)) {
+            // Fonts picked for Customizer → Typography → Custom Font come in from there, by someone
+            // who may change the site's settings; their contents were checked just above.
+            $fontForSettings = $isFont && $request->input('purpose') === 'font'
+                && auth()->user() && auth()->user()->hasPermission('manage_settings');
+
+            if (!empty($allowedFormats) && !in_array($extension, $allowedFormats) && !$fontForSettings) {
                 return response()->json([
                     'success' => false,
                     'message' => "File format '.{$extension}' is not allowed. Allowed: ".implode(', ', $allowedFormats),

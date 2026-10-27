@@ -238,9 +238,13 @@
                                                  @endif
 
                                                  @if($type === 'custom_fonts')
-                                                    {{-- Typography → Custom Font: a screen of its own, saved through its own endpoints. --}}
+                                                    {{-- Typography → Custom Font: one box per font face, files from the Media Library. --}}
                                                     <tr class="field-row border-b border-[#f0f0f1]" data-label="{{ strtolower($label . ' ' . $desc . ' custom font upload woff woff2 ttf otf') }}">
-                                                        <td colspan="2" class="px-5 py-4">
+                                                        <th scope="row" class="w-[260px] text-left align-top px-5 py-3.5">
+                                                            <span class="text-[13px] font-semibold text-[#2271b1] block mb-0.5">{{ $label }}</span>
+                                                            <p class="text-[11px] text-[#646970] leading-relaxed m-0">{{ $desc }}</p>
+                                                        </th>
+                                                        <td class="px-5 py-3.5 align-top">
                                                             @include('falcon-cms::admin.customizer.custom-fonts', ['field' => $field])
                                                         </td>
                                                     </tr>

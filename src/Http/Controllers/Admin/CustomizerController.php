@@ -273,18 +273,21 @@ class CustomizerController extends Controller
                     ],
                 ],
             ],
-            // Fonts the site owner uploads. Kept by CustomFonts in an option of their own and
-            // changed only through its own endpoints, never by Save or Reset here.
+            // Fonts picked from the Media Library. Saved by CustomFonts::save(), which checks
+            // every file again; the generic loop below skips this type, and Reset leaves it.
             'typography_custom_fonts' => [
                 'title' => 'Custom Font',
                 'icon' => 'font_download',
                 'parent' => 'Typography',
                 'parent_icon' => 'text_fields',
                 'fields' => [
-                    'custom_fonts_manager' => [
+                    'custom_fonts' => [
                         'type' => 'custom_fonts',
                         'label' => 'Custom Fonts',
-                        'desc' => 'Upload your own fonts. They appear under "Custom Fonts" in every font list: Typography, the page builder and Motion Visual text.',
+                        'desc' => 'Upload a font to use throughout the site: Typography, the page builder and Motion Visual text list it under "Custom Fonts". '
+                            .'Pick each file from the Media Library. WOFF2 alone covers every current browser; add WOFF for older ones — '
+                            .'or a TTF / OTF, and a WOFF is made from it for you. Add one box per weight and style (Regular, Bold, Italic…); '
+                            .'boxes with the same name become one family.',
                     ],
                 ],
             ],
@@ -1322,6 +1325,15 @@ class CustomizerController extends Controller
         }
 
         $nonDataTypes = ['heading', 'info', 'action_button', 'custom_fonts'];
+
+        // Typography → Custom Font: only when the screen sent its list (a form without it leaves
+        // the fonts alone), and only what passes CustomFonts' own checks.
+        $fontNotes = [];
+        if ($request->has('custom_fonts')) {
+            $sent = json_decode((string) $request->input('custom_fonts'), true);
+            $fontNotes = is_array($sent) ? CustomFonts::save($sent) : ['The custom fonts could not be read, so they were left as they were.'];
+        }
+
         foreach ($this->sections() as $sectionKey => $sec) {
             if (in_array($sectionKey, $lockedSections)) {
                 continue;
@@ -1342,8 +1354,8 @@ class CustomizerController extends Controller
         forget_cms_options_cache();
 
         // A pasted Instagram token: checked with Instagram, kept encrypted, posts fetched.
-        $ok = true;
-        $message = 'Settings saved successfully.';
+        $ok = !$fontNotes;
+        $message = 'Settings saved successfully.'.($fontNotes ? ' Custom fonts: '.implode(' ', $fontNotes) : '');
         $token = trim((string) $request->input('instagram_access_token', ''));
         if ($token !== '') {
             // Connecting fetches the latest posts and saves their pictures, which can take a while.
