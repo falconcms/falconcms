@@ -1039,6 +1039,62 @@ database) can ask for its canvas preview to be its real output: add `'preview' =
 as they change, so the canvas shows what the page will. The template receives `$el`, `$s` (the
 settings), `$previewDevice` and `$builderPreview = true`.
 
+### Extending the builder's own elements
+
+A plugin can add options to the elements, containers and columns the builder already has,
+without a new element. The [Pro Scroll Effects plugin](/guide/pro) adds its Scroll Reveal (Title
+and Text Block) and Scroll Motion (everything) this way.
+
+#### `falcon_builder_element_extras` (action)
+**Args:** none
+
+Prints into the Extra tab of every element, inside the builder's Vue app. Echo Vue markup bound to
+`editingElement.settings` (show it only for the types it is for with `v-if`). Keep setting values
+flat scalars — the shortcode converter keeps any such setting it has no attribute for. The page
+must check every value again: nothing typed in the panel is trusted.
+
+```php
+add_falcon_action('falcon_builder_element_extras', function () {
+    echo '<div v-if="editingElement.type === 'title'">'
+        .'<label class="text-[10px] text-slate-500">My option</label>'
+        .'<select v-model="editingElement.settings.my_option">…</select></div>';
+});
+```
+
+#### `falcon_builder_container_extras` / `falcon_builder_column_extras` (actions)
+**Args:** `$base` — the node's expression in the builder (`layout[editingContext.ci]`, `editingColumn`…)
+
+The same, in the Extra tab of a container and of a column. Bind to `{$base}.settings`.
+
+#### `falcon_builder_assets` (action)
+**Args:** none
+
+Prints in the builder page before the app mounts: the plugin's `<style>` and `<script>` for the
+canvas. A script there can mark a canvas wrapper by pushing a function onto
+`window.falconBuilderCanvas`; it gets the node and its kind (`'element'`, `'container'` or
+`'column'`; a nested row is an element of type `row`) and returns attributes for its wrapper
+(classes, `data-*`, CSS variables in `style`), or `null`. Styles and classes from several plugins
+add up. It reads `node.settings`, so the wrapper follows the panel as it changes.
+
+```js
+(window.falconBuilderCanvas = window.falconBuilderCanvas || []).push(function (node, kind) {
+    return node.settings.my_option ? { 'data-my-option': node.settings.my_option } : null;
+});
+```
+
+#### `falcon_builder_element_html` (filter)
+**Args:** `$html, $el`
+
+An element's finished HTML on the page, with the element (`type`, `id`, `settings`). Return it
+changed, or as it came. The HTML is only captured while something is hooked here.
+
+#### `falcon_builder_node_attributes` (filter)
+**Args:** `$attributes, $node, $kind`
+
+Extra attributes on the outer tag of a container or a column on the page (`$kind` is
+`'container'` or `'column'`). Start from `''`, append ` name="value"` pairs, and escape the values
+with `e()`. The tag already has `class` and `style`, so add your own `data-*` attributes.
+
 ---
 
 ## Posts, Loops and Dynamic Content
@@ -1933,7 +1989,7 @@ return [
 
 ## Complete Hook List
 
-### Actions (124 total)
+### Actions (128 total)
 
 | Hook | Args |
 |---|---|
@@ -2064,8 +2120,12 @@ return [
 | `falcon_posts_fetched` | `$posts, $args` |
 | `falcon_admin_list_columns` | `$type, $posts, $where` |
 | `falcon_admin_list_cells` | `$post, $type` |
+| `falcon_builder_element_extras` | — |
+| `falcon_builder_container_extras` | `$base` |
+| `falcon_builder_column_extras` | `$base` |
+| `falcon_builder_assets` | — |
 
-### Filters (86 total)
+### Filters (88 total)
 
 | Hook | Args |
 |---|---|
@@ -2073,6 +2133,8 @@ return [
 | `falcon_the_content` | `$content, $post` |
 | `site_title` | `$title` |
 | `falcon_builder_elements` | `$elements` |
+| `falcon_builder_element_html` | `$html, $el` |
+| `falcon_builder_node_attributes` | `$attributes, $node, $kind` |
 | `cms_theme_options` | `$options` |
 | `falcon_general_settings_fields` | `$fields` |
 | `falcon_api_post_data` | `$data, $post` |

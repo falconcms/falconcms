@@ -897,6 +897,26 @@
             const isElementPro   = (type) => proElementTypes.includes(type);
             const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
 
+            // Extra attributes a plugin puts on a canvas wrapper (classes, data-*, CSS variables
+            // in style). A plugin registers a function (node, kind) → { attr: value } in
+            // window.falconBuilderCanvas, printed on the falcon_builder_assets action; kind is
+            // 'element', 'container' or 'column' (a nested row is an element of type 'row').
+            // It reads node.settings, so the wrapper updates as the settings change.
+            const fcCanvasAttrs = (el, kind = 'element') => {
+                const out = {};
+                for (const fn of (window.falconBuilderCanvas || [])) {
+                    try {
+                        const a = typeof fn === 'function' ? fn(el, kind) : null;
+                        if (!a || typeof a !== 'object') continue;
+                        // two plugins on one wrapper: their styles and classes add up
+                        if (out.style && a.style) a.style = Object.assign({}, out.style, a.style);
+                        if (out.class && a.class) a.class = [out.class, a.class];
+                        Object.assign(out, a);
+                    } catch (e) {}
+                }
+                return out;
+            };
+
             // An element that only means anything beside another one.
             //
             // Previous/Next steps through a sequence of documentation pages, and what
@@ -7551,7 +7571,7 @@
                 sepShapeLayers, sepShapeWrapStyle, sepShapeSvgStyle, sepShapeOverlayStyle,
                 sepIsCustom, sepCustomMarkup, sepCustomCss, sepScopeId, sepPickSvgFromMedia, sepPasteSvg,
                 cardPerView, cardPreviewCols, cardPreviewCount,
-                searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements, elementLocked, isElementPro,
+                searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements, elementLocked, isElementPro, fcCanvasAttrs,
                 elementRequirement, pageHasElement,
                 shouldShowGuide,
                 toasts, showToast,

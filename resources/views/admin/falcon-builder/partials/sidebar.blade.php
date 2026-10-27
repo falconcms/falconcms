@@ -5701,6 +5701,8 @@
                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.text-anim-options')
                             </div>
                             @include('falcon-cms::admin.falcon-builder.partials.components.fields.extra-options')
+                            {{-- Plugins add their own Extra options here (Vue markup bound to editingElement). --}}
+                            @php do_falcon_action('falcon_builder_element_extras') @endphp
                         </div>
                     </div>
                 </div>

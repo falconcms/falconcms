@@ -1390,6 +1390,9 @@
                 </div>
             </div>
 
+            {{-- Plugins add their own Extra options here (Vue markup; the argument is the column's expression). --}}
+            @php do_falcon_action('falcon_builder_column_extras', 'editingColumn') @endphp
+
             <!-- Conditional Visibility -->
             <div class="border-t border-slate-100 pt-4">
                 <div class="flex justify-between items-center mb-3">

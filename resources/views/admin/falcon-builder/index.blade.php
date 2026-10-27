@@ -288,6 +288,9 @@
     <script src="{{ asset('vendor/falcon-cms/js/vue.global.js') }}"></script>
     <script src="{{ asset('vendor/falcon-cms/js/purify.min.js') }}"></script>
 
+    {{-- Plugins' builder styles and scripts, before the app mounts (see fcCanvasAttrs). --}}
+    @php do_falcon_action('falcon_builder_assets') @endphp
+
     @include('falcon-cms::admin.falcon-builder.partials.scripts')
 
     {{-- Header/footer preview iframe auto-resize. OUTSIDE #lazy-builder-app + after the Vue

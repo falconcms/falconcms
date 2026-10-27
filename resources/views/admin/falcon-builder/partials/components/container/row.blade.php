@@ -24,6 +24,7 @@
      @mouseenter="setHover('container', ci); container._bgHover = true"
      @mouseleave="setHover(null); container._bgHover = false"
      :data-fc-node="'container-' + ci"
+     v-bind="fcCanvasAttrs(container, 'container')"
      @dragover="onDragOver($event, 'container', ci)"
      @drop="onDrop($event, 'container', ci)">
 @endif

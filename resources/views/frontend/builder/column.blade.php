@@ -618,7 +618,7 @@
 @if($colShowByCondition)
 <{{ $htmlTag }} class="lazy-column {{ $colCid }} {{ $visibilityClasses }} {{ $s['cssClass'] ?? '' }} {{ !empty($s['sticky']) ? 'lazy-sticky-col' : '' }}{{ $colAnimType ? ' lz-anim lz-anim-' . $colAnimType : '' }}"
     @if(!empty($s['cssId'])) id="{{ $s['cssId'] }}" @endif
-    style="{{ implode('; ', $outerStyles) }}"@if($colAnimType) data-anim-duration="{{ $s['anim_duration'] ?? 600 }}" data-anim-delay="{{ $s['anim_delay'] ?? 0 }}" data-anim-easing="{{ $s['anim_easing'] ?? 'ease' }}"@endif>
+    style="{{ implode('; ', $outerStyles) }}"@if($colAnimType) data-anim-duration="{{ $s['anim_duration'] ?? 600 }}" data-anim-delay="{{ $s['anim_delay'] ?? 0 }}" data-anim-easing="{{ $s['anim_easing'] ?? 'ease' }}"@endif{!! apply_falcon_filters('falcon_builder_node_attributes', '', $column, 'column') !!}>
     
     @if($link)
         <a href="{{ $link }}" target="{{ $s['linkTarget'] ?? '_self' }}" style="text-decoration: none; color: inherit; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100% !important; width: 100%;">
@@ -668,6 +668,12 @@
                             $__elTo   = !empty($el['settings']['vis_date_to'])   ? strtotime($el['settings']['vis_date_to'])   : null;
                             $__elShow = (!$__elFrom || $__elNow >= $__elFrom) && (!$__elTo || $__elNow <= $__elTo);
                         }
+                    @endphp
+                    @php
+                        // A plugin may rework an element's finished HTML (falcon_builder_element_html,
+                        // given the HTML and the element). Captured only when one is hooked in.
+                        $__elFilter = has_falcon_filter('falcon_builder_element_html');
+                        if ($__elFilter) { ob_start(); }
                     @endphp
                     @if($__elView && $__elShow)
                         @php
@@ -719,6 +725,9 @@
                         @if($__elAnimType)
                             </div>
                         @endif
+                    @endif
+                    @if($__elFilter)
+                        {!! apply_falcon_filters('falcon_builder_element_html', (string) ob_get_clean(), $el) !!}
                     @endif
                 @endif
             @endforeach

@@ -102,6 +102,7 @@
                  @mouseenter="setHover('nested-column', ci, coli, eli, ncoli)"
                  @mouseleave="setHover(null)"
                  :data-fc-node="'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli"
+                 v-bind="fcCanvasAttrs(ncol, 'column')"
                  @dragover="onDragOver($event, 'nested-column', ci, coli, eli, ncoli)"
                  @drop="onDrop($event, 'nested-column', ci, coli, eli, ncoli)">
 
@@ -285,6 +286,7 @@
                      ]"
                      :style="(nestedEl.type === 'row' || nestedEl.type === 'section_separator' || nestedEl.type === 'code_block' || nestedEl.type === 'table' || nestedEl.type === 'callout' || nestedEl.type === 'toc' || nestedEl.type === 'heading' || nestedEl.type === 'prev_next') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
                      :data-fc-node="'nested-element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli"
+                     v-bind="fcCanvasAttrs(nestedEl)"
                      @dragover="onDragOver($event, 'element', ci, coli, eli, ncoli, nestedEli)"
                      @drop="onDrop($event, 'element', ci, coli, eli, ncoli, nestedEli)">
                         <div v-if="elementLocked(nestedEl.type)" class="absolute top-1 right-1 z-30 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide shadow-sm pointer-events-none" title="Pro element — upgrade to edit or move">
