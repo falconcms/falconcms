@@ -5,7 +5,50 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.6 <Badge type="tip" text="Latest" /> {#v2-8-6}
+## v2.8.7 <Badge type="tip" text="Latest" /> {#v2-8-7}
+
+**Released: 2026-10-27**
+
+Motion Visual — animated dots, shapes, text and pictures across a whole column or container —
+smooth scrolling for every link to a section, and two SEO fixes.
+
+### Added
+
+- **Motion Visual** (Column / Container → Extra; free). A layer across the whole column or
+  container, behind its content or in front of it, switched on and off with one switch (off puts
+  no markup, style or script on the page, and keeps every setting):
+  - **Dots** drawn on a canvas — how many, size, speed, color, fine lines between near dots, and
+    what the mouse does to them (push away or pull in).
+  - **Shapes, text and pictures** — 39 shapes, your own uploaded images, and text (fill, outline
+    or gradient; sized as a share of the layer, so it keeps its place on every screen). Each item
+    has its own position, size, turn, color, opacity, blur and mouse depth, and one of seven
+    animations: float, drift, rotate, pulse, swing, orbit, bounce.
+  - **Seven presets** to start from (Floating Dots, Connected Dots, Soft Bubbles, Geometric,
+    Blobs, Big Word, Custom), and **Main / Accent / Random** colors on the builder's own color
+    picker — Random keeps changing by itself.
+  - **In the builder** the canvas shows the real layer, for top-level and nested columns and for
+    containers, with handles to drag, resize and turn each item.
+  - **Light on the page:** shapes animate with CSS alone; one small script, loaded only on pages
+    that have a visual, draws the dots and follows the mouse, and stops while the layer is off
+    screen. Visitors who ask for reduced motion always get it still; tablets and phones can be
+    set to full, calmer, still or hidden.
+  - Plugins and themes can add shapes and presets (`falcon_motion_visual_shapes`,
+    `falcon_motion_visual_presets`).
+- **Smooth scrolling for every link to a section** — builder buttons, text links and image links
+  to `#section` now glide there and stop just under the sticky header, like the landing-page
+  menu. The scroll is measured again on every frame, so images loading on the way or a header
+  that changes size cannot make it miss; a wheel or touch takes over at once. The address bar
+  reads `/page/#section`.
+
+### Fixed
+
+- **SEO changes reach cached pages.** Saving SEO → Settings, Bulk SEO or a Site Analysis fix now
+  empties the page cache; before, cached pages kept the old head (a new default share image
+  stayed off them until the cache was cleared by hand).
+- **Weekly SEO email: "Send a test now" keeps the addresses typed beside it.** The button sent
+  to the old addresses and the field came back empty, so the address looked unsaveable.
+
+## v2.8.6 {#v2-8-6}
 
 **Released: 2026-10-24**
 
