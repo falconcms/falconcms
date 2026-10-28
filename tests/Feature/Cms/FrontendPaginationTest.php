@@ -31,7 +31,7 @@ class FrontendPaginationTest extends TestCase
     /** A plain `->links()` while the request for $path is handled. */
     private function linksOn(string $path, int $current): string
     {
-        return (new FrontendPagination)->handle(Request::create($path), fn () => (string) $this->page($current)->links());
+        return (new FrontendPagination)->handle(Request::create($path), fn () => $this->page($current)->links()->toHtml());
     }
 
     public function test_the_site_is_registered_for_every_web_page(): void
