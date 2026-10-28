@@ -82,6 +82,50 @@ php artisan storage:link
 
 ---
 
+## Web Server (nginx)
+
+FalconCMS works with nginx's default settings. On a production server, give PHP's response
+headers more room than the default as well:
+
+```nginx
+# In the http block, or in the server block of the site
+fastcgi_buffer_size 32k;
+fastcgi_buffers 16 16k;
+fastcgi_busy_buffers_size 64k;
+```
+
+nginx reads every response header PHP sends (cookies, security headers) into one buffer of
+4 KB by default. When they are larger, it answers **502 Bad Gateway** and logs
+`upstream sent too big header while reading response header from upstream`. FalconCMS keeps
+its own headers well below that: since 2.8.10 the cart cookie stays small whatever the cart
+holds. A plugin or theme that sends large cookies or headers can still cross it, and the
+setting above stops that becoming a 502.
+
+Check the configuration and reload nginx:
+
+```bash
+nginx -t && nginx -s reload
+```
+
+::: tip Docker
+In a container, put the lines in a file of their own under `/etc/nginx/conf.d/` (for example
+`fastcgi-buffers.conf`) and mount it, so recreating the container keeps them.
+:::
+
+::: details Seeing 502 Bad Gateway?
+Check nginx's error log first (`/var/log/nginx/error.log`):
+
+- `upstream sent too big header` — the headers above. Add the buffer settings, and update
+  FalconCMS to 2.8.10 or later if a full cart causes it.
+- `connect() failed` or `Connection refused` — PHP-FPM is not running or listens on another
+  address than `fastcgi_pass`.
+- `upstream timed out` — a request took longer than `fastcgi_read_timeout`; a large import or
+  update may need it raised.
+- A few seconds of 502 during an update, while PHP-FPM reloads, is normal.
+:::
+
+---
+
 ## Updating
 
 ### From the dashboard (recommended)
