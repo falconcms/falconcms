@@ -7,6 +7,29 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.8.8] — 2026-10-28
+
+### Added
+- Custom fonts: upload your own (Customizer → Typography → Custom Font), weights read from the
+  file, variable fonts as a range, usable in every typography setting.
+- Builder extension hooks for plugins: the Extra tab, the canvas and the page markup.
+
+### Changed
+- Uninstalling a plugin keeps its data unless "Also delete all of its data" is ticked and the
+  plugin's slug typed; uninstalling several at once never deletes data.
+
+### Fixed
+- With AVIF images on, product gallery thumbnails change the main picture again.
+
+### Security
+- GitHub Actions pinned, Dependabot, and a security policy.
+
+## [2.8.7] — 2026-10-27
+
+### Added
+- Motion Visual (Column / Container → Extra) and smooth scrolling to sections; two SEO fixes.
+  See the full notes at <https://falconcms.github.io/falconcms/changelog#v2-8-7>.
+
 ## [2.8.6] — 2026-10-24
 
 ### Security

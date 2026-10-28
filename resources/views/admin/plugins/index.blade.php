@@ -87,13 +87,13 @@
                                     <span class="text-[#996800]">Requires {{ implode(', ', $p['missing_dependencies']) }} (install and activate it first)</span>
                                     @if(empty($p['bundled']))
                                         <span class="text-[#c3c4c7]">|</span>
-                                        <a href="#" onclick="event.preventDefault();confirmDelete('{{ route('admin.plugins.destroy', $slug) }}', '{{ $p['name'] ?? $slug }}')" class="text-[#b32d2e] hover:underline">Delete</a>
+                                        <a href="#" onclick="event.preventDefault();confirmDelete(this)" data-url="{{ route('admin.plugins.destroy', $slug) }}" data-name="{{ $p['name'] ?? $slug }}" data-slug="{{ $slug }}" data-keeps="{{ is_string($p['data'] ?? null) ? $p['data'] : '' }}" class="text-[#b32d2e] hover:underline">Delete</a>
                                     @endif
                                 @else
                                     <a href="#" onclick="event.preventDefault();submitSingle('{{ route('admin.plugins.activate', $slug) }}')" class="text-[#2271b1] hover:underline">Activate</a>
                                     @if(empty($p['bundled']))
                                         <span class="text-[#c3c4c7]">|</span>
-                                        <a href="#" onclick="event.preventDefault();confirmDelete('{{ route('admin.plugins.destroy', $slug) }}', '{{ $p['name'] ?? $slug }}')" class="text-[#b32d2e] hover:underline">Delete</a>
+                                        <a href="#" onclick="event.preventDefault();confirmDelete(this)" data-url="{{ route('admin.plugins.destroy', $slug) }}" data-name="{{ $p['name'] ?? $slug }}" data-slug="{{ $slug }}" data-keeps="{{ is_string($p['data'] ?? null) ? $p['data'] : '' }}" class="text-[#b32d2e] hover:underline">Delete</a>
                                     @endif
                                 @endif
                                 {{-- A bundled plugin ships with the CMS and updates with it: no delete, no separate update. --}}
@@ -144,7 +144,27 @@
 
     {{-- Hidden helper forms for single-plugin actions --}}
     <form id="single-action-form" method="POST" class="hidden">@csrf</form>
-    <form id="delete-action-form" method="POST" class="hidden">@csrf @method('DELETE')</form>
+    {{-- Uninstall: the data stays unless "delete its data" is ticked and the slug typed (PluginController::destroy checks both). --}}
+    <div id="uninstall-dialog" class="hidden fixed inset-0 z-[100000] bg-black/50 items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="uninstall-title">
+        <form id="delete-action-form" method="POST" class="bg-white rounded-sm shadow-xl w-full max-w-[520px] p-6 text-[13px] text-[#1d2327]">
+            @csrf @method('DELETE')
+            <h2 id="uninstall-title" class="text-[17px] font-semibold mb-3">Uninstall <span data-u="name"></span>?</h2>
+            <p class="mb-2">Its files are removed. <strong>Its data is kept</strong>: activate it again (or install it again) and everything is as you left it.</p>
+            <p class="mb-4 text-[#646970]">A plugin that comes with FalconCMS Pro is put back in this list on the next page load, ready to activate.</p>
+            <label class="flex items-start gap-2 p-3 border border-[#dcdcde] rounded-sm bg-[#fcf0f1] cursor-pointer">
+                <input type="checkbox" name="delete_data" value="1" class="mt-0.5" onchange="uninstallSync()">
+                <span><strong class="text-[#b32d2e]">Also delete all of its data.</strong> <span data-u="keeps"></span> This cannot be undone: only a backup brings it back.</span>
+            </label>
+            <div data-u="confirm" class="hidden mt-3">
+                <label for="uninstall-confirm" class="block mb-1">Type <code class="bg-[#f0f0f1] px-1" data-u="slug"></code> to confirm:</label>
+                <input id="uninstall-confirm" name="confirm_slug" type="text" autocomplete="off" class="wp-input w-full" oninput="uninstallSync()">
+            </div>
+            <div class="flex justify-end gap-2 mt-5">
+                <button type="button" class="wp-btn-secondary" onclick="uninstallClose()">Cancel</button>
+                <button type="submit" data-u="go" class="px-3 h-[32px] rounded-sm bg-[#b32d2e] text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Uninstall</button>
+            </div>
+        </form>
+    </div>
 
     @push('scripts')
     <script>
@@ -152,18 +172,33 @@
             const f = document.getElementById('single-action-form');
             f.action = url; f.submit();
         }
-        function confirmDelete(url, name) {
-            if (!confirm('Uninstall ' + name + '? This deletes its files and rolls back its migrations.')) return;
-            const f = document.getElementById('delete-action-form');
-            f.action = url; f.submit();
+        function confirmDelete(link) {
+            const d = document.getElementById('uninstall-dialog'), f = document.getElementById('delete-action-form'), u = (k) => f.querySelector('[data-u="' + k + '"]');
+            f.action = link.dataset.url; f.reset();
+            u('name').textContent = link.dataset.name;
+            u('slug').textContent = link.dataset.slug;
+            u('keeps').textContent = link.dataset.keeps ? 'That is: ' + link.dataset.keeps + '.' : 'Its settings and its own tables.';
+            f.dataset.slug = link.dataset.slug;
+            uninstallSync();
+            d.classList.remove('hidden'); d.classList.add('flex');
+            f.querySelector('[data-u="go"]').focus();
         }
+        // deleting the data needs the slug typed; keeping it needs nothing more
+        function uninstallSync() {
+            const f = document.getElementById('delete-action-form'), wipe = f.delete_data.checked, go = f.querySelector('[data-u="go"]');
+            f.querySelector('[data-u="confirm"]').classList.toggle('hidden', !wipe);
+            go.disabled = wipe && f.confirm_slug.value.trim() !== f.dataset.slug;
+            go.textContent = wipe ? 'Uninstall and delete its data' : 'Uninstall';
+        }
+        function uninstallClose() { const d = document.getElementById('uninstall-dialog'); d.classList.add('hidden'); d.classList.remove('flex'); }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') uninstallClose(); });
         function confirmBulk() {
             const form = document.getElementById('plugins-form');
             const action = form.querySelector('[name=action]').value;
             const checked = form.querySelectorAll('.plg-cb:checked').length;
             if (!action) { alert('Choose a bulk action.'); return false; }
             if (!checked) { alert('Select at least one plugin.'); return false; }
-            if (action === 'delete') return confirm('Uninstall ' + checked + ' plugin(s)? Files and data will be removed.');
+            if (action === 'delete') return confirm('Uninstall ' + checked + ' plugin(s)? Their files are removed; their data is kept, so activating them again brings everything back. (To delete the data of a plugin, uninstall it on its own.)');
             return true;
         }
     </script>

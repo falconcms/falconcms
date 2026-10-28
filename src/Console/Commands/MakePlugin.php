@@ -96,7 +96,8 @@ class MakePlugin extends Command
 
             public function uninstall(): void
             {
-                // Clean up (drop tables, delete options) when the plugin is removed.
+                // Runs only when the plugin is uninstalled WITH its data: delete its options here
+                // (its migrations are rolled back after this). A plain uninstall keeps everything.
             }
 
             public function upgrade(?string \$previousVersion): void

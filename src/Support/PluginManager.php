@@ -641,13 +641,15 @@ class PluginManager
     }
 
     /**
-     * Uninstall a plugin: deactivate it, run its optional lifecycle uninstall()
-     * (where it can drop its own data), roll back its convention migrations,
-     * remove its DB record and — when $deleteFiles — delete its folder.
+     * Uninstall a plugin: deactivate it, remove its DB record and — when $deleteFiles —
+     * delete its folder. Its data stays unless $deleteData: a plugin removed by mistake
+     * (or put back by FalconCMS Pro, which re-copies its plugins) is activated again with
+     * everything as it was. With $deleteData its lifecycle uninstall() runs (where it drops
+     * its settings) and its convention migrations are rolled back (its tables go).
      *
      * @return array{ok:bool,message:string}
      */
-    public function uninstall(string $slug, bool $deleteFiles = true): array
+    public function uninstall(string $slug, bool $deleteFiles = true, bool $deleteData = false): array
     {
         $manifest = $this->manifest($slug);
 
@@ -667,7 +669,7 @@ class PluginManager
         }
 
         try {
-            if ($manifest) {
+            if ($manifest && $deleteData) {
                 $this->callLifecycle($manifest, 'uninstall');
                 $this->rollbackMigrations($manifest);
             }
@@ -684,7 +686,9 @@ class PluginManager
             return $this->result(false, 'Uninstall failed: '.$e->getMessage());
         }
 
-        return $this->result(true, ($manifest['name'] ?? $slug).' uninstalled.');
+        return $this->result(true, ($manifest['name'] ?? $slug).($deleteData
+            ? ' uninstalled, and its data deleted.'
+            : ' uninstalled. Its data was kept: activate it again to carry on where you left off.'));
     }
 
     /**

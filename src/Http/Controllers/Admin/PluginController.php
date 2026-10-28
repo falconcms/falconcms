@@ -80,6 +80,7 @@ class PluginController extends Controller
                 'activate' => $plugins->activate($slug),
                 'deactivate' => $plugins->deactivate($slug),
                 'update' => $plugins->update($slug),
+                // Many at once never deletes data: that is one plugin at a time, typed to confirm.
                 'delete' => $plugins->uninstall($slug),
             };
             $done += $result['ok'] ? 1 : 0;
@@ -104,9 +105,16 @@ class PluginController extends Controller
         return $this->flash($plugins->update($slug));
     }
 
-    public function destroy(string $slug, PluginManager $plugins)
+    /**
+     * Uninstall one plugin. Its data is kept unless "delete its data" was ticked AND the
+     * plugin's slug typed to confirm, so neither a slip of the mouse nor a forged form
+     * without the slug can wipe it.
+     */
+    public function destroy(Request $request, string $slug, PluginManager $plugins)
     {
-        return $this->flash($plugins->uninstall($slug));
+        $deleteData = $request->boolean('delete_data') && hash_equals($slug, trim((string) $request->input('confirm_slug', '')));
+
+        return $this->flash($plugins->uninstall($slug, true, $deleteData));
     }
 
     public function upload(Request $request, PluginManager $plugins)

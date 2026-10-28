@@ -58,9 +58,15 @@ new version.
 
 ### Uninstalling
 
-**Uninstall** deactivates the plugin, lets it clean up after itself, rolls back
-its migrations, deletes its folder and removes its record. It is irreversible —
-back up first if the plugin stores data you care about.
+**Delete** opens a dialog. By default it deactivates the plugin, deletes its folder and
+removes its record, but **keeps its data**: its settings and its own tables stay, so
+activating it again (or installing it again) brings everything back as it was. A plugin that
+comes with FalconCMS Pro reappears in the list on the next page load, ready to activate.
+
+To remove the data as well, tick **Also delete all of its data** and type the plugin's slug.
+Then the plugin's lifecycle `uninstall()` runs and its migrations are rolled back. That cannot
+be undone — only a backup brings the data back. Uninstalling several plugins at once (bulk
+action) never deletes data.
 
 ### From the command line
 
@@ -142,6 +148,7 @@ resources/views/plugins/seo-booster/
 | `bootstrap` | — | Bootstrap filename. Defaults to `plugin.php`. |
 | `settings_route` | — | Name of the route for the plugin's settings page, e.g. `"seo-booster.settings"`. While the plugin is active, the Plugins screen shows a **Settings** link to it. |
 | `dependencies` | — | Slugs that must be installed **and active** first. |
+| `data` | — | What the plugin's data is, in a few words (e.g. `"every slider and its revisions"`). The uninstall dialog shows it beside **Also delete all of its data**. |
 
 ### The bootstrap — `plugin.php`
 
@@ -200,7 +207,8 @@ class Lifecycle
 
     public function uninstall(): void
     {
-        // Runs before removal — drop your tables/options here.
+        // Runs only when the data is deleted too (ticked and typed in the uninstall
+        // dialog) — drop your options here; your migrations are rolled back after it.
     }
 
     public function upgrade(?string $previousVersion): void
@@ -238,7 +246,8 @@ view('seo-booster::report');
 ### Migrations
 
 Migrations in `database/migrations/` run when the plugin is **activated**, and
-are rolled back on uninstall. Prefix your table names to avoid collisions.
+are rolled back only when it is uninstalled with its data. Prefix your table names to avoid
+collisions.
 
 ### Classes and providers
 

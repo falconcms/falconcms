@@ -5,7 +5,47 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.7 <Badge type="tip" text="Latest" /> {#v2-8-7}
+## v2.8.8 <Badge type="tip" text="Latest" /> {#v2-8-8}
+
+**Released: 2026-10-28**
+
+Your own fonts, builder hooks for plugins, an uninstall that keeps a plugin's data, and product
+galleries that change their picture again with AVIF on.
+
+### Added
+
+- **Custom fonts** (Customizer → Typography → Custom Font). Upload your own font files from the
+  Media Library, one box per font face; the weights are read from each file, and a variable font
+  is offered as a range. A custom font can be chosen in every typography setting, in the
+  builder, and in Motion Visual text.
+- **Builder extension hooks.** A plugin can add its own settings to the Extra tab of elements,
+  containers and columns (nested columns too), show its effect in the builder canvas, and add
+  attributes to the page markup of what it touches. Documented in [Hooks](/api/hooks).
+
+### Changed
+
+- **Uninstalling a plugin keeps its data.** Plugins → Delete now opens a dialog: the plugin's
+  files are removed, but its settings and its own tables stay, so activating it again (or
+  installing it again) brings everything back. To delete the data too, tick **Also delete all of
+  its data** and type the plugin's slug; the dialog says what that data is. Uninstalling several
+  plugins at once never deletes data. A plugin that comes with FalconCMS Pro reappears in the
+  list on the next page load, ready to activate.
+
+### Fixed
+
+- **Product gallery thumbnails change the main picture again when AVIF is on.** With Falcon SEO's
+  AVIF images, library pictures are wrapped in `<picture>` with an AVIF source; a gallery
+  thumbnail (or a variable product's option) changed the image underneath, but the browser kept
+  showing the first picture. The AVIF source now steps aside once a script changes the picture.
+
+### Security
+
+- The repository's GitHub Actions are pinned to exact versions, Dependabot keeps them and the
+  Composer packages up to date, and a security policy says how to report a problem.
+
+---
+
+## v2.8.7 {#v2-8-7}
 
 **Released: 2026-10-27**
 
