@@ -6,18 +6,14 @@ use Illuminate\Support\Facades\Crypt;
 use Throwable;
 
 /**
- * Falcon SEO's Pro tools: AI writing (Claude), keyword data from DataForSEO, one-click fixes
- * and the weekly SEO email. They need a FalconCMS Pro licence; the keys they use are the
- * site's own, stored encrypted, and nothing is sent anywhere without one.
+ * Falcon SEO's Pro tools: keyword data from DataForSEO, one-click fixes and the weekly SEO
+ * email. They need a FalconCMS Pro licence; the keys they use are the site's own, stored
+ * encrypted, and nothing is sent anywhere without one. (AI writing is the Falcon AI plugin's.)
  */
 final class Pro
 {
     /** The licence feature; any active Pro licence includes it. */
     public const FEATURE = 'seo_pro';
-
-    public const CLAUDE_KEY = 'seo_ai_api_key';
-
-    public const CLAUDE_MODEL = 'seo_ai_model';
 
     public const DATAFORSEO_LOGIN = 'seo_dataforseo_login';
 
@@ -27,13 +23,6 @@ final class Pro
 
     public const REPORT_TO = 'seo_weekly_report_to';
 
-    /** The models offered for AI writing, best first. */
-    public const MODELS = [
-        'claude-opus-5-5' => 'Claude Opus 5.5 (best results)',
-        'claude-sonnet-5-5' => 'Claude Sonnet 5.5 (faster, half the cost)',
-        'claude-haiku-5-5' => 'Claude Haiku 5.5 (fastest, cheapest)',
-    ];
-
     /** Whether the licence covers the Pro tools: the feature itself, or any active Pro licence. */
     public static function active(): bool
     {
@@ -42,18 +31,6 @@ final class Pro
         }
 
         return falcon_pro(self::FEATURE) || falcon_pro();
-    }
-
-    public static function claudeKey(): string
-    {
-        return self::secret(self::CLAUDE_KEY);
-    }
-
-    public static function claudeModel(): string
-    {
-        $model = (string) get_cms_option(self::CLAUDE_MODEL, 'claude-opus-5-5');
-
-        return isset(self::MODELS[$model]) ? $model : 'claude-opus-5-5';
     }
 
     /** @return array{0: string, 1: string} login, password */

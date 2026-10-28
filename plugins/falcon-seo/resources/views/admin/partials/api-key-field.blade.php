@@ -1,5 +1,5 @@
 {{--
-    One outside service's key on SEO → Settings: $service (claude | bing | dataforseo), $label.
+    One outside service's key on SEO → Settings: $service (bing | dataforseo), $label.
 
     A saved key shows in its field with the middle hidden ("sk-ant-api03-a••••••••••••VwAA"):
     the whole key is never sent back to the browser, and saving the field unchanged keeps it.

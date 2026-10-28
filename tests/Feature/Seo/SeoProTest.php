@@ -7,10 +7,10 @@ use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\Doubles\FakeClaudeTransport;
 use FalconCms\Core\Tests\TestCase;
 use FalconSeo\Mail\SeoReportMail;
-use FalconSeo\Support\AiWriter;
 use FalconSeo\Support\ApiKeys;
 use FalconSeo\Support\DataForSeo;
 use FalconSeo\Support\Pro;
+use FalconSeo\Support\SeoAi;
 use FalconSeo\Support\SeoFixer;
 use FalconSeo\Support\SeoReport;
 use FalconSeo\Support\SiteScan;
@@ -19,7 +19,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
-/** Falcon SEO's Pro tools: AI writing, Google keyword numbers, one-click fixes, the weekly email. */
+/**
+ * Falcon SEO's Pro tools: Google keyword numbers, one-click fixes, the weekly email. The AI fixes
+ * are written by Falcon AI (its own tests cover the writing), asked through SeoAi's filters.
+ */
 class SeoProTest extends TestCase
 {
     use MakesShopFixtures;
@@ -29,11 +32,12 @@ class SeoProTest extends TestCase
         return $this->makeUser(['role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id')]);
     }
 
+    /** Falcon AI set up with Claude, answering from the queued replies. */
     private function claude(array $replies): FakeClaudeTransport
     {
         $fake = new FakeClaudeTransport($replies);
-        $this->app->instance('falcon-seo.ai.transporter', $fake);
-        $this->setCmsOptions([Pro::CLAUDE_KEY => Crypt::encryptString('sk-ant-test')]);
+        $this->app->instance('falcon-ai.claude.transporter', $fake);
+        $this->setCmsOptions(['ai_provider' => 'claude', 'ai_claude_key' => Crypt::encryptString('sk-ant-api03-testtesttesttesttesttest')]);
 
         return $fake;
     }
@@ -50,54 +54,26 @@ class SeoProTest extends TestCase
         $this->actingAs($this->admin());
 
         $this->assertFalse(Pro::active());
-        $this->postJson('/admin/seo/ai-suggest', ['field' => 'title'])->assertForbidden();
         $this->postJson('/admin/seo/site-analysis/fix', ['check' => 'description', 'post_ids' => [1]])->assertForbidden();
         $this->get('/admin/seo/settings')->assertOk()->assertSee('Upgrade to Pro');
     }
 
-    public function test_claude_writes_title_options_with_the_page_and_keyword(): void
+    /** Without AI set up, the AI fixes say where to set it up instead of failing. */
+    public function test_ai_fixes_ask_falcon_ai_and_say_when_it_is_not_set_up(): void
     {
         $this->withProLicensed();
-        $fake = $this->claude([json_encode(['options' => [
-            ['text' => 'Green Tea Guide: How to Brew It Right at Home', 'why' => 'Keyword first, clear benefit.'],
-            ['text' => 'Brewing Green Tea: Temperatures and Times', 'why' => 'Specific.'],
-        ]])]);
         $this->actingAs($this->admin());
         $post = $this->makePost();
 
-        $res = $this->postJson('/admin/seo/ai-suggest', ['field' => 'title', 'post_id' => $post->id, 'keyword' => 'green tea'])->assertOk();
+        $this->assertFalse(SeoAi::available());
+        $this->postJson('/admin/seo/site-analysis/fix', ['check' => 'title', 'method' => 'ai', 'post_ids' => [$post->id]])
+            ->assertStatus(422)->assertJson(['message' => SeoAi::NOT_SET_UP]);
 
-        $this->assertSame('Green Tea Guide: How to Brew It Right at Home', $res->json('options.0.text'));
-        $body = $fake->body();
-        $this->assertSame('claude-opus-5-5', $body['model']);
-        $this->assertSame('json_schema', $body['output_config']['format']['type']);
-        $this->assertSame('low', $body['output_config']['effort']);
-        $this->assertSame('default', $body['fallbacks']);
-        $this->assertStringContainsString('Focus keyword: green tea', $body['messages'][0]['content']);
-        $this->assertStringContainsString('brewed at 80 degrees', $body['messages'][0]['content']);
-        $this->assertSame('sk-ant-test', $fake->requests[0]->getHeaderLine('x-api-key'));
-        $this->assertStringContainsString('server-side-fallback-2026-07-01', $fake->requests[0]->getHeaderLine('anthropic-beta'));
-    }
-
-    public function test_a_rejected_key_says_what_to_do(): void
-    {
-        $this->withProLicensed();
-        $this->claude([401]);
-        $this->actingAs($this->admin());
-
-        $this->postJson('/admin/seo/ai-suggest', ['field' => 'description', 'title' => 'x'])
-            ->assertStatus(422)->assertJson(['message' => 'Claude did not accept the API key. Check it in SEO → Settings → AI writing.']);
-    }
-
-    public function test_an_account_without_credit_says_so_plainly(): void
-    {
-        $this->withProLicensed();
-        $this->claude([['__status' => 400, 'type' => 'error', 'error' => ['type' => 'invalid_request_error',
-            'message' => 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.']]]);
-        $this->actingAs($this->admin());
-
-        $this->postJson('/admin/seo/ai-suggest', ['field' => 'title', 'title' => 'x'])
-            ->assertStatus(422)->assertJson(['message' => 'The Anthropic account has no credit left. Add some at console.anthropic.com → Plans & Billing, then try again.']);
+        $this->claude([json_encode(['options' => [['text' => 'Green Tea Guide: Brew It Right at Home', 'why' => 'Keyword first.']]])]);
+        $this->assertTrue(SeoAi::available());
+        $res = $this->postJson('/admin/seo/site-analysis/fix', ['check' => 'title', 'method' => 'ai', 'post_ids' => [$post->id]])->assertOk();
+        $this->assertTrue($res->json('results.0.fixed'));
+        $this->assertSame('Green Tea Guide: Brew It Right at Home', $post->fresh()->seo_meta['title']);
     }
 
     public function test_dataforseo_numbers_by_country(): void
@@ -209,8 +185,6 @@ class SeoProTest extends TestCase
         $this->get('/admin/seo/settings')->assertOk()->assertSee('value="seo@site.test"', false);
     }
 
-    private const CLAUDE = 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789';
-
     private const BING = '0123456789abcdef0123456789abcdef';
 
     public function test_settings_keep_the_keys_encrypted(): void
@@ -218,72 +192,62 @@ class SeoProTest extends TestCase
         $this->withProLicensed();
         $this->actingAs($this->admin());
 
-        $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY => ' '.self::CLAUDE.' ', Pro::DATAFORSEO_LOGIN => ' me@site.test ', Pro::DATAFORSEO_PASSWORD => 'Api-Password-123',
-            Pro::CLAUDE_MODEL => 'claude-sonnet-5-5', Pro::REPORT_ENABLED => '1', 'bing_webmaster_api_key' => self::BING])->assertRedirect()->assertSessionMissing('error');
+        $this->post('/admin/seo/settings', [Pro::DATAFORSEO_LOGIN => ' me@site.test ', Pro::DATAFORSEO_PASSWORD => 'Api-Password-123',
+            Pro::REPORT_ENABLED => '1', 'bing_webmaster_api_key' => self::BING])->assertRedirect()->assertSessionMissing('error');
 
-        $stored = DB::table('cms_settings')->where('key', Pro::CLAUDE_KEY)->value('value');
-        $this->assertStringNotContainsString('sk-ant', (string) $stored);
+        $stored = DB::table('cms_settings')->where('key', 'bing_webmaster_api_key')->value('value');
+        $this->assertStringNotContainsString(self::BING, (string) $stored);
         forget_cms_options_cache();
-        $this->assertSame(self::CLAUDE, Pro::claudeKey());
         $this->assertSame(['me@site.test', 'Api-Password-123'], Pro::dataForSeo());
-        $this->assertSame('claude-sonnet-5-5', Pro::claudeModel());
-        $this->assertSame('sk-ant-api03-a••••••••••••6789', ApiKeys::masked('claude'));
         $this->assertSame('0123••••••••••••cdef', ApiKeys::masked('bing'));
         $this->assertSame('Ap••••••••••••23', ApiKeys::masked('dataforseo'));
         $this->assertSame(self::BING, ApiKeys::key('bing'));
 
         // An empty field, or one still showing the masked key, keeps the saved key; "Remove" clears it.
-        $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY => ''])->assertRedirect();
-        $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY => ApiKeys::masked('claude'), 'bing_webmaster_api_key' => ApiKeys::masked('bing')])
-            ->assertRedirect()->assertSessionMissing('error');
+        $this->post('/admin/seo/settings', ['bing_webmaster_api_key' => ''])->assertRedirect();
+        $this->post('/admin/seo/settings', ['bing_webmaster_api_key' => ApiKeys::masked('bing')])->assertRedirect()->assertSessionMissing('error');
         forget_cms_options_cache();
-        $this->assertSame(self::CLAUDE, Pro::claudeKey());
         $this->assertSame(self::BING, ApiKeys::key('bing'));
-        $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY.'_remove' => '1'])->assertRedirect();
+        $this->post('/admin/seo/settings', ['bing_webmaster_api_key_remove' => '1'])->assertRedirect();
         forget_cms_options_cache();
-        $this->assertSame('', Pro::claudeKey());
-        $this->assertFalse(AiWriter::available());
+        $this->assertSame('', ApiKeys::key('bing'));
     }
 
     public function test_what_is_not_a_key_is_refused_and_the_saved_one_kept(): void
     {
         $this->withProLicensed();
         $this->actingAs($this->admin());
-        $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY => self::CLAUDE, 'bing_webmaster_api_key' => self::BING])->assertRedirect();
+        $this->post('/admin/seo/settings', ['bing_webmaster_api_key' => self::BING])->assertRedirect();
 
         // What a browser's password manager fills in: the admin password, in every password field.
-        $this->post('/admin/seo/settings', [Pro::CLAUDE_KEY => 'MyAdminPass1', 'bing_webmaster_api_key' => 'MyAdminPass1',
+        $this->post('/admin/seo/settings', ['bing_webmaster_api_key' => 'MyAdminPass1',
             Pro::DATAFORSEO_LOGIN => 'admin', Pro::DATAFORSEO_PASSWORD => 'short', 'seo_separator' => '|'])
-            ->assertRedirect()->assertSessionHas('error', fn ($m) => str_contains($m, 'Claude API key was not saved') && str_contains($m, 'Bing Webmaster API key was not saved')
+            ->assertRedirect()->assertSessionHas('error', fn ($m) => str_contains($m, 'Bing Webmaster API key was not saved')
                 && str_contains($m, 'DataForSEO API password was not saved') && str_contains($m, 'DataForSEO login was not saved'));
 
         forget_cms_options_cache();
-        $this->assertSame(self::CLAUDE, Pro::claudeKey(), 'the good key stays');
-        $this->assertSame(self::BING, ApiKeys::key('bing'));
+        $this->assertSame(self::BING, ApiKeys::key('bing'), 'the good key stays');
         $this->assertSame('|', get_cms_option('seo_separator'), 'the rest of the page still saves');
 
         $html = $this->get('/admin/seo/settings')->assertOk()->getContent();
-        $this->assertStringContainsString('value="sk-ant-api03-a••••••••••••6789" data-masked="sk-ant-api03-a••••••••••••6789"', $html);
+        $this->assertStringContainsString('value="0123••••••••••••cdef" data-masked="0123••••••••••••cdef"', $html);
         $this->assertStringContainsString('autocomplete="new-password"', $html);
-        $this->assertStringNotContainsString(self::CLAUDE, $html, 'a saved key never goes back to the browser');
+        $this->assertStringNotContainsString(self::BING, $html, 'a saved key never goes back to the browser');
+        $this->assertStringNotContainsString('Claude API key', $html, 'AI keys are set up under AI → Settings now');
     }
 
     public function test_each_saved_key_can_be_tested_for_free(): void
     {
         $this->withProLicensed();
         $this->actingAs($this->admin());
-        $this->setCmsOptions([Pro::CLAUDE_KEY => Crypt::encryptString(self::CLAUDE), 'bing_webmaster_api_key' => Crypt::encryptString(self::BING),
+        $this->setCmsOptions(['bing_webmaster_api_key' => Crypt::encryptString(self::BING),
             Pro::DATAFORSEO_LOGIN => 'me@site.test', Pro::DATAFORSEO_PASSWORD => Crypt::encryptString('Api-Password-123')]);
-        $fake = new FakeClaudeTransport([['type' => 'model', 'id' => 'claude-opus-5-5', 'display_name' => 'Claude Opus 5.5', 'created_at' => '2026-09-01T00:00:00Z'], 401]);
-        $this->app->instance('falcon-seo.ai.transporter', $fake);
         Http::fake([
             'ssl.bing.com/*' => Http::response(['d' => [['Url' => 'https://site.test/']]]),
             'api.dataforseo.com/v3/appendix/user_data' => Http::response(['status_code' => 20000, 'tasks' => [['status_code' => 20000, 'result' => [['money' => ['balance' => 12.5]]]]]]),
         ]);
 
-        $this->postJson('/admin/seo/settings/test-key', ['service' => 'claude'])->assertOk()->assertJson(['ok' => true, 'message' => 'Works: Claude Opus 5.5 is ready. (Writing also needs credit on the Anthropic account.)']);
-        $this->assertStringEndsWith('/v1/models/claude-opus-5-5', (string) $fake->requests[0]->getUri());
-        $this->postJson('/admin/seo/settings/test-key', ['service' => 'claude'])->assertOk()->assertJson(['ok' => false]);
+        $this->postJson('/admin/seo/settings/test-key', ['service' => 'claude'])->assertStatus(422);
         $this->postJson('/admin/seo/settings/test-key', ['service' => 'bing'])->assertOk()->assertJson(['ok' => true, 'message' => 'Works: 1 site(s) in this Bing Webmaster account.']);
         $this->postJson('/admin/seo/settings/test-key', ['service' => 'dataforseo'])->assertOk()->assertJson(['ok' => true, 'message' => 'Works: balance $12.50.']);
         Http::assertSent(fn ($r) => str_contains($r->url(), 'user_data') && $r->hasHeader('Authorization'));

@@ -103,6 +103,7 @@ export default defineConfig({
             { text: 'Forms', link: '/guide/forms' },
             { text: 'Multi-language', link: '/guide/multilang' },
             { text: 'SEO', link: '/guide/seo' },
+            { text: 'AI Writing', link: '/guide/ai' },
             { text: 'Search Console (Pro)', link: '/guide/search-console' },
             { text: 'News Sites (Pro)', link: '/guide/news' },
             { text: 'Instagram Feed (Pro)', link: '/guide/instagram-feed' },
@@ -212,7 +213,8 @@ export default defineConfig({
         {
           text: 'Changelog',
           items: [
-            { text: 'v2.8.8 (Latest)', link: '/changelog#v2-8-8' },
+            { text: 'v2.8.9 (Latest)', link: '/changelog#v2-8-9' },
+            { text: 'v2.8.8', link: '/changelog#v2-8-8' },
             { text: 'v2.8.7', link: '/changelog#v2-8-7' },
             { text: 'v2.8.6', link: '/changelog#v2-8-6' },
             { text: 'v2.8.5', link: '/changelog#v2-8-5' },

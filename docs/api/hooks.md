@@ -1456,6 +1456,32 @@ The Falcon SEO plugin does all its work through these. Another plugin can use th
 
 ---
 
+### AI writing (Falcon AI)
+
+#### `falcon_admin_post_editor_tabs` (action)
+**Args:** `?Post $post, string $type`
+
+Prints in the post editor's tab row, right after Rich Editor and Page Builder (`$post` is null on
+Add New). Falcon AI puts **Write with AI** here.
+
+#### `falcon_ai_providers` (filter)
+**Args:** `array $providers`
+
+`id => class` of the AI providers offered under AI → Settings. A class implements
+`FalconAi\Contracts\AiProvider`.
+
+#### `falcon_ai_generated` (action)
+**Args:** `string $feature, FalconAi\Data\AiResult $result`
+
+After every AI answer (`outline`, `section`, `meta`, `rewrite`, `seo_title`, `seo_description`,
+`seo_alt`), with the provider, model and tokens used.
+
+#### `falcon_seo_ai_available`, `falcon_seo_ai_suggestions`, `falcon_seo_ai_alt_texts` (filters)
+**Args:** `bool` · `?array $options, string $field, array $page` · `?array $alts, array $images, array $page`
+
+How Falcon SEO asks for AI writing (Site Analysis fixes). Falcon AI answers them; another plugin
+can too. Return null to leave it to the next.
+
 ## E-commerce Logic Hooks
 
 The hooks above change how the shop **looks**. These change what it **does**: prices, the cart,
@@ -2216,6 +2242,10 @@ return [
 | `falcon_cart_subtotal` | `$subtotal, $cart` |
 | `falcon_shop_settings_toggles` | `$toggles` |
 | `falcon_shop_settings_tabs` | `$tabs` |
+| `falcon_ai_providers` | `$providers` |
+| `falcon_seo_ai_available` | `$available` |
+| `falcon_seo_ai_suggestions` | `$options, $field, $page` |
+| `falcon_seo_ai_alt_texts` | `$alts, $images, $page` |
 | `falcon_cart_shipping_bar` | `$html, $context` |
 | `falcon_cart_total` | `$total, $parts` |
 | `falcon_coupon_is_valid` | `$valid, $coupon, $cart` |

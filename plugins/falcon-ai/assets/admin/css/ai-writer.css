@@ -1,0 +1,132 @@
+/* Falcon AI — the editor bar, the Write with AI window and the SEO suggestions. */
+
+/* In the editor's tab row, right after "Page Builder", on the same baseline as the tabs. */
+.falcon-ai-bar { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 4px 12px; }
+.falcon-ai-bar .falcon-ai-btn { height: 30px; }
+.falcon-ai-btn {
+    display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+    border: 1px solid #c3c4c7; border-radius: 4px; background: #fff; color: #2c3338;
+    font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+}
+.falcon-ai-btn:hover { border-color: #2271b1; color: #2271b1; }
+.falcon-ai-btn:disabled { opacity: .6; cursor: default; }
+.falcon-ai-btn--primary { background: #2271b1; border-color: #2271b1; color: #fff; }
+.falcon-ai-btn--primary:hover { background: #135e96; color: #fff; }
+.falcon-ai-hint, .falcon-ai-status { font-size: 12px; color: #646970; }
+.falcon-ai-hint a { color: #2271b1; }
+
+.falcon-ai-improve { position: relative; }
+.falcon-ai-menu {
+    position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; min-width: 200px; padding: 4px;
+    background: #fff; border: 1px solid #dcdcde; border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+}
+.falcon-ai-menu[hidden] { display: none; }
+.falcon-ai-menu button { display: block; width: 100%; padding: 7px 10px; border: 0; background: none; text-align: left; font-size: 13px; color: #2c3338; cursor: pointer; border-radius: 4px; }
+.falcon-ai-menu button:hover, .falcon-ai-menu button:focus-visible { background: #f0f6fc; color: #2271b1; }
+
+/* The window */
+html.falcon-ai-open { overflow: hidden; }
+.falcon-ai-modal { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.falcon-ai-modal[hidden] { display: none; }
+.falcon-ai-modal__backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); }
+.falcon-ai-modal__panel {
+    position: relative; display: flex; flex-direction: column; width: 100%; max-width: 760px; max-height: calc(100vh - 32px);
+    background: #fff; border-radius: 8px; box-shadow: 0 20px 60px rgba(0, 0, 0, .3); outline: none;
+}
+.falcon-ai-modal__header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f0f0f1; }
+.falcon-ai-modal__header h2 { margin: 0; font-size: 17px; font-weight: 600; color: #1d2327; }
+.falcon-ai-modal__close { width: 32px; height: 32px; border: 0; background: none; font-size: 22px; line-height: 1; color: #646970; cursor: pointer; border-radius: 4px; }
+.falcon-ai-modal__close:hover { background: #f0f0f1; }
+.falcon-ai-modal__body { padding: 16px 18px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.falcon-ai-modal__footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 12px 18px; border-top: 1px solid #f0f0f1; }
+.falcon-ai-modal__footer:empty { display: none; }
+
+.falcon-ai-field { display: flex; flex-direction: column; gap: 4px; }
+.falcon-ai-field label { font-size: 13px; font-weight: 600; color: #2c3338; }
+.falcon-ai-field small { font-size: 12px; color: #646970; }
+.falcon-ai-field input, .falcon-ai-field select, .falcon-ai-field textarea,
+.falcon-ai-outline input, .falcon-ai-outline textarea {
+    width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #8c8f94; border-radius: 4px; font-size: 14px; background: #fff;
+}
+.falcon-ai-field input, .falcon-ai-field select { height: 34px; }
+.falcon-ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.falcon-ai-grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.falcon-ai-outline { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; }
+.falcon-ai-outline li { display: flex; flex-direction: column; gap: 4px; }
+.falcon-ai-outline__row { display: flex; gap: 4px; }
+.falcon-ai-outline__row input { font-weight: 600; }
+.falcon-ai-outline textarea { font-size: 13px; color: #50575e; }
+.falcon-ai-icon { flex-shrink: 0; width: 30px; border: 1px solid #dcdcde; border-radius: 4px; background: #fff; color: #50575e; cursor: pointer; }
+.falcon-ai-icon:hover { border-color: #2271b1; color: #2271b1; }
+
+.falcon-ai-msg { margin: 0; padding: 9px 12px; border-radius: 4px; background: #f0f6fc; color: #1d2327; font-size: 13px; }
+.falcon-ai-msg--error { background: #fcf0f1; color: #8a2424; }
+.falcon-ai-small { margin: 0; font-size: 13px; color: #50575e; }
+.falcon-ai-loading { display: flex; align-items: center; gap: 10px; padding: 24px 0; font-size: 14px; color: #50575e; }
+.falcon-ai-spinner { width: 18px; height: 18px; border: 2px solid #dcdcde; border-top-color: #2271b1; border-radius: 50%; animation: falcon-ai-spin .8s linear infinite; }
+@keyframes falcon-ai-spin { to { transform: rotate(360deg); } }
+.falcon-ai-progress { margin: 0; font-size: 14px; font-weight: 600; color: #1d2327; }
+.falcon-ai-written__item { margin: 0; font-size: 13px; color: #00a32a; }
+.falcon-ai-preview {
+    min-height: 140px; max-height: 280px; overflow: auto; padding: 10px 12px; white-space: pre-wrap;
+    border: 1px solid #dcdcde; border-radius: 4px; background: #f6f7f7; font-size: 13px; color: #50575e;
+}
+.falcon-ai-preview:empty::before { content: 'Waiting for the first words…'; color: #8c8f94; }
+.falcon-ai-choice { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.falcon-ai-choice label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+/* Falcon SEO box */
+.falcon-ai-seo-btn { margin-right: 12px; border: 0; background: none; padding: 0; font-size: 11px; color: #2271b1; cursor: pointer; }
+.falcon-ai-seo-btn:hover { text-decoration: underline; }
+.falcon-ai-seo-btn:disabled { opacity: .6; }
+.falcon-ai-seo-box:empty { display: none; }
+.falcon-ai-seo-box { margin-top: 8px; }
+.falcon-ai-seo-options { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid #dcdcde; border-radius: 4px; background: #f6f7f7; }
+.falcon-ai-seo-option { display: flex; flex-direction: column; gap: 2px; padding: 8px; border: 1px solid transparent; border-radius: 4px; background: #fff; text-align: left; cursor: pointer; }
+.falcon-ai-seo-option:hover { border-color: #2271b1; }
+.falcon-ai-seo-option span { font-size: 13px; color: #1d2327; }
+.falcon-ai-seo-option small, .falcon-ai-seo-options > small { font-size: 11px; color: #646970; }
+
+@media (max-width: 640px) {
+    .falcon-ai-grid, .falcon-ai-grid--3 { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .falcon-ai-spinner { animation-duration: 2s; }
+}
+
+/* The searchable language list (Tom Select), dressed like the admin's own inputs. Tom Select
+   copies the select's classes (wp-input…) onto its wrapper: only the inner control is drawn. */
+.falcon-ai-ts.ts-wrapper { height: auto; padding: 0; border: 0; background: none; box-shadow: none; }
+.falcon-ai-ts.ts-wrapper.single .ts-control,
+.falcon-ai-ts.ts-wrapper.single.input-active .ts-control {
+    display: flex; align-items: center; min-height: 34px; padding: 0 32px 0 10px;
+    background: #fff; background-image: none; border: 1px solid #8c8f94; border-radius: 4px;
+    box-shadow: none; font-size: 14px; color: #2c3338; cursor: pointer;
+}
+.falcon-ai-ts.ts-wrapper.single .ts-control:not(.rtl)::after {
+    /* A chevron, not the default triangle. */
+    content: ''; position: absolute; top: 50%; right: 12px; width: 7px; height: 7px; margin-top: -5px;
+    border-style: solid; border-color: #50575e; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); transition: transform .15s ease;
+}
+.falcon-ai-ts.ts-wrapper.single.dropdown-active .ts-control:not(.rtl)::after { margin-top: -1px; border-width: 0 1.5px 1.5px 0; transform: rotate(-135deg); }
+.falcon-ai-ts.ts-wrapper.focus .ts-control { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
+.falcon-ai-ts .ts-control .item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.falcon-ai-ts-dropdown.ts-dropdown {
+    margin-top: 4px; border: 1px solid #dcdcde; border-radius: 6px; background: #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .14); overflow: hidden; font-size: 14px; color: #2c3338;
+}
+.falcon-ai-ts-dropdown .dropdown-input-wrap { padding: 8px; border-bottom: 1px solid #f0f0f1; }
+.falcon-ai-ts-dropdown .dropdown-input {
+    width: 100%; height: 32px; padding: 0 10px 0 30px; border: 1px solid #c3c4c7; border-radius: 4px; font-size: 13px; box-shadow: none;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238c8f94' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 9px center / 14px;
+}
+.falcon-ai-ts-dropdown .dropdown-input:focus { outline: none; border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
+.falcon-ai-ts-dropdown .ts-dropdown-content { max-height: 260px; padding: 4px; }
+.falcon-ai-ts-dropdown .option { padding: 7px 10px; border-radius: 4px; }
+.falcon-ai-ts-dropdown .option.active { background: #f0f6fc; color: #2271b1; }
+.falcon-ai-ts-dropdown .option.selected { font-weight: 600; }
+.falcon-ai-ts-dropdown .no-results { padding: 10px; color: #646970; }
+/* Opened inside the Write with AI window: above it. */
+body > .falcon-ai-ts-dropdown.ts-dropdown { z-index: 100001; }

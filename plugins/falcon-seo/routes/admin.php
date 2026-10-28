@@ -39,8 +39,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     Route::post('seo/keyword-suggestions', [SeoToolsController::class, 'keywordSuggestions'])->name('seo.keyword-suggestions');
     Route::post('seo/keyword-demand', [KeywordResearchController::class, 'demand'])->name('seo.keyword-demand')->middleware('throttle:60,1');
     Route::post('seo/keyword-countries', [KeywordResearchController::class, 'countries'])->name('seo.keyword-countries')->middleware('throttle:60,1');
-    // Pro: AI writing, Google keyword numbers, one-click fixes, the weekly email.
-    Route::post('seo/ai-suggest', [SeoProController::class, 'suggest'])->name('seo.ai-suggest')->middleware('throttle:20,1');
+    // Pro: Google keyword numbers, one-click fixes, the weekly email.
     Route::post('seo/keyword-metrics', [SeoProController::class, 'metrics'])->name('seo.keyword-metrics')->middleware('throttle:12,1');
     Route::post('seo/site-analysis/fix', [SeoProController::class, 'fix'])->name('seo.site-analysis.fix')->middleware('throttle:60,1');
     Route::post('seo/settings/test-key', [SeoToolsController::class, 'testKey'])->name('seo.test-key')->middleware('throttle:20,1');

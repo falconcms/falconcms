@@ -9,7 +9,17 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+## [2.8.9] — 2026-10-28
+
 ### Added
+- Falcon AI (free, bundled, on by default): Write with AI in the post editor (an editable outline,
+  the article streamed in section by section, then its SEO title, description, excerpt and tags),
+  Improve selection (rewrite, expand, shorten, simplify, translate), and SEO suggestions, in about
+  80 languages (a searchable list). Works with Claude, OpenAI or Google Gemini (which has a free
+  tier) on the site's own key, set under AI → Settings & Usage, with a monthly token limit, a
+  usage record and a choice of which roles may use it. Every AI answer is cleaned before it
+  reaches the editor.
+- `falcon_admin_post_editor_tabs`, a hook in the post editor's tab row.
 - Shop hooks for plugins: `falcon_product_card_actions` (a button on product cards),
   `falcon_shop_settings_tabs` and `falcon_shop_settings_toggles` (a tab of Shop → Settings with
   switches that save), `falcon_cart_shipping_bar` (a line above the cart and in the mini-cart),
@@ -23,6 +33,9 @@ Full release notes, with the reasoning behind each change, live at
   on a cached page stops failing with 419. Pages cached before the update are rendered afresh.
 
 ### Changed
+- AI writing moved out of Falcon SEO into Falcon AI, and is now free. The saved Claude key and model
+  are carried over on update; SEO → Settings no longer has an AI section. Site Analysis's AI fixes
+  ask Falcon AI (`falcon_seo_ai_*` filters).
 - The shop archive's "Add to cart" opens the mini-cart, like product cards elsewhere, instead
   of a popup.
 

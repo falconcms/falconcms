@@ -144,22 +144,21 @@ the rest of FalconCMS) and a correct `APP_URL`, since the pages are fetched at t
 
 ## Pro tools
 
-With FalconCMS Pro, four more tools come with Falcon SEO. Set them up under **SEO → Settings → AI
-writing, keyword data & weekly email**. Each uses your own account with the service, and the keys
-are stored encrypted.
+With FalconCMS Pro, three more tools come with Falcon SEO. Set them up under **SEO → Settings →
+Keyword data & weekly email**. Each uses your own account with the service, and the keys are
+stored encrypted.
 
-- **AI writing (Claude).** **✨ Suggest with AI** beside the SEO title and meta description gives
-  three options written for the page and its focus keyword, each with the reason. Click one to use
-  it. The same button appears in Analysis next to a title or description that needs work. You need
-  an Anthropic API key and can choose the model: Opus 5.5 is the best, Sonnet 5.5 and Haiku 5.5
-  are faster and cheaper. Only the page being worked on is sent.
+**AI writing** (**✨ Suggest with AI** beside the SEO title and meta description, and the AI fixes
+below) is free and comes from the [Falcon AI](/guide/ai) plugin: set it up under **AI → Settings**
+with a Claude or OpenAI key.
+
 - **Keyword data (DataForSEO).** In Analysis, Google's monthly searches, cost per click, ad
   competition and ranking difficulty (0 to 100) for the focus keyword, in each chosen country (the
   first ten). DataForSEO bills per request, so each keyword and country is asked once a month at
   most.
 - **One-click fixes.** In Site Analysis, the problems that can be fixed get **Fix all** buttons:
-  fill missing meta descriptions from the page text or write them with AI, rewrite SEO titles with
-  AI, give images alt text from their file names or with AI, and remove broken links while keeping
+  fill missing meta descriptions from the page text or write them with AI (Falcon AI), rewrite SEO
+  titles with AI, give images alt text from their file names or with AI, and remove broken links while keeping
   their words. A revision is kept before any page's content changes. A description an author wrote
   is only replaced when AI is asked to.
 - **Weekly SEO email.** Every Monday morning: the average score, pages whose score dropped by 10 or

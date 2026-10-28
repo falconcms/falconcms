@@ -22,7 +22,7 @@ final class SeoFixer
     public const FIXABLE = ['description', 'title', 'alt', 'broken_links'];
 
     /**
-     * @param  string  $method  "auto" (from the page itself) or "ai" (written by Claude)
+     * @param  string  $method  "auto" (from the page itself) or "ai" (written by the AI set up in Falcon AI)
      * @return array{fixed: bool, message: string}
      */
     public static function fix(Post $post, string $check, string $method = 'auto'): array
@@ -46,7 +46,7 @@ final class SeoFixer
         $current = trim((string) ($seo['description'] ?? ''));
 
         if ($method === 'ai') {
-            $options = AiWriter::suggest('description', self::page($post, $current));
+            $options = SeoAi::suggest('description', self::page($post, $current));
             $text = $options[0]['text'] ?? '';
         } else {
             if ($current !== '') {
@@ -68,7 +68,7 @@ final class SeoFixer
             return ['fixed' => false, 'message' => 'A better title needs AI (or your own words in the editor).'];
         }
         $seo = is_array($post->seo_meta) ? $post->seo_meta : [];
-        $text = AiWriter::suggest('title', self::page($post, (string) ($seo['title'] ?? '')))[0]['text'] ?? '';
+        $text = SeoAi::suggest('title', self::page($post, (string) ($seo['title'] ?? '')))[0]['text'] ?? '';
         if ($text === '') {
             return ['fixed' => false, 'message' => 'No title came back.'];
         }
@@ -87,7 +87,7 @@ final class SeoFixer
             return ['fixed' => false, 'message' => 'Every image in the content has alt text (images the theme adds are edited in the theme).'];
         }
 
-        $alts = $method === 'ai' ? AiWriter::altTexts($images, self::page($post)) : [];
+        $alts = $method === 'ai' ? SeoAi::altTexts($images, self::page($post)) : [];
         foreach ($images as $image) {
             $alts[$image['src']] ??= self::altFromFileName($image['src']);
         }

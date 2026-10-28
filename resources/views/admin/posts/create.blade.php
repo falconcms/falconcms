@@ -80,6 +80,8 @@
                 <div class="flex items-center mb-[1px] relative z-10 pl-2">
                     <button type="button" id="editor-mode-rich" class="px-4 py-2 text-[13px] font-semibold border border-[#dcdcde] border-b-0 bg-white text-[#2c3338] rounded-t-sm">Rich Editor</button>
                     <button type="button" id="editor-mode-builder" class="px-4 py-2 text-[13px] font-semibold border border-transparent border-b-0 text-[#2271b1] hover:text-[#0a4b78] rounded-t-sm">Page Builder</button>
+                    {{-- Plugins add tools that work on the content here, beside the editor tabs (Falcon AI: Write with AI). --}}
+                    <?php do_falcon_action('falcon_admin_post_editor_tabs', null, $type ?? ($post->type ?? 'post')); ?>
                 </div>
                 <input type="hidden" name="editor_type" id="editor_type" value="{{ old('editor_type', 'rich') }}">
 

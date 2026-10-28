@@ -229,12 +229,13 @@ class BundledPluginTest extends TestCase
         $plugins = app(PluginManager::class);
         $public = public_path('plugin-assets/falcon-shop/frontend/js/mini-cart.js');
         try {
-            $this->assertSame(['falcon-shop'], $plugins->syncPublishedAssets());
+            // The bundled plugins with an assets folder (Falcon SEO has none).
+            $this->assertSame(['falcon-ai', 'falcon-shop'], $plugins->syncPublishedAssets());
             $this->assertFileExists($public);
 
             $plugins->deactivate('falcon-shop');
             $this->assertFileDoesNotExist($public);
-            $this->assertSame([], $plugins->syncPublishedAssets(), 'an update must not publish a switched-off plugin');
+            $this->assertNotContains('falcon-shop', $plugins->syncPublishedAssets(), 'an update must not publish a switched-off plugin');
 
             $plugins->activate('falcon-shop');
             $this->assertFileExists($public);

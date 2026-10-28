@@ -1,9 +1,9 @@
 {{--
-    Editor → SEO panel, Pro: "Suggest with AI" beside the SEO title and meta description, and
-    Google's own keyword numbers (DataForSEO) in the Analysis tab. Nothing here without Pro.
+    Editor → SEO panel, Pro: Google's own keyword numbers (DataForSEO) in the Analysis tab.
+    Nothing here without Pro. ("Suggest with AI" beside the SEO title and description is the
+    Falcon AI plugin's.)
 --}}
 @php
-    $falconSeoAi = \FalconSeo\Support\AiWriter::available();
     $falconSeoDfs = \FalconSeo\Support\DataForSeo::available();
 @endphp
 @if(\FalconSeo\Support\Pro::active())
@@ -12,57 +12,12 @@
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
     const num = n => n === null || n === undefined ? '—' : Number(n).toLocaleString();
     const token = () => document.querySelector('input[name="_token"]')?.value || '';
-    const editorContent = () => {
-        if (window.tinymce && tinymce.get('wp-editor') && document.getElementById('editor_type')?.value !== 'builder') return tinymce.get('wp-editor').getContent();
-        return document.getElementById('editor_type')?.value !== 'builder' ? (document.querySelector('textarea[name="content"]')?.value || '') : '';
-    };
 
     window.falconSeoPro = {
-        ai: @json($falconSeoAi),
         dfs: @json($falconSeoDfs),
         dfsBatch: {{ \FalconSeo\Support\DataForSeo::COUNTRY_BATCH }},
         // Google numbers are billed per country: the first few chosen countries only.
         dfsMax: 10,
-
-        /** Ask Claude for options and show them under the field; a click fills it. */
-        suggest(field) {
-            const input = document.getElementById(field === 'title' ? 'seo-title-input' : 'seo-desc-input');
-            let box = document.getElementById('falcon-seo-ai-' + field);
-            if (!box) {
-                box = document.createElement('div');
-                box.id = 'falcon-seo-ai-' + field;
-                box.className = 'mt-2';
-                input.parentNode.insertBefore(box, input.nextSibling);
-            }
-            if (!this.ai) {
-                box.innerHTML = '<p class="text-[12px] text-[#b32d2e]">Add a Claude API key under SEO → Settings → AI writing first.</p>';
-                return;
-            }
-            box.innerHTML = '<p class="text-[12px] text-[#646970] italic">Claude is writing…</p>';
-            const body = new FormData();
-            body.append('_token', token());
-            body.append('field', field);
-            body.append('post_id', "{{ $post->id ?? 0 }}");
-            body.append('title', document.querySelector('input[name="title"]')?.value || '');
-            body.append('keyword', document.getElementById('seo-focus-keyword')?.value || '');
-            body.append('current', input.value || '');
-            body.append('content', editorContent());
-            fetch(@json(route('admin.seo.ai-suggest')), {method: 'POST', body, headers: {'Accept': 'application/json'}})
-                .then(r => r.json().then(d => r.ok ? d : Promise.reject(new Error(d.message || 'The suggestion failed.'))))
-                .then(d => {
-                    box.innerHTML = '<div class="border border-[#dcdcde] rounded bg-[#f6f7f7] p-2 space-y-1">'
-                        + (d.options || []).map((o, i) => `<button type="button" data-i="${i}" class="block w-full text-left p-2 rounded bg-white border border-transparent hover:border-[#2271b1]">
-                            <span class="block text-[13px] text-[#1d2327]">${esc(o.text)}</span>
-                            <span class="block text-[11px] text-[#646970]">${o.text.length} characters · ${esc(o.why)}</span></button>`).join('')
-                        + '<p class="text-[11px] text-[#646970] px-1">Click one to use it, then save the page.</p></div>';
-                    box.querySelectorAll('button[data-i]').forEach(b => b.addEventListener('click', () => {
-                        input.value = d.options[b.dataset.i].text;
-                        input.dispatchEvent(new Event('input', {bubbles: true}));
-                        box.innerHTML = '';
-                    }));
-                })
-                .catch(e => { box.innerHTML = `<p class="text-[12px] text-[#b32d2e]">${esc(e.message)}</p>`; });
-        },
 
         /** Google's numbers for the keyword in the chosen countries, a few countries per request. */
         async metrics(keyword, countries, el) {
@@ -103,20 +58,6 @@
         },
     };
 
-    // "Suggest with AI" beside the SEO title and meta description.
-    document.addEventListener('DOMContentLoaded', function () {
-        ['title', 'desc'].forEach(key => {
-            const counter = document.getElementById('seo-' + key + '-count');
-            if (!counter || document.getElementById('falcon-seo-ai-btn-' + key)) return;
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.id = 'falcon-seo-ai-btn-' + key;
-            btn.className = 'text-[11px] text-[#2271b1] hover:underline mr-3';
-            btn.textContent = '✨ Suggest with AI';
-            btn.addEventListener('click', () => window.falconSeoPro.suggest(key === 'title' ? 'title' : 'description'));
-            counter.parentNode.insertBefore(btn, counter);
-        });
-    });
 })();
 </script>
 @endif

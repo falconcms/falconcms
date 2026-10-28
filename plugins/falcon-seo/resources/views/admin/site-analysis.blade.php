@@ -8,7 +8,7 @@
         $gradeName = ['good' => 'Good', 'ok' => 'Needs some work', 'poor' => 'Needs work'];
         $edit = fn ($row) => \FalconSeo\Support\SeoAudit::editUrl((int) $row['post_id'], (string) $row['type']);
         $pro = \FalconSeo\Support\Pro::active();
-        $ai = \FalconSeo\Support\AiWriter::available();
+        $ai = \FalconSeo\Support\SeoAi::available();
         // Pro one-click fixes: what each button does, by problem. [label, method, needs AI]
         $fixes = [
             'description' => [['Fill missing ones from the page text', 'auto', false], ['Write them with AI', 'ai', true]],
@@ -80,7 +80,7 @@
                                 <span class="text-[#646970]">Fix all {{ $count }}:</span>
                                 @foreach($fixes[$problem['id']] as [$label, $method, $needsAi])
                                     <button type="button" class="wp-btn-secondary h-7 py-0 px-2 text-[12px]" @disabled($needsAi && !$ai)
-                                            title="{{ $needsAi && !$ai ? 'Add a Claude API key in SEO → Settings first' : 'A revision is kept before any content changes' }}"
+                                            title="{{ $needsAi && !$ai ? 'Needs AI writing set up: AI → Settings' : 'A revision is kept before any content changes' }}"
                                             onclick="falconSiteFix(this, @js($problem['id']), @js($method), @js(array_column($problem['pages'], 'post_id')))">{{ $needsAi ? '✨ ' : '' }}{{ $label }}</button>
                                 @endforeach
                                 <span class="falcon-site-fix-out text-[#646970]"></span>

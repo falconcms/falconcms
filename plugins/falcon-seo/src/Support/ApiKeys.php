@@ -2,27 +2,21 @@
 
 namespace FalconSeo\Support;
 
-use Anthropic\Client;
-use Anthropic\Core\Exceptions\APIConnectionException;
-use Anthropic\Core\Exceptions\AuthenticationException;
-use Anthropic\Core\Exceptions\NotFoundException;
-use Anthropic\Core\Exceptions\PermissionDeniedException;
-use Anthropic\RequestOptions;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
- * The outside services' keys on SEO → Settings: Claude (AI writing), Bing Webmaster Tools
- * (search demand) and DataForSEO (Google keyword data).
+ * The outside services' keys on SEO → Settings: Bing Webmaster Tools (search demand) and
+ * DataForSEO (Google keyword data). The AI keys are Falcon AI's (AI → Settings).
  *
  * Saving: a key is stored encrypted; an empty field keeps the one saved; "Remove" clears it.
  * A value that cannot be that service's key is refused with a message instead of saved: a
  * browser filling the admin password into the first password field it sees would otherwise
  * replace a good key every time the page is saved.
  *
- * Testing: each service has a call that costs nothing (list a model, list the account's
- * sites, read the account balance), so "Test" says whether the saved key works.
+ * Testing: each service has a call that costs nothing (list the account's sites, read the
+ * account balance), so "Test" says whether the saved key works.
  */
 final class ApiKeys
 {
@@ -30,11 +24,10 @@ final class ApiKeys
     public const MASK = '•';
 
     /** How much of a saved key shows: [characters at the start, characters at the end]. */
-    private const VISIBLE = ['claude' => [14, 4], 'bing' => [4, 4], 'dataforseo' => [2, 2]];
+    private const VISIBLE = ['bing' => [4, 4], 'dataforseo' => [2, 2]];
 
     /** service => [option, label, the shape a real key has, what to do when it does not] */
     public const SERVICES = [
-        'claude' => [Pro::CLAUDE_KEY, 'Claude API key', '/^sk-ant-[A-Za-z0-9_\-]{20,}$/', 'A Claude API key starts with "sk-ant-". Copy it again from console.anthropic.com → API keys.'],
         'bing' => [KeywordDemand::BING_KEY, 'Bing Webmaster API key', '/^[a-f0-9]{32}$/i', 'A Bing Webmaster API key is 32 letters and digits (0-9, a-f). Copy it again from Bing Webmaster Tools → Settings → API access.'],
         'dataforseo' => [Pro::DATAFORSEO_PASSWORD, 'DataForSEO API password', '/^\S{8,}$/', 'The DataForSEO API password is the one on app.dataforseo.com → API Access (not your account password).'],
     ];
@@ -131,7 +124,6 @@ final class ApiKeys
 
         try {
             return match ($service) {
-                'claude' => self::testClaude($key),
                 'bing' => self::testBing($key),
                 'dataforseo' => self::testDataForSeo($key),
                 default => ['ok' => false, 'message' => 'Unknown service.'],
@@ -139,27 +131,6 @@ final class ApiKeys
         } catch (Throwable $e) {
             return ['ok' => false, 'message' => 'The test could not run: '.$e->getMessage()];
         }
-    }
-
-    private static function testClaude(string $key): array
-    {
-        if (!class_exists(Client::class)) {
-            return ['ok' => false, 'message' => 'The Anthropic PHP library is missing: run composer update once.'];
-        }
-        $model = Pro::claudeModel();
-        try {
-            $transporter = app()->bound('falcon-seo.ai.transporter') ? app('falcon-seo.ai.transporter') : null;
-            $client = new Client(apiKey: $key, requestOptions: RequestOptions::with(timeout: 20.0, maxRetries: 0, transporter: $transporter));
-            $info = $client->models->retrieve($model);
-        } catch (AuthenticationException|PermissionDeniedException $e) {
-            return ['ok' => false, 'message' => 'Claude refused the key. Check that it is active on console.anthropic.com and the account has credit.'];
-        } catch (NotFoundException $e) {
-            return ['ok' => false, 'message' => "The key works, but {$model} is not available to it: choose another model."];
-        } catch (APIConnectionException $e) {
-            return ['ok' => false, 'message' => 'This server could not reach api.anthropic.com.'];
-        }
-
-        return ['ok' => true, 'message' => 'Works: '.($info->displayName ?? $model).' is ready. (Writing also needs credit on the Anthropic account.)'];
     }
 
     private static function testBing(string $key): array

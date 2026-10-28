@@ -3,50 +3,23 @@
 namespace FalconSeo\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Post;
-use FalconSeo\Support\AiWriter;
 use FalconSeo\Support\DataForSeo;
 use FalconSeo\Support\Pro;
+use FalconSeo\Support\SeoAi;
 use FalconSeo\Support\SeoFixer;
 use FalconSeo\Support\SeoReport;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
-/** The Pro tools: AI writing, Google keyword numbers, one-click fixes, the weekly email. */
+/**
+ * The Pro tools: Google keyword numbers, one-click fixes, the weekly email. (Writing with AI —
+ * "Suggest with AI" in the editor — is the Falcon AI plugin's; the AI fixes here ask it.)
+ */
 class SeoProController extends Controller
 {
     /** Pages fixed per "Fix all" request: AI fixes take a few seconds each. */
     public const FIX_BATCH = 5;
-
-    /** Editor → SEO: SEO title or meta description options written by Claude. */
-    public function suggest(Request $request)
-    {
-        $data = $request->validate([
-            'field' => 'required|in:title,description',
-            'post_id' => 'nullable|integer',
-            'title' => 'nullable|string|max:500',
-            'content' => 'nullable|string|max:2000000',
-            'keyword' => 'nullable|string|max:200',
-            'current' => 'nullable|string|max:1000',
-        ]);
-        if ($locked = $this->locked()) {
-            return $locked;
-        }
-        $post = !empty($data['post_id']) ? Post::find($data['post_id']) : null;
-        $page = [
-            'title' => (string) ($data['title'] ?? $post?->title ?? ''),
-            'content' => trim((string) ($data['content'] ?? '')) !== '' ? (string) $data['content'] : (string) ($post?->content ?? ''),
-            'keyword' => (string) ($data['keyword'] ?? ''),
-            'current' => (string) ($data['current'] ?? ''),
-        ];
-
-        try {
-            return response()->json(['options' => AiWriter::suggest($data['field'], $page)]);
-        } catch (RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
-    }
 
     /** Editor → SEO → Analysis: Google's searches, cost per click and difficulty by country (DataForSEO). */
     public function metrics(Request $request)
@@ -79,8 +52,8 @@ class SeoProController extends Controller
             return $locked;
         }
         $method = $data['method'] ?? 'auto';
-        if ($method === 'ai' && !AiWriter::available()) {
-            return response()->json(['message' => 'AI fixes need a Claude API key in SEO → Settings → AI writing.'], 422);
+        if ($method === 'ai' && !SeoAi::available()) {
+            return response()->json(['message' => SeoAi::NOT_SET_UP], 422);
         }
 
         $results = [];

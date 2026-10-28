@@ -5,7 +5,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.8 <Badge type="tip" text="Latest" /> {#v2-8-8}
+## v2.8.9 <Badge type="tip" text="Latest" /> {#v2-8-9}
+
+**Released: 2026-10-28**
+
+Write with AI, free: Falcon AI writes whole articles in the post editor with Claude, OpenAI or
+Google Gemini (which has a free tier). Also shop hooks for plugins, and cached pages that no
+longer break add to cart.
+
+### Added
+
+- **Falcon AI** (free, bundled, on by default). A **Write with AI** button beside the Page
+  Builder tab of the post editor:
+  - Give a topic (plus an optional focus keyword, audience, length, tone and notes) and get an
+    outline you can edit, then the article, written section by section as you watch, then its
+    SEO title, description, excerpt and tags.
+  - **Improve selection** rewrites, expands, shortens, simplifies or translates the selected text.
+  - SEO suggestions (titles, descriptions, image alt text) in Falcon SEO and its Site Analysis.
+  - About 80 writing languages, in a searchable list.
+  - Works with **Claude**, **OpenAI** or **Google Gemini** on the site's own API key, set under
+    AI → Settings & Usage. Gemini's Flash models have a free tier; new Google AI Studio keys
+    starting with `AQ.` are accepted. A busy Gemini model (503) is retried automatically.
+  - A monthly token limit, a usage record (counts only, never the text) and a choice of which
+    roles may write with AI. Keys are stored encrypted and never sent to the browser, and every
+    AI answer is cleaned before it reaches the editor. See [AI Writing](/guide/ai).
+- `falcon_admin_post_editor_tabs`, a hook in the post editor's tab row.
+- **Shop hooks for plugins:** `falcon_product_card_actions` (a button on product cards),
+  `falcon_shop_settings_tabs` and `falcon_shop_settings_toggles` (a tab of Shop → Settings),
+  `falcon_cart_shipping_bar` (a line above the cart and in the mini-cart),
+  `falcon_shipping_zone_for_country()`, and `LazyCart.added()` / `window.FalconShopUx` for
+  add-to-cart feedback. Falcon Shop Boost (Pro) is built on them. Documented in [Hooks](/api/hooks).
+- `settings_params` in `plugin.json`: the Plugins screen's Settings link can open one tab.
+
+### Changed
+
+- **AI writing moved out of Falcon SEO into Falcon AI, and is now free.** A saved Claude key and
+  model are carried over on update; SEO → Settings no longer has an AI section.
+- The shop archive's "Add to cart" opens the mini-cart, like product cards elsewhere.
+
+### Fixed
+
+- **Add to cart on a cached page no longer fails with 419.** With static page caching on, a
+  cached page used to hand its first visitor's CSRF token to everyone after them. Each visitor
+  now gets their own token. Pages cached before the update are rendered afresh.
+
+---
+
+## v2.8.8 {#v2-8-8}
 
 **Released: 2026-10-28**
 

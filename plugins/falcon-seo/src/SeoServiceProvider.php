@@ -204,7 +204,7 @@ class SeoServiceProvider extends ServiceProvider
         // The editor's SEO tabs (Analysis, Keywords, Internal Linking) ask these; no menu owns
         // them, so they are open to whoever can write posts or pages.
         add_falcon_filter('falcon_admin_path_access', function ($decided, $path = '', $user = null) {
-            if ($decided !== null || !$user || !preg_match('#^admin/seo/(page-analysis|keyword-suggestions|keyword-demand|keyword-countries|keyword-metrics|ai-suggest|related-posts)$#', (string) $path)) {
+            if ($decided !== null || !$user || !preg_match('#^admin/seo/(page-analysis|keyword-suggestions|keyword-demand|keyword-countries|keyword-metrics|related-posts)$#', (string) $path)) {
                 return $decided;
             }
 

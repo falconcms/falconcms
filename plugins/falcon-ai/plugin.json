@@ -1,0 +1,16 @@
+{
+    "name": "Falcon AI",
+    "slug": "falcon-ai",
+    "version": "1.0.0",
+    "data": "the AI settings and the record of AI requests and tokens used",
+    "description": "Write with AI in the post editor (an outline you can edit, then the whole article, then its SEO title, description and tags), improve selected text, and AI suggestions for SEO titles, descriptions and image alt text. Works with Claude, OpenAI or Google Gemini (free tier), using your own API key.",
+    "author": "FalconCMS",
+    "requires_php": ">=8.3",
+    "requires_cms": ">=2.8.9",
+    "namespace": "FalconAi\\",
+    "provider": "FalconAi\\AiServiceProvider",
+    "lifecycle": "FalconAi\\Lifecycle",
+    "default_active": true,
+    "settings_route": "admin.ai.settings",
+    "dependencies": []
+}

@@ -294,10 +294,11 @@
         }
     }
 
-    // Pro: a weak SEO title or description gets "Suggest with AI" right where it is reported.
+    // A weak SEO title or description gets "Suggest with AI" right where it is reported, when an
+    // AI plugin (Falcon AI) offers window.falconSeoAi.
     function aiFix(c) {
-        if (!window.falconSeoPro || !['title', 'description'].includes(c.id) || !['warning', 'error'].includes(c.status)) return '';
-        return ` <button type="button" class="text-[11px] text-[#2271b1] hover:underline ml-1" onclick="switchSeoTab('general'); window.falconSeoPro.suggest('${c.id}')">✨ Suggest with AI</button>`;
+        if (!window.falconSeoAi || !['title', 'description'].includes(c.id) || !['warning', 'error'].includes(c.status)) return '';
+        return ` <button type="button" class="text-[11px] text-[#2271b1] hover:underline ml-1" onclick="switchSeoTab('general'); window.falconSeoAi.suggest('${c.id}')">✨ Suggest with AI</button>`;
     }
 
     function render(d) {
