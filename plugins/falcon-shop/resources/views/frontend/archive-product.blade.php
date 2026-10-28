@@ -4,22 +4,6 @@
 @section('title', $title ?? 'Shop')
 
 @section('content')
-<style>
-    /* WooCommerce-style Pagination Overrides for Laravel Default Tailwind Pagination */
-    nav[role="navigation"] { display: flex; align-items: center; justify-content: flex-start; margin-top: 2rem; }
-    nav[role="navigation"] > div:first-child { display: none; } /* Hide the 'Showing X to Y...' text from pagination block */
-    nav[role="navigation"] > div:last-child { display: flex; width: auto; }
-    nav[role="navigation"] .relative.inline-flex { 
-        padding: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
-        font-size: 14px; border-radius: 2px; margin-right: 6px; border: 1px solid #b3d4f0; color: {{ get_cms_option('theme_primary_color', '#0091ea') }}; background: white; text-decoration: none;
-    }
-    nav[role="navigation"] span[aria-current="page"] > span {
-        background-color: {{ get_cms_option('theme_primary_color', '#0091ea') }} !important; color: white !important; border-color: {{ get_cms_option('theme_primary_color', '#0091ea') }} !important; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-    }
-    nav[role="navigation"] a.relative:hover { background-color: #f0f6fc; }
-    nav[role="navigation"] svg { width: 16px; height: 16px; }
-</style>
-
 <div class="bg-white py-12 min-h-screen font-sans">
     <div class="container-custom">
         <h1 class="text-[36px] md:text-[42px] font-normal text-heading mb-8">{{ $title ?? 'Shop' }}</h1>
@@ -146,9 +130,7 @@
             @endforeach
         </div>
 
-        <div class="mt-8 flex justify-start">
-            {{ $posts->links() }}
-        </div>
+        {!! the_falcon_pagination($posts) !!}
         @else
         <div class="bg-white p-10 text-center text-[#777]">
             <p class="text-lg mb-4">No products found.</p>

@@ -235,59 +235,7 @@
         @endif
 
         {{-- ═══ PAGINATION ═══ --}}
-        @if($posts->hasPages())
-        <div class="mt-10 flex items-center gap-1.5 flex-wrap">
-            {{-- Prev --}}
-            @if($posts->onFirstPage())
-                <span class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-gray-300 cursor-not-allowed select-none">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </span>
-            @else
-                <a href="{{ $posts->previousPageUrl() }}" class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-gray-500 hover:border-[{{ $primaryColor }}] hover:text-[{{ $primaryColor }}] transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                </a>
-            @endif
-
-            {{-- Page numbers with ellipsis --}}
-            @php
-                $cur  = $posts->currentPage();
-                $last = $posts->lastPage();
-                $range = [];
-                for ($p = 1; $p <= $last; $p++) {
-                    if ($p === 1 || $p === $last || abs($p - $cur) <= 2) {
-                        $range[] = $p;
-                    }
-                }
-                $range = array_unique($range);
-                sort($range);
-            @endphp
-            @php $prevPage = null; @endphp
-            @foreach($range as $page)
-                @if($prevPage !== null && $page - $prevPage > 1)
-                    <span class="w-9 h-9 inline-flex items-center justify-center text-gray-400 text-[13px] select-none">…</span>
-                @endif
-                @if($page === $cur)
-                    <span class="w-9 h-9 inline-flex items-center justify-center rounded-[3px] text-[13px] font-semibold text-white select-none"
-                          style="background:{{ $primaryColor }};border:1px solid {{ $primaryColor }}">{{ $page }}</span>
-                @else
-                    <a href="{{ $posts->url($page) }}"
-                       class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-[13px] text-gray-600 hover:border-[{{ $primaryColor }}] hover:text-[{{ $primaryColor }}] transition-colors">{{ $page }}</a>
-                @endif
-                @php $prevPage = $page; @endphp
-            @endforeach
-
-            {{-- Next --}}
-            @if($posts->hasMorePages())
-                <a href="{{ $posts->nextPageUrl() }}" class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-gray-500 hover:border-[{{ $primaryColor }}] hover:text-[{{ $primaryColor }}] transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </a>
-            @else
-                <span class="w-9 h-9 inline-flex items-center justify-center border border-gray-200 rounded-[3px] text-gray-300 cursor-not-allowed select-none">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </span>
-            @endif
-        </div>
-        @endif
+        {!! the_falcon_pagination($posts) !!}
 
         @else
         <div class="bg-white p-10 text-center text-[#777]">

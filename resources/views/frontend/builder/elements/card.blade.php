@@ -576,51 +576,8 @@
     @if($isPaginated)
 
         @if($paginationType === 'numbered')
-        @php
-            $curPage  = $posts->currentPage();
-            $lastPage = $posts->lastPage();
-            $window   = 2; // pages each side of current
-            $pages    = [];
-            for ($i = max(1, $curPage - $window); $i <= min($lastPage, $curPage + $window); $i++) $pages[] = $i;
-        @endphp
-        @if($lastPage > 1)
-        <style>
-        .lz-pagination{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:28px;}
-        .lz-pagination a,.lz-pagination span{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 10px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:all .18s;border:1.5px solid transparent;}
-        .lz-pagination a{background:#f8fafc;color:#374151;border-color:#e5e7eb;}
-        .lz-pagination a:hover{background:#2271b1;color:#fff;border-color:#2271b1;}
-        .lz-pagination .lz-pg-active{background:#2271b1;color:#fff;border-color:#2271b1;cursor:default;}
-        .lz-pagination .lz-pg-dots{color:#9ca3af;border:none;background:transparent;cursor:default;}
-        .lz-pagination .lz-pg-prev,.lz-pagination .lz-pg-next{font-size:16px;}
-        </style>
-        <nav class="lz-pagination">
-            @if($posts->currentPage() > 1)
-            <a class="lz-pg-prev" href="{{ $posts->previousPageUrl() }}">&#8249;</a>
-            @endif
-
-            @if($pages[0] > 1)
-                <a href="{{ $posts->url(1) }}">1</a>
-                @if($pages[0] > 2)<span class="lz-pg-dots">…</span>@endif
-            @endif
-
-            @foreach($pages as $p)
-                @if($p === $curPage)
-                <span class="lz-pg-active">{{ $p }}</span>
-                @else
-                <a href="{{ $posts->url($p) }}">{{ $p }}</a>
-                @endif
-            @endforeach
-
-            @if(end($pages) < $lastPage)
-                @if(end($pages) < $lastPage - 1)<span class="lz-pg-dots">…</span>@endif
-                <a href="{{ $posts->url($lastPage) }}">{{ $lastPage }}</a>
-            @endif
-
-            @if($posts->hasMorePages())
-            <a class="lz-pg-next" href="{{ $posts->nextPageUrl() }}">&#8250;</a>
-            @endif
-        </nav>
-        @endif
+        {{-- The site's one frontend pagination (components/frontend/pagination). --}}
+        {!! the_falcon_pagination($posts) !!}
 
         @elseif($paginationType === 'load_more')
         @if($posts->hasMorePages())

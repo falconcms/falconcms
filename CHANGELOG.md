@@ -9,6 +9,15 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+## [2.8.11] — 2026-10-29
+
+### Changed
+- One pagination on every page of the site: the blog, categories and tags, custom post type
+  archives, the shop, search, builder post grids and the shop account's orders all show the
+  same pagination, in the theme's primary colour, with Previous / Next, and only the nearby
+  pages on a phone. A theme's or plugin's plain `->links()` outside the admin renders it too
+  (`FrontendPagination` middleware); `the_falcon_pagination()` renders it anywhere.
+
 ## [2.8.10] — 2026-10-28
 
 ### Fixed

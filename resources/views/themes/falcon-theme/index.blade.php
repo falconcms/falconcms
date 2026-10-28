@@ -144,49 +144,7 @@
                         </div>
                     @endif
 
-                    {{-- Pagination (simple, theme-matched) --}}
-                    @if($posts->hasPages())
-                        @php
-                            $cur = $posts->currentPage();
-                            $last = $posts->lastPage();
-                            $start = max(1, $cur - 1);
-                            $end = min($last, $cur + 1);
-                            $pgBase = 'w-9 h-9 flex items-center justify-center rounded-lg text-sm transition';
-                            $pgLink = $pgBase . ' border border-slate-200 text-slate-600 hover:border-primary hover:text-primary';
-                            $pgOff  = $pgBase . ' border border-slate-100 text-slate-300 cursor-default';
-                        @endphp
-                        <nav class="mt-14 flex items-center justify-center gap-1.5" aria-label="Pagination">
-                            @if($posts->onFirstPage())
-                                <span class="{{ $pgOff }}"><i data-lucide="chevron-left" class="w-4 h-4"></i></span>
-                            @else
-                                <a href="{{ $posts->previousPageUrl() }}" class="{{ $pgLink }}" aria-label="Previous"><i data-lucide="chevron-left" class="w-4 h-4"></i></a>
-                            @endif
-
-                            @if($start > 1)
-                                <a href="{{ $posts->url(1) }}" class="{{ $pgLink }}">1</a>
-                                @if($start > 2)<span class="px-1 text-slate-300">…</span>@endif
-                            @endif
-
-                            @for($p = $start; $p <= $end; $p++)
-                                @if($p == $cur)
-                                    <span class="{{ $pgBase }} bg-primary text-white font-bold">{{ $p }}</span>
-                                @else
-                                    <a href="{{ $posts->url($p) }}" class="{{ $pgLink }}">{{ $p }}</a>
-                                @endif
-                            @endfor
-
-                            @if($end < $last)
-                                @if($end < $last - 1)<span class="px-1 text-slate-300">…</span>@endif
-                                <a href="{{ $posts->url($last) }}" class="{{ $pgLink }}">{{ $last }}</a>
-                            @endif
-
-                            @if($posts->hasMorePages())
-                                <a href="{{ $posts->nextPageUrl() }}" class="{{ $pgLink }}" aria-label="Next"><i data-lucide="chevron-right" class="w-4 h-4"></i></a>
-                            @else
-                                <span class="{{ $pgOff }}"><i data-lucide="chevron-right" class="w-4 h-4"></i></span>
-                            @endif
-                        </nav>
-                    @endif
+                    {!! the_falcon_pagination($posts) !!}
                 @else
                     <div class="py-20 px-10 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100">
                         <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">

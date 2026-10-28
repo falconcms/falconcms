@@ -5,7 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.10 <Badge type="tip" text="Latest" /> {#v2-8-10}
+## v2.8.11 <Badge type="tip" text="Latest" /> {#v2-8-11}
+
+**Released: 2026-10-29**
+
+One pagination, the same and tidy on every page of the site.
+
+### Changed
+
+- **One pagination everywhere.** The blog, categories and tags, custom post type archives, the
+  shop and its categories, search results, builder post grids and the shop account's orders
+  each had a pagination of their own, and the shop's showed Laravel's default with a
+  "Showing 1 to 12 of 13 results" line squeezed beside it. They now all show the same one:
+  rounded buttons in the theme's primary colour, Previous and Next, the current page filled,
+  long runs shortened with "…", and on a phone only the pages next to the current one, so it
+  never wraps onto a second line.
+- A theme's or a plugin's plain `$items->links()` renders it too on any page outside the
+  admin, so custom themes match without changes; `the_falcon_pagination($items)` renders it
+  anywhere. The admin keeps its own. To change the colour, set `--falcon-pg-accent` on a parent.
+
+---
+
+## v2.8.10 {#v2-8-10}
 
 **Released: 2026-10-28**
 

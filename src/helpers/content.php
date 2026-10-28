@@ -6,6 +6,7 @@
  * Loaded by src/helpers.php.
  */
 
+use FalconCms\Core\Http\Middleware\FrontendPagination;
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\ProductCategory;
@@ -416,7 +417,8 @@ if (!function_exists('the_falcon_pagination')) {
             return '';
         }
 
-        return $items->links($view);
+        // The site's one frontend pagination, unless a theme asks for its own view.
+        return $items->links($view ?? FrontendPagination::VIEW);
     }
 }
 
