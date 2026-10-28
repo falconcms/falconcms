@@ -86,6 +86,14 @@ ever drifts — after a bulk import, or a direct database edit — rebuild it:
 php artisan falcon:reindex-attributes
 ```
 
+## Shop Boost (Pro)
+
+With a Pro licence, **Falcon Shop Boost** adds a tab to the shop settings
+(Shop → Settings → Shop Boost) with shopping feedback (fly to cart, a free shipping bar, button
+states, loading skeletons) and sales features (sticky add to cart on phones, quick view,
+"only N left", back-in-stock emails, abandoned cart reminders, recently viewed and more). It is
+built on the shop hooks listed under [E-commerce Logic Hooks](../api/hooks.md).
+
 ## Related, upsells and cross-sells
 
 | Row | Where | Chosen by |

@@ -9,6 +9,13 @@
             'coupons'        => 'Coupons',
             'emails_accounts'=> 'Email and Account',
         ];
+        // A plugin's own tab ([id => label]); its panel goes in at falcon_shop_settings_form_bottom.
+        // The id goes into the Alpine expressions below, so only a plain slug is taken.
+        foreach ((array) apply_falcon_filters('falcon_shop_settings_tabs', []) as $tabId => $tabLabel) {
+            if (is_string($tabId) && preg_match('/^[a-z0-9_-]+$/', $tabId) && is_string($tabLabel) && !isset($shopTabs[$tabId])) {
+                $shopTabs[$tabId] = $tabLabel;
+            }
+        }
         $activeNavTab = request('tab', session('active_shop_tab', 'general'));
     @endphp
 

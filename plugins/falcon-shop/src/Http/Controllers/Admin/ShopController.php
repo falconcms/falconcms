@@ -543,6 +543,12 @@ class ShopController extends Controller
             'enable_guest_checkout' => 'shop_enable_guest_checkout',
             'force_login_checkout' => 'shop_force_login_checkout',
         ];
+        // A plugin's own switches (request name => option key), for the same unticked-means-off save.
+        $toggles = array_merge($toggles, array_filter(
+            (array) apply_falcon_filters('falcon_shop_settings_toggles', []),
+            fn ($opt, $req) => is_string($req) && is_string($opt) && str_starts_with($opt, 'shop_'),
+            ARRAY_FILTER_USE_BOTH
+        ));
 
         foreach ($toggles as $reqKey => $optKey) {
             $val = $request->has($reqKey) ? '1' : '0';

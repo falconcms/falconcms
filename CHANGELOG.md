@@ -7,6 +7,25 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [Unreleased]
+
+### Added
+- Shop hooks for plugins: `falcon_product_card_actions` (a button on product cards),
+  `falcon_shop_settings_tabs` and `falcon_shop_settings_toggles` (a tab of Shop → Settings with
+  switches that save), `falcon_cart_shipping_bar` (a line above the cart and in the mini-cart),
+  `falcon_shipping_zone_for_country()`, and `LazyCart.added()` / `window.FalconShopUx` for
+  add-to-cart feedback. Falcon Shop Boost (Pro) is built on them.
+- `settings_params` in `plugin.json`: the Plugins screen's Settings link can open one tab.
+
+### Fixed
+- With static page caching on, a cached page no longer hands its first visitor's CSRF token to
+  everyone after them. Each visitor gets their own token, so add to cart (and every other form)
+  on a cached page stops failing with 419. Pages cached before the update are rendered afresh.
+
+### Changed
+- The shop archive's "Add to cart" opens the mini-cart, like product cards elsewhere, instead
+  of a popup.
+
 ## [2.8.8] — 2026-10-28
 
 ### Added

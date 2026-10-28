@@ -22,13 +22,15 @@
 
         <!-- Items (filled via AJAX) -->
         <div id="mini-cart-items" class="flex-1 overflow-y-auto">
-            <div class="flex items-center justify-center py-20">
+            <div class="flex items-center justify-center py-20" data-mini-cart-loading>
                 <i data-lucide="loader-circle" class="w-6 h-6 text-gray-300 animate-spin"></i>
             </div>
         </div>
 
         <!-- Footer -->
         <div id="mini-cart-footer" class="border-t border-gray-100 px-5 py-4 space-y-3">
+            {{-- A plugin's line above the subtotal (falcon_cart_shipping_bar), filled with each refresh. --}}
+            <div id="mini-cart-shipping-bar"></div>
             <div class="flex items-center justify-between">
                 <span class="text-[14px] text-gray-500">Subtotal</span>
                 <span id="mini-cart-subtotal" class="text-[18px] font-black text-heading">{{ falcon_price_format(0) }}</span>

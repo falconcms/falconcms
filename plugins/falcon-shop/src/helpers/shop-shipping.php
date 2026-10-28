@@ -217,6 +217,63 @@ if (!function_exists('falcon_shipping_is_calculable')) {
     }
 }
 
+if (!function_exists('falcon_shipping_zone_for_country')) {
+    /**
+     * The shipping zone that covers a country (or a "Country - State" region), or null.
+     *
+     * A state matches its own entry first, then its parent country's. Shared by the delivery
+     * cost and the free-shipping progress bar, so the bar never promises a threshold the
+     * checkout would not honour.
+     */
+    function falcon_shipping_zone_for_country($country): ?array
+    {
+        if (!$country) {
+            return null;
+        }
+
+        $zones = get_shop_option('shop_shipping_zones', []);
+        $normalizedCountry = str_replace('—', '-', $country);
+        foreach ((array) $zones as $zone) {
+            if (!is_array($zone)) {
+                continue;
+            }
+            $zoneCountries = (array) ($zone['countries'] ?? []);
+            $normalizedZoneCountries = array_map(fn ($c) => str_replace('—', '-', $c), $zoneCountries);
+
+            if (in_array($normalizedCountry, $normalizedZoneCountries)) {
+                return $zone;
+            }
+
+            if (strpos($normalizedCountry, ' - ') !== false) {
+                $parts = explode(' - ', $normalizedCountry);
+                $parentCountry = trim($parts[0]);
+                if (in_array($parentCountry, $normalizedZoneCountries)) {
+                    return $zone;
+                }
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('falcon_cart_shipping_bar')) {
+    /**
+     * A plugin's line above the cart: on the cart page, in its AJAX updates and in the mini-cart
+     * (`$context` 'cart' or 'mini-cart'). Empty unless something hooks `falcon_cart_shipping_bar`
+     * (a free shipping progress bar, say). It arrives with every cart change, never in a page the
+     * cache could keep, so it may speak about this shopper's cart.
+     */
+    function falcon_cart_shipping_bar(string $context = 'cart'): string
+    {
+        if (!has_falcon_filter('falcon_cart_shipping_bar')) {
+            return '';
+        }
+
+        return (string) apply_falcon_filters('falcon_cart_shipping_bar', '', $context);
+    }
+}
+
 if (!function_exists('falcon_delivery_shipping_details')) {
     /** Zone / flat-rate delivery cost — the calculation that existed before pickup was a choice. */
     function falcon_delivery_shipping_details($country = null)
@@ -235,31 +292,7 @@ if (!function_exists('falcon_delivery_shipping_details')) {
         }
 
         // 2. Advanced Shipping Zones
-        $zones = get_shop_option('shop_shipping_zones', []);
-
-        // Find matching zone if country is provided
-        $matchedZone = null;
-        if ($country) {
-            $normalizedCountry = str_replace('—', '-', $country);
-            foreach ($zones as $zone) {
-                $zoneCountries = (array) ($zone['countries'] ?? []);
-                $normalizedZoneCountries = array_map(fn ($c) => str_replace('—', '-', $c), $zoneCountries);
-
-                if (in_array($normalizedCountry, $normalizedZoneCountries)) {
-                    $matchedZone = $zone;
-                    break;
-                }
-
-                if (strpos($normalizedCountry, ' - ') !== false) {
-                    $parts = explode(' - ', $normalizedCountry);
-                    $parentCountry = trim($parts[0]);
-                    if (in_array($parentCountry, $normalizedZoneCountries)) {
-                        $matchedZone = $zone;
-                        break;
-                    }
-                }
-            }
-        }
+        $matchedZone = falcon_shipping_zone_for_country($country);
 
         if ($matchedZone) {
             $zoneName = $matchedZone['name'] ?? 'Shipping';

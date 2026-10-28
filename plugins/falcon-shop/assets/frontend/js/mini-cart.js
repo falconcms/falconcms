@@ -13,15 +13,22 @@ window.LazyCart = (function () {
     const overlay = () => document.getElementById('mini-cart-overlay');
     const panel   = () => document.getElementById('mini-cart-panel');
 
+    // window.FalconShopUx (fly-to-cart, button states, skeletons) comes from Falcon Shop Boost
+    // (Pro). Read lazily, so a page without it behaves exactly as before.
+    const ux = () => window.FalconShopUx || null;
+
     function refreshIcons() { if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons(); }
 
     function setBadges(count) {
+        let grew = false;
         document.querySelectorAll('.cart-count-badge').forEach(b => {
+            if (parseInt(b.textContent, 10) < count || (b.classList.contains('hidden') && count > 0)) grew = true;
             b.textContent = count;
             b.classList.toggle('hidden', !(count > 0));
         });
         const mc = document.getElementById('mini-cart-count');
         if (mc) mc.textContent = '(' + count + ')';
+        if (grew && ux()) ux().bump();
     }
 
     function open() {
@@ -56,6 +63,11 @@ window.LazyCart = (function () {
             .then(data => {
                 document.getElementById('mini-cart-items').innerHTML = data.html;
                 document.getElementById('mini-cart-subtotal').textContent = data.subtotal;
+                const bar = document.getElementById('mini-cart-shipping-bar');
+                if (bar && data.shipping_bar !== undefined) {
+                    if (ux()) ux().paintShippingBar(bar, data.shipping_bar);
+                    else bar.innerHTML = data.shipping_bar;
+                }
                 setBadges(data.count);
                 refreshIcons();
                 return data;
@@ -87,9 +99,28 @@ window.LazyCart = (function () {
         _toastTimer = setTimeout(() => { bar.style.opacity = '0'; }, 2500);
     }
 
-    function add(productId, quantity, variationId) {
+    /**
+     * After a successful add: tick the button, fly the product to the cart icon, update the
+     * badge as it lands, then slide the drawer out. Product templates that post their own form
+     * call this too, so every add-to-cart looks the same.
+     */
+    function added(source, data) {
+        const fx = ux();
+        if (fx) fx.button(source, 'done');
+        const flight = fx ? fx.flyToCart(source) : Promise.resolve();
+        return flight.then(() => {
+            if (data && data.cart_count !== undefined) setBadges(data.cart_count);
+            open(); // open() refreshes the drawer contents
+            return data;
+        });
+    }
+
+    function add(productId, quantity, variationId, source) {
         const payload = { product_id: productId, quantity: quantity || 1 };
         if (variationId) payload.variation_id = variationId;
+        // Product cards call addToCart(id) without saying which button was pressed.
+        source = source || (ux() ? ux().recentTrigger() : null);
+        if (ux()) ux().button(source, 'busy');
 
         return fetch(ROUTES.add, {
             method: 'POST',
@@ -99,18 +130,26 @@ window.LazyCart = (function () {
         .then(res => res.json().then(data => ({ ok: res.ok, data })))
         .then(({ ok, data }) => {
             if (ok && data.success) {
-                open(); // open() refreshes the drawer contents
-                return data;
+                return added(source, data);
             }
+            if (ux()) ux().button(source, 'fail');
             toast(data.message || 'Could not add to cart.', 'error');
             return Promise.reject(data);
         })
-        .catch(err => { if (!(err && err.message)) toast('Could not add to cart.', 'error'); return Promise.reject(err); });
+        .catch(err => {
+            if (ux()) ux().button(source, 'fail');
+            if (!(err && err.message)) toast('Could not add to cart.', 'error');
+            return Promise.reject(err);
+        });
     }
 
     function remove(key) {
         const itemsEl = document.getElementById('mini-cart-items');
-        if (itemsEl) {
+        // One placeholder row for each line that will be left.
+        const skeleton = ux() ? ux().cartSkeleton(Math.max(1, itemsEl ? itemsEl.querySelectorAll('li').length - 1 : 1)) : null;
+        if (itemsEl && skeleton) {
+            itemsEl.innerHTML = skeleton;
+        } else if (itemsEl) {
             itemsEl.innerHTML = '<div class="flex items-center justify-center py-20"><svg class="animate-spin w-7 h-7 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg></div>';
         }
 
@@ -134,7 +173,7 @@ window.LazyCart = (function () {
     // Close on ESC
     document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 
-    return { open, close, refresh, add, remove, setBadges, toast };
+    return { open, close, refresh, add, added, remove, setBadges, toast };
 })();
 
 // Global helper used by product cards across the theme.

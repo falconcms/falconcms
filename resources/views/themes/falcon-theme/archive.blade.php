@@ -316,6 +316,8 @@
 @if($isProductArchive)
 <script>
 function addToCart(productId) {
+    // The shop's mini-cart drawer handles it when it is on the page (fly-to-cart, button states).
+    if (window.LazyCart) return LazyCart.add(productId, 1);
     const loadingSwal = Swal.fire({ title: 'Adding to cart...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     fetch('{{ route('shop.cart.add') }}', {
         method: 'POST',

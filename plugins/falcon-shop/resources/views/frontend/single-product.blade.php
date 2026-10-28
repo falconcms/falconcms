@@ -1,4 +1,4 @@
-{{-- @version 1.0.2 --}}
+{{-- @version 1.0.3 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', $post->title)
@@ -478,6 +478,7 @@
                 // Loading state
                 btn.disabled = true;
                 btnText.innerText = 'Adding...';
+                if (window.FalconShopUx) FalconShopUx.button(btn, 'busy');
 
                 fetch(form.action, {
                     method: 'POST',
@@ -496,12 +497,16 @@
                     if (data.success) {
                         // Refresh and slide out the mini-cart drawer
                         if (window.LazyCart) {
-                            LazyCart.refresh().then(() => LazyCart.open());
+                            // Tick on the button, the product flies to the cart, then the drawer opens.
+                            // A browser can still hold an older mini-cart.js without added().
+                            if (LazyCart.added) LazyCart.added(btn, data);
+                            else LazyCart.refresh().then(() => LazyCart.open());
                         } else {
                             const badge = document.querySelector('.cart-count-badge');
                             if (badge) { badge.innerText = data.cart_count; badge.classList.remove('hidden'); }
                         }
                     } else {
+                        if (window.FalconShopUx) FalconShopUx.button(btn, 'fail');
                         Swal.fire({
                             title: 'Error!',
                             text: data.message || 'Something went wrong!',
@@ -512,6 +517,7 @@
                 .catch(error => {
                     btn.disabled = false;
                     btnText.innerText = originalText;
+                    if (window.FalconShopUx) FalconShopUx.button(btn, 'fail');
                     console.error('Error:', error);
                     Swal.fire({
                         title: 'Error!',

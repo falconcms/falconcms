@@ -1,4 +1,4 @@
-{{-- @version 1.0.3 --}}
+{{-- @version 1.0.4 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', $post->title)
@@ -639,6 +639,7 @@
                 const original = label ? label.innerText : '';
                 if (btn) btn.disabled = true;
                 if (label) label.innerText = 'Adding...';
+                if (btn && window.FalconShopUx) FalconShopUx.button(btn, 'busy');
 
                 fetch(form.action, {
                     method: 'POST',
@@ -650,14 +651,21 @@
                     if (btn) btn.disabled = false;
                     if (label) label.innerText = original;
                     if (ok && data.success) {
-                        if (window.LazyCart) { LazyCart.refresh().then(() => LazyCart.open()); }
-                    } else if (window.Swal) {
-                        Swal.fire({ title: 'Error!', text: data.message || 'Could not add to cart.', icon: 'error' });
+                        // Tick on the button, the product flies to the cart, then the drawer opens.
+                        // A browser can still hold an older mini-cart.js without added().
+                        if (window.LazyCart) {
+                            if (LazyCart.added) LazyCart.added(btn, data);
+                            else LazyCart.refresh().then(() => LazyCart.open());
+                        }
+                    } else {
+                        if (btn && window.FalconShopUx) FalconShopUx.button(btn, 'fail');
+                        if (window.Swal) Swal.fire({ title: 'Error!', text: data.message || 'Could not add to cart.', icon: 'error' });
                     }
                 })
                 .catch(() => {
                     if (btn) btn.disabled = false;
                     if (label) label.innerText = original;
+                    if (btn && window.FalconShopUx) FalconShopUx.button(btn, 'fail');
                     if (window.Swal) Swal.fire({ title: 'Error!', text: 'Could not add to cart.', icon: 'error' });
                 });
             });

@@ -149,6 +149,7 @@ resources/views/plugins/seo-booster/
 | `provider` | — | A Laravel ServiceProvider, registered on load. |
 | `bootstrap` | — | Bootstrap filename. Defaults to `plugin.php`. |
 | `settings_route` | — | Name of the route for the plugin's settings page, e.g. `"seo-booster.settings"`. While the plugin is active, the Plugins screen shows a **Settings** link to it. |
+| `settings_params` | — | Query for that link, e.g. `{"tab": "experience"}` to open one tab of a shared settings screen. |
 | `dependencies` | — | Slugs that must be installed **and active** first. |
 | `data` | — | What the plugin's data is, in a few words (e.g. `"every slider and its revisions"`). The uninstall dialog shows it beside **Also delete all of its data**. |
 

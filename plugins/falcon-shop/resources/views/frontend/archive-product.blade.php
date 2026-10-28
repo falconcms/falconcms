@@ -1,4 +1,4 @@
-{{-- @version 1.0.2 --}}
+{{-- @version 1.0.3 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', $title ?? 'Shop')
@@ -64,9 +64,9 @@
         @if($posts->count() > 0)
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
             @foreach($posts as $product)
-                <div class="group flex flex-col">
+                <div class="group flex flex-col fsx-card">
                     <div class="relative mb-4">
-                    <a href="{{ get_falcon_permalink($product) }}" class="block relative pt-[100%] overflow-hidden bg-[#eef1f5]">
+                    <a href="{{ get_falcon_permalink($product) }}" class="block relative pt-[100%] overflow-hidden bg-[#eef1f5] fsx-media">
                         @if($product->featured_image)
                             <img src="{{ str_starts_with($product->featured_image, 'http') ? $product->featured_image : asset('storage/'.$product->featured_image) }}" alt="{{ $product->title }}" class="absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity">
                         @else
@@ -79,12 +79,13 @@
                             <span class="absolute top-3 left-3 bg-sky-100 text-sky-700 text-[13px] font-bold px-3 py-1 rounded-full shadow uppercase tracking-wide z-10">Sale!</span>
                         @endif
                     </a>
-                        <div class="absolute bottom-3 right-3 z-20">
+                        <div class="absolute bottom-3 right-3 z-20 flex items-center gap-2">
+                            <?php do_falcon_action('falcon_product_card_actions', $product); ?>
                             @include('falcon-shop::frontend.partials.wishlist-button', ['product' => $product])
                         </div>
                     </div>
                     <div class="flex flex-col flex-grow text-left px-1">
-                        <div class="text-[12px] text-[#999] mb-0.5">
+                        <div class="text-[12px] text-[#999] mb-0.5 fsx-line">
                             @if($product->taxonomyTerms && $product->taxonomyTerms->count() > 0)
                                 {{ $product->taxonomyTerms->first()->name }}
                             @elseif($product->productCategories && $product->productCategories->count() > 0)
@@ -95,10 +96,10 @@
                                 Uncategorized
                             @endif
                         </div>
-                        <h2 class="text-[15px] font-bold text-heading hover:text-primary transition-colors mb-1 leading-tight">
+                        <h2 class="text-[15px] font-bold text-heading hover:text-primary transition-colors mb-1 leading-tight fsx-line">
                             <a href="{{ get_falcon_permalink($product) }}">{{ $product->title }}</a>
                         </h2>
-                        <div class="text-heading font-bold text-[14px] mb-3">
+                        <div class="text-heading font-bold text-[14px] mb-3 fsx-line">
                             @if(falcon_can_see_prices($product))
                                 {{-- A variable product is priced by its variations, so it shows a range;
                                      price_range is null for everything else and the single price stands. --}}
@@ -114,7 +115,7 @@
                                 {!! falcon_hidden_price_html($product, 'price') !!}
                             @endif
                         </div>
-                        <div class="mt-auto flex flex-wrap gap-2">
+                        <div class="mt-auto flex flex-wrap gap-2 fsx-actions">
                             @if(!falcon_can_see_prices($product))
                                 {{-- Prices are hidden for this visitor: no buy button, only the way in. --}}
                                 @php $hiddenCart = falcon_hidden_price_html($product, 'cart'); @endphp
@@ -168,6 +169,10 @@
 
 <script>
 function addToCart(productId) {
+    // The mini-cart drawer handles it wherever it is on the page (with fly-to-cart and the
+    // button states); the popup below is only for a page without it.
+    if (window.LazyCart) return LazyCart.add(productId, 1);
+
     const loadingSwal = Swal.fire({
         title: 'Adding to cart...',
         allowOutsideClick: false,

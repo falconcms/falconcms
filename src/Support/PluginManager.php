@@ -262,8 +262,9 @@ class PluginManager
 
     /**
      * Where the Plugins screen's "Settings" link goes: the route named by the manifest's
-     * "settings_route". Only a registered, live route counts. A dormant twin is not a page,
-     * and neither is the route of a plugin that is not loaded on this request.
+     * "settings_route", with its optional "settings_params" as the query (`{"tab": "x"}` opens
+     * one tab of a shared screen). Only a registered, live route counts. A dormant twin is not
+     * a page, and neither is the route of a plugin that is not loaded on this request.
      */
     protected function settingsUrl(array $manifest): ?string
     {
@@ -278,7 +279,9 @@ class PluginManager
                 return null;
             }
 
-            return route($name);
+            $params = $manifest['settings_params'] ?? [];
+
+            return route($name, is_array($params) ? array_filter($params, 'is_scalar') : []);
         } catch (Throwable $e) {
             return null;
         }

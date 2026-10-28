@@ -1573,6 +1573,34 @@ The cart subtotal. Free-shipping thresholds, coupon minimums, tax and the order 
 change a line's price, use `falcon_product_prices` instead, so the lines still add up to the
 subtotal.
 
+#### `falcon_product_card_actions` (action)
+**Args:** `Post $product`
+
+Inside a product card's image, beside the wishlist heart (shop page, related products, upsells,
+cross-sells). Print a small round button, such as a quick view.
+
+#### `falcon_shop_settings_tabs` (filter)
+**Args:** `array $tabs`
+
+Add a tab to Shop → Settings: `['my-tab' => 'My Tab']` (a plain slug; built-in tabs cannot be
+renamed). Print its panel at `falcon_shop_settings_form_bottom` inside
+`<div x-show="tab === 'my-tab'">`. The form saves each field as `shop_<name>`; a checkbox also
+needs `falcon_shop_settings_toggles`. Link to it with `/admin/shop/settings?tab=my-tab`.
+
+#### `falcon_shop_settings_toggles` (filter)
+**Args:** `array $toggles`
+
+Request name => option key (`shop_…`) of the checkboxes a plugin adds to the shop settings, so an
+unticked box is saved as `0`. The save also deletes `<key>_%` rows, so no key may be the start of
+another one.
+
+#### `falcon_cart_shipping_bar` (filter)
+**Args:** `string $html, string $context`
+
+A line above the cart: on the cart page and in its AJAX updates (`$context` 'cart') and above the
+mini-cart subtotal ('mini-cart'). Empty unless hooked. It is sent with every cart change and never
+in a page the cache keeps, so it may speak about this shopper's cart (a free shipping bar, say).
+
 #### `falcon_cart_total` (filter)
 **Args:** `float $total, array $parts`
 
@@ -2186,6 +2214,9 @@ return [
 | `falcon_add_to_cart_validation` | `$valid, $product, $variation, $quantity, $request` |
 | `falcon_update_cart_validation` | `$valid, $cartKey, $item, $quantity` |
 | `falcon_cart_subtotal` | `$subtotal, $cart` |
+| `falcon_shop_settings_toggles` | `$toggles` |
+| `falcon_shop_settings_tabs` | `$tabs` |
+| `falcon_cart_shipping_bar` | `$html, $context` |
 | `falcon_cart_total` | `$total, $parts` |
 | `falcon_coupon_is_valid` | `$valid, $coupon, $cart` |
 | `falcon_coupon_discount_amount` | `$discount, $coupon, $cart, $base` |

@@ -78,6 +78,7 @@ class ShopFrontendController extends Controller
             'count' => get_falcon_cart_count(),
             'subtotal' => falcon_price_format(get_falcon_cart_subtotal()),
             'html' => $html,
+            'shipping_bar' => falcon_cart_shipping_bar('mini-cart'),
         ]);
     }
 
@@ -2588,6 +2589,7 @@ class ShopFrontendController extends Controller
             // Qualifying for an offer can start or stop from a quantity change alone, so the
             // prompt travels with every cart update instead of waiting for a page reload.
             'offer_html' => $this->getPromotionOfferHtml(),
+            'shipping_bar' => falcon_cart_shipping_bar('cart'),
         ], $extra);
     }
 

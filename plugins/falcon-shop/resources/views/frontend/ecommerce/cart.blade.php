@@ -1,4 +1,4 @@
-{{-- @version 1.0.3 --}}
+{{-- @version 1.0.5 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', 'Cart')
@@ -47,6 +47,10 @@
                 <a href="{{ get_falcon_shop_url() }}" class="inline-block bg-primary text-white px-8 py-3 rounded-sm font-bold hover:opacity-90 hover:text-white transition-all uppercase text-sm">Return to shop</a>
             </div>
         @else
+            {{-- A plugin's line above the cart (falcon_cart_shipping_bar, a free shipping bar, say);
+                 repainted from every cart update (shipping_bar). --}}
+            <div id="cart-shipping-bar">{!! falcon_cart_shipping_bar('cart') !!}</div>
+
             <form id="cart-form" action="{{ route('shop.cart.update') }}" method="POST">
                 @csrf
                 <div class="overflow-x-auto mb-10 relative" id="cart-table-wrap">
@@ -120,7 +124,7 @@
                                         <div>
                                             <div class="flex gap-2">
                                                 <input type="text" id="coupon_code_input" placeholder="Coupon code" class="border border-gray-300 px-4 py-2 text-sm focus:border-primary outline-none min-w-[150px]">
-                                                <button type="button" onclick="applyCoupon()" class="bg-primary text-white px-6 py-2 text-sm font-bold hover:opacity-90 transition-all uppercase">Apply coupon</button>
+                                                <button type="button" onclick="applyCoupon(this)" class="bg-primary text-white px-6 py-2 text-sm font-bold hover:opacity-90 transition-all uppercase">Apply coupon</button>
                                             </div>
                                             <div id="coupon-message" class="mt-2 text-xs"></div>
                                         </div>
@@ -396,6 +400,12 @@
             offerBox.innerHTML = data.offer_html;
         }
 
+        const shipBar = document.getElementById('cart-shipping-bar');
+        if (shipBar && data.shipping_bar !== undefined) {
+            if (window.FalconShopUx) FalconShopUx.paintShippingBar(shipBar, data.shipping_bar);
+            else shipBar.innerHTML = data.shipping_bar;
+        }
+
         if (Array.isArray(data.item_subtotals) || (data.item_subtotals && typeof data.item_subtotals === 'object')) {
             Object.entries(data.item_subtotals).forEach(function ([key, value]) {
                 const row = document.querySelector('.cart-item-row[data-key="' + CSS.escape(key) + '"] .item-subtotal');
@@ -497,10 +507,11 @@
     };
 
     // ── Apply coupon ───────────────────────────────────────────────
-    window.applyCoupon = function () {
+    window.applyCoupon = function (btn) {
         const code   = document.getElementById('coupon_code_input').value.trim();
         const msgDiv = document.getElementById('coupon-message');
         if (!code) return;
+        if (window.FalconShopUx) FalconShopUx.button(btn, 'busy');
 
         msgDiv.innerHTML = 'Applying…';
         msgDiv.className = 'mt-2 text-xs text-blue-600';
@@ -516,14 +527,17 @@
                 document.getElementById('coupon_code_input').value = '';
                 msgDiv.innerHTML = data.message;
                 msgDiv.className = 'mt-2 text-xs text-emerald-600';
+                if (window.FalconShopUx) FalconShopUx.button(btn, 'done');
                 applyTotals(data);
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             } else {
+                if (window.FalconShopUx) FalconShopUx.button(btn, 'fail');
                 msgDiv.innerHTML = data.message || 'Error applying coupon.';
                 msgDiv.className = 'mt-2 text-xs text-rose-600';
             }
         })
         .catch(() => {
+            if (window.FalconShopUx) FalconShopUx.button(btn, 'fail');
             msgDiv.innerHTML = 'Error applying coupon.';
             msgDiv.className = 'mt-2 text-xs text-rose-600';
         });

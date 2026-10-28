@@ -1,4 +1,4 @@
-{{-- @version 1.0.0 --}}
+{{-- @version 1.0.1 --}}
 @extends(falcon_theme_view('layouts.app'))
 
 @section('title', 'Checkout')
@@ -21,7 +21,7 @@
                 <p class="text-[14px] mb-4 text-body">If you have a coupon code, please apply it below.</p>
                 <div class="flex gap-2">
                     <input type="text" id="coupon_code_input" placeholder="Coupon code" class="flex-grow border border-[#d3ced2] px-4 py-2.5 text-[14px] outline-none focus:border-primary">
-                    <button type="button" onclick="applyCoupon()" class="bg-primary text-white px-6 py-2.5 font-bold text-[14px] hover:opacity-90 transition-all uppercase">Apply</button>
+                    <button type="button" onclick="applyCoupon(this)" class="bg-primary text-white px-6 py-2.5 font-bold text-[14px] hover:opacity-90 transition-all uppercase">Apply</button>
                 </div>
                 <div id="coupon-message" class="mt-2 text-xs"></div>
             </div>
@@ -364,11 +364,12 @@ function applyCheckoutTotals(data) {
     }
 }
 
-function applyCoupon() {
+function applyCoupon(btn) {
     const code = document.getElementById('coupon_code_input').value;
     const msgDiv = document.getElementById('coupon-message');
     
     if(!code) return;
+    if (window.FalconShopUx) FalconShopUx.button(btn, 'busy');
     
     msgDiv.innerHTML = 'Applying...';
     msgDiv.className = 'mt-2 text-xs text-primary';
@@ -400,6 +401,7 @@ function applyCoupon() {
             document.getElementById('coupon_code_input').value = '';
             msgDiv.innerHTML = data.message;
             msgDiv.className = 'mt-2 text-xs text-emerald-600';
+            if (window.FalconShopUx) FalconShopUx.button(btn, 'done');
             
             applyCheckoutTotals(data);
             
@@ -416,12 +418,14 @@ function applyCoupon() {
                 lucide.createIcons();
             }
         } else {
+            if (window.FalconShopUx) FalconShopUx.button(btn, 'fail');
             msgDiv.innerHTML = data.message || 'Error applying coupon.';
             msgDiv.className = 'mt-2 text-xs text-rose-600';
         }
     })
     .catch(error => {
         console.error('Coupon Error:', error);
+        if (window.FalconShopUx) FalconShopUx.button(btn, 'fail');
         msgDiv.innerHTML = error.message.substring(0, 100) || 'Error applying coupon.';
         msgDiv.className = 'mt-2 text-xs text-rose-600';
     });
@@ -509,6 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalText = submitBtn.innerText;
             submitBtn.innerText = 'Processing...';
             submitBtn.disabled = true;
+            if (window.FalconShopUx) FalconShopUx.button(submitBtn, 'busy');
             const formData = new FormData(checkoutForm);
             fetch(checkoutForm.action, {
                 method: 'POST',
@@ -535,18 +540,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             document.getElementById('stripe-card-errors').textContent = result.error.message;
                             Swal.fire({ title: 'Payment failed', text: result.error.message, icon: 'error', confirmButtonColor: '{{ get_cms_option('theme_primary_color', '#0091ea') }}' });
                             submitBtn.innerText = originalText;
-                            submitBtn.disabled = false;
+                            submitBtn.disabled = false; if (window.FalconShopUx) FalconShopUx.button(submitBtn, 'fail');
                         } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
                             window.location.href = data.return_url;
                         } else {
                             submitBtn.innerText = originalText;
-                            submitBtn.disabled = false;
+                            submitBtn.disabled = false; if (window.FalconShopUx) FalconShopUx.button(submitBtn, 'idle');
                         }
                     });
                     return;
                 }
                 if (data.success && data.redirect) {
                     if (window.clearCheckoutDraft) window.clearCheckoutDraft();
+                    if (window.FalconShopUx) FalconShopUx.button(submitBtn, 'done');
                     window.location.href = data.redirect;
                 } else if (data.errors) {
                     let errorList = '<ul class="text-left list-disc pl-5 space-y-1">';
@@ -562,18 +568,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         confirmButtonColor: '{{ get_cms_option('theme_primary_color', '#0091ea') }}'
                     });
                     submitBtn.innerText = originalText;
-                    submitBtn.disabled = false;
+                    submitBtn.disabled = false; if (window.FalconShopUx) FalconShopUx.button(submitBtn, 'fail');
                 } else if (data.message) {
                     Swal.fire({ title: 'Error', text: data.message, icon: 'error', confirmButtonColor: '{{ get_cms_option('theme_primary_color', '#0091ea') }}' });
                     submitBtn.innerText = originalText;
-                    submitBtn.disabled = false;
+                    submitBtn.disabled = false; if (window.FalconShopUx) FalconShopUx.button(submitBtn, 'fail');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 Swal.fire({ title: 'Error!', text: 'Something went wrong while processing your order. Please try again.', icon: 'error', confirmButtonColor: '{{ get_cms_option('theme_primary_color', '#0091ea') }}' });
                 submitBtn.innerText = originalText;
-                submitBtn.disabled = false;
+                submitBtn.disabled = false; if (window.FalconShopUx) FalconShopUx.button(submitBtn, 'fail');
             });
         });
     }
