@@ -107,6 +107,7 @@ export default defineConfig({
             { text: 'News Sites (Pro)', link: '/guide/news' },
             { text: 'Instagram Feed (Pro)', link: '/guide/instagram-feed' },
             { text: 'Security (Pro)', link: '/guide/security' },
+            { text: 'Effects (Pro)', link: '/builder/effects' },
             { text: 'Analytics', link: '/guide/analytics' },
             { text: 'Performance', link: '/guide/performance' },
           ]
@@ -143,6 +144,7 @@ export default defineConfig({
             { text: 'Device Visibility', link: '/builder/visibility' },
             { text: 'Global Sections', link: '/builder/global-sections' },
             { text: 'Library', link: '/builder/library' },
+            { text: 'Effects (Pro)', link: '/builder/effects' },
           ]
         },
       ],

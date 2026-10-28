@@ -251,6 +251,53 @@ account, so the delivery figures in the phone checks are sample data.
 
 ---
 
+## ✨ Falcon Effects — animations for the Laravel page builder (Pro)
+
+**Falcon Effects** brings motion to pages built with the Falcon Builder: text that reveals itself
+as the page scrolls, sections that move, borders that light up, buttons and pictures that react to
+the mouse, particle backgrounds, a 360° panorama viewer and a 3D / 360° view for shop products.
+No code: every effect is a switch in the **Extra** tab of a container, column or element, and it
+plays in the builder while you edit.
+
+| | |
+| :--- | :--- |
+| **Scroll** | Scroll Reveal, Scroll Motion and parallax, Scroll Separator, Scroll Image, Horizontal Scroll, Sticky Scroll Story, Stacking Cards, Scroll Color Change, Line Draw. |
+| **Mouse** | Mouse Tilt, Magnetic buttons, Spotlight, Image Trail, Water Ripple, Button and Image hover packs. |
+| **Borders** | Twelve animated borders for containers, columns, buttons and images, sparkling and glare among them. |
+| **Backgrounds & text** | Particles, Animated Background, Typewriter, Split Text, Text Scramble, Highlight Draw, gradient sweep, glitch. |
+| **Elements** | 3D Image View (360° panorama or 3D photo), Lottie, Flip Card, Text Along Path, Before / After, Reading Progress, Page Effects. |
+| **Shop** | A 360° spin, panorama or 3D photo for any product, over its main picture. |
+
+Every effect loads its script only where it is used, keeps still for visitors who ask for less
+motion, and can be switched per device.
+
+<p align="center">
+  <img alt="A page built with Falcon Effects: a particle background, a typed headline and cards with a sparkling, a glare and a running-light border" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/effects-showcase.webp" width="900">
+</p>
+
+<table>
+<tr>
+<td width="50%"><img alt="The builder with a column's Extra tab open: Border Animation set to Sparkling" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/effects-builder-border.webp"></td>
+<td width="50%"><img alt="A product page with a 360° spin in place of the main picture and a 360° tile among the thumbnails" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/effects-product-spin.webp"></td>
+</tr>
+<tr>
+<td align="center"><b>Border Animation in the builder</b></td>
+<td align="center"><b>360° product spin</b></td>
+</tr>
+<tr>
+<td colspan="2"><img alt="The 3D Image View element showing a 360° lakeside panorama with zoom and full-screen buttons" src="https://raw.githubusercontent.com/falconcms/falconcms/main/docs/public/screenshots/effects-panorama.webp"></td>
+</tr>
+<tr>
+<td align="center" colspan="2"><b>360° panorama viewer</b></td>
+</tr>
+</table>
+
+See it working on the demo: [demo.falconcms.com/effects-showcase](https://demo.falconcms.com/effects-showcase).
+
+✨ [Falcon Effects guide](https://falconcms.github.io/falconcms/builder/effects)
+
+---
+
 ## 💎 Core vs Pro
 
 FalconCMS is **open-core**. The core above is MIT-licensed and stays free. **Pro** is a
@@ -272,6 +319,7 @@ separate, proprietary package (`falconcms/pro`) that unlocks the commercial feat
 | Multi-device & passwordless (magic) login | — | ✓ | ✓ |
 | Falcon Security — 2FA, passkeys, OTP by SMS/WhatsApp, firewall, malware scanner | — | ✓ | ✓ |
 | Fake-order protection — courier history, risk score, COD phone OTP | — | ✓ | ✓ |
+| Falcon Effects — scroll, hover, border, text and 3D effects; 360° product view | — | ✓ | ✓ |
 | Agency security dashboard — all client sites on one screen | — | — | ✓ |
 | Sites per license | 1 | 1 | Unlimited |
 | White-label branding | — | — | ✓ |

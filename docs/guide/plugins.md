@@ -58,6 +58,8 @@ new version.
 
 ### Uninstalling
 
+![The uninstall dialog: the plugin's data is kept unless "Also delete all of its data" is ticked and its slug typed](/screenshots/plugins-uninstall.webp)
+
 **Delete** opens a dialog. By default it deactivates the plugin, deletes its folder and
 removes its record, but **keeps its data**: its settings and its own tables stay, so
 activating it again (or installing it again) brings everything back as it was. A plugin that
