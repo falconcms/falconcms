@@ -342,6 +342,9 @@ class HtmlOptimizeTest extends TestCase
             $this->assertStringContainsString('<link rel="preload" as="image" href="/storage/media/hero.avif" type="image/avif" fetchpriority="high"', $out);
             $this->assertStringContainsString('<style>picture.falcon-avif{display:contents}</style></head>', $out);
             $this->assertSame(1, substr_count($out, '<picture'), 'no AVIF copy, or a srcset of its own: left alone');
+            $this->assertStringContainsString('picture.falcon-avif>img', $out, 'a gallery that changes the picture drops the AVIF source');
+            $this->assertSame(1, substr_count($out, 'picture.falcon-avif>img'), 'printed once');
+            $this->assertMatchesRegularExpression('#</script></body>#', $out);
         } finally {
             @unlink(storage_path('app/public/media/hero.webp'));
             @unlink(storage_path('app/public/media/hero.avif'));

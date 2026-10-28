@@ -94,6 +94,13 @@ final class AvifImages
      * exactly as before. Images with their own srcset, and ones already inside a <picture>,
      * are left alone.
      */
+    /** Drops a picture's AVIF <source> once its <img> is given another src (see pictures()). */
+    private const SWAP_SCRIPT = '<script>(function(){if(!window.MutationObserver)return;'
+        .'var o=new MutationObserver(function(l){l.forEach(function(r){var i=r.target,p=i.parentNode,s;'
+        .'if(p&&p.tagName==="PICTURE"&&i.getAttribute("src")!==i.__fa){while((s=p.querySelector("source")))p.removeChild(s);}});});'
+        .'document.querySelectorAll("picture.falcon-avif>img").forEach(function(i){i.__fa=i.getAttribute("src");o.observe(i,{attributes:true,attributeFilter:["src"]});});'
+        .'})();</script>';
+
     public static function pictures(string $html): string
     {
         $wrapped = 0;
@@ -124,6 +131,12 @@ final class AvifImages
 
         if ($wrapped && ($head = stripos($out, '</head>')) !== false) {
             $out = substr_replace($out, '<style>picture.falcon-avif{display:contents}</style>', $head, 0);
+        }
+        // A script that changes a picture (a product gallery's thumbnails, an Alpine :src) sets the
+        // <img>'s src, but the browser keeps showing the <source>: once the src changes, the
+        // source goes and the new picture shows.
+        if ($wrapped && ($body = strripos($out, '</body>')) !== false) {
+            $out = substr_replace($out, self::SWAP_SCRIPT, $body, 0);
         }
 
         return $out;
