@@ -7,6 +7,7 @@ use FalconCms\Core\Core\HookManager;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -58,6 +59,64 @@ class PageCacheTest extends TestCase
         // The default. A site that never turned this on must never serve a stored page.
         $this->get('/')->assertOk()->assertHeaderMissing('X-Lazy-Cache');
         $this->get('/')->assertOk()->assertHeaderMissing('X-Lazy-Cache');
+    }
+
+    // ── CSRF tokens ──────────────────────────────────────────────────────────
+
+    /**
+     * A stored page used to carry its first visitor's CSRF token to everyone after them, so
+     * a new visitor's add to cart on a cached product page failed with 419. The token is kept
+     * out of the store and each visitor gets their own back.
+     */
+    public function test_each_visitor_gets_their_own_csrf_token_from_a_cached_page(): void
+    {
+        $this->enableStaticCaching();
+
+        $first = $this->get('/')->assertOk()->assertHeader('X-Lazy-Cache', 'MISS');
+        $firstToken = session()->token();
+        $this->assertStringContainsString($firstToken, $first->getContent());
+
+        $stored = Cache::get('page_cache_'.md5(url('/')));
+        $this->assertStringNotContainsString($firstToken, $stored['content'], 'a token was stored with the page');
+        $this->assertStringContainsString('__FALCON_CSRF_TOKEN__', $stored['content']);
+
+        // A new visitor: a fresh session with its own token.
+        session()->flush();
+        session()->regenerateToken();
+        $secondToken = session()->token();
+        $this->assertNotSame($firstToken, $secondToken);
+
+        $second = $this->get('/')->assertOk()->assertHeader('X-Lazy-Cache', 'HIT');
+        $this->assertStringContainsString($secondToken, $second->getContent());
+        $this->assertStringNotContainsString($firstToken, $second->getContent());
+        $this->assertStringNotContainsString('__FALCON_CSRF_TOKEN__', $second->getContent());
+    }
+
+    public function test_a_new_visitor_can_add_to_cart_from_a_cached_product_page(): void
+    {
+        $this->enableStaticCaching();
+        $product = $this->makeProduct(['price' => 500], ['slug' => 'cached-csrf-product']);
+
+        $this->get('/product/cached-csrf-product')->assertOk()->assertHeader('X-Lazy-Cache', 'MISS');
+
+        session()->flush();
+        session()->regenerateToken();
+        $html = $this->get('/product/cached-csrf-product')->assertOk()->assertHeader('X-Lazy-Cache', 'HIT')->getContent();
+        $this->assertSame(1, preg_match('/name="_token" value="([^"]+)"/', $html, $m), 'the add to cart form has no token');
+
+        // The token from the page is the one this visitor's session accepts.
+        $this->withMiddleware()->post('/cart/add', ['_token' => $m[1], 'product_id' => $product->id, 'quantity' => 1],
+            ['X-Requested-With' => 'XMLHttpRequest', 'Accept' => 'application/json'])
+            ->assertOk()->assertJson(['success' => true]);
+    }
+
+    /** An entry stored before the swap still holds someone's token: it is rendered again, not served. */
+    public function test_an_entry_stored_with_a_token_is_not_served(): void
+    {
+        $this->enableStaticCaching();
+        Cache::put('page_cache_'.md5(url('/')), ['content' => 'stale page with an old token', 'type' => 'text/html'], now()->addHour());
+
+        $this->get('/')->assertOk()->assertHeader('X-Lazy-Cache', 'MISS')->assertDontSee('stale page');
     }
 
     public function test_a_shared_page_is_stored_and_then_served_from_the_cache(): void

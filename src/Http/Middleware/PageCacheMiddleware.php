@@ -45,6 +45,9 @@ class PageCacheMiddleware
         'shop.payment',
     ];
 
+    /** Stands in for the visitor's CSRF token in a stored page (see withoutVisitorToken()). */
+    private const TOKEN_PLACEHOLDER = '__FALCON_CSRF_TOKEN__';
+
     public function handle(Request $request, Closure $next)
     {
         // Only cache GET requests and only if not logged in as admin (to avoid caching admin-only views)
@@ -59,13 +62,16 @@ class PageCacheMiddleware
         // Create a unique key based on the URL and query parameters
         $key = 'page_cache_'.md5($request->fullUrl());
 
-        // Check if cache exists
+        // Check if cache exists. An entry stored before CSRF tokens were swapped out still holds
+        // its first visitor's token, so it is rendered afresh instead (and replaced).
         if (Cache::has($key) && get_cms_option('performance_static_caching', '0') === '1') {
             $cacheData = Cache::get($key);
 
-            return response($cacheData['content'])
-                ->header('Content-Type', $cacheData['type'])
-                ->header('X-Lazy-Cache', 'HIT');
+            if (is_array($cacheData) && !empty($cacheData['csrf'])) {
+                return response($this->withVisitorToken((string) $cacheData['content']))
+                    ->header('Content-Type', $cacheData['type'])
+                    ->header('X-Lazy-Cache', 'HIT');
+            }
         }
 
         $response = $next($request);
@@ -88,14 +94,44 @@ class PageCacheMiddleware
             }
 
             Cache::put($key, [
-                'content' => $response->getContent(),
+                'content' => $this->withoutVisitorToken((string) $response->getContent()),
                 'type' => $response->headers->get('Content-Type'),
+                'csrf' => true,
             ], now()->addHours(24));
 
             $response->header('X-Lazy-Cache', 'MISS');
         }
 
         return $response;
+    }
+
+    /**
+     * The page as it is stored: this visitor's CSRF token replaced by a placeholder.
+     *
+     * The token is in every form, the csrf-token meta tag and the shop's scripts (add to cart,
+     * wishlist). Stored as-is, the next visitor was served someone else's token and every POST
+     * they made — add to cart on a cached product page — failed with 419.
+     */
+    private function withoutVisitorToken(string $html): string
+    {
+        $token = $this->visitorToken();
+
+        return $token === null ? $html : str_replace($token, self::TOKEN_PLACEHOLDER, $html);
+    }
+
+    /** The stored page with the current visitor's own CSRF token put back in. */
+    private function withVisitorToken(string $html): string
+    {
+        return str_replace(self::TOKEN_PLACEHOLDER, $this->visitorToken() ?? '', $html);
+    }
+
+    /** The session's CSRF token, or null when there is no usable one. */
+    private function visitorToken(): ?string
+    {
+        $token = Session::isStarted() ? Session::token() : null;
+
+        // A real token is a long random string; anything short could match ordinary page text.
+        return is_string($token) && strlen($token) >= 32 ? $token : null;
     }
 
     /**
