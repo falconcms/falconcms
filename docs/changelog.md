@@ -5,7 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.9 <Badge type="tip" text="Latest" /> {#v2-8-9}
+## v2.8.10 <Badge type="tip" text="Latest" /> {#v2-8-10}
+
+**Released: 2026-10-28**
+
+A cart of several products no longer breaks the site with 502 Bad Gateway.
+
+### Fixed
+
+- **No more 502 Bad Gateway with a full cart.** The cookie that keeps a shopper's cart between
+  visits held the whole cart (names, prices, picture links), encrypted. After a few products it
+  outgrew the web server's buffer for response headers, and nginx answered every page of that
+  shopper with 502 ("upstream sent too big header"). The cookie now holds only each line's
+  product, variation, quantity and custom fields; names, prices and pictures are read from the
+  shop when a returning browser gets its cart back. A cart too big even for that (about 18
+  lines) stays in the session, so the headers always fit nginx's default 4 KB buffer. A browser
+  that still has an old, large cart cookie gets its cart back and a small cookie in its place.
+
+---
+
+## v2.8.9 {#v2-8-9}
 
 **Released: 2026-10-28**
 

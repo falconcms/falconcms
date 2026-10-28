@@ -9,6 +9,16 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+## [2.8.10] — 2026-10-28
+
+### Fixed
+- A cart of several products no longer makes the site answer 502 Bad Gateway (nginx: "upstream
+  sent too big header"). The long-lived cart cookie held the whole cart; it now holds only each
+  line's product, variation, quantity and custom fields, and the rest is read from the shop when
+  a returning browser gets its cart back. A cart too big for a small cookie (about 18 lines)
+  stays in the session, so the response headers always fit nginx's default 4 KB buffer.
+  Browsers with an old, large cart cookie get their cart back and a small cookie in its place.
+
 ## [2.8.9] — 2026-10-28
 
 ### Added

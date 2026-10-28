@@ -127,17 +127,83 @@ class MiddlewareStackTest extends TestCase
         session()->put('falcon_cart', $cart);
 
         // The session dies with the browser; the cookie is what makes a basket survive a
-        // restart, which is most of the reason an abandoned cart ever gets bought.
-        $this->get('/')->assertCookie('falcon_cart_v1', json_encode($cart));
+        // restart, which is most of the reason an abandoned cart ever gets bought. It holds
+        // only what identifies each line, so it stays small.
+        $item = reset($cart);
+        $this->get('/')->assertCookie('falcon_cart_v1', json_encode(['v' => 2, 'l' => [key($cart) => ['i' => $item['id'], 'q' => 1]]]));
     }
 
     public function test_a_returning_browser_gets_its_basket_back(): void
     {
-        $cart = $this->cartItem('Left Here Last Week');
+        $product = $this->makeProduct(['price' => 25], ['title' => 'Left Here Last Week']);
 
-        $this->withCartCookie($cart)->get('/cart')
+        $this->withCookie('falcon_cart_v1', json_encode(['v' => 2, 'l' => [(string) $product->id => ['i' => $product->id, 'q' => 3]]]))
+            ->get('/cart')
             ->assertOk()
             ->assertSee('Left Here Last Week', false);
+
+        $line = session('falcon_cart')[(string) $product->id];
+        $this->assertSame(['Left Here Last Week', $product->slug, 3], [$line['name'], $line['slug'], $line['quantity']], 'the line is built again from the product');
+    }
+
+    public function test_a_cookie_from_before_the_compact_form_still_brings_the_basket_back(): void
+    {
+        $this->withCartCookie($this->cartItem('Saved Last Month'))->get('/cart')
+            ->assertOk()
+            ->assertSee('Saved Last Month', false);
+    }
+
+    /** A big basket in one cookie overflowed the web server's header buffer (nginx: 502). */
+    public function test_a_basket_too_big_for_a_cookie_stays_in_the_session_only(): void
+    {
+        $cart = [];
+        foreach (range(1, 40) as $i) {
+            $cart += $this->cartItem('Line '.$i);
+        }
+        session()->put('falcon_cart', $cart);
+
+        $response = $this->withCartCookie($this->cartItem('Older'))->get('/');
+
+        $response->assertCookieExpired('falcon_cart_v1');
+        $this->assertCount(40, session('falcon_cart'), 'the basket itself is untouched');
+        $this->assertLessThan(4096, $this->headerBytes($response), 'nginx reads response headers into one 4 KB buffer by default');
+    }
+
+    /** Whatever the basket holds, the response headers stay small enough for nginx's buffer. */
+    public function test_the_response_headers_stay_small_with_a_full_basket(): void
+    {
+        foreach ([1, 20, 45] as $lines) {
+            $cart = [];
+            foreach (range(1, $lines) as $i) {
+                $line = $this->cartItem(str_repeat('A long product name ', 5).$i);
+                $key = (string) array_key_first($line);
+                $line[$key]['thumbnail'] = 'https://cdn.example.test/uploads/2026/10/'.str_repeat('a-long-image-file-name-', 4).$i.'.webp';
+                $line[$key]['meta'] = ['custom_fields' => ['engraving' => 'Happy birthday']];
+                $cart += $line;
+            }
+            session()->put('falcon_cart', $cart);
+
+            $response = $this->get('/');
+
+            $response->assertOk();
+            $this->assertLessThan(4096, $this->headerBytes($response), "{$lines} lines");
+        }
+    }
+
+    private function headerBytes($response): int
+    {
+        $bytes = 0;
+        foreach ($response->baseResponse->headers->allPreserveCaseWithoutCookies() as $name => $values) {
+            foreach ($values as $value) {
+                $bytes += strlen($name) + strlen((string) $value) + 4;
+            }
+        }
+        foreach ($response->baseResponse->headers->getCookies() as $cookie) {
+            // Already encrypted here, as the browser gets it.
+            $bytes += 14 + strlen((string) $cookie);
+        }
+
+        return $bytes;
     }
 
     public function test_a_session_basket_is_not_overwritten_by_an_older_cookie(): void

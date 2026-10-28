@@ -12,6 +12,7 @@ parameters:
         - tests
         - plugins/falcon-shop/src
         - plugins/falcon-seo/src
+        - plugins/falcon-ai/src
 
     # helpers.php and src/helpers/ are the procedural template helpers (the WordPress-style
     # API themes call). They are not analysed — but they ARE scanned, so every falcon_*()
