@@ -476,7 +476,9 @@ if (!function_exists('falcon_render_special_menu_item')) {
         // HTML can end up wherever the menu element is placed, not only inside the theme's own
         // header markup.
         $badgeColor = get_cms_option('theme_primary_color', '#0091ea');
-        $badgeStyle = 'min-width:18px;height:18px;padding:0 5px;margin-left:6px;font-size:11px;font-weight:700;line-height:1;color:#fff;background:'.e($badgeColor).';border-radius:9999px;';
+        // 20px with 2px sides: one and two digits fit inside the circle, so "15" stays round
+        // (5px sides made any two-digit count wider than tall — a pill).
+        $badgeStyle = 'min-width:20px;height:20px;padding:0 2px;box-sizing:border-box;margin-left:6px;font-size:11px;font-weight:700;line-height:1;letter-spacing:-0.02em;color:#fff;background:'.e($badgeColor).';border-radius:9999px;';
         $badgeCls = 'inline-flex items-center justify-center';
         $iconWrap = 'display:inline-flex;align-items:center;gap:2px;';
 
