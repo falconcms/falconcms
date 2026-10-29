@@ -130,7 +130,7 @@
     
     <!-- WP Admin Bar (Top) -->
     <div id="wpadminbar" class="fixed top-0 left-0 right-0 h-8 bg-[#1d2327] z-50 flex items-center justify-between text-[#c3c4c7] px-2 text-[13px]">
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-1 sm:space-x-4 min-w-0">
             <button id="mobile-menu-toggle" type="button" aria-label="Toggle menu"
                     class="items-center justify-center w-8 h-8 text-[#c3c4c7] hover:text-[#72aee6] transition">
                 <span class="material-symbols-outlined" style="font-size:22px !important;">menu</span>
@@ -142,17 +142,18 @@
                     </span>
                     <span class="text-white font-semibold text-[13px] hidden sm:inline hover:text-[#72aee6] transition-colors">FalconCMS</span>
                 </a>
-                <a href="/" target="_blank" class="hover:text-[#72aee6] transition px-2 flex items-center space-x-1">
+                <a href="/" target="_blank" class="hover:text-[#72aee6] transition px-2 flex items-center space-x-1 whitespace-nowrap">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                     <span>CMS Site</span>
                 </a>
             @endif
         </div>
-        <div class="flex items-center space-x-4 pr-1 text-sm relative group" x-data="{ open: false }">
+        <div class="flex items-center space-x-4 pr-1 text-sm relative group min-w-0" x-data="{ open: false }">
             {!! do_falcon_action('falcon_admin_bar_right_before') !!}
             <button @click="open = !open" class="flex items-center space-x-2 text-[#c3c4c7] group-hover:text-[#72aee6] transition py-1 px-2 focus:outline-none">
-                <span>Howdy, <span class="font-semibold">{{ auth()->user()->username ?? auth()->user()->name ?? 'Admin' }}</span></span>
-                <img src="https://secure.gravatar.com/avatar/{{ md5(strtolower(trim(optional(auth()->user())->email ?? 'admin@example.com'))) }}?s=26&d=mm&r=g" class="w-6 h-6 rounded-sm ml-1">
+                {{-- One line on a phone: "Howdy," is left out there and a long name is cut short. --}}
+                <span class="flex items-center whitespace-nowrap min-w-0"><span class="hidden sm:inline">Howdy,&nbsp;</span><span class="font-semibold truncate max-w-[120px] sm:max-w-none">{{ auth()->user()->username ?? auth()->user()->name ?? 'Admin' }}</span></span>
+                <img src="https://secure.gravatar.com/avatar/{{ md5(strtolower(trim(optional(auth()->user())->email ?? 'admin@example.com'))) }}?s=26&d=mm&r=g" class="w-6 h-6 rounded-sm ml-1 flex-shrink-0">
             </button>
             <div x-show="open" @click.away="open = false" 
                  class="absolute right-0 top-8 w-48 bg-[#2c3338] border border-[#3c434a] shadow-lg py-1 z-[60] text-[#c3c4c7] hidden group-hover:block">
