@@ -59,6 +59,24 @@ class FrontendPagesRenderTest extends TestCase
         $this->followingRedirects()->get('/'.$post->slug)->assertOk()->assertSee('A Post To Read', false);
     }
 
+    /** A post's title is the page's one H1, from the Page Title Bar or, with that off, the post itself. */
+    public function test_a_single_post_has_exactly_one_h1_with_or_without_the_title_bar(): void
+    {
+        $post = $this->makePost(['title' => 'The Title Is The Heading']);
+        $h1s = fn () => preg_match_all('#<h1\b[^>]*>\s*The Title Is The Heading\s*</h1>#', $this->get('/post/'.$post->slug)->assertOk()->getContent());
+
+        update_cms_option('theme_title_bar_enabled', '1');
+        update_cms_option('theme_title_bar_show_title', '1');
+        $this->assertSame(1, $h1s(), 'in the title bar');
+
+        update_cms_option('theme_title_bar_enabled', '0');
+        $this->assertSame(1, $h1s(), 'title bar off: the post prints it');
+
+        update_cms_option('theme_title_bar_enabled', '1');
+        update_cms_option('theme_title_bar_show_title', '0');
+        $this->assertSame(1, $h1s(), 'title hidden in the bar: the post prints it');
+    }
+
     public function test_a_page_renders(): void
     {
         $this->makePost([

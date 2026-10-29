@@ -9,6 +9,10 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+### Fixed
+- A blog post has its title as the page's H1 again when the Page Title Bar is switched off (or
+  hides its title): with it off, a post had no H1 at all, which search engines count against it.
+
 ## [2.8.12] — 2026-10-29
 
 ### Added

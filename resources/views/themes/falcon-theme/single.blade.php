@@ -100,6 +100,17 @@
 
                     <!-- Content Column -->
                     <article class="w-full {{ $sidebarContent ? 'lg:w-[70%]' : '' }}">
+                        {{-- The post's title as the page's one H1 when the Page Title Bar does not show it
+                             (switched off, or its title hidden). Without it a post had no H1 at all.
+                             A title bar made in the builder shows the title itself. --}}
+                        @php
+                            $titleInBar = trim((string) get_falcon_page_title_bar()) !== ''
+                                || (get_cms_option('theme_title_bar_enabled', '1') === '1'
+                                    && get_cms_option('theme_title_bar_show_title', '1') === '1');
+                        @endphp
+                        @unless($titleInBar)
+                            <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-6">{{ $post->title }}</h1>
+                        @endunless
                         {{-- Post meta — each item toggled from Customizer → Blog → Single Blog --}}
                         @if($sAuthor || $sDate || $sCats)
                         <header class="mb-10">
