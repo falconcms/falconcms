@@ -5,7 +5,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.11 <Badge type="tip" text="Latest" /> {#v2-8-11}
+## v2.8.12 <Badge type="tip" text="Latest" /> {#v2-8-12}
+
+**Released: 2026-10-29**
+
+Folders for the media library, everywhere files are uploaded.
+
+### Added
+
+- **Media folders.** Organise the library into folders, and folders inside folders — on the
+  Media page, the upload page and the media window that opens from pages, posts, the builder
+  and settings. Make a folder at the top level or inside another ("Where"), also right beside
+  **Upload to**; rename it any time; move it into another folder or make it a main folder again
+  (drag it, or use its Move button — the way on a phone). Move files by dragging them onto a
+  folder, with **Move to folder** under Bulk actions, or from a file's details, and upload
+  straight into a folder. See [Media Library → Folders](/guide/media#folders).
+- Folders only group files: a file keeps its address whichever folder it is in, so no page that
+  shows it breaks, and deleting a folder never deletes a file (its files go back to
+  Uncategorized, its folders move up one level).
+- The media window works on a phone: its Upload / Library tabs show across the top, and its
+  folder filter and search now work (they were placeholders before).
+
+### Fixed
+
+- The cart badge stays round with a two-digit count (15 was a pill).
+- The admin bar stays on one line on a phone ("CMS Site" and "Howdy, …" wrapped onto two).
+
+### Updating
+
+- A new table holds the folders (`cms_media_folders`, plus `folder_id` on `media`); the update
+  runs its migration. Until it has run, the library and uploads keep working without folders.
+
+---
+
+## v2.8.11 {#v2-8-11}
 
 **Released: 2026-10-29**
 

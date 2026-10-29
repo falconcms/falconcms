@@ -25,9 +25,33 @@ Click any file to:
 - Get the **direct URL**
 - **Delete** the file
 
+## Folders
+
+Keep the library tidy with folders, and folders inside folders. They are on the **Media** page,
+the **upload** page and the media window that opens from pages, posts, the builder and settings.
+
+- **All files** shows everything; **Uncategorized** shows files in no folder (every file starts
+  there). Click a folder to see its files; the number beside it is how many it holds.
+- **New folder**: give it a name and choose **Where** — at the top level (a main folder) or
+  inside another folder. It is also beside **Upload to**, so a folder can be made right before
+  uploading into it.
+- **Upload to**: uploads go into the folder picked there (the open folder to begin with).
+- **Move files**: drag them onto a folder, pick **Move to folder** under Bulk actions, or change
+  **Folder** in a file's details.
+- **Rename** a folder any time with its pencil, and **move** it with its Move button — inside
+  another folder, or to the top level to make it a main folder again. With a mouse you can also
+  drag a folder onto another one, or onto *Drop here to make it a main folder*. On a phone the
+  buttons are always shown.
+- **Delete** a folder with its bin: its files are not deleted — they go back to Uncategorized —
+  and its folders move up one level.
+
+Folders only group files. A file keeps its address whichever folder it is in, so moving it
+never breaks a page that shows it. Making and changing folders needs **Media → Add New**
+access; the library's read-only users see them without the buttons.
+
 ## Bulk Operations
 
-Select multiple files and **Bulk Delete** them at once.
+Select multiple files and **Bulk Delete** them at once, or move them into a folder.
 
 ## Image optimisation
 

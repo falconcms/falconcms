@@ -9,13 +9,15 @@ Full release notes, with the reasoning behind each change, live at
 
 ## [Unreleased]
 
+## [2.8.12] — 2026-10-29
+
 ### Added
 - Media folders: organise the library into folders (and folders inside folders), on the Media
   page, the upload page and the media window that opens from pages, posts, the builder and
   settings. Rename a folder any time, move a folder into another or make it a main folder again
   (drag it, or its Move button on a phone), make folders from the upload page too, drag files
-  onto a folder, move them with Bulk actions or
-  from a file's details, and upload straight into a folder. Folders only group files — a file
+  onto a folder, move them with Bulk actions or from a file's details, and upload straight
+  into a folder. Folders only group files — a file
   keeps its address whichever folder it is in, and deleting a folder never deletes a file (its
   files go back to Uncategorized). The media window can now be used on a phone as well.
 
