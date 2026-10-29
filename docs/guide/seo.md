@@ -56,6 +56,10 @@ You don't set any of this up:
 
 - **Title and description** exactly as typed. "Pricing — Free, Pro & Agency" stays as written,
   without `&amp;` and without the site name added twice.
+- **One H1 per post:** the post's title. The theme prints it in the **Page Title Bar**; when the
+  title bar is switched off (**Customizer → Page Title Bar**) or hides its title, the post prints
+  it at the top of the article instead, so a post never ends up without a main heading. A title
+  bar made in the builder shows the title itself, and the theme does not add a second one.
 - **A canonical address** without sort, filter or tracking parameters (`?orderby=`,
   `?utm_source=`). It keeps `?page=2`, because Google asks each page of a series to name itself.
 - **Breadcrumbs:** one trail (Home › Blog › Category › Post) used by the theme's title bar, the
