@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $height
  * @property string|null $alt_text
  * @property string|null $title
+ * @property int|null $folder_id
  * @property-read string $url
  */
 class Media extends Model
@@ -22,8 +23,10 @@ class Media extends Model
     protected $fillable = [
         'filename', 'path', 'mime_type', 'width', 'height',
         'original_size', 'compressed_size', 'alt_text',
-        'title', 'caption', 'description', 'user_id',
+        'title', 'caption', 'description', 'user_id', 'folder_id',
     ];
+
+    protected $casts = ['folder_id' => 'integer'];
 
     public function getUrlAttribute()
     {

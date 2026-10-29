@@ -1,4 +1,9 @@
-<div id="wp-media-modal" class="hidden fixed inset-0 z-[99999] overflow-hidden">
+@php
+    // The window opens on many screens (pages, the builder, settings); moving files and making
+    // folders follow Media → Add New, not the screen it was opened from.
+    $mediaCanWrite = falcon_admin_can_write('admin/media', '');
+@endphp
+<div id="wp-media-modal" class="hidden fixed inset-0 z-[99999] overflow-hidden" data-can-write="{{ $mediaCanWrite ? '1' : '' }}">
     <!-- Backdrop -->
     <div class="absolute inset-0 bg-black/60"></div>
     
@@ -22,16 +27,27 @@
                     <li><a href="#" class="media-modal-tab-btn active block px-4 py-2 border-l-4 border-l-[#2271b1] bg-white text-black font-semibold" data-target="media-upload-view">Upload files</a></li>
                     <li><a href="#" class="media-modal-tab-btn block px-4 py-2 border-l-4 border-l-transparent text-[#2271b1] hover:text-[#135e96]" data-target="media-library-view">Media Library</a></li>
                 </ul>
+                <div class="mt-4 px-4 text-[11px] font-bold uppercase tracking-wide text-[#646970]">Folders</div>
+                <ul id="mm-folder-list" class="mt-1 text-[13px]"></ul>
             </div>
 
             <!-- Content Area -->
             <div class="flex-grow flex flex-col overflow-hidden">
                 
+                {{-- On a phone the tab sidebar is hidden: the same two tabs, across the top. --}}
+                <div class="md:hidden flex border-b border-[#c3c4c7] text-[14px] shrink-0">
+                    <a href="#" class="media-modal-tab-btn active flex-1 text-center px-2 py-2 border-l-4 border-l-[#2271b1] bg-white text-black font-semibold" data-target="media-upload-view">Upload files</a>
+                    <a href="#" class="media-modal-tab-btn flex-1 text-center px-2 py-2 border-l-4 border-l-transparent text-[#2271b1]" data-target="media-library-view">Media Library</a>
+                </div>
+
                 <!-- Tab Views -->
                 <div class="flex-grow overflow-y-auto p-4 flex flex-col">
                     
                     <!-- Upload Files View -->
                     <div id="media-upload-view" class="media-tab-content flex-grow flex flex-col items-center justify-center">
+                        <div class="w-full max-w-[95%] mb-3">
+                            @include('falcon-cms::admin.media.partials.upload-to', ['selectId' => 'mm-upload-folder', 'folders' => [], 'selected' => 0])
+                        </div>
                         <div class="border-2 border-dashed border-[#c3c4c7] w-full max-w-[95%] h-full flex flex-col items-center justify-center bg-white"
                              onclick="document.getElementById('media-upload-input').click()">
                             @php
@@ -59,17 +75,18 @@
 
                     <!-- Media Library View -->
                     <div id="media-library-view" class="media-tab-content hidden flex-grow relative">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex space-x-2">
-                                <select class="wp-input h-7 text-[12px] py-0">
-                                    <option>All media items</option>
-                                    <option>Images</option>
-                                </select>
-                                <select class="wp-input h-7 text-[12px] py-0">
-                                    <option>All dates</option>
-                                </select>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <select id="mm-folder-select" class="wp-input h-7 text-[12px] py-0 w-48 mm-folder-options" data-with-all="1" aria-label="Folder"></select>
+                                <button type="button" id="mm-new-folder-btn" class="wp-btn-secondary h-7 px-2 text-[12px] items-center gap-1 hidden" title="New folder"><span class="material-symbols-outlined text-[16px]">create_new_folder</span>New folder</button>
+                                <form id="mm-new-folder-form" class="hidden flex-wrap items-center gap-1">
+                                    <input type="text" id="mm-new-folder-name" maxlength="100" placeholder="Folder name" class="wp-input h-7 text-[12px] w-40">
+                                    <select id="mm-new-folder-parent" class="wp-input h-7 text-[12px] py-0 w-48" aria-label="Where"></select>
+                                    <button type="submit" class="wp-btn-primary h-7 px-3 text-[12px]">Create</button>
+                                    <button type="button" id="mm-new-folder-cancel" class="wp-btn-secondary h-7 px-2 text-[12px]">Cancel</button>
+                                </form>
                             </div>
-                            <input type="text" placeholder="Search media items..." class="wp-input h-7 text-[12px] w-48">
+                            <input type="text" id="mm-search" placeholder="Search media items..." class="wp-input h-7 text-[12px] w-full sm:w-48">
                         </div>
                         <div id="media-library-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                             <!-- JS populated -->
@@ -116,6 +133,7 @@
                         <div><label class="block text-[12px] text-[#646970] mb-1">Title</label><input type="text" id="meta-title" class="wp-input w-full text-[13px] h-7"></div>
                         <div><label class="block text-[12px] text-[#646970] mb-1">Caption</label><textarea id="meta-caption" class="wp-input w-full text-[13px] h-16 py-1"></textarea></div>
                         <div><label class="block text-[12px] text-[#646970] mb-1">Description</label><textarea id="meta-desc" class="wp-input w-full text-[13px] h-16 py-1"></textarea></div>
+                        <div><label class="block text-[12px] text-[#646970] mb-1">Folder</label><select id="meta-folder" class="wp-input w-full text-[12px] h-7 py-0 mm-folder-options"></select></div>
                         <div><label class="block text-[12px] text-[#646970] mb-1">File URL:</label><input type="text" id="meta-url" readonly class="wp-input w-full text-[12px] h-7 bg-white/50"></div>
                     </div>
                     
@@ -151,6 +169,61 @@
         let isMultiple = false;
         let currentCallback = null;
 
+        // Folders: '' = all files, 'none' = Uncategorized, or a folder's id. Uploads go into the
+        // folder that is open (or the one picked under "Upload to").
+        const canWrite = modal.dataset.canWrite === '1';
+        const csrf = '{{ csrf_token() }}';
+        let folders = [], folderTotals = { total: 0, uncategorized: 0 }, currentFolder = '', searchTerm = '';
+
+        const esc = (t) => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const indent = (f) => '— '.repeat(f.depth);
+
+        function renderFolders() {
+            const list = document.getElementById('mm-folder-list');
+            const row = (value, label, count, icon, depth) => `<li><a href="#" data-folder="${value}" class="mm-folder-link flex items-center gap-1.5 pr-3 py-1.5 border-l-4 ${String(currentFolder) === value ? 'border-l-[#2271b1] bg-white text-black font-semibold' : 'border-l-transparent text-[#2271b1] hover:text-[#135e96]'}" style="padding-left:${12 + depth * 12}px"><span class="material-symbols-outlined text-[16px] ${icon === 'folder' ? 'text-[#dba617]' : ''}">${icon}</span><span class="grow truncate">${esc(label)}</span><span class="text-[11px] text-[#646970]">${count}</span></a></li>`;
+            list.innerHTML = row('', 'All files', folderTotals.total, 'perm_media', 0) + row('none', 'Uncategorized', folderTotals.uncategorized, 'folder_off', 0)
+                + folders.map(f => row(String(f.id), f.name, f.count, 'folder', f.depth)).join('');
+
+            document.querySelectorAll('.mm-folder-options').forEach(sel => {
+                const keep = sel.value;
+                const all = sel.dataset.withAll ? '<option value="">All files</option>' : '';
+                sel.innerHTML = all + `<option value="${sel.dataset.withAll ? 'none' : ''}">Uncategorized</option>` + folders.map(f => `<option value="${f.id}">${esc(indent(f) + f.name)}</option>`).join('');
+                sel.value = keep;
+            });
+            document.getElementById('mm-folder-select').value = currentFolder;
+            document.getElementById('mm-new-folder-parent').innerHTML = '<option value="">At the top level (a main folder)</option>'
+                + folders.map(f => `<option value="${f.id}">${esc(indent(f) + f.name)}</option>`).join('');
+            document.dispatchEvent(new CustomEvent('falcon-media-folders', { detail: { folders, from: modal } }));
+            if (/^\d+$/.test(currentFolder)) document.getElementById('mm-upload-folder').value = currentFolder;
+        }
+
+        // A folder made from an "Upload to" (here or on the page behind): show it in the lists.
+        document.addEventListener('falcon-media-folders', e => { if (e.detail.made && e.detail.from !== modal) loadFolders(); });
+
+        function loadFolders() {
+            return fetch("{{ route('admin.media.folders.index') }}", { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => { if (data) { folders = data.folders || []; folderTotals = { total: data.total, uncategorized: data.uncategorized }; } renderFolders(); })
+                .catch(() => renderFolders());
+        }
+
+        function openFolder(value) {
+            currentFolder = value;
+            document.querySelector('[data-target="media-library-view"]').click();
+            renderFolders();
+        }
+
+        async function postJson(url, body) {
+            const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify(body) });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data.success === false) {
+                const msg = data.message || 'That did not work. Please try again.';
+                if (typeof window.showToast === 'function') window.showToast(msg, 'error'); else alert(msg);
+                return null;
+            }
+            return data;
+        }
+
         // Global opener
         // Font mode (Customizer → Typography → Custom Font): openMediaModal(cb, { fontFormat: 'woff2' })
         // shows only fonts of that format, uploads only that format, and tells the server the
@@ -170,6 +243,7 @@
             else input.removeAttribute('accept');
             selectedMediaItems = [];
             resetUI();
+            loadFolders();
             loadLibrary();
         };
 
@@ -198,8 +272,10 @@
                     b.classList.remove('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
                     b.classList.add('border-l-transparent', 'text-[#2271b1]');
                 });
-                this.classList.add('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
-                this.classList.remove('border-l-transparent', 'text-[#2271b1]');
+                document.querySelectorAll(`.media-modal-tab-btn[data-target="${this.dataset.target}"]`).forEach(b => {
+                    b.classList.add('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
+                    b.classList.remove('border-l-transparent', 'text-[#2271b1]');
+                });
                 
                 document.querySelectorAll('.media-tab-content').forEach(c => c.classList.add('hidden'));
                 document.getElementById(this.dataset.target).classList.remove('hidden');
@@ -221,13 +297,14 @@
             const files = Array.from(filesList);
             
             // UI state updates to switch to library
-            const libraryTab = document.querySelector('[data-target="media-library-view"]');
             document.querySelectorAll('.media-modal-tab-btn').forEach(b => {
                 b.classList.remove('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
                 b.classList.add('border-l-transparent', 'text-[#2271b1]');
             });
-            libraryTab.classList.add('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
-            libraryTab.classList.remove('border-l-transparent', 'text-[#2271b1]');
+            document.querySelectorAll('.media-modal-tab-btn[data-target="media-library-view"]').forEach(libraryTab => {
+                libraryTab.classList.add('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
+                libraryTab.classList.remove('border-l-transparent', 'text-[#2271b1]');
+            });
             
             document.querySelectorAll('.media-tab-content').forEach(c => c.classList.add('hidden'));
             document.getElementById('media-library-view').classList.remove('hidden');
@@ -238,6 +315,7 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('_token', '{{ csrf_token() }}');
+                formData.append('folder_id', document.getElementById('mm-upload-folder').value);
                 if (fontFormat) formData.append('purpose', 'font');
 
                 try {
@@ -265,6 +343,9 @@
                 }
             }
 
+            // Show the folder the files went into.
+            currentFolder = document.getElementById('mm-upload-folder').value || 'none';
+            loadFolders();
             loadLibrary();
             document.getElementById('media-loading-spinner').classList.add('hidden');
             isUploading = false;
@@ -325,7 +406,11 @@
         // Library Logic
         function loadLibrary() {
             document.getElementById('media-loading-spinner').classList.remove('hidden');
-            fetch("{{ route('admin.media.index') }}" + (fontFormat ? '?type=font&font_format=' + fontFormat : ''), {
+            const params = new URLSearchParams();
+            if (fontFormat) { params.set('type', 'font'); params.set('font_format', fontFormat); }
+            if (currentFolder) params.set('folder', currentFolder);
+            if (searchTerm) params.set('s', searchTerm);
+            fetch("{{ route('admin.media.index') }}" + (params.toString() ? '?' + params.toString() : ''), {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
@@ -334,6 +419,9 @@
             .then(res => res.json())
             .then(data => {
                 grid.innerHTML = '';
+                if (!data.data.length) {
+                    grid.innerHTML = `<div class="col-span-full py-16 text-center text-[13px] text-[#646970] italic">${currentFolder && !searchTerm ? 'This folder is empty.' : 'No media files found.'}</div>`;
+                }
                 data.data.forEach(item => {
                     const div = document.createElement('div');
                     div.className = `relative aspect-square border-2 border-transparent bg-gray-100 cursor-pointer overflow-hidden group item-media-${item.id}`;
@@ -489,7 +577,63 @@
             document.getElementById('meta-caption').value = item.caption || '';
             document.getElementById('meta-desc').value = item.description || '';
             document.getElementById('meta-url').value = window.location.origin + '/storage/' + item.path;
+            const folderSel = document.getElementById('meta-folder');
+            folderSel.value = item.folder_id ? String(item.folder_id) : '';
+            folderSel.disabled = !canWrite;
         }
+
+        // Folder list, folder filter, search, new folder, and moving the selected file.
+        document.getElementById('mm-folder-list').addEventListener('click', e => {
+            const link = e.target.closest('.mm-folder-link');
+            if (!link) return;
+            e.preventDefault();
+            openFolder(link.dataset.folder);
+        });
+        document.getElementById('mm-folder-select').addEventListener('change', function () { currentFolder = this.value; renderFolders(); loadLibrary(); });
+        let searchTimer = null;
+        document.getElementById('mm-search').addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => { searchTerm = this.value.trim(); loadLibrary(); }, 300);
+        });
+
+        const newBtn = document.getElementById('mm-new-folder-btn'), newForm = document.getElementById('mm-new-folder-form');
+        if (canWrite) { newBtn.classList.remove('hidden'); newBtn.classList.add('inline-flex'); }
+        const toggleNew = (show) => {
+            newForm.classList.toggle('hidden', !show); newForm.classList.toggle('flex', show);
+            newBtn.classList.toggle('hidden', show); newBtn.classList.toggle('inline-flex', !show);
+            if (show) {
+                document.getElementById('mm-new-folder-name').value = '';
+                document.getElementById('mm-new-folder-parent').value = /^\d+$/.test(currentFolder) ? currentFolder : '';
+                document.getElementById('mm-new-folder-name').focus();
+            }
+        };
+        newBtn.addEventListener('click', () => toggleNew(true));
+        document.getElementById('mm-new-folder-cancel').addEventListener('click', () => toggleNew(false));
+        newForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const name = document.getElementById('mm-new-folder-name').value.trim();
+            if (!name) return;
+            const where = document.getElementById('mm-new-folder-parent').value;
+            const data = await postJson("{{ route('admin.media.folders.store') }}", { name, parent_id: where ? Number(where) : null });
+            if (!data) return;
+            toggleNew(false);
+            currentFolder = String(data.folder.id);
+            await loadFolders();
+            loadLibrary();
+        });
+
+        document.getElementById('meta-folder').addEventListener('change', async function () {
+            if (!selectedMediaItems.length) return;
+            const item = selectedMediaItems[selectedMediaItems.length - 1];
+            const folderId = this.value ? Number(this.value) : null;
+            if (await postJson("{{ route('admin.media.move') }}", { ids: [item.id], folder_id: folderId })) {
+                item.folder_id = folderId;
+                if (typeof window.showToast === 'function') window.showToast('Moved to ' + this.options[this.selectedIndex].text.replace(/^(— )+/, ''));
+                loadFolders();
+            } else {
+                this.value = item.folder_id ? String(item.folder_id) : '';
+            }
+        });
 
         document.getElementById('save-media-meta-btn').addEventListener('click', function() {
             if (selectedMediaItems.length === 0) return;

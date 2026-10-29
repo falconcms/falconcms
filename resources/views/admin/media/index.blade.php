@@ -6,17 +6,22 @@
     @php
         $canWrite = falcon_admin_can_write();
         $writeOnly = $canWrite ? '' : 'style="display:none"';
+        $folderNames = collect($folders)->pluck('name', 'id')->all();
     @endphp
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-4">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Media Library</h1>
             @if($canWrite)
-                <a href="{{ route('admin.media.create') }}" class="wp-btn-secondary px-2 py-0.5 text-[13px]">Add Media File</a>
+                <a href="{{ route('admin.media.create', ctype_digit((string) $folder) ? ['folder' => $folder] : []) }}" class="wp-btn-secondary px-2 py-0.5 text-[13px]">Add Media File</a>
             @endif
         </div>
         {{-- Plugins add tools here (Falcon SEO: "Generate AVIF copies"). --}}
         {!! do_falcon_action('falcon_media_library_actions') !!}
     </div>
+
+    <div class="flex flex-col md:flex-row gap-4 items-start">
+    @include('falcon-cms::admin.media.partials.folders')
+    <div class="grow min-w-0 w-full">
 
     <!-- Media Toolbar -->
     <form action="{{ route('admin.media.index') }}" method="GET" class="flex flex-wrap items-center justify-between gap-4 mb-4 bg-white p-2 border border-[#c3c4c7] rounded-sm">
@@ -48,6 +53,7 @@
             <button type="submit" class="wp-btn-secondary h-7 px-3 text-[13px]">Filter</button>
         </div>
         
+        @if($folder !== '')<input type="hidden" name="folder" value="{{ $folder }}">@endif
         <div class="flex items-center gap-2">
             <input type="text" name="s" value="{{ request('s') }}" class="wp-input h-7 text-[13px] w-48" placeholder="Search media...">
             <button type="submit" class="wp-btn-secondary h-7 px-3 text-[13px]">Search Media</button>
@@ -60,6 +66,14 @@
             <select id="bulk-action-selector-top" class="wp-input h-7 text-[13px] py-0 w-32">
                 <option value="">Bulk actions</option>
                 <option value="delete">Delete permanently</option>
+                @if(count($folders) || $folder !== '')
+                    <optgroup label="Move to folder">
+                        <option value="move:none">Uncategorized</option>
+                        @foreach($folders as $f)
+                            <option value="move:{{ $f['id'] }}">{{ str_repeat('— ', $f['depth']) }}{{ $f['name'] }}</option>
+                        @endforeach
+                    </optgroup>
+                @endif
             </select>
             <button id="apply-bulk-action-top" class="wp-btn-secondary h-7 px-3 text-[13px]">Apply</button>
             <button id="bulk-select-btn" class="wp-btn-secondary h-7 px-3 text-[13px] hidden" {!! $writeOnly !!}>Bulk Select</button>
@@ -76,7 +90,7 @@
     <div id="media-grid-view" class="hidden">
         <div id="media-grid-container" class="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 bg-white p-4 border border-[#c3c4c7]">
             @forelse($media as $index => $item)
-                <div class="relative cursor-pointer group media-item-container" data-id="{{ $item->id }}" data-index="{{ $index }}">
+                <div class="relative cursor-pointer group media-item-container" data-id="{{ $item->id }}" data-index="{{ $index }}" @if($canWrite) draggable="true" @endif>
                     <div class="media-item" data-item='@json($item)' data-index="{{ $index }}">
                         <div class="aspect-square border-2 border-transparent bg-[#f0f0f1] overflow-hidden group-hover:border-[#2271b1] transition-all flex items-center justify-center">
                             @if(strpos($item->mime_type, 'image/') === 0)
@@ -103,7 +117,7 @@
                     </div>
                 </div>
             @empty
-                <div class="col-span-full py-20 text-center text-[#646970] italic">No media files found.</div>
+                <div class="col-span-full py-20 text-center text-[#646970] italic">{{ $folder !== '' && !request('s') ? 'This folder is empty. Upload files here, or move files in from another folder.' : 'No media files found.' }}</div>
             @endforelse
         </div>
         <!-- Load More Button -->
@@ -113,7 +127,7 @@
     </div>
 
     <!-- Media List Table -->
-    <div id="media-list-container" class="bg-white border border-[#c3c4c7]">
+    <div id="media-list-container" class="bg-white border border-[#c3c4c7] overflow-x-auto">
         <table class="wp-list-table w-full text-left text-[13px] border-collapse">
             <thead>
                 <tr class="border-b border-[#c3c4c7] bg-[#f9f9f9]">
@@ -121,13 +135,14 @@
                     <th class="p-2 w-20">File</th>
                     <th class="p-2 font-semibold">Title</th>
                     <th class="p-2 font-semibold">Author</th>
+                    <th class="p-2 font-semibold">Folder</th>
                     <th class="p-2 font-semibold">Uploaded to</th>
                     <th class="p-2 font-semibold">Date</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($media as $index => $item)
-                    <tr class="border-b border-[#f0f0f1] hover:bg-[#f6f7f7] group" data-id="{{ $item->id }}" data-index="{{ $index }}">
+                    <tr class="border-b border-[#f0f0f1] hover:bg-[#f6f7f7] group" data-id="{{ $item->id }}" data-index="{{ $index }}" @if($canWrite) draggable="true" @endif>
                         <td class="p-2 text-center align-top pt-3">
                             @if($canWrite)<input type="checkbox" value="{{ $item->id }}" class="media-checkbox w-4 h-4">@endif
                         </td>
@@ -163,6 +178,7 @@
                             </div>
                         </td>
                         <td class="p-2 align-top pt-3 text-[#2271b1]">{{ $item->user->name ?? 'Admin' }}</td>
+                        <td class="p-2 align-top pt-3 text-[#646970]">{{ $folderNames[$item->folder_id] ?? '—' }}</td>
                         <td class="p-2 align-top pt-3">
                             @if($item->model_type && $item->model_id)
                                 <div class="text-[#2271b1] hover:text-[#135e96] cursor-pointer">Linked Content</div>
@@ -176,7 +192,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="p-10 text-center text-[#646970] italic bg-white">No media files found.</td>
+                        <td colspan="7" class="p-10 text-center text-[#646970] italic bg-white">No media files found.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -189,6 +205,14 @@
             <select id="bulk-action-selector-bottom" class="wp-input h-7 text-[13px] py-0 w-32">
                 <option value="">Bulk actions</option>
                 <option value="delete">Delete permanently</option>
+                @if(count($folders) || $folder !== '')
+                    <optgroup label="Move to folder">
+                        <option value="move:none">Uncategorized</option>
+                        @foreach($folders as $f)
+                            <option value="move:{{ $f['id'] }}">{{ str_repeat('— ', $f['depth']) }}{{ $f['name'] }}</option>
+                        @endforeach
+                    </optgroup>
+                @endif
             </select>
             <button id="apply-bulk-action-bottom" class="wp-btn-secondary h-7 px-3 text-[13px]">Apply</button>
         </div>
@@ -198,6 +222,9 @@
                 {{ $media->links('falcon-cms::components.admin.pagination') }}
             </div>
         </div>
+    </div>
+
+    </div>
     </div>
 
     <!-- Attachment Details Modal (WP Full Page Style) -->
@@ -249,6 +276,14 @@
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Title</label><input type="text" id="modal-meta-title" @unless($canWrite) readonly @endunless class="wp-input w-full text-[13px] h-8"></div>
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Caption</label><textarea id="modal-meta-caption" @unless($canWrite) readonly @endunless class="wp-input w-full text-[13px] h-16"></textarea></div>
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Description</label><textarea id="modal-meta-desc" @unless($canWrite) readonly @endunless class="wp-input w-full text-[13px] h-16"></textarea></div>
+                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Folder</label>
+                            <select id="modal-meta-folder" class="wp-input w-full text-[13px] h-8" @unless($canWrite) disabled @endunless>
+                                <option value="">Uncategorized</option>
+                                @foreach($folders as $f)
+                                    <option value="{{ $f['id'] }}">{{ str_repeat('— ', $f['depth']) }}{{ $f['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">File URL:</label><div class="flex gap-1"><input type="text" id="modal-meta-url" readonly class="wp-input grow text-[11px] h-8 bg-[#f6f7f7]"><button onclick="document.getElementById('modal-meta-url').select();document.execCommand('copy');window.showToast('Copied to clipboard!', 'success')" class="wp-btn-secondary h-8 px-2 text-[11px]">Copy</button></div></div>
                     </div>
 
@@ -380,6 +415,7 @@
                     statusEl.className = 'px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700';
                 }
                 
+                document.getElementById('modal-meta-folder').value = item.folder_id ? String(item.folder_id) : '';
                 document.getElementById('modal-meta-alt').value = item.alt_text || '';
                 document.getElementById('modal-meta-title').value = item.title || '';
                 document.getElementById('modal-meta-caption').value = item.caption || '';
@@ -461,8 +497,23 @@
 
             document.getElementById('prev-attachment').addEventListener('click', () => { if(currentIndex > 0) openDetails(currentIndex - 1); });
             document.getElementById('next-attachment').addEventListener('click', () => { if(currentIndex < items.length - 1) openDetails(currentIndex + 1); });
-            document.getElementById('close-details-modal').addEventListener('click', () => modal.classList.add('hidden'));
-            document.getElementById('details-modal-backdrop').addEventListener('click', () => modal.classList.add('hidden'));
+            let folderChanged = false;
+            const closeDetails = () => { modal.classList.add('hidden'); if (folderChanged) location.reload(); };
+            document.getElementById('close-details-modal').addEventListener('click', closeDetails);
+            document.getElementById('details-modal-backdrop').addEventListener('click', closeDetails);
+
+            document.getElementById('modal-meta-folder').addEventListener('change', async function () {
+                if (currentIndex === -1) return;
+                const item = items[currentIndex];
+                const folderId = this.value ? Number(this.value) : null;
+                if (await moveToFolder([item.id], folderId)) {
+                    item.folder_id = folderId;
+                    folderChanged = true;
+                    window.showToast('Moved to ' + this.options[this.selectedIndex].text.replace(/^(— )+/, ''));
+                } else {
+                    this.value = item.folder_id ? String(item.folder_id) : '';
+                }
+            });
 
             // Load More
             if (loadMoreBtn) {
@@ -484,7 +535,7 @@
                                 const newIndex = items.length;
                                 items.push(item);
                                 const html = `
-                                    <div class="relative cursor-pointer group media-item-container" data-id="${item.id}" data-index="${newIndex}">
+                                    <div class="relative cursor-pointer group media-item-container" data-id="${item.id}" data-index="${newIndex}" @if($canWrite) draggable="true" @endif>
                                         <div class="media-item" data-index="${newIndex}" data-item='${JSON.stringify(item)}'>
                                             <div class="aspect-square border-2 border-transparent bg-[#f0f0f1] overflow-hidden group-hover:border-[#2271b1] transition-all flex items-center justify-center">
                                                 ${item.mime_type.startsWith('image/')
@@ -553,16 +604,40 @@
                 }).then(() => location.reload());
             }
 
-            applyTop.addEventListener('click', () => {
-                const action = document.getElementById('bulk-action-selector-top').value;
-                const ids = Array.from(document.querySelectorAll('.media-checkbox:checked')).map(cb => cb.value);
-                if (action === 'delete' && ids.length > 0) executeBulkDelete(ids);
-            });
+            // Put files into a folder (null = Uncategorized); the page then shows the new state.
+            async function moveToFolder(ids, folderId) {
+                const res = await fetch('{{ route('admin.media.move') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ ids: ids, folder_id: folderId })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.success) { window.showToast(data.message || 'The files could not be moved.', 'error'); return false; }
+                return true;
+            }
 
-            applyBottom.addEventListener('click', () => {
-                const action = document.getElementById('bulk-action-selector-bottom').value;
+            function applyBulk(selectorId) {
+                const action = document.getElementById(selectorId).value;
                 const ids = Array.from(document.querySelectorAll('.media-checkbox:checked')).map(cb => cb.value);
-                if (action === 'delete' && ids.length > 0) executeBulkDelete(ids);
+                if (!ids.length) return;
+                if (action === 'delete') executeBulkDelete(ids);
+                else if (action.startsWith('move:')) {
+                    const target = action.slice(5);
+                    moveToFolder(ids, target === 'none' ? null : Number(target)).then(ok => ok && location.reload());
+                }
+            }
+            applyTop.addEventListener('click', () => applyBulk('bulk-action-selector-top'));
+            applyBottom.addEventListener('click', () => applyBulk('bulk-action-selector-bottom'));
+
+            // Drag files onto a folder in the panel: the ticked ones if this file is among them,
+            // otherwise just this one.
+            document.addEventListener('dragstart', (e) => {
+                const holder = e.target.closest && e.target.closest('[draggable="true"][data-id]');
+                if (!holder) return;
+                const ticked = Array.from(document.querySelectorAll('.media-checkbox:checked')).map(cb => cb.value);
+                const ids = ticked.includes(holder.dataset.id) ? ticked : [holder.dataset.id];
+                e.dataTransfer.setData('application/x-falcon-media', JSON.stringify(ids.map(Number)));
+                e.dataTransfer.effectAllowed = 'move';
             });
 
             // Select-all checkbox in list view header

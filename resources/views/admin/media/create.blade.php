@@ -1,7 +1,12 @@
 <x-falcon-cms::layouts.admin>
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Upload New Media</h1>
-        <a href="{{ route('admin.media.index') }}" class="wp-btn-secondary text-[13px]">← Back to Library</a>
+        <a href="{{ route('admin.media.index', $folder ? ['folder' => $folder] : []) }}" class="wp-btn-secondary text-[13px]">← Back to Library</a>
+    </div>
+
+    {{-- Where the files go (the folder the library had open, or any other), or a new folder. --}}
+    <div class="mb-4">
+        @include('falcon-cms::admin.media.partials.upload-to', ['selectId' => 'media-upload-folder', 'folders' => $folders, 'selected' => $folder])
     </div>
 
     <!-- Upload Zone -->
@@ -93,6 +98,7 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('_token', '{{ csrf_token() }}');
+                formData.append('folder_id', document.getElementById('media-upload-folder').value);
 
                 statusText.innerText = 'Uploading...';
                 fill.style.width = '40%';
@@ -124,7 +130,9 @@
             } finally {
                 activeUploads--;
                 if (activeUploads === 0) {
-                    setTimeout(() => { window.location.href = "{{ route('admin.media.index') }}"; }, 1000);
+                    // Back to the library, open at the folder the files went into.
+                    const folder = document.getElementById('media-upload-folder').value;
+                    setTimeout(() => { window.location.href = "{{ route('admin.media.index') }}" + (folder ? '?folder=' + folder : ''); }, 1000);
                 }
             }
         }

@@ -20,6 +20,7 @@ use FalconCms\Core\Http\Controllers\Admin\LanguageController;
 use FalconCms\Core\Http\Controllers\Admin\LicenseController;
 use FalconCms\Core\Http\Controllers\Admin\LoginController;
 use FalconCms\Core\Http\Controllers\Admin\MediaController;
+use FalconCms\Core\Http\Controllers\Admin\MediaFolderController;
 use FalconCms\Core\Http\Controllers\Admin\MenuManagementController;
 use FalconCms\Core\Http\Controllers\Admin\OptionsPageController;
 use FalconCms\Core\Http\Controllers\Admin\PageController;
@@ -91,6 +92,12 @@ Route::middleware(['web', SecurityHeadersMiddleware::class])->group(function () 
 Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddleware::class, AdminMiddleware::class])->group(function () {
     // Media and posts
     Route::post('media/bulk-delete', [MediaController::class, 'bulkDestroy'])->name('media.bulk-delete');
+    // Media folders (under admin/media, so they follow the library's read/write access)
+    Route::get('media/folders', [MediaFolderController::class, 'index'])->name('media.folders.index');
+    Route::post('media/folders', [MediaFolderController::class, 'store'])->name('media.folders.store');
+    Route::put('media/folders/{folder}', [MediaFolderController::class, 'update'])->name('media.folders.update');
+    Route::delete('media/folders/{folder}', [MediaFolderController::class, 'destroy'])->name('media.folders.destroy');
+    Route::post('media/move', [MediaFolderController::class, 'move'])->name('media.move');
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
     Route::get('media/upload', [MediaController::class, 'create'])->name('media.create');
     Route::post('media/bulk-optimize', [MediaController::class, 'bulkOptimize'])->name('media.bulk-optimize');

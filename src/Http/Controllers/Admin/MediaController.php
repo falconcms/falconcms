@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use FalconCms\Core\Models\Media;
+use FalconCms\Core\Models\MediaFolder;
 use FalconCms\Core\Support\CustomFonts\FontFile;
 use FalconCms\Core\Support\SvgSanitizer;
 use Illuminate\Http\Request;
@@ -40,6 +41,14 @@ class MediaController extends Controller
             }
         }
 
+        // Folder filter: a folder's id, "none" for files in no folder, anything else for all.
+        $folder = MediaFolder::ready() ? (string) $request->input('folder', '') : '';
+        if ($folder === 'none') {
+            $query->whereNull('folder_id');
+        } elseif (ctype_digit($folder) && (int) $folder > 0) {
+            $query->where('folder_id', (int) $folder);
+        }
+
         // Date filter (Format: Ym, e.g., 202404)
         if ($request->filled('m')) {
             $year = substr($request->m, 0, 4);
@@ -52,6 +61,11 @@ class MediaController extends Controller
             ? (int) ($request->input('per_page', 100))
             : 10;
         $media = $query->latest()->paginate($perPage)->appends($request->all());
+
+        // The media window asks for files only; the page's filters below are not needed.
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json($media);
+        }
 
         // Get unique months for filter dropdown
         $months = Media::selectRaw('DISTINCT DATE_FORMAT(created_at, "%Y%m") as month_val, DATE_FORMAT(created_at, "%M %Y") as month_label')
@@ -74,16 +88,19 @@ class MediaController extends Controller
             $types['pdf'] = 'PDF';
         }
 
-        if ($request->ajax() || $request->expectsJson()) {
-            return response()->json($media);
-        }
+        $folders = MediaFolder::tree();
+        $all = Media::query()->count();
+        $folderTotals = ['all' => $all, 'none' => MediaFolder::ready() ? Media::query()->whereNull('folder_id')->count() : $all];
 
-        return view('falcon-cms::admin.media.index', compact('media', 'months', 'types'));
+        return view('falcon-cms::admin.media.index', compact('media', 'months', 'types', 'folders', 'folderTotals', 'folder'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('falcon-cms::admin.media.create');
+        $folders = MediaFolder::tree();
+        $folder = (int) $request->input('folder');
+
+        return view('falcon-cms::admin.media.create', compact('folders', 'folder'));
     }
 
     public function store(Request $request)
@@ -272,7 +289,7 @@ class MediaController extends Controller
                 'original_size' => $file->getSize(),
                 'compressed_size' => $compressedSize,
                 'user_id' => auth()->id(),
-            ]);
+            ] + $this->uploadFolder($request));
 
             // Plugins make their copies (Falcon SEO: an AVIF version).
             if (str_starts_with((string) $mimeType, 'image/')) {
@@ -500,6 +517,19 @@ class MediaController extends Controller
         }
 
         return [$filename, $path];
+    }
+
+    /**
+     * Uploaded from inside a folder: it goes into that folder. Nothing is written otherwise, so
+     * an upload still works on a site whose folders migration has not run yet.
+     *
+     * @return array{folder_id?: int}
+     */
+    private function uploadFolder(Request $request): array
+    {
+        $id = (int) $request->input('folder_id');
+
+        return $id > 0 && MediaFolder::ready() && MediaFolder::query()->whereKey($id)->exists() ? ['folder_id' => $id] : [];
     }
 
     private function formatBytes(int $bytes): string
