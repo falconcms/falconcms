@@ -143,6 +143,13 @@ class PageCacheMiddleware
      */
     private function isPersonal(Request $request): bool
     {
+        // Data flashed by the request before — "Your comment is awaiting moderation", a form's
+        // errors and old input — is shown on this page only. Served from the cache the visitor
+        // never saw it; stored, every later visitor would have.
+        if (Session::isStarted() && (!empty(Session::get('_flash.old')) || !empty(Session::get('_flash.new')))) {
+            return true;
+        }
+
         foreach (self::PERSONAL_SESSION_KEYS as $sessionKey) {
             if (!empty(Session::get($sessionKey))) {
                 return true;

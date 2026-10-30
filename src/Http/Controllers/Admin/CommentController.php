@@ -67,12 +67,19 @@ class CommentController extends Controller
             return back()->with('error', 'Please select items and an action.');
         }
 
+        // Query-builder updates skip the model events that refresh a post's cached page.
+        $postIds = Comment::whereIn('id', $ids)->distinct()->pluck('post_id');
+
         if ($action === 'approve') {
             Comment::whereIn('id', $ids)->update(['is_approved' => true]);
         } elseif ($action === 'unapprove') {
             Comment::whereIn('id', $ids)->update(['is_approved' => false]);
         } elseif ($action === 'delete') {
             Comment::whereIn('id', $ids)->delete();
+        }
+
+        foreach ($postIds as $postId) {
+            falcon_forget_post_page_cache($postId);
         }
 
         return back()->with('success', 'Bulk action applied successfully.');

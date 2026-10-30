@@ -22,6 +22,14 @@
     @endphp
 
     @if($isBuilder)
+        {{-- The title as the page's H1 when the title bar does not show it: a builder post has no
+             header of its own, so with the bar off it had no title on screen at all. --}}
+        @unless(falcon_title_bar_shows_title())
+            <div class="container-custom pt-12">
+                @include('falcon-cms::themes.falcon-theme.partials.post-title', ['post' => $post, 'class' => 'text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight'])
+            </div>
+        @endunless
+
         {{-- Featured image (Single Blog → Show Featured Image) above the builder content --}}
         @if($sFeatured && $post->featured_image)
             <div class="container-custom pt-12">
@@ -100,17 +108,7 @@
 
                     <!-- Content Column -->
                     <article class="w-full {{ $sidebarContent ? 'lg:w-[70%]' : '' }}">
-                        {{-- The post's title as the page's one H1 when the Page Title Bar does not show it
-                             (switched off, or its title hidden). Without it a post had no H1 at all.
-                             A title bar made in the builder shows the title itself. --}}
-                        @php
-                            $titleInBar = trim((string) get_falcon_page_title_bar()) !== ''
-                                || (get_cms_option('theme_title_bar_enabled', '1') === '1'
-                                    && get_cms_option('theme_title_bar_show_title', '1') === '1');
-                        @endphp
-                        @unless($titleInBar)
-                            <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-6">{{ $post->title }}</h1>
-                        @endunless
+                        @include('falcon-cms::themes.falcon-theme.partials.post-title', ['post' => $post])
                         {{-- Post meta — each item toggled from Customizer → Blog → Single Blog --}}
                         @if($sAuthor || $sDate || $sCats)
                         <header class="mb-10">

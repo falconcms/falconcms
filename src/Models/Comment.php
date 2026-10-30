@@ -20,6 +20,18 @@ class Comment extends Model
         'parent_id',
     ];
 
+    protected static function booted(): void
+    {
+        // The post's cached page shows this comment list; it is stale the moment it changes.
+        $forget = static function (Comment $comment): void {
+            if ($comment->post_id && function_exists('falcon_forget_post_page_cache')) {
+                falcon_forget_post_page_cache($comment->post_id);
+            }
+        };
+        static::saved($forget);
+        static::deleted($forget);
+    }
+
     public function post(): BelongsTo
     {
         return $this->belongsTo(Post::class);

@@ -5,7 +5,56 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.14 <Badge type="tip" text="Latest" /> {#v2-8-14}
+## v2.8.15 <Badge type="tip" text="Latest" /> {#v2-8-15}
+
+**Released: 2026-10-30**
+
+A Comments element for your layouts. Also: one H1 on every single page, and a safer comment form.
+
+### Added
+
+- **Comments element.** The builder has a **Comments** element. It shows the approved comments
+  of the post being viewed, their replies, and the form to add one. Put it in a Layout Builder
+  Content section and every post that section is used for gets its own comments.
+  - **Content tab:** the heading, the count, the order, avatars, dates, replies, and the form's
+    heading and button.
+  - **Design tab:** colours, corners, typography and responsive margins.
+  - **After posting:** the visitor returns to the comments and sees whether the comment is live
+    or waiting for approval.
+
+### Fixed
+
+- **One H1 on a single post, custom post type entry or product.** With the Page Title Bar
+  showing the title, the bar's title is the H1. With the bar off, or its title hidden, the
+  template prints the title as the H1.
+  - Before, a builder post with the bar off had no H1.
+  - Before, a product with the bar on had two.
+  - In a custom Content layout, use a Title element with the dynamic source *Post Title* and the
+    H1 tag.
+- **Comments and the page cache.** A comment you approve, or one that is posted or deleted,
+  shows on its cached page straight away. Before, the cache kept the old list for up to a day.
+  A visitor's "awaiting moderation" notice or form error is never stored for other visitors.
+- **Table of Contents.** The comment section's headings are no longer listed.
+
+### Security
+
+- **Redirect.** After posting, the visitor goes back to the post's own address. Before, it was
+  an address taken from the request, which could point to another site.
+- **Moderation.** Before, typing a known commenter's email, or a member's, published a comment
+  without moderation. Now a guest comment goes live straight away only when all of these hold:
+  - the same name and email already have an approved guest comment;
+  - the email does not belong to a member;
+  - the comment has no link.
+- **Replies.** Only an approved comment on the same post can be replied to.
+- **Which posts take comments.** Only published posts. A guest must give a name and an email.
+- **Spam.** A hidden spam-trap field turns bots away. The same comment twice in ten minutes is
+  kept once.
+- **Names.** HTML tags and invisible or direction-flipping characters are removed. They could
+  make a name look like someone else's.
+
+---
+
+## v2.8.14 {#v2-8-14}
 
 **Released: 2026-10-30**
 

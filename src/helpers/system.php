@@ -233,6 +233,42 @@ if (!function_exists('falcon_refresh_route_cache')) {
     }
 }
 
+if (!function_exists('falcon_forget_post_page_cache')) {
+    /**
+     * Drop the page cache's copies of one post's page, and nothing else.
+     *
+     * A comment approved, posted or deleted changes that one page. Clearing the whole cache
+     * for it would cost every other visitor a fresh render; leaving it would show the old
+     * comment list for up to a day (the cache keeps pages 24 hours).
+     */
+    function falcon_forget_post_page_cache($postId): void
+    {
+        try {
+            $post = \FalconCms\Core\Models\Post::find($postId);
+            if (!$post || !function_exists('get_falcon_permalink')) {
+                return;
+            }
+            $url = (string) get_falcon_permalink($post);
+            if ($url === '' || $url === '#') {
+                return;
+            }
+            // The cache is keyed on the full URL the visitor asked for, so the page is looked
+            // for under this request's host and under APP_URL's (a queue or console run has
+            // only the latter), with and without the trailing slash.
+            $path = '/'.trim((string) (parse_url($url, PHP_URL_PATH) ?? ''), '/');
+            $roots = array_unique(array_filter([rtrim(url('/'), '/'), rtrim((string) config('app.url'), '/')]));
+            foreach ($roots as $root) {
+                $bare = $root.($path === '/' ? '' : $path);
+                foreach ([$bare, $bare.'/'] as $u) {
+                    \Illuminate\Support\Facades\Cache::forget('page_cache_'.md5($u));
+                }
+            }
+        } catch (\Throwable $e) {
+            // A cache that cannot be reached must never break a comment.
+        }
+    }
+}
+
 if (!function_exists('clear_page_cache')) {
     function clear_page_cache()
     {

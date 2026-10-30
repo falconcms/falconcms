@@ -360,6 +360,8 @@
         var usable = function (h) {
             if (nav.contains(h) || h.closest('.falcon-toc')) return false;
             if (labels.indexOf(h) !== -1) return false;
+            // The comment section's own headings ("Comments (3)", "Leave a Reply") are not the article's.
+            if (h.closest('.falcon-comments, #comments')) return false;
             if (cfg.exclude) {
                 try { if (h.closest(cfg.exclude) || h.matches(cfg.exclude)) return false; } catch (e) {}
             }

@@ -49,6 +49,7 @@ class BuilderShortcodeConverter
         'spacer' => Elements\SpacerElement::class,
         'table' => Elements\TableElement::class,
         'prev_next' => Elements\PrevNextElement::class,
+        'post_comments' => Elements\PostCommentsElement::class,
         'callout' => Elements\CalloutElement::class,
         'toc' => Elements\TocElement::class,
         'code_block' => Elements\CodeBlockElement::class,

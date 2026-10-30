@@ -79,7 +79,9 @@
             <div class="w-full lg:w-1/2 flex flex-col">
 
                 <?php do_falcon_action('falcon_simple_before_product_title', $post); ?>
-                {!! apply_falcon_filters('falcon_simple_product_title', '<h1 class="text-[36px] font-bold text-heading mb-4 leading-tight">' . e($post->title) . '</h1>', $post) !!}
+                {{-- The page's one H1: the title bar's when it shows the title, otherwise this one. --}}
+                @php $__ptTag = function_exists('falcon_title_bar_shows_title') && falcon_title_bar_shows_title() ? 'h2' : 'h1'; @endphp
+                {!! apply_falcon_filters('falcon_simple_product_title', '<' . $__ptTag . ' class="text-[36px] font-bold text-heading mb-4 leading-tight">' . e($post->title) . '</' . $__ptTag . '>', $post) !!}
                 <?php do_falcon_action('falcon_simple_after_product_title', $post); ?>
                 
                 <?php do_falcon_action('falcon_simple_before_product_price', $post); ?>

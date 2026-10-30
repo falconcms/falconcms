@@ -617,41 +617,126 @@ class FrontendController extends Controller
 
     public function storeComment(Request $request)
     {
-        $validated = $request->validate([
-            'post_id' => 'required|exists:posts,id',
-            'comment' => 'required|string|min:3|max:3000',
-            'name' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'parent_id' => 'nullable|exists:comments,id',
-        ]);
+        // Where the visitor goes afterwards: the post's own page, never a URL taken from the
+        // request (the Referer header behind url()->previous() is the sender's to write).
+        $postFor = fn ($id) => is_numeric($id) ? Post::find((int) $id) : null;
+        $backTo = function (?Post $post): string {
+            $url = $post ? (string) get_falcon_permalink($post) : '';
 
-        $userId = auth()->id();
-        $email = auth()->check() ? auth()->user()->email : ($validated['email'] ?? null);
-        $name = auth()->check() ? auth()->user()->name : ($validated['name'] ?? 'Guest');
+            return ($url !== '' && $url !== '#' ? $url : url('/')).'#comments';
+        };
 
-        // Check if this user/email already has at least one approved comment
-        $isApproved = false;
-        $query = Comment::where('is_approved', true);
-
-        if ($userId) {
-            $isApproved = (clone $query)->where('user_id', $userId)->exists();
-        } elseif ($email) {
-            $isApproved = (clone $query)->where('email', $email)->exists();
+        // A bot fills every field it finds, the hidden "website" one included. It is told the
+        // comment went through, so it has nothing to learn from.
+        if (trim((string) $request->input('website', '')) !== '') {
+            return redirect()->to($backTo($postFor($request->input('post_id'))))
+                ->with('success', 'Your comment is awaiting moderation.');
         }
 
+        $validated = $request->validate([
+            'post_id' => 'required|integer|exists:posts,id',
+            'comment' => 'required|string|min:3|max:3000',
+            'name' => auth()->check() ? 'nullable|string|max:100' : 'required|string|max:100',
+            'email' => auth()->check() ? 'nullable|email|max:255' : 'required|email|max:255',
+            'parent_id' => 'nullable|integer|exists:comments,id',
+        ]);
+
+        // Only a published post takes comments.
+        $post = Post::find($validated['post_id']);
+        if (!$post || $post->status !== 'published') {
+            abort(404);
+        }
+
+        // A reply belongs to an approved comment on the same post. One level of replies: a
+        // reply to a reply joins its thread.
+        $parentId = null;
+        if (!empty($validated['parent_id'])) {
+            $parent = Comment::find($validated['parent_id']);
+            if (!$parent || (int) $parent->post_id !== (int) $post->id || !$parent->is_approved) {
+                abort(422, 'That comment cannot be replied to.');
+            }
+            $parentId = $parent->parent_id ?: $parent->id;
+        }
+
+        $userId = auth()->id();
+        $email = auth()->check() ? auth()->user()->email : mb_strtolower(trim((string) $validated['email']));
+        $name = auth()->check() ? auth()->user()->name : self::cleanCommentText(strip_tags((string) $validated['name']), false);
+        $text = self::cleanCommentText((string) $validated['comment'], true);
+
+        if (mb_strlen($text) < 3 || ($name === '' && !$userId)) {
+            return back()->withInput()->withErrors(['comment' => 'Please write a comment.']);
+        }
+
+        // The same words from the same writer twice in ten minutes is a double click or a flood.
+        $duplicate = Comment::where('post_id', $post->id)
+            ->where($userId ? 'user_id' : 'email', $userId ?: $email)
+            ->where('comment', $text)
+            ->where('created_at', '>=', now()->subMinutes(10))
+            ->exists();
+        if ($duplicate) {
+            return redirect()->to($backTo($post))
+                ->with('success', 'You already posted that comment.')
+                ->with('falcon_comment_posted', (int) $post->id);
+        }
+
+        $isApproved = self::commentTrusted($userId, $email, $name, $text);
+
         Comment::create([
-            'post_id' => $validated['post_id'],
+            'post_id' => $post->id,
             'user_id' => $userId,
             'name' => $name,
             'email' => $email,
-            'comment' => $validated['comment'],
-            'parent_id' => $validated['parent_id'] ?? null,
+            'comment' => $text,
+            'parent_id' => $parentId,
             'is_approved' => $isApproved,
         ]);
 
         $message = $isApproved ? 'Comment posted successfully.' : 'Your comment is awaiting moderation.';
 
-        return back()->with('success', $message);
+        // Back to the comments, with the notice marked for this post's comment list.
+        return redirect()->to($backTo($post))
+            ->with('success', $message)
+            ->with('falcon_comment_posted', (int) $post->id);
+    }
+
+    /**
+     * Whether a comment can go live without waiting for a moderator.
+     *
+     * A signed-in writer with an approved comment is trusted. A guest only proves an email by
+     * typing it, so anyone can claim one — and an approved commenter's address, or a member's,
+     * would otherwise publish a stranger's comment straight away. A guest is trusted only when
+     * the same name and email already have an approved guest comment, the email is not an
+     * account's (a member signs in), and the comment carries no link (the spam that matters).
+     */
+    private static function commentTrusted(?int $userId, string $email, string $name, string $text): bool
+    {
+        if ($userId) {
+            return Comment::where('is_approved', true)->where('user_id', $userId)->exists();
+        }
+        if ($email === '' || preg_match('~https?://|www\.|\b[a-z0-9-]+\.(?:com|net|org|ru|xyz|top|io|info|biz)\b~i', $text)) {
+            return false;
+        }
+        if (User::whereRaw('LOWER(email) = ?', [$email])->exists()) {
+            return false;
+        }
+
+        return Comment::where('is_approved', true)->whereNull('user_id')
+            ->whereRaw('LOWER(email) = ?', [$email])->where('name', $name)->exists();
+    }
+
+    /**
+     * Comment text as stored: invisible and direction-flipping characters removed (they can make
+     * a name read as someone else's, or hide text), line breaks kept only where asked.
+     */
+    private static function cleanCommentText(string $text, bool $multiline): string
+    {
+        $text = preg_replace('/[\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2060}-\x{2064}\x{2066}-\x{2069}\x{FEFF}]/u', '', $text) ?? '';
+        $text = $multiline
+            ? (preg_replace('/[^\P{C}\n\t]/u', '', str_replace("\r\n", "\n", $text)) ?? '')
+            : (preg_replace('/\p{C}+/u', ' ', $text) ?? '');
+        $text = $multiline ? preg_replace("/\n{3,}/", "\n\n", $text) : preg_replace('/\s+/u', ' ', $text);
+
+        return trim((string) $text);
     }
 
     public function robots()

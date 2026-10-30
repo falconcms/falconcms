@@ -1369,6 +1369,11 @@
                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.table-content')
                             </div>
 
+                            <!-- ══ COMMENTS ELEMENT ══ -->
+                            <div v-else-if="editingElement?.type === 'post_comments'" class="space-y-8">
+                                @include('falcon-cms::admin.falcon-builder.partials.components.elements.post-comments-content')
+                            </div>
+
                             <!-- ══ PREVIOUS / NEXT ELEMENT ══ -->
                             <div v-else-if="editingElement?.type === 'prev_next'" class="space-y-8">
                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.prev-next-content')
@@ -3705,6 +3710,11 @@
                              <!-- Design Settings for Heading -->
                              <div v-else-if="editingElement?.type === 'heading'" class="space-y-6 pb-10">
                                  @include('falcon-cms::admin.falcon-builder.partials.components.elements.heading-design')
+                             </div>
+
+                             <!-- Design Settings for Comments -->
+                             <div v-else-if="editingElement?.type === 'post_comments'" class="space-y-6 pb-10">
+                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.post-comments-design')
                              </div>
 
                              <!-- Design Settings for Previous / Next -->

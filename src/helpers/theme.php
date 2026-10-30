@@ -153,3 +153,35 @@ if (!function_exists('render_falcon_form')) {
         }
     }
 }
+
+if (!function_exists('falcon_title_bar_shows_title')) {
+    /**
+     * Whether the Page Title Bar puts the current page's title on screen (as its H1).
+     *
+     * A single post, custom post type entry or product prints its own title as the page's H1
+     * only when this is false: with the bar switched off, or its title hidden, the page had no
+     * H1 at all; with both, it had two. A title bar made in the Layout Builder is taken to show
+     * the title itself. Answered once per request — the builder title bar is a full render.
+     */
+    function falcon_title_bar_shows_title(): bool
+    {
+        // Kept per request object: the application (and its memo) can outlive one request — a
+        // test making several, a long-running worker.
+        $memo = falcon_request_memo('title_bar');
+        $req = spl_object_id(request());
+        if (($memo['req'] ?? null) === $req && isset($memo['shows'])) {
+            return $memo['shows'];
+        }
+        $memo['req'] = $req;
+
+        if (trim((string) get_falcon_page_title_bar()) !== '') {
+            return $memo['shows'] = true;
+        }
+
+        $path = trim(request()->path(), '/');
+
+        return $memo['shows'] = get_cms_option('theme_title_bar_enabled', '1') === '1'
+            && get_cms_option('theme_title_bar_show_title', '1') === '1'
+            && $path !== '';
+    }
+}

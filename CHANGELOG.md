@@ -7,6 +7,33 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.8.15] — 2026-10-30
+
+### Added
+- Comments element (builder): the approved comments of the post being viewed, their replies
+  and the form to add one, for Layout Builder sections and builder pages. Heading, count, order,
+  avatars, dates, replies and form texts are set in its Content tab; colours, corners,
+  typography and responsive margins in Design.
+
+### Fixed
+- A single post, custom post type entry or product has exactly one H1: the Page Title Bar's
+  when it shows the title, otherwise the template's own. A builder post with the bar off had
+  none; a product with the bar on had two.
+- An approved, posted or deleted comment now shows on a cached page straight away (the page
+  cache kept the old comment list for up to a day), and a comment notice or form error is never
+  stored in the page cache for other visitors.
+- The Table of Contents no longer lists the comment section's headings.
+
+### Security
+- Comments: after posting, the visitor is sent to the post's own address, never to one taken
+  from the request (an open redirect). A guest comment is published without moderation only
+  when the same name and email already have an approved guest comment, the email is not a
+  member's, and it carries no link — claiming a known commenter's or a member's email no longer
+  skips moderation. Replies only to approved comments on the same post; only published posts
+  take comments; guests must give a name and email; a hidden spam-trap field; invisible and
+  direction-flipping characters and HTML tags removed from names; the same comment twice in ten
+  minutes is kept once.
+
 ## [2.8.14] — 2026-10-30
 
 ### Fixed

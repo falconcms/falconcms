@@ -883,7 +883,7 @@
                 text_block: 'Text Block', special_text: 'Text Block', text: 'Text',
                 heading: 'Heading', button: 'Button', image: 'Image', menu: 'Menu',
                 post_grid: 'Post Grid', post_content: 'Post Content', post_meta: 'Post Meta',
-                product_meta: 'Product Meta', social_icons: 'Social Icons',
+                product_meta: 'Product Meta', social_icons: 'Social Icons', post_comments: 'Comments',
                 advanced_search: 'Search', row: 'Nested Row',
             };
             const fcElementName = (type) => {
@@ -952,6 +952,11 @@
                 // Product Meta — renders product price/SKU/stock when the current post is a
                 // product, nothing otherwise. Available in post cards and layout sections.
                 availableElements.push({ type: 'product_meta', name: 'Product Meta', icon: 'fa fa-tag' });
+            }
+            // Comments — the comment list and form of the post being viewed. For layout
+            // sections and builder pages; a post card is a summary, not the place to talk.
+            if (!postCardMode.value) {
+                availableElements.push({ type: 'post_comments', name: 'Comments', icon: 'fa fa-comments' });
             }
 
             const filteredColumnLayouts = computed(() => {
@@ -6676,6 +6681,20 @@
                             barWidth: '', borderWidth: '', iconSize: '',
                             titleSize: '', titleWeight: '', bodySize: '',
                             collapsible: false, openByDefault: true,
+                            marginTop: 0, marginTopUnit: 'px',
+                            marginBottom: 0, marginBottomUnit: 'px',
+                            cssClass: '', cssId: '',
+                            visibility: { mobile: true, tablet: true, desktop: true },
+                        } : {}),
+                        ...(type === 'post_comments' ? {
+                            title: 'Comments', showCount: true,
+                            order: 'oldest', allowReplies: true,
+                            showAvatars: true, showDates: true,
+                            showForm: true, formTitle: 'Leave a Reply', buttonText: 'Post Comment',
+                            emptyText: 'No comments yet. Be the first to share your thoughts!',
+                            accentColor: '', buttonTextColor: '', titleColor: '', nameColor: '',
+                            textColor: '', metaColor: '', cardBg: '', borderColor: '', inputBg: '',
+                            radius: 8, itemGap: 28,
                             marginTop: 0, marginTopUnit: 'px',
                             marginBottom: 0, marginBottomUnit: 'px',
                             cssClass: '', cssId: '',

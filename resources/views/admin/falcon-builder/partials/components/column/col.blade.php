@@ -170,7 +170,7 @@
                   box and pushed a nested row ~24px down inside its column — the parent column's
                   background then showed as a band above it, with all padding set to 0.
                   A flex container does not render whitespace-only text runs at all. --}}
-             :style="(el.type === 'row' || el.type === 'section_separator' || el.type === 'code_block' || el.type === 'table' || el.type === 'callout' || el.type === 'toc' || el.type === 'heading' || el.type === 'prev_next') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : (column.settings.contentLayout === 'row' ? { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0', width: 'auto', minWidth: '0' } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' }))"
+             :style="(el.type === 'row' || el.type === 'section_separator' || el.type === 'code_block' || el.type === 'table' || el.type === 'callout' || el.type === 'toc' || el.type === 'heading' || el.type === 'prev_next' || el.type === 'post_comments') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (el.type === 'spacer' ? { flexGrow: el.settings.flexGrow || 0 } : (column.settings.contentLayout === 'row' ? { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0', width: 'auto', minWidth: '0' } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' }))"
              :data-fc-node="'element-' + ci + '-' + coli + '-' + eli"
              v-bind="fcCanvasAttrs(el)"
              @dragover="onDragOver($event, 'element', ci, coli, eli)"
@@ -197,6 +197,7 @@
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.callout')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.toc')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.prev-next')
+            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.post-comments')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.html')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.icon-box')
             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.content-box')
@@ -214,7 +215,7 @@
 
             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
             @php
-            $builtInTypes = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','code_block','table','callout','toc','prev_next','row']";
+            $builtInTypes = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','code_block','table','callout','toc','prev_next','post_comments','row']";
             @endphp
             <div v-if="customElements[el.type] !== undefined && !{!! $builtInTypes !!}.includes(el.type)"
                  :style="[{ width: '100%' }, getCustomElementRender(el).wrapperStyle, getCanvasVisibilityStyle(el.settings)]"

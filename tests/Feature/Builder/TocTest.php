@@ -571,6 +571,8 @@ class TocTest extends TestCase
 
         $this->assertStringContainsString('function labelHeadings(nav)', $script);
         $this->assertStringContainsString('if (labels.indexOf(h) !== -1) return false;', $script);
+        $this->assertStringContainsString("h.closest('.falcon-comments, #comments')", $script,
+            'the comment section headings are listed as sections of the article');
     }
 
     public function test_sticky_is_applied_to_the_element_that_can_travel(): void

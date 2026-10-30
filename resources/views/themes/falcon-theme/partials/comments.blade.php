@@ -1,4 +1,4 @@
-<div class="mt-20 pt-10 border-t border-gray-100">
+<div id="comments" class="mt-20 pt-10 border-t border-gray-100 scroll-mt-24">
     <h3 class="text-3xl font-black mb-10 tracking-tighter text-gray-900">
         Comments ({{ $post->comments->count() }})
     </h3>
