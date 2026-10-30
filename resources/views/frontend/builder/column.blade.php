@@ -509,6 +509,17 @@
             $rule = $stickyMobile ? str_replace(';', '!important;', $sOn) : $sOff;
             $colCss .= "@media(max-width:{$colBp}px){.{$colCid}{{$rule}}}";
         }
+        // A stretched column is as tall as its row, and a sticky box as tall as its own
+        // container has nowhere to travel — so with the row's default alignment the setting
+        // did nothing at all. Where it sticks, the column keeps its own height. Written after
+        // the alignment rules above so it wins over their !important.
+        foreach ([
+            [$stickyDesktop, "@media(min-width:" . ($colBpMed + 1) . "px)"],
+            [$stickyTablet,  "@media(min-width:{$colBpSm1}px) and (max-width:{$colBpMed}px)"],
+            [$stickyMobile,  "@media(max-width:{$colBp}px)"],
+        ] as [$on, $mq]) {
+            if ($on) $colCss .= "{$mq}{.{$colCid}{align-self:flex-start!important}}";
+        }
         $stickyBgColor   = $s['stickyBgColor']        ?? '';
         $stickyBgOpacity = (float)($s['stickyBgColorOpacity'] ?? 1);
         if ($stickyBgColor !== '') {

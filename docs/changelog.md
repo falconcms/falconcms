@@ -5,7 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.13 <Badge type="tip" text="Latest" /> {#v2-8-13}
+## v2.8.14 <Badge type="tip" text="Latest" /> {#v2-8-14}
+
+**Released: 2026-10-30**
+
+Sticky that sticks: columns, and the Table of Contents on more layouts.
+
+### Fixed
+
+- **Column → Sticky.** With the row's default alignment the setting did nothing. A stretched
+  column is as tall as its row, so it had nowhere to travel. Where a column sticks, it now keeps
+  its own height and stays on screen beside its taller neighbour.
+- **Table of Contents → Sticky.** Some layouts put the list in a column beside an intro, with
+  the article in the sections below. The list left the screen with its short section, even with
+  the column's own Sticky switched on. Now it pins to the screen until the article ends.
+- **Table of Contents → Sticky.** A column counts as "beside the content" only when the
+  headings it lists are in the same row.
+- **Table of Contents → Sticky.** A pinned list sits below a sticky site header instead of
+  behind it.
+
+---
+
+## v2.8.13 {#v2-8-13}
 
 **Released: 2026-10-30**
 

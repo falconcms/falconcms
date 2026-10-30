@@ -7,6 +7,17 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.8.14] — 2026-10-30
+
+### Fixed
+- Column Sticky did nothing with the row's default alignment: a stretched column is as tall as
+  its row and had nowhere to travel. Where it sticks, the column now keeps its own height.
+- Table of Contents, Sticky: a list in a column beside an intro, with the article in the
+  sections below (or in a column with its own Sticky setting), now pins to the screen until the
+  article ends instead of leaving with its short section. A column counts as "beside the
+  content" only when the headings it lists are in the same row.
+- Table of Contents: a pinned list sits below a sticky site header instead of under it.
+
 ## [2.8.13] — 2026-10-30
 
 ### Changed

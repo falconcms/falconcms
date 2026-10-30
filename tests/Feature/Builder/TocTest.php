@@ -591,7 +591,13 @@ class TocTest extends TestCase
 
         // A column with its own Sticky setting keeps its own offset rather than being
         // given a second, conflicting one.
-        $this->assertStringContainsString("if (own === 'sticky'", $script);
+        $this->assertStringContainsString("var ownSticky = pos === 'sticky'", $script);
+        $this->assertStringContainsString("if (mode === 'column' && !ownSticky) setColumn(true);", $script);
+
+        // Room beside the column counts only when the headings it lists are there too, and
+        // the column's own align-self: stretch !important must not keep it row-tall.
+        $this->assertStringContainsString('col.parentElement.contains(last)', $script);
+        $this->assertStringContainsString("col.style.setProperty('align-self', 'flex-start', 'important')", $script);
 
         // Where the column has no room to travel (the list in a section of its own above
         // the article, or columns stacked on a phone) the list docks to the screen instead.

@@ -423,7 +423,7 @@
 
         nav.setAttribute('data-ready', '');
 
-        applySticky(nav, cfg, scope);
+        applySticky(nav, cfg, scope, items);
         wireScroll(nav, cfg);
         wireScrollState(nav, items, scope, cfg);
     }
@@ -432,36 +432,47 @@
     //
     // Two ways, picked from the layout and picked again on resize:
     //
-    // column — the list sits in a column beside the content, in a row taller than the
-    //   column. The column is what sticks: a sticky box travels only inside its own
-    //   parent, and every wrapper between this element and its column is exactly as tall
-    //   as the element, so sticking any of those did nothing. This is also what the
-    //   builder's own column Sticky setting sticks, so a column that already has that
-    //   setting is left alone rather than given a second, conflicting offset.
+    // column — the list sits in a column beside the content it lists: the same row holds
+    //   those headings and is taller than the column. The column is what sticks: a sticky
+    //   box travels only inside its own parent, and every wrapper between this element
+    //   and its column is exactly as tall as the element, so sticking any of those did
+    //   nothing. This is also what the builder's own column Sticky setting sticks, so a
+    //   column that already has that setting is left alone rather than given a second,
+    //   conflicting offset.
     //
     // dock — anything else: the list in a section of its own above the article (the
-    //   most common way it is placed), or a phone where the columns have stacked. Neither
-    //   has a box with room to travel in, and a stacked column that stuck would sit on
-    //   top of the text it lists. So the list is pinned to the screen once it scrolls past
+    //   most common way it is placed, often beside an intro column), or a phone where
+    //   the columns have stacked. A column there can travel only to the end of its own
+    //   short section — which is all the builder's column Sticky did on such a page, so
+    //   the list left with it — and a stacked column that stuck would sit on top of the
+    //   text it lists. So the list is pinned to the screen once it scrolls past
     //   the top, until the content it lists has scrolled away, with a placeholder holding
     //   its place. A collapsible list folds while docked, so it costs one line of screen.
-    function applySticky(nav, cfg, scope) {
+    function applySticky(nav, cfg, scope, items) {
         if (!cfg.sticky) return;
 
         var wrap = nav.closest('.falcon-toc') || nav;
         var col = wrap.closest('.lazy-column');
         var top = cfg.stickyTop || 0;
 
-        if (col) {
-            var own = window.getComputedStyle(col).position;
-            if (own === 'sticky' || own === '-webkit-sticky') return;
-        }
+        var pos = col ? window.getComputedStyle(col).position : '';
+        var ownSticky = pos === 'sticky' || pos === '-webkit-sticky';
+        var last = items && items.length ? items[items.length - 1].el : null;
 
         // Where the docked list lets go: the end of the content it lists. The body is no
         // edge at all (the list would ride over the footer), so <main> stands in for it.
         var bound = (scope && scope !== document.body) ? scope : (document.querySelector('main') || document.body);
 
-        var colStyle = col ? { position: col.style.position, top: col.style.top, alignSelf: col.style.alignSelf, zIndex: col.style.zIndex } : null;
+        var colStyle = col ? { position: col.style.position, top: col.style.top, zIndex: col.style.zIndex,
+            alignSelf: col.style.getPropertyValue('align-self'), alignPrio: col.style.getPropertyPriority('align-self') } : null;
+
+        // The column's own CSS can pin it to the row's height with align-self: stretch
+        // !important (its Equal height / alignment settings), which a plain inline value
+        // loses to — the column then stayed as tall as the row and had nowhere to travel.
+        function shrinkColumn(on) {
+            if (on) col.style.setProperty('align-self', 'flex-start', 'important');
+            else col.style.setProperty('align-self', colStyle.alignSelf, colStyle.alignPrio);
+        }
         var mode = '';
         var ph = null, docked = false, wasOpen = null;
 
@@ -469,25 +480,41 @@
             if (!col || !col.parentElement) return false;
             // Measured at the column's own height: stretched, it is as tall as the row by
             // definition and would never seem to have room.
-            col.style.alignSelf = 'flex-start';
+            shrinkColumn(true);
             var row = col.parentElement.getBoundingClientRect(), c = col.getBoundingClientRect();
-            col.style.alignSelf = colStyle.alignSelf;
-            return c.width < row.width - 1 && row.height > c.height + 1;
+            shrinkColumn(false);
+            // Room beside the column is no use unless what it lists is there too.
+            var beside = !last || col.parentElement.contains(last);
+            return beside && c.width < row.width - 1 && row.height > c.height + 1;
         }
 
         function setColumn(on) {
             if (!col) return;
             if (on) {
-                col.style.alignSelf = 'flex-start';
+                shrinkColumn(true);
                 col.style.position = 'sticky';
                 col.style.top = top + 'px';
                 if (!colStyle.zIndex) col.style.zIndex = '2';
             } else {
                 col.style.position = colStyle.position;
                 col.style.top = colStyle.top;
-                col.style.alignSelf = colStyle.alignSelf;
+                shrinkColumn(false);
                 col.style.zIndex = colStyle.zIndex;
             }
+        }
+
+        // Pinned below a sticky site header rather than under it: the offset is measured
+        // from the header's foot when one is stuck to the top, so a list set to sit 24px
+        // from the top does not vanish behind an 80px header.
+        function dockTop() {
+            var foot = 0;
+            Array.prototype.forEach.call(document.querySelectorAll('.main-header, .falcon-builder-header, [data-falcon-sticky-header]'), function (h) {
+                var p = window.getComputedStyle(h).position;
+                if (p !== 'fixed' && p !== 'sticky' && p !== '-webkit-sticky') return;
+                var r = h.getBoundingClientRect();
+                if (r.height && r.top <= 1 && r.bottom > foot) foot = r.bottom;
+            });
+            return foot ? Math.max(top, Math.round(foot) + 12) : top;
         }
 
         var DOCK_PROPS = ['position', 'top', 'left', 'width', 'marginTop', 'marginBottom', 'zIndex', 'maxHeight', 'overflowY', 'boxShadow', 'borderRadius', 'background'];
@@ -512,14 +539,15 @@
             var bg = navCs.backgroundColor;
             var clear = !bg || bg === 'transparent' || /rgba\(.*,\s*0\)$/.test(bg);
 
+            var at = dockTop();
             wrap.style.position = 'fixed';
-            wrap.style.top = top + 'px';
+            wrap.style.top = at + 'px';
             wrap.style.left = r.left + 'px';
             wrap.style.width = r.width + 'px';
             wrap.style.marginTop = '0';
             wrap.style.marginBottom = '0';
             wrap.style.zIndex = '40';
-            wrap.style.maxHeight = Math.max(120, window.innerHeight - top - 16) + 'px';
+            wrap.style.maxHeight = Math.max(120, window.innerHeight - at - 16) + 'px';
             wrap.style.overflowY = 'auto';
             wrap.style.boxShadow = '0 8px 24px rgba(15,23,42,.12)';
             wrap.style.borderRadius = navCs.borderRadius;
@@ -544,21 +572,23 @@
             if (mode !== 'dock') return;
             var anchor = (docked ? ph : wrap).getBoundingClientRect();
             var end = bound.getBoundingClientRect().bottom;
-            var want = anchor.top < top && end > top + wrap.offsetHeight + 16;
+            var at = dockTop();
+            var want = anchor.top < at && end > at + wrap.offsetHeight + 16;
             if (want && !docked) dock();
             else if (!want && docked) undock();
             else if (docked) {
                 // Stay over the placeholder if the page reflows underneath.
                 wrap.style.left = anchor.left + 'px';
                 wrap.style.width = anchor.width + 'px';
+                wrap.style.top = at + 'px'; // a header that shrinks on scroll
             }
         }
 
         function pick() {
             if (docked) undock();
-            setColumn(false);
+            if (!ownSticky) setColumn(false);
             mode = columnHasRoom() ? 'column' : 'dock';
-            if (mode === 'column') setColumn(true);
+            if (mode === 'column' && !ownSticky) setColumn(true);
             update();
         }
 
