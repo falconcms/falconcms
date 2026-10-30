@@ -575,6 +575,30 @@ class TocTest extends TestCase
             'the comment section headings are listed as sections of the article');
     }
 
+    /**
+     * "Stop at": the sticky list lets go at a chosen heading (the Conclusion) instead of the
+     * article's end, and that heading stays in the list.
+     */
+    public function test_stop_at_reaches_the_script_and_survives_the_round_trip(): void
+    {
+        $html = $this->render(['sticky' => true, 'stopAt' => '  Conclusion  ']);
+        $this->assertSame(1, preg_match('/data-fc-toc="([^"]*)"/', $html, $m));
+        $config = json_decode(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'), true);
+        $this->assertSame('Conclusion', $config['stopAt']);
+
+        $script = $this->script($html);
+        $this->assertStringContainsString('function findStop()', $script);
+        $this->assertStringContainsString("mode = (!stop && columnHasRoom()) ? 'column' : 'dock';", $script);
+        $this->assertStringContainsString('var end = stop ? stop.getBoundingClientRect().top', $script);
+
+        $sc = \FalconCms\Core\Services\BuilderShortcodeConverter::jsonToShortcodes((string) json_encode([[
+            'id' => 'c', 'columns' => [['id' => 'k', 'elements' => [['id' => 'e', 'type' => 'toc', 'settings' => ['stopAt' => 'Conclusion']]]]],
+        ]]));
+        $this->assertStringContainsString('stop_at="Conclusion"', $sc);
+        $back = json_decode(\FalconCms\Core\Services\BuilderShortcodeConverter::shortcodesToJson($sc), true);
+        $this->assertSame('Conclusion', $back[0]['columns'][0]['elements'][0]['settings']['stopAt']);
+    }
+
     public function test_sticky_is_applied_to_the_element_that_can_travel(): void
     {
         $html = $this->render(['sticky' => true, 'stickyTop' => 40]);
@@ -603,7 +627,7 @@ class TocTest extends TestCase
 
         // Where the column has no room to travel (the list in a section of its own above
         // the article, or columns stacked on a phone) the list docks to the screen instead.
-        $this->assertStringContainsString("mode = columnHasRoom() ? 'column' : 'dock'", $script);
+        $this->assertStringContainsString("columnHasRoom()) ? 'column' : 'dock'", $script);
         $this->assertStringContainsString("wrap.style.position = 'fixed'", $script);
 
         // The offset has to reach the script, which is the only thing that can apply it.

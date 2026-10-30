@@ -62,6 +62,8 @@
     $openByDefault = ($s['openByDefault'] ?? true) !== false;
     $sticky = !empty($s['sticky']);
     $stickyTop = (int) ($s['stickyTop'] ?? 24);
+    // Where the sticky list lets go early: a heading's text ("Conclusion") or a CSS selector.
+    $stopAt = mb_substr(trim((string) ($s['stopAt'] ?? '')), 0, 120);
     $maxHeight = (int) ($s['maxHeight'] ?? 0);
     $scrollSpy = ($s['scrollSpy'] ?? true) !== false;
     $smooth = ($s['smoothScroll'] ?? true) !== false;
@@ -98,6 +100,7 @@
         'numbered' => $numbered,
         'sticky' => $sticky,
         'stickyTop' => $stickyTop,
+        'stopAt' => $stopAt,
     ];
 @endphp
 
@@ -465,6 +468,26 @@
         // edge at all (the list would ride over the footer), so <main> stands in for it.
         var bound = (scope && scope !== document.body) ? scope : (document.querySelector('main') || document.body);
 
+        // "Stop at": the list lets go when this reaches it, before the article ends — the
+        // Conclusion, say, read without the list beside it. A heading's text, matched against
+        // the list's own entries first, or a CSS selector. Nothing found: the article's end.
+        function findStop() {
+            var want = String(cfg.stopAt || '').trim();
+            if (!want) return null;
+            if (/^[#.\[]/.test(want)) {
+                try { return document.querySelector(want); } catch (e) { return null; }
+            }
+            var norm = function (t) { return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase(); };
+            var key = norm(want), hit = null;
+            (items || []).some(function (it) { if (norm(it.text) === key) { hit = it.el; return true; } return false; });
+            if (!hit) (items || []).some(function (it) { if (norm(it.text).indexOf(key) === 0) { hit = it.el; return true; } return false; });
+            if (!hit) Array.prototype.some.call(document.querySelectorAll('h1,h2,h3,h4,h5,h6'), function (h) {
+                if (!nav.contains(h) && norm(h.textContent) === key) { hit = h; return true; } return false;
+            });
+            return hit;
+        }
+        var stop = findStop();
+
         var colStyle = col ? { position: col.style.position, top: col.style.top, zIndex: col.style.zIndex,
             alignSelf: col.style.getPropertyValue('align-self'), alignPrio: col.style.getPropertyPriority('align-self') } : null;
 
@@ -573,23 +596,26 @@
         function update() {
             if (mode !== 'dock') return;
             var anchor = (docked ? ph : wrap).getBoundingClientRect();
-            var end = bound.getBoundingClientRect().bottom;
+            // The line it must not cross: the top of the Stop at heading, else the article's end.
+            var end = stop ? stop.getBoundingClientRect().top : bound.getBoundingClientRect().bottom;
             var at = dockTop();
-            var want = anchor.top < at && end > at + wrap.offsetHeight + 16;
+            var want = anchor.top < at;
             if (want && !docked) dock();
-            else if (!want && docked) undock();
-            else if (docked) {
-                // Stay over the placeholder if the page reflows underneath.
+            else if (!want && docked) { undock(); return; }
+            if (docked) {
+                // Stay over the placeholder if the page reflows underneath. At the line, the
+                // list is pushed up with the page rather than vanishing from the screen.
                 wrap.style.left = anchor.left + 'px';
                 wrap.style.width = anchor.width + 'px';
-                wrap.style.top = at + 'px'; // a header that shrinks on scroll
+                wrap.style.top = Math.min(at, end - wrap.offsetHeight - 16) + 'px';
             }
         }
 
         function pick() {
             if (docked) undock();
             if (!ownSticky) setColumn(false);
-            mode = columnHasRoom() ? 'column' : 'dock';
+            // A column sticks to the end of its row; only the docked list can stop earlier.
+            mode = (!stop && columnHasRoom()) ? 'column' : 'dock';
             if (mode === 'column' && !ownSticky) setColumn(true);
             update();
         }

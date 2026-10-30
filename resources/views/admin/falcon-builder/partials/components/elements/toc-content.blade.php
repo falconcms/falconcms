@@ -146,7 +146,15 @@
             the top once it scrolls past, until the article ends; a collapsible list folds
             while pinned. A column that already has its own Sticky setting keeps that one.
         </p>
-    </div>
+
+        <label class="text-[11px] font-bold text-slate-500 block mb-1.5 mt-4">Stop at</label>
+        <input type="text" v-model="editingElement.settings.stopAt" placeholder="Conclusion" maxlength="120"
+               class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+        <p class="text-[11px] text-slate-500 mt-1.5">
+            The heading where the list stops sticking — type its text, e.g. <em>Conclusion</em>
+            (or a CSS selector such as <code>#comments</code>). It stays in the list; the list
+            just scrolls away when the reader reaches it. Empty: it sticks to the end of the article.
+        </p>
 
     <div>
         <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Maximum height</label>

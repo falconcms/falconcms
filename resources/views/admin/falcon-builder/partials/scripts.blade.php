@@ -6723,7 +6723,7 @@
                             minLevel: 2, maxLevel: 3,
                             scope: '', exclude: '',
                             collapsible: false, openByDefault: true,
-                            sticky: false, stickyTop: 24, maxHeight: 0,
+                            sticky: false, stickyTop: 24, stopAt: '', maxHeight: 0,
                             scrollSpy: true, smoothScroll: true, scrollOffset: 80,
                             progress: false, backToTop: false, minHeadings: 2,
                             bg: '', borderColor: '', borderWidth: '', radius: '',

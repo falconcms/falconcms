@@ -24,6 +24,7 @@ final class TocElement extends Element
         self::attrI($a, 'open', (($s['openByDefault'] ?? true) === false) ? 'no' : null);
         self::attrI($a, 'sticky', !empty($s['sticky']) ? 'yes' : null);
         self::attrI($a, 'sticky_top', $s['stickyTop'] ?? null, 24);
+        self::attrI($a, 'stop_at', $s['stopAt'] ?? null);
         self::attrI($a, 'max_height', $s['maxHeight'] ?? null, 0);
         self::attrI($a, 'spy', (($s['scrollSpy'] ?? true) === false) ? 'no' : null);
         self::attrI($a, 'smooth', (($s['smoothScroll'] ?? true) === false) ? 'no' : null);
@@ -84,6 +85,7 @@ final class TocElement extends Element
             'openByDefault' => ($a['open'] ?? '') !== 'no',
             'sticky' => ($a['sticky'] ?? '') === 'yes',
             'stickyTop' => isset($a['sticky_top']) ? (int) $a['sticky_top'] : 24,
+            'stopAt' => $a['stop_at'] ?? '',
             'maxHeight' => isset($a['max_height']) ? (int) $a['max_height'] : 0,
             'scrollSpy' => ($a['spy'] ?? '') !== 'no',
             'smoothScroll' => ($a['smooth'] ?? '') !== 'no',

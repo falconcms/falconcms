@@ -5,7 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.15 <Badge type="tip" text="Latest" /> {#v2-8-15}
+## v2.8.16 <Badge type="tip" text="Latest" /> {#v2-8-16}
+
+**Released: 2026-10-30**
+
+Choose where a sticky Table of Contents stops.
+
+### Added
+
+- **Table of Contents → Sticky → Stop at.** The heading where the sticky list lets go. Type
+  the heading's text, for example *Conclusion*, or a CSS selector such as `#comments`.
+  - When the reader reaches that heading, the list scrolls away with the page.
+  - The heading stays in the list.
+  - Leave it empty and the list sticks until the end of the article, as before.
+
+### Changed
+
+- **The end of a pinned Table of Contents.** At the end of the article, a pinned list now
+  moves up with the page. Before, it jumped off the screen.
+
+---
+
+## v2.8.15 {#v2-8-15}
 
 **Released: 2026-10-30**
 

@@ -7,6 +7,17 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
+## [2.8.16] — 2026-10-30
+
+### Added
+- Table of Contents → Sticky → **Stop at**: the heading (its text, e.g. "Conclusion", or a CSS
+  selector) where the sticky list lets go. The list scrolls away with the page as the reader
+  reaches it, and the heading stays in the list. Empty: it sticks to the end of the article.
+
+### Changed
+- A pinned Table of Contents is pushed up with the page at the end of the article instead of
+  jumping off the screen.
+
 ## [2.8.15] — 2026-10-30
 
 ### Added
