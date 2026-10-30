@@ -319,6 +319,30 @@
         return out;
     }
 
+    // A heading placed straight above the list in its own column ("Table of contents")
+    // names the list; it is not a section of the article, and listing it made the list's
+    // first entry — numbered 1 — a link to itself. Walks back over the elements just
+    // before this one and collects those that are nothing but a heading, stopping at the
+    // first that has anything else in it.
+    function labelHeadings(nav) {
+        var node = nav.closest('.falcon-toc') || nav;
+        while (node.parentElement && !node.parentElement.classList.contains('lazy-column-inner') && !node.parentElement.classList.contains('lazy-column')) {
+            node = node.parentElement;
+        }
+        if (!node.parentElement) return [];
+
+        var out = [];
+        for (var prev = node.previousElementSibling; prev; prev = prev.previousElementSibling) {
+            if (/^(STYLE|SCRIPT|LINK)$/.test(prev.tagName)) continue;
+            var hs = /^H[1-6]$/.test(prev.tagName) ? [prev] : Array.prototype.slice.call(prev.querySelectorAll('h1,h2,h3,h4,h5,h6'));
+            var text = (prev.textContent || '').replace(/\s+/g, ' ').trim();
+            var own = hs.map(function (h) { return (h.textContent || '').replace(/\s+/g, ' ').trim(); }).join(' ').trim();
+            if (hs.length !== 1 || own === '' || text !== own) break;
+            out.push(hs[0]);
+        }
+        return out;
+    }
+
     function build(nav) {
         var cfg;
         try { cfg = JSON.parse(nav.getAttribute('data-fc-toc') || '{}'); } catch (e) { cfg = {}; }
@@ -332,8 +356,10 @@
 
         // Any table of contents' own entries are headings too on some themes, and one
         // that lists itself is a bug the reader sees.
+        var labels = labelHeadings(nav);
         var usable = function (h) {
             if (nav.contains(h) || h.closest('.falcon-toc')) return false;
+            if (labels.indexOf(h) !== -1) return false;
             if (cfg.exclude) {
                 try { if (h.closest(cfg.exclude) || h.matches(cfg.exclude)) return false; } catch (e) {}
             }
@@ -397,35 +423,165 @@
 
         nav.setAttribute('data-ready', '');
 
-        applySticky(nav, cfg);
+        applySticky(nav, cfg, scope);
         wireScroll(nav, cfg);
         wireScrollState(nav, items, scope, cfg);
     }
 
-    // Make the list stay on screen, by sticking the thing that can actually move.
+    // Keep the list on screen while the reader scrolls.
     //
-    // Not this element and not its wrapper: a sticky box travels inside its own parent's
-    // box, and every wrapper here is exactly as tall as the element, so the rule had
-    // nowhere to apply however it was written. The column is the one that can — it is
-    // short inside a container as tall as the whole row — which is also what the
-    // builder's own column Sticky setting sticks. A column that already has that
-    // setting is left alone rather than being given a second, conflicting offset.
-    function applySticky(nav, cfg) {
+    // Two ways, picked from the layout and picked again on resize:
+    //
+    // column — the list sits in a column beside the content, in a row taller than the
+    //   column. The column is what sticks: a sticky box travels only inside its own
+    //   parent, and every wrapper between this element and its column is exactly as tall
+    //   as the element, so sticking any of those did nothing. This is also what the
+    //   builder's own column Sticky setting sticks, so a column that already has that
+    //   setting is left alone rather than given a second, conflicting offset.
+    //
+    // dock — anything else: the list in a section of its own above the article (the
+    //   most common way it is placed), or a phone where the columns have stacked. Neither
+    //   has a box with room to travel in, and a stacked column that stuck would sit on
+    //   top of the text it lists. So the list is pinned to the screen once it scrolls past
+    //   the top, until the content it lists has scrolled away, with a placeholder holding
+    //   its place. A collapsible list folds while docked, so it costs one line of screen.
+    function applySticky(nav, cfg, scope) {
         if (!cfg.sticky) return;
 
         var wrap = nav.closest('.falcon-toc') || nav;
-        var target = wrap.closest('.lazy-column') || wrap;
-        var cs = window.getComputedStyle(target);
+        var col = wrap.closest('.lazy-column');
+        var top = cfg.stickyTop || 0;
 
-        if (cs.position === 'sticky' || cs.position === '-webkit-sticky') return;
+        if (col) {
+            var own = window.getComputedStyle(col).position;
+            if (own === 'sticky' || own === '-webkit-sticky') return;
+        }
 
-        // A stretched flex item is as tall as the row, and a sticky box the height of
-        // its own container has nowhere to go either.
-        if (cs.alignSelf === 'stretch') target.style.alignSelf = 'flex-start';
+        // Where the docked list lets go: the end of the content it lists. The body is no
+        // edge at all (the list would ride over the footer), so <main> stands in for it.
+        var bound = (scope && scope !== document.body) ? scope : (document.querySelector('main') || document.body);
 
-        target.style.position = 'sticky';
-        target.style.top = (cfg.stickyTop || 0) + 'px';
-        if (!target.style.zIndex) target.style.zIndex = '2';
+        var colStyle = col ? { position: col.style.position, top: col.style.top, alignSelf: col.style.alignSelf, zIndex: col.style.zIndex } : null;
+        var mode = '';
+        var ph = null, docked = false, wasOpen = null;
+
+        function columnHasRoom() {
+            if (!col || !col.parentElement) return false;
+            // Measured at the column's own height: stretched, it is as tall as the row by
+            // definition and would never seem to have room.
+            col.style.alignSelf = 'flex-start';
+            var row = col.parentElement.getBoundingClientRect(), c = col.getBoundingClientRect();
+            col.style.alignSelf = colStyle.alignSelf;
+            return c.width < row.width - 1 && row.height > c.height + 1;
+        }
+
+        function setColumn(on) {
+            if (!col) return;
+            if (on) {
+                col.style.alignSelf = 'flex-start';
+                col.style.position = 'sticky';
+                col.style.top = top + 'px';
+                if (!colStyle.zIndex) col.style.zIndex = '2';
+            } else {
+                col.style.position = colStyle.position;
+                col.style.top = colStyle.top;
+                col.style.alignSelf = colStyle.alignSelf;
+                col.style.zIndex = colStyle.zIndex;
+            }
+        }
+
+        var DOCK_PROPS = ['position', 'top', 'left', 'width', 'marginTop', 'marginBottom', 'zIndex', 'maxHeight', 'overflowY', 'boxShadow', 'borderRadius', 'background'];
+
+        function dock() {
+            var r = wrap.getBoundingClientRect();
+            var cs = window.getComputedStyle(wrap);
+            ph = document.createElement('div');
+            ph.setAttribute('aria-hidden', 'true');
+            ph.style.height = r.height + 'px';
+            // As wide as the list was: in a flex column a bare <div> shrinks to nothing, and the
+            // docked list, which takes its width from here, would fold its title into a column.
+            ph.style.width = '100%';
+            ph.style.flexShrink = '0';
+            ph.style.marginTop = cs.marginTop;
+            ph.style.marginBottom = cs.marginBottom;
+            wrap.parentNode.insertBefore(ph, wrap);
+
+            // The list may have no fill of its own (the Minimal preset), and pinned over
+            // the text it would be unreadable.
+            var navCs = window.getComputedStyle(nav);
+            var bg = navCs.backgroundColor;
+            var clear = !bg || bg === 'transparent' || /rgba\(.*,\s*0\)$/.test(bg);
+
+            wrap.style.position = 'fixed';
+            wrap.style.top = top + 'px';
+            wrap.style.left = r.left + 'px';
+            wrap.style.width = r.width + 'px';
+            wrap.style.marginTop = '0';
+            wrap.style.marginBottom = '0';
+            wrap.style.zIndex = '40';
+            wrap.style.maxHeight = Math.max(120, window.innerHeight - top - 16) + 'px';
+            wrap.style.overflowY = 'auto';
+            wrap.style.boxShadow = '0 8px 24px rgba(15,23,42,.12)';
+            wrap.style.borderRadius = navCs.borderRadius;
+            if (clear) wrap.style.background = window.getComputedStyle(document.body).backgroundColor || '#fff';
+            wrap.setAttribute('data-fc-toc-docked', '');
+
+            if (nav.tagName === 'DETAILS') { wasOpen = nav.open; nav.open = false; }
+            docked = true;
+        }
+
+        function undock() {
+            DOCK_PROPS.forEach(function (p) { wrap.style[p] = ''; });
+            wrap.removeAttribute('data-fc-toc-docked');
+            if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
+            ph = null;
+            if (nav.tagName === 'DETAILS' && wasOpen !== null) nav.open = wasOpen;
+            wasOpen = null;
+            docked = false;
+        }
+
+        function update() {
+            if (mode !== 'dock') return;
+            var anchor = (docked ? ph : wrap).getBoundingClientRect();
+            var end = bound.getBoundingClientRect().bottom;
+            var want = anchor.top < top && end > top + wrap.offsetHeight + 16;
+            if (want && !docked) dock();
+            else if (!want && docked) undock();
+            else if (docked) {
+                // Stay over the placeholder if the page reflows underneath.
+                wrap.style.left = anchor.left + 'px';
+                wrap.style.width = anchor.width + 'px';
+            }
+        }
+
+        function pick() {
+            if (docked) undock();
+            setColumn(false);
+            mode = columnHasRoom() ? 'column' : 'dock';
+            if (mode === 'column') setColumn(true);
+            update();
+        }
+
+        // A link followed from the docked list folds it again, so the heading it went to
+        // is not left underneath it.
+        nav.addEventListener('click', function (ev) {
+            if (docked && nav.tagName === 'DETAILS' && ev.target.closest && ev.target.closest('a[href^="#"]')) nav.open = false;
+        });
+
+        var ticking = false;
+        window.addEventListener('scroll', function () {
+            if (ticking) return;
+            ticking = true;
+            setTimeout(function () { ticking = false; update(); }, 16);
+        }, { passive: true });
+
+        var resizeTimer = 0;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(pick, 120);
+        });
+
+        pick();
     }
 
     // Smooth scrolling with an offset, because a sticky site header would otherwise
@@ -445,6 +601,7 @@
             ev.preventDefault();
             var y = top ? 0 : target.getBoundingClientRect().top + window.pageYOffset - (cfg.offset || 0);
             window.scrollTo({ top: y < 0 ? 0 : y, behavior: (cfg.smooth && !reduced) ? 'smooth' : 'auto' });
+            if (!top && nav._fcTocPin) nav._fcTocPin(target.id);
 
             // The address bar gets the slash before the fragment — /pricing/#plans
             // rather than /pricing#plans. The same place either way; the difference is
@@ -483,6 +640,51 @@
 
         var bar = cfg.progress ? nav.querySelector('[data-fc-toc-bar]') : null;
         var spy = !!cfg.spy;
+        var shown = null;
+
+        // Light one entry, and keep it in sight when the list scrolls inside itself (a
+        // Maximum height, or a long list pinned to the screen).
+        var mark = function (current) {
+            if (current === shown) return;
+            shown = current;
+            for (var id in links) {
+                if (Object.prototype.hasOwnProperty.call(links, id)) {
+                    links[id].classList.toggle('is-active', id === current);
+                }
+            }
+            var a = current ? links[current] : null;
+            if (!a) return;
+            [nav, nav.closest('.falcon-toc')].forEach(function (box) {
+                if (!box || box.scrollHeight <= box.clientHeight + 1) return;
+                var b = box.getBoundingClientRect(), r = a.getBoundingClientRect();
+                if (!r.height) return; // folded away
+                if (r.top < b.top) box.scrollTop -= (b.top - r.top) + 8;
+                else if (r.bottom > b.bottom) box.scrollTop += (r.bottom - b.bottom) + 8;
+            });
+        };
+
+        // The entry a reader clicked stays the active one until they scroll on their
+        // own. Position alone gets it wrong near the foot of the page: a short last
+        // section cannot be scrolled up to the top, so the heading after the one they
+        // asked for — or the one before — would light instead. A heading that has left
+        // the screen altogether (the scroll bar dragged) lets go too.
+        var pinned = null, landed = false;
+        nav._fcTocPin = function (id) {
+            if (!links[id]) return;
+            pinned = id;
+            landed = false;
+            mark(id);
+        };
+        var release = function () { pinned = null; };
+        ['wheel', 'touchstart'].forEach(function (t) { window.addEventListener(t, release, { passive: true }); });
+        window.addEventListener('keydown', function (ev) {
+            if (/^(Arrow(Up|Down)|Page(Up|Down)|Home|End| )$/.test(ev.key)) release();
+        });
+
+        // Arriving on /page/#section lights that section.
+        var hash = location.hash ? decodeURIComponent(location.hash.slice(1)) : '';
+        if (hash && links[hash]) nav._fcTocPin(hash);
+
         if (!spy && !bar) return;
 
         // A heading counts as reached once its top is at or above the line the reader
@@ -495,7 +697,18 @@
         var update = function () {
             ticking = false;
 
-            if (spy) {
+            if (pinned) {
+                var held = document.getElementById(pinned);
+                var at = held ? held.getBoundingClientRect().top : NaN;
+                var near = at > -window.innerHeight && at < window.innerHeight;
+                // Not until it has been reached: a smooth scroll starts with it far away.
+                if (near) landed = true;
+                else if (landed || !held) pinned = null;
+            }
+
+            if (spy && pinned) {
+                mark(pinned);
+            } else if (spy) {
                 var current = items.length ? items[0].id : null;
                 for (var i = 0; i < items.length; i++) {
                     if (items[i].el.getBoundingClientRect().top <= line()) {
@@ -507,11 +720,7 @@
 
                 // Past the end of the content there is no next section, so the last one
                 // stays lit rather than the list going blank at the foot of the page.
-                for (var id in links) {
-                    if (Object.prototype.hasOwnProperty.call(links, id)) {
-                        links[id].classList.toggle('is-active', id === current);
-                    }
-                }
+                mark(current);
             }
 
             if (bar) {

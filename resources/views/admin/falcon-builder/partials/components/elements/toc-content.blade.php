@@ -141,9 +141,10 @@
         <input type="number" v-model.number="editingElement.settings.stickyTop" min="0" max="400"
                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
         <p class="text-[11px] text-slate-500 mt-1.5">
-            This sticks the <em>column</em> the list is in, because that is the part with room
-            to move — so put the list in a column of its own beside the content. A column that
-            already has its own Sticky setting keeps that one.
+            In a column of its own beside the content, the <em>column</em> sticks. Anywhere
+            else (above the article, or on a phone where the columns stack) the list pins to
+            the top once it scrolls past, until the article ends; a collapsible list folds
+            while pinned. A column that already has its own Sticky setting keeps that one.
         </p>
     </div>
 

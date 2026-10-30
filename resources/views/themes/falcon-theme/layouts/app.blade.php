@@ -319,7 +319,13 @@
         main {
             padding-top: {{ get_cms_option('theme_page_padding_top', '60px') }};
             padding-bottom: {{ get_cms_option('theme_page_padding_bottom', '60px') }};
+            /* Nothing in the content may widen the page (a phone's sideways scroll bar). clip,
+               not hidden: clip makes no scroll container, so sticky inside keeps working. The
+               builder renderer writes the same rule for sites with an older copy of this file. */
+            overflow-x: clip;
         }
+        /* A long URL or unbroken string in a post breaks instead of running off a phone screen. */
+        .falcon-content-wrapper { overflow-wrap: break-word; }
 
         /* Kill the sub-pixel hairline (body bg peeking through) where the page content meets a
            full-width Layout header/footer — pull them 1px into the adjacent section to cover it. */

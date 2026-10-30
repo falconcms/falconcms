@@ -114,6 +114,8 @@
     var iconOpen   = iconType === 'chevron' ? 'fas fa-chevron-up'   : 'fas fa-minus';
     var iconClosed = iconType === 'chevron' ? 'fas fa-chevron-down'  : 'fas fa-plus';
 
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     function setHeaderState(header, isOpen) {
         header.setAttribute('data-open', isOpen ? 'true' : 'false');
         if (isOpen) {
@@ -123,7 +125,7 @@
         } else {
             header.style.color            = titleColor;
             header.style.backgroundColor  = titleBgColor;
-            header.style.borderRadius     = borderRadius + 'px';
+            // The rounded bottom corners return once the panel has slid shut (setContentState).
         }
         var iconEl = header.querySelector('.lazy-accordion-icon i');
         if (iconEl) {
@@ -131,13 +133,33 @@
         }
     }
 
-    function setContentState(content, isOpen, borderRadius, borderColor, bgColor) {
+    // Slides the panel open or shut by animating its height and vertical padding.
+    function setContentState(content, isOpen, header) {
+        var isShown = content.style.display !== 'none';
+        if (isOpen === isShown && !content._falconAnim) return;
+        if (content._falconAnim) { content._falconAnim.cancel(); content._falconAnim = null; }
+
+        var finish = function () {
+            content._falconAnim = null;
+            content.style.overflow = '';
+            if (!isOpen) {
+                content.style.display = 'none';
+                if (header && header.getAttribute('data-open') !== 'true') header.style.borderRadius = borderRadius + 'px';
+            }
+        };
+
         if (isOpen) {
             content.style.display      = '';
             content.style.borderRadius = '0 0 ' + borderRadius + 'px ' + borderRadius + 'px';
-        } else {
-            content.style.display = 'none';
         }
+        if (reduceMotion || typeof content.animate !== 'function') { finish(); return; }
+
+        var cs = window.getComputedStyle(content);
+        var full = { height: cs.height, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1 };
+        var none = { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 };
+        content.style.overflow = 'hidden';
+        content._falconAnim = content.animate(isOpen ? [none, full] : [full, none], { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)' });
+        content._falconAnim.onfinish = finish;
     }
 
     var items = el.querySelectorAll('.lazy-accordion-item');
@@ -155,14 +177,14 @@
                     var otherContent = otherItem.querySelector('.lazy-accordion-content');
                     if (otherHeader && otherContent && otherHeader !== header) {
                         setHeaderState(otherHeader, false);
-                        setContentState(otherContent, false, borderRadius, borderColor, '{{ $contentBgColor }}');
+                        setContentState(otherContent, false, otherHeader);
                     }
                 });
             }
 
             var willOpen = !isCurrentlyOpen;
             setHeaderState(header, willOpen);
-            setContentState(content, willOpen, borderRadius, borderColor, '{{ $contentBgColor }}');
+            setContentState(content, willOpen, header);
         });
     });
 })();

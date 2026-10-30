@@ -561,6 +561,18 @@ class TocTest extends TestCase
      * on, the CSS was right, and nothing happened. On the wrapper the parent is the
      * column, which is as tall as the row.
      */
+    /**
+     * The heading placed right above the list ("Table of contents") names the list. It is
+     * not a section of the article, and listing it made entry 1 a link to itself.
+     */
+    public function test_the_heading_that_labels_the_list_is_not_listed(): void
+    {
+        $script = $this->script($this->render([]));
+
+        $this->assertStringContainsString('function labelHeadings(nav)', $script);
+        $this->assertStringContainsString('if (labels.indexOf(h) !== -1) return false;', $script);
+    }
+
     public function test_sticky_is_applied_to_the_element_that_can_travel(): void
     {
         $html = $this->render(['sticky' => true, 'stickyTop' => 40]);
@@ -575,11 +587,16 @@ class TocTest extends TestCase
         $script = $this->script($html);
         $this->assertStringContainsString("wrap.closest('.lazy-column')", $script,
             'the script no longer sticks the column, which is the only thing that can travel');
-        $this->assertStringContainsString("target.style.position = 'sticky'", $script);
+        $this->assertStringContainsString("col.style.position = 'sticky'", $script);
 
         // A column with its own Sticky setting keeps its own offset rather than being
         // given a second, conflicting one.
-        $this->assertStringContainsString("if (cs.position === 'sticky'", $script);
+        $this->assertStringContainsString("if (own === 'sticky'", $script);
+
+        // Where the column has no room to travel (the list in a section of its own above
+        // the article, or columns stacked on a phone) the list docks to the screen instead.
+        $this->assertStringContainsString("mode = columnHasRoom() ? 'column' : 'dock'", $script);
+        $this->assertStringContainsString("wrap.style.position = 'fixed'", $script);
 
         // The offset has to reach the script, which is the only thing that can apply it.
         $this->assertSame(1, preg_match('/data-fc-toc="([^"]*)"/', $html, $m));

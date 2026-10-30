@@ -5,7 +5,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.12 <Badge type="tip" text="Latest" /> {#v2-8-12}
+## v2.8.13 <Badge type="tip" text="Latest" /> {#v2-8-13}
+
+**Released: 2026-10-30**
+
+Fixes for the Table of Contents, the Content element and pages that scrolled sideways.
+
+### Changed
+
+- **Accordion.** A panel slides open and shut instead of appearing all at once.
+- **Table of Contents → Sticky.** A list in a column of its own beside the content sticks its
+  column, as before. Anywhere else, in a section of its own above the article or on a phone
+  where the columns have stacked, it now pins to the top of the screen once it scrolls past and
+  lets go when the article ends. A collapsible list folds to one line while pinned.
+
+### Fixed
+
+- **The Content element runs every element in the post.** Shown through a Layout Builder
+  Content section, a post's Table of Contents did not appear, and the Accordion, Tabs, Table,
+  Code Block and other elements that need a script did nothing.
+- **Table of Contents.** Sticky did nothing unless the list sat in a column beside the
+  content.
+- **Table of Contents.** The section being read stays lit, whether the reader scrolled there or
+  clicked its link, also near the foot of the page. Opening a `#section` link lights that
+  section, and a long list keeps the lit entry in view.
+- **Table of Contents.** A heading placed straight above the list ("Table of contents") names
+  the list. It is no longer counted as entry 1.
+- **No sideways scroll bar.** Several things widened the page. On a phone this showed a
+  sideways scroll bar and a blank strip on the right:
+  - Scroll Motion's *Slide in from the left / right*
+  - entrance slides
+  - a full-width Content section (on desktop it was a scroll bar wider than the page)
+  - long unbroken text in a post
+- A blog post has its title as its H1 again when the Page Title Bar is switched off or hides its
+  title. Before, such a post had no H1 at all.
+
+---
+
+## v2.8.12 {#v2-8-12}
 
 **Released: 2026-10-29**
 

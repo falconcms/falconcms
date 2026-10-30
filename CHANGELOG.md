@@ -7,9 +7,28 @@ This project follows [Semantic Versioning](https://semver.org/).
 Full release notes, with the reasoning behind each change, live at
 <https://falconcms.github.io/falconcms/changelog>.
 
-## [Unreleased]
+## [2.8.13] — 2026-10-30
+
+### Changed
+- Accordion: a panel now slides open and shut instead of appearing at once.
+- Table of Contents, Sticky: a list in a column beside the content sticks its column, as before;
+  anywhere else (in a section of its own above the article, or on a phone where the columns
+  stack) it now pins to the top of the screen until the article ends, and a collapsible list
+  folds while pinned.
 
 ### Fixed
+- The Content element (Layout Builder) runs the post's elements again: the Table of Contents,
+  Accordion, Tabs, Table, Code Block and other elements that need a script did nothing (the TOC
+  did not show at all) when a post was shown through a Content section.
+- Table of Contents: Sticky did nothing when the list was not in a column beside the content.
+- Table of Contents: the entry for the section being read stays lit whether the reader scrolled
+  there or clicked its link, also near the foot of the page; arriving on a #section link lights
+  it, and a long list keeps the lit entry in view.
+- Table of Contents: the heading placed above the list ("Table of contents") is no longer listed
+  as its first entry.
+- No more sideways scroll bar: Scroll Motion "Slide in from the left/right", entrance slides,
+  full-width Content sections (a scroll bar wider on desktop) and long unbroken text in a post
+  no longer widen the page.
 - A blog post has its title as the page's H1 again when the Page Title Bar is switched off (or
   hides its title): with it off, a post had no H1 at all, which search engines count against it.
 

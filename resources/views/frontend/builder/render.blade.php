@@ -1,4 +1,10 @@
 <style>
+    /* Nothing on the page may widen it. Entrance slides, Scroll Motion (Pro) and full-bleed
+       sections all push a box past the screen's edge, which gave phones a sideways scroll bar
+       and a blank strip on the right. clip, not hidden: clip makes no scroll container, so
+       sticky columns, the TOC and sticky headers inside keep working. */
+    main, .falcon-builder-footer { overflow-x: clip; }
+
     .element-image {
         overflow: hidden;
     }

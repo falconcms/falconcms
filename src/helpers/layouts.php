@@ -67,6 +67,11 @@ if (!function_exists('_falcon_layout_post_context')) {
             'post' => $post,
             'postTitle' => $post->title ?? '',
             'postContent' => $fullContent,
+            // get_falcon_post_content() has already sanitised it (classic HTML wholesale, builder
+            // layouts per element), so the Content element must not run it through the sanitiser
+            // again: that strips the <script> every interactive element ships (TOC, Accordion,
+            // Tabs, Table, Code Block …) and leaves them dead inside a Layout section.
+            'postContentRendered' => true,
             'postExcerpt' => $excerpt,
             'postPublishedAt' => $post->published_at ?? null,
             'postCreatedAt' => $post->created_at ?? null,

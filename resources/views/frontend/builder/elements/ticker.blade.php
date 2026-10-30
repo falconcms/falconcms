@@ -129,7 +129,7 @@
 }
 </style>
 
-@once('lztick-global-css')
+{{-- Not @once: the Content element's throwaway pre-render would spend it. --}}
 <style>
 .lztick-wrap .lztick-link { color: inherit; text-decoration: none; }
 .lztick-wrap .lztick-link:hover { opacity: .75; text-decoration: underline; }
@@ -175,4 +175,3 @@
     background: rgba(255,255,255,0.12); padding: 1px 8px; border-radius: 3px;
 }
 </style>
-@endonce

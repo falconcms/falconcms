@@ -375,7 +375,8 @@
 {!! '<style>' . $css . '</style>' !!}
 
 @if(!empty($s['sticky']))
-@once('lazy-sticky-observer-js')
+{{-- Not @once: the Content element pre-renders a post's layout in a throwaway pass that
+     would spend it. The script is idempotent (data-sticky-init). --}}
 <script>
 (function(){
     function initLazyStickyObservers(){
@@ -394,7 +395,6 @@
         :initLazyStickyObservers();
 })();
 </script>
-@endonce
 @endif
 
 @php
