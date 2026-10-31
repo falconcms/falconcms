@@ -137,6 +137,17 @@
     </label>
 
     <div v-if="editingElement.settings.sticky" class="pl-6">
+        <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Enable sticky on</label>
+        <div class="flex gap-1 mb-4">
+            @foreach([['stickyDesktop', 'fa-desktop', 'Desktop'], ['stickyTablet', 'fa-tablet-alt', 'Tablet'], ['stickyMobile', 'fa-mobile-alt', 'Mobile']] as [$key, $icon, $label])
+            <button type="button" @click="editingElement.settings.{{ $key }} = editingElement.settings.{{ $key }} === false ? true : false"
+                    :class="editingElement.settings.{{ $key }} !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-200 text-slate-400'"
+                    class="flex-1 py-1 rounded text-[10px] font-medium transition-colors flex items-center justify-center gap-1">
+                <i class="fa {{ $icon }} text-[9px]"></i> {{ $label }}
+            </button>
+            @endforeach
+        </div>
+
         <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Distance from the top</label>
         <input type="number" v-model.number="editingElement.settings.stickyTop" min="0" max="400"
                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
@@ -155,6 +166,7 @@
             (or a CSS selector such as <code>#comments</code>). It stays in the list; the list
             just scrolls away when the reader reaches it. Empty: it sticks to the end of the article.
         </p>
+    </div>
 
     <div>
         <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Maximum height</label>
