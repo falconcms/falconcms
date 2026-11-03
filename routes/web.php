@@ -445,8 +445,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
     // Themes
     Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');
     Route::post('/themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
-    Route::post('/themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
-    Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
+    Route::post('/themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate')->where('slug', '[A-Za-z0-9_-]+');
+    Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy')->where('slug', '[A-Za-z0-9_-]+');
 
     // Plugins
     Route::get('/plugins', [PluginController::class, 'index'])->name('plugins.index');

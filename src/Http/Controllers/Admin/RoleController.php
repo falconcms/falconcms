@@ -72,6 +72,12 @@ class RoleController extends Controller
 
     public function update(Request $request, Role $role)
     {
+        // The same guard as edit(): without it a PUT straight to the route changed the Super
+        // Admin role's permissions for anyone allowed on the Roles screen.
+        if ($role->slug === 'super-admin' && !auth()->user()->hasRole('super-admin')) {
+            abort(403, 'Only a Super Admin can change the Super Admin role.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|unique:roles,slug,'.$role->id,

@@ -59,8 +59,10 @@ class PageCacheMiddleware
             return $next($request);
         }
 
-        // Create a unique key based on the URL and query parameters
-        $key = 'page_cache_'.md5($request->fullUrl());
+        $key = $this->cacheKey($request);
+        if ($key === null) {
+            return $next($request);
+        }
 
         // Check if cache exists. An entry stored before CSRF tokens were swapped out still holds
         // its first visitor's token, so it is rendered afresh instead (and replaced).
@@ -93,16 +95,56 @@ class PageCacheMiddleware
                 return $response;
             }
 
+            // A search is one of endless variants of a page: kept briefly, so they do not pile up.
             Cache::put($key, [
                 'content' => $this->withoutVisitorToken((string) $response->getContent()),
                 'type' => $response->headers->get('Content-Type'),
                 'csrf' => true,
-            ], now()->addHours(24));
+            ], ($request->filled('q') || $request->filled('s')) ? now()->addHour() : now()->addHours(24));
 
             $response->header('X-Lazy-Cache', 'MISS');
         }
 
         return $response;
+    }
+
+    /** Query parameters that only say where a visitor came from: the page is the same. */
+    private const TRACKING_PARAMS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid', 'dclid', 'yclid', 'twclid', 'ttclid', 'li_fat_id', 'mc_cid', 'mc_eid', 'ref', '_ga', '_gl'];
+
+    /**
+     * The key a page is stored under, or null when it is not stored at all.
+     *
+     * It used to be the full URL, query string and all, so /?x=1, /?x=2… each kept its own
+     * copy for a day: anyone could fill the cache (and the disk or table under it) with
+     * copies of one page. Now tracking parameters are dropped — an ad click reuses the
+     * page — a list's ?page=N and a search's words (up to 100 characters, kept for an hour
+     * rather than a day: see handle()) are kept, and any other query is left uncached.
+     */
+    private function cacheKey(Request $request): ?string
+    {
+        $query = [];
+        foreach ($request->query() as $name => $value) {
+            $name = (string) $name;
+            if (str_starts_with(strtolower($name), 'utm_') || in_array(strtolower($name), self::TRACKING_PARAMS, true)) {
+                continue;
+            }
+            if ($name === 'page' && is_string($value) && preg_match('/^[1-9]\d{0,3}$/', $value)) {
+                $query['page'] = $value;
+
+                continue;
+            }
+            if (in_array($name, ['q', 's'], true) && is_string($value) && mb_strlen($value) <= 100) {
+                $query[$name] = $value;
+
+                continue;
+            }
+
+            return null;
+        }
+        ksort($query);
+
+        // url() as fullUrl() spells it, so a page's key is what falcon_forget_post_page_cache() forgets.
+        return 'page_cache_'.md5($request->url().($query ? '?'.http_build_query($query) : ''));
     }
 
     /**

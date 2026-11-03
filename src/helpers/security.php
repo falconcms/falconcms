@@ -253,12 +253,56 @@ if (!function_exists('falcon_blocked_upload_extensions')) {
     {
         return apply_falcon_filters('falcon_blocked_upload_extensions', [
             // Executed by the server rather than served to the browser.
-            'php', 'php3', 'php4', 'php5', 'php7', 'phtml', 'phar',
+            'php', 'php3', 'php4', 'php5', 'php7', 'pht', 'phps', 'phtml', 'phar',
             'asp', 'aspx', 'jsp', 'js', 'cgi', 'pl', 'py', 'rb',
             'sh', 'bash', 'exe', 'bat', 'cmd', 'htaccess', 'htpasswd',
-            // Documents that can carry script.
+            // Documents that can carry script. HTML above all: served from /storage on the
+            // site's own origin, an uploaded page ran its script as the signed-in admin.
+            'html', 'htm', 'xhtml', 'xht', 'shtml', 'mht', 'mhtml',
             'svgz', 'xml', 'xsl', 'xslt',
         ]);
+    }
+}
+
+if (!function_exists('falcon_is_public_http_url')) {
+    /**
+     * Whether the server may fetch $url for a user: http(s) only, to a host that resolves to
+     * public addresses alone — never loopback, the private ranges, link-local (the cloud
+     * metadata service at 169.254.169.254) or other reserved space. Checked again for every
+     * redirect by whoever follows them.
+     */
+    function falcon_is_public_http_url(string $url): bool
+    {
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = trim((string) ($parts['host'] ?? ''), '[]');
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return false;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $ips = [$host];
+        } else {
+            $ips = [];
+            foreach ((array) @dns_get_record($host, DNS_A | DNS_AAAA) as $record) {
+                $ips[] = $record['ip'] ?? $record['ipv6'] ?? null;
+            }
+            $ips = array_values(array_filter($ips));
+            if ($ips === [] && ($v4 = gethostbyname($host)) !== $host) {
+                $ips = [$v4];
+            }
+        }
+
+        if ($ips === []) {
+            return false;
+        }
+        foreach ($ips as $ip) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

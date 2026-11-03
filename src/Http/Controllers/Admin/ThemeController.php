@@ -198,6 +198,14 @@ class ThemeController extends Controller
                 $themeSlug = basename($sourcePath);
             }
 
+            // The folder name is the theme's slug in every URL and setting after this, so it is
+            // held to what those accept.
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', (string) $themeSlug)) {
+                File::deleteDirectory($tempPath);
+
+                return redirect()->back()->with('error', "The theme folder '{$themeSlug}' may only use letters, numbers, - and _.");
+            }
+
             // Target path (Main App)
             $targetPath = resource_path('views/themes/'.$themeSlug);
 
@@ -226,6 +234,11 @@ class ThemeController extends Controller
 
     protected function findThemePath($slug)
     {
+        // A folder name, nothing else: ".." used to be a "theme" too, and deleting it took
+        // resources/views (and public/) with it.
+        if (!is_string($slug) || !preg_match('/^[A-Za-z0-9_-]+$/', $slug)) {
+            return null;
+        }
         $path = resource_path('views/themes/'.$slug);
 
         return File::isDirectory($path) ? $path : null;

@@ -6,6 +6,7 @@ use FalconCms\Core\Support\PluginManager;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 
 /**
  * Admin UI for drop-in plugins — the functional counterpart to the Themes
@@ -142,13 +143,30 @@ class PluginController extends Controller
     {
         $request->validate(['plugin_url' => 'required|url']);
 
-        $url = $request->input('plugin_url');
+        $url = (string) $request->input('plugin_url');
+        // Only public http(s) addresses, every redirect included: file_get_contents() used to
+        // read whatever it was given — file://, the server's own ports, the cloud metadata
+        // service.
+        if (!falcon_is_public_http_url($url)) {
+            return $this->flash(['ok' => false, 'message' => 'That URL cannot be downloaded from: use a public http(s) address.']);
+        }
+        $contents = false;
         try {
-            $contents = @file_get_contents($url);
+            $response = Http::timeout(30)->withOptions([
+                'allow_redirects' => ['max' => 3, 'protocols' => ['http', 'https'], 'on_redirect' => function ($request, $response, $uri) {
+                    if (!falcon_is_public_http_url((string) $uri)) {
+                        throw new \RuntimeException('Redirected to an address that is not public.');
+                    }
+                }],
+            ])->get($url);
+            $maxBytes = 50 * 1024 * 1024;
+            if ($response->successful() && strlen($response->body()) <= $maxBytes) {
+                $contents = $response->body();
+            }
         } catch (\Throwable $e) {
             $contents = false;
         }
-        if ($contents === false) {
+        if ($contents === false || $contents === '') {
             return $this->flash(['ok' => false, 'message' => 'Could not download the plugin from that URL.']);
         }
 

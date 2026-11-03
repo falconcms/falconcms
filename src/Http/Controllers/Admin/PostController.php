@@ -29,6 +29,10 @@ class PostController extends Controller
     public function builder($id)
     {
         $post = Post::findOrFail($id);
+        // The builder is the type's editor: the same check the classic editor makes. Its
+        // save, autosave and revision routes skipped it, so anyone allowed into the builder
+        // could overwrite any page, post or layout by id.
+        $this->authorizePostAction($post, 'edit');
         $customElements = apply_falcon_filters('falcon_builder_elements', []);
 
         $bodyRaw = get_cms_option('theme_typography_body');
@@ -236,6 +240,7 @@ class PostController extends Controller
     public function saveBuilder(Request $request, $id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
 
         // Snapshot the PRIOR state BEFORE overwriting, so restoring the latest revision
         // brings back the version from before this save (true undo).
@@ -258,6 +263,7 @@ class PostController extends Controller
     public function autosaveBuilder(Request $request, $id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
 
         // Build a transient clone-like model carrying the in-progress content (do not persist to post).
         $draft = clone $post;
@@ -276,6 +282,7 @@ class PostController extends Controller
     public function revisions($id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
         $rows = Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->orderByDesc('id')
@@ -298,6 +305,7 @@ class PostController extends Controller
     public function restoreRevision(Request $request, $id, $revisionId)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
         $rev = Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->findOrFail($revisionId);
@@ -319,6 +327,7 @@ class PostController extends Controller
     public function deleteRevisionBuilder($id, $revisionId)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
         Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->where('id', $revisionId)
