@@ -43,7 +43,7 @@ class SeoMetaEscapingTest extends TestCase
         $this->assertStringContainsString('<title>Laravel CMS Pricing – Free, Pro & Agency Plans - FalconCMS</title>', $html);
         $this->assertStringContainsString('<meta name="description" content="Compare Free, Pro & Agency plans.">', $html);
         $this->assertStringContainsString('<meta property="og:title" content="Laravel CMS Pricing – Free, Pro & Agency Plans">', $html);
-        $this->assertStringContainsString('<meta property="twitter:title" content="Laravel CMS Pricing – Free, Pro & Agency Plans">', $html);
+        $this->assertStringContainsString('<meta name="twitter:title" content="Laravel CMS Pricing – Free, Pro & Agency Plans">', $html);
         $this->assertStringNotContainsString('&amp;', $html);
     }
 
@@ -83,6 +83,6 @@ class SeoMetaEscapingTest extends TestCase
 
         $html = $this->render([]);
 
-        $this->assertStringContainsString('<meta property="twitter:site" content="@falconcms">', $html);
+        $this->assertStringContainsString('<meta name="twitter:site" content="@falconcms">', $html);
     }
 }

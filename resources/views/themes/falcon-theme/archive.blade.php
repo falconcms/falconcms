@@ -191,7 +191,11 @@
             <article class="flex flex-col rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition-shadow duration-200">
                 <a href="{{ $permalink }}" class="block relative pt-[56%] overflow-hidden bg-gray-100">
                     @if($imgSrc)
-                        <img src="{{ $imgSrc }}" alt="{{ $postItem->title }}"
+                        @php
+                            $cardImg = function_exists('falcon_media_info') ? falcon_media_info($imgSrc) : null;
+                        @endphp
+                        <img src="{{ $imgSrc }}" alt="{{ $postItem->title }}" loading="lazy"
+                             @if($cardImg && $cardImg['width'] && $cardImg['height']) width="{{ $cardImg['width'] }}" height="{{ $cardImg['height'] }}" @endif
                              class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300">
                     @else
                         <div class="absolute inset-0 flex items-center justify-center bg-gray-100">

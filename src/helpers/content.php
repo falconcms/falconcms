@@ -15,6 +15,7 @@ use FalconCms\Core\Services\BuilderShortcodeConverter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -1032,11 +1033,54 @@ if (!function_exists('falcon_media_info')) {
             $row = null;
         }
 
-        return $row ? [
-            'width' => $row->width ? (int) $row->width : null,
-            'height' => $row->height ? (int) $row->height : null,
+        if (!$row) {
+            return null;
+        }
+        $width = $row->width ? (int) $row->width : null;
+        $height = $row->height ? (int) $row->height : null;
+        // The library measures raster images on upload; an SVG has no pixel size to read, so
+        // its <img> went out without one and the page jumped as it loaded. Its own width/height
+        // or viewBox stands in.
+        if ((!$width || !$height) && str_ends_with(strtolower($path), '.svg')) {
+            [$width, $height] = falcon_svg_dimensions(storage_path('app/public/'.$path)) ?? [$width, $height];
+        }
+
+        return [
+            'width' => $width,
+            'height' => $height,
             'alt' => (string) ($row->alt_text ?? ''),
-        ] : null;
+        ];
+    }
+}
+
+if (!function_exists('falcon_svg_dimensions')) {
+    /**
+     * An SVG file's intrinsic size: its width and height attributes when they are plain
+     * numbers (or px), else its viewBox. Cached by path and modification time.
+     *
+     * @return array{0: int, 1: int}|null
+     */
+    function falcon_svg_dimensions(string $file): ?array
+    {
+        $mtime = @filemtime($file);
+        if ($mtime === false) {
+            return null;
+        }
+
+        return Cache::rememberForever('falcon_svg_size:'.md5($file.'|'.$mtime), function () use ($file) {
+            $head = (string) @file_get_contents($file, false, null, 0, 4096);
+            if (!preg_match('/<svg\b[^>]*>/i', $head, $tag)) {
+                return null;
+            }
+            $attr = fn (string $name) => preg_match('/\s'.$name.'\s*=\s*["\']\s*([\d.]+)(px)?\s*["\']/i', $tag[0], $m) ? (float) $m[1] : null;
+            $w = $attr('width');
+            $h = $attr('height');
+            if ((!$w || !$h) && preg_match('/viewBox\s*=\s*["\']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*["\']/i', $tag[0], $vb)) {
+                [$w, $h] = [(float) $vb[1], (float) $vb[2]];
+            }
+
+            return $w && $h ? [(int) round($w), (int) round($h)] : null;
+        });
     }
 }
 

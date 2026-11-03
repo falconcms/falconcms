@@ -11,7 +11,8 @@
     // ?color=, ?utm_source=) all name the one page. Except ?page=: page 2 of an archive lists other
     // posts than page 1, and Google asks each page of a series to name itself.
     $pageNumber = (int) request()->query('page', 1);
-    $canonical = url()->current().($pageNumber > 1 ? '?page='.$pageNumber : '');
+    // /index.php is the front controller, not a page: it named itself as a second home page.
+    $canonical = preg_replace('#/index\.php(?=/|$)#', '', url()->current()).($pageNumber > 1 ? '?page='.$pageNumber : '');
     $type = 'website';
     $noindex = false;
     $nofollow = false;
@@ -33,7 +34,11 @@
     if (isset($post)) {
         $seo = is_array($post->seo_meta) ? $post->seo_meta : [];
         $currentTitle = $withSite($seo['title'] ?? $post->title);
-        $currentDesc = $seo['description'] ?? $post->excerpt ?? Str::limit(falcon_html_to_text($post->content), 160);
+        // The first that says something: the SEO field, the excerpt, then the post's own words.
+        // A builder page's content is JSON, and read as HTML it printed its settings
+        // ([{"id":…,"settings":…) as the description on every page nobody wrote one for.
+        $plainText = function_exists('falcon_post_plain_text') ? falcon_post_plain_text($post) : falcon_html_to_text($post->content);
+        $currentDesc = trim((string) ($seo['description'] ?? '')) ?: (trim((string) ($post->excerpt ?? '')) ?: Str::limit(trim(preg_replace('/\s+/u', ' ', $plainText)), 160));
         
         $ogImage = $seo['og_image'] ?? $post->featured_image;
         if ($ogImage) {
@@ -51,7 +56,29 @@
         $twitterTitle = $seo['twitter_title'] ?? $ogTitle;
         $twitterImage = $seo['twitter_image'] ?? $ogImage;
     } elseif (isset($title)) {
-        $currentTitle = $withSite($title);
+        // A taxonomy archive: its own description (the site's would repeat on every archive),
+        // and a tag says it is one, so a tag and a category of one name ("Laravel CMS") do not
+        // share a title.
+        $archiveCtx = falcon_layout_context();
+        $archiveTax = ($archiveCtx['kind'] ?? null) === 'archive' ? ($archiveCtx['taxonomy'] ?? null) : null;
+        $isTagArchive = in_array($archiveTax, ['post_tag', 'product_tag'], true);
+        $currentTitle = $withSite($isTagArchive ? 'Posts tagged '.$title : $title);
+        if ($archiveTax && !empty($archiveCtx['term_id'])) {
+            $termModel = [
+                'category' => \FalconCms\Core\Models\Category::class,
+                'post_tag' => \FalconCms\Core\Models\Tag::class,
+                'product_category' => \FalconCms\Core\Models\ProductCategory::class,
+                'product_tag' => \FalconCms\Core\Models\ProductTag::class,
+            ][$archiveTax] ?? \FalconCms\Core\Models\TaxonomyTerm::class;
+            try {
+                $termDesc = class_exists($termModel) ? trim(strip_tags((string) ($termModel::find($archiveCtx['term_id'])->description ?? ''))) : '';
+            } catch (\Throwable $e) {
+                $termDesc = '';
+            }
+            $currentDesc = $termDesc !== ''
+                ? $termDesc
+                : ($isTagArchive ? 'Posts tagged '.$title : $title).': articles and guides from '.$siteTitle.'.';
+        }
     }
 
     // Pages that are no use as a search result: the site's own search results, and an archive
@@ -108,15 +135,15 @@
     $twitterCardType = get_cms_option('twitter_card_type', 'summary_large_image');
     $twitterHandle   = get_cms_option('twitter_handle', '');
 @endphp
-<meta property="twitter:card" content="{{ $twitterCardType }}">
-<meta property="twitter:url" content="{{ url()->current() }}">
-<meta property="twitter:title" content="{!! $meta($twitterTitle) !!}">
-<meta property="twitter:description" content="{!! $meta($ogDesc) !!}">
+<meta name="twitter:card" content="{{ $twitterCardType }}">
+<meta name="twitter:url" content="{{ url()->current() }}">
+<meta name="twitter:title" content="{!! $meta($twitterTitle) !!}">
+<meta name="twitter:description" content="{!! $meta($ogDesc) !!}">
 @if($twitterImage)
-<meta property="twitter:image" content="{{ $twitterImage }}">
+<meta name="twitter:image" content="{{ $twitterImage }}">
 @endif
 @if($twitterHandle)
-<meta property="twitter:site" content="{{ '@' . ltrim($twitterHandle, '@') }}">
+<meta name="twitter:site" content="{{ '@' . ltrim($twitterHandle, '@') }}">
 @endif
 
 @php
