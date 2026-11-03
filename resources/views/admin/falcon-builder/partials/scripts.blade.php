@@ -7614,6 +7614,7 @@
                 falconMenuData: reactive(window.falconMenuData || {}),
                 falconMenusList: window.falconMenusList || {},
                 postCardMode,
+                layoutMode,
                 ocSettings, ocSaveState, ocTargetPicker, ocCanvasFold, ocVal, ocSet, ocOverridden, ocResetDevice,
                 customElements,
                 getCustomElementPreviewText,

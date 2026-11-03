@@ -1269,8 +1269,10 @@
                                class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                     </div>
 
-                    <!-- Stop sticking -->
-                    <div class="mb-3">
+                    <!-- Stop sticking. Not in a header, footer, page title bar or content layout:
+                         there the section sticks as one wrapper (_falcon_builder_render_wrapper),
+                         and the setting would do nothing. -->
+                    <div v-if="!layoutMode" class="mb-3">
                         <label class="text-[10px] text-slate-500 block mb-1.5">Stop Sticking</label>
                         <div class="flex bg-slate-100 rounded overflow-hidden">
                             @foreach([['', 'Section end'], ['distance', 'After scroll'], ['element', 'At element']] as [$val, $lbl])
