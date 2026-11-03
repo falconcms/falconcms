@@ -18,7 +18,9 @@
     <button onclick="lzGalleryNav('{{ $id }}',-1)" aria-label="Previous" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:28px;cursor:pointer;z-index:2;padding:12px 16px;border-radius:4px;">&#10094;</button>
     @endif
     <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;max-width:90vw;">
-        <img class="lz-lb-img" src="" alt="" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:4px;display:block;">
+        {{-- No src until a picture opens: an empty src is invalid HTML, and page checkers
+             counted this placeholder as an image without alt text on every page with a gallery. --}}
+        <img class="lz-lb-img" alt="" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:4px;display:block;">
         <div class="lz-lb-cap" style="color:#ccc;font-size:14px;text-align:center;max-width:600px;padding:0 16px;"></div>
     </div>
     @if($nav)

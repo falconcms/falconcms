@@ -122,7 +122,10 @@ final class PageAnalyzer
         $title = preg_match('#<title\b[^>]*>(.*?)</title\s*>#is', $html, $t) ? self::text($t[1]) : '';
         $description = self::meta($html, 'description');
         preg_match_all('#<img\b[^>]*>#i', $root, $m);
-        $images = array_map([self::class, 'attributes'], $m[0]);
+        // Only pictures: an <img> with no source at all is a placeholder a script fills later
+        // (the lightbox's), and counting it reported "no alt text" on pages whose every image had one.
+        $images = array_values(array_filter(array_map([self::class, 'attributes'], $m[0]),
+            fn ($img) => trim((string) ($img['src'] ?? '').($img['data-src'] ?? '').($img['srcset'] ?? '').($img['data-srcset'] ?? '')) !== ''));
         $links = self::links($root, $url, $siteHost);
 
         $groups = [];
@@ -487,7 +490,12 @@ final class PageAnalyzer
 
     private static function text(string $html): string
     {
-        // Tags become spaces so words either side of one do not run together.
+        // Block tags and <br> become spaces so words either side of one do not run together.
+        // Inline tags join what they wrap, as a browser shows it: a split-text heading puts each
+        // letter in its own <span> ("<span>E</span><span>v</span>…"), and spacing every tag
+        // read it as "E v e r y …", so its words were never found.
+        $inline = 'a|abbr|b|bdi|bdo|cite|code|data|dfn|em|i|kbd|mark|q|s|samp|small|span|strong|sub|sup|time|u|var|wbr';
+        $html = preg_replace('#</?(?:'.$inline.')\b[^>]*>#i', '', $html) ?? $html;
         $text = html_entity_decode(strip_tags(preg_replace('#<[^>]+>#', ' $0 ', $html) ?? $html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return trim(preg_replace('/\s+/u', ' ', $text) ?? $text);

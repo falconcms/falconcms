@@ -72,6 +72,40 @@ class PageAnalysisTest extends TestCase
         $this->assertSame('good', $result['grade']);
     }
 
+    public function test_a_split_text_heading_is_read_as_its_words(): void
+    {
+        // Falcon Effects' split text wraps every letter in a span, words joined by &#32;.
+        $letters = fn (string $word) => implode('', array_map(fn ($c) => '<span class="fe-ch">'.$c.'</span>', mb_str_split($word)));
+        $heading = implode('&#32;', array_map(fn ($w) => '<span class="fe-w">'.$letters($w).'</span>', ['Choosing', 'coffee', 'beans']));
+        $html = $this->page('<h1>Espresso at home</h1><p>Coffee beans matter.</p><h2>'.$heading.'</h2><p>Some text.</p>');
+
+        $result = PageAnalyzer::analyze($html, ['url' => 'https://site.test/coffee', 'keyword' => 'coffee beans', 'slug' => 'coffee']);
+
+        $this->assertSame('good', $this->check($result, 'kw_subheadings')['status'], json_encode($this->check($result, 'kw_subheadings')));
+        // Block tags still separate words: two paragraphs do not run together.
+        $this->assertSame('good', $this->check($result, 'kw_intro')['status']);
+    }
+
+    public function test_an_image_placeholder_without_a_source_is_not_counted(): void
+    {
+        // The lightbox's <img>, filled by script when a picture opens.
+        $html = $this->page('<h1>Coffee beans</h1><p>Coffee beans.</p><img src="/storage/media/a.jpg" alt="Coffee beans" width="10" height="10">'
+            .'<img class="lz-lb-img" alt=""><img class="lz-lb-img" src="" alt="">');
+
+        $result = PageAnalyzer::analyze($html, ['url' => 'https://site.test/coffee', 'keyword' => 'coffee beans', 'slug' => 'coffee']);
+
+        $this->assertSame('good', $this->check($result, 'alt')['status']);
+        $this->assertSame(1, $result['stats']['images']);
+    }
+
+    public function test_the_lightbox_ships_no_empty_image_source(): void
+    {
+        $html = view('falcon-cms::components.frontend.lightbox', ['id' => 'g1', 'nav' => true])->render();
+
+        $this->assertStringContainsString('class="lz-lb-img"', $html);
+        $this->assertStringNotContainsString('src=""', $html);
+    }
+
     public function test_broken_links_are_reported(): void
     {
         Http::fake([
