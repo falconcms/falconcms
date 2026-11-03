@@ -5,7 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.18 <Badge type="tip" text="Latest" /> {#v2-8-18}
+## v2.8.19 <Badge type="tip" text="Latest" /> {#v2-8-19}
+
+**Released: 2026-11-03**
+
+### Fixed
+
+- **Post Views in the Post Card builder.** The Post Views dynamic source (and any source a plugin
+  adds) was offered only in the page builder. The Post Card builder — where a view count on each
+  card is most often wanted — and the Mega Menu and Off-Canvas builders now offer it too.
+
+---
+
+## v2.8.18 {#v2-8-18}
 
 **Released: 2026-11-03**
 
