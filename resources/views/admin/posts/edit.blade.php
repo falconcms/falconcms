@@ -87,6 +87,11 @@
                                         $prefix .= $post->type . '/';
                                     }
                                     $displayBase = rtrim(url('/'), '/') . '/' . $prefix;
+                                    // Posts live under /post/: show the address the link opens.
+                                    $permalinkPath = rtrim((string) $fullUrl, '/');
+                                    if ($post->slug && str_ends_with($permalinkPath, '/'.$post->slug)) {
+                                        $displayBase = substr($permalinkPath, 0, -strlen($post->slug));
+                                    }
                                     $displaySlug = $post->slug . '/';
                                 }
                             @endphp

@@ -53,6 +53,11 @@
                             $previewPrefix .= $previewType.'/';
                         }
                         $previewUrl = $previewSlug ? rtrim(url('/'), '/').'/'.$previewPrefix.$previewSlug : url('/');
+                        // A saved post's real address: posts sit under /post/, which the
+                        // prefix above left out ("/falconcms-vs-filament" for /post/falconcms-vs-filament).
+                        if ($previewSlug && !empty($post->id) && function_exists('get_falcon_permalink')) {
+                            $previewUrl = get_falcon_permalink($post) ?: $previewUrl;
+                        }
                     @endphp
                     <div id="preview-url" class="text-[14px] text-[#006621] truncate">{{ $previewUrl }}</div>
                     <div id="preview-desc" class="text-[13px] text-[#4d5156] line-clamp-2">{{ $seo['description'] ?? 'Please provide a meta description...' }}</div>
