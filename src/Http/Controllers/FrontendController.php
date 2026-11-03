@@ -513,6 +513,26 @@ class FrontendController extends Controller
         return view($view, compact('post'));
     }
 
+    /**
+     * A post or page rendered by the theme whatever its status, for an editor's preview
+     * (Admin\PostController::previewBuilder, which checks the permission). Never cached and
+     * never indexed: a draft must not leak through a cache or into search.
+     */
+    public function preview(Post $post)
+    {
+        $baseView = ($post->type === 'page') ? 'page' : 'single';
+        $viewName = in_array($post->type, ['page', 'post'], true) ? $baseView : "single-{$post->type}";
+        $view = apply_falcon_filters('falcon_single_view', null, $post) ?? $this->resolveThemeView($viewName, $baseView);
+
+        view()->share('current_post', $post);
+        falcon_layout_context(['kind' => 'single', 'post_type' => $post->type, 'post_id' => $post->id]);
+        $post->load('comments.replies');
+
+        return response()->view($view, compact('post'))
+            ->header('X-Robots-Tag', 'noindex, nofollow')
+            ->header('Cache-Control', 'no-store, private');
+    }
+
     public function search(Request $request)
     {
         try {

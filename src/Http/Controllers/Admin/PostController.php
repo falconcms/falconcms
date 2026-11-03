@@ -478,8 +478,10 @@ class PostController extends Controller
         $post = Post::findOrFail($id);
         $this->authorizePostAction($post, 'edit');
 
-        // This would typically return a front-end view that renders the builder JSON
-        return view('falcon-cms::admin.falcon-builder.preview', compact('post'));
+        // The page as visitors will see it, through the theme — a draft included. The old
+        // preview view printed the builder JSON, so a draft could not be looked at without
+        // publishing it.
+        return app(\FalconCms\Core\Http\Controllers\FrontendController::class)->preview($post);
     }
 
     public function __construct()
