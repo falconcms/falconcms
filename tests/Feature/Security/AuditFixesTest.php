@@ -130,6 +130,23 @@ class AuditFixesTest extends TestCase
         $this->assertTrue(falcon_is_public_http_url('https://93.184.216.34/plugin.zip'));
     }
 
+    /**
+     * Saving a page in the classic editor left its cached copy in place for a day: visitors
+     * (and Google) kept reading the old meta description on falconcms.com/demo.
+     */
+    public function test_saving_a_page_drops_its_cached_copy(): void
+    {
+        $page = Post::create(['user_id' => $this->userWithRole('administrator')->id, 'title' => 'Demo', 'slug' => 'demo-'.uniqid(), 'type' => 'page', 'status' => 'published', 'lang_code' => 'en', 'content' => '<p>Old.</p>']);
+        $key = 'page_cache_'.md5(url('/'.$page->slug));
+        Cache::put($key, ['content' => 'old copy', 'type' => 'text/html', 'csrf' => true], 600);
+
+        $this->actingAs($this->userWithRole('administrator'))->put('/admin/pages/'.$page->id, [
+            'title' => 'Demo', 'slug' => $page->slug, 'content' => '<p>New.</p>', 'status' => 'published',
+        ])->assertRedirect();
+
+        $this->assertFalse(Cache::has($key), 'the page kept serving its old copy');
+    }
+
     public function test_the_page_cache_does_not_keep_a_copy_per_query_string(): void
     {
         $this->setCmsOptions(['performance_static_caching' => '1']);

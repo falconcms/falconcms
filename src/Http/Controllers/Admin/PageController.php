@@ -240,6 +240,10 @@ class PageController extends Controller
             }
         }
 
+        // Visitors are served the cached copy until it goes: PostController clears it on every
+        // save, and pages used to be left out, so an edited page stayed stale for a day.
+        clear_page_cache();
+
         if ($request->has('redirect_to_builder')) {
             return redirect()->route('admin.pages.edit', ['page' => $page, 'start_builder' => 1])->with('success', 'Page created successfully.');
         }
@@ -496,6 +500,8 @@ class PageController extends Controller
             }
         }
 
+        clear_page_cache();
+
         return back()->with('success', 'Page updated successfully.');
     }
 
@@ -507,6 +513,8 @@ class PageController extends Controller
         $page->delete();
         falcon_log_activity('deleted', "Moved page to trash: {$title}", $page);
 
+        clear_page_cache();
+
         return redirect()->route('admin.pages.index')->with('success', 'Page moved to trash.');
     }
 
@@ -516,6 +524,8 @@ class PageController extends Controller
         $this->authorizePageWrite($page, 'restore');
         $page->restore();
 
+        clear_page_cache();
+
         return back()->with('success', 'Page restored successfully.');
     }
 
@@ -524,6 +534,8 @@ class PageController extends Controller
         $page = Page::onlyTrashed()->findOrFail($id);
         $this->authorizePageWrite($page, 'delete');
         $page->forceDelete();
+
+        clear_page_cache();
 
         return back()->with('success', 'Page deleted permanently.');
     }
@@ -553,6 +565,8 @@ class PageController extends Controller
                 falcon_log_activity('deleted', "Moved page to trash: {$page->title}", $page);
             }
 
+            clear_page_cache();
+
             return back()->with('success', count($ids).' pages moved to trash.');
         } elseif ($action === 'restore') {
             $pages = Page::onlyTrashed()->whereIn('id', $ids)->get();
@@ -560,6 +574,8 @@ class PageController extends Controller
                 $page->restore();
                 falcon_log_activity('restored', "Restored page from trash: {$page->title}", $page);
             }
+
+            clear_page_cache();
 
             return back()->with('success', count($ids).' pages restored.');
         } elseif ($action === 'delete') {
@@ -570,6 +586,8 @@ class PageController extends Controller
                 falcon_log_activity('deleted', "Deleted page permanently: {$title}", $page);
             }
 
+            clear_page_cache();
+
             return back()->with('success', count($ids).' pages deleted permanently.');
         } elseif (in_array($action, ['draft', 'published'])) {
             $pages = Page::whereIn('id', $ids)->get();
@@ -577,6 +595,8 @@ class PageController extends Controller
                 $page->update(['status' => $action]);
                 falcon_log_activity('updated', "Updated page status to {$action}: {$page->title}", $page);
             }
+
+            clear_page_cache();
 
             return back()->with('success', count($ids).' pages marked as '.ucfirst($action).'.');
         }
