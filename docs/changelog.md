@@ -5,7 +5,51 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.16 <Badge type="tip" text="Latest" /> {#v2-8-16}
+## v2.8.18 <Badge type="tip" text="Latest" /> {#v2-8-18}
+
+**Released: 2026-11-03**
+
+Post views on every site, editors in the page builder, and a round of security, SEO and
+reliability fixes from a full code audit. (v2.8.17 was a single fix to the Table of Contents
+sticky settings panel.)
+
+### Added
+
+- **Post Views, built in.** The builder's **Dynamic Source → Post → Post Views** shows how many
+  times a post was read, on any title, text block or button — the post's own page or each card
+  of a Card grid. Choose the period (all time, today, last 7 or 30 days), the number style
+  (12,345 · 12.3K · 12345), a label (`views`, or `Read {count} times`), Latin, Bangla, Devanagari
+  or Arabic digits, and a threshold below which the fallback shows. Also as `{lazy:post_views}`.
+  - Views are counted by the reader's browser, so pages served from the page cache or a CDN
+    count too. Bots, drafts and signed-in editors are not counted.
+  - The Card element can order posts by views: all time, today, the last 7 or 30 days.
+  - It used to need the Falcon News plugin (Pro). A site that counted with it keeps its figures.
+- **Sticky → Stop sticking** for columns, nested columns and containers: at the end of the
+  section (as before), after scrolling a number of pixels, or when a chosen element (`#id`,
+  `.class`, `footer` or a heading's text) reaches it. The box moves up with the page rather than
+  vanishing. Not offered in header, footer and other layout sections, where it would do nothing.
+
+### Fixed
+
+- **Editors can use the page builder.** With page permissions, it opened only for
+  administrators; it now opens for the types a user may write, and each save is checked
+  against the post's type, as the classic editor does.
+- **Security.** A theme named `..` could delete `resources/views`; only a Super Admin can
+  change the Super Admin role; HTML files can no longer be uploaded to the media library; a
+  plugin installed from a URL is fetched only from public http(s) addresses; the page cache no
+  longer keeps a copy per query string.
+- **Saving a page clears the page cache.** Edited pages could serve their old copy for a day.
+- **SEO.** Category and tag archives print their own description (tags are titled “Posts
+  tagged …”); a builder page with no SEO description no longer shows its layout JSON as the
+  description; `/index.php` is no longer a second home page; Twitter card tags use `name=`;
+  SVG images and archive cards carry their width and height.
+- **Table of Contents → Sticky → Enable sticky on** (Desktop, Tablet, Mobile) now works.
+- **Category search** in the admin no longer fails; the media month filter and shop reports
+  work on SQLite; database backups stream instead of filling memory.
+
+---
+
+## v2.8.16 {#v2-8-16}
 
 **Released: 2026-10-30**
 

@@ -83,9 +83,10 @@ class ReadingTimeTest extends TestCase
         });
 
         $sources = falcon_extra_dynamic_sources();
-        $this->assertSame(['post_shares'], array_column($sources['text'], 'key'));
+        // Beside the core's own Post Views; the malformed key and the unknown context are dropped.
+        $this->assertSame(['post_views', 'post_shares'], array_column($sources['text'], 'key'));
         $this->assertSame([], $sources['link']);
-        $this->assertSame('42 shares', $sources['text'][0]['sample']);
+        $this->assertSame('42 shares', $sources['text'][1]['sample']);
 
         $post = (object) ['id' => 7, 'content' => ''];
         $this->assertSame('x:7', falcon_resolve_dynamic_value('post_shares', $post, falcon_dynamic_config(['dynamic_shares_net' => 'x'])));
