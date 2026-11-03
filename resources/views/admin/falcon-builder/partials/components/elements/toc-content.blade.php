@@ -156,6 +156,7 @@
             else (above the article, or on a phone where the columns stack) the list pins to
             the top once it scrolls past, until the article ends; a collapsible list folds
             while pinned. A column that already has its own Sticky setting keeps that one.
+            On a device switched off above, the list stays where the layout puts it.
         </p>
 
         <label class="text-[11px] font-bold text-slate-500 block mb-1.5 mt-4">Stop at</label>

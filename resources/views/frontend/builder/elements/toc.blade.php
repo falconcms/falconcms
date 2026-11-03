@@ -64,6 +64,13 @@
     $stickyTop = (int) ($s['stickyTop'] ?? 24);
     // Where the sticky list lets go early: a heading's text ("Conclusion") or a CSS selector.
     $stopAt = mb_substr(trim((string) ($s['stopAt'] ?? '')), 0, 120);
+    // The devices it sticks on, split at the theme's own breakpoints (as the columns are).
+    $stickyOn = [
+        'desktop' => ($s['stickyDesktop'] ?? true) !== false,
+        'tablet' => ($s['stickyTablet'] ?? true) !== false,
+        'mobile' => ($s['stickyMobile'] ?? true) !== false,
+    ];
+    $bp = [(int) get_cms_option('theme_small_screen_breakpoint', '800'), (int) get_cms_option('theme_medium_screen_breakpoint', '1100')];
     $maxHeight = (int) ($s['maxHeight'] ?? 0);
     $scrollSpy = ($s['scrollSpy'] ?? true) !== false;
     $smooth = ($s['smoothScroll'] ?? true) !== false;
@@ -101,6 +108,8 @@
         'sticky' => $sticky,
         'stickyTop' => $stickyTop,
         'stopAt' => $stopAt,
+        'stickyOn' => $stickyOn,
+        'bp' => $bp,
     ];
 @endphp
 
@@ -460,8 +469,12 @@
         var col = wrap.closest('.lazy-column');
         var top = cfg.stickyTop || 0;
 
-        var pos = col ? window.getComputedStyle(col).position : '';
-        var ownSticky = pos === 'sticky' || pos === '-webkit-sticky';
+        // Read again on every pick: the column's own Sticky can be on for some devices only.
+        var ownSticky = false;
+        function columnSticks() {
+            var pos = col ? window.getComputedStyle(col).position : '';
+            return pos === 'sticky' || pos === '-webkit-sticky';
+        }
         var last = items && items.length ? items[items.length - 1].el : null;
 
         // Where the docked list lets go: the end of the content it lists. The body is no
@@ -488,7 +501,9 @@
         }
         var stop = findStop();
 
-        var colStyle = col ? { position: col.style.position, top: col.style.top, zIndex: col.style.zIndex,
+        var colStyle = col ? { zIndex: col.style.zIndex,
+            position: col.style.getPropertyValue('position'), positionPrio: col.style.getPropertyPriority('position'),
+            top: col.style.getPropertyValue('top'), topPrio: col.style.getPropertyPriority('top'),
             alignSelf: col.style.getPropertyValue('align-self'), alignPrio: col.style.getPropertyPriority('align-self') } : null;
 
         // The column's own CSS can pin it to the row's height with align-self: stretch
@@ -499,7 +514,7 @@
             else col.style.setProperty('align-self', colStyle.alignSelf, colStyle.alignPrio);
         }
         var mode = '';
-        var ph = null, docked = false, wasOpen = null;
+        var ph = null, docked = false, wasOpen = null, colSet = false;
 
         function columnHasRoom() {
             if (!col || !col.parentElement) return false;
@@ -517,14 +532,18 @@
             if (!col) return;
             if (on) {
                 shrinkColumn(true);
-                col.style.position = 'sticky';
-                col.style.top = top + 'px';
+                // !important: the column's own Sticky, switched off on this device, writes
+                // position:static!important, which a plain inline value loses to.
+                col.style.setProperty('position', 'sticky', 'important');
+                col.style.setProperty('top', top + 'px', 'important');
                 if (!colStyle.zIndex) col.style.zIndex = '2';
+                colSet = true;
             } else {
-                col.style.position = colStyle.position;
-                col.style.top = colStyle.top;
+                col.style.setProperty('position', colStyle.position, colStyle.positionPrio);
+                col.style.setProperty('top', colStyle.top, colStyle.topPrio);
                 shrinkColumn(false);
                 col.style.zIndex = colStyle.zIndex;
+                colSet = false;
             }
         }
 
@@ -611,9 +630,18 @@
             }
         }
 
+        // Off on this device (Enable sticky on): the list stays where the layout puts it.
+        function stickyHere() {
+            var on = cfg.stickyOn || {}, bp = cfg.bp || [800, 1100], w = window.innerWidth;
+            var device = w <= bp[0] ? 'mobile' : (w <= bp[1] ? 'tablet' : 'desktop');
+            return on[device] !== false;
+        }
+
         function pick() {
             if (docked) undock();
-            if (!ownSticky) setColumn(false);
+            if (colSet) setColumn(false);
+            ownSticky = columnSticks();
+            if (!stickyHere()) { mode = ''; return; }
             // A column sticks to the end of its row; only the docked list can stop earlier.
             mode = (!stop && columnHasRoom()) ? 'column' : 'dock';
             if (mode === 'column' && !ownSticky) setColumn(true);

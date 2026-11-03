@@ -599,6 +599,41 @@ class TocTest extends TestCase
         $this->assertSame('Conclusion', $back[0]['columns'][0]['elements'][0]['settings']['stopAt']);
     }
 
+    /**
+     * "Enable sticky on": the devices reach the script with the theme's breakpoints, a device
+     * switched off stops the script there, and the choice survives the shortcode round trip.
+     */
+    public function test_sticky_devices_reach_the_script_and_survive_the_round_trip(): void
+    {
+        $html = $this->render(['sticky' => true, 'stickyMobile' => false]);
+        $this->assertSame(1, preg_match('/data-fc-toc="([^"]*)"/', $html, $m));
+        $config = json_decode(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'), true);
+        $this->assertSame(['desktop' => true, 'tablet' => true, 'mobile' => false], $config['stickyOn']);
+        $this->assertSame([800, 1100], $config['bp']);
+
+        $script = $this->script($html);
+        $this->assertStringContainsString('function stickyHere()', $script);
+        $this->assertStringContainsString("if (!stickyHere()) { mode = ''; return; }", $script);
+
+        // Never set: on everywhere, as before the option existed.
+        $plain = json_decode(html_entity_decode(
+            (preg_match('/data-fc-toc="([^"]*)"/', $this->render(['sticky' => true]), $p) ? $p[1] : ''), ENT_QUOTES, 'UTF-8'), true);
+        $this->assertSame(['desktop' => true, 'tablet' => true, 'mobile' => true], $plain['stickyOn']);
+
+        $sc = \FalconCms\Core\Services\BuilderShortcodeConverter::jsonToShortcodes((string) json_encode([[
+            'id' => 'c', 'columns' => [['id' => 'k', 'elements' => [['id' => 'e', 'type' => 'toc',
+                'settings' => ['sticky' => true, 'stickyTablet' => false, 'stickyMobile' => false]]]]],
+        ]]));
+        $this->assertStringContainsString('sticky_tablet="no"', $sc);
+        $this->assertStringContainsString('sticky_mobile="no"', $sc);
+        $this->assertStringNotContainsString('sticky_desktop', $sc);
+        $back = json_decode(\FalconCms\Core\Services\BuilderShortcodeConverter::shortcodesToJson($sc), true);
+        $settings = $back[0]['columns'][0]['elements'][0]['settings'];
+        $this->assertTrue($settings['stickyDesktop']);
+        $this->assertFalse($settings['stickyTablet']);
+        $this->assertFalse($settings['stickyMobile']);
+    }
+
     public function test_sticky_is_applied_to_the_element_that_can_travel(): void
     {
         $html = $this->render(['sticky' => true, 'stickyTop' => 40]);
@@ -613,11 +648,12 @@ class TocTest extends TestCase
         $script = $this->script($html);
         $this->assertStringContainsString("wrap.closest('.lazy-column')", $script,
             'the script no longer sticks the column, which is the only thing that can travel');
-        $this->assertStringContainsString("col.style.position = 'sticky'", $script);
+        $this->assertStringContainsString("col.style.setProperty('position', 'sticky', 'important')", $script);
 
         // A column with its own Sticky setting keeps its own offset rather than being
         // given a second, conflicting one.
-        $this->assertStringContainsString("var ownSticky = pos === 'sticky'", $script);
+        $this->assertStringContainsString("return pos === 'sticky' || pos === '-webkit-sticky';", $script);
+        $this->assertStringContainsString('ownSticky = columnSticks();', $script);
         $this->assertStringContainsString("if (mode === 'column' && !ownSticky) setColumn(true);", $script);
 
         // Room beside the column counts only when the headings it lists are there too, and
