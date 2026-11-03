@@ -69,9 +69,17 @@ final class CodeBlockElement extends Element
         // "<?php" as a tag and swallows everything after it, taking this
         // element's own closing tag and the section's with it. The snippet, and
         // the rest of the page, simply vanished.
-        return '[falcon_code_block '.trim($a).$vis.']'
-            .str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], $codeBody)
-            .'[/falcon_code_block]';
+        $escaped = str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], $codeBody);
+
+        // Line breaks, tabs and runs of spaces go inside <pre>. The post editor
+        // (TinyMCE) shows this shortcode as HTML and collapses whitespace
+        // everywhere except in <pre>: saving a builder post from the post screen
+        // turned "composer require …\nphp artisan …" into one line.
+        if (preg_match('/[\n\r\t]| {2}|^\s|\s$/', $codeBody)) {
+            $escaped = '<pre>'.$escaped.'</pre>';
+        }
+
+        return '[falcon_code_block '.trim($a).$vis.']'.$escaped.'[/falcon_code_block]';
     }
 
     public static function fromShortcode(string $type, array $a, array $vis, string $inner, string $attrStr): ?array
@@ -88,7 +96,15 @@ final class CodeBlockElement extends Element
         // Not trimmed: a snippet's leading indentation and its closing newline
         // are part of the code. The trim below is only for the emptiness test
         // and the base64 comparison, which cannot contain whitespace anyway.
-        $raw = self::unmangleBody($inner);
+        // Code kept in <pre> (see toShortcode) is verbatim: take it as it stands. The
+        // editor may have split the paragraph around it ("</p><pre>…</pre><p>") and, if
+        // someone pressed Enter in it, written <br> — a real "<br>" in code would be
+        // "&lt;br&gt;" here, so a tag can only be a line break.
+        if (preg_match('#^\s*(?:</?p\b[^>]*>\s*)*<pre\b[^>]*>(.*)</pre>\s*(?:</?p\b[^>]*>\s*)*$#is', $inner, $pre)) {
+            $raw = str_replace("\u{00A0}", ' ', preg_replace('#<br\s*/?>\r?\n?#i', "\n", $pre[1]) ?? $pre[1]);
+        } else {
+            $raw = self::unmangleBody($inner);
+        }
         $body = trim($raw);
         // Undoes the entities the writer put in. A hand-written shortcode holding
         // plain code has none, so this leaves it alone.

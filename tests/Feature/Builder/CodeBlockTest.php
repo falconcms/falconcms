@@ -309,6 +309,36 @@ class CodeBlockTest extends TestCase
         $this->assertSame('echo "a > b"', $back[0]['columns'][0]['elements'][0]['settings']['code'] ?? null);
     }
 
+    /**
+     * Saving a builder post from the post screen sends this shortcode through TinyMCE, which
+     * collapses whitespace outside <pre>: "composer require …\nphp artisan …" came back as
+     * one line on falconcms.com. Multi-line code is kept in <pre>, and what the editor does
+     * around and inside it (splitting the paragraph, <br> for Enter, a no-break space) is undone.
+     */
+    public function test_line_breaks_and_indentation_survive_the_post_editor(): void
+    {
+        $code = "composer require falconcms/falconcms\nphp artisan falcon:install\n\tif (\$a) {\n        return 1;\n    }";
+
+        $shortcode = $this->wrap(['code' => $code, 'language' => 'bash']);
+        $this->assertStringContainsString("<pre>composer require falconcms/falconcms\nphp artisan", $shortcode, 'still readable');
+
+        // What TinyMCE hands back: the text around the <pre> in paragraphs, the newline
+        // after the second line typed as <br>, one indent space as a no-break space.
+        $edited = str_replace(
+            ['[falcon_code_block ', '<pre>', '</pre>', "falcon:install\n", "        return"],
+            ['<p>[falcon_code_block ', '</p><pre>', '</pre><p>', 'falcon:install<br>', "       \u{00A0}return"],
+            $shortcode
+        );
+        $edited = preg_replace('#\[/falcon_code_block\]#', '[/falcon_code_block]</p>', $edited, 1);
+
+        $back = json_decode(BuilderShortcodeConverter::shortcodesToJson($edited), true);
+        $this->assertSame($code, $back[0]['columns'][0]['elements'][0]['settings']['code'] ?? null);
+
+        // One plain line needs no <pre>, and stays exactly as before.
+        $this->assertStringContainsString(']composer require falconcms/falconcms[/falcon_code_block]',
+            $this->wrap(['code' => 'composer require falconcms/falconcms', 'language' => 'bash']));
+    }
+
     /** The one string a raw body cannot hold is the closing tag the parser stops at. */
     public function test_code_holding_the_closing_tag_falls_back_to_base64(): void
     {
