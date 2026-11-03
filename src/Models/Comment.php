@@ -6,7 +6,21 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $post_id
+ * @property int|null $user_id
+ * @property string|null $name
+ * @property string|null $email
+ * @property string $comment
+ * @property bool $is_approved
+ * @property bool $is_read
+ * @property int|null $parent_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Comment extends Model
 {
     protected $fillable = [

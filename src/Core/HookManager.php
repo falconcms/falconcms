@@ -116,7 +116,13 @@ class HookManager
     // Actions
     public function addAction($tag, $callback, $priority = 10)
     {
-        $this->actions[self::canonical($tag)][$priority][] = $callback;
+        $tag = self::canonical($tag);
+        $newPriority = !isset($this->actions[$tag][$priority]);
+        $this->actions[$tag][$priority][] = $callback;
+        // Kept in priority order as hooks are added, not on every run.
+        if ($newPriority) {
+            ksort($this->actions[$tag]);
+        }
     }
 
     public function doAction($tag, ...$args)
@@ -125,8 +131,6 @@ class HookManager
         if (!isset($this->actions[$tag])) {
             return;
         }
-
-        ksort($this->actions[$tag]);
 
         foreach ($this->actions[$tag] as $priority => $callbacks) {
             foreach ($callbacks as $callback) {
@@ -138,7 +142,14 @@ class HookManager
     // Filters
     public function addFilter($tag, $callback, $priority = 10)
     {
-        $this->filters[self::canonical($tag)][$priority][] = $callback;
+        $tag = self::canonical($tag);
+        $newPriority = !isset($this->filters[$tag][$priority]);
+        $this->filters[$tag][$priority][] = $callback;
+        // Kept in priority order as filters are added: applyFilters() runs inside loops
+        // (every product, every element) and used to sort on every call.
+        if ($newPriority) {
+            ksort($this->filters[$tag]);
+        }
     }
 
     public function applyFilters($tag, $value, ...$args)
@@ -147,8 +158,6 @@ class HookManager
         if (!isset($this->filters[$tag])) {
             return $value;
         }
-
-        ksort($this->filters[$tag]);
 
         foreach ($this->filters[$tag] as $priority => $callbacks) {
             foreach ($callbacks as $callback) {

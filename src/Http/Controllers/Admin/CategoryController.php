@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Collection;
 
 class CategoryController extends Controller
 {
@@ -22,49 +23,19 @@ class CategoryController extends Controller
 
         $query->latest();
 
+        // The parent dropdown needs every category, searching or not: built once, before
+        // the search narrows the list (a search used to leave it undefined, a 500).
+        $fullTree = $this->tree((clone $query)->get());
+
         if ($request->has('s')) {
             $query->where('name', 'like', '%'.$request->s.'%');
-            $categories = $query->paginate(10);
+            $categories = $query->paginate(10)->withQueryString();
         } else {
-            $allCategories = $query->get();
-            $tree = collect();
-            $visitedIds = [];
-
-            $buildTree = function ($parentId, $level) use (&$buildTree, $allCategories, &$tree, &$visitedIds) {
-                foreach ($allCategories->where('parent_id', $parentId) as $cat) {
-                    if (in_array($cat->id, $visitedIds)) {
-                        continue;
-                    } // Prevent infinite loops
-                    $visitedIds[] = $cat->id;
-                    $cat->level = $level;
-                    $tree->push($cat);
-                    $buildTree($cat->id, $level + 1);
-                }
-            };
-
-            // Build tree starting from root categories
-            $buildTree(null, 0);
-
-            // If there are still categories not in the tree (orphans or circular loops)
-            if ($tree->count() < $allCategories->count()) {
-                $orphans = $allCategories->whereNotIn('id', $visitedIds);
-                foreach ($orphans as $orphan) {
-                    if (in_array($orphan->id, $visitedIds)) {
-                        continue;
-                    }
-                    $orphan->level = 0; // Show orphans at root level
-                    $tree->push($orphan);
-                    $visitedIds[] = $orphan->id;
-                    $buildTree($orphan->id, 1);
-                }
-            }
-
             $page = Paginator::resolveCurrentPage() ?: 1;
             $perPage = 10;
-            $fullTree = $tree;
             $categories = new LengthAwarePaginator(
-                $tree->forPage($page, $perPage),
-                $tree->count(),
+                $fullTree->forPage($page, $perPage),
+                $fullTree->count(),
                 $perPage,
                 $page,
                 ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
@@ -72,6 +43,44 @@ class CategoryController extends Controller
         }
 
         return view('falcon-cms::admin.categories.index', compact('categories', 'fullTree'));
+    }
+
+    /** Categories in tree order, each with its depth as ->level; orphans and loops at the root. */
+    private function tree(Collection $all): Collection
+    {
+        $tree = collect();
+        $visitedIds = [];
+
+        $buildTree = function ($parentId, $level) use (&$buildTree, $all, &$tree, &$visitedIds) {
+            foreach ($all->where('parent_id', $parentId) as $cat) {
+                if (in_array($cat->id, $visitedIds)) {
+                    continue;
+                } // Prevent infinite loops
+                $visitedIds[] = $cat->id;
+                $cat->level = $level;
+                $tree->push($cat);
+                $buildTree($cat->id, $level + 1);
+            }
+        };
+
+        // Build tree starting from root categories
+        $buildTree(null, 0);
+
+        // If there are still categories not in the tree (orphans or circular loops)
+        if ($tree->count() < $all->count()) {
+            $orphans = $all->whereNotIn('id', $visitedIds);
+            foreach ($orphans as $orphan) {
+                if (in_array($orphan->id, $visitedIds)) {
+                    continue;
+                }
+                $orphan->level = 0; // Show orphans at root level
+                $tree->push($orphan);
+                $visitedIds[] = $orphan->id;
+                $buildTree($orphan->id, 1);
+            }
+        }
+
+        return $tree;
     }
 
     public function bulk(Request $request)

@@ -26,8 +26,13 @@ class ShopReportController extends Controller
             default => '%Y-%m',
         };
 
+        // DATE_FORMAT is MySQL's; SQLite spells it strftime (and its week as %W).
+        $sqlite = DB::connection()->getDriverName() === 'sqlite';
+        if ($sqlite && $period === 'weekly') {
+            $groupFmt = '%Y-%W';
+        }
         $revenue = DB::table('shop_orders')
-            ->selectRaw('DATE_FORMAT(created_at, ?) as period, SUM(total) as revenue, COUNT(*) as orders', [$groupFmt])
+            ->selectRaw(($sqlite ? 'strftime(?, created_at)' : 'DATE_FORMAT(created_at, ?)').' as period, SUM(total) as revenue, COUNT(*) as orders', [$groupFmt])
             ->where('status', '!=', 'cancelled')
             ->whereBetween('created_at', [$from, $to])
             ->groupBy('period')
@@ -47,7 +52,7 @@ class ShopReportController extends Controller
 
         // Customer lifetime value (top spenders)
         $topCustomers = DB::table('shop_orders')
-            ->selectRaw('customer_email, CONCAT(first_name, " ", last_name) as customer_name, COUNT(*) as order_count, SUM(total) as lifetime_value')
+            ->selectRaw('customer_email, '.self::fullNameSql().' as customer_name, COUNT(*) as order_count, SUM(total) as lifetime_value')
             ->where('status', '!=', 'cancelled')
             ->groupBy('customer_email', 'first_name', 'last_name')
             ->orderByDesc('lifetime_value')
@@ -65,6 +70,14 @@ class ShopReportController extends Controller
             'revenue', 'topProducts', 'topCustomers', 'summary',
             'period', 'from', 'to', 'fromRaw', 'toRaw'
         ));
+    }
+
+    /** A customer's full name, spelled for the driver (CONCAT is MySQL's, || SQLite's). */
+    private static function fullNameSql(): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "first_name || ' ' || last_name"
+            : "CONCAT(first_name, ' ', last_name)";
     }
 
     public function export(Request $request)
@@ -89,7 +102,7 @@ class ShopReportController extends Controller
             $filename = 'top-products-'.now()->format('Y-m-d').'.csv';
         } elseif ($type === 'customers') {
             $rows = DB::table('shop_orders')
-                ->selectRaw('customer_email, CONCAT(first_name, " ", last_name) as customer_name, COUNT(*) as order_count, SUM(total) as lifetime_value')
+                ->selectRaw('customer_email, '.self::fullNameSql().' as customer_name, COUNT(*) as order_count, SUM(total) as lifetime_value')
                 ->where('status', '!=', 'cancelled')
                 ->groupBy('customer_email', 'first_name', 'last_name')
                 ->orderByDesc('lifetime_value')

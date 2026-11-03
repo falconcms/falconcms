@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class BackupController extends Controller
 {
@@ -25,7 +26,7 @@ class BackupController extends Controller
     /**
      * Whether this connection can be dumped and restored as SQL.
      *
-     * buildSqlDump() is written in MySQL — SHOW TABLES, SHOW CREATE TABLE, backticks — and
+     * writeSqlDump() is written in MySQL — SHOW TABLES, SHOW CREATE TABLE, backticks — and
      * runSqlDump() replays it the same way. The README lists SQLite as a supported database
      * for running the CMS, and it is; this one tool is the exception. Saying so plainly
      * beats letting a shop owner press Create Backup and receive a raw SQL syntax error
@@ -190,7 +191,7 @@ class BackupController extends Controller
         }
 
         $filename = 'backup-'.Carbon::now()->format('Y-m-d-H-i-s').'.sql';
-        file_put_contents($this->backupDir().'/'.$filename, $this->buildSqlDump());
+        $this->writeSqlDump($this->backupDir().'/'.$filename);
 
         falcon_log_activity('created', "Created a database backup: {$filename}");
 
@@ -253,9 +254,16 @@ class BackupController extends Controller
 
         // Database goes in as database.sql, media under a media/ folder. Restore
         // detects both by content, so the two always travel together cleanly.
-        $zip->addFromString('database.sql', $this->buildSqlDump());
-        $mediaCount = $this->addMediaToZip($zip, 'media/');
-        $zip->close();
+        // Dumped to a file first: ZipArchive reads an added file only when it closes.
+        $dump = $this->backupDir().'/.dump-'.Str::random(12).'.sql';
+        try {
+            $this->writeSqlDump($dump);
+            $zip->addFile($dump, 'database.sql');
+            $mediaCount = $this->addMediaToZip($zip, 'media/');
+            $zip->close();
+        } finally {
+            @unlink($dump);
+        }
 
         falcon_log_activity('created', "Created a full backup: {$filename} (database + {$mediaCount} media files)");
 
@@ -289,38 +297,65 @@ class BackupController extends Controller
         return $count;
     }
 
-    private function buildSqlDump(): string
+    /**
+     * Write the database out as SQL, a thousand rows at a time, straight to $path.
+     *
+     * It used to read every table whole with get() and build the dump as one string, so a
+     * site with a few hundred thousand analytics or log rows ran out of memory half-way.
+     * Rows are paged by the primary key where there is a one-column one (fast at any
+     * size); otherwise in the order of all their columns, which is total for any table,
+     * so paging never skips or repeats a row.
+     */
+    private function writeSqlDump(string $path): void
     {
-        $tables = DB::select('SHOW TABLES');
-        $dbName = config('database.connections.mysql.database');
-        $sql = "-- Falcon CMS Backup\n-- Database: {$dbName}\n-- Date: ".now()."\n\n";
-        $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
-
-        foreach ($tables as $table) {
-            $tableName = current((array) $table);
-
-            $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`")[0];
-            $sql .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
-            $sql .= $createTable->{'Create Table'}.";\n\n";
-
-            foreach (DB::table($tableName)->get() as $row) {
-                $row = (array) $row;
-                $columns = array_keys($row);
-                $values = array_map(function ($value) {
-                    if (is_null($value)) {
-                        return 'NULL';
-                    }
-
-                    return "'".addslashes($value)."'";
-                }, array_values($row));
-
-                $sql .= "INSERT INTO `{$tableName}` (`".implode('`, `', $columns).'`) VALUES ('.implode(', ', $values).");\n";
-            }
-            $sql .= "\n";
+        $out = fopen($path, 'wb');
+        if ($out === false) {
+            throw new \Exception('Could not write the backup file.');
         }
-        $sql .= 'SET FOREIGN_KEY_CHECKS=1;';
 
-        return $sql;
+        try {
+            $dbName = config('database.connections.mysql.database');
+            fwrite($out, "-- Falcon CMS Backup
+-- Database: {$dbName}
+-- Date: ".now().'
+
+');
+            fwrite($out, 'SET FOREIGN_KEY_CHECKS=0;
+
+');
+
+            foreach (DB::select('SHOW TABLES') as $table) {
+                $tableName = current((array) $table);
+
+                $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`")[0];
+                fwrite($out, "DROP TABLE IF EXISTS `{$tableName}`;
+");
+                fwrite($out, $createTable->{'Create Table'}.';
+
+');
+
+                $write = function ($rows) use ($out, $tableName) {
+                    foreach ($rows as $row) {
+                        $row = (array) $row;
+                        $values = array_map(fn ($value) => is_null($value) ? 'NULL' : "'".addslashes((string) $value)."'", array_values($row));
+                        fwrite($out, "INSERT INTO `{$tableName}` (`".implode('`, `', array_keys($row)).'`) VALUES ('.implode(', ', $values).');
+');
+                    }
+                };
+                $primary = DB::select("SHOW KEYS FROM `{$tableName}` WHERE Key_name = 'PRIMARY'");
+                if (count($primary) === 1) {
+                    DB::table($tableName)->chunkById(1000, $write, $primary[0]->Column_name);
+                } else {
+                    $count = count(DB::select("SHOW COLUMNS FROM `{$tableName}`"));
+                    DB::table($tableName)->orderByRaw(implode(', ', range(1, max(1, $count))))->chunk(1000, $write);
+                }
+                fwrite($out, '
+');
+            }
+            fwrite($out, 'SET FOREIGN_KEY_CHECKS=1;');
+        } finally {
+            fclose($out);
+        }
     }
 
     // ───────────────────────────── restore ─────────────────────────────

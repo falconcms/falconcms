@@ -15,7 +15,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\ProductCategory\:\:\$level\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 1
 			path: plugins/falcon-shop/src/Http/Controllers/Admin/ProductCategoryController.php
 
 		-
@@ -33,12 +33,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\ProductCategory\:\:\$slug\.$#'
 			identifier: property.notFound
-			count: 1
-			path: plugins/falcon-shop/src/Http/Controllers/Admin/ProductCategoryController.php
-
-		-
-			message: '#^Call to function compact\(\) contains possibly undefined variable \$fullTree\.$#'
-			identifier: variable.undefined
 			count: 1
 			path: plugins/falcon-shop/src/Http/Controllers/Admin/ProductCategoryController.php
 
@@ -321,20 +315,8 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Category\:\:\$level\.$#'
 			identifier: property.notFound
-			count: 3
-			path: src/Http/Controllers/Admin/CategoryController.php
-
-		-
-			message: '#^Call to function compact\(\) contains possibly undefined variable \$fullTree\.$#'
-			identifier: variable.undefined
 			count: 1
 			path: src/Http/Controllers/Admin/CategoryController.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Comment\:\:\$is_approved\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Http/Controllers/Admin/CommentController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
@@ -777,7 +759,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasRole\(\)\.$#'
 			identifier: method.notFound
-			count: 1
+			count: 2
 			path: src/Http/Controllers/Admin/RoleController.php
 
 		-
@@ -1283,12 +1265,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: src/Models/TaxonomyTerm.php
-
-		-
-			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Comment\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Support/ExportManager.php
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\CustomTaxonomy\:\:\$name\.$#'

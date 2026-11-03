@@ -651,7 +651,7 @@ class FrontendController extends Controller
         // reply to a reply joins its thread.
         $parentId = null;
         if (!empty($validated['parent_id'])) {
-            $parent = Comment::find($validated['parent_id']);
+            $parent = Comment::find((int) $validated['parent_id']);
             if (!$parent || (int) $parent->post_id !== (int) $post->id || !$parent->is_approved) {
                 abort(422, 'That comment cannot be replied to.');
             }

@@ -2,11 +2,14 @@
 
 namespace FalconCms\Core\Tests\Feature\Builder;
 
+use App\Models\User;
 use FalconCms\Core\Models\Comment;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * The Comments element (post_comments): the comment list and form of the post a layout is
@@ -248,9 +251,9 @@ class PostCommentsTest extends TestCase
     {
         $post = $this->makePost('member');
         $admin = $this->admin();
-        Comment::create(['post_id' => $post->id, 'name' => $admin->name, 'email' => $admin->email, 'comment' => 'Old guest one', 'is_approved' => true]);
+        Comment::create(['post_id' => $post->id, 'name' => $admin->getAttribute('name'), 'email' => $admin->getAttribute('email'), 'comment' => 'Old guest one', 'is_approved' => true]);
 
-        $this->submit($post, ['name' => $admin->name, 'email' => $admin->email, 'comment' => 'Pretending to be the admin']);
+        $this->submit($post, ['name' => $admin->getAttribute('name'), 'email' => $admin->getAttribute('email'), 'comment' => 'Pretending to be the admin']);
 
         $this->assertDatabaseHas('comments', ['comment' => 'Pretending to be the admin', 'is_approved' => false]);
     }
@@ -281,7 +284,7 @@ class PostCommentsTest extends TestCase
         $this->submit($post, ['name' => "Robert'); --", 'comment' => $text]);
 
         $this->assertDatabaseHas('comments', ['comment' => $text]);
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasTable('comments'));
+        $this->assertTrue(Schema::hasTable('comments'));
     }
 
     // ── the page cache ───────────────────────────────────────────────────────
@@ -321,11 +324,11 @@ class PostCommentsTest extends TestCase
         $this->post(route('frontend.comment.store'), $this->fields($post, $extra))->assertRedirect();
     }
 
-    private function admin(): \App\Models\User
+    private function admin(): User
     {
-        return \App\Models\User::where('email', 'admin-xss@example.com')->first() ?? \App\Models\User::forceCreate([
+        return User::where('email', 'admin-xss@example.com')->first() ?? User::forceCreate([
             'name' => 'Site Admin', 'email' => 'admin-xss@example.com', 'password' => bcrypt('secret-'.uniqid()),
-            'role_id' => (int) \Illuminate\Support\Facades\DB::table('roles')->where('slug', 'administrator')->value('id'),
+            'role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id'),
         ]);
     }
 

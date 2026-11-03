@@ -10,7 +10,6 @@ use FalconCms\Core\Support\MenuPlacement;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class AcptCptController extends Controller
@@ -20,32 +19,8 @@ class AcptCptController extends Controller
 
     public function index(Request $request)
     {
-        // Auto-fix missing columns if migration failed
-        try {
-            DB::statement('ALTER TABLE post_types MODIFY COLUMN icon TEXT NULL');
-        } catch (\Exception $e) {
-        }
-
-        if (!Schema::hasColumn('post_types', 'singular_name')) {
-            Schema::table('post_types', function ($table) {
-                $table->string('singular_name')->nullable()->after('slug');
-            });
-        }
-        if (!Schema::hasColumn('post_types', 'show_in_menu')) {
-            Schema::table('post_types', function ($table) {
-                $table->boolean('show_in_menu')->default(true)->after('is_active');
-            });
-        }
-        if (!Schema::hasColumn('post_types', 'is_public')) {
-            Schema::table('post_types', function ($table) {
-                if (Schema::hasColumn('post_types', 'public')) {
-                    $table->renameColumn('public', 'is_public');
-                } else {
-                    $table->boolean('is_public')->default(true)->after('show_in_menu');
-                }
-            });
-        }
-
+        // The columns this used to add here, with ALTER TABLE on every visit, have been in the
+        // create_cms_core_tables migration from the start.
         $query = PostType::where('is_builtin', false);
 
         if ($request->filled('s')) {
@@ -250,27 +225,6 @@ class AcptCptController extends Controller
 
     public function store(Request $request)
     {
-        // Auto-fix missing columns
-        try {
-            DB::statement('ALTER TABLE post_types MODIFY COLUMN icon TEXT NULL');
-        } catch (\Exception $e) {
-        }
-
-        if (!Schema::hasColumn('post_types', 'singular_name')) {
-            Schema::table('post_types', function ($table) {
-                $table->string('singular_name')->nullable()->after('slug');
-            });
-        }
-        if (!Schema::hasColumn('post_types', 'is_public')) {
-            Schema::table('post_types', function ($table) {
-                if (Schema::hasColumn('post_types', 'public')) {
-                    $table->renameColumn('public', 'is_public');
-                } else {
-                    $table->boolean('is_public')->default(true)->after('show_in_menu');
-                }
-            });
-        }
-
         $request->validate([
             'plural_label' => 'required|string|max:255',
             'singular_label' => 'required|string|max:255',

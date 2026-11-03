@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
+use Carbon\Carbon;
 use FalconCms\Core\Models\Media;
 use FalconCms\Core\Models\MediaFolder;
 use FalconCms\Core\Support\CustomFonts\FontFile;
@@ -68,9 +69,18 @@ class MediaController extends Controller
         }
 
         // Get unique months for filter dropdown
-        $months = Media::selectRaw('DISTINCT DATE_FORMAT(created_at, "%Y%m") as month_val, DATE_FORMAT(created_at, "%M %Y") as month_label')
-            ->orderBy('month_val', 'desc')
-            ->get();
+        // Spelled for the driver, as the post and page lists do: DATE_FORMAT is MySQL's alone.
+        $driver = \DB::connection()->getDriverName();
+        $yearCol = $driver === 'sqlite' ? "strftime('%Y', created_at)" : 'YEAR(created_at)';
+        $monthCol = $driver === 'sqlite' ? "strftime('%m', created_at)" : 'MONTH(created_at)';
+        $months = Media::query()->toBase()->selectRaw("$yearCol as year, $monthCol as month")
+            ->groupByRaw("$yearCol, $monthCol")
+            ->orderByRaw("$yearCol DESC, $monthCol DESC")
+            ->get()
+            ->map(fn ($row) => (object) [
+                'month_val' => sprintf('%04d%02d', (int) $row->year, (int) $row->month),
+                'month_label' => Carbon::create((int) $row->year, (int) $row->month, 1)->format('F Y'),
+            ]);
 
         // Get existing types for filter dropdown
         $hasImages = Media::where('mime_type', 'like', 'image/%')->exists();
