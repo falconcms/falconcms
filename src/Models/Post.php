@@ -58,10 +58,14 @@ class Post extends Model
         $meta = is_array($this->seo_meta) ? $this->seo_meta : [];
         $score = 0;
 
+        // Lengths are counted in characters, as the editor's counter and Google count them.
+        // strlen() counted bytes, so one en dash or curly quote pushed a 60-character title
+        // over the limit and halved its points.
+
         // Title: 30% (Fallback to post title if meta title is empty)
         $title = !empty($meta['title']) ? $meta['title'] : ($this->title ?? '');
         if (!empty($title)) {
-            $len = strlen($title);
+            $len = mb_strlen($title);
             if ($len >= 50 && $len <= 60) {
                 $score += 30;
             } elseif ($len > 0) {
@@ -71,7 +75,7 @@ class Post extends Model
 
         // Description: 40%
         if (!empty($meta['description'])) {
-            $len = strlen($meta['description']);
+            $len = mb_strlen($meta['description']);
             if ($len >= 150 && $len <= 160) {
                 $score += 40;
             } elseif ($len > 0) {
@@ -79,13 +83,16 @@ class Post extends Model
             }
         }
 
-        // Keywords: 10%
-        if (!empty($meta['keywords'])) {
+        // Focus keyword: 10%. The editor's Focus Keyword field is what the analysis works
+        // from; the old meta keywords field is still honoured for content that has one.
+        if (!empty($meta['focus_keyword']) || !empty($meta['keywords'])) {
             $score += 10;
         }
 
-        // OG Image: 20%
-        if (!empty($meta['og_image'])) {
+        // Share image: 20%. The page shares the same image seo-meta prints: its own social
+        // image, else its featured image, else the site's default — a page with any of them
+        // is not missing one.
+        if (!empty($meta['og_image']) || !empty($this->featured_image) || !empty(get_cms_option('seo_default_image'))) {
             $score += 20;
         }
 
