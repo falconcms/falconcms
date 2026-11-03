@@ -167,7 +167,10 @@
     // Reading time (200 wpm). Counted in any script and from builder content as well as HTML —
     // str_word_count() saw a Bangla article, or any builder post, as "1 min read".
     $readingTimeStr = '';
-    if ($showReadingTime && $ctxContent) {
+    // The post itself when there is one: its stored content, counted once per request.
+    if ($showReadingTime && isset($post) && is_object($post) && isset($post->content)) {
+        $readingTimeStr = falcon_reading_time($post) . ' min read';
+    } elseif ($showReadingTime && $ctxContent) {
         $readingTimeStr = falcon_reading_time((object) ['content' => $ctxContent]) . ' min read';
     }
 

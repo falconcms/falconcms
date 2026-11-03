@@ -476,6 +476,10 @@ if (!function_exists('falcon_post_plain_text')) {
             }
         }
 
+        // Rendered HTML (a Layout section's post content) carries every element's <style> and
+        // <script>; strip_tags() keeps their code as text, and the CSS was counted as words —
+        // a 1,500-word guide on falconcms.com said "47 min read".
+        $content = preg_replace('#<(script|style|noscript|template|svg)\b[^>]*>.*?</\1\s*>#is', ' ', $content) ?? $content;
         $text = html_entity_decode(strip_tags(str_replace(['<br', '</p>', '</li>', '</h'], [' <br', ' </p>', ' </li>', ' </h'], $content)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return trim(preg_replace('/\s+/u', ' ', $text));

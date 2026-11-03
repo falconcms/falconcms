@@ -60,7 +60,8 @@ if (!function_exists('_falcon_layout_post_context')) {
 
         // Full, rendered content for the Content element (builder JSON → HTML, or classic).
         $fullContent = function_exists('get_falcon_post_content') ? get_falcon_post_content($post->content ?? '') : (string) ($post->content ?? '');
-        $plain = trim(strip_tags($fullContent));
+        // The words only: strip_tags() alone kept the rendered elements' CSS and scripts.
+        $plain = function_exists('falcon_post_plain_text') ? falcon_post_plain_text($fullContent) : trim(strip_tags($fullContent));
         $excerpt = $post->excerpt ?? (mb_strlen($plain) > 160 ? mb_substr($plain, 0, 160).'…' : $plain);
 
         return [

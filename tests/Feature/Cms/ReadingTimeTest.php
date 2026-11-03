@@ -54,6 +54,18 @@ class ReadingTimeTest extends TestCase
         $this->assertSame(3, falcon_reading_time($post)); // 452 words
     }
 
+    public function test_rendered_html_is_counted_without_its_styles_and_scripts(): void
+    {
+        // A Layout section hands the Post Meta element the post's rendered HTML, where every
+        // element ships its own <style> and <script>: a 1,500-word guide said "47 min read".
+        $css = '<style>'.str_repeat('.lc-abc{display:flex;padding:24px;color:#333}@media(max-width:600px){.lc-abc{padding:12px}} ', 200).'</style>';
+        $js = '<script>'.str_repeat('document.querySelectorAll(".toc a").forEach(function (a) { a.onclick = go; }); ', 200).'</script>';
+        $html = $css.'<div><p>'.str_repeat('word ', 400).'</p></div>'.$js.'<svg><text>Chart label</text></svg>';
+
+        $this->assertSame(400, falcon_word_count(falcon_post_plain_text($html)));
+        $this->assertSame(2, falcon_reading_time($this->makeStory($html)));
+    }
+
     public function test_the_dynamic_source_takes_a_label_speed_and_digits(): void
     {
         $post = $this->makeStory('<p>'.str_repeat('খবর ', 600).'</p>');
