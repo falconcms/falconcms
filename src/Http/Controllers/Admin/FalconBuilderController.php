@@ -721,8 +721,9 @@ class FalconBuilderController extends Controller
      */
     public function breakpoints()
     {
-        $this->authorize();
-
+        // Read by every builder, the page builder included, which editors use too; it is the two
+        // numbers already printed into the builder page. AdminMiddleware lets in whoever may
+        // write some content, rather than only those who may change settings.
         return response()->json([
             'small' => (int) get_cms_option('theme_small_screen_breakpoint', '800'),
             'medium' => (int) get_cms_option('theme_medium_screen_breakpoint', '1100'),

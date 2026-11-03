@@ -181,6 +181,22 @@ class AdminMiddleware
             }
         }
 
+        // The page builder. No menu owns its addresses, so nobody but an administrator could
+        // open it — an editor with every page permission still met a 403. A post's builder
+        // (admin/falcon-builder/{id}/…) is judged by PostController against that post's type,
+        // as the classic editor is; the helpers it reads from (icons, breakpoints, previews,
+        // the saved-template list) are open to whoever may write some content. Saving to the
+        // shared library stays with the Library's own menu.
+        if (preg_match('#^admin/falcon-builder/\d+(/.*)?$#', $path)) {
+            return true;
+        }
+        $builderHelper = preg_match('#^admin/falcon-builder/(icons/[^/]+|element-preview|motion-visual-preview)$#', $path)
+            || $path === 'admin/falcon-builder-sections/breakpoints'
+            || ($request->isMethodSafe() && in_array($path, ['admin/falcon-builder/library', 'admin/falcon-builder/global-sections'], true));
+        if ($builderHelper) {
+            return $this->canWriteAnyContent($user, $access);
+        }
+
         $bestMatch = $access->ownerOf($path, $request->query('type') ?? $request->query('cpt_slug'));
 
         if (!$bestMatch) {
@@ -208,5 +224,23 @@ class AdminMiddleware
         }
 
         return true;
+    }
+
+    /** Whether the user may write at least one content type: posts, pages or any custom type. */
+    protected function canWriteAnyContent($user, MenuAccess $access): bool
+    {
+        $types = ['post', 'page'];
+        try {
+            $types = array_merge($types, DB::table('post_types')->whereNull('deleted_at')->pluck('slug')->all());
+        } catch (\Throwable $e) {
+            // Without the custom types table, posts and pages still decide.
+        }
+        foreach (array_unique($types) as $type) {
+            if ($access->canWriteType($user, (string) $type) === true) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

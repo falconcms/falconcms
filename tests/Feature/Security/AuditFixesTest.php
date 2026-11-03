@@ -62,24 +62,39 @@ class AuditFixesTest extends TestCase
     }
 
     /**
-     * No menu owns the builder's addresses, so AdminMiddleware lets only administrators in
-     * today. A plugin may open them (falcon_admin_path_access); the controller then has to
-     * hold each save to the type it writes, as the classic editor does.
+     * An editor with page permissions uses the page builder on pages — it used to answer 403
+     * for everyone but administrators — and each save is held to the type it writes.
      */
-    public function test_the_builder_saves_only_types_the_user_may_write(): void
+    public function test_the_builder_opens_for_the_types_the_user_may_write(): void
     {
         (new MenuSeeder)->run();
-        add_falcon_filter('falcon_admin_path_access', fn ($decided, $path) => str_starts_with($path, 'admin/falcon-builder/') ? true : $decided, 10);
         $pagesOnly = $this->userWith(['manage_pages', 'access_all_pages_pages', 'access_add_new_pages']);
         $page = Post::create(['user_id' => $pagesOnly->id, 'title' => 'Mine', 'slug' => 'mine-'.uniqid(), 'type' => 'page', 'status' => 'draft', 'lang_code' => 'en', 'content' => '[]']);
         $post = Post::create(['user_id' => $pagesOnly->id, 'title' => 'Not mine', 'slug' => 'not-mine-'.uniqid(), 'type' => 'post', 'status' => 'published', 'lang_code' => 'en', 'content' => 'original']);
+
+        $this->actingAs($pagesOnly)->get("/admin/falcon-builder/{$page->id}")->assertOk();
+        $this->actingAs($pagesOnly)->get("/admin/falcon-builder/{$post->id}")->assertForbidden();
+        // What the builder reads from while it is open.
+        $this->actingAs($pagesOnly)->getJson('/admin/falcon-builder/icons/fontawesome')->assertOk();
+        $this->actingAs($pagesOnly)->getJson('/admin/falcon-builder-sections/breakpoints')->assertOk();
 
         $layout = ['layout' => [['id' => 'c', 'columns' => []]]];
         $this->actingAs($pagesOnly)->postJson("/admin/falcon-builder/{$page->id}/save", $layout)->assertOk();
         $this->actingAs($pagesOnly)->postJson("/admin/falcon-builder/{$post->id}/save", $layout)->assertForbidden();
         $this->actingAs($pagesOnly)->postJson("/admin/falcon-builder/{$post->id}/autosave", $layout)->assertForbidden();
-
         $this->assertSame('original', $post->fresh()->content);
+
+        // Saving to the shared library is still the Library menu's to grant.
+        $this->actingAs($pagesOnly)->postJson('/admin/falcon-builder/library/save', ['name' => 'x', 'type' => 'container', 'content' => []])->assertForbidden();
+    }
+
+    public function test_the_builder_helpers_stay_closed_to_a_user_who_writes_nothing(): void
+    {
+        (new MenuSeeder)->run();
+        $reader = $this->userWith(['manage_pages', 'access_all_pages_pages']);
+
+        $this->actingAs($reader)->getJson('/admin/falcon-builder/icons/fontawesome')->assertForbidden();
+        $this->actingAs($reader)->getJson('/admin/falcon-builder-sections/breakpoints')->assertForbidden();
     }
 
     public function test_a_theme_slug_cannot_climb_out_of_the_themes_folder(): void

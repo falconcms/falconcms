@@ -153,6 +153,7 @@ class PostController extends Controller
     {
         $part = in_array($part, ['header', 'titlebar', 'footer'], true) ? $part : 'header';
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
 
         // Establish the same context the frontend would for this post, so the Layout Builder
         // resolves the header/footer that actually applies to it (and dynamic values resolve).
@@ -475,6 +476,7 @@ class PostController extends Controller
     public function previewBuilder($id)
     {
         $post = Post::findOrFail($id);
+        $this->authorizePostAction($post, 'edit');
 
         // This would typically return a front-end view that renders the builder JSON
         return view('falcon-cms::admin.falcon-builder.preview', compact('post'));
