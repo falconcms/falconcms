@@ -141,6 +141,13 @@ final class ContainerConverter
             }
             self::attr($a, 'sticky_offset', $s['stickyOffset'] ?? null);
             self::attr($a, 'sticky_z_index', $s['stickyZIndex'] ?? null);
+            // Where it lets go: after N px stuck, or at an element. Quotes and brackets would
+            // break the shortcode, so the selector is kept to #id, .class or a heading's text.
+            if (in_array($s['stickyEnd'] ?? '', ['distance', 'element'], true)) {
+                $a[] = 'sticky_end="'.$s['stickyEnd'].'"';
+                self::attr($a, 'sticky_end_distance', isset($s['stickyEndDistance']) && $s['stickyEndDistance'] !== '' ? (int) $s['stickyEndDistance'] : null);
+                self::attr($a, 'sticky_end_at', trim(str_replace(['"', '[', ']'], '', (string) ($s['stickyEndAt'] ?? ''))));
+            }
             self::attr($a, 'sticky_bg_color', $s['stickyBgColor'] ?? null);
             if (!empty($s['stickyBgColor']) && isset($s['stickyBgColorOpacity']) && (float) $s['stickyBgColorOpacity'] < 1) {
                 $a[] = 'sticky_bg_color_opacity="'.$s['stickyBgColorOpacity'].'"';
@@ -311,6 +318,9 @@ final class ContainerConverter
             'stickyMobile' => ($a['sticky_mobile'] ?? '') !== 'no',
             'stickyOffset' => self::num($a['sticky_offset'] ?? 0),
             'stickyZIndex' => self::num($a['sticky_z_index'] ?? 99),
+            'stickyEnd' => in_array($a['sticky_end'] ?? '', ['distance', 'element'], true) ? $a['sticky_end'] : '',
+            'stickyEndDistance' => isset($a['sticky_end_distance']) ? (int) $a['sticky_end_distance'] : 600,
+            'stickyEndAt' => $a['sticky_end_at'] ?? '',
             'stickyBgColor' => $a['sticky_bg_color'] ?? '',
             'stickyBgColorOpacity' => isset($a['sticky_bg_color_opacity']) ? (float) $a['sticky_bg_color_opacity'] : 1,
         ];

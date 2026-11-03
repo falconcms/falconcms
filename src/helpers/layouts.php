@@ -579,3 +579,37 @@ if (!function_exists('get_falcon_content')) {
         return null;
     }
 }
+
+if (!function_exists('falcon_sticky_end_attributes')) {
+    /**
+     * The data-* attributes that tell a sticky column or container where to let go.
+     *
+     * A sticky box travels to the end of its own parent, and a top-level container's
+     * parent is the whole page, so without this it rode along to the footer. Two ways
+     * to stop earlier: after the reader has scrolled N px with it stuck, or when a
+     * chosen element (#id, .class or a heading's text) reaches its bottom edge. Either
+     * way the box is pushed up with the page rather than vanishing.
+     */
+    function falcon_sticky_end_attributes(array $s): string
+    {
+        if (empty($s['sticky'])) {
+            return '';
+        }
+        $mode = (string) ($s['stickyEnd'] ?? '');
+        $top = (int) ($s['stickyOffset'] ?? 0);
+        if ($mode === 'distance') {
+            // Blank is the field's placeholder, not 0 (which would let go at once).
+            $raw = $s['stickyEndDistance'] ?? '';
+            $value = max(0, $raw === '' || $raw === null ? 600 : (int) $raw);
+        } elseif ($mode === 'element') {
+            $value = mb_substr(trim((string) ($s['stickyEndAt'] ?? '')), 0, 120);
+            if ($value === '') {
+                return '';
+            }
+        } else {
+            return '';
+        }
+
+        return ' data-sticky-end="'.e($mode).'" data-sticky-end-value="'.e((string) $value).'" data-sticky-top="'.$top.'"';
+    }
+}

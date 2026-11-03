@@ -1731,7 +1731,7 @@
                 boxShadow: false, boxShadowPositionVertical: 0, boxShadowPositionHorizontal: 0,
                 boxShadowBlurRadius: 0, boxShadowSpreadRadius: 0, boxShadowColor: '#000000', boxShadowStyle: 'outer',
                 sticky: false, stickyDesktop: true, stickyTablet: true, stickyMobile: true,
-                stickyOffset: 0, stickyZIndex: 99,
+                stickyOffset: 0, stickyZIndex: 99, stickyEnd: '', stickyEndDistance: 600, stickyEndAt: '',
                 zIndex: null, overflow: 'default', order: null,
                 ...overrides
             });

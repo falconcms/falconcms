@@ -1269,6 +1269,29 @@
                                class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
                     </div>
 
+                    <!-- Stop sticking -->
+                    <div class="mb-3">
+                        <label class="text-[10px] text-slate-500 block mb-1.5">Stop Sticking</label>
+                        <div class="flex bg-slate-100 rounded overflow-hidden">
+                            @foreach([['', 'Section end'], ['distance', 'After scroll'], ['element', 'At element']] as [$val, $lbl])
+                            <button type="button" @click="editingColumn.settings.stickyEnd = '{{ $val }}'"
+                                    :class="(editingColumn.settings.stickyEnd || '') === '{{ $val }}' ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-500 hover:bg-slate-200'"
+                                    class="flex-1 py-1.5 text-[10px] font-medium transition-colors">{{ $lbl }}</button>
+                            @endforeach
+                        </div>
+                        <template v-if="editingColumn.settings.stickyEnd === 'distance'">
+                            <input type="number" min="0" v-model.number="editingColumn.settings.stickyEndDistance" placeholder="600"
+                                   class="w-full mt-2 border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <p class="text-[10px] text-slate-400 mt-1">Pixels the reader scrolls with the column stuck; then it scrolls away with the page.</p>
+                        </template>
+                        <template v-else-if="editingColumn.settings.stickyEnd === 'element'">
+                            <input type="text" maxlength="120" v-model="editingColumn.settings.stickyEndAt" placeholder="#cta, .site-footer or a heading's text"
+                                   class="w-full mt-2 border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <p class="text-[10px] text-slate-400 mt-1">When this element reaches the column's bottom edge, the column is pushed up with it.</p>
+                        </template>
+                        <p v-else class="text-[10px] text-slate-400 mt-1">Sticks until its parent section ends. A top-level container's parent is the whole page.</p>
+                    </div>
+
                     <!-- Sticky BG Color -->
                     <div>
                         <div class="flex justify-between items-center mb-2">

@@ -609,6 +609,9 @@
         :initLazyStickyObservers();
 })();
 </script>
+@if(falcon_sticky_end_attributes($s) !== '')
+@include('falcon-cms::frontend.builder.sticky-end')
+@endif
 @endif
 
 @php
@@ -629,7 +632,7 @@
 @if($colShowByCondition)
 <{{ $htmlTag }} class="lazy-column {{ $colCid }} {{ $visibilityClasses }} {{ $s['cssClass'] ?? '' }} {{ !empty($s['sticky']) ? 'lazy-sticky-col' : '' }}{{ $colAnimType ? ' lz-anim lz-anim-' . $colAnimType : '' }}"
     @if(!empty($s['cssId'])) id="{{ $s['cssId'] }}" @endif
-    style="{{ implode('; ', $outerStyles) }}"@if($colAnimType) data-anim-duration="{{ $s['anim_duration'] ?? 600 }}" data-anim-delay="{{ $s['anim_delay'] ?? 0 }}" data-anim-easing="{{ $s['anim_easing'] ?? 'ease' }}"@endif{!! apply_falcon_filters('falcon_builder_node_attributes', '', $column, 'column') !!}>
+    style="{{ implode('; ', $outerStyles) }}"@if($colAnimType) data-anim-duration="{{ $s['anim_duration'] ?? 600 }}" data-anim-delay="{{ $s['anim_delay'] ?? 0 }}" data-anim-easing="{{ $s['anim_easing'] ?? 'ease' }}"@endif{!! falcon_sticky_end_attributes($s) !!}{!! apply_falcon_filters('falcon_builder_node_attributes', '', $column, 'column') !!}>
     
     @if($link)
         <a href="{{ $link }}" target="{{ $s['linkTarget'] ?? '_self' }}" style="text-decoration: none; color: inherit; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100% !important; width: 100%;">
