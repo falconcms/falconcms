@@ -142,6 +142,9 @@ Contributors included — sees every row of a list it may read, and with that se
 permission can edit any item in it. To keep someone to reading, give their role the list without
 Add New.
 
+The page builder follows the same rule *(since v2.8.18)*: a role with **Add New** for Pages (or
+Posts, or a post type) can open those items in the builder and save them; one without it cannot.
+
 ## Sign-in Lockout
 
 Every login form — the dashboard's, the shop's **My Account** and plugins' own (the wholesale

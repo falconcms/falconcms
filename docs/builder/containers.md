@@ -25,7 +25,7 @@ Right-click the container toolbar or click the gear icon:
 - CSS Class, CSS ID
 - Custom CSS
 - Animation on scroll (fade in, slide up, zoom)
-- Sticky (sticks to top on scroll)
+- Sticky (sticks to top on scroll), with **Stop Sticking** — see [Sticky](#sticky)
 
 **Visibility:**
 - Show/hide on Desktop, Tablet, Mobile
@@ -83,6 +83,9 @@ Click the column toolbar:
 - CSS Class, CSS ID
 - Custom CSS
 
+**Extra:**
+- Sticky, with a top offset and **Stop Sticking** — see [Sticky](#sticky)
+
 ### Column Width
 
 **Design → Width** offers the usual fractions — `1/6` through `1/1`, plus `Auto`.
@@ -108,6 +111,21 @@ This makes your layout naturally stack on mobile.
 Nested columns have the same control, in the same place.
 
 ---
+
+## Sticky
+
+A container, a column or a nested column can stay on screen while the page scrolls: switch on
+**Sticky** and set the **Top Offset** (the gap above it, for example the height of a sticky
+header). **Stop Sticking** *(since v2.8.18)* chooses where it lets go:
+
+| Stop Sticking | The box scrolls away with the page |
+|---|---|
+| **Section end** (default) | when its parent section ends. A top-level container's parent is the whole page |
+| **After scroll** | once the reader has scrolled this many pixels with it stuck |
+| **At element** | when a chosen element reaches its bottom edge: `#cta`, `.site-footer`, `footer` or a heading's text |
+
+The box is pushed up by the page rather than disappearing. Stop Sticking is not offered in
+headers, footers, page title bars and content layouts, which stick as one piece.
 
 ## Adding Elements to Columns
 

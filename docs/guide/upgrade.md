@@ -69,6 +69,7 @@ update shows as open again.
 | `php artisan falcon:update` | Update assets, migrations, and permissions |
 | `php artisan falcon:seed` | Seed default menus and demo content |
 | `php artisan falcon:publish-scheduled` | Manually publish due scheduled posts |
+| `php artisan falcon:prune-post-views` | Drop [post view](/guide/post-views) daily figures older than the days kept |
 | `php artisan make:falcon-page {Name}` | Scaffold a new admin dashboard page |
 
 ## Scaffolding a Custom Admin Page
@@ -92,7 +93,8 @@ Falcon CMS auto-registers a scheduled task via Laravel's scheduler. Ensure your 
 * * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-This runs `falcon:publish-scheduled` every minute to auto-publish scheduled posts.
+This runs `falcon:publish-scheduled` every minute to auto-publish scheduled posts, and
+`falcon:prune-post-views` every night at 03:40.
 
 If you can't set up cron, Falcon CMS also auto-publishes as a **terminating callback** after every web request — so scheduled posts publish on the next page load after their scheduled time.
 

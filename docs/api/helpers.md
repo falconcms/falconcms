@@ -50,7 +50,7 @@ get_falcon_posts([
     'lang'              => 'en',          // language code
     'author'            => 3,             // user ID
     'search'            => 'keyword',     // search term
-    'orderby'           => 'date',        // date|title|random|menu_order
+    'orderby'           => 'date',        // date|title|random|menu_order|views|views_day|views_week|views_month
     'order'             => 'DESC',        // ASC|DESC
     'exclude'           => [1, 2, 3],     // exclude post IDs
     'include'           => [4, 5],        // include only these IDs

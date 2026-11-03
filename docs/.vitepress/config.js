@@ -110,6 +110,7 @@ export default defineConfig({
             { text: 'Security (Pro)', link: '/guide/security' },
             { text: 'Effects (Pro)', link: '/builder/effects' },
             { text: 'Analytics', link: '/guide/analytics' },
+            { text: 'Post Views', link: '/guide/post-views' },
             { text: 'Performance', link: '/guide/performance' },
           ]
         },

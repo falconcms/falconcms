@@ -16,7 +16,7 @@ part of the free core.
 - **Falcon Search Console** — Google Search Console inside the admin, with opportunities, a content plan and each page's numbers in its editor ([docs](/guide/search-console))
 - **Falcon Wholesale** — wholesale and B2B selling in the shop: applications with approval, customer levels, prices per level and quantity tier, a trade portal, buying on account, quotes and company accounts ([docs](/wholesale/overview))
 - **Falcon Security** — two-factor sign-in and passkeys, a firewall with attack patterns, a malware scanner, temporary access for developers, a lockdown switch, a security log with alerts, card-testing protection for the shop and live traffic ([docs](/guide/security))
-- **Falcon News** — for news sites: a view counter that works behind the page cache, Most Viewed, RSS feeds and a Google News sitemap ([docs](/guide/news))
+- **Falcon News** — for news sites: a Most Viewed screen and settings for the core's view counter, RSS feeds and a Google News sitemap ([docs](/guide/news))
 - **Falcon Effects** — scroll, hover, border, text, particle and 3D effects for the builder, a 360° panorama viewer, and a 3D / 360° view for shop products ([docs](/builder/effects))
 
 Bundled plugins arrive with Pro but stay off until you activate them under **Plugins**.
