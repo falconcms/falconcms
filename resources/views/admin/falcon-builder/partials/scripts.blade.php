@@ -4671,6 +4671,20 @@
             const falconNum = (value, fallback) => (value === null || value === undefined || value === '') ? fallback : value;
 
             /**
+             * Whether a Menu element is collapsed into its mobile menu at the device being
+             * previewed — the canvas's form of frontend/builder/elements/menu.blade.php's
+             * breakpoint. The canvas used to style every menu as a mobile menu on tablet and
+             * mobile, so a footer menu set to never collapse ("none") showed 50px rows and
+             * 16px text there while the site kept its compact desktop list.
+             */
+            const menuCollapsed = (el) => {
+                const bp = (el && el.settings && el.settings.mobileCollapseBreakpoint) || 'tablet';
+                if (bp === 'none') return false;
+                const rank = { mobile: 1, tablet: 2, desktop: 3 };
+                return (rank[bp] || 2) >= (rank[device.value] || 1);
+            };
+
+            /**
              * One edge's border width for the Button, hovered or resting.
              *
              * Hover Border Size is per edge and every field is optional, so a blank one keeps
@@ -7555,7 +7569,7 @@
                 isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal, respUnitVal,
                 iconBoxIconStyle, iconBoxGlyphStyle, iconBoxHoverCss, iconBoxState, iconBoxField,
-                falconButtonHoverAnim, falconBtnHoverBorder, falconNum,
+                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,
                 fcTanimModes: FC_TANIM_MODES, fcTanimEasings: FC_TANIM_EASINGS,

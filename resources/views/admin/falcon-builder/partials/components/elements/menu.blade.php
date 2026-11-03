@@ -10,7 +10,7 @@
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: (device === 'mobile' || device === 'tablet') ? (el.settings.mobileMenuTriggerHorizontalAlign || 'center') : 'stretch'
+            alignItems: menuCollapsed(el) ? (el.settings.mobileMenuTriggerHorizontalAlign || 'center') : 'stretch'
          },
          getCanvasVisibilityStyle(el.settings)
      ]">
@@ -50,7 +50,7 @@
         wins without either having to outrank the other by weight. The front-end template
         does the same thing for the same reason.
     -->
-    <component :is="'style'" v-if="device === 'desktop'"
+    <component :is="'style'" v-if="!menuCollapsed(el)"
         :key="'menu-style-' + el.id + '-' + (el.settings.justification || 'flex-start') + '-' + (el.settings.submenuDirection || 'left') + '-' + (el.settings.submenuSpace || 10) + '-' + (el.settings.subSubMenuDirection || 'right') + '-' + (el.settings.subSubMenuOffset ?? 5) + '-' + (el.settings.submenuTextColorHover || '#2271b1') + '-' + (el.settings.itemColor || '') + '-' + (el.settings.itemBgColor || '') + '-' + (el.settings.itemColorHover || '') + '-' + (el.settings.itemBgColorHover || '')"
         :innerHTML="
             '.menu-container-' + el.id + ' .lazy-menu-nav { justify-content: ' + (el.settings.justification || 'flex-start') + '!important; }' +
@@ -200,7 +200,7 @@
                 <li v-for="(item, idx) in falconMenuData[el.settings.menuId]"
                     class="admin-menu-item relative group/item"
                     :key="idx"
-                    :style="device === 'desktop' ? { display: 'flex', alignItems: (el.settings.alignItems || 'center') } : {}"
+                    :style="!menuCollapsed(el) ? { display: 'flex', alignItems: (el.settings.alignItems || 'center') } : {}"
                     @mouseenter="el._hoveredIdx = idx; el._hoveredSubIdx = null; el._hoveredGSubIdx = null; el._activeMenuLink = null; el._activeSubMenuLink = null"
                     @mouseleave="el._hoveredIdx = null; el._hoveredSubIdx = null; el._hoveredGSubIdx = null; el._activeMenuLink = null; el._activeSubMenuLink = null">
                     
@@ -208,7 +208,7 @@
                        class="admin-menu-link flex items-center justify-between gap-2 transition-all"
                        @mouseenter="el._activeMenuLink = idx"
                        @mouseleave="el._activeMenuLink = null"
-                       :style='(device === "mobile" || device === "tablet") ? ("color: " + (el._activeMenuLink === idx ? (el.settings.mobileMenuTextColorHover || "#2271b1") : (el.settings.mobileMenuTextColor || "#333")) + " !important; " +
+                       :style='menuCollapsed(el) ? ("color: " + (el._activeMenuLink === idx ? (el.settings.mobileMenuTextColorHover || "#2271b1") : (el.settings.mobileMenuTextColor || "#333")) + " !important; " +
                               "background-color: " + (el._activeMenuLink === idx ? (el.settings.mobileMenuBgColorHover || "#f8f9fa") : "transparent") + " !important; " +
                               "padding-top: " + getUnitVal(el.settings.mobileMenuItemPaddingTop ?? 12, "px") + " !important; " +
                               "padding-right: " + getUnitVal(el.settings.mobileMenuItemPaddingRight ?? 20, "px") + " !important; " +
@@ -253,7 +253,7 @@
                            }'>
                         <span :style="{ display: 'inline-flex', alignItems: 'center', gap: ((parseInt(el.settings.menuIconGap) >= 0 ? parseInt(el.settings.menuIconGap) : 6) + 'px'), flexDirection: (el.settings.menuIconPosition === 'right' ? 'row-reverse' : 'row') }">
                         <i v-if="item.icon" :class="item.icon"></i>
-                        <span v-if="!(item.show_only_icon && item.icon)" :style='(device === "mobile" || device === "tablet") ? (
+                        <span v-if="!(item.show_only_icon && item.icon)" :style='menuCollapsed(el) ? (
                             "font-size: " + (el.settings.mobileMenuFontSize ? (isNaN(el.settings.mobileMenuFontSize) ? el.settings.mobileMenuFontSize : el.settings.mobileMenuFontSize + "px") : "16px") + " !important; " +
                             "letter-spacing: " + (el.settings.mobileMenuLetterSpacing ? (isNaN(el.settings.mobileMenuLetterSpacing) ? el.settings.mobileMenuLetterSpacing : el.settings.mobileMenuLetterSpacing + "px") : "0px") + " !important; " +
                             "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
@@ -263,7 +263,7 @@
                             "color: inherit !important;"
                         ) : ""'>@{{ item.title }}</span>
                         </span>
-                        <i v-if="item.children && item.children.length > 0 && (device === 'desktop' || el.settings.mobileMenuMode !== 'expanded') && ((device === 'mobile' || device === 'tablet') || (el.settings.arrowScopeObj && el.settings.arrowScopeObj.main) || (!(el.settings.arrowScopeObj && el.settings.arrowScopeObj.main) && !(el.settings.arrowScopeObj && el.settings.arrowScopeObj.submenu) && el.settings.showArrows !== 'no'))"
+                        <i v-if="item.children && item.children.length > 0 && (!menuCollapsed(el) || el.settings.mobileMenuMode !== 'expanded') && (menuCollapsed(el) || (el.settings.arrowScopeObj && el.settings.arrowScopeObj.main) || (!(el.settings.arrowScopeObj && el.settings.arrowScopeObj.main) && !(el.settings.arrowScopeObj && el.settings.arrowScopeObj.submenu) && el.settings.showArrows !== 'no'))"
                            class="fa fa-chevron-down admin-menu-arrow text-[10px]"
                            :style="{
                                transform: el._hoveredIdx === idx ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -274,16 +274,16 @@
                     </a>
 
                     <!-- Desktop hover bridge: spans the submenuSpace gap so mouseleave doesn't fire mid-air -->
-                    <div v-if="device === 'desktop' && item.children && item.children.length > 0"
+                    <div v-if="!menuCollapsed(el) && item.children && item.children.length > 0"
                          :style="{ position: 'absolute', top: '100%', left: '0', right: '0', height: ((el.settings.submenuSpace || 10) + 4) + 'px', zIndex: '998' }">
                     </div>
 
                     <!-- Submenu (Level 2) -->
                     <ul v-if="item.children && item.children.length > 0"
                         class="admin-submenu"
-                        :class="{'absolute top-full left-0 z-[1000] transition-all duration-300': device === 'desktop', 'static block': device !== 'desktop'}"
+                        :class="{'absolute top-full left-0 z-[1000] transition-all duration-300': !menuCollapsed(el), 'static block': menuCollapsed(el)}"
                         :style="[
-                            (device === 'mobile' || device === 'tablet') ? {
+                            menuCollapsed(el) ? {
                                 backgroundColor: el.settings.mobileMenuBgColor || 'transparent',
                                 display: (el.settings.mobileMenuMode == 'expanded' || el._hoveredIdx === idx) ? 'block !important' : 'none',
                                 opacity: (el.settings.mobileMenuMode == 'expanded' || el._hoveredIdx === idx) ? '1 !important' : '1',
@@ -323,7 +323,7 @@
                                class="admin-menu-link flex items-center justify-between transition-all"
                                @mouseenter="el._activeSubMenuLink = cidx"
                                @mouseleave="el._activeSubMenuLink = null"
-                                :style='(device === "mobile" || device === "tablet") ? ("color: " + (el._activeSubMenuLink === cidx ? (el.settings.mobileMenuTextColorHover || "#2271b1") : (el.settings.mobileMenuTextColor || "#333")) + " !important; " +
+                                :style='menuCollapsed(el) ? ("color: " + (el._activeSubMenuLink === cidx ? (el.settings.mobileMenuTextColorHover || "#2271b1") : (el.settings.mobileMenuTextColor || "#333")) + " !important; " +
                                        "background-color: " + (el._activeSubMenuLink === cidx ? (el.settings.mobileMenuBgColorHover || "#f8f9fa") : "transparent") + " !important; " +
                                        "padding-top: " + getUnitVal(el.settings.mobileMenuItemPaddingTop ?? 12, "px") + " !important; " +
                                        "padding-right: " + getUnitVal(el.settings.mobileMenuItemPaddingRight ?? 20, "px") + " !important; " +
@@ -364,7 +364,7 @@
                                 }'>
                                  <span :style="{ display: 'inline-flex', alignItems: 'center', gap: ((parseInt(el.settings.menuIconGap) >= 0 ? parseInt(el.settings.menuIconGap) : 6) + 'px'), flexDirection: (el.settings.menuIconPosition === 'right' ? 'row-reverse' : 'row') }">
                                  <i v-if="child.icon" :class="child.icon"></i>
-                                 <span v-if="!(child.show_only_icon && child.icon)" :style='(device === "mobile" || device === "tablet") ? (
+                                 <span v-if="!(child.show_only_icon && child.icon)" :style='menuCollapsed(el) ? (
                                      "font-size: " + (el.settings.mobileMenuFontSize ? (isNaN(el.settings.mobileMenuFontSize) ? el.settings.mobileMenuFontSize : el.settings.mobileMenuFontSize + "px") : "15px") + " !important; " +
                                      "letter-spacing: " + (el.settings.mobileMenuLetterSpacing ? (isNaN(el.settings.mobileMenuLetterSpacing) ? el.settings.mobileMenuLetterSpacing : el.settings.mobileMenuLetterSpacing + "px") : "0px") + " !important; " +
                                      "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
@@ -374,10 +374,10 @@
                                      "color: inherit !important;"
                                  ) : ""'>@{{ child.title }}</span>
                                  </span>
-                                <i v-if="child.children && child.children.length > 0 && (device === 'desktop' || el.settings.mobileMenuMode !== 'expanded') && ((device === 'mobile' || device === 'tablet') || (el.settings.arrowScopeObj && el.settings.arrowScopeObj.submenu) || (!(el.settings.arrowScopeObj && el.settings.arrowScopeObj.main) && !(el.settings.arrowScopeObj && el.settings.arrowScopeObj.submenu) && el.settings.showArrows !== 'no'))"
+                                <i v-if="child.children && child.children.length > 0 && (!menuCollapsed(el) || el.settings.mobileMenuMode !== 'expanded') && (menuCollapsed(el) || (el.settings.arrowScopeObj && el.settings.arrowScopeObj.submenu) || (!(el.settings.arrowScopeObj && el.settings.arrowScopeObj.main) && !(el.settings.arrowScopeObj && el.settings.arrowScopeObj.submenu) && el.settings.showArrows !== 'no'))"
                                    :class="'fa admin-menu-arrow text-[10px] ' + (el.settings.subSubMenuDirection === 'left' ? 'fa-chevron-left' : 'fa-chevron-right')"
                                    :style="{
-                                       transform: (device === 'mobile' || device === 'tablet') ? (el._hoveredSubIdx === cidx ? 'rotate(180deg)' : 'rotate(0deg)') : (el._hoveredSubIdx === cidx ? 'rotate(0deg)' : (el.settings.subSubMenuDirection === 'left' ? 'rotate(90deg)' : 'rotate(-90deg)')),
+                                       transform: menuCollapsed(el) ? (el._hoveredSubIdx === cidx ? 'rotate(180deg)' : 'rotate(0deg)') : (el._hoveredSubIdx === cidx ? 'rotate(0deg)' : (el.settings.subSubMenuDirection === 'left' ? 'rotate(90deg)' : 'rotate(-90deg)')),
                                        transition: 'all 0.3s',
                                        opacity: 0.6,
                                        fontSize: '10px'
@@ -385,7 +385,7 @@
                             </a>
 
                             <!-- Desktop hover bridge: spans the subSubMenuOffset gap horizontally -->
-                            <div v-if="device === 'desktop' && child.children && child.children.length > 0"
+                            <div v-if="!menuCollapsed(el) && child.children && child.children.length > 0"
                                  :style="{
                                      position: 'absolute', top: '0', height: '100%',
                                      width: ((el.settings.subSubMenuOffset || 5) + 4) + 'px', zIndex: '998',
@@ -396,9 +396,9 @@
                             <!-- Level 3 Submenu -->
                             <ul v-if="child.children && child.children.length > 0"
                                 class="admin-submenu"
-                                :class="{'absolute top-0 left-full z-[1001] transition-all duration-300': device === 'desktop', 'static block': device !== 'desktop'}"
+                                :class="{'absolute top-0 left-full z-[1001] transition-all duration-300': !menuCollapsed(el), 'static block': menuCollapsed(el)}"
                                 :style="[
-                                    (device === 'mobile' || device === 'tablet') ? {
+                                    menuCollapsed(el) ? {
                                         backgroundColor: el.settings.mobileMenuBgColor || 'transparent',
                                         paddingTop: '0',
                                         paddingRight: '0',
@@ -435,7 +435,7 @@
                                     @mouseleave="el._hoveredGSubIdx = null">
                                     <a href="javascript:void(0)" 
                                        class="admin-menu-link flex items-center justify-between transition-all"
-                                :style='(device === "mobile" || device === "tablet") ? ("color: " + (el._hoveredGSubIdx === gidx ? (el.settings.mobileMenuTextColorHover || "#2271b1") : (el.settings.mobileMenuTextColor || "#333")) + " !important; " +
+                                :style='menuCollapsed(el) ? ("color: " + (el._hoveredGSubIdx === gidx ? (el.settings.mobileMenuTextColorHover || "#2271b1") : (el.settings.mobileMenuTextColor || "#333")) + " !important; " +
                                        "background-color: " + (el._hoveredGSubIdx === gidx ? (el.settings.mobileMenuBgColorHover || "#f8f9fa") : "transparent") + " !important; " +
                                        "padding-top: " + getUnitVal(el.settings.mobileMenuItemPaddingTop ?? 12, "px") + " !important; " +
                                        "padding-right: " + getUnitVal(el.settings.mobileMenuItemPaddingRight ?? 20, "px") + " !important; " +
@@ -476,7 +476,7 @@
                                          }'>
                                          <span :style="{ display: 'inline-flex', alignItems: 'center', gap: ((parseInt(el.settings.menuIconGap) >= 0 ? parseInt(el.settings.menuIconGap) : 6) + 'px'), flexDirection: (el.settings.menuIconPosition === 'right' ? 'row-reverse' : 'row') }">
                                          <i v-if="gchild.icon" :class="gchild.icon"></i>
-                                         <span v-if="!(gchild.show_only_icon && gchild.icon)" :style='(device === "mobile" || device === "tablet") ? (
+                                         <span v-if="!(gchild.show_only_icon && gchild.icon)" :style='menuCollapsed(el) ? (
                                              "font-size: " + (el.settings.mobileMenuFontSize ? (isNaN(el.settings.mobileMenuFontSize) ? el.settings.mobileMenuFontSize : el.settings.mobileMenuFontSize + "px") : "15px") + " !important; " +
                                              "letter-spacing: " + (el.settings.mobileMenuLetterSpacing ? (isNaN(el.settings.mobileMenuLetterSpacing) ? el.settings.mobileMenuLetterSpacing : el.settings.mobileMenuLetterSpacing + "px") : "0px") + " !important; " +
                                              "line-height: " + (el.settings.mobileMenuLineHeight || "inherit") + " !important; " +
@@ -486,10 +486,10 @@
                                              "color: inherit !important;"
                                          ) : ""'>@{{ gchild.title }}</span>
                                          </span>
-                                         <i v-if="gchild.children && gchild.children.length > 0 && (device === 'desktop' || el.settings.mobileMenuMode !== 'expanded')"
+                                         <i v-if="gchild.children && gchild.children.length > 0 && (!menuCollapsed(el) || el.settings.mobileMenuMode !== 'expanded')"
                                             class="fa fa-chevron-down admin-menu-arrow text-[10px]"
                                             :style="{
-                                                transform: ((device === 'mobile' || device === 'tablet') && el._hoveredGSubIdx === gidx) ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                transform: (menuCollapsed(el) && el._hoveredGSubIdx === gidx) ? 'rotate(180deg)' : 'rotate(0deg)',
                                                 transition: 'all 0.3s',
                                                 opacity: 0.6,
                                                 fontSize: '10px'
