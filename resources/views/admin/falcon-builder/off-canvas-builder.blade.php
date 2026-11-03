@@ -80,6 +80,9 @@
                 $menuNamesJson = json_encode($menuNames);
             } catch(\Exception $e) { $menuDataJson='{}'; $menuNamesJson='{}'; }
         @endphp
+        {{-- Dynamic sources beyond the built-in ones (the core's Post Views, a plugin's own) reach
+             every builder, not only the page builder: a post card is where views are shown most. --}}
+        window.falconExtraDynSources = {!! json_encode(function_exists('falcon_extra_dynamic_sources') ? falcon_extra_dynamic_sources() : [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) !!};
         window.falconMenuData  = {!! $menuDataJson !!};
         window.falconMenusList = {!! $menuNamesJson !!};
         @php $builderPostCards = json_decode(get_cms_option('falcon_post_cards','[]'),true) ?: []; @endphp

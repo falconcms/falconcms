@@ -137,6 +137,19 @@ class PostViewsTest extends TestCase
         $this->assertSame('1,530 views', falcon_resolve_tokens('{lazy:post_views}', $story));
     }
 
+    /**
+     * The extra sources reached only the page builder, so Post Views was missing from the Post
+     * Card builder — where a view count is most often wanted — and from the menu and off-canvas
+     * builders.
+     */
+    public function test_every_builder_is_given_the_extra_dynamic_sources(): void
+    {
+        foreach (['index', 'post-card-builder', 'mega-menu-builder', 'off-canvas-builder'] as $view) {
+            $source = (string) file_get_contents(__DIR__.'/../../../resources/views/admin/falcon-builder/'.$view.'.blade.php');
+            $this->assertStringContainsString('window.falconExtraDynSources', $source, $view);
+        }
+    }
+
     public function test_a_post_page_carries_the_beacon(): void
     {
         $story = $this->story('Story');
