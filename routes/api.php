@@ -1,7 +1,14 @@
 <?php
 
 use FalconCms\Core\Http\Controllers\Api\V1\CmsApiController;
+use FalconCms\Core\Http\Controllers\PostViewHitController;
 use Illuminate\Support\Facades\Route;
+
+// The post views beacon: no session, cookies or CSRF — the page that sends it may be a day-old
+// cached copy — only a rate limit per address. Always answers 204.
+Route::post('falcon/post-views', PostViewHitController::class)
+    ->middleware('throttle:120,1')
+    ->name('falcon.post-views.hit');
 
 Route::prefix('api/v1')->middleware(['api', 'throttle:60,1'])->group(function () {
 

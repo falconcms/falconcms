@@ -15,6 +15,7 @@ use FalconCms\Core\Console\Commands\PluginDeactivate;
 use FalconCms\Core\Console\Commands\PluginList;
 use FalconCms\Core\Console\Commands\PruneActivityLogs;
 use FalconCms\Core\Console\Commands\PruneAnalytics;
+use FalconCms\Core\Console\Commands\PrunePostViews;
 use FalconCms\Core\Console\Commands\PublishScheduledPosts;
 use FalconCms\Core\Console\Commands\ReindexProductAttributes;
 use FalconCms\Core\Console\Commands\SeedFalconCms;
@@ -35,6 +36,7 @@ use FalconCms\Core\Support\CustomFonts\CustomFonts;
 use FalconCms\Core\Support\MotionVisual\MotionVisuals;
 use FalconCms\Core\Support\OffCanvas;
 use FalconCms\Core\Support\PluginManager;
+use FalconCms\Core\Support\PostViews;
 use FalconCms\Core\Support\SettingsExtension;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -182,6 +184,10 @@ class FalconCmsServiceProvider extends ServiceProvider
                 echo CustomFonts::styleTag();
             }, 1);
 
+            // Post views: the counter's beacon on post pages, the most-viewed orders and the
+            // Post Views dynamic source. Every site has them (they began in Falcon News).
+            PostViews::register();
+
             // Back to top, from Customizer → Performance. On the footer hook for the same
             // reason as the styles above: every theme that calls the action gets it, and a
             // theme update cannot drop it. The partial renders nothing at all when the
@@ -259,6 +265,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             ReindexProductAttributes::class,
             PruneAnalytics::class,
             PruneActivityLogs::class,
+            PrunePostViews::class,
             InstagramSync::class,
             PluginList::class,
             PluginActivate::class,
@@ -272,6 +279,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             $schedule->command('falcon:publish-scheduled')->everyMinute()->withoutOverlapping();
             $schedule->command('falcon:expire-sales')->daily();
             $schedule->command('falcon:prune-analytics')->dailyAt('03:30')->withoutOverlapping();
+            $schedule->command('falcon:prune-post-views')->dailyAt('03:40')->withoutOverlapping();
             // Hourly, because the shortest retention this offers is 24 hours — a daily
             // sweep would let entries outlive their window by most of a day.
             $schedule->command('falcon:prune-activity-logs')->hourly()->withoutOverlapping();
