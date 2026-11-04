@@ -18,8 +18,8 @@ Right-click the container toolbar or click the gear icon:
 - Background color, gradient, or image
 - Background position and size
 - Min height
-- Padding (top, right, bottom, left)
-- Margin
+- Padding (top, right, bottom, left) — see [Sizes: any CSS value](#sizes-any-css-value)
+- Margin (top, bottom)
 
 **Advanced:**
 - CSS Class, CSS ID
@@ -71,7 +71,7 @@ Click the column toolbar:
 
 **Size:**
 - Width percentage (responsive: desktop, tablet, mobile)
-- Padding
+- Padding and margin — see [Sizes: any CSS value](#sizes-any-css-value)
 
 **Background:**
 - Background color or image
@@ -109,6 +109,29 @@ Use the device switch at the top-right of the Width panel to choose which one yo
 This makes your layout naturally stack on mobile.
 
 Nested columns have the same control, in the same place.
+
+---
+
+## Sizes: any CSS value
+
+Padding and margin boxes — on containers, columns, nested columns and every element — work like
+the **Font Size** box: one text box per side, with no unit dropdown. Type the value with its unit:
+
+| You type | You get |
+|---|---|
+| `20` | 20px (a bare number is pixels) |
+| `2rem`, `1.5em` | relative to the font size |
+| `5%` | a share of the width |
+| `10vh`, `4vw` | a share of the screen |
+| `calc(1rem + 2vw)` | anything CSS accepts |
+
+Each box follows the device switch beside its label: a value typed on **Tablet** or **Mobile**
+applies from that screen size down, and an empty box shows, greyed, the value it inherits from
+the larger screen. Pages built before keep exactly the sizes they had.
+
+Elements that used to have one or two padding boxes — Accordion title and content, Tabs content,
+Code Block, Content Box (box and button), Table cells, Callout, Prev/Next and Table of Contents —
+now have all four sides. A side left empty keeps the value the element had.
 
 ---
 

@@ -90,6 +90,7 @@ export default defineConfig({
             { text: 'Configuration', link: '/guide/configuration' },
             { text: 'Installing Pro', link: '/guide/pro' },
             { text: 'Upgrade Guide', link: '/guide/upgrade' },
+            { text: 'Backups & Moving a Site', link: '/guide/backups' },
           ]
         },
         {

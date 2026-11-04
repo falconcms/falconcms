@@ -35,6 +35,14 @@ The **Reading Time** dynamic source (and the Post Meta element) counts words in 
 and in posts made with the builder. Choose its label (`min read`, or `{min} minute read`), the
 reading speed and the digits.
 
+## "3 hours ago" dates <Badge type="tip" text="2.9.0" />
+
+Set a title or text block's **Dynamic Source** to **Post → Post Date** and its **Show As** to
+**Time ago**: "just now", "5 minutes ago", "3 hours ago", in the site's language (a Bangla site
+gets "৩ ঘণ্টা আগে"), with the **Digits** you choose. After **Time ago for (days)** — 7 unless you
+change it, `0` for never — the post's date shows instead. The words are kept current in the
+reader's browser, so cached pages stay right. Use it on the post page and in Card templates.
+
 ## Showing a lead story
 
 To pick stories by hand, add a custom field (a checkbox or true/false field called `featured`,

@@ -27,6 +27,11 @@ From the menu editor, add items from the panels on the left:
 
 Drag items to reorder. Drag items to the right (indent) to make them sub-items.
 
+A page, post, product or category item links to that item **as it is now**: rename its slug,
+translate it or move the site to another address, and the menu follows. Links to the site
+itself are written as paths (`/about`), so a menu works under every address the site is opened
+at — its domain, a staging copy, `127.0.0.1:8000`. A **Custom URL** keeps what you typed.
+
 ### One-page (landing page) menus <Badge type="tip" text="2.7.0" /> {#one-page-menus}
 
 For a landing page, add **Custom URL** items pointing at sections of the same page — give the
@@ -91,6 +96,12 @@ Render in your theme's `layouts/app.blade.php`:
 ```
 
 The builder-based header/footer automatically applies sticky behavior and responsive visibility.
+
+### A different menu on tablet or mobile <Badge type="tip" text="2.9.0" />
+
+In the builder's **Menu** element, the device switch beside **Menu** lets tablet and mobile
+show a menu of their own — a shorter one on phones, say. Left on *Same as Desktop* (or *Same as
+Tablet*), a screen shows the larger screen's menu.
 
 ## Mega Menus
 

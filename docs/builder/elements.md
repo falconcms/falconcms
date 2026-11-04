@@ -249,7 +249,12 @@ A data table with an optional header row and column, sortable columns and a stic
 **Settings:**
 - First row is a header / First column is a header
 - Caption, shown under the table
-- Readers can sort by clicking a header; the header can stay visible while scrolling
+- Readers can sort by clicking a header
+- **Header stays visible while scrolling** — as the page scrolls past a long table, its header
+  row stays at the top of the window (just below a fixed or sticky site header) until the
+  table's last row goes by. A wide table still scrolls sideways under it, and clicking a header
+  still sorts. With a max height, the header stays at the top of the table's own box instead.
+  The canvas shows it live as you scroll the builder.
 - Max height (0 shows the whole table; above that it scrolls)
 - On small screens: scroll sideways, or stack each row as a card
 
@@ -290,7 +295,10 @@ A raw HTML block — paste any embed code or custom markup.
 Render a navigation menu inline inside the builder canvas — primarily used in the header builder.
 
 **Settings:**
-- Select menu (by location or slug)
+- Select menu (by location or slug). The device switch beside **Menu** sets a different menu
+  for **Tablet** or **Mobile** — a short menu on phones, for example. Left on *Same as Desktop*
+  (or *Same as Tablet*), a screen shows the larger screen's menu. The canvas shows the menu of
+  the device you are previewing.
 - Layout: horizontal / vertical
 - Item padding, spacing, border radius
 - Colours and hover colours for text, background and border
@@ -331,6 +339,24 @@ Add a unique ID for anchor links or JavaScript targeting.
 ---
 
 ## Dynamic Values
+
+### Post Date: date or "time ago"
+
+A title, text block or button whose **Dynamic Source** is **Post → Post Date** has these options
+(the gear on the blue source pill):
+
+- **Date Type** — published or last modified.
+- **Show As** — **Date** (in the **Format**, e.g. `M j, Y` → Nov 3, 2026) or **Time ago**
+  ("just now", "5 minutes ago", "3 hours ago", "2 days ago") — what news sites show.
+- **Time ago for (days)** — older posts show their date instead, because "45 days ago" says less
+  than a date. 7 by default; `0` shows "ago" always.
+- **Digits** — 0123, ০১২৩ (Bangla), १२३ (Devanagari) or ١٢٣ (Arabic).
+- **Before / After** — e.g. `Published: ` (spaces are kept).
+
+"Time ago" is written in the site's language and kept current in the reader's browser, so a
+page served from the page cache or a CDN never says "3 hours ago" the next day.
+
+### Tokens
 
 Many text fields support dynamic tokens — they're replaced at render time:
 
