@@ -69,7 +69,7 @@
     // With a max height the table scrolls in its own box and plain CSS sticky works there.
     // Without one the page scrolls, and CSS sticky cannot follow it: the horizontal-scroll
     // box around the table is a scroll container, so the header would only ever stick
-    // inside a box that never scrolls. The script below keeps the header in view instead.
+    // inside a box that never scrolls. The script below shows a fixed copy of it instead.
     $stickyPage = $sticky && $maxHeight <= 0;
 
     // Rows and columns an author wants picked out. Numbers are 1-based and counted
@@ -164,11 +164,7 @@
             white-space: nowrap;
             @if($headTypo) {{ $headTypo }} @endif
             @if($sticky && !$stickyPage) position: sticky; top: 0; z-index: 2; @endif
-            @if($stickyPage) position: relative; z-index: 2; @endif
         }
-        @if($stickyPage)
-        #{{ $uid }} .fc-tbl-stuck thead th { box-shadow: inset 0 -1px 0 var(--fc-line), 0 3px 6px -2px rgba(0,0,0,.12); }
-        @endif
         @if($headerCol)
         #{{ $uid }} tbody th {
             background: {{ $g('headerBg') }};
@@ -321,23 +317,31 @@
 </div>
 
 @if($stickyPage)
-{{-- The header follows the page: moved down as the table scrolls past the top of the
-     window (below a fixed or sticky site header, if one is there) and never past the
-     table's last row. The horizontal scroll of a wide table keeps working. Repeat-safe
-     like the sort script below. --}}
+{{-- The header follows the page. Once the table's top has scrolled under the top of the
+     window (or under a fixed or sticky site header), a copy of the header row is shown
+     there with position: fixed, its columns as wide as the table's and its look read from
+     the real cells. Fixed, it does not move while the page scrolls, so it does not shake
+     the way a header moved on every scroll event did; near the table's end it slides up
+     with the last row. A wide table's sideways scroll moves it too, and a click on one of
+     its cells reaches the real header (sorting). Repeat-safe like the sort script below. --}}
 <script>
 (function () {
     'use strict';
     if (window.__falconTableSticky) return;
     window.__falconTableSticky = true;
 
+    var LOOK = ['background-color', 'background-image', 'color', 'font-family', 'font-size', 'font-weight', 'font-style',
+        'line-height', 'letter-spacing', 'text-transform', 'text-align', 'vertical-align', 'white-space',
+        'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+        'border-top', 'border-right', 'border-bottom', 'border-left'];
+
     // The bottom of a fixed or sticky bar covering the top of the window (the site header).
-    function topOffset(skip) {
+    function topOffset() {
         var off = 0, seen = [];
         var els = document.elementsFromPoint ? document.elementsFromPoint(window.innerWidth / 2, 1) : [];
         for (var i = 0; i < els.length; i++) {
             for (var el = els[i]; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
-                if (seen.indexOf(el) !== -1 || skip.contains(el)) break;
+                if (seen.indexOf(el) !== -1 || (el.classList && el.classList.contains('fc-tbl-fixedhead'))) break;
                 seen.push(el);
                 var pos = getComputedStyle(el).position;
                 if (pos === 'fixed' || pos === 'sticky') {
@@ -349,33 +353,86 @@
         return off;
     }
 
+    function copyOf(box) {
+        if (box.__fcHead) return box.__fcHead;
+        var head = box.querySelector('thead');
+        var wrap = document.createElement('div');
+        wrap.className = 'fc-tbl-fixedhead';
+        wrap.setAttribute('aria-hidden', 'true');
+        wrap.style.cssText = 'position:fixed;left:0;top:0;z-index:40;overflow:hidden;display:none;box-shadow:0 3px 6px -2px rgba(0,0,0,.14);';
+        var table = document.createElement('table');
+        table.style.cssText = 'border-collapse:collapse;table-layout:fixed;margin:0;';
+        var copy = head.cloneNode(true);
+        table.appendChild(copy);
+        wrap.appendChild(table);
+        document.body.appendChild(wrap);
+        // A click on the copy is a click on the real header cell (a sortable table sorts).
+        wrap.addEventListener('click', function (e) {
+            var th = e.target.closest ? e.target.closest('th') : null;
+            if (!th) return;
+            var i = Array.prototype.indexOf.call(copy.querySelectorAll('th'), th);
+            var real = head.querySelectorAll('th')[i];
+            if (real) { real.click(); box.__fcHeadDirty = true; update(); }
+        });
+        box.__fcHead = { wrap: wrap, table: table, copy: copy, head: head };
+        box.__fcHeadDirty = true;
+        return box.__fcHead;
+    }
+
+    // Widths, height and look of each cell, taken from the real header as it is now.
+    function dress(box, c) {
+        var src = c.head.querySelectorAll('th'), dst = c.copy.querySelectorAll('th');
+        c.table.style.width = box.querySelector('table').getBoundingClientRect().width + 'px';
+        for (var i = 0; i < src.length && i < dst.length; i++) {
+            var cs = getComputedStyle(src[i]), r = src[i].getBoundingClientRect(), css = [];
+            for (var k = 0; k < LOOK.length; k++) css.push(LOOK[k] + ':' + cs.getPropertyValue(LOOK[k]));
+            css.push('box-sizing:border-box', 'width:' + r.width + 'px', 'min-width:' + r.width + 'px', 'max-width:' + r.width + 'px', 'height:' + r.height + 'px');
+            dst[i].style.cssText = css.join(';');
+            dst[i].innerHTML = src[i].innerHTML;
+            if (src[i].dataset.dir) dst[i].dataset.dir = src[i].dataset.dir; else delete dst[i].dataset.dir;
+        }
+        box.__fcHeadDirty = false;
+    }
+
     function update() {
         var boxes = document.querySelectorAll('[data-fc-sticky-head]');
+        var off = null;
         for (var i = 0; i < boxes.length; i++) {
             var box = boxes[i], head = box.querySelector('thead');
             if (!head) continue;
-            var ths = head.querySelectorAll('th');
+            var c = box.__fcHead;
             // Hidden (a table stacked into cards on a phone): nothing to keep in view.
-            if (!head.getClientRects().length) continue;
+            if (!head.getClientRects().length) { if (c) c.wrap.style.display = 'none'; continue; }
             var r = box.getBoundingClientRect(), hh = head.getBoundingClientRect().height;
-            var shift = r.top < window.innerHeight ? Math.min(Math.max(topOffset(box) - r.top, 0), Math.max(r.height - hh, 0)) : 0;
-            var t = shift > 0 ? 'translateY(' + shift + 'px)' : '';
-            for (var j = 0; j < ths.length; j++) if (ths[j].style.transform !== t) ths[j].style.transform = t;
-            box.classList.toggle('fc-tbl-stuck', shift > 0);
+            if (off === null) off = topOffset();
+            var show = r.top < off && r.bottom - hh > 0 && r.bottom > off;
+            if (!show) { if (c) c.wrap.style.display = 'none'; box.classList.remove('fc-tbl-stuck'); continue; }
+            c = copyOf(box);
+            if (box.__fcHeadDirty) dress(box, c);
+            var w = c.wrap.style;
+            w.display = 'block';
+            w.top = Math.min(off, r.bottom - hh) + 'px';   // slides up with the last row
+            w.left = (r.left + box.clientLeft) + 'px';
+            w.width = box.clientWidth + 'px';
+            c.table.style.transform = 'translateX(' + (-box.scrollLeft) + 'px)';
+            box.classList.add('fc-tbl-stuck');
         }
     }
 
-    var queued = false;
-    function schedule() {
-        if (queued) return;
-        queued = true;
-        requestAnimationFrame(function () { queued = false; update(); });
-    }
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule);
-    window.addEventListener('load', schedule);
-    schedule();
+    // Straight from the scroll event (it fires before the frame is painted), not a frame later.
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', function () {
+        var boxes = document.querySelectorAll('[data-fc-sticky-head]');
+        for (var i = 0; i < boxes.length; i++) boxes[i].__fcHeadDirty = true;
+        update();
+    });
+    // A wide table scrolled sideways: the copy follows.
+    document.addEventListener('scroll', function (e) {
+        if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-fc-sticky-head')) update();
+    }, true);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', update);
+    window.addEventListener('load', update);
+    update();
 })();
 </script>
 @endif

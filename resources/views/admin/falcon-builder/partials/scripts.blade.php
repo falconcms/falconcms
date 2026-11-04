@@ -5163,8 +5163,12 @@
 
             function fcTblScrollStyle(el) {
                 const h = parseInt((el.settings || {}).maxHeight, 10) || 0;
+                // A sticky header with no max height sticks to the canvas as it scrolls: the
+                // box must then not be a scroll container itself, or the header could only
+                // stick inside a box that never scrolls (the page uses a fixed copy instead).
+                const stickToCanvas = !!(el.settings || {}).stickyHeader && h <= 0;
                 return {
-                    overflowX: 'auto',
+                    overflowX: stickToCanvas ? 'visible' : 'auto',
                     overflowY: h > 0 ? 'auto' : 'visible',
                     maxHeight: h > 0 ? h + 'px' : 'none',
                     borderRadius: (fcTblVal(el, 'radius') || 0) + 'px',
@@ -5206,6 +5210,8 @@
                     whiteSpace: 'nowrap',
                     verticalAlign: 'top',
                 }, fcTblBorderStyle(el), fcTblTypo(el, 'tbl_head'),
+                   // "Header stays visible while scrolling", live on the canvas too.
+                   (el.settings || {}).stickyHeader ? { position: 'sticky', top: '0px', zIndex: 3 } : {},
                    fcTblSpec((el.settings || {}).highlightCols).indexOf(i + 1) !== -1
                      ? { boxShadow: 'inset 0 -2px 0 ' + ((el.settings || {}).highlightColor || '#B9720F') }
                      : {});
