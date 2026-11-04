@@ -66,6 +66,11 @@
     $responsive = $s['responsive'] ?? 'scroll';   // scroll | stack
     $maxHeight = (int) ($s['maxHeight'] ?? 0);
     $sticky    = !empty($s['stickyHeader']) && $headerRow;
+    // With a max height the table scrolls in its own box and plain CSS sticky works there.
+    // Without one the page scrolls, and CSS sticky cannot follow it: the horizontal-scroll
+    // box around the table is a scroll container, so the header would only ever stick
+    // inside a box that never scrolls. The script below keeps the header in view instead.
+    $stickyPage = $sticky && $maxHeight <= 0;
 
     // Rows and columns an author wants picked out. Numbers are 1-based and counted
     // the way the table reads: row 1 is the first body row.
@@ -158,8 +163,12 @@
             text-align: left;
             white-space: nowrap;
             @if($headTypo) {{ $headTypo }} @endif
-            @if($sticky) position: sticky; top: 0; z-index: 2; @endif
+            @if($sticky && !$stickyPage) position: sticky; top: 0; z-index: 2; @endif
+            @if($stickyPage) position: relative; z-index: 2; @endif
         }
+        @if($stickyPage)
+        #{{ $uid }} .fc-tbl-stuck thead th { box-shadow: inset 0 -1px 0 var(--fc-line), 0 3px 6px -2px rgba(0,0,0,.12); }
+        @endif
         @if($headerCol)
         #{{ $uid }} tbody th {
             background: {{ $g('headerBg') }};
@@ -279,7 +288,7 @@
     </style>
 
     <div id="{{ $uid }}">
-        <div class="fc-tbl-scroll">
+        <div class="fc-tbl-scroll"@if($stickyPage) data-fc-sticky-head @endif>
             <table @if($sortable) data-fc-sortable="1" @endif>
                 @if($caption)<caption>{!! TableStyles::cell($caption) !!}</caption>@endif
 
@@ -310,6 +319,66 @@
         </div>
     </div>
 </div>
+
+@if($stickyPage)
+{{-- The header follows the page: moved down as the table scrolls past the top of the
+     window (below a fixed or sticky site header, if one is there) and never past the
+     table's last row. The horizontal scroll of a wide table keeps working. Repeat-safe
+     like the sort script below. --}}
+<script>
+(function () {
+    'use strict';
+    if (window.__falconTableSticky) return;
+    window.__falconTableSticky = true;
+
+    // The bottom of a fixed or sticky bar covering the top of the window (the site header).
+    function topOffset(skip) {
+        var off = 0, seen = [];
+        var els = document.elementsFromPoint ? document.elementsFromPoint(window.innerWidth / 2, 1) : [];
+        for (var i = 0; i < els.length; i++) {
+            for (var el = els[i]; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+                if (seen.indexOf(el) !== -1 || skip.contains(el)) break;
+                seen.push(el);
+                var pos = getComputedStyle(el).position;
+                if (pos === 'fixed' || pos === 'sticky') {
+                    var r = el.getBoundingClientRect();
+                    if (r.top <= 1 && r.bottom > 0 && r.bottom < window.innerHeight / 2) off = Math.max(off, r.bottom);
+                }
+            }
+        }
+        return off;
+    }
+
+    function update() {
+        var boxes = document.querySelectorAll('[data-fc-sticky-head]');
+        for (var i = 0; i < boxes.length; i++) {
+            var box = boxes[i], head = box.querySelector('thead');
+            if (!head) continue;
+            var ths = head.querySelectorAll('th');
+            // Hidden (a table stacked into cards on a phone): nothing to keep in view.
+            if (!head.getClientRects().length) continue;
+            var r = box.getBoundingClientRect(), hh = head.getBoundingClientRect().height;
+            var shift = r.top < window.innerHeight ? Math.min(Math.max(topOffset(box) - r.top, 0), Math.max(r.height - hh, 0)) : 0;
+            var t = shift > 0 ? 'translateY(' + shift + 'px)' : '';
+            for (var j = 0; j < ths.length; j++) if (ths[j].style.transform !== t) ths[j].style.transform = t;
+            box.classList.toggle('fc-tbl-stuck', shift > 0);
+        }
+    }
+
+    var queued = false;
+    function schedule() {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(function () { queued = false; update(); });
+    }
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule);
+    window.addEventListener('load', schedule);
+    schedule();
+})();
+</script>
+@endif
 
 @if($sortable)
 {{-- Emitted with every sortable table and made safe to repeat by the flag below,
