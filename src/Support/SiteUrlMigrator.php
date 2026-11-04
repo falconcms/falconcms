@@ -134,7 +134,14 @@ final class SiteUrlMigrator
         $plainPath = '#https?://'.$hostRe.'(?=/)#i';
         $jsonPath = '#https?:\\\\/\\\\/'.$hostRe.'(?=\\\\/)#i';
         $toJson = str_replace('/', '\\/', $to);
-        $rewrite = function (string $v) use ($plain, $json, $plainPath, $jsonPath, $to, $toJson, $relative): string {
+        // URL-encoded inside another link (a share button, an embed): https%3A%2F%2Fold.com
+        $encPath = '#https?%3A%2F%2F'.$hostRe.'(?=%2F)#i';
+        $enc = '#https?%3A%2F%2F'.$hostRe.'(?=[&"\'\s<>]|%3F|%23|$)#i';
+        $rewrite = function (string $v) use ($plain, $json, $plainPath, $jsonPath, $encPath, $enc, $to, $toJson, $relative): string {
+            if (stripos($v, '%2F%2F') !== false) {
+                $v = preg_replace($encPath, $relative ? '' : rawurlencode($to), $v) ?? $v;
+                $v = preg_replace($enc, $relative ? '%2F' : rawurlencode($to), $v) ?? $v;
+            }
             if ($relative) {
                 // Followed by its path: drop the address ("https://old.com/a" → "/a"). A bare
                 // address is the site's root ("https://old.com" → "/", "https:\/\/old.com" → "\/").
@@ -201,15 +208,14 @@ final class SiteUrlMigrator
             }
         }
 
-        // Settings and pages are cached: drop the copies that still hold the old links.
-        try {
-            if (function_exists('forget_cms_options_cache')) {
-                forget_cms_options_cache();
+        // Settings, menus and pages are cached: drop the copies that still hold the old links.
+        foreach (['forget_cms_options_cache', 'forget_nav_menu_cache', 'clear_page_cache'] as $forget) {
+            try {
+                if (function_exists($forget)) {
+                    $forget();
+                }
+            } catch (Throwable $e) {
             }
-            if (function_exists('clear_page_cache')) {
-                clear_page_cache();
-            }
-        } catch (Throwable $e) {
         }
 
         return $stats;

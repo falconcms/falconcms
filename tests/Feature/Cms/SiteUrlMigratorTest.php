@@ -160,4 +160,32 @@ class SiteUrlMigratorTest extends TestCase
         $this->assertSame('/kept', $out[3]->url, 'a stored URL is better than a guess');
         $this->assertSame('https://old-site.example/about-old', $item->url, 'the row passed in is not changed');
     }
+
+    /** A link inside another link (share buttons, embeds) is URL-encoded and moves too. */
+    public function test_url_encoded_links_move(): void
+    {
+        $post = DB::table('posts')->insertGetId(['title' => 'P', 'slug' => 'p-'.uniqid(), 'type' => 'page', 'status' => 'published', 'lang_code' => 'en',
+            'content' => '<a href="https://www.facebook.com/sharer.php?u=https%3A%2F%2Ffalconcms.com%2Fpricing&t=x">Share</a> <a href="https://x.com/share?url=https%3A%2F%2Ffalconcms.com">Home</a> https%3A%2F%2Ffalconcms.com.au%2Fx',
+            'created_at' => now(), 'updated_at' => now()]);
+
+        SiteUrlMigrator::migrate('https://falconcms.com', 'http://falconcms.test');
+        $c = (string) DB::table('posts')->where('id', $post)->value('content');
+        $this->assertStringContainsString('u=http%3A%2F%2Ffalconcms.test%2Fpricing&t=x', $c);
+        $this->assertStringContainsString('url=http%3A%2F%2Ffalconcms.test">', $c);
+        $this->assertStringContainsString('https%3A%2F%2Ffalconcms.com.au%2Fx', $c, 'another domain');
+
+        SiteUrlMigrator::migrate('http://falconcms.test', null);
+        $c = (string) DB::table('posts')->where('id', $post)->value('content');
+        $this->assertStringContainsString('u=%2Fpricing&t=x', $c);
+        $this->assertStringContainsString('url=%2F">', $c);
+    }
+
+    /** After a move the cached menus go too, or a theme menu kept the old links for an hour. */
+    public function test_the_menu_cache_is_dropped(): void
+    {
+        $this->menuItem('https://falconcms.com/pricing');
+        $before = falcon_nav_menu_version();
+        SiteUrlMigrator::migrate('https://falconcms.com', 'http://falconcms.test');
+        $this->assertNotSame($before, falcon_nav_menu_version());
+    }
 }

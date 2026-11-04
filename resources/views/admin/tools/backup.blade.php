@@ -66,7 +66,7 @@
                 <span class="material-symbols-outlined text-[20px] text-[#646970]">upload_file</span>
                 <div>
                     <h2 class="text-[14px] font-semibold text-[#1d2327]">Upload Backup from Another Site</h2>
-                    <p class="text-[12px] text-[#646970]">Upload a <code>.sql</code>, <code>.sql.gz</code>, or <code>.zip</code> backup file exported from another site, then restore it below.</p>
+                    <p class="text-[12px] text-[#646970]">Upload a <code>.sql</code>, <code>.sql.gz</code>, or <code>.zip</code> backup file exported from another site, then restore it below. Links to the other site's address (menus, buttons, content, settings) are changed to this site's address automatically.</p>
                 </div>
             </div>
             <div class="p-5">
@@ -189,7 +189,7 @@
             <p class="text-[13px] text-[#1d2327] leading-relaxed">
                 Backups capture your posts, pages, users and settings (database) and your uploaded images &amp; files (media). It is recommended to download them and store them in a secure offline location.
                 <br>
-                <strong>Tip:</strong> Choose <strong>Database + Media</strong> for a complete site copy in a single file. Restore (or upload &amp; restore) detects automatically what a file contains — database, media, or both — and brings it back accordingly, so you can move a whole site to another FalconCMS install with one file.
+                <strong>Tip:</strong> Choose <strong>Database + Media</strong> for a complete site copy in a single file. Restore (or upload &amp; restore) detects automatically what a file contains — database, media, or both — and brings it back accordingly, so you can move a whole site to another FalconCMS install with one file. Restored on a different address (a new domain, a local copy), its links to the old address are moved to this one by themselves; visit logs and Search Console figures are kept as they were.
             </p>
         </div>
     </div>

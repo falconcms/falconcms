@@ -38,5 +38,9 @@ class BackupRestoreSiteUrlTest extends TestCase
         }
 
         $this->assertSame('http://localhost/pricing', DB::table('navigation_menu_items')->where('id', $item)->value('url'));
+
+        // The page says so, so nobody sets about changing links by hand.
+        $this->actingAs($user)->get('/admin/tools/backup')->assertOk()
+            ->assertSee("changed to this site's address automatically", false);
     }
 }
