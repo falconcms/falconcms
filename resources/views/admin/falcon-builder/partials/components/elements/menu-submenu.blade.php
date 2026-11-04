@@ -137,15 +137,15 @@
             <div class="grid grid-cols-3 gap-2">
                 <div>
                     <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1 text-center">FONT SIZE</label>
-                    <input type="text" v-model="editingElement.settings.submenuFontSize" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] text-center">
+                    <input type="text" v-model="editingElement.settings.submenuFontSize" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                 </div>
                 <div>
                     <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1 text-center">LINE HEIGHT</label>
-                    <input type="text" v-model="editingElement.settings.submenuLineHeight" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] text-center">
+                    <input type="text" v-model="editingElement.settings.submenuLineHeight" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                 </div>
                 <div>
                     <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1 text-center">LETTER SP.</label>
-                    <input type="text" :value="fsDisplay(editingElement.settings, 'submenuLetterSpacing')" @input="fsInput(editingElement.settings, 'submenuLetterSpacing', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] text-center">
+                    <input type="text" :value="fsDisplay(editingElement.settings, 'submenuLetterSpacing')" @input="fsInput(editingElement.settings, 'submenuLetterSpacing', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                 </div>
             </div>
 

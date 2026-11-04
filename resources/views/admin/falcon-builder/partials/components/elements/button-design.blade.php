@@ -394,17 +394,17 @@
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                 <input type="text" :value="fsDisplay(editingElement.settings, 'fontSize')" @input="fsInput(editingElement.settings, 'fontSize', $event.target.value)"
-                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center">
+                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Hei...</label>
                 <input type="text" v-model="editingElement.settings.lineHeight"
-                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center">
+                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter S...</label>
                 <input type="text" :value="fsDisplay(editingElement.settings, 'letterSpacing')" @input="fsInput(editingElement.settings, 'letterSpacing', $event.target.value)"
-                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center">
+                       class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
         </div>
 

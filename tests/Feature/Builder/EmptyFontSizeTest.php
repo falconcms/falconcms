@@ -87,6 +87,19 @@ class EmptyFontSizeTest extends TestCase
         }
     }
 
+    /** The Code Block follows the body size when its size is empty; a block saved before keeps 14px. */
+    public function test_the_code_block_follows_the_body_size_when_empty(): void
+    {
+        $code = fn (array $s) => $this->render('code-block', $s + ['code' => 'echo 1;', 'language' => 'php']);
+
+        // inherit, not left out: a monospace <pre> would drop to the browser's smaller size.
+        $this->assertMatchesRegularExpression('/font-size:\s*inherit;/', $code(['fontSize' => '']));
+        $this->assertMatchesRegularExpression('/font-size:\s*14px;/', $code([]));
+        $this->assertMatchesRegularExpression('/font-size:\s*0\.9rem;/', $code(['fontSize' => '0.9rem']));
+        $this->assertSame('', $this->roundTrip('code_block', ['code' => 'x', 'fontSize' => ''])['fontSize']);
+        $this->assertSame(14, $this->roundTrip('code_block', ['code' => 'x'])['fontSize']);
+    }
+
     public function test_the_customizer_sizes_are_read_for_the_canvas(): void
     {
         update_cms_option('theme_typography_body', json_encode(['size' => '15px']));

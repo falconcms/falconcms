@@ -58,7 +58,10 @@
 
     // ── Box ──────────────────────────────────────────────────────────────────
     // Any CSS size, as every Font Size field takes ("15px", "0.9rem"); a bare number is px.
-    $fontSize     = getUnitVal((($s['fontSize'] ?? '') === '' ? 14 : $s['fontSize']), 'px');
+    // Empty follows the Customizer's body size. Written as inherit, not left out: a <pre> in a
+    // monospace face would otherwise drop to the browser's smaller monospace size. Never set
+    // (a block saved before) keeps the 14px it always had.
+    $fontSize     = !array_key_exists('fontSize', $s) || $s['fontSize'] === null ? '14px' : ($s['fontSize'] === '' ? 'inherit' : getUnitVal($s['fontSize'], 'px'));
     // As typed: a bare number is a multiplier, "22px" or "1.6em" a length.
     $lineHeight   = (($s['lineHeight'] ?? '') === '') ? 1.7 : trim((string) $s['lineHeight']);
     $radius       = (int) ($s['borderRadius'] ?? 10);

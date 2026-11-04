@@ -6066,7 +6066,7 @@
                 return {
                     margin: '0', padding: pad + 'px', background: 'none', border: '0',
                     color: t.fg, fontFamily: 'inherit',
-                    fontSize: getUnitVal(s.fontSize || 14, 'px'),
+                    fontSize: fontSizeVal(s.fontSize, 'px', 14) || 'inherit',
                     lineHeight: String(s.lineHeight || 1.7),
                     tabSize: '4',
                 };
@@ -6816,7 +6816,7 @@
                             showLineNumbers: true, startLine: 1, highlightLines: '', wrapLines: false, maxHeight: 0,
                             showCopy: true, copyLabel: 'Copy', copiedLabel: 'Copied!',
                             typeMode: 'none', typeSpeed: 30, typeStart: 'view', typeCaret: true,
-                            fontSize: 14, lineHeight: 1.7, fontFamily: '',
+                            fontSize: '', lineHeight: 1.7, fontFamily: '',
                             padding: 18, borderRadius: 10, borderWidth: 1,
                             marginTop: 0, marginTopUnit: 'px',
                             marginBottom: 0, marginBottomUnit: 'px',

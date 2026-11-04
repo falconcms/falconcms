@@ -12,12 +12,12 @@
 <!-- Type -->
 <div class="grid grid-cols-2 gap-2">
     <div>
-        <label class="text-[12px] font-bold text-[#333] block mb-2">Font size</label>
-        <input type="text" v-model="editingElement.settings.fontSize" placeholder="14px" class="wp-input w-full">
+        <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font size</label>
+        <input type="text" v-model="editingElement.settings.fontSize" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
     </div>
     <div>
-        <label class="text-[12px] font-bold text-[#333] block mb-2">Line height</label>
-        <input type="text" v-model="editingElement.settings.lineHeight" class="wp-input w-full">
+        <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line height</label>
+        <input type="text" v-model="editingElement.settings.lineHeight" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
     </div>
 </div>
 

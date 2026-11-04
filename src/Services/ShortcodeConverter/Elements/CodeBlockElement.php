@@ -30,7 +30,7 @@ final class CodeBlockElement extends Element
         self::attrI($a, 'type_speed', $s['typeSpeed'] ?? null, 30);
         self::attrI($a, 'type_start', $s['typeStart'] ?? null, 'view');
         self::attrI($a, 'type_caret', (($s['typeCaret'] ?? true) === false) ? 'no' : null);
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null, 14);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null, 14);
         self::attrI($a, 'line_height', $s['lineHeight'] ?? null, 1.7);
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null);
         self::attrI($a, 'padding', $s['padding'] ?? null, 18);
@@ -138,7 +138,7 @@ final class CodeBlockElement extends Element
             'typeSpeed' => isset($a['type_speed']) ? (int) $a['type_speed'] : 30,
             'typeStart' => $a['type_start'] ?? 'view',
             'typeCaret' => ($a['type_caret'] ?? '') !== 'no',
-            'fontSize' => isset($a['font_size']) ? self::num($a['font_size']) : 14,
+            'fontSize' => self::fontIn($a, 'font_size', 14, fn ($v) => self::num($v)),
             'lineHeight' => isset($a['line_height']) ? self::num($a['line_height']) : 1.7,
             'fontFamily' => $a['font_family'] ?? '',
             'padding' => isset($a['padding']) ? (int) $a['padding'] : 18,

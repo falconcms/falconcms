@@ -264,7 +264,7 @@
                 <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block">Mobile Menu Trigger Font Size</label>
             </div>
             <input type="text" v-model="editingElement.settings.mobileMenuTriggerFontSize" placeholder="e.g. 16px"
-                   class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                   class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
         </div>
 
         <!-- Mobile Menu Trigger Horizontal Align -->
@@ -387,9 +387,9 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">Font Size</label>
+                        <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                         <input type="text" v-model="editingElement.settings.mobileMenuFontSize" placeholder="e.g. 16px" 
-                               class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                               class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                     </div>
                     <div>
                         <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">Font Weight</label>
@@ -410,14 +410,14 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">Line Height</label>
+                        <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                         <input type="text" v-model="editingElement.settings.mobileMenuLineHeight" placeholder="e.g. 1.5" 
-                               class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                               class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                     </div>
                     <div>
-                        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">Letter Spacing</label>
+                        <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                         <input type="text" :value="fsDisplay(editingElement.settings, 'mobileMenuLetterSpacing')" @input="fsInput(editingElement.settings, 'mobileMenuLetterSpacing', $event.target.value)" placeholder="e.g. 0.5px" 
-                               class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                               class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                     </div>
                 </div>
 

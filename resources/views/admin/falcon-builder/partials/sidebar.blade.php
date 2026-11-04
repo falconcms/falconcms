@@ -3849,9 +3849,9 @@
                                  <!-- Typography -->
                                  <div class="grid grid-cols-2 gap-3">
                                      <div>
-                                         <label class="text-[12px] font-bold text-[#333] block mb-2">Font Size</label>
+                                         <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                          <input type="text" :value="fsDisplay(editingElement.settings, 'fontSize')" @input="fsInput(editingElement.settings, 'fontSize', $event.target.value)"
-                                                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                                class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                      </div>
                                      <div>
                                          <label class="text-[12px] font-bold text-[#333] block mb-2">Font Weight</label>
@@ -3955,9 +3955,9 @@
                                      <label class="text-[12px] font-bold text-[#333] uppercase mb-3 block">Typography</label>
                                      <div class="grid grid-cols-2 gap-3">
                                          <div>
-                                             <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                              <input type="text" :value="fsDisplay(editingElement.settings, 'fontSize')" @input="fsInput(editingElement.settings, 'fontSize', $event.target.value)"
-                                                    class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                                                    class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div>
                                              <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Font Weight</label>
@@ -4157,9 +4157,9 @@
                                                  </select>
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'titleFontSize')" @input="fsInput(editingElement.settings, 'titleFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <!-- Font Weight + Letter Spacing: 2-col -->
@@ -4174,17 +4174,17 @@
                                                  </select>
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'titleLetterSpacing')" @input="fsInput(editingElement.settings, 'titleLetterSpacing', $event.target.value)" placeholder="0px"
-                                                        class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <!-- Line Height + Spacing Below: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                                  <input type="text" v-model="editingElement.settings.titleLineHeight" placeholder="1.3"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Spacing Below</label>
@@ -4239,9 +4239,9 @@
                                          <!-- Font Size + Font Weight: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'descFontSize')" @input="fsInput(editingElement.settings, 'descFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
@@ -4255,14 +4255,14 @@
                                          <!-- Line Height + Letter Spacing: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                                  <input type="text" v-model="editingElement.settings.descLineHeight"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'descLetterSpacing')" @input="fsInput(editingElement.settings, 'descLetterSpacing', $event.target.value)" placeholder="0px"
-                                                        class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <!-- Text Transform -->
@@ -4315,9 +4315,9 @@
                                          <!-- Font Size + Font Weight: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" v-model="editingElement.settings.readMoreFontSize" placeholder="13px, 0.9rem…"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
@@ -4332,14 +4332,14 @@
                                          <!-- Line Height + Letter Spacing: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                                  <input type="text" v-model="editingElement.settings.readMoreLineHeight" placeholder="1.4"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'readMoreLetterSpacing')" @input="fsInput(editingElement.settings, 'readMoreLetterSpacing', $event.target.value)" placeholder="0px"
-                                                        class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <!-- Spacing Above (gap from the description) + Arrow gap: 2-col -->
@@ -4542,9 +4542,9 @@
                                                  </select>
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'titleFontSize')" @input="fsInput(editingElement.settings, 'titleFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
@@ -4560,16 +4560,16 @@
                                                  </select>
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'titleLetterSpacing')" @input="fsInput(editingElement.settings, 'titleLetterSpacing', $event.target.value)" placeholder="0px"
-                                                        class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                                  <input type="text" v-model="editingElement.settings.titleLineHeight" placeholder="1.3"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Spacing Below</label>
@@ -4620,9 +4620,9 @@
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'contentFontSize')" @input="fsInput(editingElement.settings, 'contentFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
@@ -4637,14 +4637,14 @@
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                                  <input type="text" v-model="editingElement.settings.contentLineHeight" placeholder="1.6"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'contentLetterSpacing')" @input="fsInput(editingElement.settings, 'contentLetterSpacing', $event.target.value)" placeholder="0px"
-                                                        class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div>
@@ -4676,9 +4676,9 @@
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'linkFontSize')" @input="fsInput(editingElement.settings, 'linkFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
@@ -4995,9 +4995,9 @@
                                          <!-- Font Size + Padding -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'titleFontSize')" @input="fsInput(editingElement.settings, 'titleFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
@@ -5025,14 +5025,14 @@
                                          <!-- Letter Spacing + Line Height -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'titleLetterSpacing')" @input="fsInput(editingElement.settings, 'titleLetterSpacing', $event.target.value)" placeholder="0px"
-                                                        class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                                  <input type="text" v-model="editingElement.settings.titleLineHeight" placeholder="1.4"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <!-- Text Transform -->
@@ -5121,9 +5121,9 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'contentFontSize')" @input="fsInput(editingElement.settings, 'contentFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
@@ -5139,14 +5139,14 @@
                                          <!-- Letter Spacing + Line Height -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'contentLetterSpacing')" @input="fsInput(editingElement.settings, 'contentLetterSpacing', $event.target.value)" placeholder="0px"
-                                                        class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                                  <input type="text" v-model="editingElement.settings.contentLineHeight" placeholder="1.6"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div class="grid grid-cols-2 gap-3">
@@ -5321,9 +5321,9 @@
                                          </div>
                                          <!-- Font Size -->
                                          <div>
-                                             <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Font Size</label>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                              <input type="text" :value="fsDisplay(editingElement.settings, 'fontSize')" @input="fsInput(editingElement.settings, 'fontSize', $event.target.value)"
-                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <!-- Font Weight -->
                                          <div>
@@ -5340,9 +5340,9 @@
                                          </div>
                                          <!-- Line Height -->
                                          <div>
-                                             <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Line Height</label>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                              <input type="text" v-model="editingElement.settings.lineHeight" placeholder="1.5"
-                                                    class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                                    class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -5420,9 +5420,9 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'tabFontSize')" @input="fsInput(editingElement.settings, 'tabFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
@@ -5442,9 +5442,9 @@
                                          </div>
                                          <!-- Letter Spacing -->
                                          <div class="flex flex-col gap-1">
-                                             <label class="text-[9px] font-bold text-slate-400 uppercase">Letter Spacing</label>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                              <input type="text" :value="fsDisplay(editingElement.settings, 'tabLetterSpacing')" @input="fsInput(editingElement.settings, 'tabLetterSpacing', $event.target.value)" placeholder="0px"
-                                                    class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] focus:outline-none focus:border-[#0091ea]">
+                                                    class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="grid grid-cols-2 gap-3">
                                              <!-- Tab Color -->
@@ -5485,9 +5485,9 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'contentFontSize')" @input="fsInput(editingElement.settings, 'contentFontSize', $event.target.value)"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
@@ -5503,14 +5503,14 @@
                                          <!-- Letter Spacing + Line Height -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter Spacing</label>
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'contentLetterSpacing')" @input="fsInput(editingElement.settings, 'contentLetterSpacing', $event.target.value)" placeholder="0px"
-                                                        class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Height</label>
                                                  <input type="text" v-model="editingElement.settings.contentLineHeight" placeholder="1.6"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div class="grid grid-cols-2 gap-3">

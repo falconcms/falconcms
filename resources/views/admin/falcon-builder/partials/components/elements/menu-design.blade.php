@@ -138,7 +138,7 @@
                 <div>
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">FONT SIZE</label>
                     <input type="text" :value="fsDisplay(editingElement.settings, 'fontSize')" @input="fsInput(editingElement.settings, 'fontSize', $event.target.value)" 
-                           class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] text-center focus:outline-none focus:border-[#0091ea]">
+                           class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                 </div>
                 <div>
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">FONT WEIGHT</label>
@@ -159,13 +159,13 @@
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">LINE HEIGHT</label>
                     <input type="text" v-model="editingElement.settings.lineHeight" 
                            placeholder="e.g. 1.5"
-                           class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] text-center focus:outline-none focus:border-[#0091ea]">
+                           class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                 </div>
                 <div>
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">LETTER SPACING</label>
                     <input type="text" :value="fsDisplay(editingElement.settings, 'letterSpacing')" @input="fsInput(editingElement.settings, 'letterSpacing', $event.target.value)" 
                            placeholder="e.g. 1px"
-                           class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] text-center focus:outline-none focus:border-[#0091ea]">
+                           class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                 </div>
             </div>
 
