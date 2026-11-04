@@ -5,7 +5,76 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.8.19 <Badge type="tip" text="Latest" /> {#v2-8-19}
+## v2.9.0 <Badge type="tip" text="Latest" /> {#v2-9-0}
+
+**Released: 2026-11-04**
+
+Size fields that take any CSS value, "3 hours ago" dates for news, a menu per device, a sticky
+table header that works, and site moves that carry their links with them.
+
+### Added
+
+- **Post Date → Show As: Time ago.** "5 minutes ago", "3 hours ago", "2 days ago", in the site's
+  language, with Latin, Bangla, Devanagari or Arabic digits. After a limit (7 days unless you set
+  another; 0 = always) the date shows instead, in the element's format. The words are kept
+  current in the reader's browser, so a page served from the page cache or a CDN never says
+  "3 hours ago" the next day.
+- **A menu per device.** The Menu element's **Menu** has a responsive switch: tablet and mobile
+  can each show a menu of their own. Left on "Same as …", they show the larger screen's menu.
+- **`php artisan falcon:replace-url [from] [to] [--relative]`** moves every link to an old
+  address onto this site, for data copied over by other means than a restore. `--relative`
+  keeps only the path, for a site opened at more than one address.
+
+### Changed
+
+- **Padding and margin fields are text boxes, like Font Size**, everywhere in the builder:
+  containers, columns, nested columns, every element, and plugin elements' spacing fields. Type
+  `20`, `20px`, `2rem`, `5%`, `10vh` or `calc(1rem + 2vw)`; a bare number is px. The unit
+  dropdowns are gone. Pages saved before look exactly as they did.
+- **Four sides wherever there were one or two padding boxes**: Accordion title and content,
+  Tabs content, Code Block, Content Box box and button, Table cells, Callout, Prev/Next and
+  Table of Contents. A side left empty keeps the old value.
+- **One kind of Font Size, Line Height and Letter Spacing field** — a text box that takes any
+  CSS size. A font size left empty follows the Customizer's typography.
+- **Side-by-side fields are the same size** in every panel (Icon Box, Content Box, Tabs, Ticker,
+  Gallery, Menu). Menu → Mobile shows Trigger Text and Trigger Font Size side by side.
+- **Image and Button**: a border radius per corner.
+- **Menus link to pages as they are now.** A Menu element's page, post and term items are worked
+  out from the item (a renamed slug or a translation follows), and links to the site itself are
+  written as paths, so menus are right under every address the site is opened at.
+
+### Fixed
+
+- **Restoring a backup on another site moved none of its links.** A database brought from
+  falconcms.com to a local copy kept its menus, buttons and settings pointing at
+  falconcms.com. A backup now records its site's address, and a restore on a different address
+  moves every link to the old site onto the new one — in menus, layouts, content, settings and
+  revisions, inside JSON, PHP-serialized and URL-encoded values. Other domains, e-mail
+  addresses, visit logs and Search Console figures are left alone. A backup made before this
+  is read from its data.
+- **Table → Header stays visible while scrolling** did nothing on the page: the header could
+  only stick inside the table's own scroll box. It now stays at the top of the window (below a
+  fixed site header) while the table scrolls past, without shaking, follows a wide table's
+  sideways scroll and keeps sorting. It also shows live on the canvas.
+- **Missing word spaces.** "Published: " before a Post Date lost its space when the page was
+  saved ("Published:3 hours ago"), and Minify HTML removed the space between a label and its
+  value ("CATEGORY:Flagship Phones"). Builder layouts are saved as written, and the minifier
+  keeps a space between inline tags.
+- **Device Visibility** buttons of a container, column, nested row or element with no setting
+  yet all looked switched off, and the first click sometimes did nothing. A nested row hidden on
+  the device being edited is now dimmed on the canvas like every element.
+- **Code Block** keeps its line breaks when a builder post is saved from the post screen.
+- **The builder's Preview** shows the page through the theme instead of its JSON.
+- **The post screen** shows a post's real address in the search preview and permalink.
+- **SEO analysis** reads split-text headings and skips image placeholders; the post list's SEO
+  score counts the focus keyword and the shared image, in characters.
+- **Reading time** no longer counts a rendered post's CSS and scripts.
+- **Menu on the canvas** is styled as a mobile menu only where it collapses; the Mobile tab is
+  hidden for a menu that never collapses.
+
+---
+
+## v2.8.19 {#v2-8-19}
 
 **Released: 2026-11-03**
 
