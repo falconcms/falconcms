@@ -89,7 +89,7 @@
         $v = $s['margin_' . $side] ?? '';
         if ($v === '' || $v === null) continue;
         $u = $s['margin_' . $side . '_unit'] ?? 'px';
-        $marginCss .= "margin-{$side}:{$v}{$u};";
+        $marginCss .= "margin-{$side}:" . getUnitVal($v, $u) . ";";
     }
     $getRespMargin = function(string $side, string $dev) use ($s): ?array {
         $base = 'margin_' . $side;
@@ -126,7 +126,7 @@
         $rules = [];
         foreach ($sides as $side) {
             $m = $getRespMargin($side, $rDev);
-            if ($m !== null) $rules[] = "margin-{$side}:{$m[0]}{$m[1]}!important";
+            if ($m !== null) $rules[] = "margin-{$side}:" . getUnitVal($m[0], $m[1]) . "!important";
         }
         $a = $getRespAlign($rDev);
         if ($a && in_array($a, ['flex-start','center','flex-end'], true)) $rules[] = "justify-content:{$a}!important";

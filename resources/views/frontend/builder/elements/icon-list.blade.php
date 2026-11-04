@@ -19,8 +19,8 @@
     $fontFamily   = $s['fontFamily']   ?? 'inherit';
     $lineHeight   = $s['lineHeight']   ?? '1.5';
     $textAlign    = $s['textAlign']    ?? 'left';
-    $marginTop    = ($s['marginTop']   ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
     $cssClass     = $s['cssClass']     ?? '';
     $cssId        = !empty($s['cssId']) ? $s['cssId'] : null;
 

@@ -36,12 +36,12 @@
     <!-- Container Overlays (Margin/Padding) -->
     <div v-if="!isPreview">
         <div class="absolute left-0 right-0 pointer-events-auto z-0 bg-[#9c27b0]/10 transition-opacity"
-             :style="{ height: (container.settings.marginTop || 0) + 'px', top: '-' + (container.settings.marginTop || 0) + 'px' }"
+             :style="{ height: getUnitVal(container.settings.marginTop || 0, container.settings.marginTopUnit || 'px'), top: 'calc(-1 * ' + getUnitVal(container.settings.marginTop || 0, container.settings.marginTopUnit || 'px') + ')' }"
              :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'marginTop' && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
              <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#9c27b0]/40"></div>
         </div>
         <div class="absolute left-0 right-0 pointer-events-auto z-0 bg-[#9c27b0]/10 transition-opacity"
-             :style="{ height: (container.settings.marginBottom || 0) + 'px', bottom: '-' + (container.settings.marginBottom || 0) + 'px' }"
+             :style="{ height: getUnitVal(container.settings.marginBottom || 0, container.settings.marginBottomUnit || 'px'), bottom: 'calc(-1 * ' + getUnitVal(container.settings.marginBottom || 0, container.settings.marginBottomUnit || 'px') + ')' }"
              :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'marginBottom' && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
              <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#9c27b0]/40"></div>
         </div>

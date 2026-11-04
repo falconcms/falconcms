@@ -365,18 +365,18 @@
 <div class="pt-4 border-t border-slate-50">
     <label class="text-[12px] font-bold text-[#333] block mb-2">Element Visibility</label>
     <div class="grid grid-cols-3 gap-1">
-        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                :class="editingElement.settings.visibility.mobile ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+        <button @click="editingElement.settings.visibility = editingElement.settings.visibility || { mobile: true, tablet: true, desktop: true }; editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                :class="editingElement.settings.visibility?.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                 class="py-3 rounded transition-all flex items-center justify-center">
             <i class="fa fa-mobile-alt text-sm"></i>
         </button>
-        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                :class="editingElement.settings.visibility.tablet ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+        <button @click="editingElement.settings.visibility = editingElement.settings.visibility || { mobile: true, tablet: true, desktop: true }; editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                :class="editingElement.settings.visibility?.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                 class="py-3 rounded transition-all flex items-center justify-center">
             <i class="fa fa-tablet-alt text-sm"></i>
         </button>
-        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                :class="editingElement.settings.visibility.desktop ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+        <button @click="editingElement.settings.visibility = editingElement.settings.visibility || { mobile: true, tablet: true, desktop: true }; editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                :class="editingElement.settings.visibility?.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                 class="py-3 rounded transition-all flex items-center justify-center">
             <i class="fa fa-desktop text-sm"></i>
         </button>

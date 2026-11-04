@@ -456,6 +456,56 @@ if (!function_exists('getUnitVal')) {
     }
 }
 
+if (!function_exists('falcon_padding_sides')) {
+    /**
+     * A four-sided padding as a CSS value ("12px 1rem 12px 1rem"), from the settings
+     * {$base}Top, {$base}Right, {$base}Bottom and {$base}Left.
+     *
+     * Those boxes were one or two fields before (Accordion's titlePadding, Table's
+     * cellPaddingY/cellPaddingX). A side left empty falls back to that old setting, and then
+     * to $default, so a page saved before keeps its look. $legacy is the old key for all four
+     * sides, or side => key ('Top' => 'cellPaddingY', 'Left' => 'cellPaddingX', …). Each side
+     * may be any CSS size; a bare number is px. Mirrors padSides() in the builder.
+     *
+     * @param  array<string,mixed>  $s
+     * @param  mixed  $default  one value for every side, or side => value
+     * @param  string|array<string,string>  $legacy
+     */
+    function falcon_padding_sides(array $s, string $base, $default = 0, $legacy = []): string
+    {
+        return implode(' ', falcon_padding_side_list($s, $base, $default, $legacy));
+    }
+}
+
+if (!function_exists('falcon_padding_side_list')) {
+    /**
+     * The four sides of falcon_padding_sides() one by one: ['Top' => '12px', 'Right' => '1rem', …],
+     * for a rule that needs only some of them (a header padded left and right only).
+     *
+     * @param  array<string,mixed>  $s
+     * @param  mixed  $default
+     * @param  string|array<string,string>  $legacy
+     * @return array<string,string>
+     */
+    function falcon_padding_side_list(array $s, string $base, $default = 0, $legacy = []): array
+    {
+        $out = [];
+        foreach (['Top', 'Right', 'Bottom', 'Left'] as $side) {
+            $v = $s[$base.$side] ?? '';
+            if ($v === '' || $v === null) {
+                $old = is_array($legacy) ? ($legacy[$side] ?? null) : $legacy;
+                $v = $old !== null && $old !== '' ? ($s[$old] ?? '') : '';
+            }
+            if ($v === '' || $v === null) {
+                $v = is_array($default) ? ($default[$side] ?? 0) : $default;
+            }
+            $out[$side] = getUnitVal($v, 'px') ?? '0px';
+        }
+
+        return $out;
+    }
+}
+
 // Returns a readable foreground (#111111 / #ffffff) for a given background hex — used so
 // brand-coloured boxes keep their icon legible (e.g. white icon on Snapchat yellow → dark).
 if (!function_exists('falcon_contrast_color')) {

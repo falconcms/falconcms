@@ -88,8 +88,8 @@
     $titleTypo = $typo('toc_title');
     $itemTypo  = $typo('toc_item');
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $uid    = 'fc-toc-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) ($el['id'] ?? uniqid('', false)));
     $elemId = !empty($s['cssId']) ? $s['cssId'] : null;
@@ -134,7 +134,7 @@
             display: block;
             background: {{ $bg }};
             border-radius: {{ (int) $g('radius') }}px;
-            padding: {{ (int) $g('padY') }}px {{ (int) $g('padX') }}px;
+            padding: {{ falcon_padding_sides($s, 'pad', ['Top' => $g('padY'), 'Right' => $g('padX'), 'Bottom' => $g('padY'), 'Left' => $g('padX')]) }};
             @if((int) $g('borderWidth') > 0) border: {{ (int) $g('borderWidth') }}px solid {{ $g('borderColor') }}; @endif
             @if($maxHeight > 0) max-height: {{ $maxHeight }}px; overflow-y: auto; @endif
         }

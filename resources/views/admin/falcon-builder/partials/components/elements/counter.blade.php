@@ -2,8 +2,8 @@
      :style="{
          textAlign: el.settings.textAlign || 'center',
          padding: '8px 0',
-         marginTop: (el.settings.marginTop || 0) + (el.settings.marginTopUnit || 'px'),
-         marginBottom: (el.settings.marginBottom || 0) + (el.settings.marginBottomUnit || 'px')
+         marginTop: getUnitVal(el.settings.marginTop || 0, el.settings.marginTopUnit || 'px'),
+         marginBottom: getUnitVal(el.settings.marginBottom || 0, el.settings.marginBottomUnit || 'px')
      }">
     <div v-if="el.settings.icon"
          :style="{ color: el.settings.iconColor || '#2271b1', fontSize: (el.settings.iconSize || 40) + 'px', marginBottom: '8px' }">

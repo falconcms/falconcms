@@ -143,7 +143,7 @@
                 <div>
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">FONT WEIGHT</label>
                     <select v-model="editingElement.settings.fontWeight"
-                            class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea] bg-white">
+                            class="w-full border border-slate-200 rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#0091ea] bg-white">
                         <option v-for="v in titleFontVariants" :key="v" :value="v">@{{ ({
                             '100':'Thin 100','200':'Extra Light 200','300':'Light 300',
                             '400':'Regular 400','500':'Medium 500','600':'Semi Bold 600',
@@ -201,24 +201,7 @@
             <!-- Padding (4 Boxes) -->
             <div>
                 <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">ITEM PADDING (T | R | B | L)</label>
-                <div class="grid grid-cols-4 gap-2">
-                    <div class="space-y-1">
-                        <input type="number" v-model="editingElement.settings.itemPaddingTop" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]" title="Top">
-                        <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Top</div>
-                    </div>
-                    <div class="space-y-1">
-                        <input type="number" v-model="editingElement.settings.itemPaddingRight" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]" title="Right">
-                        <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Right</div>
-                    </div>
-                    <div class="space-y-1">
-                        <input type="number" v-model="editingElement.settings.itemPaddingBottom" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]" title="Bottom">
-                        <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Bottom</div>
-                    </div>
-                    <div class="space-y-1">
-                        <input type="number" v-model="editingElement.settings.itemPaddingLeft" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]" title="Left">
-                        <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Left</div>
-                    </div>
-                </div>
+                @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'itemPadding', 'responsive' => false, 'unit' => false, 'placeholders' => ['Top' => '10', 'Right' => '15', 'Bottom' => '10', 'Left' => '15']])
             </div>
 
             <!-- Spacing & Border Radius -->

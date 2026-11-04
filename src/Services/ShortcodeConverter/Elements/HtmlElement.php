@@ -27,9 +27,9 @@ final class HtmlElement extends Element
     {
         return ['id' => $a['id'] ?? self::uid(), 'type' => 'html', 'settings' => [
             'htmlContent' => $inner,
-            'marginTop' => isset($a['margin_top']) ? (int) $a['margin_top'] : 0,
+            'marginTop' => isset($a['margin_top']) ? self::num($a['margin_top']) : 0,
             'marginTopUnit' => $a['margin_top_unit'] ?? 'px',
-            'marginBottom' => isset($a['margin_bottom']) ? (int) $a['margin_bottom'] : 0,
+            'marginBottom' => isset($a['margin_bottom']) ? self::num($a['margin_bottom']) : 0,
             'marginBottomUnit' => $a['margin_bottom_unit'] ?? 'px',
             'cssClass' => $a['css_class'] ?? '',
             'cssId' => $a['css_id'] ?? '',

@@ -41,6 +41,7 @@ final class TocElement extends Element
         self::attrI($a, 'radius', $s['radius'] ?? null);
         self::attrI($a, 'pad_y', $s['padY'] ?? null);
         self::attrI($a, 'pad_x', $s['padX'] ?? null);
+        self::sidesAttr($a, 'pad', $s, 'pad');
         self::attrI($a, 'title_color', $s['titleColor'] ?? null);
         self::attrI($a, 'title_size', $s['titleSize'] ?? null);
         self::attrI($a, 'title_weight', $s['titleWeight'] ?? null);
@@ -105,6 +106,7 @@ final class TocElement extends Element
             'radius' => self::numOrBlank($a['radius'] ?? null),
             'padY' => self::numOrBlank($a['pad_y'] ?? null),
             'padX' => self::numOrBlank($a['pad_x'] ?? null),
+            ...self::sidesIn($a, 'pad', 'pad'),
             'titleColor' => $a['title_color'] ?? '',
             'titleSize' => self::numOrBlank($a['title_size'] ?? null),
             'titleWeight' => $a['title_weight'] ?? '',

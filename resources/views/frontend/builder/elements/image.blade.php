@@ -69,10 +69,10 @@
     // Desktop wrapper style
     $align = $s['textAlign'] ?? $s['align'] ?? 'center';
     $wrapperStyle = "width:100%;text-align:{$align};";
-    if (isset($s['marginTop'])    && $s['marginTop']    !== '') $wrapperStyle .= "margin-top:{$s['marginTop']}" . ($s['marginTopUnit'] ?? 'px') . ";";
-    if (isset($s['marginRight'])  && $s['marginRight']  !== '') $wrapperStyle .= "margin-right:{$s['marginRight']}" . ($s['marginRightUnit'] ?? 'px') . ";";
-    if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $wrapperStyle .= "margin-bottom:{$s['marginBottom']}" . ($s['marginBottomUnit'] ?? 'px') . ";";
-    if (isset($s['marginLeft'])   && $s['marginLeft']   !== '') $wrapperStyle .= "margin-left:{$s['marginLeft']}" . ($s['marginLeftUnit'] ?? 'px') . ";";
+    if (isset($s['marginTop'])    && $s['marginTop']    !== '') $wrapperStyle .= "margin-top:" . getUnitVal($s['marginTop'], $s['marginTopUnit'] ?? 'px') . ";";
+    if (isset($s['marginRight'])  && $s['marginRight']  !== '') $wrapperStyle .= "margin-right:" . getUnitVal($s['marginRight'], $s['marginRightUnit'] ?? 'px') . ";";
+    if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $wrapperStyle .= "margin-bottom:" . getUnitVal($s['marginBottom'], $s['marginBottomUnit'] ?? 'px') . ";";
+    if (isset($s['marginLeft'])   && $s['marginLeft']   !== '') $wrapperStyle .= "margin-left:" . getUnitVal($s['marginLeft'], $s['marginLeftUnit'] ?? 'px') . ";";
 
     $aspectRatio = $s['aspectRatio'] ?? 'none';
     $hasRatio    = ($aspectRatio && $aspectRatio !== 'none');

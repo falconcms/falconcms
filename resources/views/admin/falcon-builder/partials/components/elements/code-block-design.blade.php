@@ -27,12 +27,14 @@
            class="wp-input w-full" placeholder="Leave empty for the system monospace stack">
 </div>
 
+<!-- Padding: one box per side, any CSS size (was one px box: padding) -->
+<div>
+    <label class="text-[12px] font-bold text-[#333] block mb-2">Padding</label>
+    @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['responsive' => false, 'unit' => false, 'legacy' => 'padding', 'placeholders' => ['Top' => '18', 'Right' => '18', 'Bottom' => '18', 'Left' => '18']])
+</div>
+
 <!-- Box -->
-<div class="grid grid-cols-3 gap-2">
-    <div>
-        <label class="text-[12px] font-bold text-[#333] block mb-2">Padding</label>
-        <input type="number" min="0" max="80" v-model.number="editingElement.settings.padding" class="wp-input w-full">
-    </div>
+<div class="grid grid-cols-2 gap-2">
     <div>
         <label class="text-[12px] font-bold text-[#333] block mb-2">Radius</label>
         <input type="number" min="0" max="40" v-model.number="editingElement.settings.borderRadius" class="wp-input w-full">
@@ -47,10 +49,10 @@
 <div class="grid grid-cols-2 gap-2">
     <div>
         <label class="text-[12px] font-bold text-[#333] block mb-2">Margin top</label>
-        <input type="number" v-model.number="editingElement.settings.marginTop" class="wp-input w-full">
+        <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', false)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, false)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', false, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="wp-input w-full">
     </div>
     <div>
         <label class="text-[12px] font-bold text-[#333] block mb-2">Margin bottom</label>
-        <input type="number" v-model.number="editingElement.settings.marginBottom" class="wp-input w-full">
+        <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', false)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, false)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', false, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="wp-input w-full">
     </div>
 </div>

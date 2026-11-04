@@ -56,9 +56,11 @@ final class ContentBoxElement extends Element
         self::attrI($a, 'link_btn_text_color', $s['linkButtonTextColor'] ?? null, '#ffffff');
         self::attrI($a, 'link_btn_pad_x', $s['linkButtonPaddingX'] ?? null, 20);
         self::attrI($a, 'link_btn_pad_y', $s['linkButtonPaddingY'] ?? null, 10);
+        self::sidesAttr($a, 'link_btn_pad', $s, 'linkButtonPadding');
         self::attrI($a, 'link_btn_radius', $s['linkButtonRadius'] ?? null, 4);
         self::attrI($a, 'box_bg_color', $s['boxBgColor'] ?? null);
         self::attrI($a, 'box_padding', $s['boxPadding'] ?? null);
+        self::sidesAttr($a, 'box_padding', $s, 'boxPadding');
         self::attrI($a, 'box_border_radius', $s['boxBorderRadius'] ?? null, 0);
         self::attrI($a, 'box_border_width', $s['boxBorderWidth'] ?? null, 0);
         self::attrI($a, 'box_border_color', $s['boxBorderColor'] ?? null, '#e5e7eb');
@@ -163,11 +165,13 @@ final class ContentBoxElement extends Element
             'linkHoverColor' => $a['link_hover_color'] ?? '',
             'linkSpacing' => isset($a['link_spacing']) ? (int) $a['link_spacing'] : 14,
             'linkButtonTextColor' => $a['link_btn_text_color'] ?? '#ffffff',
-            'linkButtonPaddingX' => isset($a['link_btn_pad_x']) ? (int) $a['link_btn_pad_x'] : 20,
-            'linkButtonPaddingY' => isset($a['link_btn_pad_y']) ? (int) $a['link_btn_pad_y'] : 10,
+            'linkButtonPaddingX' => isset($a['link_btn_pad_x']) ? self::num($a['link_btn_pad_x']) : 20,
+            'linkButtonPaddingY' => isset($a['link_btn_pad_y']) ? self::num($a['link_btn_pad_y']) : 10,
+            ...self::sidesIn($a, 'link_btn_pad', 'linkButtonPadding'),
             'linkButtonRadius' => isset($a['link_btn_radius']) ? (int) $a['link_btn_radius'] : 4,
             'boxBgColor' => $a['box_bg_color'] ?? '',
             'boxPadding' => $a['box_padding'] ?? '',
+            ...self::sidesIn($a, 'box_padding', 'boxPadding'),
             'boxBorderRadius' => isset($a['box_border_radius']) ? (int) $a['box_border_radius'] : 0,
             'boxBorderWidth' => isset($a['box_border_width']) ? (int) $a['box_border_width'] : 0,
             'boxBorderColor' => $a['box_border_color'] ?? '#e5e7eb',

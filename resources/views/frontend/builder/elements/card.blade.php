@@ -155,10 +155,10 @@
     if ($layout === 'list') { $cols = 1; $colsTablet = 1; $colsMobile = 1; }
 
     // Margin
-    $marginStyle  = "margin-top:"    . ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px') . ";";
-    $marginStyle .= "margin-right:"  . ($s['marginRight']  ?? 0) . ($s['marginRightUnit']  ?? 'px') . ";";
-    $marginStyle .= "margin-bottom:" . ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px') . ";";
-    $marginStyle .= "margin-left:"   . ($s['marginLeft']   ?? 0) . ($s['marginLeftUnit']   ?? 'px') . ";";
+    $marginStyle  = "margin-top:"    . getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px') . ";";
+    $marginStyle .= "margin-right:"  . getUnitVal($s['marginRight'] ?? 0, $s['marginRightUnit'] ?? 'px') . ";";
+    $marginStyle .= "margin-bottom:" . getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px') . ";";
+    $marginStyle .= "margin-left:"   . getUnitVal($s['marginLeft'] ?? 0, $s['marginLeftUnit'] ?? 'px') . ";";
 
     // Post card builder layout
     $cardLayout = is_array($cardCfg['layout'] ?? null) ? $cardCfg['layout'] : [];

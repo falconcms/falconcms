@@ -34,6 +34,7 @@ final class TableElement extends Element
         self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'pad_y', $s['cellPaddingY'] ?? null);
         self::attrI($a, 'pad_x', $s['cellPaddingX'] ?? null);
+        self::sidesAttr($a, 'cell_pad', $s, 'cellPadding');
         self::attrI($a, 'radius', $s['radius'] ?? null);
         self::attrI($a, 'margin_top', $s['marginTop'] ?? null);
         self::attrI($a, 'margin_top_unit', $s['marginTopUnit'] ?? null, 'px');
@@ -235,8 +236,9 @@ final class TableElement extends Element
             'hover' => isset($a['hover']) ? ($a['hover'] === 'yes') : null,
             'hoverBg' => $a['hover_bg'] ?? null,
             'fontSize' => self::fontIn($a, 'font_size', null, fn ($v) => self::num($v)),
-            'cellPaddingY' => isset($a['pad_y']) ? (int) $a['pad_y'] : null,
-            'cellPaddingX' => isset($a['pad_x']) ? (int) $a['pad_x'] : null,
+            'cellPaddingY' => isset($a['pad_y']) ? self::num($a['pad_y']) : null,
+            'cellPaddingX' => isset($a['pad_x']) ? self::num($a['pad_x']) : null,
+            ...self::sidesIn($a, 'cell_pad', 'cellPadding'),
             'radius' => isset($a['radius']) ? (int) $a['radius'] : null,
             'marginTop' => isset($a['margin_top']) ? self::num($a['margin_top']) : 0,
             'marginTopUnit' => $a['margin_top_unit'] ?? 'px',

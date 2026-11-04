@@ -8,14 +8,29 @@
     <div class="space-y-6">
         <!-- Select Menu -->
         <div class="space-y-4">
+            {{-- A menu per device: tablet and mobile may each have their own; left on "Same as …"
+                 they show the larger screen's menu (the page draws one copy per distinct menu). --}}
             <div class="flex justify-between items-center">
                 <label class="text-[12px] font-bold text-slate-700">Menu</label>
+                <div class="flex gap-1 items-center">
+                    <button v-if="device !== 'desktop'" @click="editingElement.settings['menuId_' + device] = ''" title="Same as the larger screen" class="text-slate-300 hover:text-red-500 transition-colors">
+                        <i class="fa fa-undo text-[10px]"></i>
+                    </button>
+                    @include('falcon-cms::admin.falcon-builder.partials.components.fields.responsive-mode', ['menu' => 'menuSelect'])
+                </div>
             </div>
-            <select v-model="editingElement.settings.menuId" 
+            <select v-if="device === 'desktop'" v-model="editingElement.settings.menuId"
                     class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea] bg-white">
                 <option value="">Select a menu...</option>
                 <option v-for="(name, id) in falconMenusList" :value="id">@{{ name }}</option>
             </select>
+            <select v-else :value="editingElement.settings['menuId_' + device] || ''"
+                    @change="editingElement.settings['menuId_' + device] = $event.target.value"
+                    class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea] bg-white">
+                <option value="">Same as @{{ device === 'mobile' ? 'Tablet' : 'Desktop' }} (@{{ falconMenusList[menuIdFor(editingElement.settings, device === 'mobile' ? 'tablet' : 'desktop')] || 'no menu' }})</option>
+                <option v-for="(name, id) in falconMenusList" :value="id">@{{ name }}</option>
+            </select>
+            <p v-if="device !== 'desktop'" class="text-[11px] text-slate-400">The menu on @{{ device }} screens. Left on "Same as", the larger screen's menu is used.</p>
         </div>
 
         <!-- Direction Selector -->
@@ -41,13 +56,11 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Top</label>
-                    <input type="number" v-model="editingElement.settings.marginTop" 
-                           class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                    <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', false)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, false)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', false, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                 </div>
                 <div class="space-y-1">
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bottom</label>
-                    <input type="number" v-model="editingElement.settings.marginBottom" 
-                           class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                    <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', false)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, false)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', false, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                 </div>
             </div>
         </div>
@@ -100,17 +113,17 @@
                 <label class="text-[12px] font-bold text-slate-700">Element Visibility</label>
             </div>
             <div class="flex bg-slate-50 border border-slate-100 rounded overflow-hidden">
-                <button @click="editingElement.settings.visibility = editingElement.settings.visibility || {mobile:true, tablet:true, desktop:true}; editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
+                <button @click="editingElement.settings.visibility = editingElement.settings.visibility || {mobile:true, tablet:true, desktop:true}; editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
                         :class="(editingElement.settings.visibility?.mobile ?? true) ? 'bg-[#2271b1] text-white shadow-sm' : 'text-slate-400'"
                         class="flex-1 py-2.5 flex items-center justify-center border-r border-slate-100 transition-all">
                     <i class="fa fa-mobile-alt text-xs"></i>
                 </button>
-                <button @click="editingElement.settings.visibility = editingElement.settings.visibility || {mobile:true, tablet:true, desktop:true}; editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
+                <button @click="editingElement.settings.visibility = editingElement.settings.visibility || {mobile:true, tablet:true, desktop:true}; editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
                         :class="(editingElement.settings.visibility?.tablet ?? true) ? 'bg-[#2271b1] text-white shadow-sm' : 'text-slate-400'"
                         class="flex-1 py-2.5 flex items-center justify-center border-r border-slate-100 transition-all">
                     <i class="fa fa-tablet-alt text-xs"></i>
                 </button>
-                <button @click="editingElement.settings.visibility = editingElement.settings.visibility || {mobile:true, tablet:true, desktop:true}; editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
+                <button @click="editingElement.settings.visibility = editingElement.settings.visibility || {mobile:true, tablet:true, desktop:true}; editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
                         :class="(editingElement.settings.visibility?.desktop ?? true) ? 'bg-[#2271b1] text-white shadow-sm' : 'text-slate-400'"
                         class="flex-1 py-2.5 flex items-center justify-center transition-all">
                     <i class="fa fa-desktop text-xs"></i>

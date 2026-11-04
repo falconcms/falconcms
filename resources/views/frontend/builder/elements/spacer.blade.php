@@ -9,8 +9,8 @@
 
     $style_type     = $s['style']           ?? 'default';
     $flexGrow       = (int)($s['flexGrow']  ?? 0);
-    $marginTop      = ($s['marginTop']      ?? 0) . ($s['marginTopUnit']       ?? 'px');
-    $marginBottom   = ($s['marginBottom']   ?? 0) . ($s['marginBottomUnit']    ?? 'px');
+    $marginTop      = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom   = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
     $separatorWidth = ($s['separatorWidth'] ?? 100) . ($s['separatorWidthUnit'] ?? '%');
     $alignment      = $s['alignment']       ?? 'center';
     $borderSize     = (int)($s['borderSize']     ?? 1);

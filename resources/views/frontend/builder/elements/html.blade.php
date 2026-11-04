@@ -9,8 +9,8 @@
 
     $htmlContent  = $s['htmlContent']  ?? '';
     $cssClass     = $s['cssClass']     ?? '';
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $elemId = !empty($s['cssId']) ? $s['cssId'] : ('html-' . ($el['id'] ?? str_replace('.', '', uniqid('', true))));
     $outerStyle = "width:100%;margin-top:{$marginTop};margin-bottom:{$marginBottom};";

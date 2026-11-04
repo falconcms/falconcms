@@ -24,10 +24,10 @@
     // Desktop base styles — width:100% and align-self:stretch so it fills column width
     $wrapStyle  = "width:100%;align-self:stretch;";
     $wrapStyle .= "text-align:" . ($s['textAlign'] ?? 'left') . ";";
-    $wrapStyle .= "margin-top:"    . ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px') . ";";
-    $wrapStyle .= "margin-right:"  . ($s['marginRight']  ?? 0) . ($s['marginRightUnit']  ?? 'px') . ";";
-    $wrapStyle .= "margin-bottom:" . ($s['marginBottom'] ?? 8) . ($s['marginBottomUnit'] ?? 'px') . ";";
-    $wrapStyle .= "margin-left:"   . ($s['marginLeft']   ?? 0) . ($s['marginLeftUnit']   ?? 'px') . ";";
+    $wrapStyle .= "margin-top:"    . getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px') . ";";
+    $wrapStyle .= "margin-right:"  . getUnitVal($s['marginRight'] ?? 0, $s['marginRightUnit'] ?? 'px') . ";";
+    $wrapStyle .= "margin-bottom:" . getUnitVal($s['marginBottom'] ?? 8, $s['marginBottomUnit'] ?? 'px') . ";";
+    $wrapStyle .= "margin-left:"   . getUnitVal($s['marginLeft'] ?? 0, $s['marginLeftUnit'] ?? 'px') . ";";
 
     // Typography — text-align explicitly inherited so responsive overrides cascade properly
     $typoStyle  = "font-family:"    . ($s['fontFamily']    ?? 'inherit') . ";";

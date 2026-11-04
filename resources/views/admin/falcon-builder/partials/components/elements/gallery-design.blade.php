@@ -94,7 +94,7 @@
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Style</label>
                 <select v-model="editingElement.settings.imgBorderStyle"
-                        class="w-full border border-slate-200 rounded px-1 py-2 text-[11px] focus:outline-none focus:border-[#0091ea]">
+                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
                     <option value="solid">Solid</option>
                     <option value="dashed">Dashed</option>
                     <option value="dotted">Dotted</option>
@@ -240,33 +240,11 @@
         <div class="grid grid-cols-2 gap-3">
             <div class="flex flex-col gap-1">
                 <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                    <input type="number"
-                           :value="getResponsiveVal(editingElement.settings, 'marginTop', device) ?? 0"
-                           @input="setResponsiveVal(editingElement.settings, 'marginTop', device, $event.target.value === '' ? '' : Number($event.target.value))"
-                           placeholder="0"
-                           class="w-full h-9 px-2 text-[12px] text-center border-none focus:ring-0">
-                    <select :value="getResponsiveVal(editingElement.settings, 'marginTopUnit', device) || 'px'"
-                            @change="setResponsiveVal(editingElement.settings, 'marginTopUnit', device, $event.target.value)"
-                            class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                        <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                    </select>
-                </div>
+                <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', device, true)" @input="spInput(editingElement.settings, 'marginTop', device, $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', device, true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
             <div class="flex flex-col gap-1">
                 <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                    <input type="number"
-                           :value="getResponsiveVal(editingElement.settings, 'marginBottom', device) ?? 0"
-                           @input="setResponsiveVal(editingElement.settings, 'marginBottom', device, $event.target.value === '' ? '' : Number($event.target.value))"
-                           placeholder="0"
-                           class="w-full h-9 px-2 text-[12px] text-center border-none focus:ring-0">
-                    <select :value="getResponsiveVal(editingElement.settings, 'marginBottomUnit', device) || 'px'"
-                            @change="setResponsiveVal(editingElement.settings, 'marginBottomUnit', device, $event.target.value)"
-                            class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                        <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                    </select>
-                </div>
+                <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', device, true)" @input="spInput(editingElement.settings, 'marginBottom', device, $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', device, true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
         </div>
     </div>

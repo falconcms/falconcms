@@ -45,14 +45,14 @@
     $wrapperStyles = [
         'align-self: stretch',
         'text-align: ' . ($s['textAlign'] ?? 'center'),
-        'padding-top: ' . ($s['paddingTop'] ?? 20) . ($s['paddingTopUnit'] ?? 'px'),
-        'padding-right: ' . ($s['paddingRight'] ?? 0) . ($s['paddingRightUnit'] ?? 'px'),
-        'padding-bottom: ' . ($s['paddingBottom'] ?? 20) . ($s['paddingBottomUnit'] ?? 'px'),
-        'padding-left: ' . ($s['paddingLeft'] ?? 0) . ($s['paddingLeftUnit'] ?? 'px'),
-        'margin-top: ' . ($s['marginTop'] ?? 0) . ($s['marginTopUnit'] ?? 'px'),
-        'margin-right: ' . ($s['marginRight'] ?? 0) . ($s['marginRightUnit'] ?? 'px'),
-        'margin-bottom: ' . ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px'),
-        'margin-left: ' . ($s['marginLeft'] ?? 0) . ($s['marginLeftUnit'] ?? 'px'),
+        'padding-top: ' . getUnitVal($s['paddingTop'] ?? 20, $s['paddingTopUnit'] ?? 'px'),
+        'padding-right: ' . getUnitVal($s['paddingRight'] ?? 0, $s['paddingRightUnit'] ?? 'px'),
+        'padding-bottom: ' . getUnitVal($s['paddingBottom'] ?? 20, $s['paddingBottomUnit'] ?? 'px'),
+        'padding-left: ' . getUnitVal($s['paddingLeft'] ?? 0, $s['paddingLeftUnit'] ?? 'px'),
+        'margin-top: ' . getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px'),
+        'margin-right: ' . getUnitVal($s['marginRight'] ?? 0, $s['marginRightUnit'] ?? 'px'),
+        'margin-bottom: ' . getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px'),
+        'margin-left: ' . getUnitVal($s['marginLeft'] ?? 0, $s['marginLeftUnit'] ?? 'px'),
     ];
 
     // Empty: no font-size, so the heading takes the Customizer's size for its tag.

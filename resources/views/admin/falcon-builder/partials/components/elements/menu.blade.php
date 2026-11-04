@@ -194,10 +194,10 @@
                  Comments belong here rather than inside the :style binding — that is an HTML
                  attribute value, and a quote in it ends the attribute and blanks the whole
                  builder. tests/Feature/Builder/BuilderTemplateSyntaxTest enforces this. --}}
-            <template v-if="el.settings.menuId && falconMenuData[el.settings.menuId]">
+            <template v-if="menuIdFor(el.settings, device) && falconMenuData[menuIdFor(el.settings, device)]">
                 
                 <!-- Main Level -->
-                <li v-for="(item, idx) in falconMenuData[el.settings.menuId]"
+                <li v-for="(item, idx) in falconMenuData[menuIdFor(el.settings, device)]"
                     class="admin-menu-item relative group/item"
                     :key="idx"
                     :style="!menuCollapsed(el) ? { display: 'flex', alignItems: (el.settings.alignItems || 'center') } : {}"
@@ -341,10 +341,10 @@
                                        "flex-direction: " + ((el.settings.mobileMenuTextAlign === "right") ? "row-reverse" : "row") + " !important; " +
                                        "text-decoration: none !important; border-bottom: " + (el.settings.mobileSeparatorEnabled === "no" ? "none" : ("1px solid " + (el.settings.mobileMenuSeparatorColor || "rgba(0,0,0,0.05)"))) + " !important;") : {
                                     color: (el._hoveredSubIdx === cidx ? (el.settings.submenuTextColorHover || "#2271b1") : (el.settings.submenuTextColor || "#333")),
-                                    paddingTop: (el.settings.submenuPaddingTop !== undefined ? el.settings.submenuPaddingTop : 10) + "px",
-                                    paddingRight: (el.settings.submenuPaddingRight !== undefined ? el.settings.submenuPaddingRight : 20) + "px",
-                                    paddingBottom: (el.settings.submenuPaddingBottom !== undefined ? el.settings.submenuPaddingBottom : 10) + "px",
-                                    paddingLeft: (el.settings.submenuPaddingLeft !== undefined ? el.settings.submenuPaddingLeft : 20) + "px",
+                                    paddingTop: getUnitVal(falconNum(el.settings.submenuPaddingTop, 10), "px"),
+                                    paddingRight: getUnitVal(falconNum(el.settings.submenuPaddingRight, 20), "px"),
+                                    paddingBottom: getUnitVal(falconNum(el.settings.submenuPaddingBottom, 10), "px"),
+                                    paddingLeft: getUnitVal(falconNum(el.settings.submenuPaddingLeft, 20), "px"),
                                     fontFamily: (el.settings.submenuFontFamily && el.settings.submenuFontFamily !== "inherit") ? el.settings.submenuFontFamily : (themeNavFont || "inherit"),
                                     fontSize: getUnitVal(el.settings.submenuFontSize || 14, "px"),
                                     fontWeight: el.settings.submenuFontWeight || "400",
@@ -453,10 +453,10 @@
                                        "flex-direction: " + ((el.settings.mobileMenuTextAlign === "right") ? "row-reverse" : "row") + " !important; " +
                                        "text-decoration: none !important; border-bottom: " + (el.settings.mobileSeparatorEnabled === "no" ? "none" : ("1px solid " + (el.settings.mobileMenuSeparatorColor || "rgba(0,0,0,0.05)"))) + " !important;") : {
                                              color: el._hoveredGSubIdx === gidx ? (el.settings.submenuTextColorHover || "#2271b1") : (el.settings.submenuTextColor || "#333"),
-                                             paddingTop: (el.settings.submenuPaddingTop !== undefined ? el.settings.submenuPaddingTop : 10) + "px",
-                                             paddingRight: (el.settings.submenuPaddingRight !== undefined ? el.settings.submenuPaddingRight : 20) + "px",
-                                             paddingBottom: (el.settings.submenuPaddingBottom !== undefined ? el.settings.submenuPaddingBottom : 10) + "px",
-                                             paddingLeft: (el.settings.submenuPaddingLeft !== undefined ? el.settings.submenuPaddingLeft : 20) + "px",
+                                             paddingTop: getUnitVal(falconNum(el.settings.submenuPaddingTop, 10), "px"),
+                                             paddingRight: getUnitVal(falconNum(el.settings.submenuPaddingRight, 20), "px"),
+                                             paddingBottom: getUnitVal(falconNum(el.settings.submenuPaddingBottom, 10), "px"),
+                                             paddingLeft: getUnitVal(falconNum(el.settings.submenuPaddingLeft, 20), "px"),
                                              fontFamily: (el.settings.submenuFontFamily && el.settings.submenuFontFamily !== "inherit") ? el.settings.submenuFontFamily : (themeNavFont || "inherit"),
                                              fontSize: getUnitVal(el.settings.submenuFontSize || 14, "px"),
                                              fontWeight: el.settings.submenuFontWeight || "400",
@@ -504,7 +504,7 @@
             <template v-else>
                 <div class="py-2 px-4 bg-slate-50 border border-dashed border-slate-200 text-slate-400 text-[11px] font-bold uppercase tracking-widest rounded flex items-center gap-2">
                     <i class="fa fa-info-circle text-[#0091ea]"></i>
-                    @{{ el.settings.menuId ? 'Selected menu is empty' : 'No menu selected' }}
+                    @{{ menuIdFor(el.settings, device) ? 'Selected menu is empty' : 'No menu selected' }}
                 </div>
             </template>
         </ul>

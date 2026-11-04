@@ -25,7 +25,7 @@
     $titleBgColor         = $s['titleBgColor']         ?? '#f8fafc';
     $titleActiveBgColor   = $s['titleActiveBgColor']   ?? '#0091ea';
     $titleActiveColor     = $s['titleActiveColor']     ?? '#ffffff';
-    $titlePadding         = ($s['titlePadding']        ?? 16) . 'px';
+    $titlePadding         = falcon_padding_sides($s, 'titlePadding', 16, 'titlePadding');
 
     $contentFontSize      = getUnitVal($s['contentFontSize'] ?? 14, $s['contentFontSizeUnit'] ?? 'px');
     $contentFontFamily    = $s['contentFontFamily']    ?? 'inherit';
@@ -33,14 +33,14 @@
     $contentLineHeight    = $s['contentLineHeight']    ?? 1.6;
     $contentColor         = $s['contentColor']         ?? '#555555';
     $contentBgColor       = $s['contentBgColor']       ?? '#ffffff';
-    $contentPadding       = ($s['contentPadding']      ?? 16) . 'px';
+    $contentPadding       = falcon_padding_sides($s, 'contentPadding', 16, 'contentPadding');
 
     $borderColor  = $s['borderColor']  ?? '#e2e8f0';
     $borderRadius = ($s['borderRadius'] ?? 8);
     $itemGap      = ($s['itemGap']     ?? 8) . 'px';
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $outerStyle = "width:100%;margin-top:{$marginTop};margin-bottom:{$marginBottom};";
 

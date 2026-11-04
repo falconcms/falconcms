@@ -9,6 +9,8 @@
 use Carbon\Carbon;
 use FalconCms\Core\Models\PostMeta;
 use FalconCms\Core\Support\OffCanvas;
+use FalconCms\Core\Support\RelativeDates;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Str;
 
 if (!function_exists('falcon_dynamic_config')) {
@@ -33,6 +35,10 @@ if (!function_exists('falcon_dynamic_config')) {
         return [
             'date_type' => $s['dynamic_date_type'] ?? 'published',
             'date_format' => $s['dynamic_date_format'] ?? '',
+            // Post Date "Show as": 'date' (the format above) or 'relative' ("3 hours ago"),
+            // and for how many days a date reads as "ago" before it shows the date (0 = always).
+            'date_display' => $s['dynamic_date_display'] ?? 'date',
+            'date_relative_days' => $s['dynamic_date_relative_days'] ?? '',
             'before' => $s['dynamic_before'] ?? '',
             'after' => $s['dynamic_after'] ?? '',
             'fallback' => $s['dynamic_fallback'] ?? '',
@@ -198,7 +204,11 @@ if (!function_exists('falcon_resolve_dynamic_value')) {
                 $d = $dateType === 'modified'
                     ? ($post->updated_at ?? null)
                     : ($post->published_at ?? $post->created_at ?? null);
-                $val = ($post && $d) ? Carbon::parse($d)->format($dateFormat) : '';
+                if ($post && $d && ($config['date_display'] ?? 'date') === 'relative') {
+                    // "3 hours ago", kept current by the browser (the page may be cached).
+                    return RelativeDates::html($d, $config, (string) $before, (string) $after);
+                }
+                $val = ($post && $d) ? falcon_localize_digits(Carbon::parse($d)->format($dateFormat), $config['digits'] ?? '') : '';
                 break;
             case 'post_reading_time':
                 if (!$post) {
@@ -413,7 +423,12 @@ if (!function_exists('falcon_apply_custom_dynamic')) {
         foreach ($settings as $k => $v) {
             if (is_string($k) && str_ends_with($k, '_dynamic') && !empty($v)) {
                 $base = substr($k, 0, -strlen('_dynamic'));
-                $settings[$base] = falcon_resolve_dynamic_value($v, $post, $config);
+                $resolved = falcon_resolve_dynamic_value($v, $post, $config);
+                // A plugin's template may escape or reuse the value: hand it the plain words
+                // (a time-ago date comes back as a <time> for the elements that keep it current).
+                $settings[$base] = $resolved instanceof Htmlable
+                    ? html_entity_decode(strip_tags($resolved->toHtml()), ENT_QUOTES | ENT_HTML5)
+                    : $resolved;
             }
         }
 
@@ -606,7 +621,8 @@ if (!function_exists('falcon_custom_element_render')) {
                 if ($v === '' || $v === null) {
                     $edges[] = '0';
                 } else {
-                    $edges[] = $v.($s[$prefix.'_'.$side.'_unit'] ?? 'px');
+                    // A box may hold a whole CSS value ("calc(1rem + 2vw)"): getUnitVal leaves it as is.
+                    $edges[] = getUnitVal($v, $s[$prefix.'_'.$side.'_unit'] ?? 'px');
                     $has = true;
                 }
             }

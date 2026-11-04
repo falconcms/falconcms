@@ -189,19 +189,12 @@
         </label>
     </div>
 
-    <div class="grid grid-cols-3 gap-3">
-        <div>
-            <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Pad Y</label>
-            <input type="number" min="0" max="40" v-model.number="editingElement.settings.cellPaddingY"
-                   :placeholder="fcTblVal(editingElement, 'cellPaddingY')"
-                   class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
-        </div>
-        <div>
-            <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Pad X</label>
-            <input type="number" min="0" max="40" v-model.number="editingElement.settings.cellPaddingX"
-                   :placeholder="fcTblVal(editingElement, 'cellPaddingX')"
-                   class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
-        </div>
+    <!-- Cell padding: one box per side, any CSS size (was Pad Y / Pad X); empty = the style's -->
+    <div>
+        <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Cell Padding</label>
+        @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'cellPadding', 'responsive' => false, 'unit' => false, 'hintJs' => ['Top' => "String(fcTblVal(editingElement, 'cellPaddingY'))", 'Right' => "String(fcTblVal(editingElement, 'cellPaddingX'))", 'Bottom' => "String(fcTblVal(editingElement, 'cellPaddingY'))", 'Left' => "String(fcTblVal(editingElement, 'cellPaddingX'))"]])
+    </div>
+    <div class="grid grid-cols-2 gap-3">
         <div>
             <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Radius</label>
             <input type="number" min="0" max="30" v-model.number="editingElement.settings.radius"
@@ -213,13 +206,11 @@
     <div class="grid grid-cols-2 gap-3">
         <div>
             <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Margin top</label>
-            <input type="number" v-model.number="editingElement.settings.marginTop"
-                   class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+            <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', false)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, false)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', false, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
         </div>
         <div>
             <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Margin bottom</label>
-            <input type="number" v-model.number="editingElement.settings.marginBottom"
-                   class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+            <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', false)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, false)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', false, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
         </div>
     </div>
 </div>

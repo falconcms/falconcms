@@ -57,8 +57,8 @@
     $iconBorderW = (int) ($s['iconBorderWidth'] ?? 1);
     $iconPadding = (int) ($s['iconPadding'] ?? 10);
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $cssClass = $s['cssClass'] ?? '';
     $elemId   = 'separator-' . ($el['id'] ?? str_replace('.', '', uniqid('', true)));

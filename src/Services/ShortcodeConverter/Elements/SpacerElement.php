@@ -34,9 +34,9 @@ final class SpacerElement extends Element
         return ['id' => $a['id'] ?? self::uid(), 'type' => 'spacer', 'settings' => [
             'style' => $a['style'] ?? 'default',
             'flexGrow' => isset($a['flex_grow']) ? (int) $a['flex_grow'] : 0,
-            'marginTop' => isset($a['margin_top']) ? (int) $a['margin_top'] : 0,
+            'marginTop' => isset($a['margin_top']) ? self::num($a['margin_top']) : 0,
             'marginTopUnit' => $a['margin_top_unit'] ?? 'px',
-            'marginBottom' => isset($a['margin_bottom']) ? (int) $a['margin_bottom'] : 0,
+            'marginBottom' => isset($a['margin_bottom']) ? self::num($a['margin_bottom']) : 0,
             'marginBottomUnit' => $a['margin_bottom_unit'] ?? 'px',
             'separatorWidth' => isset($a['separator_width']) ? (int) $a['separator_width'] : 100,
             'separatorWidthUnit' => $a['separator_width_unit'] ?? '%',

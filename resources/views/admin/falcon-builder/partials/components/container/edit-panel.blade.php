@@ -511,18 +511,18 @@
                 <label class="text-[11px] font-bold text-[#444]">Device Visibility</label>
             </div>
             <div class="grid grid-cols-3 gap-2" @click.capture="if (!{{ $base }}.settings.visibility) { {{ $base }}.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                <button @click="{{ $base }}.settings.visibility.mobile = !{{ $base }}.settings.visibility.mobile"
-                        :class="{{ $base }}.settings.visibility && {{ $base }}.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                <button @click="{{ $base }}.settings.visibility.mobile = {{ $base }}.settings.visibility.mobile === false"
+                        :class="!{{ $base }}.settings.visibility || {{ $base }}.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                         class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                     <i class="fa fa-mobile-alt text-sm"></i>
                 </button>
-                <button @click="{{ $base }}.settings.visibility.tablet = !{{ $base }}.settings.visibility.tablet"
-                        :class="{{ $base }}.settings.visibility && {{ $base }}.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                <button @click="{{ $base }}.settings.visibility.tablet = {{ $base }}.settings.visibility.tablet === false"
+                        :class="!{{ $base }}.settings.visibility || {{ $base }}.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                         class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                     <i class="fa fa-tablet-alt text-sm"></i>
                 </button>
-                <button @click="{{ $base }}.settings.visibility.desktop = !{{ $base }}.settings.visibility.desktop"
-                        :class="{{ $base }}.settings.visibility && {{ $base }}.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                <button @click="{{ $base }}.settings.visibility.desktop = {{ $base }}.settings.visibility.desktop === false"
+                        :class="!{{ $base }}.settings.visibility || {{ $base }}.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                         class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                     <i class="fa fa-desktop text-sm"></i>
                 </button>
@@ -582,27 +582,11 @@
                 <div class="grid grid-cols-2 gap-4 mb-6">
                     <div class="flex flex-col gap-1">
                         <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Top</label>
-                        <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                            <input type="number" v-model.number="{{ $base }}.settings[device === 'desktop' ? 'marginTop' : 'marginTop_' + device]" class="w-full h-9 px-3 text-[12px] border-none focus:ring-0" :placeholder="getResponsiveVal({{ $base }}.settings, 'marginTop', device) || '0'">
-                            <select v-model="{{ $base }}.settings[device === 'desktop' ? 'marginTopUnit' : 'marginTopUnit_' + device]" class="bg-slate-50 border-l border-slate-200 text-[10px] px-1 focus:ring-0 border-none outline-none cursor-pointer">
-                                <option value="px">px</option>
-                                <option value="rem">rem</option>
-                                <option value="%">%</option>
-                                <option value="em">em</option>
-                            </select>
-                        </div>
+                        <input type="text" :value="spDisplay({{ $base }}.settings, 'marginTop', device, true)" @input="spInput({{ $base }}.settings, 'marginTop', device, $event.target.value, true)" :placeholder="spHint({{ $base }}.settings, 'marginTop', device, true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                     </div>
                     <div class="flex flex-col gap-1">
                         <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Bottom</label>
-                        <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                            <input type="number" v-model.number="{{ $base }}.settings[device === 'desktop' ? 'marginBottom' : 'marginBottom_' + device]" class="w-full h-9 px-3 text-[12px] border-none focus:ring-0" :placeholder="getResponsiveVal({{ $base }}.settings, 'marginBottom', device) || '0'">
-                            <select v-model="{{ $base }}.settings[device === 'desktop' ? 'marginBottomUnit' : 'marginBottomUnit_' + device]" class="bg-slate-50 border-l border-slate-200 text-[10px] px-1 focus:ring-0 border-none outline-none cursor-pointer">
-                                <option value="px">px</option>
-                                <option value="rem">rem</option>
-                                <option value="%">%</option>
-                                <option value="em">em</option>
-                            </select>
-                        </div>
+                        <input type="text" :value="spDisplay({{ $base }}.settings, 'marginBottom', device, true)" @input="spInput({{ $base }}.settings, 'marginBottom', device, $event.target.value, true)" :placeholder="spHint({{ $base }}.settings, 'marginBottom', device, true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                     </div>
                 </div>
             </div>
@@ -634,20 +618,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2 mb-4">
-                    <div class="flex flex-col gap-1" v-for="side in ['Top', 'Right', 'Bottom', 'Left']">
-                        <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">@{{side}}</label>
-                        <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                            <input type="number" min="0" v-model.number="{{ $base }}.settings[device === 'desktop' ? 'padding' + side : 'padding' + side + '_' + device]" :placeholder="getResponsiveVal({{ $base }}.settings, 'padding' + side, device) || '0'" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                            <select v-model="{{ $base }}.settings[device === 'desktop' ? 'padding' + side + 'Unit' : 'padding' + side + 'Unit_' + device]" class="bg-slate-50 border-l border-slate-200 text-[9px] px-1 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                <option value="px">px</option>
-                                <option value="rem">rem</option>
-                                <option value="%">%</option>
-                                <option value="em">em</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
+                @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['model' => $base.'.settings', 'class' => 'mb-4'])
             </div>
 
             <!-- Container Link Color -->

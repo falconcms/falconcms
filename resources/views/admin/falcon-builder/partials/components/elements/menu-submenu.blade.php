@@ -202,24 +202,7 @@
         <!-- Padding (4 Boxes) -->
         <div>
             <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-3">Submenu Item Padding</label>
-            <div class="grid grid-cols-4 gap-2">
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.submenuPaddingTop" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Top</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.submenuPaddingRight" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Right</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.submenuPaddingBottom" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Bottom</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.submenuPaddingLeft" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Left</div>
-                </div>
-            </div>
+            @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'submenuPadding', 'responsive' => false, 'unit' => false, 'placeholders' => ['Top' => '10', 'Right' => '20', 'Bottom' => '10', 'Left' => '20']])
         </div>
     </div>
 

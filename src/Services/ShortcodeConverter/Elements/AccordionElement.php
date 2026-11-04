@@ -27,6 +27,7 @@ final class AccordionElement extends Element
         self::attrI($a, 'title_active_bg_color', $s['titleActiveBgColor'] ?? null, '#0091ea');
         self::attrI($a, 'title_active_color', $s['titleActiveColor'] ?? null, '#ffffff');
         self::attrI($a, 'title_padding', $s['titlePadding'] ?? null, 16);
+        self::sidesAttr($a, 'title_padding', $s, 'titlePadding');
         self::fontAttr($a, 'content_font_size', $s['contentFontSize'] ?? null, 14);
         self::attrI($a, 'content_font_family', $s['contentFontFamily'] ?? null, 'inherit');
         self::attrI($a, 'content_letter_spacing', $s['contentLetterSpacing'] ?? null, '0px');
@@ -34,6 +35,7 @@ final class AccordionElement extends Element
         self::attrI($a, 'content_color', $s['contentColor'] ?? null, '#555555');
         self::attrI($a, 'content_bg_color', $s['contentBgColor'] ?? null, '#ffffff');
         self::attrI($a, 'content_padding', $s['contentPadding'] ?? null, 16);
+        self::sidesAttr($a, 'content_padding', $s, 'contentPadding');
         self::attrI($a, 'border_color', $s['borderColor'] ?? null, '#e2e8f0');
         self::attrI($a, 'border_radius', $s['borderRadius'] ?? null, 8);
         self::attrI($a, 'item_gap', $s['itemGap'] ?? null, 8);
@@ -83,20 +85,22 @@ final class AccordionElement extends Element
             'titleBgColor' => $a['title_bg_color'] ?? '#f8fafc',
             'titleActiveBgColor' => $a['title_active_bg_color'] ?? '#0091ea',
             'titleActiveColor' => $a['title_active_color'] ?? '#ffffff',
-            'titlePadding' => isset($a['title_padding']) ? (int) $a['title_padding'] : 16,
+            'titlePadding' => isset($a['title_padding']) ? self::num($a['title_padding']) : 16,
+            ...self::sidesIn($a, 'title_padding', 'titlePadding'),
             'contentFontSize' => self::fontIn($a, 'content_font_size', 14, fn ($v) => self::num($v)),
             'contentFontFamily' => $a['content_font_family'] ?? 'inherit',
             'contentLetterSpacing' => $a['content_letter_spacing'] ?? '0px',
             'contentLineHeight' => isset($a['content_line_height']) ? self::num($a['content_line_height']) : 1.6,
             'contentColor' => $a['content_color'] ?? '#555555',
             'contentBgColor' => $a['content_bg_color'] ?? '#ffffff',
-            'contentPadding' => isset($a['content_padding']) ? (int) $a['content_padding'] : 16,
+            'contentPadding' => isset($a['content_padding']) ? self::num($a['content_padding']) : 16,
+            ...self::sidesIn($a, 'content_padding', 'contentPadding'),
             'borderColor' => $a['border_color'] ?? '#e2e8f0',
             'borderRadius' => isset($a['border_radius']) ? (int) $a['border_radius'] : 8,
             'itemGap' => isset($a['item_gap']) ? (int) $a['item_gap'] : 8,
-            'marginTop' => isset($a['margin_top']) ? (int) $a['margin_top'] : 0,
+            'marginTop' => isset($a['margin_top']) ? self::num($a['margin_top']) : 0,
             'marginTopUnit' => $a['margin_top_unit'] ?? 'px',
-            'marginBottom' => isset($a['margin_bottom']) ? (int) $a['margin_bottom'] : 0,
+            'marginBottom' => isset($a['margin_bottom']) ? self::num($a['margin_bottom']) : 0,
             'marginBottomUnit' => $a['margin_bottom_unit'] ?? 'px',
             'cssClass' => $a['css_class'] ?? '',
             'cssId' => $a['css_id'] ?? '',

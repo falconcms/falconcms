@@ -92,8 +92,8 @@
     $headTypo = $typo('tbl_head');
     $bodyTypo = $typo('tbl_body');
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $uid    = 'fc-tbl-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) ($el['id'] ?? uniqid('', false)));
     $elemId = !empty($s['cssId']) ? $s['cssId'] : null;
@@ -141,7 +141,7 @@
              The header and any highlighted cells set their own colour further down and
              still win, being written later. --}}
         #{{ $uid }} th, #{{ $uid }} td {
-            padding: {{ (int) $g('cellPaddingY') }}px {{ (int) $g('cellPaddingX') }}px;
+            padding: {{ falcon_padding_sides($s, 'cellPadding', ['Top' => $g('cellPaddingY'), 'Right' => $g('cellPaddingX'), 'Bottom' => $g('cellPaddingY'), 'Left' => $g('cellPaddingX')]) }};
             vertical-align: top;
             color: {{ $g('textColor') }};
             @if($bodyTypo) {{ $bodyTypo }} @endif

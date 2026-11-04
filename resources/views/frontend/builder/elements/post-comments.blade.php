@@ -68,8 +68,8 @@
     $titleTypo = Typography::css($s, 'cm_title');
     $bodyTypo  = Typography::css($s, 'cm_body');
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $bpSm  = (int) get_cms_option('theme_small_screen_breakpoint',  '800');
     $bpMed = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');

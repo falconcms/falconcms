@@ -197,13 +197,13 @@
         if ($isNestedRow && $hasOvr('minHeight', $dev))
             $inner[] = 'min-height:' . $getResVal('minHeight', $dev) . '!important';
         if ($hasOvr('marginTop', $dev) && ($mv = $getResVal('marginTop', $dev)) !== null)
-            $outer[] = 'margin-top:' . $mv . ($getResVal('marginTopUnit', $dev) ?? 'px') . '!important';
+            $outer[] = 'margin-top:' . getUnitVal($mv, $getResVal('marginTopUnit', $dev) ?? 'px') . '!important';
         if ($hasOvr('marginBottom', $dev) && ($mv = $getResVal('marginBottom', $dev)) !== null)
-            $outer[] = 'margin-bottom:' . $mv . ($getResVal('marginBottomUnit', $dev) ?? 'px') . '!important';
+            $outer[] = 'margin-bottom:' . getUnitVal($mv, $getResVal('marginBottomUnit', $dev) ?? 'px') . '!important';
         foreach (['Top', 'Right', 'Bottom', 'Left'] as $_side) {
             if ($hasOvr('padding' . $_side, $dev) && ($_pv = $getResVal('padding' . $_side, $dev)) !== null) {
                 $_unit = $getResVal('padding' . $_side . 'Unit', $dev) ?? 'px';
-                $outer[] = 'padding-' . strtolower($_side) . ':' . $_pv . $_unit . '!important';
+                $outer[] = 'padding-' . strtolower($_side) . ':' . getUnitVal($_pv, $_unit) . '!important';
             }
         }
         if ($hasOvr('columnGap', $dev) && ($_cgv = $getResVal('columnGap', $dev)) !== null)
@@ -240,12 +240,12 @@
     [$mi, $mo] = $buildRules('mobile');
 
     // Desktop base values for responsive properties
-    $dMarginTop    = (isset($s['marginTop'])    && $s['marginTop']    !== '') ? $s['marginTop']    . ($s['marginTopUnit']    ?? 'px') : '0px';
-    $dMarginBottom = (isset($s['marginBottom']) && $s['marginBottom'] !== '') ? $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px') : '0px';
+    $dMarginTop    = (isset($s['marginTop'])    && $s['marginTop']    !== '') ? getUnitVal($s['marginTop'], $s['marginTopUnit'] ?? 'px') : '0px';
+    $dMarginBottom = (isset($s['marginBottom']) && $s['marginBottom'] !== '') ? getUnitVal($s['marginBottom'], $s['marginBottomUnit'] ?? 'px') : '0px';
     $dPaddingCss = '';
     foreach (['Top' => 'top', 'Right' => 'right', 'Bottom' => 'bottom', 'Left' => 'left'] as $_ps => $_pc) {
         if (isset($s['padding' . $_ps]) && $s['padding' . $_ps] !== '')
-            $dPaddingCss .= "padding-{$_pc}:{$s['padding' . $_ps]}" . ($s['padding' . $_ps . 'Unit'] ?? 'px') . ';';
+            $dPaddingCss .= "padding-{$_pc}:" . getUnitVal($s['padding' . $_ps], $s['padding' . $_ps . 'Unit'] ?? 'px') . ';';
     }
     $dColGap = (isset($s['columnGap']) && $s['columnGap'] !== '') ? $s['columnGap'] : '0';
 

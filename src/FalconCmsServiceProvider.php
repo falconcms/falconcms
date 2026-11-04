@@ -37,6 +37,7 @@ use FalconCms\Core\Support\MotionVisual\MotionVisuals;
 use FalconCms\Core\Support\OffCanvas;
 use FalconCms\Core\Support\PluginManager;
 use FalconCms\Core\Support\PostViews;
+use FalconCms\Core\Support\RelativeDates;
 use FalconCms\Core\Support\SettingsExtension;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -187,6 +188,9 @@ class FalconCmsServiceProvider extends ServiceProvider
             // Post views: the counter's beacon on post pages, the most-viewed orders and the
             // Post Views dynamic source. Every site has them (they began in Falcon News).
             PostViews::register();
+
+            // Post Date as "3 hours ago": the footer script that keeps it current on cached pages.
+            RelativeDates::register();
 
             // Back to top, from Customizer → Performance. On the footer hook for the same
             // reason as the styles above: every theme that calls the action gets it, and a

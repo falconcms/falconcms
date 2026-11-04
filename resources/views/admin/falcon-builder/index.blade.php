@@ -107,6 +107,12 @@
             // So the canvas can redo Reading Time live when its label or speed is changed.
             try { $__dynPreview['__reading_words'] = (string) (function_exists('falcon_word_count') ? falcon_word_count(falcon_post_plain_text($post)) : 0); }
             catch (\Throwable $e) { $__dynPreview['__reading_words'] = '0'; }
+            // So the canvas can show Post Date as "3 hours ago" from the real dates.
+            try {
+                $__pd = $post->published_at ?? $post->created_at ?? null;
+                $__dynPreview['__post_date_iso'] = $__pd ? \Carbon\Carbon::parse($__pd)->toIso8601String() : '';
+                $__dynPreview['__post_modified_iso'] = !empty($post->updated_at) ? \Carbon\Carbon::parse($post->updated_at)->toIso8601String() : '';
+            } catch (\Throwable $e) { $__dynPreview['__post_date_iso'] = $__dynPreview['__post_modified_iso'] = ''; }
             // When editing a Layout template (PTB/Header/Footer/Content) or a post with no
             // featured image, the Feature Image source resolves to empty — so the canvas can't
             // preview the image layer (e.g. a gradient layered over the feature image). Rather

@@ -2,8 +2,8 @@
      :style="[getCanvasVisibilityStyle(el.settings), {
          width: '100%',
          textAlign:    el.settings.textAlign !== 'full' ? (el.settings.textAlign || 'center') : undefined,
-         marginTop:    (el.settings.marginTop    !== undefined ? el.settings.marginTop    : 0) + (el.settings.marginTopUnit    || 'px'),
-         marginBottom: (el.settings.marginBottom !== undefined ? el.settings.marginBottom : 0) + (el.settings.marginBottomUnit || 'px')
+         marginTop:    getUnitVal(el.settings.marginTop !== undefined ? el.settings.marginTop : 0, el.settings.marginTopUnit || 'px'),
+         marginBottom: getUnitVal(el.settings.marginBottom !== undefined ? el.settings.marginBottom : 0, el.settings.marginBottomUnit || 'px')
      }]">
 
     <div :style="{

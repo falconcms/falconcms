@@ -53,12 +53,12 @@
         <!-- Column Overlays -->
         <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-0">
             <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
-                 :style="{ height: (column.settings.marginTop || 0) + 'px', top: '-' + (column.settings.marginTop || 0) + 'px' }"
+                 :style="{ height: getUnitVal(column.settings.marginTop || 0, column.settings.marginTopUnit || 'px'), top: 'calc(-1 * ' + getUnitVal(column.settings.marginTop || 0, column.settings.marginTopUnit || 'px') + ')' }"
                  :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginTop')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#9c27b0]/20"></div>
             </div>
             <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
-                 :style="{ height: (column.settings.marginBottom || 0) + 'px', bottom: '-' + (column.settings.marginBottom || 0) + 'px' }"
+                 :style="{ height: getUnitVal(column.settings.marginBottom || 0, column.settings.marginBottomUnit || 'px'), bottom: 'calc(-1 * ' + getUnitVal(column.settings.marginBottom || 0, column.settings.marginBottomUnit || 'px') + ')' }"
                  :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginBottom')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#9c27b0]/20"></div>
             </div>

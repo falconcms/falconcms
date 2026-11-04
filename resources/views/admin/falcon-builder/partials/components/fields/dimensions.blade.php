@@ -15,22 +15,12 @@
             @include('falcon-cms::admin.falcon-builder.partials.components.fields.responsive-mode', ['menu' => $dimMenu])
         </div>
     </div>
-    <div class="grid grid-cols-2 gap-2">
-        @foreach(['top'=>'Top','right'=>'Right','bottom'=>'Bottom','left'=>'Left'] as $side => $sideLabel)
-        <div class="flex flex-col gap-1">
-            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">{{ $sideLabel }}</label>
-            <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                <input type="number"
-                       :value="getResponsiveVal(editingElement.settings, '{{ $key }}_{{ $side }}', device)"
-                       @input="setResponsiveVal(editingElement.settings, '{{ $key }}_{{ $side }}', device, $event.target.value === '' ? '' : Number($event.target.value))"
-                       placeholder="0" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                <select :value="getResponsiveVal(editingElement.settings, '{{ $key }}_{{ $side }}_unit', device) || '{{ $unit }}'"
-                        @change="setResponsiveVal(editingElement.settings, '{{ $key }}_{{ $side }}_unit', device, $event.target.value)"
-                        class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                    <option value="px">px</option><option value="em">em</option><option value="rem">rem</option><option value="%">%</option>
-                </select>
-            </div>
-        </div>
-        @endforeach
-    </div>
+    {{-- One box per side, like Font Size: "20", "2rem", "5%". Stored as before: the number in
+         {key}_top and its unit in {key}_top_unit, so the plugin reading them needs no change. --}}
+    @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', [
+        'key' => $key,
+        'sides' => ['Top' => '_top', 'Right' => '_right', 'Bottom' => '_bottom', 'Left' => '_left'],
+        'unit' => '_unit',
+        'defUnit' => $unit,
+    ])
 </div>

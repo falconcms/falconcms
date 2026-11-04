@@ -87,7 +87,7 @@
     <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Box</div>
 
     <div class="grid grid-cols-2 gap-3">
-        @foreach([['borderWidth', 'Border width'], ['radius', 'Corner radius'], ['padY', 'Padding ↕'], ['padX', 'Padding ↔']] as [$key, $label])
+        @foreach([['borderWidth', 'Border width'], ['radius', 'Corner radius']] as [$key, $label])
         <div>
             <label class="text-[11px] font-bold text-slate-500 block mb-1.5">{{ $label }}</label>
             <input type="number" v-model.number="editingElement.settings.{{ $key }}" min="0" max="80"
@@ -95,6 +95,12 @@
                    class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
         </div>
         @endforeach
+    </div>
+
+    <!-- Padding: one box per side, any CSS size (was Padding ↕ / ↔); empty = the style's -->
+    <div>
+        <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Padding</label>
+        @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'pad', 'responsive' => false, 'unit' => false, 'hintJs' => ['Top' => "String(fcTocVal(editingElement, 'padY'))", 'Right' => "String(fcTocVal(editingElement, 'padX'))", 'Bottom' => "String(fcTocVal(editingElement, 'padY'))", 'Left' => "String(fcTocVal(editingElement, 'padX'))"]])
     </div>
 </div>
 

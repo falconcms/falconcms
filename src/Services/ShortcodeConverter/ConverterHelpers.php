@@ -103,6 +103,32 @@ trait ConverterHelpers
     }
 
     /**
+     * A four-sided padding's boxes ({$key}Top … {$key}Left) as {$attr}_top … {$attr}_left.
+     * Empty sides are left out: they fall back to the old one-box setting (falcon_padding_sides).
+     */
+    protected static function sidesAttr(string &$str, string $attr, array $s, string $key): void
+    {
+        foreach (['Top' => 'top', 'Right' => 'right', 'Bottom' => 'bottom', 'Left' => 'left'] as $side => $suffix) {
+            self::attrI($str, $attr.'_'.$suffix, $s[$key.$side] ?? null);
+        }
+    }
+
+    /**
+     * The four boxes back from a shortcode, as entered ("12", "1.5rem"), empty when absent.
+     *
+     * @return array<string,mixed>
+     */
+    protected static function sidesIn(array $a, string $attr, string $key): array
+    {
+        $out = [];
+        foreach (['Top' => 'top', 'Right' => 'right', 'Bottom' => 'bottom', 'Left' => 'left'] as $side => $suffix) {
+            $out[$key.$side] = isset($a[$attr.'_'.$suffix]) ? self::num($a[$attr.'_'.$suffix]) : '';
+        }
+
+        return $out;
+    }
+
+    /**
      * A text font size, which may be left empty on purpose.
      *
      * An empty font size means "use the Customizer's typography" (the site's body, heading

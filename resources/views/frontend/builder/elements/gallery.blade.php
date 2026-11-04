@@ -27,8 +27,8 @@
     $capTt     = $s['captionTextTransform'] ?? 'none';
     $capColor  = $s['captionColor']         ?? '#6b7280';
 
-    $mt = isset($s['marginTop'])    && $s['marginTop']    !== '' ? $s['marginTop']    . ($s['marginTopUnit']    ?? 'px') : '0px';
-    $mb = isset($s['marginBottom']) && $s['marginBottom'] !== '' ? $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px') : '0px';
+    $mt = isset($s['marginTop'])    && $s['marginTop']    !== '' ? getUnitVal($s['marginTop'], $s['marginTopUnit'] ?? 'px') : '0px';
+    $mb = isset($s['marginBottom']) && $s['marginBottom'] !== '' ? getUnitVal($s['marginBottom'], $s['marginBottomUnit'] ?? 'px') : '0px';
     $mtT = (isset($s['marginTop_tablet'])    && $s['marginTop_tablet']    !== '' && $s['marginTop_tablet']    !== null) ? $s['marginTop_tablet']    . ($s['marginTopUnit_tablet']    ?? $s['marginTopUnit']    ?? 'px') : $mt;
     $mbT = (isset($s['marginBottom_tablet']) && $s['marginBottom_tablet'] !== '' && $s['marginBottom_tablet'] !== null) ? $s['marginBottom_tablet'] . ($s['marginBottomUnit_tablet'] ?? $s['marginBottomUnit'] ?? 'px') : $mb;
     $mtM = (isset($s['marginTop_mobile'])    && $s['marginTop_mobile']    !== '' && $s['marginTop_mobile']    !== null) ? $s['marginTop_mobile']    . ($s['marginTopUnit_mobile']    ?? $s['marginTopUnit']    ?? 'px') : $mtT;

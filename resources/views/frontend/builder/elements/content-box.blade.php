@@ -81,7 +81,7 @@
         . 'text-decoration:none;display:inline-flex;align-items:center;gap:6px;margin-top:' . $linkGap . 'px;';
     $linkStyle = $linkType === 'button'
         ? $linkBase . 'color:' . ($s['linkButtonTextColor'] ?? '#ffffff') . ';background:' . $linkColor . ';'
-            . 'padding:' . (int) ($s['linkButtonPaddingY'] ?? 10) . 'px ' . (int) ($s['linkButtonPaddingX'] ?? 20) . 'px;'
+            . 'padding:' . falcon_padding_sides($s, 'linkButtonPadding', ['Top' => 10, 'Right' => 20, 'Bottom' => 10, 'Left' => 20], ['Top' => 'linkButtonPaddingY', 'Right' => 'linkButtonPaddingX', 'Bottom' => 'linkButtonPaddingY', 'Left' => 'linkButtonPaddingX']) . ';'
             . 'border-radius:' . (int) ($s['linkButtonRadius'] ?? 4) . 'px;'
         : $linkBase . 'color:' . $linkColor . ';';
 
@@ -102,6 +102,15 @@
     // Distance from the item's outer edge to its content — what the timeline rail has to
     // reach back across when the box is padded or bordered.
     $boxInset   = $boxPadding + $boxBorderW;
+    // Box padding per side (boxPaddingTop … Left), any CSS size. A side left empty keeps the
+    // one-box padding above. With none of them set nothing below changes.
+    $padSides = [];
+    foreach (['Top', 'Right', 'Bottom', 'Left'] as $_side) {
+        $_v = $s['boxPadding' . $_side] ?? '';
+        if ($_v !== '' && $_v !== null) $padSides[$_side] = getUnitVal($_v, 'px');
+    }
+    if ($padSides) $padExplicit = true;
+    $padSide = fn (string $side, int $base) => $padSides[$side] ?? ($base . 'px');
     $shadowCss  = match ($boxShadow) {
         'small'  => 'box-shadow:0 1px 4px rgba(0,0,0,.08);',
         'medium' => 'box-shadow:0 4px 14px rgba(0,0,0,.10);',
@@ -135,8 +144,8 @@
     // Keep the glyph inside the circle even when the dot is smaller than the icon setting.
     $tlIconSize  = max(8, min($iconSize, $tlDotBox - 12));
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
     $cssClass = $s['cssClass'] ?? '';
     $cssId    = !empty($s['cssId']) ? $s['cssId'] : null;
 
@@ -175,13 +184,22 @@
         // The connector has to cross this item's bottom inset, the row gap and the next item's
         // top inset — otherwise adding box padding leaves a break between the segments.
         $lineReach = $rowGap + 2 * $boxInset;
-        $css .= ".{$uid} .fcb-line{position:absolute;left:50%;transform:translateX(-50%);top:{$tlDotBox}px;bottom:-{$lineReach}px;border-left:{$tlLineWidth}px {$tlLineStyle} {$tlLineColor};}";
+        // Per-side padding may be in any unit, so the reach is left to calc().
+        $lineBottom = $padSides
+            ? 'calc(-1 * (' . $rowGap . 'px + ' . $padSide('Bottom', $boxPadding) . ' + ' . $padSide('Top', $boxPadding) . ' + ' . (2 * $boxBorderW) . 'px))'
+            : "-{$lineReach}px";
+        $css .= ".{$uid} .fcb-line{position:absolute;left:50%;transform:translateX(-50%);top:{$tlDotBox}px;bottom:{$lineBottom};border-left:{$tlLineWidth}px {$tlLineStyle} {$tlLineColor};}";
         $css .= ".{$uid} .fcb-item:last-child .fcb-line{display:none;}";
     }
     if ($isTimelineH) {
         $css .= ".{$uid} .fcb-item{position:relative;}";
         $railOut = $boxInset + (int) round($colGap / 2);
-        $css .= ".{$uid} .fcb-rail-h{display:flex;align-items:center;margin:0 -{$railOut}px {$tlGap}px;}";
+        if ($padSides) {
+            $_out = fn (string $side) => 'calc(-1 * (' . $padSide($side, $boxPadding) . ' + ' . ($boxBorderW + (int) round($colGap / 2)) . 'px))';
+            $css .= ".{$uid} .fcb-rail-h{display:flex;align-items:center;margin:0 " . $_out('Right') . " {$tlGap}px " . $_out('Left') . ";}";
+        } else {
+            $css .= ".{$uid} .fcb-rail-h{display:flex;align-items:center;margin:0 -{$railOut}px {$tlGap}px;}";
+        }
         $css .= ".{$uid} .fcb-seg{flex:1 1 auto;border-top:{$tlLineWidth}px {$tlLineStyle} {$tlLineColor};}";
         // The rail should read as one continuous line, so the outer halves are hidden.
         // Trim the rail at the START and END of every ROW, not just of the whole list — with
@@ -251,13 +269,14 @@
         }
         return '<a class="fcb-more" href="' . e($url) . '" target="' . e($linkTarget) . '" style="' . $linkStyle . '">' . e($text) . $arrow . '</a>';
     };
-    $itemBoxStyle = function (array $item) use ($boxBg, $boxPadding, $padExplicit, $boxRadius, $boxBorderW, $boxBorderC, $shadowCss) {
+    $itemBoxStyle = function (array $item) use ($boxBg, $boxPadding, $padExplicit, $padSides, $padSide, $boxRadius, $boxBorderW, $boxBorderC, $shadowCss) {
         $bg = !empty($item['bgColor']) ? $item['bgColor'] : $boxBg;
         $st = 'box-sizing:border-box;';
         if ($bg !== '')        $st .= "background-color:{$bg};";
         // A per-item background is chrome as well, so it earns the same breathing room.
         $pad = ($boxPadding === 0 && $bg !== '' && !$padExplicit) ? 30 : $boxPadding;
-        if ($pad > 0)          $st .= "padding:{$pad}px;";
+        if ($padSides)         $st .= 'padding:' . $padSide('Top', $pad) . ' ' . $padSide('Right', $pad) . ' ' . $padSide('Bottom', $pad) . ' ' . $padSide('Left', $pad) . ';';
+        elseif ($pad > 0)      $st .= "padding:{$pad}px;";
         if ($boxRadius > 0)    $st .= "border-radius:{$boxRadius}px;";
         if ($boxBorderW > 0)   $st .= "border:{$boxBorderW}px solid {$boxBorderC};";
         return $st . $shadowCss;

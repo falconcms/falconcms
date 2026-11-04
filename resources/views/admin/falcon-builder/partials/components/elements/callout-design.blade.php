@@ -109,8 +109,6 @@
             ['borderWidth', 'Border'],
             ['radius', 'Corner radius'],
             ['gap', 'Icon gap'],
-            ['padY', 'Padding ↕'],
-            ['padX', 'Padding ↔'],
         ] as [$key, $label])
         <div>
             <label class="text-[11px] font-bold text-slate-500 block mb-1.5">{{ $label }}</label>
@@ -119,6 +117,12 @@
                    class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
         </div>
         @endforeach
+    </div>
+
+    <!-- Padding: one box per side, any CSS size (was Padding ↕ / ↔); empty = the style's -->
+    <div>
+        <label class="text-[11px] font-bold text-slate-500 block mb-1.5">Padding</label>
+        @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'pad', 'responsive' => false, 'unit' => false, 'hintJs' => ['Top' => "String(fcCalVal(editingElement, 'padY'))", 'Right' => "String(fcCalVal(editingElement, 'padX'))", 'Bottom' => "String(fcCalVal(editingElement, 'padY'))", 'Left' => "String(fcCalVal(editingElement, 'padX'))"]])
     </div>
 </div>
 

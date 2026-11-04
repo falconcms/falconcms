@@ -34,6 +34,7 @@ final class CodeBlockElement extends Element
         self::attrI($a, 'line_height', $s['lineHeight'] ?? null, 1.7);
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null);
         self::attrI($a, 'padding', $s['padding'] ?? null, 18);
+        self::sidesAttr($a, 'padding', $s, 'padding');
         self::attrI($a, 'radius', $s['borderRadius'] ?? null, 10);
         self::attrI($a, 'border', $s['borderWidth'] ?? null, 1);
         self::attrI($a, 'margin_top', $s['marginTop'] ?? null);
@@ -141,7 +142,8 @@ final class CodeBlockElement extends Element
             'fontSize' => self::fontIn($a, 'font_size', 14, fn ($v) => self::num($v)),
             'lineHeight' => isset($a['line_height']) ? self::num($a['line_height']) : 1.7,
             'fontFamily' => $a['font_family'] ?? '',
-            'padding' => isset($a['padding']) ? (int) $a['padding'] : 18,
+            'padding' => isset($a['padding']) ? self::num($a['padding']) : 18,
+            ...self::sidesIn($a, 'padding', 'padding'),
             'borderRadius' => isset($a['radius']) ? (int) $a['radius'] : 10,
             'borderWidth' => isset($a['border']) ? (int) $a['border'] : 1,
             'marginTop' => isset($a['margin_top']) ? self::num($a['margin_top']) : 0,

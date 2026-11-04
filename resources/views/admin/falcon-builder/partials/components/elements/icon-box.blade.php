@@ -3,8 +3,8 @@
      :class="['lzib-' + el.id, el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"
      :style="[getCanvasVisibilityStyle(el.settings), {
-         marginTop:    (el.settings.marginTop    || 0) + (el.settings.marginTopUnit    || 'px'),
-         marginBottom: (el.settings.marginBottom || 0) + (el.settings.marginBottomUnit || 'px'),
+         marginTop:    getUnitVal(el.settings.marginTop || 0, el.settings.marginTopUnit || 'px'),
+         marginBottom: getUnitVal(el.settings.marginBottom || 0, el.settings.marginBottomUnit || 'px'),
      }]">
 
     {{-- Live hover preview (matches the front-end rule): inline styles can't express :hover,

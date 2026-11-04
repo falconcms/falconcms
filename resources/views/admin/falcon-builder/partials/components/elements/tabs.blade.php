@@ -3,8 +3,8 @@
      :class="[el.settings.cssClass || '']"
      :id="el.settings.cssId || undefined"
      :style="[getCanvasVisibilityStyle(el.settings), {
-         marginTop:    (el.settings.marginTop    || 0) + (el.settings.marginTopUnit    || 'px'),
-         marginBottom: (el.settings.marginBottom || 0) + (el.settings.marginBottomUnit || 'px'),
+         marginTop:    getUnitVal(el.settings.marginTop || 0, el.settings.marginTopUnit || 'px'),
+         marginBottom: getUnitVal(el.settings.marginBottom || 0, el.settings.marginBottomUnit || 'px'),
      }]">
 
     <template v-if="el.settings.items && el.settings.items.length">
@@ -56,7 +56,7 @@
         <template v-for="(item, idx) in el.settings.items" :key="'panel-' + (item.id || idx)">
             <div v-if="idx === (el.settings.defaultActive ?? 0)"
                  :style="{
-                     padding: (el.settings.contentPadding ?? 20) + 'px',
+                     padding: padSides(el.settings, 'contentPadding', 20, 'contentPadding'),
                      fontSize: fontSizeVal(el.settings.contentFontSize, el.settings.contentFontSizeUnit || 'px', 14),
                      fontFamily: el.settings.contentFontFamily || 'inherit',
                      letterSpacing: el.settings.contentLetterSpacing || '0px',

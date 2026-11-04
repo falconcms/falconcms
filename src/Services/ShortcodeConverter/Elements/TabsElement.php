@@ -28,6 +28,7 @@ final class TabsElement extends Element
         self::attrI($a, 'content_color', $s['contentColor'] ?? null, '#555555');
         self::attrI($a, 'content_bg_color', $s['contentBgColor'] ?? null, '#ffffff');
         self::attrI($a, 'content_padding', $s['contentPadding'] ?? null, 20);
+        self::sidesAttr($a, 'content_padding', $s, 'contentPadding');
         self::attrI($a, 'border_color', $s['borderColor'] ?? null, '#e2e8f0');
         self::attrI($a, 'border_radius', $s['borderRadius'] ?? null, 4);
         self::attrI($a, 'margin_top', $s['marginTop'] ?? null);
@@ -77,12 +78,13 @@ final class TabsElement extends Element
             'contentLineHeight' => isset($a['content_line_height']) ? self::num($a['content_line_height']) : 1.6,
             'contentColor' => $a['content_color'] ?? '#555555',
             'contentBgColor' => $a['content_bg_color'] ?? '#ffffff',
-            'contentPadding' => isset($a['content_padding']) ? (int) $a['content_padding'] : 20,
+            'contentPadding' => isset($a['content_padding']) ? self::num($a['content_padding']) : 20,
+            ...self::sidesIn($a, 'content_padding', 'contentPadding'),
             'borderColor' => $a['border_color'] ?? '#e2e8f0',
             'borderRadius' => isset($a['border_radius']) ? (int) $a['border_radius'] : 4,
-            'marginTop' => isset($a['margin_top']) ? (int) $a['margin_top'] : 0,
+            'marginTop' => isset($a['margin_top']) ? self::num($a['margin_top']) : 0,
             'marginTopUnit' => $a['margin_top_unit'] ?? 'px',
-            'marginBottom' => isset($a['margin_bottom']) ? (int) $a['margin_bottom'] : 0,
+            'marginBottom' => isset($a['margin_bottom']) ? self::num($a['margin_bottom']) : 0,
             'marginBottomUnit' => $a['margin_bottom_unit'] ?? 'px',
             'cssClass' => $a['css_class'] ?? '',
             'cssId' => $a['css_id'] ?? '',

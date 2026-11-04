@@ -8,14 +8,14 @@
          {
             width: '100%',
             maxWidth: '100%',
-            paddingTop: (getResponsiveVal(el.settings, 'paddingTop', device) ?? 0) + (getResponsiveVal(el.settings, 'paddingTopUnit', device) || 'px'),
-            paddingRight: (getResponsiveVal(el.settings, 'paddingRight', device) ?? 0) + (getResponsiveVal(el.settings, 'paddingRightUnit', device) || 'px'),
-            paddingBottom: (getResponsiveVal(el.settings, 'paddingBottom', device) ?? 0) + (getResponsiveVal(el.settings, 'paddingBottomUnit', device) || 'px'),
-            paddingLeft: (getResponsiveVal(el.settings, 'paddingLeft', device) ?? 0) + (getResponsiveVal(el.settings, 'paddingLeftUnit', device) || 'px'),
-            marginTop: (getResponsiveVal(el.settings, 'marginTop', device) ?? 0) + (getResponsiveVal(el.settings, 'marginTopUnit', device) || 'px'),
-            marginRight: (getResponsiveVal(el.settings, 'marginRight', device) ?? 0) + (getResponsiveVal(el.settings, 'marginRightUnit', device) || 'px'),
-            marginBottom: (getResponsiveVal(el.settings, 'marginBottom', device) ?? 0) + (getResponsiveVal(el.settings, 'marginBottomUnit', device) || 'px'),
-            marginLeft: (getResponsiveVal(el.settings, 'marginLeft', device) ?? 0) + (getResponsiveVal(el.settings, 'marginLeftUnit', device) || 'px'),
+            paddingTop: getUnitVal(getResponsiveVal(el.settings, 'paddingTop', device) ?? 0, getResponsiveVal(el.settings, 'paddingTopUnit', device) || 'px'),
+            paddingRight: getUnitVal(getResponsiveVal(el.settings, 'paddingRight', device) ?? 0, getResponsiveVal(el.settings, 'paddingRightUnit', device) || 'px'),
+            paddingBottom: getUnitVal(getResponsiveVal(el.settings, 'paddingBottom', device) ?? 0, getResponsiveVal(el.settings, 'paddingBottomUnit', device) || 'px'),
+            paddingLeft: getUnitVal(getResponsiveVal(el.settings, 'paddingLeft', device) ?? 0, getResponsiveVal(el.settings, 'paddingLeftUnit', device) || 'px'),
+            marginTop: getUnitVal(getResponsiveVal(el.settings, 'marginTop', device) ?? 0, getResponsiveVal(el.settings, 'marginTopUnit', device) || 'px'),
+            marginRight: getUnitVal(getResponsiveVal(el.settings, 'marginRight', device) ?? 0, getResponsiveVal(el.settings, 'marginRightUnit', device) || 'px'),
+            marginBottom: getUnitVal(getResponsiveVal(el.settings, 'marginBottom', device) ?? 0, getResponsiveVal(el.settings, 'marginBottomUnit', device) || 'px'),
+            marginLeft: getUnitVal(getResponsiveVal(el.settings, 'marginLeft', device) ?? 0, getResponsiveVal(el.settings, 'marginLeftUnit', device) || 'px'),
          },
          getCanvasVisibilityStyle(el.settings)
      ]">

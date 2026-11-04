@@ -26,6 +26,7 @@ final class CalloutElement extends Element
         self::attrI($a, 'radius', $s['radius'] ?? null);
         self::attrI($a, 'pad_y', $s['padY'] ?? null);
         self::attrI($a, 'pad_x', $s['padX'] ?? null);
+        self::sidesAttr($a, 'pad', $s, 'pad');
         self::attrI($a, 'gap', $s['gap'] ?? null);
         self::attrI($a, 'bar', $s['barWidth'] ?? null);
         self::attrI($a, 'border', $s['borderWidth'] ?? null);
@@ -124,6 +125,7 @@ final class CalloutElement extends Element
             'radius' => self::numOrBlank($a['radius'] ?? null),
             'padY' => self::numOrBlank($a['pad_y'] ?? null),
             'padX' => self::numOrBlank($a['pad_x'] ?? null),
+            ...self::sidesIn($a, 'pad', 'pad'),
             'gap' => self::numOrBlank($a['gap'] ?? null),
             'barWidth' => self::numOrBlank($a['bar'] ?? null),
             'borderWidth' => self::numOrBlank($a['border'] ?? null),

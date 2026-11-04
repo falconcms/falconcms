@@ -61,8 +61,8 @@
     $paddingBottom = $paddingMap[$aspect] ?? '56.25%';
 
     $wrapperStyle = 'width:100%;';
-    if (isset($s['marginTop'])    && $s['marginTop']    !== '') $wrapperStyle .= 'margin-top:'    . $s['marginTop']    . ($s['marginTopUnit']    ?? 'px') . ';';
-    if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $wrapperStyle .= 'margin-bottom:' . $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px') . ';';
+    if (isset($s['marginTop'])    && $s['marginTop']    !== '') $wrapperStyle .= 'margin-top:'    . getUnitVal($s['marginTop'], $s['marginTopUnit'] ?? 'px') . ';';
+    if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $wrapperStyle .= 'margin-bottom:' . getUnitVal($s['marginBottom'], $s['marginBottomUnit'] ?? 'px') . ';';
 
     $thumbnailUrl = $ytId ? 'https://img.youtube.com/vi/' . $ytId . '/hqdefault.jpg' : null;
 

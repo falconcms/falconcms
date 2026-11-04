@@ -154,7 +154,21 @@
                             { value: 'published', label: 'Post Published' },
                             { value: 'modified',  label: 'Post Modified' },
                         ]},
+                        // "3 hours ago" for news: kept current in the reader's browser, so a cached
+                        // page does not go stale. Older than the limit, the date shows instead.
+                        { key: 'dynamic_date_display', label: 'Show As', type: 'select', options: [
+                            { value: 'date',     label: 'Date (Nov 3, 2026)' },
+                            { value: 'relative', label: 'Time ago (3 hours ago)' },
+                        ]},
+                        { key: 'dynamic_date_relative_days', label: 'Time ago for (days)', type: 'number', placeholder: '7  (0 = always)',
+                          showIf: { key: 'dynamic_date_display', value: 'relative' } },
                         { key: 'dynamic_date_format', label: 'Format',    type: 'text', placeholder: 'F j, Y' },
+                        { key: 'dynamic_digits',      label: 'Digits',    type: 'select', options: [
+                            { value: '',           label: '0123 (Latin)' },
+                            { value: 'bengali',    label: '০১২৩ (Bangla)' },
+                            { value: 'devanagari', label: '०१२३ (Devanagari)' },
+                            { value: 'arabic',     label: '٠١٢٣ (Arabic)' },
+                        ]},
                         { key: 'dynamic_before',      label: 'Before',    type: 'text', placeholder: 'Text before value' },
                         { key: 'dynamic_after',       label: 'After',     type: 'text', placeholder: 'Text after value' },
                         { key: 'dynamic_fallback',    label: 'Fallback',  type: 'text', placeholder: 'Fallback value' },
@@ -265,6 +279,19 @@
                     if (d.sample) dynSrcExtraSamples[d.key] = d.sample;
                 });
             });
+            // "3 hours ago" in the page's language, largest whole unit first (as Carbon writes it).
+            const dynTimeAgo = (t) => {
+                const lang = document.documentElement.lang || 'en';
+                const s = Math.floor((Date.now() - t) / 1000);
+                try {
+                    if (s < 1) return new Intl.RelativeTimeFormat(lang, { numeric: 'auto' }).format(0, 'second');
+                    const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'always' });
+                    for (const [unit, sec] of [['year', 31536000], ['month', 2592000], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60], ['second', 1]]) {
+                        if (s >= sec) return rtf.format(-Math.floor(s / sec), unit);
+                    }
+                } catch (e) {}
+                return Math.max(0, Math.floor(s / 3600)) + ' hours ago';
+            };
             const dynLocalizeDigits = (str, digits) => {
                 const sets = { bengali: '০১২৩৪৫৬৭৮৯', devanagari: '०१२३४५६७८९', arabic: '٠١٢٣٤٥٦٧٨٩' };
                 const set = sets[digits];
@@ -302,6 +329,21 @@
                     const names = (limit ? terms.slice(0, limit) : terms.slice(0, 3)).map(t => t.name);
                     const body  = names.length ? names.join(s.dynamic_tax_separator || ', ')
                                                : (s.dynamic_fallback || 'Taxonomy');
+                    return (s.dynamic_before || '') + body + (s.dynamic_after || '');
+                }
+                // Post Date: "3 hours ago" worked out from the post's real date, as the page's
+                // script does (RelativeDates::script()); past the limit, the date. Digits follow.
+                if (s.dynamic_source === 'post_date') {
+                    const pv = window.builderDynPreview || {};
+                    const iso = s.dynamic_date_type === 'modified' ? pv.__post_modified_iso : pv.__post_date_iso;
+                    const dateText = dynLocalizeDigits(dynSrcSample('post_date'), s.dynamic_digits);
+                    let body = dateText;
+                    if (s.dynamic_date_display === 'relative') {
+                        const t = Date.parse(iso || '') || (Date.now() - 3 * 3600 * 1000);
+                        const raw = s.dynamic_date_relative_days;
+                        const days = (raw === '' || raw === undefined || raw === null || isNaN(raw)) ? 7 : Math.max(0, parseInt(raw, 10) || 0);
+                        body = (days > 0 && Date.now() - t >= days * 864e5) ? dateText : dynLocalizeDigits(dynTimeAgo(t), s.dynamic_digits);
+                    }
                     return (s.dynamic_before || '') + body + (s.dynamic_after || '');
                 }
                 // Reading Time: follow the label, speed and digits chosen, from the real word count.
@@ -3914,7 +3956,8 @@
                 if (s.linkType === 'button') {
                     st.color = s.linkButtonTextColor || '#ffffff';
                     st.background = s.linkColor || s.iconColor || '#2271b1';
-                    st.padding = cbNum(s.linkButtonPaddingY, 10) + 'px ' + cbNum(s.linkButtonPaddingX, 20) + 'px';
+                    st.padding = padSides(s, 'linkButtonPadding', { Top: 10, Right: 20, Bottom: 10, Left: 20 },
+                        { Top: 'linkButtonPaddingY', Right: 'linkButtonPaddingX', Bottom: 'linkButtonPaddingY', Left: 'linkButtonPaddingX' });
                     st.borderRadius = cbNum(s.linkButtonRadius, 4) + 'px';
                 } else {
                     st.color = s.linkColor || s.iconColor || '#2271b1';
@@ -3934,13 +3977,27 @@
             // Everything between the item's outer edge and its content — what the timeline rail
             // has to reach back across when the box is padded or bordered.
             const contentBoxInset = (el) => contentBoxPad(el, null) + cbNum((el.settings || {}).boxBorderWidth, 0);
+            // Box padding per side (boxPaddingTop … Left), any CSS size; null when none is set,
+            // and then the one-box padding above is all there is. Mirrors content-box.blade.php.
+            const contentBoxPadSides = (el) => {
+                const s = el.settings || {}, out = {};
+                let any = false;
+                ['Top', 'Right', 'Bottom', 'Left'].forEach(side => {
+                    const v = s['boxPadding' + side];
+                    if (v !== undefined && v !== null && v !== '') { out[side] = getUnitVal(v, 'px'); any = true; }
+                });
+                return any ? out : null;
+            };
             const contentBoxItemStyle = (el, item) => {
                 const s = el.settings || {};
                 const st = { boxSizing: 'border-box' };
                 const bg = (item && item.bgColor) || s.boxBgColor;
                 if (bg) st.backgroundColor = bg;
-                const pad = contentBoxPad(el, item);
-                if (pad > 0) st.padding = pad + 'px';
+                const sides = contentBoxPadSides(el);
+                // Any side set counts as an explicit padding, so the 30px of a chromed box is not added.
+                const pad = sides ? contentBoxPad(el, null) : contentBoxPad(el, item);
+                if (sides) st.padding = ['Top', 'Right', 'Bottom', 'Left'].map(k => sides[k] || (pad + 'px')).join(' ');
+                else if (pad > 0) st.padding = pad + 'px';
                 if (cbNum(s.boxBorderRadius, 0) > 0) st.borderRadius = cbNum(s.boxBorderRadius, 0) + 'px';
                 if (cbNum(s.boxBorderWidth, 0) > 0) st.border = cbNum(s.boxBorderWidth, 0) + 'px solid ' + (s.boxBorderColor || '#e5e7eb');
                 const shadows = { small: '0 1px 4px rgba(0,0,0,.08)', medium: '0 4px 14px rgba(0,0,0,.10)', large: '0 12px 30px rgba(0,0,0,.14)' };
@@ -3977,12 +4034,20 @@
                     // Reach across this item's bottom inset, the row gap and the next item's top
                     // inset, or box padding would break the connector into disconnected pieces.
                     const reach = cbNum(s.rowGap, 30) + 2 * inset;
-                    css += k + ' .fcb-line{position:absolute;left:50%;transform:translateX(-50%);top:' + contentBoxDot(el) + 'px;bottom:-' + reach + 'px;border-left:' + lineW + 'px ' + lineS + ' ' + lineC + ';}';
+                    const ps = contentBoxPadSides(el), basePad = contentBoxPad(el, null) + 'px';
+                    const bottom = ps
+                        ? 'calc(-1 * (' + cbNum(s.rowGap, 30) + 'px + ' + (ps.Bottom || basePad) + ' + ' + (ps.Top || basePad) + ' + ' + (2 * cbNum(s.boxBorderWidth, 0)) + 'px))'
+                        : '-' + reach + 'px';
+                    css += k + ' .fcb-line{position:absolute;left:50%;transform:translateX(-50%);top:' + contentBoxDot(el) + 'px;bottom:' + bottom + ';border-left:' + lineW + 'px ' + lineS + ' ' + lineC + ';}';
                     css += k + ' .fcb-item:last-child .fcb-line{display:none;}';
                 }
                 if (s.boxLayout === 'timeline-horizontal') {
                     const out = inset + Math.round(cbNum(s.columnGap, 30) / 2);
-                    css += k + ' .fcb-rail-h{margin-left:-' + out + 'px;margin-right:-' + out + 'px;}';
+                    const ps = contentBoxPadSides(el), basePad = contentBoxPad(el, null) + 'px';
+                    const rest = cbNum(s.boxBorderWidth, 0) + Math.round(cbNum(s.columnGap, 30) / 2);
+                    css += ps
+                        ? k + ' .fcb-rail-h{margin-left:calc(-1 * (' + (ps.Left || basePad) + ' + ' + rest + 'px));margin-right:calc(-1 * (' + (ps.Right || basePad) + ' + ' + rest + 'px));}'
+                        : k + ' .fcb-rail-h{margin-left:-' + out + 'px;margin-right:-' + out + 'px;}';
                     css += k + ' .fcb-seg{border-top:' + lineW + 'px ' + lineS + ' ' + lineC + ';}';
                     // Trim the rail at each ROW edge, not just the first/last item — the grid wraps
                     // when there are more items than columns.
@@ -4489,7 +4554,10 @@
                     type: 'row',
                     settings: {
                         paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0,
-                        marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0
+                        marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
+                        // Shown everywhere, as a container starts: without it the Device
+                        // Visibility buttons of a new nested row all looked switched off.
+                        visibility: { mobile: true, tablet: true, desktop: true },
                     },
                     columns: layoutConfig.split('-').map((part, idx) => {
                         const [num, den] = part.split('/');
@@ -4668,6 +4736,14 @@
              *
              * frontend/builder/elements/menu.blade.php applies the identical rule.
              */
+            // The menu a Menu element shows on a device: tablet and mobile may name their own,
+            // and one left empty uses the larger screen's (as frontend/builder/elements/menu.blade.php).
+            const menuIdFor = (s, dev) => {
+                if (!s) return '';
+                const d = String(s.menuId || '');
+                const t = String(s.menuId_tablet || '') || d;
+                return dev === 'mobile' ? (String(s.menuId_mobile || '') || t) : (dev === 'tablet' ? t : d);
+            };
             const falconNum = (value, fallback) => (value === null || value === undefined || value === '') ? fallback : value;
 
             /**
@@ -4724,6 +4800,79 @@
                 const v = String(value ?? '').trim();
                 s[key] = v;
                 if (v !== '' && !isNaN(v) && (key + 'Unit') in s) s[key + 'Unit'] = 'px';
+            };
+
+            /**
+             * Padding fields are one text box per side, like Font Size: "20", "20px", "2rem",
+             * "5%", "10vh" or even "calc(1rem + 2vw)". The settings keep the shape they have
+             * always had — a number in paddingTop and its unit in paddingTopUnit (per device:
+             * paddingTop_tablet, paddingTopUnit_tablet) — so saved pages, shortcodes and the
+             * page renderers need no change: "2rem" is stored as 2 + "rem", a bare number as px.
+             * Anything that is not a number with a unit (calc(), auto) is kept whole; every
+             * renderer passes it through getUnitVal(), which leaves such a value as it is.
+             * $unit names the unit key's suffix: true = "Unit" (paddingTopUnit), a string for
+             * other spellings ("_unit" → spacing_top_unit), false for fields that never had a
+             * unit key (Menu): there "1rem" is kept whole and a bare number is px.
+             * $defUnit is the unit a number without a stored unit is in (px unless a field says so).
+             * Only a complete number is split off ("2." stays "2." while it is being typed).
+             */
+            const SP_LENGTH = /^(-?(?:\d+(?:\.\d+)?|\.\d+))\s*(px|%|r?em|vh|vw|vmin|vmax|[sdl]v[hw]|ch|ex|pt|cm|mm|in)?$/i;
+            const spKey = (key, device) => (!device || device === 'desktop') ? key : key + '_' + device;
+            const spUnitKey = (key, unit) => unit === true ? key + 'Unit' : (unit ? key + unit : null);
+            const spShow = (s, key, device, value, unit, defUnit) => {
+                if (value === undefined || value === null || value === '') return '';
+                const uk = spUnitKey(key, unit);
+                if (!uk || isNaN(value)) return String(value);
+                const u = String(getResponsiveVal(s, uk, device || 'desktop') || defUnit);
+                return u === 'px' ? String(value) : String(value) + u;
+            };
+            const spDisplay = (s, key, device, unit = true, defUnit = 'px') =>
+                s ? spShow(s, key, device, s[spKey(key, device)], unit, defUnit) : '';
+            // A tablet/mobile box shows what it inherits (the larger screen's value) as its hint.
+            const spHint = (s, key, device, unit = true, fallback = '0', defUnit = 'px') => {
+                if (!s || !device || device === 'desktop') return fallback;
+                const from = device === 'mobile' ? 'tablet' : 'desktop';
+                const shown = spShow(s, key, from, getResponsiveVal(s, key, from), unit, defUnit);
+                return shown === '' ? fallback : shown;
+            };
+            /**
+             * A four-sided padding as a CSS value, from {base}Top/Right/Bottom/Left. A side left
+             * empty falls back to the old one- or two-box setting ($legacy: one key, or
+             * side => key) and then to $def. Mirrors PHP's falcon_padding_sides().
+             */
+            const padSides = (s, base, def = 0, legacy = null) => padSideList(s, base, def, legacy).join(' ');
+            // The same four sides as an array [top, right, bottom, left], for a rule that needs only some.
+            const padSideList = (s, base, def = 0, legacy = null) => ['Top', 'Right', 'Bottom', 'Left'].map(side => {
+                const empty = (v) => v === undefined || v === null || v === '';
+                let v = s ? s[base + side] : undefined;
+                if (empty(v) && s && legacy) {
+                    const old = typeof legacy === 'string' ? legacy : legacy[side];
+                    if (old) v = s[old];
+                }
+                if (empty(v)) v = (def !== null && typeof def === 'object') ? (def[side] ?? 0) : def;
+                return getUnitVal(v, 'px') || '0px';
+            });
+            // The hint a split padding box shows: what the side falls back to (see padSides).
+            const padHint = (s, legacyKey, def) => {
+                const v = s && legacyKey ? s[legacyKey] : undefined;
+                return (v === undefined || v === null || v === '') ? String(def) : String(v);
+            };
+
+            const spInput = (s, key, device, value, unit = true) => {
+                if (!s) return;
+                const raw = String(value ?? '').trim();
+                const k = spKey(key, device);
+                if (raw === '') { s[k] = ''; return; }
+                const m = raw.match(SP_LENGTH);
+                if (!m) { s[k] = raw; return; }
+                const u = (m[2] || 'px').toLowerCase();
+                const uk = spUnitKey(key, unit);
+                if (uk) {
+                    s[k] = Number(m[1]);
+                    s[spKey(uk, device)] = u;
+                } else {
+                    s[k] = u === 'px' ? Number(m[1]) : m[1] + u;
+                }
             };
 
             const menuCollapsed = (el) => {
@@ -5007,8 +5156,8 @@
                 const s = el.settings || {};
                 return {
                     width: '100%',
-                    marginTop: (s.marginTop || 0) + (s.marginTopUnit || 'px'),
-                    marginBottom: (s.marginBottom || 0) + (s.marginBottomUnit || 'px'),
+                    marginTop: getUnitVal(s.marginTop || 0, s.marginTopUnit || 'px'),
+                    marginBottom: getUnitVal(s.marginBottom || 0, s.marginBottomUnit || 'px'),
                 };
             }
 
@@ -5042,7 +5191,9 @@
             }
 
             function fcTblPad(el) {
-                return fcTblVal(el, 'cellPaddingY') + 'px ' + fcTblVal(el, 'cellPaddingX') + 'px';
+                // Per-side boxes (cellPaddingTop …) win; an empty side keeps Pad Y / Pad X or the style's.
+                const y = fcTblVal(el, 'cellPaddingY'), x = fcTblVal(el, 'cellPaddingX');
+                return padSides(el.settings || {}, 'cellPadding', { Top: y, Right: x, Bottom: y, Left: x });
             }
 
             function fcTblHeadCellStyle(el, i) {
@@ -5484,7 +5635,7 @@
                 const style = {
                     background: fill === 'tint' ? tint : (fill === 'white' ? '#FFFFFF' : 'transparent'),
                     borderRadius: (fcCalVal(el, 'radius') || 0) + 'px',
-                    padding: header ? '0' : (fcCalVal(el, 'padY') + 'px ' + fcCalVal(el, 'padX') + 'px'),
+                    padding: header ? '0' : (padSides(el.settings || {}, 'pad', { Top: fcCalVal(el, 'padY'), Right: fcCalVal(el, 'padX'), Bottom: fcCalVal(el, 'padY'), Left: fcCalVal(el, 'padX') })),
                     overflow: header ? 'hidden' : 'visible',
                 };
                 if (+fcCalVal(el, 'borderWidth') > 0) style.border = fcCalVal(el, 'borderWidth') + 'px solid ' + accent + (header ? '44' : '33');
@@ -5503,7 +5654,7 @@
                 };
                 if (header) {
                     style.background = fcCalAccent(el);
-                    style.padding = '9px ' + fcCalVal(el, 'padX') + 'px';
+                    { const p = padSideList(el.settings || {}, 'pad', { Top: fcCalVal(el, 'padY'), Right: fcCalVal(el, 'padX'), Bottom: fcCalVal(el, 'padY'), Left: fcCalVal(el, 'padX') }); style.padding = '9px ' + p[1] + ' 9px ' + p[3]; }
                     style.marginBottom = '0';
                 }
                 return style;
@@ -5552,7 +5703,7 @@
                     color: fcCalBodyColor(el),
                     fontSize: fcCalVal(el, 'bodySize') + 'px',
                     lineHeight: '1.65',
-                    padding: header ? (fcCalVal(el, 'padY') + 'px ' + fcCalVal(el, 'padX') + 'px') : '0',
+                    padding: header ? (padSides(el.settings || {}, 'pad', { Top: fcCalVal(el, 'padY'), Right: fcCalVal(el, 'padX'), Bottom: fcCalVal(el, 'padY'), Left: fcCalVal(el, 'padX') })) : '0',
                 }, fcTblTypo(el, 'cal_body'));
             }
 
@@ -5663,7 +5814,7 @@
                 const style = {
                     background: fcTocVal(el, 'bg'),
                     borderRadius: (fcTocVal(el, 'radius') || 0) + 'px',
-                    padding: fcTocVal(el, 'padY') + 'px ' + fcTocVal(el, 'padX') + 'px',
+                    padding: padSides(el.settings || {}, 'pad', { Top: fcTocVal(el, 'padY'), Right: fcTocVal(el, 'padX'), Bottom: fcTocVal(el, 'padY'), Left: fcTocVal(el, 'padX') }),
                 };
                 if (+fcTocVal(el, 'borderWidth') > 0) {
                     style.border = fcTocVal(el, 'borderWidth') + 'px solid ' + fcTocVal(el, 'borderColor');
@@ -5855,7 +6006,7 @@
                     display: 'flex',
                     alignItems: 'center',
                     gap: '12px',
-                    padding: fcPnVal(el, 'padY') + 'px ' + fcPnVal(el, 'padX') + 'px',
+                    padding: padSides(el.settings || {}, 'pad', { Top: fcPnVal(el, 'padY'), Right: fcPnVal(el, 'padX'), Bottom: fcPnVal(el, 'padY'), Left: fcPnVal(el, 'padX') }),
                     background: fcPnVal(el, 'bg'),
                     borderRadius: (fcPnVal(el, 'radius') || 0) + 'px',
                     textDecoration: 'none',
@@ -6028,8 +6179,8 @@
                 const s = el.settings || {};
                 return {
                     width: '100%',
-                    marginTop: (s.marginTop || 0) + (s.marginTopUnit || 'px'),
-                    marginBottom: (s.marginBottom || 0) + (s.marginBottomUnit || 'px'),
+                    marginTop: getUnitVal(s.marginTop || 0, s.marginTopUnit || 'px'),
+                    marginBottom: getUnitVal(s.marginBottom || 0, s.marginBottomUnit || 'px'),
                 };
             }
 
@@ -6062,9 +6213,8 @@
 
             function fcCodePreStyle(el) {
                 const s = el.settings || {}, t = fcCodeTheme(el);
-                const pad = (s.padding != null ? s.padding : 18);
                 return {
-                    margin: '0', padding: pad + 'px', background: 'none', border: '0',
+                    margin: '0', padding: padSides(s, 'padding', 18, 'padding'), background: 'none', border: '0',
                     color: t.fg, fontFamily: 'inherit',
                     fontSize: fontSizeVal(s.fontSize, 'px', 14) || 'inherit',
                     lineHeight: String(s.lineHeight || 1.7),
@@ -6299,8 +6449,8 @@
                     width: '100%',
                     alignItems: 'center',
                     justifyContent: align === 'left' ? 'flex-start' : (align === 'right' ? 'flex-end' : 'center'),
-                    marginTop:    sepNum(s.marginTop, 0)    + (s.marginTopUnit    || 'px'),
-                    marginBottom: sepNum(s.marginBottom, 0) + (s.marginBottomUnit || 'px'),
+                    marginTop:    getUnitVal(falconNum(s.marginTop, 0), s.marginTopUnit || 'px'),
+                    marginBottom: getUnitVal(falconNum(s.marginBottom, 0), s.marginBottomUnit || 'px'),
                 };
             };
             const sepInnerStyle = (el) => {
@@ -7618,7 +7768,7 @@
                 isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal, respUnitVal,
                 iconBoxIconStyle, iconBoxGlyphStyle, iconBoxHoverCss, iconBoxState, iconBoxField,
-                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, fontSizeVal, cornerRadius, fsDisplay, fsInput,
+                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, fontSizeVal, cornerRadius, menuIdFor, fsDisplay, fsInput, spDisplay, spHint, spInput, padSides, padHint,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,
                 fcTanimModes: FC_TANIM_MODES, fcTanimEasings: FC_TANIM_EASINGS,

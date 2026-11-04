@@ -50,8 +50,8 @@
     $labelTypo = $typo('pn_label');
     $titleTypo = $typo('pn_title');
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $uid    = 'fc-pn-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) ($el['id'] ?? uniqid('', false)));
     $elemId = !empty($s['cssId']) ? $s['cssId'] : null;
@@ -85,7 +85,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: {{ (int) $g('padY') }}px {{ (int) $g('padX') }}px;
+            padding: {{ falcon_padding_sides($s, 'pad', ['Top' => $g('padY'), 'Right' => $g('padX'), 'Bottom' => $g('padY'), 'Left' => $g('padX')]) }};
             background: {{ $g('bg') }};
             border-radius: {{ (int) $g('radius') }}px;
             @if((int) $g('borderWidth') > 0) border: {{ (int) $g('borderWidth') }}px solid {{ $g('borderColor') }}; @endif

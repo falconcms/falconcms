@@ -69,8 +69,8 @@
     $titleTypo = $typo('cal_title');
     $bodyTypo  = $typo('cal_body');
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $uid    = 'fc-cal-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) ($el['id'] ?? uniqid('', false)));
     $elemId = !empty($s['cssId']) ? $s['cssId'] : null;
@@ -108,7 +108,7 @@
             display: block;
             background: {{ $background }};
             border-radius: {{ (int) $g('radius') }}px;
-            padding: {{ (int) $g('padY') }}px {{ (int) $g('padX') }}px;
+            padding: {{ falcon_padding_sides($s, 'pad', ['Top' => $g('padY'), 'Right' => $g('padX'), 'Bottom' => $g('padY'), 'Left' => $g('padX')]) }};
             @if((int) $g('borderWidth') > 0) border: {{ (int) $g('borderWidth') }}px solid {{ $accent }}33; @endif
             @if((int) $g('barWidth') > 0) border-left: {{ (int) $g('barWidth') }}px solid var(--fc-cal-accent); @endif
             @if(!empty($preset['shadow'])) box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px -16px rgba(16,24,40,.24); @endif
@@ -156,11 +156,12 @@
         }
         #{{ $uid }} .fc-cal-head {
             margin: 0;
-            padding: 9px {{ (int) $g('padX') }}px;
+            @php $calPad = falcon_padding_side_list($s, 'pad', ['Top' => $g('padY'), 'Right' => $g('padX'), 'Bottom' => $g('padY'), 'Left' => $g('padX')]); @endphp
+            padding: 9px {{ $calPad['Right'] }} 9px {{ $calPad['Left'] }};
             background: var(--fc-cal-accent);
         }
         #{{ $uid }} .fc-cal-title, #{{ $uid }} .fc-cal-icon, #{{ $uid }} .fc-cal-chev { color: #FFFFFF; }
-        #{{ $uid }} .fc-cal-body { padding: {{ (int) $g('padY') }}px {{ (int) $g('padX') }}px; }
+        #{{ $uid }} .fc-cal-body { padding: {{ falcon_padding_sides($s, 'pad', ['Top' => $g('padY'), 'Right' => $g('padX'), 'Bottom' => $g('padY'), 'Left' => $g('padX')]) }}; }
         @endif
         #{{ $uid }} .fc-cal-body {
             color: {{ $bodyColor }};

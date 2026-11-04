@@ -177,24 +177,7 @@
             <div class="flex justify-between items-center">
                 <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block">Mobile Menu Trigger Padding</label>
             </div>
-            <div class="grid grid-cols-4 gap-2">
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.mobileMenuTriggerPaddingTop" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Top</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.mobileMenuTriggerPaddingRight" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Right</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.mobileMenuTriggerPaddingBottom" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Bottom</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.mobileMenuTriggerPaddingLeft" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Left</div>
-                </div>
-            </div>
+            @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'mobileMenuTriggerPadding', 'responsive' => false, 'unit' => false, 'placeholders' => ['Top' => '10', 'Right' => '15', 'Bottom' => '10', 'Left' => '15']])
         </div>
 
         <!-- Trigger to Menu Spacing -->
@@ -249,22 +232,18 @@
             </div>
         </div>
 
-        <!-- Mobile Menu Trigger Text -->
-        <div class="space-y-2">
-            <div class="flex justify-between items-center">
-                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block">Mobile Menu Trigger Text</label>
+        <!-- Mobile Menu Trigger Text + Font Size, side by side, same size -->
+        <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-2">
+                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block">Trigger Text</label>
+                <input type="text" v-model="editingElement.settings.mobileMenuTriggerText" placeholder="e.g. Menu"
+                       class="w-full h-9 border border-slate-200 rounded px-3 text-[12px] focus:outline-none focus:border-[#0091ea]">
             </div>
-            <input type="text" v-model="editingElement.settings.mobileMenuTriggerText" placeholder="e.g. Menu"
-                   class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
-        </div>
-
-        <!-- Mobile Menu Trigger Font Size -->
-        <div class="space-y-2">
-            <div class="flex justify-between items-center">
-                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block">Mobile Menu Trigger Font Size</label>
+            <div class="space-y-2">
+                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block">Trigger Font Size</label>
+                <input type="text" v-model="editingElement.settings.mobileMenuTriggerFontSize" placeholder="e.g. 16px"
+                       class="w-full h-9 border border-slate-200 rounded px-3 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
-            <input type="text" v-model="editingElement.settings.mobileMenuTriggerFontSize" placeholder="e.g. 16px"
-                   class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
         </div>
 
         <!-- Mobile Menu Trigger Horizontal Align -->
@@ -319,24 +298,7 @@
             <div class="flex justify-between items-center">
                 <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block">Mobile Menu Item Padding</label>
             </div>
-            <div class="grid grid-cols-4 gap-2">
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.mobileMenuItemPaddingTop" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Top</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.mobileMenuItemPaddingRight" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Right</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.mobileMenuItemPaddingBottom" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Bottom</div>
-                </div>
-                <div class="space-y-1">
-                    <input type="number" v-model="editingElement.settings.mobileMenuItemPaddingLeft" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                    <div class="text-[8px] text-slate-400 font-bold uppercase text-center">Left</div>
-                </div>
-            </div>
+            @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'mobileMenuItemPadding', 'responsive' => false, 'unit' => false, 'placeholders' => ['Top' => '12', 'Right' => '20', 'Bottom' => '12', 'Left' => '20']])
         </div>
 
         <!-- Text Align -->
@@ -392,9 +354,9 @@
                                class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                     </div>
                     <div>
-                        <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">Font Weight</label>
+                        <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Weight</label>
                         <select v-model="editingElement.settings.mobileMenuFontWeight" 
-                                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea] bg-white">
+                                class="w-full border border-slate-200 rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#0091ea] bg-white">
                             <option value="100">100 - Thin</option>
                             <option value="200">200 - Extra Light</option>
                             <option value="300">300 - Light</option>

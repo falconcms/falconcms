@@ -11,7 +11,8 @@
           stretched past its own content and the container background showed through above and
           below it, with 0 padding set. Full width is what was wanted; that comes from w-full.
           Only a row-direction column needs basis:100%, to push the nested row onto its own line. --}}
-     :style="{ flexBasis: column.settings.contentLayout === 'row' ? '100%' : 'auto' }"
+     {{-- Hidden on the device being edited: dimmed with a dashed outline, as every element is. --}}
+     :style="[{ flexBasis: column.settings.contentLayout === 'row' ? '100%' : 'auto' }, getCanvasVisibilityStyle(el.settings)]"
      @contextmenu.prevent.stop="openCtxMenu($event, 'nested-row', ci, coli, eli)"
      @mouseenter="setHover('nested-row', ci, coli, eli)"
      @mouseleave="setHover(null)">

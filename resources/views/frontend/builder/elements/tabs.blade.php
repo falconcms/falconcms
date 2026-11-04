@@ -27,13 +27,13 @@
     $contentLineHeight    = $s['contentLineHeight']    ?? 1.6;
     $contentColor         = $s['contentColor']         ?? '#555555';
     $contentBgColor       = $s['contentBgColor']       ?? '#ffffff';
-    $contentPadding       = ($s['contentPadding']      ?? 20) . 'px';
+    $contentPadding       = falcon_padding_sides($s, 'contentPadding', 20, 'contentPadding');
 
     $borderColor  = $s['borderColor']  ?? '#e2e8f0';
     $borderRadius = (int)($s['borderRadius'] ?? 4);
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $outerStyle = "width:100%;margin-top:{$marginTop};margin-bottom:{$marginBottom};";
 

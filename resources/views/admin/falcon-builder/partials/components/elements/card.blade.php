@@ -1,10 +1,10 @@
 <div v-if="el.type === 'card'"
      class="w-full py-2"
      :style="[getCanvasVisibilityStyle(el.settings), {
-         marginTop:    (el.settings.marginTop    || 0) + (el.settings.marginTopUnit    || 'px'),
-         marginRight:  (el.settings.marginRight  || 0) + (el.settings.marginRightUnit  || 'px'),
-         marginBottom: (el.settings.marginBottom || 0) + (el.settings.marginBottomUnit || 'px'),
-         marginLeft:   (el.settings.marginLeft   || 0) + (el.settings.marginLeftUnit   || 'px')
+         marginTop:    getUnitVal(el.settings.marginTop || 0, el.settings.marginTopUnit || 'px'),
+         marginRight:  getUnitVal(el.settings.marginRight || 0, el.settings.marginRightUnit || 'px'),
+         marginBottom: getUnitVal(el.settings.marginBottom || 0, el.settings.marginBottomUnit || 'px'),
+         marginLeft:   getUnitVal(el.settings.marginLeft || 0, el.settings.marginLeftUnit || 'px')
      }]">
 
     {{-- Header bar --}}

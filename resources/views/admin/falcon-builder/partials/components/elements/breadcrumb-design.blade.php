@@ -172,17 +172,7 @@
                 <i class="fa fa-undo text-[10px]"></i>
             </button>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-            <template v-for="side in ['Top','Right','Bottom','Left']" :key="'pad' + side">
-                <div class="flex flex-col gap-1">
-                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">@{{ side }}</label>
-                    <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                        <input type="number" min="0" v-model.number="editingElement.settings['padding' + side]" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                        <select v-model="editingElement.settings['padding' + side + 'Unit']" class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option><option value="em">em</option></select>
-                    </div>
-                </div>
-            </template>
-        </div>
+        @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['responsive' => false])
     </div>
 
     <!-- Margin -->
@@ -197,10 +187,7 @@
             <template v-for="side in ['Top','Right','Bottom','Left']" :key="'mar' + side">
                 <div class="flex flex-col gap-1">
                     <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">@{{ side }}</label>
-                    <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                        <input type="number" v-model.number="editingElement.settings['margin' + side]" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                        <select v-model="editingElement.settings['margin' + side + 'Unit']" class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option><option value="em">em</option></select>
-                    </div>
+                    <input type="text" :value="spDisplay(editingElement.settings, 'margin' + side, 'desktop', true)" @input="spInput(editingElement.settings, 'margin' + side, 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'margin' + side, 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                 </div>
             </template>
         </div>

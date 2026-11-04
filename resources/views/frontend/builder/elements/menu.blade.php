@@ -128,6 +128,47 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 @endif
 
 @php
+    // A menu per device (Content → Menu, with its responsive switch): tablet and mobile may each
+    // name a menu of their own; one left empty uses the larger screen's. When they differ, the
+    // element is drawn once per distinct menu, each copy shown only on its own devices (the
+    // same falcon-hide-* classes Device Visibility uses). Devices that share a menu share one
+    // copy; with no per-device menu nothing changes — it is drawn exactly once, as before.
+    $__mvS = $el['settings'] ?? [];
+    $__mvD = (string) ($__mvS['menuId'] ?? '');
+    $__mvT = (string) ($__mvS['menuId_tablet'] ?? '') ?: $__mvD;
+    $__mvM = (string) ($__mvS['menuId_mobile'] ?? '') ?: $__mvT;
+    $__mvSplit = empty($__menuVariant) && ($__mvT !== $__mvD || $__mvM !== $__mvD);
+@endphp
+@if($__mvSplit)
+    @php
+        $__mvGroups = [];
+        foreach (['desktop' => $__mvD, 'tablet' => $__mvT, 'mobile' => $__mvM] as $__mvDev => $__mvId) {
+            $__mvGroups[$__mvId][] = $__mvDev;
+        }
+    @endphp
+    @foreach($__mvGroups as $__mvId => $__mvDevs)
+        @php
+            $__mvHide = implode(' ', array_map(fn ($d) => 'falcon-hide-'.$d, array_diff(['desktop', 'tablet', 'mobile'], $__mvDevs)));
+            $__mvEl = $el;
+            $__mvEl['settings']['menuId'] = $__mvId;
+            unset($__mvEl['settings']['menuId_tablet'], $__mvEl['settings']['menuId_mobile']);
+            // The copy for the desktop keeps the element's id and CSS ID (anchors, custom CSS);
+            // the others get their own, so no id appears twice on the page.
+            if (!in_array('desktop', $__mvDevs, true)) {
+                $__mvSuffix = '-'.implode('-', $__mvDevs);
+                $__mvEl['id'] = ($el['id'] ?? 'menu').$__mvSuffix;
+                if (!empty($__mvEl['settings']['cssId'])) {
+                    $__mvEl['settings']['cssId'] .= $__mvSuffix;
+                }
+            }
+        @endphp
+        <div class="falcon-menu-variant {{ $__mvHide }}" style="display:contents">
+            @include('falcon-cms::frontend.builder.elements.menu', ['el' => $__mvEl, '__menuVariant' => true])
+        </div>
+    @endforeach
+@else
+
+@php
     $s = $el['settings'] ?? [];
     $menuId = $s['menuId'] ?? null;
     $layout = $s['layout'] ?? 'horizontal';
@@ -218,8 +259,8 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 
     // Styles for Desktop
     $wrapperStyle = 'width: 100%; position: relative;';
-    if (isset($s['marginTop'])    && $s['marginTop']    !== '') $wrapperStyle .= ' margin-top: '    . $s['marginTop']    . ($s['marginTopUnit']    ?? 'px') . ';';
-    if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $wrapperStyle .= ' margin-bottom: ' . $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px') . ';';
+    if (isset($s['marginTop'])    && $s['marginTop']    !== '') $wrapperStyle .= ' margin-top: '    . getUnitVal($s['marginTop'], $s['marginTopUnit'] ?? 'px') . ';';
+    if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $wrapperStyle .= ' margin-bottom: ' . getUnitVal($s['marginBottom'], $s['marginBottomUnit'] ?? 'px') . ';';
     
     // Link Styles (General)
     // $blankFollowsTheme: an empty size writes no font-size at all, so the link takes the
@@ -272,7 +313,8 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     };
 
     $mainLinkStyle = $getTypographyStyle('', '16px', true);
-    $mainLinkStyle .= ' padding: ' . $num($s['itemPaddingTop'] ?? null, 10) . 'px ' . $num($s['itemPaddingRight'] ?? null, 15) . 'px ' . $num($s['itemPaddingBottom'] ?? null, 10) . 'px ' . $num($s['itemPaddingLeft'] ?? null, 15) . 'px;';
+    // Padding boxes take any CSS size ("1rem", "5%"); a bare number is px (getUnitVal).
+    $mainLinkStyle .= ' padding: ' . getUnitVal($num($s['itemPaddingTop'] ?? null, 10), 'px') . ' ' . getUnitVal($num($s['itemPaddingRight'] ?? null, 15), 'px') . ' ' . getUnitVal($num($s['itemPaddingBottom'] ?? null, 10), 'px') . ' ' . getUnitVal($num($s['itemPaddingLeft'] ?? null, 15), 'px') . ';';
     $mainLinkStyle .= ' border-radius: ' . $num($s['itemBorderRadius'] ?? null, 0) . 'px;';
     
     // Normal Borders
@@ -283,18 +325,18 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     $mainLinkStyle .= ' transition: all ' . $transitionTime . 's ease-in-out; text-decoration: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;';
 
     $subLinkStyle = $getTypographyStyle('submenu', '14px');
-    $subLinkStyle .= ' padding: ' . ($s['submenuPaddingTop'] ?? 10) . 'px ' . ($s['submenuPaddingRight'] ?? 20) . 'px ' . ($s['submenuPaddingBottom'] ?? 10) . 'px ' . ($s['submenuPaddingLeft'] ?? 20) . 'px;';
+    $subLinkStyle .= ' padding: ' . getUnitVal($num($s['submenuPaddingTop'] ?? null, 10), 'px') . ' ' . getUnitVal($num($s['submenuPaddingRight'] ?? null, 20), 'px') . ' ' . getUnitVal($num($s['submenuPaddingBottom'] ?? null, 10), 'px') . ' ' . getUnitVal($num($s['submenuPaddingLeft'] ?? null, 20), 'px') . ';';
     $subLinkStyle .= ' text-decoration: none; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; gap: 10px;';
 
     // Mobile Specifics
     $mobileLinkStyle = $getTypographyStyle('mobileMenu', '16px');
     $mobileLinkStyle .= ' min-height: ' . ($s['mobileMenuItemMinHeight'] ?? 60) . 'px;';
     
-    $mPtop = $s['mobileMenuItemPaddingTop'] ?? 12;
-    $mPright = $s['mobileMenuItemPaddingRight'] ?? 20;
-    $mPbottom = $s['mobileMenuItemPaddingBottom'] ?? 12;
-    $mPleft = $s['mobileMenuItemPaddingLeft'] ?? 20;
-    $mobileLinkStyle .= " padding: {$mPtop}px {$mPright}px {$mPbottom}px {$mPleft}px;";
+    $mPtop = getUnitVal($num($s['mobileMenuItemPaddingTop'] ?? null, 12), 'px');
+    $mPright = getUnitVal($num($s['mobileMenuItemPaddingRight'] ?? null, 20), 'px');
+    $mPbottom = getUnitVal($num($s['mobileMenuItemPaddingBottom'] ?? null, 12), 'px');
+    $mPleft = getUnitVal($num($s['mobileMenuItemPaddingLeft'] ?? null, 20), 'px');
+    $mobileLinkStyle .= " padding: {$mPtop} {$mPright} {$mPbottom} {$mPleft};";
     
     $mAlign = $s['mobileMenuTextAlign'] ?? 'left';
     $mJustify = ($mAlign === 'center') ? 'center' : 'space-between';
@@ -865,3 +907,4 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
 </script>
 
 @include('falcon-cms::components.frontend.menu-scrollspy')
+@endif

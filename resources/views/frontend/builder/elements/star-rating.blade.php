@@ -23,8 +23,8 @@
     $lblTt     = $s['labelTextTransform']      ?? 'none';
     $lblColor  = $s['labelColor']              ?? '#6b7280';
 
-    $mt = isset($s['marginTop'])    && $s['marginTop']    !== '' ? $s['marginTop']    . ($s['marginTopUnit']    ?? 'px') : '0px';
-    $mb = isset($s['marginBottom']) && $s['marginBottom'] !== '' ? $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px') : '0px';
+    $mt = isset($s['marginTop'])    && $s['marginTop']    !== '' ? getUnitVal($s['marginTop'], $s['marginTopUnit'] ?? 'px') : '0px';
+    $mb = isset($s['marginBottom']) && $s['marginBottom'] !== '' ? getUnitVal($s['marginBottom'], $s['marginBottomUnit'] ?? 'px') : '0px';
 @endphp
 
 <div class="lz-star-rating {{ $s['cssClass'] ?? '' }} {{ $visCls }}"

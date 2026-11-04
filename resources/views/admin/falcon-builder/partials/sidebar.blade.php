@@ -412,18 +412,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -594,18 +594,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -764,18 +764,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -1012,18 +1012,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -1272,18 +1272,18 @@
                                     <label class="text-[12px] font-bold text-[#333] block mb-2">Element Visibility</label>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -1330,18 +1330,18 @@
                                     <label class="text-[12px] font-bold text-[#333] block mb-2">Element Visibility</label>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -1519,18 +1519,18 @@
                                     <label class="text-[12px] font-bold text-[#333] block mb-2">Element Visibility</label>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -1733,18 +1733,18 @@
                                     <label class="text-[12px] font-bold text-[#333] block mb-2">Element Visibility</label>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -1871,18 +1871,18 @@
                                     <label class="text-[12px] font-bold text-[#333] block mb-2">Element Visibility</label>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -2038,18 +2038,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -2326,18 +2326,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -2461,18 +2461,18 @@
                                     <label class="text-[12px] font-bold text-[#333] block mb-2">Element Visibility</label>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -2550,18 +2550,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -2734,18 +2734,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -2887,18 +2887,18 @@
                                     <label class="text-[12px] font-bold text-[#333] block mb-2">Element Visibility</label>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -3009,18 +3009,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -3125,18 +3125,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -3219,18 +3219,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -3386,18 +3386,18 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -3578,18 +3578,18 @@
                                     <label class="text-[12px] font-bold text-[#333] block mb-3">Element Visibility</label>
                                     <div class="grid grid-cols-3 gap-2"
                                          @click.capture="if (!editingElement.settings.visibility) { editingElement.settings.visibility = { mobile: true, tablet: true, desktop: true }; }">
-                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.mobile = editingElement.settings.visibility.mobile === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.mobile !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Mobile">
                                             <i class="fa fa-mobile-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.tablet = editingElement.settings.visibility.tablet === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.tablet !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Tablet">
                                             <i class="fa fa-tablet-alt text-sm"></i>
                                         </button>
-                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
-                                                :class="editingElement.settings.visibility && editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
+                                        <button @click="editingElement.settings.visibility.desktop = editingElement.settings.visibility.desktop === false"
+                                                :class="!editingElement.settings.visibility || editingElement.settings.visibility.desktop !== false ? 'bg-[#2271b1] text-white' : 'bg-slate-100 text-slate-400'"
                                                 class="py-3 rounded transition-all flex items-center justify-center" title="Desktop">
                                             <i class="fa fa-desktop text-sm"></i>
                                         </button>
@@ -3749,25 +3749,11 @@
                                      <div class="grid grid-cols-2 gap-2">
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginTop"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginTopUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginBottom"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginBottomUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -3878,13 +3864,11 @@
                                  <div class="grid grid-cols-2 gap-3">
                                      <div>
                                          <label class="text-[12px] font-bold text-[#333] block mb-2">Margin Top (px)</label>
-                                         <input type="number" v-model.number="editingElement.settings.marginTop"
-                                                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                         <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, false)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                      </div>
                                      <div>
                                          <label class="text-[12px] font-bold text-[#333] block mb-2">Margin Bottom (px)</label>
-                                         <input type="number" v-model.number="editingElement.settings.marginBottom"
-                                                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
+                                         <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, false)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                      </div>
                                  </div>
                              </div>
@@ -3960,9 +3944,9 @@
                                                     class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div>
-                                             <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Font Weight</label>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Weight</label>
                                              <select v-model="editingElement.settings.fontWeight"
-                                                     class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
+                                                     class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
                                                  <option value="300">Light 300</option>
                                                  <option value="400">Normal 400</option>
                                                  <option value="500">Medium 500</option>
@@ -3996,25 +3980,11 @@
                                      <div class="grid grid-cols-2 gap-2">
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginTop"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginTopUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginBottom"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginBottomUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -4044,11 +4014,11 @@
                                          <!-- Icon Size + Spacing: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Size</label>
-                                                 <div class="flex border border-slate-200 rounded-md overflow-hidden">
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Size</label>
+                                                 <div class="flex border border-slate-200 rounded overflow-hidden">
                                                      <input type="number" min="1" v-model.number="editingElement.settings[iconBoxField('iconSize')]"
                                                             :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconSize ?? 40) : ''"
-                                                            class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
+                                                            class="w-full px-2 py-2 text-[12px] text-center border-none focus:ring-0">
                                                      {{-- A unit is not a state: the same measurement cannot be px at rest and rem under the pointer. --}}
                                                      <select v-model="editingElement.settings.iconSizeUnit"
                                                              class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
@@ -4060,10 +4030,10 @@
                                                   (the card below shifts as the pointer crosses the icon); leave it empty
                                                   to keep the normal spacing on hover. --}}
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Spacing Below</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Spacing Below</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings[iconBoxField('iconSpacing')]"
                                                         :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconSpacing ?? 16) : ''"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <!-- Icon Color -->
@@ -4099,21 +4069,21 @@
                                          <!-- Border + Border Color -->
                                          <div class="grid grid-cols-2 gap-2 items-end">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border (px)</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Border (px)</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings[iconBoxField('iconBorderWidth')]"
                                                         :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconBorderWidth || 0) : '0'"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border Color</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Border Color</label>
                                                  <div class="flex gap-1.5 items-center">
-                                                     <div class="checkerboard rounded overflow-hidden w-8 h-8 border border-slate-200 cursor-pointer flex-shrink-0"
+                                                     <div class="checkerboard rounded overflow-hidden w-9 h-9 border border-slate-200 cursor-pointer flex-shrink-0"
                                                           @click="openColorPicker($event, editingElement.settings, iconBoxField('iconBorderColor'))">
                                                          <div :style="{ backgroundColor: editingElement.settings[iconBoxField('iconBorderColor')] || editingElement.settings.iconBorderColor || '#2271b1' }" class="w-full h-full"></div>
                                                      </div>
                                                      <input type="text" v-model="editingElement.settings[iconBoxField('iconBorderColor')]"
                                                             :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconBorderColor || '#2271b1') : ''"
-                                                            class="w-full border border-slate-200 rounded px-1 h-8 text-[11px]">
+                                                            class="w-full border border-slate-200 rounded px-2 py-2 text-[12px]">
                                                  </div>
                                              </div>
                                          </div>
@@ -4121,16 +4091,16 @@
                                               becomes with a background or a border — the same test both renderers make. --}}
                                          <div v-if="editingElement.settings.iconBgColor || editingElement.settings.iconBorderWidth || editingElement.settings.iconBgColorHover || editingElement.settings.iconBorderWidthHover" class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border Radius</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Border Radius</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings[iconBoxField('iconBorderRadius')]"
                                                         :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconBorderRadius ?? 50) : ''"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (Px)</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Padding (Px)</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings[iconBoxField('iconPadding')]"
                                                         :placeholder="iconBoxState === 'hover' ? (editingElement.settings.iconPadding || 0) : ''"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                      </div>
@@ -4148,9 +4118,9 @@
                                          <!-- HTML Tag + Font Size: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">HTML Tag</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">HTML Tag</label>
                                                  <select v-model="editingElement.settings.titleTag"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option>
                                                      <option value="h4">H4</option><option value="h5">H5</option><option value="h6">H6</option>
                                                      <option value="p">P</option><option value="div">DIV</option>
@@ -4165,9 +4135,9 @@
                                          <!-- Font Weight + Letter Spacing: 2-col -->
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Weight</label>
                                                  <select v-model="editingElement.settings.titleFontWeight"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="400">400 Regular</option><option value="500">500 Medium</option>
                                                      <option value="600">600 Semibold</option><option value="700">700 Bold</option>
                                                      <option value="800">800 Extrabold</option><option value="900">900 Black</option>
@@ -4187,9 +4157,9 @@
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Spacing Below</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Spacing Below</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.titleSpacing"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <!-- Text Transform -->
@@ -4244,9 +4214,9 @@
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Weight</label>
                                                  <select v-model="editingElement.settings.descFontWeight"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="400">400 Regular</option><option value="500">500 Medium</option>
                                                      <option value="600">600 Semibold</option><option value="700">700 Bold</option>
                                                  </select>
@@ -4320,9 +4290,9 @@
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Weight</label>
                                                  <select v-model="editingElement.settings.readMoreFontWeight"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="400">400 Regular</option><option value="500">500 Medium</option>
                                                      <option value="600">600 Semibold</option><option value="700">700 Bold</option>
                                                      <option value="800">800 Extrabold</option><option value="900">900 Black</option>
@@ -4421,25 +4391,11 @@
                                      <div class="grid grid-cols-2 gap-2">
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginTop"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginTopUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginBottom"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginBottomUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -4454,14 +4410,14 @@
                                      <label class="text-[12px] font-bold text-[#333] uppercase mb-3 block">SPACING</label>
                                      <div class="grid grid-cols-2 gap-2">
                                          <div class="flex flex-col gap-1">
-                                             <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Column Gap</label>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Column Gap</label>
                                              <input type="number" min="0" v-model.number="editingElement.settings.columnGap"
-                                                    class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                    class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="flex flex-col gap-1">
-                                             <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Row Gap</label>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Row Gap</label>
                                              <input type="number" min="0" v-model.number="editingElement.settings.rowGap"
-                                                    class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                    class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -4472,26 +4428,26 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Size (px)</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Size (px)</label>
                                                  <input type="number" min="1" v-model.number="editingElement.settings.iconSize"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Spacing</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Spacing</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.iconSpacing"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Radius (px)</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Radius (px)</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.iconBorderRadius"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Padding (px)</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.iconPadding"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div>
@@ -4533,9 +4489,9 @@
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">HTML Tag</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">HTML Tag</label>
                                                  <select v-model="editingElement.settings.titleTag"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option>
                                                      <option value="h4">H4</option><option value="h5">H5</option><option value="h6">H6</option>
                                                      <option value="p">P</option><option value="div">DIV</option>
@@ -4549,9 +4505,9 @@
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Weight</label>
                                                  <select v-model="editingElement.settings.titleFontWeight"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="100">100 Thin</option><option value="200">200 Extra Light</option>
                                                      <option value="300">300 Light</option><option value="400">400 Regular</option>
                                                      <option value="500">500 Medium</option><option value="600">600 Semibold</option>
@@ -4572,9 +4528,9 @@
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Spacing Below</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Spacing Below</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.titleSpacing"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div>
@@ -4625,9 +4581,9 @@
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Weight</label>
                                                  <select v-model="editingElement.settings.contentFontWeight"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="100">100 Thin</option><option value="200">200 Extra Light</option>
                                                      <option value="300">300 Light</option><option value="400">400 Regular</option>
                                                      <option value="500">500 Medium</option><option value="600">600 Semibold</option>
@@ -4681,9 +4637,9 @@
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Weight</label>
                                                  <select v-model="editingElement.settings.linkFontWeight"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="400">400 Regular</option><option value="500">500 Medium</option>
                                                      <option value="600">600 Semibold</option><option value="700">700 Bold</option>
                                                      <option value="800">800 Extrabold</option><option value="900">900 Black</option>
@@ -4736,21 +4692,16 @@
                                          </div>
                                          <!-- Button-only controls -->
                                          <template v-if="editingElement.settings.linkType === 'button'">
-                                             <div class="grid grid-cols-3 gap-2">
+                                             <!-- Button padding: one box per side, any CSS size (was Pad X / Pad Y) -->
+                                             <div>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Button Padding</label>
+                                                 @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'linkButtonPadding', 'responsive' => false, 'unit' => false, 'legacy' => ['Top' => 'linkButtonPaddingY', 'Right' => 'linkButtonPaddingX', 'Bottom' => 'linkButtonPaddingY', 'Left' => 'linkButtonPaddingX'], 'placeholders' => ['Top' => '10', 'Right' => '20', 'Bottom' => '10', 'Left' => '20']])
+                                             </div>
+                                             <div class="grid grid-cols-2 gap-2">
                                                  <div class="flex flex-col gap-1">
-                                                     <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Pad X</label>
-                                                     <input type="number" min="0" v-model.number="editingElement.settings.linkButtonPaddingX"
-                                                            class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
-                                                 </div>
-                                                 <div class="flex flex-col gap-1">
-                                                     <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Pad Y</label>
-                                                     <input type="number" min="0" v-model.number="editingElement.settings.linkButtonPaddingY"
-                                                            class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
-                                                 </div>
-                                                 <div class="flex flex-col gap-1">
-                                                     <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Radius</label>
+                                                     <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Radius</label>
                                                      <input type="number" min="0" v-model.number="editingElement.settings.linkButtonRadius"
-                                                            class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                            class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                                  </div>
                                              </div>
                                              <div>
@@ -4774,28 +4725,28 @@
                                  <div class="pt-4 border-t border-slate-50">
                                      <label class="text-[12px] font-bold text-[#333] uppercase mb-3 block">BOX</label>
                                      <div class="space-y-3">
+                                         <!-- Box padding: one box per side, any CSS size (was one px box: boxPadding) -->
+                                         <div>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Padding</label>
+                                             @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'boxPadding', 'responsive' => false, 'unit' => false, 'legacy' => 'boxPadding', 'placeholders' => ['Top' => 'auto', 'Right' => 'auto', 'Bottom' => 'auto', 'Left' => 'auto']])
+                                         </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
-                                                 <input type="number" min="0" v-model.number="editingElement.settings.boxPadding" placeholder="0"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
-                                             </div>
-                                             <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Radius (px)</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Radius (px)</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.boxBorderRadius"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border (px)</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Border (px)</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.boxBorderWidth"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Shadow</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Shadow</label>
                                                  <select v-model="editingElement.settings.boxShadow"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="none">None</option><option value="small">Small</option>
                                                      <option value="medium">Medium</option><option value="large">Large</option>
                                                  </select>
@@ -4837,23 +4788,23 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Width</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Width</label>
                                                  <input type="number" min="1" v-model.number="editingElement.settings.timelineLineWidth"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Style</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line Style</label>
                                                  <select v-model="editingElement.settings.timelineLineStyle"
-                                                         class="w-full border border-slate-200 rounded px-1 h-8 text-[11px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
                                                      <option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option>
                                                  </select>
                                              </div>
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Dot Size</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Dot Size</label>
                                                  <input type="number" min="6" v-model.number="editingElement.settings.timelineDotSize"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center" title="Distance from the rail to the content">Rail Gap</label>
@@ -4863,9 +4814,9 @@
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Dot Border</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Dot Border</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.timelineDotBorderWidth"
-                                                        class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">&nbsp;</label>
@@ -4927,25 +4878,11 @@
                                      <div class="grid grid-cols-2 gap-2">
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginTop"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginTopUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginBottom"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginBottomUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -4961,14 +4898,14 @@
                                      <div class="space-y-3">
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Border Radius</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Border Radius</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.borderRadius"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full py-2 px-2 text-[12px] text-center border border-slate-200 rounded focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Item Gap (px)</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Item Gap (px)</label>
                                                  <input type="number" min="0" v-model.number="editingElement.settings.itemGap"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
+                                                        class="w-full py-2 px-2 text-[12px] text-center border border-slate-200 rounded focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <!-- Border Color -->
@@ -4999,11 +4936,11 @@
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'titleFontSize')" @input="fsInput(editingElement.settings, 'titleFontSize', $event.target.value)"
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
-                                             <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
-                                                 <input type="number" min="0" v-model.number="editingElement.settings.titlePadding"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
-                                             </div>
+                                         </div>
+                                         <!-- Padding: one box per side, any CSS size (was one px box: titlePadding) -->
+                                         <div>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Padding</label>
+                                             @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'titlePadding', 'responsive' => false, 'unit' => false, 'legacy' => 'titlePadding', 'placeholders' => ['Top' => '16', 'Right' => '16', 'Bottom' => '16', 'Left' => '16']])
                                          </div>
                                          <!-- Font Weight -->
                                          <div>
@@ -5125,11 +5062,11 @@
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'contentFontSize')" @input="fsInput(editingElement.settings, 'contentFontSize', $event.target.value)"
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
-                                             <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
-                                                 <input type="number" min="0" v-model.number="editingElement.settings.contentPadding"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
-                                             </div>
+                                         </div>
+                                         <!-- Padding: one box per side, any CSS size (was one px box: contentPadding) -->
+                                         <div>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Padding</label>
+                                             @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'contentPadding', 'responsive' => false, 'unit' => false, 'legacy' => 'contentPadding', 'placeholders' => ['Top' => '16', 'Right' => '16', 'Bottom' => '16', 'Left' => '16']])
                                          </div>
                                          <!-- Content Font Family -->
                                          <div>
@@ -5188,25 +5125,11 @@
                                      <div class="grid grid-cols-2 gap-2">
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginTop"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginTopUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginBottom"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginBottomUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -5392,17 +5315,11 @@
                                              <div class="grid grid-cols-2 gap-2">
                                                  <div class="flex flex-col gap-1">
                                                      <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                                                     <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                                                         <input type="number" v-model.number="editingElement.settings[device === 'desktop' ? 'marginTop' : 'marginTop_' + device]" :placeholder="getResponsiveVal(editingElement.settings, 'marginTop', device) || '0'" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                         <select :value="getResponsiveVal(editingElement.settings, 'marginTopUnit', device) || 'px'" @change="setResponsiveVal(editingElement.settings, 'marginTopUnit', device, $event.target.value)" class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select>
-                                                     </div>
+                                                     <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', device, true)" @input="spInput(editingElement.settings, 'marginTop', device, $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', device, true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                                  </div>
                                                  <div class="flex flex-col gap-1">
                                                      <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                                                     <div class="flex border border-slate-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                                                         <input type="number" v-model.number="editingElement.settings[device === 'desktop' ? 'marginBottom' : 'marginBottom_' + device]" :placeholder="getResponsiveVal(editingElement.settings, 'marginBottom', device) || '0'" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                         <select :value="getResponsiveVal(editingElement.settings, 'marginBottomUnit', device) || 'px'" @change="setResponsiveVal(editingElement.settings, 'marginBottomUnit', device, $event.target.value)" class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center"><option value="px">px</option><option value="rem">rem</option><option value="%">%</option></select>
-                                                     </div>
+                                                     <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', device, true)" @input="spInput(editingElement.settings, 'marginBottom', device, $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', device, true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                                  </div>
                                              </div>
                                          </div>
@@ -5425,9 +5342,9 @@
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Weight</label>
+                                                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Weight</label>
                                                  <select v-model="editingElement.settings.tabFontWeight"
-                                                         class="w-full h-8 border border-slate-200 rounded px-1 text-[11px] focus:outline-none focus:border-[#0091ea]">
+                                                         class="w-full py-2 border border-slate-200 rounded px-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
                                                      <option value="400">Regular (400)</option>
                                                      <option value="500">Medium (500)</option>
                                                      <option value="600">Semi Bold (600)</option>
@@ -5489,11 +5406,11 @@
                                                  <input type="text" :value="fsDisplay(editingElement.settings, 'contentFontSize')" @input="fsInput(editingElement.settings, 'contentFontSize', $event.target.value)"
                                                         class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
-                                             <div class="flex flex-col gap-1">
-                                                 <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Padding (px)</label>
-                                                 <input type="number" min="0" v-model.number="editingElement.settings.contentPadding"
-                                                        class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
-                                             </div>
+                                         </div>
+                                         <!-- Padding: one box per side, any CSS size (was one px box: contentPadding) -->
+                                         <div>
+                                             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Padding</label>
+                                             @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => 'contentPadding', 'responsive' => false, 'unit' => false, 'legacy' => 'contentPadding', 'placeholders' => ['Top' => '20', 'Right' => '20', 'Bottom' => '20', 'Left' => '20']])
                                          </div>
                                          <!-- Content Font Family -->
                                          <div>
@@ -5572,25 +5489,11 @@
                                      <div class="grid grid-cols-2 gap-2">
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginTop"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginTopUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginBottom"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginBottomUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -5606,25 +5509,11 @@
                                      <div class="grid grid-cols-2 gap-2">
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Top</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginTop"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginTopUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Bottom</label>
-                                             <div class="flex border border-slate-200 rounded-md overflow-hidden">
-                                                 <input type="number" v-model.number="editingElement.settings.marginBottom"
-                                                        class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0">
-                                                 <select v-model="editingElement.settings.marginBottomUnit"
-                                                         class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                                     <option value="px">px</option><option value="rem">rem</option><option value="%">%</option>
-                                                 </select>
-                                             </div>
+                                             <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                      </div>
                                  </div>
@@ -5739,7 +5628,8 @@
             </div>
             <div class="p-3 space-y-3 overflow-y-auto" style="max-height:320px">
                 <template v-for="field in getDynSrcDef(dynSrcMenu.configKey).subFields" :key="field.key">
-                    <div>
+                    {{-- showIf: a field that only matters for one choice of another (Time ago → days) --}}
+                    <div v-if="!field.showIf || (dynSrcMenu.settings[field.showIf.key] || '') === field.showIf.value">
                         <label class="text-[10px] font-semibold text-slate-500 block mb-1 uppercase tracking-wide">@{{ field.label }}</label>
                         <select v-if="field.type === 'select'"
                                 v-model="dynSrcMenu.settings[field.key]"

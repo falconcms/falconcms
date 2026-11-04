@@ -65,12 +65,12 @@
     // As typed: a bare number is a multiplier, "22px" or "1.6em" a length.
     $lineHeight   = (($s['lineHeight'] ?? '') === '') ? 1.7 : trim((string) $s['lineHeight']);
     $radius       = (int) ($s['borderRadius'] ?? 10);
-    $padding      = (int) ($s['padding'] ?? 18);
+    $padding      = falcon_padding_sides($s, 'padding', 18, 'padding');
     $borderWidth  = (int) ($s['borderWidth'] ?? 1);
     $fontFamily   = trim((string) ($s['fontFamily'] ?? '')) ?: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
 
-    $marginTop    = ($s['marginTop']    ?? 0) . ($s['marginTopUnit']    ?? 'px');
-    $marginBottom = ($s['marginBottom'] ?? 0) . ($s['marginBottomUnit'] ?? 'px');
+    $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
+    $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
 
     $lines   = CodeHighlighter::highlightLines($code, $language);
     // A trailing newline yields one empty line the author did not type; drop it so
@@ -128,7 +128,7 @@
         }
         #{{ $uid }} pre {
             margin: 0;
-            padding: {{ $padding }}px {{ $padding }}px;
+            padding: {{ $padding }};
             color: var(--fc-fg);
             font-family: inherit;
             font-size: {{ $fontSize }};

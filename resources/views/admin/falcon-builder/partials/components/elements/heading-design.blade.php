@@ -105,24 +105,7 @@
             </div>
         </div>
     </div>
-    <div class="grid grid-cols-4 gap-2">
-        @foreach(['Top', 'Right', 'Bottom', 'Left'] as $side)
-        <div>
-            <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">{{ $side }}</label>
-            <input type="number"
-                   :value="getResponsiveVal(editingElement.settings, '{{ $box }}{{ $side }}', device)"
-                   @input="setResponsiveVal(editingElement.settings, '{{ $box }}{{ $side }}', device, $event.target.value === '' ? '' : Number($event.target.value))"
-                   class="w-full border border-slate-200 rounded px-1.5 py-2 text-[12px] text-center text-slate-600 focus:outline-none focus:border-[#0091ea]">
-        </div>
-        @endforeach
-    </div>
-    <select :value="getResponsiveVal(editingElement.settings, '{{ $box }}TopUnit', device) || 'px'"
-            @change="['Top','Right','Bottom','Left'].forEach(s => setResponsiveVal(editingElement.settings, '{{ $box }}' + s + 'Unit', device, $event.target.value))"
-            class="mt-2 w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-slate-500 bg-slate-50 focus:outline-none focus:border-[#0091ea]">
-        <option value="px">px</option>
-        <option value="%">%</option>
-        <option value="em">em</option>
-        <option value="rem">rem</option>
-    </select>
+    {{-- One box per side, like Font Size: any CSS size; stored as number + unit as before. --}}
+    @include('falcon-cms::admin.falcon-builder.partials.components.fields.spacing', ['key' => $box])
 </div>
 @endforeach

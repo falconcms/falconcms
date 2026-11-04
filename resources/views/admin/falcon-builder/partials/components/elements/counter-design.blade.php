@@ -177,29 +177,11 @@
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <label class="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block">Margin Top</label>
-                <div class="flex border border-slate-200 rounded overflow-hidden focus-within:border-[#0091ea]">
-                    <input type="number" v-model.number="editingElement.settings.marginTop" placeholder="0"
-                           class="w-full h-9 px-2 text-[12px] text-center border-none focus:ring-0">
-                    <select v-model="editingElement.settings.marginTopUnit"
-                            class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                        <option value="px">px</option>
-                        <option value="rem">rem</option>
-                        <option value="%">%</option>
-                    </select>
-                </div>
+                <input type="text" :value="spDisplay(editingElement.settings, 'marginTop', 'desktop', true)" @input="spInput(editingElement.settings, 'marginTop', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginTop', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
             <div>
                 <label class="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block">Margin Bottom</label>
-                <div class="flex border border-slate-200 rounded overflow-hidden focus-within:border-[#0091ea]">
-                    <input type="number" v-model.number="editingElement.settings.marginBottom" placeholder="0"
-                           class="w-full h-9 px-2 text-[12px] text-center border-none focus:ring-0">
-                    <select v-model="editingElement.settings.marginBottomUnit"
-                            class="bg-slate-50 border-l border-slate-200 text-[9px] px-0.5 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                        <option value="px">px</option>
-                        <option value="rem">rem</option>
-                        <option value="%">%</option>
-                    </select>
-                </div>
+                <input type="text" :value="spDisplay(editingElement.settings, 'marginBottom', 'desktop', true)" @input="spInput(editingElement.settings, 'marginBottom', 'desktop', $event.target.value, true)" :placeholder="spHint(editingElement.settings, 'marginBottom', 'desktop', true, '0')" title="Any CSS size: 20, 20px, 2rem, 5%, 10vh" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
         </div>
     </div>

@@ -36,8 +36,8 @@
     $iconSize   = ($s['iconSize']        ?? 40) . 'px';
     $iconColor  = $s['iconColor']        ?? '#0091ea';
 
-    $marginTop    = isset($s['marginTop'])    && $s['marginTop']    !== '' ? $s['marginTop']    . ($s['marginTopUnit']    ?? 'px') : '0px';
-    $marginBottom = isset($s['marginBottom']) && $s['marginBottom'] !== '' ? $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px') : '0px';
+    $marginTop    = isset($s['marginTop'])    && $s['marginTop']    !== '' ? getUnitVal($s['marginTop'], $s['marginTopUnit'] ?? 'px') : '0px';
+    $marginBottom = isset($s['marginBottom']) && $s['marginBottom'] !== '' ? getUnitVal($s['marginBottom'], $s['marginBottomUnit'] ?? 'px') : '0px';
 
     $wrapperStyle = "width:100%;max-width:100%;text-align:{$textAlign};margin-top:{$marginTop};margin-bottom:{$marginBottom};";
 

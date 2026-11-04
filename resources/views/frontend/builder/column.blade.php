@@ -108,21 +108,21 @@
         'width: 100%',
         'flex-grow: 1',
         'margin: 0',
-        'padding-top: '    . ($s['paddingTop']    ?? 0) . ($s['paddingTopUnit']    ?? 'px'),
-        'padding-right: '  . ($s['paddingRight']  ?? 0) . ($s['paddingRightUnit']  ?? 'px'),
-        'padding-bottom: ' . ($s['paddingBottom'] ?? 0) . ($s['paddingBottomUnit'] ?? 'px'),
-        'padding-left: '   . ($s['paddingLeft']   ?? 0) . ($s['paddingLeftUnit']   ?? 'px'),
+        'padding-top: '    . getUnitVal($s['paddingTop'] ?? 0, $s['paddingTopUnit'] ?? 'px'),
+        'padding-right: '  . getUnitVal($s['paddingRight'] ?? 0, $s['paddingRightUnit'] ?? 'px'),
+        'padding-bottom: ' . getUnitVal($s['paddingBottom'] ?? 0, $s['paddingBottomUnit'] ?? 'px'),
+        'padding-left: '   . getUnitVal($s['paddingLeft'] ?? 0, $s['paddingLeftUnit'] ?? 'px'),
         'align-items: stretch',
     ];
 
-    if (isset($s['marginTop']) && $s['marginTop'] !== '') $outerStyles[] = 'margin-top: ' . $s['marginTop'] . ($s['marginTopUnit'] ?? 'px');
-    if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $outerStyles[] = 'margin-bottom: ' . $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px');
+    if (isset($s['marginTop']) && $s['marginTop'] !== '') $outerStyles[] = 'margin-top: ' . getUnitVal($s['marginTop'], $s['marginTopUnit'] ?? 'px');
+    if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $outerStyles[] = 'margin-bottom: ' . getUnitVal($s['marginBottom'], $s['marginBottomUnit'] ?? 'px');
 
     $innerStyles = [
-        'padding-top: '    . ($s['paddingTop']    ?? 0) . ($s['paddingTopUnit'] ?? 'px'),
-        'padding-bottom: ' . ($s['paddingBottom'] ?? 0) . ($s['paddingBottomUnit'] ?? 'px'),
-        'padding-left: '   . ($s['paddingLeft']   ?? 0) . ($s['paddingLeftUnit'] ?? 'px'),
-        'padding-right: '  . ($s['paddingRight']  ?? 0) . ($s['paddingRightUnit'] ?? 'px'),
+        'padding-top: '    . getUnitVal($s['paddingTop'] ?? 0, $s['paddingTopUnit'] ?? 'px'),
+        'padding-bottom: ' . getUnitVal($s['paddingBottom'] ?? 0, $s['paddingBottomUnit'] ?? 'px'),
+        'padding-left: '   . getUnitVal($s['paddingLeft'] ?? 0, $s['paddingLeftUnit'] ?? 'px'),
+        'padding-right: '  . getUnitVal($s['paddingRight'] ?? 0, $s['paddingRightUnit'] ?? 'px'),
         'box-sizing: border-box',
     ];
     if (!$isDefaultAlign) {
@@ -132,8 +132,8 @@
             'flex-grow: ' . ($shouldStretch ? '1' : '0')
         );
     }
-    if (isset($s['marginLeft']) && $s['marginLeft'] !== '') $innerStyles[] = 'margin-left: ' . $s['marginLeft'] . ($s['marginLeftUnit'] ?? 'px');
-    if (isset($s['marginRight']) && $s['marginRight'] !== '') $innerStyles[] = 'margin-right: ' . $s['marginRight'] . ($s['marginRightUnit'] ?? 'px');
+    if (isset($s['marginLeft']) && $s['marginLeft'] !== '') $innerStyles[] = 'margin-left: ' . getUnitVal($s['marginLeft'], $s['marginLeftUnit'] ?? 'px');
+    if (isset($s['marginRight']) && $s['marginRight'] !== '') $innerStyles[] = 'margin-right: ' . getUnitVal($s['marginRight'], $s['marginRightUnit'] ?? 'px');
 
     $contentLayout = ($s['contentLayout'] ?? '') ?: 'column';
     if ($contentLayout && $contentLayout !== 'block') {
@@ -366,7 +366,7 @@
             $mVal = $getColRespOvr($mProp, $rDev);
             if ($mVal !== null) {
                 $mUnit = $getColRespOvr($mProp . 'Unit', $rDev) ?? ($s[$mProp . 'Unit'] ?? 'px');
-                $rOuter[] = strtolower(preg_replace('/([A-Z])/', '-$1', $mProp)) . ':' . $mVal . $mUnit . '!important';
+                $rOuter[] = strtolower(preg_replace('/([A-Z])/', '-$1', $mProp)) . ':' . getUnitVal($mVal, $mUnit) . '!important';
             }
         }
         // Responsive padding + marginLeft/Right (inner element) — !important needed to override inline styles
@@ -374,7 +374,7 @@
             $pVal = $getColRespOvr($pProp, $rDev);
             if ($pVal !== null) {
                 $pUnit = $getColRespOvr($pProp . 'Unit', $rDev) ?? ($s[$pProp . 'Unit'] ?? 'px');
-                $rInner[] = strtolower(preg_replace('/([A-Z])/', '-$1', $pProp)) . ':' . $pVal . $pUnit . '!important';
+                $rInner[] = strtolower(preg_replace('/([A-Z])/', '-$1', $pProp)) . ':' . getUnitVal($pVal, $pUnit) . '!important';
             }
         }
         // Responsive background color (only when bgType is 'color')

@@ -38,8 +38,8 @@
     $fontSize     = getUnitVal($s['fontSize'] ?? 14, $s['fontSizeUnit'] ?? 'px');
     $fontWeight   = $s['fontWeight'] ?? '400';
     $gap          = ($s['gap'] ?? 8) . ($s['gapUnit'] ?? 'px');
-    $mt = (isset($s['marginTop'])    && $s['marginTop']    !== '' ? $s['marginTop']    : 0) . ($s['marginTopUnit']    ?? 'px');
-    $mb = (isset($s['marginBottom']) && $s['marginBottom'] !== '' ? $s['marginBottom'] : 0) . ($s['marginBottomUnit'] ?? 'px');
+    $mt = getUnitVal(isset($s['marginTop']) && $s['marginTop'] !== '' ? $s['marginTop'] : 0, $s['marginTopUnit'] ?? 'px');
+    $mb = getUnitVal(isset($s['marginBottom']) && $s['marginBottom'] !== '' ? $s['marginBottom'] : 0, $s['marginBottomUnit'] ?? 'px');
     $cssClass = $s['cssClass'] ?? '';
     $cssId    = $s['cssId']    ?? '';
     $pmUid    = 'fpm-' . ($el['id'] ?? str_replace('.', '', uniqid('', true)));
