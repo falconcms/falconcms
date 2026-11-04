@@ -12,12 +12,14 @@ use Illuminate\Console\Command;
  *   php artisan falcon:replace-url                      (old address read from the data)
  *   php artisan falcon:replace-url https://falconcms.com
  *   php artisan falcon:replace-url https://old.com https://new.com
+ *   php artisan falcon:replace-url http://falconcms.test --relative   (→ "/about": right under any address)
  */
 class ReplaceSiteUrl extends Command
 {
     protected $signature = 'falcon:replace-url
         {from? : The old address, e.g. https://falconcms.com (default: worked out from the data)}
         {to? : The new address (default: this site\'s APP_URL)}
+        {--relative : Drop the old address and keep the path ("/about"), so links work under any address}
         {--force : Do not ask for confirmation}';
 
     protected $description = 'Move links from another site\'s address to this site (menus, content, layouts, settings)';
@@ -25,14 +27,15 @@ class ReplaceSiteUrl extends Command
     public function handle(): int
     {
         $from = SiteUrlMigrator::normalize($this->argument('from') ?: SiteUrlMigrator::guess());
-        $to = SiteUrlMigrator::normalize($this->argument('to') ?: config('app.url'));
+        $relative = (bool) $this->option('relative');
+        $to = $relative ? null : SiteUrlMigrator::normalize($this->argument('to') ?: config('app.url'));
         if (!$from) {
             $this->error('No old address given, and none could be worked out from the data.');
 
             return self::FAILURE;
         }
-        if (!$to) {
-            $this->error('No new address: pass one, or set APP_URL.');
+        if (!$relative && !$to) {
+            $this->error('No new address: pass one, set APP_URL, or use --relative.');
 
             return self::FAILURE;
         }
@@ -41,7 +44,8 @@ class ReplaceSiteUrl extends Command
 
             return self::SUCCESS;
         }
-        if (!$this->option('force') && !$this->confirm("Replace links to {$from} with {$to}?", true)) {
+        $label = $relative ? 'paths ("/…")' : $to;
+        if (!$this->option('force') && !$this->confirm("Replace links to {$from} with {$label}?", true)) {
             return self::SUCCESS;
         }
 
@@ -49,7 +53,7 @@ class ReplaceSiteUrl extends Command
         foreach ($stats['tables'] as $table => $n) {
             $this->line("  {$table}: {$n}");
         }
-        $this->info("Moved {$stats['values']} values from {$from} to {$to}.");
+        $this->info("Moved {$stats['values']} values from {$from} to {$label}.");
         if ($stats['skipped']) {
             $this->warn('Skipped (no single-column primary key): '.implode(', ', $stats['skipped']));
         }

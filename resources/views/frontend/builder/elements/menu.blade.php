@@ -244,6 +244,8 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             ->where('navigation_menu_id', $menuId)
             ->orderBy('order')
             ->get();
+        // Pages, posts and terms link to where they are now, under the address in use.
+        $allItems = falcon_menu_item_urls($allItems);
         $grouped = $allItems->groupBy('parent_id');
         $menuItems = $grouped->get(null, collect([]));
     }

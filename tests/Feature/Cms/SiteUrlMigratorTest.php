@@ -111,4 +111,53 @@ class SiteUrlMigratorTest extends TestCase
         $this->artisan('falcon:replace-url', ['from' => 'http://falconcms.test', 'to' => 'http://falconcms.test', '--force' => true])
             ->expectsOutputToContain('Nothing to do')->assertSuccessful();
     }
+
+    /** --relative: the old address goes and the path stays, so links work under any address. */
+    public function test_relative_keeps_only_the_path(): void
+    {
+        $page = $this->menuItem('http://falconcms.test/about');
+        $root = $this->menuItem('http://falconcms.test');
+        $query = $this->menuItem('http://falconcms.test/?s=x');
+        $post = DB::table('posts')->insertGetId(['title' => 'P', 'slug' => 'p-'.uniqid(), 'type' => 'page', 'status' => 'published', 'lang_code' => 'en',
+            'content' => json_encode([['linkUrl' => 'http://falconcms.test/laravel-cms/', 'home' => 'http://falconcms.test']]).' <a href="http://falconcms.test">Home</a>',
+            'created_at' => now(), 'updated_at' => now()]);
+
+        SiteUrlMigrator::migrate('http://falconcms.test', null);
+
+        $this->assertSame('/about', $this->url($page));
+        $this->assertSame('/', $this->url($root));
+        $this->assertSame('/?s=x', $this->url($query));
+        $content = (string) DB::table('posts')->where('id', $post)->value('content');
+        $this->assertStringContainsString('"linkUrl":"\/laravel-cms\/"', $content);
+        $this->assertStringContainsString('"home":"\/"', $content);
+        $this->assertStringContainsString('<a href="/">Home</a>', $content);
+        $this->assertSame('/laravel-cms/', json_decode(substr($content, 0, strpos($content, ' <a')), true)[0]['linkUrl']);
+    }
+
+    public function test_a_link_to_this_site_becomes_a_path(): void
+    {
+        config(['app.url' => 'http://falconcms.test']);
+        $this->assertSame('/about', falcon_local_url('http://localhost/about'), 'the request host');
+        $this->assertSame('/about?x=1', falcon_local_url('http://falconcms.test/about?x=1'), 'APP_URL');
+        $this->assertSame('/', falcon_local_url('http://falconcms.test'));
+        $this->assertSame('https://github.com/x', falcon_local_url('https://github.com/x'));
+        $this->assertSame('/already', falcon_local_url('/already'));
+        $this->assertSame('#plans', falcon_local_url('#plans'));
+    }
+
+    /** A Menu element's page item links to the page as it is now, not to the address saved with it. */
+    public function test_a_menu_items_page_link_is_worked_out_from_the_page(): void
+    {
+        $page = DB::table('posts')->insertGetId(['title' => 'About', 'slug' => 'about-us', 'type' => 'page', 'status' => 'published', 'lang_code' => 'en',
+            'content' => '', 'created_at' => now(), 'updated_at' => now()]);
+        $item = (object) ['id' => 1, 'type' => 'page', 'object_id' => $page, 'url' => 'https://old-site.example/about-old', 'title' => 'About'];
+        $custom = (object) ['id' => 2, 'type' => 'custom', 'object_id' => null, 'url' => 'https://github.com/x', 'title' => 'GitHub'];
+        $missing = (object) ['id' => 3, 'type' => 'page', 'object_id' => 999999, 'url' => '/kept', 'title' => 'Gone'];
+
+        $out = falcon_menu_item_urls([$item, $custom, $missing])->keyBy('id');
+        $this->assertSame('/about-us', $out[1]->url);
+        $this->assertSame('https://github.com/x', $out[2]->url);
+        $this->assertSame('/kept', $out[3]->url, 'a stored URL is better than a guess');
+        $this->assertSame('https://old-site.example/about-old', $item->url, 'the row passed in is not changed');
+    }
 }

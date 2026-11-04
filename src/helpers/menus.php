@@ -13,6 +13,7 @@ use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\PostType;
 use FalconCms\Core\Models\TaxonomyTerm;
 use FalconCms\Core\Models\Wishlist;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
@@ -76,6 +77,92 @@ if (!function_exists('falcon_same_page')) {
         }
 
         return $pathA === $pathB;
+    }
+}
+
+if (!function_exists('falcon_local_url')) {
+    /**
+     * A link to this site without its scheme and host: "http://127.0.0.1:8000/about" → "/about".
+     *
+     * Menus kept their pages' full addresses, and a site is often reached at more than one
+     * (a local copy at falconcms.test and at 127.0.0.1:8000, a staging domain, a cached page
+     * built under another one). A link to the host this request came in on, or to APP_URL's,
+     * becomes a path, which is right under every address. Other hosts are left as they are.
+     */
+    function falcon_local_url(?string $url): string
+    {
+        $url = (string) $url;
+        if (!preg_match('#^(?:https?:)?//([^/?\#]+)(.*)$#i', $url, $m)) {
+            return $url;
+        }
+        $host = strtolower($m[1]);
+        $own = [];
+        try {
+            $req = request();
+            if ($req) {
+                $own[] = strtolower($req->getHttpHost());
+            }
+        } catch (Throwable $e) {
+        }
+        $app = parse_url((string) config('app.url'));
+        if (!empty($app['host'])) {
+            $own[] = strtolower($app['host'].(isset($app['port']) ? ':'.$app['port'] : ''));
+        }
+        if (!in_array($host, $own, true)) {
+            return $url;
+        }
+        $rest = $m[2];
+
+        return $rest === '' || $rest[0] !== '/' ? '/'.$rest : $rest;
+    }
+}
+
+if (!function_exists('falcon_menu_item_urls')) {
+    /**
+     * Work out the address of each menu item that stands for a post, page or term, from the
+     * thing itself, as get_falcon_menu() does for theme menus: the address saved with the
+     * item was a snapshot (its host, its slug, its language) and went stale when the site
+     * moved, the slug changed or the page was translated. Custom links keep what was typed.
+     * One query per kind, however many items. Returns the same rows with ->url set.
+     *
+     * @param  iterable<object>  $items  navigation_menu_items rows
+     * @return Collection<int, object>
+     */
+    function falcon_menu_item_urls(iterable $items)
+    {
+        $items = collect($items);
+        $postIds = $items->filter(fn ($i) => !in_array($i->type ?? 'custom', ['custom', 'category'], true) && !falcon_is_special_menu_item($i->type ?? '') && !empty($i->object_id))
+            ->pluck('object_id')->unique()->all();
+        $termIds = $items->filter(fn ($i) => ($i->type ?? '') === 'category' && !empty($i->object_id))->pluck('object_id')->unique()->all();
+
+        $posts = $postIds ? Post::whereIn('id', $postIds)->get()->keyBy('id') : collect();
+        $terms = $termIds ? TaxonomyTerm::whereIn('id', $termIds)->get()->keyBy('id') : collect();
+        $cats = $termIds ? Category::whereIn('id', $termIds)->get()->keyBy('id') : collect();
+        $locale = app()->getLocale();
+
+        return $items->map(function ($item) use ($posts, $terms, $cats, $locale) {
+            $url = null;
+            try {
+                if (($item->type ?? '') === 'category' && !empty($item->object_id)) {
+                    if ($term = $terms->get($item->object_id)) {
+                        $url = get_falcon_term_link($term->slug, $term->taxonomy_slug);
+                    } elseif ($cat = $cats->get($item->object_id)) {
+                        $url = get_falcon_term_link($cat);
+                    }
+                } elseif ($post = $posts->get($item->object_id ?? 0)) {
+                    if (($post->lang_code ?? $locale) !== $locale && method_exists($post, 'getTranslation') && ($tr = $post->getTranslation($locale))) {
+                        $post = $tr;
+                    }
+                    $url = get_falcon_permalink($post);
+                }
+            } catch (Throwable $e) {
+                $url = null; // a stored URL is better than a guess
+            }
+            $item = clone $item;
+            $item->url = falcon_local_url($url ?: ($item->url ?? ''));
+
+            return $item;
+        });
     }
 }
 
@@ -400,7 +487,8 @@ if (!function_exists('this_process_items')) {
                                 $post = $translation;
                             }
                         }
-                        $item->url = get_falcon_permalink($post);
+                        // A path, so the cached menu is right under every address the site has.
+                        $item->url = falcon_local_url(get_falcon_permalink($post));
                     }
                 }
 
@@ -414,9 +502,9 @@ if (!function_exists('this_process_items')) {
                 if ($item->type === 'category' && $item->object_id) {
                     $term = TaxonomyTerm::find($item->object_id);
                     if ($term) {
-                        $item->url = get_falcon_term_link($term->slug, $term->taxonomy_slug);
+                        $item->url = falcon_local_url(get_falcon_term_link($term->slug, $term->taxonomy_slug));
                     } elseif ($category = Category::find($item->object_id)) {
-                        $item->url = get_falcon_term_link($category);
+                        $item->url = falcon_local_url(get_falcon_term_link($category));
                     }
                 }
 

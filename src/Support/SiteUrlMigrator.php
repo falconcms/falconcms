@@ -105,20 +105,25 @@ final class SiteUrlMigrator
     /**
      * Rewrite every link to $from (any scheme, with or without www) as a link to $to.
      *
+     * $to = null (relative): the old address is dropped and the path kept — "https://old.com/a"
+     * becomes "/a", "https://old.com" becomes "/" — so the links work under whatever address
+     * the site is opened at (a local copy reached as falconcms.test and as 127.0.0.1:8000).
+     *
      * @return array{values:int, tables:array<string,int>, skipped:list<string>}
      */
-    public static function migrate(string $from, string $to): array
+    public static function migrate(string $from, ?string $to): array
     {
         $from = self::normalize($from);
-        $to = self::normalize($to);
+        $relative = $to === null;
+        $to = $relative ? '' : self::normalize($to);
         $stats = ['values' => 0, 'tables' => [], 'skipped' => []];
-        if (!$from || !$to) {
+        if (!$from || (!$relative && !$to)) {
             return $stats;
         }
         $oldHost = (string) parse_url($from, PHP_URL_HOST);
         $oldPort = parse_url($from, PHP_URL_PORT);
         $bareHost = preg_replace('/^www\./', '', $oldHost);
-        if ($bareHost === preg_replace('/^www\./', '', (string) parse_url($to, PHP_URL_HOST)) && $oldPort === parse_url($to, PHP_URL_PORT)) {
+        if (!$relative && $bareHost === preg_replace('/^www\./', '', (string) parse_url($to, PHP_URL_HOST)) && $oldPort === parse_url($to, PHP_URL_PORT)) {
             return $stats; // the same site
         }
 
@@ -126,8 +131,19 @@ final class SiteUrlMigrator
         // https://old.com  and the JSON-escaped https:\/\/old.com, ending where the host ends.
         $plain = '#https?://'.$hostRe.'(?=[/"\'?\#\s<>\\\\)]|$)#i';
         $json = '#https?:\\\\/\\\\/'.$hostRe.'(?=\\\\/|[/"\'?\#\s<>)]|$)#i';
+        $plainPath = '#https?://'.$hostRe.'(?=/)#i';
+        $jsonPath = '#https?:\\\\/\\\\/'.$hostRe.'(?=\\\\/)#i';
         $toJson = str_replace('/', '\\/', $to);
-        $rewrite = function (string $v) use ($plain, $json, $to, $toJson): string {
+        $rewrite = function (string $v) use ($plain, $json, $plainPath, $jsonPath, $to, $toJson, $relative): string {
+            if ($relative) {
+                // Followed by its path: drop the address ("https://old.com/a" → "/a"). A bare
+                // address is the site's root ("https://old.com" → "/", "https:\/\/old.com" → "\/").
+                $v = preg_replace($jsonPath, '', $v) ?? $v;
+                $v = preg_replace($json, '\\/', $v) ?? $v;
+                $v = preg_replace($plainPath, '', $v) ?? $v;
+
+                return preg_replace($plain, '/', $v) ?? $v;
+            }
             $v = preg_replace($json, $toJson, $v) ?? $v;
 
             return preg_replace($plain, $to, $v) ?? $v;
