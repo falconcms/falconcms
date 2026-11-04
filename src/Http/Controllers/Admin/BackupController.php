@@ -319,8 +319,8 @@ class BackupController extends Controller
             // The site's address, so a restore elsewhere can move its links (SiteUrlMigrator).
             fwrite($out, "-- Falcon CMS Backup
 -- Database: {$dbName}
--- Site URL: ".rtrim(url('/'), '/')."
--- Date: ".now().'
+-- Site URL: ".rtrim(url('/'), '/').'
+-- Date: '.now().'
 
 ');
             fwrite($out, 'SET FOREIGN_KEY_CHECKS=0;
@@ -617,7 +617,7 @@ class BackupController extends Controller
 
             return $stats['values'] > 0 ? " Links moved from {$from} to {$to} ({$stats['values']} values)." : '';
         } catch (\Throwable $e) {
-            return ' Links could not be moved to this site's address: '.$e->getMessage();
+            return " Links could not be moved to this site's address: ".$e->getMessage();
         }
     }
 
