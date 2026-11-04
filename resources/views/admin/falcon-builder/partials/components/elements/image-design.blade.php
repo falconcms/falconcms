@@ -161,7 +161,21 @@
             <!-- Border Radius -->
             <div>
                 <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">BORDER RADIUS</label>
-                <input type="number" v-model="editingElement.settings.borderRadius" class="w-full border border-slate-200 rounded px-3 py-2 text-[13px]">
+                {{-- One field per corner, as on a container. An empty corner shows (and uses)
+                     the single radius an older image was saved with. --}}
+                <div class="grid grid-cols-2 gap-1">
+                    <div v-for="(label, key) in {'TopLeft': 'T/L', 'TopRight': 'T/R', 'BottomRight': 'B/R', 'BottomLeft': 'B/L'}" :key="key">
+                        <label class="block text-[7px] font-bold text-slate-400 mb-1 uppercase tracking-wider text-center">@{{ label }}</label>
+                        <div class="flex border border-slate-200 rounded overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
+                            <input type="number" min="0" v-model.number="editingElement.settings['borderRadius' + key]" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0" :placeholder="editingElement.settings.borderRadius || 0">
+                            <select v-model="editingElement.settings['borderRadius' + key + 'Unit']" class="bg-slate-50 border-l border-slate-200 text-[9px] px-1 focus:ring-0 border-none outline-none cursor-pointer text-center">
+                                <option value="px">px</option>
+                                <option value="rem">rem</option>
+                                <option value="%">%</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Border Settings -->

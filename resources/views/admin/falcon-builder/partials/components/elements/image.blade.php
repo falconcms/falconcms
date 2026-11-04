@@ -19,7 +19,9 @@
          :style="{
             width: respUnitVal(el.settings, 'width', device, 'auto'),
             maxWidth: respUnitVal(el.settings, 'maxWidth', device, '100%'),
-            borderRadius: getUnitVal(el.settings.borderRadius ?? 0, el.settings.borderRadiusUnit || 'px'),
+            borderRadius: ['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'].map(c => (el.settings['borderRadius' + c] !== undefined && el.settings['borderRadius' + c] !== null && el.settings['borderRadius' + c] !== '')
+                ? getUnitVal(el.settings['borderRadius' + c], el.settings['borderRadius' + c + 'Unit'] || 'px')
+                : getUnitVal(el.settings.borderRadius || 0, el.settings.borderRadiusUnit || 'px')).join(' '),
             borderTopWidth: getUnitVal(el.settings.borderSizeTop ?? 0, 'px'),
             borderRightWidth: getUnitVal(el.settings.borderSizeRight ?? 0, 'px'),
             borderBottomWidth: getUnitVal(el.settings.borderSizeBottom ?? 0, 'px'),

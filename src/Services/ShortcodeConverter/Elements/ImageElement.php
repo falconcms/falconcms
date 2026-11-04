@@ -57,6 +57,11 @@ final class ImageElement extends Element
         // Border
         self::attrI($a, 'border_radius', $s['borderRadius'] ?? null);
         self::attrI($a, 'border_radius_unit', $s['borderRadiusUnit'] ?? null, 'px');
+        // Per corner, named as on a container and column.
+        foreach (['TopLeft' => 'tl', 'TopRight' => 'tr', 'BottomRight' => 'br', 'BottomLeft' => 'bl'] as $corner => $short) {
+            self::attrI($a, 'radius_'.$short, $s['borderRadius'.$corner] ?? null);
+            self::attrI($a, 'radius_'.$short.'_unit', $s['borderRadius'.$corner.'Unit'] ?? null, 'px');
+        }
         self::attrI($a, 'border_top', $s['borderSizeTop'] ?? null);
         self::attrI($a, 'border_right', $s['borderSizeRight'] ?? null);
         self::attrI($a, 'border_bottom', $s['borderSizeBottom'] ?? null);
@@ -113,6 +118,14 @@ final class ImageElement extends Element
             // Border
             'borderRadius' => $a['border_radius'] ?? null,
             'borderRadiusUnit' => $a['border_radius_unit'] ?? 'px',
+            'borderRadiusTopLeft' => self::num($a['radius_tl'] ?? null),
+            'borderRadiusTopRight' => self::num($a['radius_tr'] ?? null),
+            'borderRadiusBottomRight' => self::num($a['radius_br'] ?? null),
+            'borderRadiusBottomLeft' => self::num($a['radius_bl'] ?? null),
+            'borderRadiusTopLeftUnit' => $a['radius_tl_unit'] ?? 'px',
+            'borderRadiusTopRightUnit' => $a['radius_tr_unit'] ?? 'px',
+            'borderRadiusBottomRightUnit' => $a['radius_br_unit'] ?? 'px',
+            'borderRadiusBottomLeftUnit' => $a['radius_bl_unit'] ?? 'px',
             'borderSizeTop' => isset($a['border_top']) ? (int) $a['border_top'] : null,
             'borderSizeRight' => isset($a['border_right']) ? (int) $a['border_right'] : null,
             'borderSizeBottom' => isset($a['border_bottom']) ? (int) $a['border_bottom'] : null,
