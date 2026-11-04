@@ -98,6 +98,31 @@ if (!function_exists('falcon_css_size_to_px')) {
     }
 }
 
+if (!function_exists('falcon_corner_radius')) {
+    /**
+     * An element's border-radius from its four corners (borderRadiusTopLeft … BottomLeft, each
+     * with its own unit, as on a container). A corner left empty takes the single Border Radius
+     * the element was saved with before it had corners, or $legacy when that was never set.
+     * Null when every corner is 0, so nothing is written.
+     */
+    function falcon_corner_radius(array $s, $legacy = null): ?string
+    {
+        $all = $s['borderRadius'] ?? null;
+        if ($all === null || $all === '') {
+            $all = $legacy;
+        }
+        $allCss = ($all === null || $all === '') ? '0' : (is_numeric($all) ? $all.($s['borderRadiusUnit'] ?? 'px') : (string) $all);
+
+        $corners = [];
+        foreach (['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'] as $corner) {
+            $v = $s['borderRadius'.$corner] ?? null;
+            $corners[] = ($v === null || $v === '') ? $allCss : (is_numeric($v) ? $v.($s['borderRadius'.$corner.'Unit'] ?? 'px') : (string) $v);
+        }
+
+        return array_filter($corners, fn ($c) => (float) $c != 0) ? implode(' ', $corners) : null;
+    }
+}
+
 if (!function_exists('falcon_theme_font_sizes')) {
     /**
      * The Customizer's text sizes, which a builder element with an empty font size follows.

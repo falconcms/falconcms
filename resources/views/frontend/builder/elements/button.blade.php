@@ -118,7 +118,8 @@
                 : "linear-gradient(" . ($s['bgGradientAngle'] ?? 180) . "deg, " . $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? null) . " " . ($s['bgGradientStartPosition'] ?? 0) . "%, " . $hexToRgba($s['bgGradientEndColor'], $s['bgGradientEndOpacity'] ?? null) . " " . ($s['bgGradientEndPosition'] ?? 100) . "%)")
             : 'none',
         'color' => $hexToRgba((($s['buttonStyle'] ?? 'default') === 'custom' && !empty($s['customTextColor'])) ? $s['customTextColor'] : ($s['color'] ?? '#ffffff'), (($s['buttonStyle'] ?? 'default') === 'custom' && !empty($s['customTextColor'])) ? ($s['customTextColorOpacity'] ?? null) : ($s['colorOpacity'] ?? null)),
-        'border-radius' => getUnitVal($s['borderRadius'] ?? 5, 'px'),
+        // Per corner; a button saved with one radius (or none: 5px) keeps it on every corner.
+        'border-radius' => falcon_corner_radius($s, 5),
         'border-top-width' => getUnitVal($s['borderSizeTop'] ?? 0, 'px'),
         'border-right-width' => getUnitVal($s['borderSizeRight'] ?? 0, 'px'),
         'border-bottom-width' => getUnitVal($s['borderSizeBottom'] ?? 0, 'px'),

@@ -4692,6 +4692,21 @@
                 return getUnitVal((value === null || value === undefined) ? legacy : value, unit || 'px');
             };
 
+            /**
+             * border-radius from an element's four corners — the canvas side of PHP's
+             * falcon_corner_radius(): an empty corner takes the single Border Radius saved
+             * before corners existed, or `legacy` when that was never set.
+             */
+            const cornerRadius = (s, legacy) => {
+                s = s || {};
+                const all = (s.borderRadius === undefined || s.borderRadius === null || s.borderRadius === '') ? legacy : s.borderRadius;
+                const allCss = getUnitVal(all ?? 0, s.borderRadiusUnit || 'px') || '0';
+                return ['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'].map(c => {
+                    const v = s['borderRadius' + c];
+                    return (v === undefined || v === null || v === '') ? allCss : getUnitVal(v, s['borderRadius' + c + 'Unit'] || 'px');
+                }).join(' ');
+            };
+
             const themeFontHint = (el, key) => {
                 const sizes = window.builderThemeFontSizes || {};
                 const s = (el && el.settings) || {};
@@ -7598,7 +7613,7 @@
                 isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal, respUnitVal,
                 iconBoxIconStyle, iconBoxGlyphStyle, iconBoxHoverCss, iconBoxState, iconBoxField,
-                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, themeFontHint, fontSizeVal,
+                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, themeFontHint, fontSizeVal, cornerRadius,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,
                 fcTanimModes: FC_TANIM_MODES, fcTanimEasings: FC_TANIM_EASINGS,

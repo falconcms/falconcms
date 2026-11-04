@@ -58,7 +58,7 @@
                 )
                 : 'none',
            color: el.isHovered ? hexToRgba(el.settings.hoverColor || '#ffffff', el.settings.hoverColorOpacity) : hexToRgba((el.settings.buttonStyle === 'custom' ? (el.settings.customTextColor || el.settings.color) : el.settings.color) || '#ffffff', el.settings.buttonStyle === 'custom' ? (el.settings.customTextColorOpacity ?? el.settings.colorOpacity) : el.settings.colorOpacity),
-           borderRadius: getUnitVal(el.settings.borderRadius ?? 5, 'px'),
+           borderRadius: cornerRadius(el.settings, 5),
            borderTopWidth: getUnitVal(falconBtnHoverBorder(el, 'Top'), 'px'),
            borderRightWidth: getUnitVal(falconBtnHoverBorder(el, 'Right'), 'px'),
            borderBottomWidth: getUnitVal(falconBtnHoverBorder(el, 'Bottom'), 'px'),

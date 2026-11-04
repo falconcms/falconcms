@@ -60,6 +60,11 @@ final class ButtonElement extends Element
         self::attrI($a, 'border_color', $s['borderColor'] ?? null);
         self::attrI($a, 'border_color_opacity', $s['borderColorOpacity'] ?? null, 1);
         self::attrI($a, 'border_radius', $s['borderRadius'] ?? null);
+        // Per corner, named as on a container, column and the Image.
+        foreach (['TopLeft' => 'tl', 'TopRight' => 'tr', 'BottomRight' => 'br', 'BottomLeft' => 'bl'] as $corner => $short) {
+            self::attrI($a, 'radius_'.$short, $s['borderRadius'.$corner] ?? null);
+            self::attrI($a, 'radius_'.$short.'_unit', $s['borderRadius'.$corner.'Unit'] ?? null, 'px');
+        }
         // Icon
         self::attrI($a, 'icon', $s['icon'] ?? null);
         self::attrI($a, 'icon_position', $s['iconPosition'] ?? null, 'left');
@@ -174,6 +179,14 @@ final class ButtonElement extends Element
             'borderColor' => $a['border_color'] ?? null,
             'borderColorOpacity' => isset($a['border_color_opacity']) ? (float) $a['border_color_opacity'] : null,
             'borderRadius' => isset($a['border_radius']) ? (int) $a['border_radius'] : null,
+            'borderRadiusTopLeft' => self::num($a['radius_tl'] ?? null),
+            'borderRadiusTopRight' => self::num($a['radius_tr'] ?? null),
+            'borderRadiusBottomRight' => self::num($a['radius_br'] ?? null),
+            'borderRadiusBottomLeft' => self::num($a['radius_bl'] ?? null),
+            'borderRadiusTopLeftUnit' => $a['radius_tl_unit'] ?? 'px',
+            'borderRadiusTopRightUnit' => $a['radius_tr_unit'] ?? 'px',
+            'borderRadiusBottomRightUnit' => $a['radius_br_unit'] ?? 'px',
+            'borderRadiusBottomLeftUnit' => $a['radius_bl_unit'] ?? 'px',
             // Icon
             'icon' => $a['icon'] ?? null,
             'iconPosition' => $a['icon_position'] ?? 'left',

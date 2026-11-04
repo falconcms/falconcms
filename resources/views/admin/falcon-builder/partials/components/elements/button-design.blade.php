@@ -530,11 +530,22 @@
 
     <!-- Border Radius -->
     <div class="pt-4 border-t border-slate-50">
-        <div class="flex justify-between items-center mb-1.5">
-            <label class="text-[12px] font-bold text-[#333] uppercase">Border Radius</label>
-            <span class="text-[10px] text-slate-400">@{{ editingElement.settings.borderRadius || 0 }}px</span>
+        <label class="text-[12px] font-bold text-[#333] uppercase block mb-1.5">Border Radius</label>
+        {{-- One field per corner, as on a container and the Image. An empty corner shows (and
+             uses) the single radius an older button was saved with, 5px when it had none. --}}
+        <div class="grid grid-cols-2 gap-1">
+            <div v-for="(label, key) in {'TopLeft': 'T/L', 'TopRight': 'T/R', 'BottomRight': 'B/R', 'BottomLeft': 'B/L'}" :key="key">
+                <label class="block text-[7px] font-bold text-slate-400 mb-1 uppercase tracking-wider text-center">@{{ label }}</label>
+                <div class="flex border border-slate-200 rounded overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
+                    <input type="number" min="0" v-model.number="editingElement.settings['borderRadius' + key]" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0" :placeholder="editingElement.settings.borderRadius ?? 5">
+                    <select v-model="editingElement.settings['borderRadius' + key + 'Unit']" class="bg-slate-50 border-l border-slate-200 text-[9px] px-1 focus:ring-0 border-none outline-none cursor-pointer text-center">
+                        <option value="px">px</option>
+                        <option value="rem">rem</option>
+                        <option value="%">%</option>
+                    </select>
+                </div>
+            </div>
         </div>
-        <input type="range" v-model.number="editingElement.settings.borderRadius" min="0" max="100" class="w-full accent-[#0091ea]">
     </div>
 
     <!-- Button Size & Span -->

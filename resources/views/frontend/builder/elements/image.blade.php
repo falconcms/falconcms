@@ -86,17 +86,8 @@
 
     // Each corner its own radius (TopLeft, TopRight, BottomRight, BottomLeft, as on a
     // container); a corner left empty takes the single Border Radius older images were saved with.
-    $brAll = $s['borderRadius'] ?? '';
-    $brAllUnit = $s['borderRadiusUnit'] ?? 'px';
-    $brCorners = [];
-    foreach (['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'] as $corner) {
-        $v = $s['borderRadius'.$corner] ?? null;
-        $brCorners[] = ($v === null || $v === '')
-            ? (($brAll === '' || $brAll === null) ? '0' : $brAll.$brAllUnit)
-            : $v.($s['borderRadius'.$corner.'Unit'] ?? 'px');
-    }
-    if (array_filter($brCorners, fn ($c) => (float) $c != 0)) {
-        $elemStyle .= 'border-radius:'.implode(' ', $brCorners).';';
+    if ($radius = falcon_corner_radius($s)) {
+        $elemStyle .= 'border-radius:'.$radius.';';
     }
     $bTop    = (int)($s['borderSizeTop']    ?? 0);
     $bRight  = (int)($s['borderSizeRight']  ?? 0);
