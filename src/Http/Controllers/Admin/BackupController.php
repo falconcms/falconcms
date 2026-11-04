@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Http\Controllers\Admin;
 
 use Carbon\Carbon;
+use FalconCms\Core\Support\SiteUrlMigrator;
 use FalconCms\Core\Support\SvgSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -315,8 +316,10 @@ class BackupController extends Controller
 
         try {
             $dbName = config('database.connections.mysql.database');
+            // The site's address, so a restore elsewhere can move its links (SiteUrlMigrator).
             fwrite($out, "-- Falcon CMS Backup
 -- Database: {$dbName}
+-- Site URL: ".rtrim(url('/'), '/')."
 -- Date: ".now().'
 
 ');
@@ -391,10 +394,11 @@ class BackupController extends Controller
                 throw new \Exception('Backup file is empty or could not be read.');
             }
             $executed = $this->runSqlDump($sql);
+            $moved = $this->moveSiteUrl($sql);
 
-            falcon_log_activity('restored', "Restored database from snapshot: {$filename} ({$executed} statements)");
+            falcon_log_activity('restored', "Restored database from snapshot: {$filename} ({$executed} statements)".$moved);
 
-            return back()->with('success', "Database restored successfully from \"{$filename}\" ({$executed} statements executed).");
+            return back()->with('success', "Database restored successfully from \"{$filename}\" ({$executed} statements executed).".$moved);
         } catch (\Throwable $e) {
             $this->toggleForeignKeys(true);
 
@@ -489,7 +493,7 @@ class BackupController extends Controller
                 throw new \Exception('The archive contains an empty database dump.');
             }
             $executed = $this->runSqlDump($sql);
-            $done[] = "database ({$executed} statements)";
+            $done[] = "database ({$executed} statements)".$this->moveSiteUrl($sql);
         }
 
         // 2) Media
@@ -592,6 +596,29 @@ class BackupController extends Controller
         falcon_log_activity('restored', "Restored from backup: {$filename} (".implode(', ', $done).')');
 
         return back()->with('success', "Restored from \"{$filename}\": ".implode(' + ', $done).'.');
+    }
+
+    /**
+     * A database from another site still links to that site: its menus, buttons, layouts and
+     * settings say "https://old-site.com/…". They are moved to this site's address. The old
+     * address is the one the backup wrote at its top; an older backup without it is read from
+     * the data (SiteUrlMigrator::guess). Restoring a site's own backup changes nothing.
+     * Returns a sentence for the message, or ''.
+     */
+    private function moveSiteUrl(string $sql): string
+    {
+        try {
+            $from = SiteUrlMigrator::fromDump($sql) ?? SiteUrlMigrator::guess();
+            $to = SiteUrlMigrator::normalize(url('/'));
+            if (!$from || !$to || $from === $to) {
+                return '';
+            }
+            $stats = SiteUrlMigrator::migrate($from, $to);
+
+            return $stats['values'] > 0 ? " Links moved from {$from} to {$to} ({$stats['values']} values)." : '';
+        } catch (\Throwable $e) {
+            return ' Links could not be moved to this site's address: '.$e->getMessage();
+        }
     }
 
     /** Execute a full SQL dump string. Returns the number of statements run. */

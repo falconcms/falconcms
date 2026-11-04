@@ -18,6 +18,7 @@ use FalconCms\Core\Console\Commands\PruneAnalytics;
 use FalconCms\Core\Console\Commands\PrunePostViews;
 use FalconCms\Core\Console\Commands\PublishScheduledPosts;
 use FalconCms\Core\Console\Commands\ReindexProductAttributes;
+use FalconCms\Core\Console\Commands\ReplaceSiteUrl;
 use FalconCms\Core\Console\Commands\SeedFalconCms;
 use FalconCms\Core\Console\Commands\UninstallFalconCms;
 use FalconCms\Core\Console\Commands\UninstallFalconDatabase;
@@ -278,6 +279,7 @@ class FalconCmsServiceProvider extends ServiceProvider
             PruneAnalytics::class,
             PruneActivityLogs::class,
             PrunePostViews::class,
+            ReplaceSiteUrl::class,
             InstagramSync::class,
             PluginList::class,
             PluginActivate::class,
