@@ -32,6 +32,15 @@
         </div>
     </div>
 
+    {{-- A menu set never to collapse is never a mobile menu: on every screen it keeps the
+         Design tab's own styles (item padding, font size, colours), on the canvas as on
+         the page. Everything below would change nothing, so it is not shown. --}}
+    <div v-if="editingElement.settings.mobileCollapseBreakpoint === 'none'" class="text-[11px] leading-relaxed text-slate-500 bg-slate-50 border border-slate-100 rounded p-3">
+        This menu never collapses, so it keeps the <strong>Design</strong> tab's styles (item padding, font size, colours) on every screen.
+        Choose a breakpoint above to give it a mobile menu with its own settings.
+    </div>
+
+    <template v-else>
     <!-- Mobile Menu Mode -->
     <div class="space-y-4">
         <div class="flex justify-between items-center">
@@ -542,4 +551,5 @@
             </div>
         </div>
     </div>
+    </template>
 </div>

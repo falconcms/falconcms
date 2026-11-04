@@ -241,7 +241,7 @@
                                fontFamily: (el.settings.fontFamily && el.settings.fontFamily !== "inherit") ? el.settings.fontFamily : (themeNavFont || "inherit"),
                                fontSize: el.settings.fontSize === "" ? undefined : getUnitVal(falconNum(el.settings.fontSize, 16), "px"),
                                fontWeight: el.settings.fontWeight || "400",
-                               lineHeight: falconNum(el.settings.lineHeight, 1.5),
+                               lineHeight: (el.settings.lineHeight === "" || el.settings.lineHeight === null || el.settings.lineHeight === undefined) ? undefined : el.settings.lineHeight,
                                letterSpacing: (el.settings.letterSpacing === "" || el.settings.letterSpacing === undefined || el.settings.letterSpacing === null) ? "normal" : getUnitVal(el.settings.letterSpacing, "px"),
                                textTransform: el.settings.textTransform || "none",
                                textDecoration: "none",

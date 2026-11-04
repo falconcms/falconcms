@@ -203,6 +203,11 @@
     @isset($__cvSizes['nav'])
     .canvas-container nav { font-size: {{ $__cvSizes['nav'] }}; }
     @endisset
+    {{-- …and its line height, which a menu link with none of its own inherits on the page. --}}
+    @php $__cvNav = json_decode((string) get_cms_option('theme_typography_nav'), true) ?: []; @endphp
+    @if(!empty($__cvNav['line_height']))
+    .canvas-container nav { line-height: {{ $__cvNav['line_height'] }}; }
+    @endif
     .canvas-container.mobile, .canvas-container.tablet {
         box-shadow: 0 10px 45px rgba(0,0,0,0.15) !important;
         outline: 1px solid #cbd5e1;
