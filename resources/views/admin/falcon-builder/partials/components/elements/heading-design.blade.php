@@ -39,15 +39,7 @@
         </div>
         <div>
             <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter S...</label>
-            <div class="flex gap-1">
-                <input type="number" v-model.number="editingElement.settings.letterSpacing" placeholder="0"
-                       class="w-full min-w-0 border border-slate-200 rounded-l px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-                <select v-model="editingElement.settings.letterSpacingUnit"
-                        class="border border-l-0 border-slate-200 rounded-r px-1 py-2 text-[11px] text-slate-500 bg-slate-50 focus:outline-none">
-                    <option value="px">px</option>
-                    <option value="em">em</option>
-                </select>
-            </div>
+            <input type="text" :value="fsDisplay(editingElement.settings, 'letterSpacing')" @input="fsInput(editingElement.settings, 'letterSpacing', $event.target.value)" placeholder="0" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
         </div>
     </div>
 

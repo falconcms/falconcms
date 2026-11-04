@@ -70,17 +70,20 @@ class EmptyFontSizeTest extends TestCase
         $this->assertSame('2rem', $this->roundTrip('title', ['title' => 'Hi', 'fontSize' => '2rem'])['fontSize']);
         $this->assertSame('1.1em', $this->roundTrip('tabs', ['items' => [], 'tabFontSize' => '1.1em'])['tabFontSize']);
         $this->assertSame(18, $this->roundTrip('icon_list', ['items' => [], 'fontSize' => 18])['fontSize']);
+        // Line heights too: "22px" is a length, 1.5 a multiplier; neither may be cast away.
+        $this->assertSame('22px', $this->roundTrip('accordion', ['items' => [], 'titleLineHeight' => '22px'])['titleLineHeight']);
+        $this->assertSame(1.5, $this->roundTrip('icon_box', ['title' => 'T', 'descLineHeight' => 1.5])['descLineHeight']);
     }
 
-    /** One kind of Font Size field everywhere: a text box, no number box, no unit dropdown. */
+    /** One kind of Font Size, Line Height and Letter Spacing field everywhere: a text box, no number box, no unit dropdown. */
     public function test_no_panel_has_a_number_box_or_unit_dropdown_for_a_font_size(): void
     {
         $dir = dirname(__DIR__, 3).'/resources/views/admin/falcon-builder/partials';
         $files = array_merge(glob($dir.'/*.blade.php'), glob($dir.'/components/*/*.blade.php'));
         foreach ($files as $file) {
             $html = file_get_contents($file);
-            $this->assertDoesNotMatchRegularExpression('/v-model[^=]*="editingElement\.settings\.\w*FontSizeUnit"/i', $html, basename($file).' has a font size unit dropdown');
-            $this->assertDoesNotMatchRegularExpression('/type="(number|range)"[^>]*v-model[^=]*="editingElement\.settings\.\w*fontSize"/i', $html, basename($file).' has a number box for a font size');
+            $this->assertDoesNotMatchRegularExpression('/v-model[^=]*="editingElement\.settings\.\w*(FontSize|LetterSpacing|LineHeight)Unit"/i', $html, basename($file).' has a unit dropdown for a font size, line height or letter spacing');
+            $this->assertDoesNotMatchRegularExpression('/type="(number|range)"[^>]*v-model[^=]*="editingElement\.settings\.\w*(fontSize|lineHeight|letterSpacing)"/i', $html, basename($file).' has a number box for a font size, line height or letter spacing');
         }
     }
 

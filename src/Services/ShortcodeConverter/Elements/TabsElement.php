@@ -74,7 +74,7 @@ final class TabsElement extends Element
             'contentFontSize' => self::fontIn($a, 'content_font_size', 14, fn ($v) => self::num($v)),
             'contentFontFamily' => $a['content_font_family'] ?? 'inherit',
             'contentLetterSpacing' => $a['content_letter_spacing'] ?? '0px',
-            'contentLineHeight' => isset($a['content_line_height']) ? (float) $a['content_line_height'] : 1.6,
+            'contentLineHeight' => isset($a['content_line_height']) ? self::num($a['content_line_height']) : 1.6,
             'contentColor' => $a['content_color'] ?? '#555555',
             'contentBgColor' => $a['content_bg_color'] ?? '#ffffff',
             'contentPadding' => isset($a['content_padding']) ? (int) $a['content_padding'] : 20,

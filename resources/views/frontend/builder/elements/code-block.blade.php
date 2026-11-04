@@ -59,7 +59,8 @@
     // ── Box ──────────────────────────────────────────────────────────────────
     // Any CSS size, as every Font Size field takes ("15px", "0.9rem"); a bare number is px.
     $fontSize     = getUnitVal((($s['fontSize'] ?? '') === '' ? 14 : $s['fontSize']), 'px');
-    $lineHeight   = (float) ($s['lineHeight'] ?? 1.7);
+    // As typed: a bare number is a multiplier, "22px" or "1.6em" a length.
+    $lineHeight   = (($s['lineHeight'] ?? '') === '') ? 1.7 : trim((string) $s['lineHeight']);
     $radius       = (int) ($s['borderRadius'] ?? 10);
     $padding      = (int) ($s['padding'] ?? 18);
     $borderWidth  = (int) ($s['borderWidth'] ?? 1);

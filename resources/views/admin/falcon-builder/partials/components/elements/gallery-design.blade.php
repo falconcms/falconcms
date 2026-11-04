@@ -173,7 +173,7 @@
             </div>
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Letter S...</label>
-                <input type="text" v-model="editingElement.settings.captionLetterSpacing" placeholder="0px"
+                <input type="text" :value="fsDisplay(editingElement.settings, 'captionLetterSpacing')" @input="fsInput(editingElement.settings, 'captionLetterSpacing', $event.target.value)" placeholder="0px"
                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
         </div>

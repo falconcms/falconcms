@@ -17,7 +17,7 @@
     </div>
     <div>
         <label class="text-[12px] font-bold text-[#333] block mb-2">Line height</label>
-        <input type="number" min="1" max="3" step="0.05" v-model.number="editingElement.settings.lineHeight" class="wp-input w-full">
+        <input type="text" v-model="editingElement.settings.lineHeight" class="wp-input w-full">
     </div>
 </div>
 

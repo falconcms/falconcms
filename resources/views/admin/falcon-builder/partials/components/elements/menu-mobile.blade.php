@@ -416,7 +416,7 @@
                     </div>
                     <div>
                         <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">Letter Spacing</label>
-                        <input type="text" v-model="editingElement.settings.mobileMenuLetterSpacing" placeholder="e.g. 0.5px" 
+                        <input type="text" :value="fsDisplay(editingElement.settings, 'mobileMenuLetterSpacing')" @input="fsInput(editingElement.settings, 'mobileMenuLetterSpacing', $event.target.value)" placeholder="e.g. 0.5px" 
                                class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                     </div>
                 </div>

@@ -145,7 +145,7 @@
                 </div>
                 <div>
                     <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1 text-center">LETTER SP.</label>
-                    <input type="text" v-model="editingElement.settings.submenuLetterSpacing" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] text-center">
+                    <input type="text" :value="fsDisplay(editingElement.settings, 'submenuLetterSpacing')" @input="fsInput(editingElement.settings, 'submenuLetterSpacing', $event.target.value)" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] text-center">
                 </div>
             </div>
 

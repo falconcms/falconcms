@@ -4175,7 +4175,7 @@
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
-                                                 <input type="text" v-model="editingElement.settings.titleLetterSpacing" placeholder="0px"
+                                                 <input type="text" :value="fsDisplay(editingElement.settings, 'titleLetterSpacing')" @input="fsInput(editingElement.settings, 'titleLetterSpacing', $event.target.value)" placeholder="0px"
                                                         class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
@@ -4183,7 +4183,7 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
-                                                 <input type="number" min="0" step="0.1" v-model.number="editingElement.settings.titleLineHeight" placeholder="1.3"
+                                                 <input type="text" v-model="editingElement.settings.titleLineHeight" placeholder="1.3"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -4256,12 +4256,12 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
-                                                 <input type="number" min="0" step="0.1" v-model.number="editingElement.settings.descLineHeight"
+                                                 <input type="text" v-model="editingElement.settings.descLineHeight"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
-                                                 <input type="text" v-model="editingElement.settings.descLetterSpacing" placeholder="0px"
+                                                 <input type="text" :value="fsDisplay(editingElement.settings, 'descLetterSpacing')" @input="fsInput(editingElement.settings, 'descLetterSpacing', $event.target.value)" placeholder="0px"
                                                         class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
@@ -4333,12 +4333,12 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
-                                                 <input type="number" min="0" step="0.1" v-model.number="editingElement.settings.readMoreLineHeight" placeholder="1.4"
+                                                 <input type="text" v-model="editingElement.settings.readMoreLineHeight" placeholder="1.4"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
-                                                 <input type="text" v-model="editingElement.settings.readMoreLetterSpacing" placeholder="0px"
+                                                 <input type="text" :value="fsDisplay(editingElement.settings, 'readMoreLetterSpacing')" @input="fsInput(editingElement.settings, 'readMoreLetterSpacing', $event.target.value)" placeholder="0px"
                                                         class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
@@ -4561,14 +4561,14 @@
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
-                                                 <input type="text" v-model="editingElement.settings.titleLetterSpacing" placeholder="0px"
+                                                 <input type="text" :value="fsDisplay(editingElement.settings, 'titleLetterSpacing')" @input="fsInput(editingElement.settings, 'titleLetterSpacing', $event.target.value)" placeholder="0px"
                                                         class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
-                                                 <input type="number" min="0" step="0.1" v-model.number="editingElement.settings.titleLineHeight" placeholder="1.3"
+                                                 <input type="text" v-model="editingElement.settings.titleLineHeight" placeholder="1.3"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -4638,12 +4638,12 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
-                                                 <input type="number" min="0" step="0.1" v-model.number="editingElement.settings.contentLineHeight" placeholder="1.6"
+                                                 <input type="text" v-model="editingElement.settings.contentLineHeight" placeholder="1.6"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
-                                                 <input type="text" v-model="editingElement.settings.contentLetterSpacing" placeholder="0px"
+                                                 <input type="text" :value="fsDisplay(editingElement.settings, 'contentLetterSpacing')" @input="fsInput(editingElement.settings, 'contentLetterSpacing', $event.target.value)" placeholder="0px"
                                                         class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
@@ -5026,12 +5026,12 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
-                                                 <input type="text" v-model="editingElement.settings.titleLetterSpacing" placeholder="0px"
+                                                 <input type="text" :value="fsDisplay(editingElement.settings, 'titleLetterSpacing')" @input="fsInput(editingElement.settings, 'titleLetterSpacing', $event.target.value)" placeholder="0px"
                                                         class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
-                                                 <input type="number" min="0" step="0.1" v-model.number="editingElement.settings.titleLineHeight" placeholder="1.4"
+                                                 <input type="text" v-model="editingElement.settings.titleLineHeight" placeholder="1.4"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
@@ -5140,12 +5140,12 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
-                                                 <input type="text" v-model="editingElement.settings.contentLetterSpacing" placeholder="0px"
+                                                 <input type="text" :value="fsDisplay(editingElement.settings, 'contentLetterSpacing')" @input="fsInput(editingElement.settings, 'contentLetterSpacing', $event.target.value)" placeholder="0px"
                                                         class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
-                                                 <input type="number" min="0" step="0.1" v-model.number="editingElement.settings.contentLineHeight" placeholder="1.6"
+                                                 <input type="text" v-model="editingElement.settings.contentLineHeight" placeholder="1.6"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
@@ -5443,7 +5443,7 @@
                                          <!-- Letter Spacing -->
                                          <div class="flex flex-col gap-1">
                                              <label class="text-[9px] font-bold text-slate-400 uppercase">Letter Spacing</label>
-                                             <input type="text" v-model="editingElement.settings.tabLetterSpacing" placeholder="0px"
+                                             <input type="text" :value="fsDisplay(editingElement.settings, 'tabLetterSpacing')" @input="fsInput(editingElement.settings, 'tabLetterSpacing', $event.target.value)" placeholder="0px"
                                                     class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div class="grid grid-cols-2 gap-3">
@@ -5504,12 +5504,12 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Letter Spacing</label>
-                                                 <input type="text" v-model="editingElement.settings.contentLetterSpacing" placeholder="0px"
+                                                 <input type="text" :value="fsDisplay(editingElement.settings, 'contentLetterSpacing')" @input="fsInput(editingElement.settings, 'contentLetterSpacing', $event.target.value)" placeholder="0px"
                                                         class="w-full border border-slate-200 rounded-md px-2 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Line Height</label>
-                                                 <input type="number" min="0" step="0.1" v-model.number="editingElement.settings.contentLineHeight" placeholder="1.6"
+                                                 <input type="text" v-model="editingElement.settings.contentLineHeight" placeholder="1.6"
                                                         class="w-full border border-slate-200 rounded-md px-1 h-8 text-[11px] text-center focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
