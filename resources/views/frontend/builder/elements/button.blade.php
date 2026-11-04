@@ -126,7 +126,8 @@
         'border-style' => 'solid',
         'border-color' => $hexToRgba($s['borderColor'] ?? '#000000', $s['borderColorOpacity'] ?? null),
         'font-family' => $s['fontFamily'] ?? 'inherit',
-        'font-size' => preg_match('/[a-zA-Z%]/', (string)($s['fontSize'] ?? '')) ? (string)($s['fontSize'] ?? '16px') : (($s['fontSize'] ?? 16) . ($s['fontSizeUnit'] ?? 'px')),
+        // Empty: inherits the Customizer's body size (removed from the map below).
+        'font-size' => ($s['fontSize'] ?? null) === '' ? null : (preg_match('/[a-zA-Z%]/', (string)($s['fontSize'] ?? '')) ? (string)($s['fontSize'] ?? '16px') : (($s['fontSize'] ?? 16) . ($s['fontSizeUnit'] ?? 'px'))),
         'font-weight' => $s['fontWeight'] ?? '600',
         'line-height' => $s['lineHeight'] ?? 'normal',
         'letter-spacing' => getUnitVal($s['letterSpacing'] ?? 0, $s['letterSpacingUnit'] ?? 'px'),
@@ -139,8 +140,9 @@
         // centring the label is what it has always done.
         'text-align' => $isSpan ? $align : 'center',
     ];
+    $btnStyles = array_filter($btnStyles, fn ($v) => $v !== null);
 
-    $isCustom = ($s['buttonStyle'] ?? 'default') === 'custom';
+    $isCustom =($s['buttonStyle'] ?? 'default') === 'custom';
     $hoverColor   = $hexToRgba($s['hoverColor']   ?? '#ffffff', $s['hoverColorOpacity']   ?? null);
     $hoverBgColor = $hexToRgba($s['hoverBgColor'] ?? '#007cc0', $s['hoverBgColorOpacity'] ?? null);
     $hoverStart = $hexToRgba($s['bgGradientHoverStartColor'] ?? '#007cc0', $s['bgGradientHoverStartOpacity'] ?? null);

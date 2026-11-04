@@ -239,7 +239,7 @@
                                borderLeftWidth: getUnitVal(el._hoveredIdx === idx ? (el.settings.itemBorderSizeLeftHover ?? el.settings.itemBorderSizeLeft ?? 0) : (el.settings.itemBorderSizeLeft ?? 0), "px"),
                                borderColor: el._hoveredIdx === idx ? (el.settings.itemBorderColorHover || el.settings.itemBorderColor || "transparent") : (el.settings.itemBorderColor || "transparent"),
                                fontFamily: (el.settings.fontFamily && el.settings.fontFamily !== "inherit") ? el.settings.fontFamily : (themeNavFont || "inherit"),
-                               fontSize: getUnitVal(falconNum(el.settings.fontSize, 16), "px"),
+                               fontSize: el.settings.fontSize === "" ? undefined : getUnitVal(falconNum(el.settings.fontSize, 16), "px"),
                                fontWeight: el.settings.fontWeight || "400",
                                lineHeight: falconNum(el.settings.lineHeight, 1.5),
                                letterSpacing: (el.settings.letterSpacing === "" || el.settings.letterSpacing === undefined || el.settings.letterSpacing === null) ? "normal" : getUnitVal(el.settings.letterSpacing, "px"),

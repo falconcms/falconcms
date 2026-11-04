@@ -30,7 +30,7 @@ final class TickerElement extends Element
         self::attrI($a, 'color', $s['textColor'] ?? null, '#ffffff');
         self::attrI($a, 'lbl_bg', $s['labelBgColor'] ?? null, '#ef4444');
         self::attrI($a, 'lbl_color', $s['labelTextColor'] ?? null, '#ffffff');
-        self::attrI($a, 'fsize', $s['fontSize'] ?? null, '14px');
+        self::fontAttr($a, 'fsize', $s['fontSize'] ?? null, '14px');
         self::attrI($a, 'fweight', $s['fontWeight'] ?? null, '500');
         self::attrI($a, 'height', $s['height'] ?? null, 44);
         self::attrI($a, 'radius', $s['borderRadius'] ?? null, 0);
@@ -63,7 +63,7 @@ final class TickerElement extends Element
             'textColor' => $a['color'] ?? '#ffffff',
             'labelBgColor' => $a['lbl_bg'] ?? '#ef4444',
             'labelTextColor' => $a['lbl_color'] ?? '#ffffff',
-            'fontSize' => $a['fsize'] ?? '14px',
+            'fontSize' => self::fontIn($a, 'fsize', '14px'),
             'fontWeight' => $a['fweight'] ?? '500',
             'height' => isset($a['height']) ? (int) $a['height'] : 44,
             'borderRadius' => isset($a['radius']) ? (int) $a['radius'] : 0,

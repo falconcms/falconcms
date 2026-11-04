@@ -187,6 +187,22 @@
         padding-left: 0 !important;
         padding-right: 0 !important;
     }
+    /* The Customizer's heading and navigation sizes, as the theme writes them for the page
+       (`body h2 {…}` in layouts/app.blade.php). A builder element whose font size is left
+       empty follows them there, so it has to follow them here too; one given its own size
+       sets it inline and wins either way. Headings are fluid on the page: at the tablet canvas
+       (Medium Screen wide) they are at full size, at the mobile canvas (Small Screen wide) at
+       their smallest. */
+    @php $__cvSizes = falcon_theme_font_sizes(); @endphp
+    @foreach(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as $__h)
+        @isset($__cvSizes[$__h])
+    .canvas-container {{ $__h }} { font-size: {{ $__cvSizes[$__h]['max'] }}; }
+    .canvas-container.mobile {{ $__h }} { font-size: {{ $__cvSizes[$__h]['min'] }}; }
+        @endisset
+    @endforeach
+    @isset($__cvSizes['nav'])
+    .canvas-container nav { font-size: {{ $__cvSizes['nav'] }}; }
+    @endisset
     .canvas-container.mobile, .canvas-container.tablet {
         box-shadow: 0 10px 45px rgba(0,0,0,0.15) !important;
         outline: 1px solid #cbd5e1;

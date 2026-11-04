@@ -16,7 +16,7 @@ final class AccordionElement extends Element
         self::attrI($a, 'allow_multiple', ($s['allowMultiple'] ?? false) ? 'yes' : null);
         self::attrI($a, 'icon_type', $s['iconType'] ?? null, 'plus');
         self::attrI($a, 'icon_position', $s['iconPosition'] ?? null, 'right');
-        self::attrI($a, 'title_font_size', $s['titleFontSize'] ?? null, 15);
+        self::fontAttr($a, 'title_font_size', $s['titleFontSize'] ?? null, 15);
         self::attrI($a, 'title_font_weight', $s['titleFontWeight'] ?? null, '600');
         self::attrI($a, 'title_font_family', $s['titleFontFamily'] ?? null, 'inherit');
         self::attrI($a, 'title_letter_spacing', $s['titleLetterSpacing'] ?? null, '0px');
@@ -27,7 +27,7 @@ final class AccordionElement extends Element
         self::attrI($a, 'title_active_bg_color', $s['titleActiveBgColor'] ?? null, '#0091ea');
         self::attrI($a, 'title_active_color', $s['titleActiveColor'] ?? null, '#ffffff');
         self::attrI($a, 'title_padding', $s['titlePadding'] ?? null, 16);
-        self::attrI($a, 'content_font_size', $s['contentFontSize'] ?? null, 14);
+        self::fontAttr($a, 'content_font_size', $s['contentFontSize'] ?? null, 14);
         self::attrI($a, 'content_font_family', $s['contentFontFamily'] ?? null, 'inherit');
         self::attrI($a, 'content_letter_spacing', $s['contentLetterSpacing'] ?? null, '0px');
         self::attrI($a, 'content_line_height', $s['contentLineHeight'] ?? null, 1.6);
@@ -73,7 +73,7 @@ final class AccordionElement extends Element
             'allowMultiple' => ($a['allow_multiple'] ?? '') === 'yes',
             'iconType' => $a['icon_type'] ?? 'plus',
             'iconPosition' => $a['icon_position'] ?? 'right',
-            'titleFontSize' => isset($a['title_font_size']) ? (int) $a['title_font_size'] : 15,
+            'titleFontSize' => self::fontIn($a, 'title_font_size', 15, 'intval'),
             'titleFontWeight' => $a['title_font_weight'] ?? '600',
             'titleFontFamily' => $a['title_font_family'] ?? 'inherit',
             'titleLetterSpacing' => $a['title_letter_spacing'] ?? '0px',
@@ -84,7 +84,7 @@ final class AccordionElement extends Element
             'titleActiveBgColor' => $a['title_active_bg_color'] ?? '#0091ea',
             'titleActiveColor' => $a['title_active_color'] ?? '#ffffff',
             'titlePadding' => isset($a['title_padding']) ? (int) $a['title_padding'] : 16,
-            'contentFontSize' => isset($a['content_font_size']) ? (int) $a['content_font_size'] : 14,
+            'contentFontSize' => self::fontIn($a, 'content_font_size', 14, 'intval'),
             'contentFontFamily' => $a['content_font_family'] ?? 'inherit',
             'contentLetterSpacing' => $a['content_letter_spacing'] ?? '0px',
             'contentLineHeight' => isset($a['content_line_height']) ? (float) $a['content_line_height'] : 1.6,

@@ -77,6 +77,10 @@
              Medium Screen in the Customizer resizes an already-open canvas. --}}
         window.builderBreakpointsUrl = '{{ route('admin.falcon-builder.breakpoints') }}';
 
+        {{-- The Customizer's text sizes, shown as each empty Font Size field's placeholder:
+             an element whose size is left empty follows them (falcon_theme_font_sizes()). --}}
+        window.builderThemeFontSizes = @json(falcon_theme_font_sizes());
+
         window.builderPagePadding = {
             top: '{{ get_cms_option('theme_page_padding_top', '60px') }}',
             bottom: '{{ get_cms_option('theme_page_padding_bottom', '60px') }}'

@@ -27,7 +27,7 @@ final class CounterElement extends Element
         self::attrI($a, 'num_family', $s['numberFontFamily'] ?? null, 'inherit');
         self::attrI($a, 'num_lh', $s['numberLineHeight'] ?? null, '1.1');
         self::attrI($a, 'num_ls', $s['numberLetterSpacing'] ?? null, '0px');
-        self::attrI($a, 'lbl_size', $s['labelFontSize'] ?? null, '14px');
+        self::fontAttr($a, 'lbl_size', $s['labelFontSize'] ?? null, '14px');
         self::attrI($a, 'lbl_weight', $s['labelFontWeight'] ?? null, '400');
         self::attrI($a, 'lbl_color', $s['labelColor'] ?? null);
         self::attrI($a, 'lbl_family', $s['labelFontFamily'] ?? null, 'inherit');
@@ -65,7 +65,7 @@ final class CounterElement extends Element
             'numberFontFamily' => $a['num_family'] ?? 'inherit',
             'numberLineHeight' => $a['num_lh'] ?? '1.1',
             'numberLetterSpacing' => $a['num_ls'] ?? '0px',
-            'labelFontSize' => $a['lbl_size'] ?? '14px',
+            'labelFontSize' => self::fontIn($a, 'lbl_size', '14px'),
             'labelFontWeight' => $a['lbl_weight'] ?? '400',
             'labelColor' => $a['lbl_color'] ?? '#666666',
             'labelFontFamily' => $a['lbl_family'] ?? 'inherit',

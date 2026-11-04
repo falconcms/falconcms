@@ -55,7 +55,7 @@
                     backgroundClip: !el.settings.useLink && el.settings.useGradient ? 'text' : 'unset',
                     textAlign: getResponsiveVal(el.settings, 'textAlign', device) || 'center',
                     fontFamily: el.settings.fontFamily || 'inherit',
-                    fontSize: /[a-zA-Z%]/.test(String(getResponsiveVal(el.settings, 'fontSize', device) || '')) ? String(getResponsiveVal(el.settings, 'fontSize', device)) : getUnitVal(getResponsiveVal(el.settings, 'fontSize', device) || 36, getResponsiveVal(el.settings, 'fontSizeUnit', device) || 'px'),
+                    fontSize: fontSizeVal(getResponsiveVal(el.settings, 'fontSize', device), getResponsiveVal(el.settings, 'fontSizeUnit', device) || 'px', 36),
                     fontWeight: el.settings.fontWeight || '800',
                     lineHeight: getResponsiveVal(el.settings, 'lineHeight', device) || '1.2',
                     letterSpacing: /[a-zA-Z%]/.test(String(getResponsiveVal(el.settings, 'letterSpacing', device) || '')) ? String(getResponsiveVal(el.settings, 'letterSpacing', device)) : getUnitVal(getResponsiveVal(el.settings, 'letterSpacing', device), getResponsiveVal(el.settings, 'letterSpacingUnit', device) || 'px'),

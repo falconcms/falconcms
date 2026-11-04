@@ -13,7 +13,7 @@
 
     <p :style="{
             fontFamily:    el.settings.fontFamily || 'inherit',
-            fontSize:      getUnitVal(el.settings.fontSize || 13, el.settings.fontSizeUnit || 'px'),
+            fontSize:      fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', 13),
             fontWeight:    el.settings.fontWeight || '400',
             lineHeight:    el.settings.lineHeight || '1.6',
             letterSpacing: /[a-zA-Z%]/.test(String(el.settings.letterSpacing ?? '')) ? String(el.settings.letterSpacing) : ((el.settings.letterSpacing ?? 0) + (el.settings.letterSpacingUnit || 'px')),

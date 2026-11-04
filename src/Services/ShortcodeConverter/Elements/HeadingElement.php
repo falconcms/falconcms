@@ -13,7 +13,7 @@ final class HeadingElement extends Element
     {
         $a = $base;
         self::attrI($a, 'tag', $s['tag'] ?? null, 'h2');
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'font_weight', $s['fontWeight'] ?? null);
         self::attrI($a, 'align', $s['textAlign'] ?? null);
         self::attrI($a, 'color', $s['color'] ?? null);
@@ -28,7 +28,7 @@ final class HeadingElement extends Element
         return ['id' => $a['id'] ?? self::uid(), 'type' => 'heading', 'settings' => array_merge([
             'title' => trim($inner),
             'tag' => $a['tag'] ?? 'h2',
-            'fontSize' => $a['font_size'] ?? null,
+            'fontSize' => self::fontIn($a, 'font_size', null),
             'fontWeight' => $a['font_weight'] ?? null,
             'textAlign' => $a['align'] ?? null,
             'color' => $a['color'] ?? null,

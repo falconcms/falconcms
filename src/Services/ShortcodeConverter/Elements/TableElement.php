@@ -31,7 +31,7 @@ final class TableElement extends Element
         self::attrI($a, 'stripe_bg', $s['stripeBg'] ?? null);
         self::attrI($a, 'hover', isset($s['hover']) ? (!empty($s['hover']) ? 'yes' : 'no') : null);
         self::attrI($a, 'hover_bg', $s['hoverBg'] ?? null);
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'pad_y', $s['cellPaddingY'] ?? null);
         self::attrI($a, 'pad_x', $s['cellPaddingX'] ?? null);
         self::attrI($a, 'radius', $s['radius'] ?? null);
@@ -234,7 +234,7 @@ final class TableElement extends Element
             'stripeBg' => $a['stripe_bg'] ?? null,
             'hover' => isset($a['hover']) ? ($a['hover'] === 'yes') : null,
             'hoverBg' => $a['hover_bg'] ?? null,
-            'fontSize' => isset($a['font_size']) ? self::num($a['font_size']) : null,
+            'fontSize' => self::fontIn($a, 'font_size', null, fn ($v) => self::num($v)),
             'cellPaddingY' => isset($a['pad_y']) ? (int) $a['pad_y'] : null,
             'cellPaddingX' => isset($a['pad_x']) ? (int) $a['pad_x'] : null,
             'radius' => isset($a['radius']) ? (int) $a['radius'] : null,

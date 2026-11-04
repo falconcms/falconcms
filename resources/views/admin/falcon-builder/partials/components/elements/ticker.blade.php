@@ -18,7 +18,7 @@
              overflow:     'hidden',
              background:   el.settings.bgColor     || '#1e3a8a',
              color:        el.settings.textColor    || '#ffffff',
-             fontSize:     getUnitVal(el.settings.fontSize || 14, el.settings.fontSizeUnit || 'px'),
+             fontSize:     fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', 14),
              lineHeight:   'normal',
              fontWeight:   el.settings.fontWeight   || '500',
              height:       (el.settings.height ?? 44) + 'px',
@@ -40,7 +40,7 @@
                  fontWeight:    '700',
                  whiteSpace:    'nowrap',
                  flexShrink:    '0',
-                 fontSize:      getUnitVal(el.settings.fontSize || 14, el.settings.fontSizeUnit || 'px'),
+                 fontSize:      fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', 14),
                  textTransform: 'uppercase',
                  letterSpacing: '.03em',
              }">

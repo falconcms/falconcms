@@ -47,7 +47,7 @@ final class ButtonElement extends Element
         self::attrI($a, 'bg_gradient_end_pos', $s['bgGradientEndPosition'] ?? null);
         // Typography
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null);
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'font_weight', $s['fontWeight'] ?? null);
         self::attrI($a, 'line_height', $s['lineHeight'] ?? null);
         self::attrI($a, 'letter_spacing', $s['letterSpacing'] ?? null);
@@ -161,7 +161,7 @@ final class ButtonElement extends Element
             'bgGradientEndPosition' => isset($a['bg_gradient_end_pos']) ? (int) $a['bg_gradient_end_pos'] : null,
             // Typography
             'fontFamily' => $a['font_family'] ?? 'inherit',
-            'fontSize' => $a['font_size'] ?? null,
+            'fontSize' => self::fontIn($a, 'font_size', null),
             'fontWeight' => $a['font_weight'] ?? '600',
             'lineHeight' => $a['line_height'] ?? null,
             'letterSpacing' => $a['letter_spacing'] ?? null,

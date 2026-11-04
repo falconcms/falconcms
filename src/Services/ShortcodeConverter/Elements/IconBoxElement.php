@@ -27,7 +27,7 @@ final class IconBoxElement extends Element
         self::attrI($a, 'icon_padding', $s['iconPadding'] ?? null, 0);
         self::attrI($a, 'title_font_family', $s['titleFontFamily'] ?? null, 'inherit');
         self::attrI($a, 'title_tag', $s['titleTag'] ?? null, 'h3');
-        self::attrI($a, 'title_font_size', $s['titleFontSize'] ?? null, 20);
+        self::fontAttr($a, 'title_font_size', $s['titleFontSize'] ?? null, 20);
         self::attrI($a, 'title_font_size_unit', $s['titleFontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'title_font_weight', $s['titleFontWeight'] ?? null, '600');
         self::attrI($a, 'title_color', $s['titleColor'] ?? null, '#222222');
@@ -36,7 +36,7 @@ final class IconBoxElement extends Element
         self::attrI($a, 'title_letter_spacing', $s['titleLetterSpacing'] ?? null, '0px');
         self::attrI($a, 'title_text_transform', $s['titleTextTransform'] ?? null, 'none');
         self::attrI($a, 'desc_font_family', $s['descFontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'desc_font_size', $s['descFontSize'] ?? null, 14);
+        self::fontAttr($a, 'desc_font_size', $s['descFontSize'] ?? null, 14);
         self::attrI($a, 'desc_font_size_unit', $s['descFontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'desc_font_weight', $s['descFontWeight'] ?? null, '400');
         self::attrI($a, 'desc_color', $s['descColor'] ?? null, '#666666');
@@ -78,7 +78,7 @@ final class IconBoxElement extends Element
             'iconPadding' => isset($a['icon_padding']) ? (int) $a['icon_padding'] : 0,
             'titleFontFamily' => $a['title_font_family'] ?? 'inherit',
             'titleTag' => $a['title_tag'] ?? 'h3',
-            'titleFontSize' => isset($a['title_font_size']) ? (int) $a['title_font_size'] : 20,
+            'titleFontSize' => self::fontIn($a, 'title_font_size', 20, 'intval'),
             'titleFontSizeUnit' => $a['title_font_size_unit'] ?? 'px',
             'titleFontWeight' => $a['title_font_weight'] ?? '600',
             'titleColor' => $a['title_color'] ?? '#222222',
@@ -87,7 +87,7 @@ final class IconBoxElement extends Element
             'titleLetterSpacing' => $a['title_letter_spacing'] ?? '0px',
             'titleTextTransform' => $a['title_text_transform'] ?? 'none',
             'descFontFamily' => $a['desc_font_family'] ?? 'inherit',
-            'descFontSize' => isset($a['desc_font_size']) ? (int) $a['desc_font_size'] : 14,
+            'descFontSize' => self::fontIn($a, 'desc_font_size', 14, 'intval'),
             'descFontSizeUnit' => $a['desc_font_size_unit'] ?? 'px',
             'descFontWeight' => $a['desc_font_weight'] ?? '400',
             'descColor' => $a['desc_color'] ?? '#666666',

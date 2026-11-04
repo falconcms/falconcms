@@ -55,12 +55,13 @@
         'margin-left: ' . ($s['marginLeft'] ?? 0) . ($s['marginLeftUnit'] ?? 'px'),
     ];
 
+    // Empty: no font-size, so the heading takes the Customizer's size for its tag.
     $fsRaw = $s['fontSize'] ?? 36;
-    $fsCSS = preg_match('/[a-zA-Z%]/', (string)$fsRaw) ? (string)$fsRaw : ($fsRaw . ($s['fontSizeUnit'] ?? 'px'));
+    $fsCSS = $fsRaw === '' ? null : (preg_match('/[a-zA-Z%]/', (string)$fsRaw) ? (string)$fsRaw : ($fsRaw . ($s['fontSizeUnit'] ?? 'px')));
 
-    $titleStyles = [
+    $titleStyles = array_filter([
         'font-family: ' . ($s['fontFamily'] ?? 'inherit'),
-        'font-size: ' . $fsCSS,
+        $fsCSS === null ? null : 'font-size: ' . $fsCSS,
         'font-weight: ' . ($s['fontWeight'] ?? '800'),
         'line-height: ' . ($s['lineHeight'] ?? '1.2'),
         'letter-spacing: ' . ($s['letterSpacing'] ?? 0) . ($s['letterSpacingUnit'] ?? 'px'),
@@ -68,7 +69,7 @@
         'text-align: ' . ($s['textAlign'] ?? 'center'),
         'margin: 0',
         'transition: color 0.3s ease',
-    ];
+    ]);
 
     $useLink = !empty($s['useLink']) && ($resolvedLinkUrl !== '' || $linkDynamic === 'post_url');
 

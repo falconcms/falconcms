@@ -163,7 +163,7 @@
         <div class="grid grid-cols-3 gap-3">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
-                <input type="text" v-model="editingElement.settings.captionFontSize" placeholder="13px"
+                <input type="text" v-model="editingElement.settings.captionFontSize" :placeholder="themeFontHint(editingElement, 'captionFontSize')"
                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
             </div>
             <div>

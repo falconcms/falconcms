@@ -33,7 +33,7 @@ final class GalleryElement extends Element
         self::attrI($a, 'hover', $s['hoverEffect'] ?? null, 'zoom');
         self::attrI($a, 'cap_align', $s['captionAlign'] ?? null, 'center');
         self::attrI($a, 'cap_family', $s['captionFontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'cap_size', $s['captionFontSize'] ?? null, '13px');
+        self::fontAttr($a, 'cap_size', $s['captionFontSize'] ?? null, '13px');
         self::attrI($a, 'cap_weight', $s['captionFontWeight'] ?? null, '400');
         self::attrI($a, 'cap_lh', $s['captionLineHeight'] ?? null, '1.4');
         self::attrI($a, 'cap_ls', $s['captionLetterSpacing'] ?? null, '0px');
@@ -84,7 +84,7 @@ final class GalleryElement extends Element
             'hoverEffect' => $a['hover'] ?? 'zoom',
             'captionAlign' => $a['cap_align'] ?? 'center',
             'captionFontFamily' => $a['cap_family'] ?? 'inherit',
-            'captionFontSize' => $a['cap_size'] ?? '13px',
+            'captionFontSize' => self::fontIn($a, 'cap_size', '13px'),
             'captionFontWeight' => $a['cap_weight'] ?? '400',
             'captionLineHeight' => $a['cap_lh'] ?? '1.4',
             'captionLetterSpacing' => $a['cap_ls'] ?? '0px',

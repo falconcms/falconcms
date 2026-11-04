@@ -31,7 +31,7 @@
             </i>
             <span :style="{
                 color:      el.settings.textColor  || '#333333',
-                fontSize:   getUnitVal(el.settings.fontSize || 15, el.settings.fontSizeUnit || 'px'),
+                fontSize:   fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', 15),
                 fontWeight: el.settings.fontWeight || '400',
                 fontFamily: el.settings.fontFamily || 'inherit',
                 lineHeight: el.settings.lineHeight || '1.5',

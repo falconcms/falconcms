@@ -15,13 +15,13 @@ final class TabsElement extends Element
         self::attrI($a, 'default_active', $s['defaultActive'] ?? null, 0);
         self::attrI($a, 'style', $s['style'] ?? null, 'underline');
         self::attrI($a, 'alignment', $s['alignment'] ?? null, 'left');
-        self::attrI($a, 'tab_font_size', $s['tabFontSize'] ?? null, 14);
+        self::fontAttr($a, 'tab_font_size', $s['tabFontSize'] ?? null, 14);
         self::attrI($a, 'tab_font_weight', $s['tabFontWeight'] ?? null, '500');
         self::attrI($a, 'tab_font_family', $s['tabFontFamily'] ?? null, 'inherit');
         self::attrI($a, 'tab_letter_spacing', $s['tabLetterSpacing'] ?? null, '0px');
         self::attrI($a, 'tab_color', $s['tabColor'] ?? null, '#666666');
         self::attrI($a, 'active_color', $s['activeColor'] ?? null, '#0091ea');
-        self::attrI($a, 'content_font_size', $s['contentFontSize'] ?? null, 14);
+        self::fontAttr($a, 'content_font_size', $s['contentFontSize'] ?? null, 14);
         self::attrI($a, 'content_font_family', $s['contentFontFamily'] ?? null, 'inherit');
         self::attrI($a, 'content_letter_spacing', $s['contentLetterSpacing'] ?? null, '0px');
         self::attrI($a, 'content_line_height', $s['contentLineHeight'] ?? null, 1.6);
@@ -65,13 +65,13 @@ final class TabsElement extends Element
             'defaultActive' => isset($a['default_active']) ? (int) $a['default_active'] : 0,
             'style' => $a['style'] ?? 'underline',
             'alignment' => $a['alignment'] ?? 'left',
-            'tabFontSize' => isset($a['tab_font_size']) ? (int) $a['tab_font_size'] : 14,
+            'tabFontSize' => self::fontIn($a, 'tab_font_size', 14, 'intval'),
             'tabFontWeight' => $a['tab_font_weight'] ?? '500',
             'tabFontFamily' => $a['tab_font_family'] ?? 'inherit',
             'tabLetterSpacing' => $a['tab_letter_spacing'] ?? '0px',
             'tabColor' => $a['tab_color'] ?? '#666666',
             'activeColor' => $a['active_color'] ?? '#0091ea',
-            'contentFontSize' => isset($a['content_font_size']) ? (int) $a['content_font_size'] : 14,
+            'contentFontSize' => self::fontIn($a, 'content_font_size', 14, 'intval'),
             'contentFontFamily' => $a['content_font_family'] ?? 'inherit',
             'contentLetterSpacing' => $a['content_letter_spacing'] ?? '0px',
             'contentLineHeight' => isset($a['content_line_height']) ? (float) $a['content_line_height'] : 1.6,

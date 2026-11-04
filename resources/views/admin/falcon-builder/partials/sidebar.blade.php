@@ -3850,7 +3850,7 @@
                                  <div class="grid grid-cols-2 gap-3">
                                      <div>
                                          <label class="text-[12px] font-bold text-[#333] block mb-2">Font Size</label>
-                                         <input type="text" v-model="editingElement.settings.fontSize" placeholder="14px, 1rem, 2vw, calc()…"
+                                         <input type="text" v-model="editingElement.settings.fontSize" :placeholder="themeFontHint(editingElement, 'fontSize')"
                                                 class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                      </div>
                                      <div>
@@ -3956,7 +3956,7 @@
                                      <div class="grid grid-cols-2 gap-3">
                                          <div>
                                              <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
-                                             <input type="text" v-model="editingElement.settings.fontSize" placeholder="14px"
+                                             <input type="text" v-model="editingElement.settings.fontSize" :placeholder="themeFontHint(editingElement, 'fontSize')"
                                                     class="w-full border border-slate-200 rounded px-2 py-1.5 text-[12px] focus:outline-none focus:border-[#0091ea]">
                                          </div>
                                          <div>
@@ -4158,7 +4158,7 @@
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.titleFontSize" placeholder="24px, 2rem, 5vw…"
+                                                 <input type="text" v-model="editingElement.settings.titleFontSize" :placeholder="themeFontHint(editingElement, 'titleFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
@@ -4240,7 +4240,7 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.descFontSize" placeholder="18px, 1.2rem, 4vw…"
+                                                 <input type="text" v-model="editingElement.settings.descFontSize" :placeholder="themeFontHint(editingElement, 'descFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -4543,7 +4543,7 @@
                                              </div>
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.titleFontSize" placeholder="20px, 1.4rem…"
+                                                 <input type="text" v-model="editingElement.settings.titleFontSize" :placeholder="themeFontHint(editingElement, 'titleFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                          </div>
@@ -4621,7 +4621,7 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.contentFontSize" placeholder="15px, 1rem…"
+                                                 <input type="text" v-model="editingElement.settings.contentFontSize" :placeholder="themeFontHint(editingElement, 'contentFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -4677,7 +4677,7 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.linkFontSize" placeholder="14px"
+                                                 <input type="text" v-model="editingElement.settings.linkFontSize" :placeholder="themeFontHint(editingElement, 'linkFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -4996,7 +4996,7 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.titleFontSize"
+                                                 <input type="text" v-model="editingElement.settings.titleFontSize" :placeholder="themeFontHint(editingElement, 'titleFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -5122,7 +5122,7 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.contentFontSize"
+                                                 <input type="text" v-model="editingElement.settings.contentFontSize" :placeholder="themeFontHint(editingElement, 'contentFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -5323,7 +5323,7 @@
                                          <div>
                                              <label class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Font Size</label>
                                              <div class="flex gap-1">
-                                                 <input type="text" v-model="editingElement.settings.fontSize"
+                                                 <input type="text" v-model="editingElement.settings.fontSize" :placeholder="themeFontHint(editingElement, 'fontSize')"
                                                         class="flex-1 border border-slate-200 rounded px-2 py-2 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                                  <select v-model="editingElement.settings.fontSizeUnit"
                                                          class="border border-slate-200 rounded px-2 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
@@ -5427,7 +5427,7 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.tabFontSize"
+                                                 <input type="text" v-model="editingElement.settings.tabFontSize" :placeholder="themeFontHint(editingElement, 'tabFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">
@@ -5492,7 +5492,7 @@
                                          <div class="grid grid-cols-2 gap-2">
                                              <div class="flex flex-col gap-1">
                                                  <label class="text-[9px] font-bold text-slate-400 uppercase text-center">Font Size</label>
-                                                 <input type="text" v-model="editingElement.settings.contentFontSize"
+                                                 <input type="text" v-model="editingElement.settings.contentFontSize" :placeholder="themeFontHint(editingElement, 'contentFontSize')"
                                                         class="w-full h-8 px-2 text-[11px] text-center border border-slate-200 rounded-md focus:outline-none focus:border-[#0091ea]">
                                              </div>
                                              <div class="flex flex-col gap-1">

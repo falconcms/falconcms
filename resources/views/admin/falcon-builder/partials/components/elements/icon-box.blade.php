@@ -37,7 +37,7 @@
                  :style="{
                      width: '100%',
                      fontFamily: el.settings.titleFontFamily || 'inherit',
-                     fontSize: getUnitVal(el.settings.titleFontSize || 20, el.settings.titleFontSizeUnit || 'px'),
+                     fontSize: fontSizeVal(el.settings.titleFontSize, el.settings.titleFontSizeUnit || 'px', 20),
                      fontWeight: el.settings.titleFontWeight || '600',
                      color: el.settings.titleColor || '#222222',
                      marginBottom: (el.settings.titleSpacing ?? 8) + 'px',
@@ -50,7 +50,7 @@
                  :style="{
                      width: '100%',
                      fontFamily: el.settings.descFontFamily || 'inherit',
-                     fontSize: getUnitVal(el.settings.descFontSize || 14, el.settings.descFontSizeUnit || 'px'),
+                     fontSize: fontSizeVal(el.settings.descFontSize, el.settings.descFontSizeUnit || 'px', 14),
                      fontWeight: el.settings.descFontWeight || '400',
                      color: el.settings.descColor || '#666666',
                      lineHeight: el.settings.descLineHeight || 1.6,
@@ -62,7 +62,7 @@
                  class="lazy-icon-box__more"
                  :style="{
                      fontFamily: el.settings.readMoreFontFamily || 'inherit',
-                     fontSize: getUnitVal(el.settings.readMoreFontSize || 13, el.settings.readMoreFontSizeUnit || 'px'),
+                     fontSize: fontSizeVal(el.settings.readMoreFontSize, el.settings.readMoreFontSizeUnit || 'px', 13),
                      fontWeight: el.settings.readMoreFontWeight || '600',
                      color: el.settings.readMoreColor || el.settings.iconColor || '#2271b1',
                      lineHeight: el.settings.readMoreLineHeight || 1.4,
@@ -90,7 +90,7 @@
             <div v-if="el.settings.title"
                  :style="{
                      fontFamily: el.settings.titleFontFamily || 'inherit',
-                     fontSize: getUnitVal(el.settings.titleFontSize || 20, el.settings.titleFontSizeUnit || 'px'),
+                     fontSize: fontSizeVal(el.settings.titleFontSize, el.settings.titleFontSizeUnit || 'px', 20),
                      fontWeight: el.settings.titleFontWeight || '600',
                      color: el.settings.titleColor || '#222222',
                      marginBottom: (el.settings.titleSpacing ?? 8) + 'px',
@@ -101,7 +101,7 @@
             <div v-if="el.settings.description"
                  :style="{
                      fontFamily: el.settings.descFontFamily || 'inherit',
-                     fontSize: getUnitVal(el.settings.descFontSize || 14, el.settings.descFontSizeUnit || 'px'),
+                     fontSize: fontSizeVal(el.settings.descFontSize, el.settings.descFontSizeUnit || 'px', 14),
                      fontWeight: el.settings.descFontWeight || '400',
                      color: el.settings.descColor || '#666666',
                      lineHeight: el.settings.descLineHeight || 1.6,
@@ -112,7 +112,7 @@
                  class="lazy-icon-box__more"
                  :style="{
                      fontFamily: el.settings.readMoreFontFamily || 'inherit',
-                     fontSize: getUnitVal(el.settings.readMoreFontSize || 13, el.settings.readMoreFontSizeUnit || 'px'),
+                     fontSize: fontSizeVal(el.settings.readMoreFontSize, el.settings.readMoreFontSizeUnit || 'px', 13),
                      fontWeight: el.settings.readMoreFontWeight || '600',
                      color: el.settings.readMoreColor || el.settings.iconColor || '#2271b1',
                      lineHeight: el.settings.readMoreLineHeight || 1.4,

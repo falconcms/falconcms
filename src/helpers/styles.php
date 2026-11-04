@@ -98,6 +98,50 @@ if (!function_exists('falcon_css_size_to_px')) {
     }
 }
 
+if (!function_exists('falcon_theme_font_sizes')) {
+    /**
+     * The Customizer's text sizes, which a builder element with an empty font size follows.
+     *
+     * body and nav are single sizes; each heading has its full size (max, from the medium screen
+     * up) and its smallest (min, at the small screen and below) — the two ends of the fluid
+     * clamp() the theme writes. A typography not saved yet is left out, because the theme
+     * writes no rule for it either. The builder canvas uses these to show what the page will.
+     *
+     * @return array{body?: string, nav?: string, h1?: array{max: string, min: string}, h2?: array{max: string, min: string}, h3?: array{max: string, min: string}, h4?: array{max: string, min: string}, h5?: array{max: string, min: string}, h6?: array{max: string, min: string}}
+     */
+    function falcon_theme_font_sizes(): array
+    {
+        $read = static fn (string $tag) => json_decode((string) get_cms_option('theme_typography_'.$tag), true) ?: null;
+        $sizes = [];
+
+        $body = $read('body');
+        $bodyPx = falcon_css_size_to_px((string) ($body['size'] ?? '15px'), 16.0)['px'] ?? 15.0;
+        $sizes['body'] = (string) ($body['size'] ?? '15px');
+        $nav = $read('nav');
+        if (!empty($nav['size'])) {
+            $sizes['nav'] = falcon_fluid_font_size((string) $nav['size'], 0, 0, 0, 0, $bodyPx);
+        }
+
+        // The same reading as the theme's typography block (layouts/app.blade.php).
+        $sensitivity = (float) get_cms_option('theme_typography_sensitivity', '0.6');
+        $floorPx = $bodyPx * (float) get_cms_option('theme_font_size_factor', '1.50');
+        $small = (int) get_cms_option('theme_small_screen_breakpoint', '800');
+        $medium = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');
+        foreach (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as $tag) {
+            $typo = $read($tag);
+            if (empty($typo['size'])) {
+                continue;
+            }
+            $fluid = falcon_fluid_font_size((string) $typo['size'], $sensitivity, $floorPx, $small, $medium, $bodyPx);
+            $sizes[$tag] = preg_match('/^clamp\(([^,]+),.*,\s*([^,]+)\)$/', $fluid, $m)
+                ? ['max' => trim($m[2]), 'min' => trim($m[1])]
+                : ['max' => $fluid, 'min' => $fluid];
+        }
+
+        return $sizes;
+    }
+}
+
 if (!function_exists('falcon_fluid_font_size')) {
     /**
      * A fixed font-size rewritten as a fluid clamp(), for the Customizer's Responsive Typography.

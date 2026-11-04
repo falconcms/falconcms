@@ -13,7 +13,7 @@ final class TitleElement extends Element
     {
         $a = $base;
         // Typography
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'font_size_unit', $s['fontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'font_weight', $s['fontWeight'] ?? null);
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null);
@@ -98,7 +98,7 @@ final class TitleElement extends Element
         $ts = [
             'title' => trim($inner),
             // Typography
-            'fontSize' => isset($a['font_size']) ? (int) $a['font_size'] : null,
+            'fontSize' => self::fontIn($a, 'font_size', null, 'intval'),
             'fontSizeUnit' => $a['font_size_unit'] ?? 'px',
             'fontWeight' => $a['font_weight'] ?? null,
             'fontFamily' => $a['font_family'] ?? null,

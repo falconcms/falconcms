@@ -30,7 +30,7 @@ final class ContentBoxElement extends Element
         self::attrI($a, 'icon_spacing', $s['iconSpacing'] ?? null, 16);
         self::attrI($a, 'title_tag', $s['titleTag'] ?? null, 'h3');
         self::attrI($a, 'title_font_family', $s['titleFontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'title_font_size', $s['titleFontSize'] ?? null, 20);
+        self::fontAttr($a, 'title_font_size', $s['titleFontSize'] ?? null, 20);
         self::attrI($a, 'title_font_size_unit', $s['titleFontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'title_font_weight', $s['titleFontWeight'] ?? null, '600');
         self::attrI($a, 'title_color', $s['titleColor'] ?? null, '#222222');
@@ -39,14 +39,14 @@ final class ContentBoxElement extends Element
         self::attrI($a, 'title_text_transform', $s['titleTextTransform'] ?? null, 'none');
         self::attrI($a, 'title_spacing', $s['titleSpacing'] ?? null, 10);
         self::attrI($a, 'content_font_family', $s['contentFontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'content_font_size', $s['contentFontSize'] ?? null, 15);
+        self::fontAttr($a, 'content_font_size', $s['contentFontSize'] ?? null, 15);
         self::attrI($a, 'content_font_size_unit', $s['contentFontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'content_font_weight', $s['contentFontWeight'] ?? null, '400');
         self::attrI($a, 'content_color', $s['contentColor'] ?? null, '#666666');
         self::attrI($a, 'content_line_height', $s['contentLineHeight'] ?? null, 1.6);
         self::attrI($a, 'content_letter_spacing', $s['contentLetterSpacing'] ?? null, '0px');
         self::attrI($a, 'link_font_family', $s['linkFontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'link_font_size', $s['linkFontSize'] ?? null, 14);
+        self::fontAttr($a, 'link_font_size', $s['linkFontSize'] ?? null, 14);
         self::attrI($a, 'link_font_size_unit', $s['linkFontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'link_font_weight', $s['linkFontWeight'] ?? null, '600');
         self::attrI($a, 'link_text_transform', $s['linkTextTransform'] ?? null, 'none');
@@ -139,7 +139,7 @@ final class ContentBoxElement extends Element
             'iconSpacing' => isset($a['icon_spacing']) ? (int) $a['icon_spacing'] : 16,
             'titleTag' => $a['title_tag'] ?? 'h3',
             'titleFontFamily' => $a['title_font_family'] ?? 'inherit',
-            'titleFontSize' => $a['title_font_size'] ?? 20,
+            'titleFontSize' => self::fontIn($a, 'title_font_size', 20),
             'titleFontSizeUnit' => $a['title_font_size_unit'] ?? 'px',
             'titleFontWeight' => $a['title_font_weight'] ?? '600',
             'titleColor' => $a['title_color'] ?? '#222222',
@@ -148,14 +148,14 @@ final class ContentBoxElement extends Element
             'titleTextTransform' => $a['title_text_transform'] ?? 'none',
             'titleSpacing' => isset($a['title_spacing']) ? (int) $a['title_spacing'] : 10,
             'contentFontFamily' => $a['content_font_family'] ?? 'inherit',
-            'contentFontSize' => $a['content_font_size'] ?? 15,
+            'contentFontSize' => self::fontIn($a, 'content_font_size', 15),
             'contentFontSizeUnit' => $a['content_font_size_unit'] ?? 'px',
             'contentFontWeight' => $a['content_font_weight'] ?? '400',
             'contentColor' => $a['content_color'] ?? '#666666',
             'contentLineHeight' => isset($a['content_line_height']) ? (float) $a['content_line_height'] : 1.6,
             'contentLetterSpacing' => $a['content_letter_spacing'] ?? '0px',
             'linkFontFamily' => $a['link_font_family'] ?? 'inherit',
-            'linkFontSize' => $a['link_font_size'] ?? 14,
+            'linkFontSize' => self::fontIn($a, 'link_font_size', 14),
             'linkFontSizeUnit' => $a['link_font_size_unit'] ?? 'px',
             'linkFontWeight' => $a['link_font_weight'] ?? '600',
             'linkTextTransform' => $a['link_text_transform'] ?? 'none',

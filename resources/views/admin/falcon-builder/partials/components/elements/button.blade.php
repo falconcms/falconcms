@@ -69,7 +69,7 @@
                 : hexToRgba(el.settings.borderColor || '#000000', el.settings.borderColorOpacity),
            ...falconButtonHoverAnim(el),
            fontFamily: el.settings.fontFamily || 'inherit',
-           fontSize: el.settings.fontSize ? (/[a-zA-Z%]/.test(String(el.settings.fontSize)) ? String(el.settings.fontSize) : String(el.settings.fontSize) + (el.settings.fontSizeUnit || 'px')) : '16px',
+           fontSize: fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', '16px'),
            fontWeight: el.settings.fontWeight || '600',
            lineHeight: el.settings.lineHeight || 'normal',
            letterSpacing: getUnitVal(el.settings.letterSpacing ?? 0, el.settings.letterSpacingUnit || 'px'),

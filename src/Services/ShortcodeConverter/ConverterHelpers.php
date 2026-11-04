@@ -103,6 +103,42 @@ trait ConverterHelpers
     }
 
     /**
+     * A text font size, which may be left empty on purpose.
+     *
+     * An empty font size means "use the Customizer's typography" (the site's body, heading
+     * or navigation size). attrI() drops an empty value and the reader then restores the
+     * element's old default, so a size left empty came back as 16px or 36px after the post
+     * screen saved it. It is written as "inherit" instead; fontIn() reads it back as empty.
+     */
+    protected static function fontAttr(string &$str, string $key, $value, $skip = null): void
+    {
+        if ($value === '') {
+            $str .= ' '.$key.'="inherit"';
+
+            return;
+        }
+        self::attrI($str, $key, $value, $skip);
+    }
+
+    /**
+     * Read a font size written by fontAttr(): "inherit" is empty (follow the Customizer),
+     * absent is the element's old default (content saved before keeps its look), anything
+     * else goes through $cast when one is given.
+     */
+    protected static function fontIn(array $a, string $key, $legacy, ?callable $cast = null)
+    {
+        $value = $a[$key] ?? null;
+        if ($value === null) {
+            return $legacy;
+        }
+        if (is_string($value) && strtolower(trim($value)) === 'inherit') {
+            return '';
+        }
+
+        return $cast ? $cast($value) : $value;
+    }
+
+    /**
      * Append an attribute that must survive being cleared.
      *
      * attrI() drops an empty value, which is right for almost everything — an empty

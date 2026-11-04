@@ -18,7 +18,7 @@ final class BreadcrumbElement extends Element
         self::attrI($a, 'show_current', (($s['showCurrent'] ?? true) === false) ? 'no' : null);
         // Typography
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'font_size_unit', $s['fontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'font_weight', $s['fontWeight'] ?? null, '400');
         self::attrI($a, 'line_height', $s['lineHeight'] ?? null);
@@ -63,7 +63,7 @@ final class BreadcrumbElement extends Element
             'separator' => $a['separator'] ?? '/',
             'showCurrent' => isset($a['show_current']) ? !in_array($a['show_current'], ['no', 'false', '0'], true) : true,
             'fontFamily' => $a['font_family'] ?? 'inherit',
-            'fontSize' => $a['font_size'] ?? 14,
+            'fontSize' => self::fontIn($a, 'font_size', 14),
             'fontSizeUnit' => $a['font_size_unit'] ?? 'px',
             'fontWeight' => $a['font_weight'] ?? '400',
             'lineHeight' => $a['line_height'] ?? '',

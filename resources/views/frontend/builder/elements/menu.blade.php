@@ -222,7 +222,10 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $wrapperStyle .= ' margin-bottom: ' . $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px') . ';';
     
     // Link Styles (General)
-    $getTypographyStyle = function($prefix, $defaultSize = '16px') use ($s) {
+    // $blankFollowsTheme: an empty size writes no font-size at all, so the link takes the
+    // Customizer's Navigation size from the <nav> it sits in (`body nav` in the theme). Used
+    // for the main links; a size never set (null, content saved before) keeps $defaultSize.
+    $getTypographyStyle = function($prefix, $defaultSize = '16px', $blankFollowsTheme = false) use ($s) {
         $style = '';
         
         $ffKey = $prefix ? $prefix . 'FontFamily' : 'fontFamily';
@@ -237,8 +240,11 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
             $style .= "font-family: $ff !important;";
         }
         
-        $fontSize = (($s[$fsKey] ?? null) === null || ($s[$fsKey] ?? null) === '') ? $defaultSize : $s[$fsKey];
-        $style .= "font-size: " . $fontSize . (is_numeric($fontSize) ? 'px' : '') . " !important;";
+        $rawSize = $s[$fsKey] ?? null;
+        if (!($blankFollowsTheme && $rawSize === '')) {
+            $fontSize = ($rawSize === null || $rawSize === '') ? $defaultSize : $rawSize;
+            $style .= "font-size: " . $fontSize . (is_numeric($fontSize) ? 'px' : '') . " !important;";
+        }
         
         $fontWeight = $s[$fwKey] ?? '400';
         $style .= "font-weight: " . $fontWeight . " !important;";
@@ -265,7 +271,7 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
         return ($value === null || $value === '') ? $default : $value;
     };
 
-    $mainLinkStyle = $getTypographyStyle('', '16px');
+    $mainLinkStyle = $getTypographyStyle('', '16px', true);
     $mainLinkStyle .= ' padding: ' . $num($s['itemPaddingTop'] ?? null, 10) . 'px ' . $num($s['itemPaddingRight'] ?? null, 15) . 'px ' . $num($s['itemPaddingBottom'] ?? null, 10) . 'px ' . $num($s['itemPaddingLeft'] ?? null, 15) . 'px;';
     $mainLinkStyle .= ' border-radius: ' . $num($s['itemBorderRadius'] ?? null, 0) . 'px;';
     

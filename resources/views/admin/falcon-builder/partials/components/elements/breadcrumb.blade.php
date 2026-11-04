@@ -28,7 +28,7 @@
     <nav class="element-breadcrumb"
          :style="{
             fontFamily: el.settings.fontFamily || 'inherit',
-            fontSize: /[a-zA-Z%]/.test(String(el.settings.fontSize || '')) ? String(el.settings.fontSize) : getUnitVal(el.settings.fontSize || 14, el.settings.fontSizeUnit || 'px'),
+            fontSize: fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', 14),
             fontWeight: el.settings.fontWeight || '400',
             color: el.settings.color || '#6b7280',
             lineHeight: el.settings.lineHeight || 1.6,

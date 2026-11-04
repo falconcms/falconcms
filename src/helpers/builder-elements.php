@@ -26,7 +26,7 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
         'fields' => [
             // General
             'content' => ['type' => 'wysiwyg', 'label' => 'Content', 'default' => '<p>your content is here...</p>'],
-            'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => 16],
+            'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => ''],
             'fontSizeUnit' => ['type' => 'select', 'label' => 'Unit', 'options' => ['px' => 'px', 'em' => 'em', 'rem' => 'rem'], 'default' => 'px'],
             'textAlign' => [
                 'type' => 'select',
@@ -37,7 +37,7 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
 
             // Design - Typography
             'fontFamily' => ['type' => 'text', 'label' => 'Font Family', 'default' => 'inherit'],
-            'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => 20],
+            'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => ''],
             'fontSizeUnit' => ['type' => 'text', 'label' => 'Size Unit', 'default' => 'px'],
             'fontWeight' => ['type' => 'text', 'label' => 'Font Weight', 'default' => '400'],
             'lineHeight' => ['type' => 'text', 'label' => 'Line Height', 'default' => '1.5'],
@@ -128,7 +128,7 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
             ],
 
             // Design - Typography
-            'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => 16, 'tab' => 'design'],
+            'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => '', 'tab' => 'design'],
             'fontWeight' => ['type' => 'text', 'label' => 'Font Weight', 'default' => '600', 'tab' => 'design'],
             'textTransform' => ['type' => 'select', 'label' => 'Text Transform', 'options' => ['none' => 'None', 'uppercase' => 'UPPERCASE', 'lowercase' => 'lowercase', 'capitalize' => 'Capitalize'], 'default' => 'none', 'tab' => 'design'],
 
@@ -239,7 +239,7 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
 
             // Design - Typography
             'fontFamily' => ['type' => 'text', 'label' => 'Font Family', 'default' => 'inherit', 'tab' => 'design'],
-            'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => 16, 'tab' => 'design'],
+            'fontSize' => ['type' => 'number', 'label' => 'Font Size', 'default' => '', 'tab' => 'design'],
             'fontWeight' => ['type' => 'text', 'label' => 'Font Weight', 'default' => '400', 'tab' => 'design'],
             'lineHeight' => ['type' => 'text', 'label' => 'Line Height', 'default' => '', 'tab' => 'design'],
             'letterSpacing' => ['type' => 'text', 'label' => 'Letter Spacing', 'default' => '', 'tab' => 'design'],

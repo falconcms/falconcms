@@ -10,7 +10,7 @@
              gap:            (el.settings.layout || 'inline') === 'stacked' ? '4px' : getUnitVal(el.settings.gap ?? 12, el.settings.gapUnit || 'px'),
              justifyContent: { left: 'flex-start', center: 'center', right: 'flex-end' }[el.settings.metaAlign || 'left'] || 'flex-start',
              fontFamily:     el.settings.meta_family     || 'inherit',
-             fontSize:       el.settings.meta_size       || getUnitVal(el.settings.fontSize || 13, el.settings.fontSizeUnit || 'px'),
+             fontSize:       el.settings.meta_size       || fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', 13),
              fontWeight:     el.settings.meta_weight     || el.settings.fontWeight || '400',
              lineHeight:     el.settings.meta_line_height    || 'inherit',
              letterSpacing:  el.settings.meta_letter_spacing || 'normal',

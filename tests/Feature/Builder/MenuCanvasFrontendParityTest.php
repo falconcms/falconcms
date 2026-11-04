@@ -146,10 +146,12 @@ class MenuCanvasFrontendParityTest extends TestCase
     public function test_the_main_link_font_size_defaults_to_the_same_number(): void
     {
         $this->assertStringContainsString(
-            "\$getTypographyStyle('', '16px')",
+            "\$getTypographyStyle('', '16px', true)",
             $this->read(self::FRONTEND),
-            'the site sizes main menu links from this default'
+            'the site sizes main menu links from this default (an empty size follows the Customizer)'
         );
+        // Both sides leave an empty size to the Customizer's Navigation size.
+        $this->assertStringContainsString('fontSize: el.settings.fontSize === "" ? undefined', $this->read(self::CANVAS));
         $this->assertStringContainsString(
             'falconNum(el.settings.fontSize, 16)',
             $this->read(self::CANVAS),

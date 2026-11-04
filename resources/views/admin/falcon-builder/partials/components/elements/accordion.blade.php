@@ -18,7 +18,7 @@
                          alignItems: 'center',
                          justifyContent: 'space-between',
                          padding: (el.settings.titlePadding ?? 16) + 'px',
-                         fontSize: getUnitVal(el.settings.titleFontSize || 15, el.settings.titleFontSizeUnit || 'px'),
+                         fontSize: fontSizeVal(el.settings.titleFontSize, el.settings.titleFontSizeUnit || 'px', 15),
                          fontWeight: el.settings.titleFontWeight || '600',
                          fontFamily: el.settings.titleFontFamily || 'inherit',
                          letterSpacing: el.settings.titleLetterSpacing || '0px',
@@ -52,7 +52,7 @@
                 <div v-if="idx === (el.settings.defaultOpen ?? 0)"
                      :style="{
                          padding: (el.settings.contentPadding ?? 16) + 'px',
-                         fontSize: getUnitVal(el.settings.contentFontSize || 14, el.settings.contentFontSizeUnit || 'px'),
+                         fontSize: fontSizeVal(el.settings.contentFontSize, el.settings.contentFontSizeUnit || 'px', 14),
                          fontFamily: el.settings.contentFontFamily || 'inherit',
                          letterSpacing: el.settings.contentLetterSpacing || '0px',
                          lineHeight: el.settings.contentLineHeight || 1.6,

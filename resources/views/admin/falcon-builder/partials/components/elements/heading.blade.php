@@ -18,7 +18,7 @@
             margin: '0',
             padding: '0',
             textAlign: getResponsiveVal(el.settings, 'textAlign', device) || 'left',
-            fontSize: el.settings.fontSize ? (/[a-zA-Z%]/.test(String(el.settings.fontSize)) ? String(el.settings.fontSize) : String(el.settings.fontSize) + (el.settings.fontSizeUnit || 'px')) : '30px',
+            fontSize: fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', '30px'),
             fontWeight: el.settings.fontWeight || '700',
             lineHeight: el.settings.lineHeight || '1.2',
             letterSpacing: getUnitVal(el.settings.letterSpacing, el.settings.letterSpacingUnit),

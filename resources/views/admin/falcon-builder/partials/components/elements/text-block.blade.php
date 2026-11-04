@@ -30,7 +30,7 @@
             text-align: @{{ getResponsiveVal(el.settings, 'textAlign', device) || 'center' }} !important;
             color: @{{ textAnimClips(el) ? 'transparent' : ((el.isHovered && el.settings.hoverColor) ? el.settings.hoverColor : (el.settings.color || '#333333')) }} !important;
             font-family: @{{ el.settings.fontFamily || 'inherit' }} !important;
-            font-size: @{{ getUnitVal(el.settings.fontSize || 16, el.settings.fontSizeUnit || 'px') }} !important;
+            font-size: @{{ fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', 16) || 'inherit' }} !important;
             font-weight: @{{ el.settings.fontWeight || '400' }} !important;
             line-height: @{{ el.settings.lineHeight || '1.5' }} !important;
             letter-spacing: @{{ /[a-zA-Z%]/.test(String(el.settings.letterSpacing || '')) ? String(el.settings.letterSpacing) : ((el.settings.letterSpacing || 0) + (el.settings.letterSpacingUnit || 'px')) }} !important;

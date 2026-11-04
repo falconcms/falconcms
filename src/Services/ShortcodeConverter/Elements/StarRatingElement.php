@@ -21,7 +21,7 @@ final class StarRatingElement extends Element
         self::attrI($a, 'align', $s['textAlign'] ?? null, 'center');
         self::attrI($a, 'gap', $s['gap'] ?? null, 4);
         self::attrI($a, 'lbl_family', $s['labelFontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'lbl_size', $s['labelFontSize'] ?? null, '13px');
+        self::fontAttr($a, 'lbl_size', $s['labelFontSize'] ?? null, '13px');
         self::attrI($a, 'lbl_weight', $s['labelFontWeight'] ?? null, '400');
         self::attrI($a, 'lbl_lh', $s['labelLineHeight'] ?? null, '1.4');
         self::attrI($a, 'lbl_ls', $s['labelLetterSpacing'] ?? null, '0px');
@@ -49,7 +49,7 @@ final class StarRatingElement extends Element
             'textAlign' => $a['align'] ?? 'center',
             'gap' => isset($a['gap']) ? (int) $a['gap'] : 4,
             'labelFontFamily' => $a['lbl_family'] ?? 'inherit',
-            'labelFontSize' => $a['lbl_size'] ?? '13px',
+            'labelFontSize' => self::fontIn($a, 'lbl_size', '13px'),
             'labelFontWeight' => $a['lbl_weight'] ?? '400',
             'labelLineHeight' => $a['lbl_lh'] ?? '1.4',
             'labelLetterSpacing' => $a['lbl_ls'] ?? '0px',

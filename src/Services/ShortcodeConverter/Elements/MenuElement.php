@@ -37,7 +37,7 @@ final class MenuElement extends Element
         self::attrI($a, 'align_items', $s['alignItems'] ?? null, 'flex-start');
         self::attrI($a, 'justification', $s['justification'] ?? null, 'flex-start');
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'font_weight', $s['fontWeight'] ?? null);
         self::attrI($a, 'line_height', $s['lineHeight'] ?? null);
         self::attrI($a, 'letter_spacing', $s['letterSpacing'] ?? null);
@@ -73,7 +73,7 @@ final class MenuElement extends Element
         self::attrI($a, 'sub_sub_direction', $s['subSubMenuDirection'] ?? null, 'right');
         self::attrI($a, 'sub_sub_offset', $s['subSubMenuOffset'] ?? null, 5);
         self::attrI($a, 'submenu_font_family', $s['submenuFontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'submenu_font_size', $s['submenuFontSize'] ?? null);
+        self::fontAttr($a, 'submenu_font_size', $s['submenuFontSize'] ?? null);
         self::attrI($a, 'submenu_line_height', $s['submenuLineHeight'] ?? null);
         self::attrI($a, 'submenu_letter_sp', $s['submenuLetterSpacing'] ?? null);
         self::attrI($a, 'submenu_text_transform', $s['submenuTextTransform'] ?? null);
@@ -122,7 +122,7 @@ final class MenuElement extends Element
         self::attrI($a, 'mobile_text_align', $s['mobileMenuTextAlign'] ?? null, 'left');
         self::attrI($a, 'mobile_indent', $s['mobileMenuIndentSubmenus'] ?? null, 'on');
         self::attrI($a, 'mobile_font_family', $s['mobileMenuFontFamily'] ?? null, 'inherit');
-        self::attrI($a, 'mobile_font_size', $s['mobileMenuFontSize'] ?? null);
+        self::fontAttr($a, 'mobile_font_size', $s['mobileMenuFontSize'] ?? null);
         self::attrI($a, 'mobile_font_weight', $s['mobileMenuFontWeight'] ?? null);
         self::attrI($a, 'mobile_line_height', $s['mobileMenuLineHeight'] ?? null);
         self::attrI($a, 'mobile_letter_sp', $s['mobileMenuLetterSpacing'] ?? null);
@@ -160,7 +160,7 @@ final class MenuElement extends Element
             'alignItems' => $a['align_items'] ?? 'flex-start',
             'justification' => $a['justification'] ?? 'flex-start',
             'fontFamily' => $a['font_family'] ?? 'inherit',
-            'fontSize' => $a['font_size'] ?? null,
+            'fontSize' => self::fontIn($a, 'font_size', null),
             'fontWeight' => $a['font_weight'] ?? null,
             'lineHeight' => $a['line_height'] ?? null,
             'letterSpacing' => $a['letter_spacing'] ?? null,
@@ -195,7 +195,7 @@ final class MenuElement extends Element
             'subSubMenuDirection' => $a['sub_sub_direction'] ?? 'right',
             'subSubMenuOffset' => isset($a['sub_sub_offset']) ? (int) $a['sub_sub_offset'] : 5,
             'submenuFontFamily' => $a['submenu_font_family'] ?? 'inherit',
-            'submenuFontSize' => $a['submenu_font_size'] ?? null,
+            'submenuFontSize' => self::fontIn($a, 'submenu_font_size', null),
             'submenuLineHeight' => $a['submenu_line_height'] ?? null,
             'submenuLetterSpacing' => $a['submenu_letter_sp'] ?? null,
             'submenuTextTransform' => $a['submenu_text_transform'] ?? null,
@@ -243,7 +243,7 @@ final class MenuElement extends Element
             'mobileMenuTextAlign' => $a['mobile_text_align'] ?? 'left',
             'mobileMenuIndentSubmenus' => $a['mobile_indent'] ?? 'on',
             'mobileMenuFontFamily' => $a['mobile_font_family'] ?? 'inherit',
-            'mobileMenuFontSize' => $a['mobile_font_size'] ?? null,
+            'mobileMenuFontSize' => self::fontIn($a, 'mobile_font_size', null),
             'mobileMenuFontWeight' => $a['mobile_font_weight'] ?? null,
             'mobileMenuLineHeight' => $a['mobile_line_height'] ?? null,
             'mobileMenuLetterSpacing' => $a['mobile_letter_sp'] ?? null,

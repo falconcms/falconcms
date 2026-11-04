@@ -15,7 +15,7 @@ final class SpecialTextElement extends Element
         self::attrTextAnim($a, $s);
         // Typography
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null);
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'font_size_unit', $s['fontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'font_weight', $s['fontWeight'] ?? null);
         self::attrI($a, 'line_height', $s['lineHeight'] ?? null);
@@ -94,7 +94,7 @@ final class SpecialTextElement extends Element
             'content' => trim($inner),
             // Typography
             'fontFamily' => $a['font_family'] ?? 'inherit',
-            'fontSize' => $a['font_size'] ?? 16,
+            'fontSize' => self::fontIn($a, 'font_size', 16),
             'fontSizeUnit' => $a['font_size_unit'] ?? 'px',
             'fontWeight' => $a['font_weight'] ?? '400',
             'lineHeight' => $a['line_height'] ?? '1.5',

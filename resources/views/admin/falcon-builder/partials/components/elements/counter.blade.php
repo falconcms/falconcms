@@ -11,7 +11,7 @@
     </div>
     <div :style="{
              color:         el.settings.numberColor       || '#222222',
-             fontSize:      getUnitVal(el.settings.numberFontSize || 48, el.settings.numberFontSizeUnit || 'px'),
+             fontSize:      fontSizeVal(el.settings.numberFontSize, el.settings.numberFontSizeUnit || 'px', 48),
              fontWeight:    el.settings.numberFontWeight  || '700',
              fontFamily:    el.settings.numberFontFamily  || 'inherit',
              lineHeight:    el.settings.numberLineHeight  || '1.1',
@@ -22,7 +22,7 @@
     </div>
     <div v-if="el.settings.label" :style="{
              color:         el.settings.labelColor        || '#666666',
-             fontSize:      getUnitVal(el.settings.labelFontSize || 14, el.settings.labelFontSizeUnit || 'px'),
+             fontSize:      fontSizeVal(el.settings.labelFontSize, el.settings.labelFontSizeUnit || 'px', 14),
              fontWeight:    el.settings.labelFontWeight   || '400',
              fontFamily:    el.settings.labelFontFamily   || 'inherit',
              lineHeight:    el.settings.labelLineHeight   || '1.4',

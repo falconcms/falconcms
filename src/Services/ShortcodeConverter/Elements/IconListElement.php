@@ -20,7 +20,7 @@ final class IconListElement extends Element
         self::attrI($a, 'item_spacing', $s['itemSpacing'] ?? null, 10);
         self::attrI($a, 'text_align', $s['textAlign'] ?? null, 'left');
         self::attrI($a, 'text_color', $s['textColor'] ?? null, '#333333');
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null, 15);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null, 15);
         self::attrI($a, 'font_size_unit', $s['fontSizeUnit'] ?? null, 'px');
         self::attrI($a, 'font_weight', $s['fontWeight'] ?? null, '400');
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null, 'inherit');
@@ -77,7 +77,7 @@ final class IconListElement extends Element
             'itemSpacing' => isset($a['item_spacing']) ? (int) $a['item_spacing'] : 10,
             'textAlign' => $a['text_align'] ?? 'left',
             'textColor' => $a['text_color'] ?? '#333333',
-            'fontSize' => isset($a['font_size']) ? (int) $a['font_size'] : 15,
+            'fontSize' => self::fontIn($a, 'font_size', 15, 'intval'),
             'fontSizeUnit' => $a['font_size_unit'] ?? 'px',
             'fontWeight' => $a['font_weight'] ?? '400',
             'fontFamily' => $a['font_family'] ?? 'inherit',

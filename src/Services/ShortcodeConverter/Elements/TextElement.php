@@ -12,7 +12,7 @@ final class TextElement extends Element
     public static function toShortcode(array $el, $type, $s, string $base, string $vis): string
     {
         $a = $base;
-        self::attrI($a, 'font_size', $s['fontSize'] ?? null);
+        self::fontAttr($a, 'font_size', $s['fontSize'] ?? null);
         self::attrI($a, 'font_weight', $s['fontWeight'] ?? null);
         self::attrI($a, 'color', $s['color'] ?? null);
         self::attrI($a, 'align', $s['textAlign'] ?? null);
@@ -26,7 +26,7 @@ final class TextElement extends Element
     {
         return ['id' => $a['id'] ?? self::uid(), 'type' => 'text', 'settings' => [
             'content' => trim($inner),
-            'fontSize' => $a['font_size'] ?? null,
+            'fontSize' => self::fontIn($a, 'font_size', null),
             'fontWeight' => $a['font_weight'] ?? null,
             'color' => $a['color'] ?? null,
             'textAlign' => $a['align'] ?? null,

@@ -4677,6 +4677,35 @@
              * mobile, so a footer menu set to never collapse ("none") showed 50px rows and
              * 16px text there while the site kept its compact desktop list.
              */
+            /**
+             * The placeholder of an empty Font Size field: the Customizer size the element
+             * follows while it is empty — its heading tag's size for a Title or Heading, the
+             * Navigation size for a Menu, the Body size for the rest.
+             */
+            /**
+             * A text font size for the canvas, by the frontend's rule: empty ("") writes none,
+             * so the element follows the Customizer's typography; never set (null/undefined —
+             * content saved before sizes could be left empty) keeps the element's old default.
+             */
+            const fontSizeVal = (value, unit, legacy) => {
+                if (value === '') return undefined;
+                return getUnitVal((value === null || value === undefined) ? legacy : value, unit || 'px');
+            };
+
+            const themeFontHint = (el, key) => {
+                const sizes = window.builderThemeFontSizes || {};
+                const s = (el && el.settings) || {};
+                let size = sizes.body;
+                if (key === 'fontSize' && (el.type === 'title' || el.type === 'heading')) {
+                    const raw = el.type === 'heading' ? s.tag : s.htmlTag;
+                    const tag = /^h[1-6]$/.test(raw || '') ? raw : 'h2';
+                    size = sizes[tag] ? sizes[tag].max : size;
+                } else if (key === 'fontSize' && el.type === 'menu' && sizes.nav) {
+                    size = sizes.nav;
+                }
+                return size ? 'Theme (' + size + ')' : 'Theme';
+            };
+
             const menuCollapsed = (el) => {
                 const bp = (el && el.settings && el.settings.mobileCollapseBreakpoint) || 'tablet';
                 if (bp === 'none') return false;
@@ -6506,7 +6535,7 @@
                             numberFontSize: '48px', numberFontWeight: '700',
                             numberColor: '#222222', numberFontFamily: 'inherit',
                             numberLineHeight: '1.1', numberLetterSpacing: '0px',
-                            labelFontSize: '14px', labelFontWeight: '400', labelColor: '#666666',
+                            labelFontSize: '', labelFontWeight: '400', labelColor: '#666666',
                             labelFontFamily: 'inherit', labelLineHeight: '1.4', labelLetterSpacing: '0px', labelTextTransform: 'none',
                             icon: '', iconSize: 40, iconColor: '#2271b1',
                             marginTop: 0, marginTopUnit: 'px', marginBottom: 0, marginBottomUnit: 'px',
@@ -6517,7 +6546,7 @@
                             rating: 4.5, maxStars: 5, label: '',
                             starSize: 24, starColor: '#f59e0b', emptyColor: '#d1d5db',
                             textAlign: 'center', gap: 4,
-                            labelFontFamily: 'inherit', labelFontSize: '13px', labelFontWeight: '400',
+                            labelFontFamily: 'inherit', labelFontSize: '', labelFontWeight: '400',
                             labelLineHeight: '1.4', labelLetterSpacing: '0px', labelTextTransform: 'none',
                             labelColor: '#6b7280',
                             marginTop: 0, marginTopUnit: 'px', marginBottom: 0, marginBottomUnit: 'px',
@@ -6531,7 +6560,7 @@
                             imgBorderWidth: 0, imgBorderStyle: 'solid', imgBorderColor: '#e2e8f0',
                             lightbox: true, hoverEffect: 'zoom',
                             captionAlign: 'center',
-                            captionFontFamily: 'inherit', captionFontSize: '13px', captionFontWeight: '400',
+                            captionFontFamily: 'inherit', captionFontSize: '', captionFontWeight: '400',
                             captionLineHeight: '1.4', captionLetterSpacing: '0px', captionTextTransform: 'none',
                             captionColor: '#6b7280',
                             marginTop: 0, marginTopUnit: 'px', marginBottom: 0, marginBottomUnit: 'px',
@@ -6542,7 +6571,7 @@
                         ...(type === 'title' ? {
                             // A new title starts as the page's H1. Titles saved before this carry no
                             // tag and still render as H2, so existing pages keep their outline.
-                            title: 'Title', htmlTag: 'h1', titleColor: '#222', fontSize: 36, fontSizeUnit: 'px', fontWeight: '800', textAlign: 'center',
+                            title: 'Title', htmlTag: 'h1', titleColor: '#222', fontSize: '', fontSizeUnit: 'px', fontWeight: '800', textAlign: 'center',
                             useLink: false, linkUrl: '', linkColor: '#2271b1', linkHoverColor: '#1a5a96',
                             separator: 'none', separatorColor: '#2271b1', dividerWidth: 60, dividerHeight: 3,
                             paddingTop: 20, paddingBottom: 20, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
@@ -6551,7 +6580,7 @@
                         } : {}),
                         ...(type === 'breadcrumb' ? {
                             showHome: true, homeLabel: 'Home', separator: '/', showCurrent: true,
-                            fontFamily: 'inherit', fontSize: 14, fontSizeUnit: 'px', fontWeight: '400',
+                            fontFamily: 'inherit', fontSize: '', fontSizeUnit: 'px', fontWeight: '400',
                             lineHeight: '', letterSpacing: '', textTransform: 'none',
                             color: '#6b7280', linkColor: '#6b7280', linkHoverColor: '#2271b1',
                             separatorColor: '#9ca3af', currentColor: '#111827',
@@ -6590,7 +6619,7 @@
                             defaultIcon: 'fa fa-check',
                             iconSize: 14, iconColor: '#2271b1', iconPosition: 'left',
                             gap: 10, itemSpacing: 10, textAlign: 'left',
-                            textColor: '#333333', fontSize: 15, fontSizeUnit: 'px',
+                            textColor: '#333333', fontSize: '', fontSizeUnit: 'px',
                             fontWeight: '400', fontFamily: 'inherit', lineHeight: '1.5',
                             marginTop: 0, marginTopUnit: 'px', marginBottom: 0, marginBottomUnit: 'px',
                             cssClass: '', cssId: '',
@@ -6598,7 +6627,7 @@
                         } : {}),
                         ...(type === 'post_content' ? {
                             content_display: 'excerpt', excerptLength: 120, stripHtml: true,
-                            textAlign: 'left', fontFamily: 'inherit', fontSize: 13, fontSizeUnit: 'px',
+                            textAlign: 'left', fontFamily: 'inherit', fontSize: '', fontSizeUnit: 'px',
                             fontWeight: '400', lineHeight: '1.6', letterSpacing: 0, textTransform: 'none',
                             color: '#6b7280',
                             marginTop: 0, marginRight: 0, marginBottom: 8, marginLeft: 0,
@@ -6614,7 +6643,7 @@
                             hideEmptyTerms: true,
                             dateFormat: 'M j, Y', separator: '·', layout: 'inline', showIcons: true,
                             metaAlign: 'left',
-                            fontSize: 13, fontSizeUnit: 'px', fontWeight: '400', color: '#6b7280', linkColor: '#374151',
+                            fontSize: '', fontSizeUnit: 'px', fontWeight: '400', color: '#6b7280', linkColor: '#374151',
                             gap: 12, gapUnit: 'px',
                             marginTop: 0, marginBottom: 8, marginTopUnit: 'px', marginBottomUnit: 'px',
                             cssClass: '', cssId: '',
@@ -6629,7 +6658,7 @@
                             layout: 'stacked', separator: '·', metaAlign: 'left',
                             labelColor: '#6b7280', valueColor: '#111827', saleColor: '#e02b2b',
                             instockColor: '#15803d', outofstockColor: '#b91c1c',
-                            fontSize: 14, fontSizeUnit: 'px', fontWeight: '400',
+                            fontSize: '', fontSizeUnit: 'px', fontWeight: '400',
                             gap: 8, gapUnit: 'px',
                             marginTop: 0, marginBottom: 0, marginTopUnit: 'px', marginBottomUnit: 'px',
                             cssClass: '', cssId: '',
@@ -6651,7 +6680,7 @@
                             textColor: '#ffffff',
                             labelBgColor: '#ef4444',
                             labelTextColor: '#ffffff',
-                            fontSize: '14px',
+                            fontSize: '',
                             fontWeight: '500',
                             height: 44,
                             borderRadius: 0,
@@ -6833,15 +6862,15 @@
                             iconBorderRadius: 50, iconPadding: 0, iconSpacing: 16,
                             // Title
                             titleTag: 'h3', titleFontFamily: 'inherit',
-                            titleFontSize: 20, titleFontSizeUnit: 'px', titleFontWeight: '600',
+                            titleFontSize: '', titleFontSizeUnit: 'px', titleFontWeight: '600',
                             titleColor: '#222222', titleLineHeight: 1.3, titleLetterSpacing: '0px',
                             titleTextTransform: 'none', titleSpacing: 10,
                             // Content
-                            contentFontFamily: 'inherit', contentFontSize: 15, contentFontSizeUnit: 'px',
+                            contentFontFamily: 'inherit', contentFontSize: '', contentFontSizeUnit: 'px',
                             contentFontWeight: '400', contentColor: '#666666',
                             contentLineHeight: 1.6, contentLetterSpacing: '0px',
                             // Read more
-                            linkFontFamily: 'inherit', linkFontSize: 14, linkFontSizeUnit: 'px',
+                            linkFontFamily: 'inherit', linkFontSize: '', linkFontSizeUnit: 'px',
                             linkFontWeight: '600', linkTextTransform: 'none', linkColor: '', linkHoverColor: '',
                             linkSpacing: 14, linkButtonTextColor: '#ffffff',
                             linkButtonPaddingX: 20, linkButtonPaddingY: 10, linkButtonRadius: 4,
@@ -6870,11 +6899,11 @@
                             iconBorderWidth: 0, iconBorderColor: '#2271b1',
                             titleTag: 'h3',
                             titleFontFamily: 'inherit',
-                            titleFontSize: 20, titleFontSizeUnit: 'px',
+                            titleFontSize: '', titleFontSizeUnit: 'px',
                             titleFontWeight: '600', titleColor: '#222222', titleSpacing: 8,
                             titleLineHeight: 1.3, titleLetterSpacing: '0px', titleTextTransform: 'none',
                             descFontFamily: 'inherit',
-                            descFontSize: 14, descFontSizeUnit: 'px',
+                            descFontSize: '', descFontSizeUnit: 'px',
                             descFontWeight: '400', descColor: '#666666', descLineHeight: 1.6,
                             descLetterSpacing: '0px', descTextTransform: 'none',
                             marginTop: 0, marginTopUnit: 'px',
@@ -6889,11 +6918,11 @@
                             ],
                             defaultOpen: 0, allowMultiple: false,
                             iconType: 'plus', iconPosition: 'right',
-                            titleFontSize: 15, titleFontWeight: '600',
+                            titleFontSize: '', titleFontWeight: '600',
                             titleFontFamily: 'inherit', titleLetterSpacing: '0px', titleLineHeight: 1.4, titleTextTransform: 'none',
                             titleColor: '#222222', titleBgColor: '#f8fafc',
                             titleActiveBgColor: '#2271b1', titleActiveColor: '#ffffff', titlePadding: 16,
-                            contentFontSize: 14, contentFontFamily: 'inherit', contentLetterSpacing: '0px', contentLineHeight: 1.6,
+                            contentFontSize: '', contentFontFamily: 'inherit', contentLetterSpacing: '0px', contentLineHeight: 1.6,
                             contentColor: '#555555', contentBgColor: '#ffffff', contentPadding: 16,
                             borderColor: '#e2e8f0', borderRadius: 8, itemGap: 8,
                             marginTop: 0, marginTopUnit: 'px', marginBottom: 0, marginBottomUnit: 'px',
@@ -6906,10 +6935,10 @@
                                 { id: Date.now() + '_2', label: 'Tab Two', content: '<p>Tab two content goes here.</p>' },
                             ],
                             defaultActive: 0, style: 'underline', alignment: 'left',
-                            tabFontSize: 14, tabFontWeight: '500',
+                            tabFontSize: '', tabFontWeight: '500',
                             tabFontFamily: 'inherit', tabLetterSpacing: '0px',
                             tabColor: '#666666', activeColor: '#2271b1',
-                            contentFontSize: 14, contentFontFamily: 'inherit', contentLetterSpacing: '0px', contentLineHeight: 1.6,
+                            contentFontSize: '', contentFontFamily: 'inherit', contentLetterSpacing: '0px', contentLineHeight: 1.6,
                             contentColor: '#555555', contentBgColor: '#ffffff', contentPadding: 20,
                             borderColor: '#e2e8f0', borderRadius: 4,
                             marginTop: 0, marginTopUnit: 'px', marginBottom: 0, marginBottomUnit: 'px',
@@ -7569,7 +7598,7 @@
                 isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal, respUnitVal,
                 iconBoxIconStyle, iconBoxGlyphStyle, iconBoxHoverCss, iconBoxState, iconBoxField,
-                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed,
+                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, themeFontHint, fontSizeVal,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,
                 fcTanimModes: FC_TANIM_MODES, fcTanimEasings: FC_TANIM_EASINGS,
