@@ -137,7 +137,7 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">FONT SIZE</label>
-                    <input type="text" :value="fsDisplay(editingElement.settings, 'fontSize')" @input="fsInput(editingElement.settings, 'fontSize', $event.target.value)" :placeholder="themeFontHint(editingElement, 'fontSize')" 
+                    <input type="text" :value="fsDisplay(editingElement.settings, 'fontSize')" @input="fsInput(editingElement.settings, 'fontSize', $event.target.value)" 
                            class="w-full border border-slate-200 rounded px-3 py-2 text-[13px] text-center focus:outline-none focus:border-[#0091ea]">
                 </div>
                 <div>

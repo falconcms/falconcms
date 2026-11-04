@@ -4726,20 +4726,6 @@
                 if (v !== '' && !isNaN(v) && (key + 'Unit') in s) s[key + 'Unit'] = 'px';
             };
 
-            const themeFontHint = (el, key) => {
-                const sizes = window.builderThemeFontSizes || {};
-                const s = (el && el.settings) || {};
-                let size = sizes.body;
-                if (key === 'fontSize' && (el.type === 'title' || el.type === 'heading')) {
-                    const raw = el.type === 'heading' ? s.tag : s.htmlTag;
-                    const tag = /^h[1-6]$/.test(raw || '') ? raw : 'h2';
-                    size = sizes[tag] ? sizes[tag].max : size;
-                } else if (key === 'fontSize' && el.type === 'menu' && sizes.nav) {
-                    size = sizes.nav;
-                }
-                return size ? 'Theme (' + size + ')' : 'Theme';
-            };
-
             const menuCollapsed = (el) => {
                 const bp = (el && el.settings && el.settings.mobileCollapseBreakpoint) || 'tablet';
                 if (bp === 'none') return false;
@@ -7632,7 +7618,7 @@
                 isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal, respUnitVal,
                 iconBoxIconStyle, iconBoxGlyphStyle, iconBoxHoverCss, iconBoxState, iconBoxField,
-                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, themeFontHint, fontSizeVal, cornerRadius, fsDisplay, fsInput,
+                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, fontSizeVal, cornerRadius, fsDisplay, fsInput,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,
                 fcTanimModes: FC_TANIM_MODES, fcTanimEasings: FC_TANIM_EASINGS,
