@@ -64,6 +64,26 @@ class EmptyFontSizeTest extends TestCase
         $this->assertStringContainsString('font-size: 16px', $this->render('button', ['text' => 'Go', 'linkUrl' => '#']));
     }
 
+    /** Every Font Size field takes any CSS size; it must not come back as a bare integer. */
+    public function test_a_size_with_its_own_unit_survives_the_round_trip(): void
+    {
+        $this->assertSame('2rem', $this->roundTrip('title', ['title' => 'Hi', 'fontSize' => '2rem'])['fontSize']);
+        $this->assertSame('1.1em', $this->roundTrip('tabs', ['items' => [], 'tabFontSize' => '1.1em'])['tabFontSize']);
+        $this->assertSame(18, $this->roundTrip('icon_list', ['items' => [], 'fontSize' => 18])['fontSize']);
+    }
+
+    /** One kind of Font Size field everywhere: a text box, no number box, no unit dropdown. */
+    public function test_no_panel_has_a_number_box_or_unit_dropdown_for_a_font_size(): void
+    {
+        $dir = dirname(__DIR__, 3).'/resources/views/admin/falcon-builder/partials';
+        $files = array_merge(glob($dir.'/*.blade.php'), glob($dir.'/components/*/*.blade.php'));
+        foreach ($files as $file) {
+            $html = file_get_contents($file);
+            $this->assertDoesNotMatchRegularExpression('/v-model[^=]*="editingElement\.settings\.\w*FontSizeUnit"/i', $html, basename($file).' has a font size unit dropdown');
+            $this->assertDoesNotMatchRegularExpression('/type="(number|range)"[^>]*v-model[^=]*="editingElement\.settings\.\w*fontSize"/i', $html, basename($file).' has a number box for a font size');
+        }
+    }
+
     public function test_the_customizer_sizes_are_read_for_the_canvas(): void
     {
         update_cms_option('theme_typography_body', json_encode(['size' => '15px']));

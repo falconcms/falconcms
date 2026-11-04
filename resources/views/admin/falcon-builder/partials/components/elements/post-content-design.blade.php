@@ -71,7 +71,7 @@
         <div class="grid grid-cols-3 gap-3">
             <div>
                 <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font Size</label>
-                <input type="text" v-model="editingElement.settings.fontSize" :placeholder="themeFontHint(editingElement, 'fontSize')"
+                <input type="text" :value="fsDisplay(editingElement.settings, 'fontSize')" @input="fsInput(editingElement.settings, 'fontSize', $event.target.value)" :placeholder="themeFontHint(editingElement, 'fontSize')"
                        class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center">
             </div>
             <div>

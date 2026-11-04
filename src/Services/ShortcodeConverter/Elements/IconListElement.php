@@ -77,7 +77,7 @@ final class IconListElement extends Element
             'itemSpacing' => isset($a['item_spacing']) ? (int) $a['item_spacing'] : 10,
             'textAlign' => $a['text_align'] ?? 'left',
             'textColor' => $a['text_color'] ?? '#333333',
-            'fontSize' => self::fontIn($a, 'font_size', 15, 'intval'),
+            'fontSize' => self::fontIn($a, 'font_size', 15, fn ($v) => self::num($v)),
             'fontSizeUnit' => $a['font_size_unit'] ?? 'px',
             'fontWeight' => $a['font_weight'] ?? '400',
             'fontFamily' => $a['font_family'] ?? 'inherit',

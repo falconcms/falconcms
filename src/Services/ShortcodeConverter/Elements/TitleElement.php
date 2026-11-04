@@ -98,7 +98,7 @@ final class TitleElement extends Element
         $ts = [
             'title' => trim($inner),
             // Typography
-            'fontSize' => self::fontIn($a, 'font_size', null, 'intval'),
+            'fontSize' => self::fontIn($a, 'font_size', null, fn ($v) => self::num($v)),
             'fontSizeUnit' => $a['font_size_unit'] ?? 'px',
             'fontWeight' => $a['font_weight'] ?? null,
             'fontFamily' => $a['font_family'] ?? null,

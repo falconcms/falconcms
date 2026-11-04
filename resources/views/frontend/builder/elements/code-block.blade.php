@@ -57,7 +57,8 @@
     $typeCaret    = ($s['typeCaret'] ?? true) !== false;
 
     // ── Box ──────────────────────────────────────────────────────────────────
-    $fontSize     = (float) ($s['fontSize'] ?? 14);
+    // Any CSS size, as every Font Size field takes ("15px", "0.9rem"); a bare number is px.
+    $fontSize     = getUnitVal((($s['fontSize'] ?? '') === '' ? 14 : $s['fontSize']), 'px');
     $lineHeight   = (float) ($s['lineHeight'] ?? 1.7);
     $radius       = (int) ($s['borderRadius'] ?? 10);
     $padding      = (int) ($s['padding'] ?? 18);
@@ -126,7 +127,7 @@
             padding: {{ $padding }}px {{ $padding }}px;
             color: var(--fc-fg);
             font-family: inherit;
-            font-size: {{ $fontSize }}px;
+            font-size: {{ $fontSize }};
             line-height: {{ $lineHeight }};
             tab-size: 4;
             background: none;

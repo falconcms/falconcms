@@ -4707,6 +4707,25 @@
                 }).join(' ');
             };
 
+            /**
+             * Every Font Size field is one text box that takes any CSS size ("16", "16px",
+             * "1.2rem", "5vw"), like the Title's. Some elements also keep a separate unit
+             * (fontSizeUnit …) from when they had a unit dropdown: the box shows the size with
+             * that unit ("2rem", not a bare "2" that would read as px), and a bare number typed
+             * in is px, so what is typed is what renders.
+             */
+            const fsDisplay = (s, key) => {
+                const v = s ? s[key] : '';
+                if (v === undefined || v === null || v === '') return '';
+                const unit = s[key + 'Unit'];
+                return (!isNaN(v) && String(v).trim() !== '' && unit && unit !== 'px') ? String(v) + unit : String(v);
+            };
+            const fsInput = (s, key, value) => {
+                const v = String(value ?? '').trim();
+                s[key] = v;
+                if (v !== '' && !isNaN(v) && (key + 'Unit') in s) s[key + 'Unit'] = 'px';
+            };
+
             const themeFontHint = (el, key) => {
                 const sizes = window.builderThemeFontSizes || {};
                 const s = (el && el.settings) || {};
@@ -6061,7 +6080,7 @@
                 return {
                     margin: '0', padding: pad + 'px', background: 'none', border: '0',
                     color: t.fg, fontFamily: 'inherit',
-                    fontSize: (s.fontSize || 14) + 'px',
+                    fontSize: getUnitVal(s.fontSize || 14, 'px'),
                     lineHeight: String(s.lineHeight || 1.7),
                     tabSize: '4',
                 };
@@ -7613,7 +7632,7 @@
                 isCustomBasis, customWidthValue, setCustomWidth, nearestWidthPreset, showCustomWidth,
                 getVisibilityClasses, getCanvasVisibilityStyle, pmCanvasRows, getResponsiveVal, setResponsiveVal, resetResponsiveVal, respUnitVal,
                 iconBoxIconStyle, iconBoxGlyphStyle, iconBoxHoverCss, iconBoxState, iconBoxField,
-                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, themeFontHint, fontSizeVal, cornerRadius,
+                falconButtonHoverAnim, falconBtnHoverBorder, falconNum, menuCollapsed, themeFontHint, fontSizeVal, cornerRadius, fsDisplay, fsInput,
                 textAnimClass, textAnimVars, textAnimClips, textAnimGroups, textAnimSupports, textAnimActive,
                 textAnimDefaultDuration, textAnimUsesAccent,
                 fcTanimModes: FC_TANIM_MODES, fcTanimEasings: FC_TANIM_EASINGS,

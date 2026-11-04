@@ -12,8 +12,8 @@
 <!-- Type -->
 <div class="grid grid-cols-2 gap-2">
     <div>
-        <label class="text-[12px] font-bold text-[#333] block mb-2">Font size (px)</label>
-        <input type="number" min="9" max="32" step="0.5" v-model.number="editingElement.settings.fontSize" class="wp-input w-full">
+        <label class="text-[12px] font-bold text-[#333] block mb-2">Font size</label>
+        <input type="text" v-model="editingElement.settings.fontSize" placeholder="14px" class="wp-input w-full">
     </div>
     <div>
         <label class="text-[12px] font-bold text-[#333] block mb-2">Line height</label>
