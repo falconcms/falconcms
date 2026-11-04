@@ -47,6 +47,27 @@ class HtmlOptimizeMiddleware
      */
     private const DEFER_SKIP = ['tailwind', 'cdn.tailwindcss', 'alpine', 'turnstile', 'recaptcha', 'data-no-defer'];
 
+    /**
+     * Tags whose neighbouring whitespace never shows (block boxes, the document's head, table
+     * and list structure, SVG shapes): the HTML minifier removes it. Between any other two tags
+     * whitespace is a visible word space and is kept as one space.
+     */
+    private const BLOCK_TAGS = [
+        'html' => 1, 'head' => 1, 'body' => 1, 'title' => 1, 'meta' => 1, 'link' => 1, 'base' => 1, 'style' => 1,
+        'script' => 1, 'noscript' => 1, 'template' => 1,
+        'div' => 1, 'p' => 1, 'section' => 1, 'article' => 1, 'aside' => 1, 'header' => 1, 'footer' => 1, 'nav' => 1,
+        'main' => 1, 'address' => 1, 'blockquote' => 1, 'figure' => 1, 'figcaption' => 1, 'details' => 1, 'summary' => 1,
+        'dialog' => 1, 'hr' => 1, 'br' => 1, 'pre' => 1, 'form' => 1, 'fieldset' => 1, 'legend' => 1,
+        'h1' => 1, 'h2' => 1, 'h3' => 1, 'h4' => 1, 'h5' => 1, 'h6' => 1, 'hgroup' => 1,
+        'ul' => 1, 'ol' => 1, 'li' => 1, 'dl' => 1, 'dt' => 1, 'dd' => 1, 'menu' => 1,
+        'table' => 1, 'thead' => 1, 'tbody' => 1, 'tfoot' => 1, 'tr' => 1, 'td' => 1, 'th' => 1, 'caption' => 1,
+        'colgroup' => 1, 'col' => 1, 'option' => 1, 'optgroup' => 1, 'datalist' => 1,
+        'source' => 1, 'track' => 1, 'video' => 1, 'audio' => 1, 'canvas' => 1, 'iframe' => 1, 'picture' => 1,
+        'g' => 1, 'defs' => 1, 'path' => 1, 'circle' => 1, 'rect' => 1, 'line' => 1, 'polyline' => 1, 'polygon' => 1,
+        'ellipse' => 1, 'use' => 1, 'symbol' => 1, 'clippath' => 1, 'lineargradient' => 1, 'radialgradient' => 1,
+        'stop' => 1, 'mask' => 1, 'filter' => 1,
+    ];
+
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
@@ -553,7 +574,19 @@ class HtmlOptimizeMiddleware
             fn ($m) => $shield($m[0]), $html) ?? $html;
 
         $html = preg_replace('/<!--(?!\[if).*?-->/s', '', $html) ?? $html; // keep IE conditionals
+        // Between two inline tags the whitespace is a word space: "<span>Category:</span>
+        // <a>Phones</a>" reads "Category: Phones", and dropping it printed "Category:Phones"
+        // (a theme's label and value, a title's "Published: " and its date). It is kept as one
+        // space. Next to a block tag it never shows, and goes. Marked first, so the pass that
+        // removes the rest cannot take it.
+        $html = preg_replace_callback('/<\/?([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*>\s+(?=<\/?([a-zA-Z][a-zA-Z0-9-]*))/',
+            function ($m) {
+                $block = isset(self::BLOCK_TAGS[strtolower($m[1])]) || isset(self::BLOCK_TAGS[strtolower($m[2])]);
+
+                return $block ? rtrim($m[0]) : rtrim($m[0])."\x02";
+            }, $html) ?? $html;
         $html = preg_replace('/>\s+</', '><', $html) ?? $html;             // between tags
+        $html = str_replace("\x02", ' ', $html);
         $html = preg_replace('/\s{2,}/', ' ', $html) ?? $html;            // runs within text
 
         return strtr($html, $protected);

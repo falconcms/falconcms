@@ -41,6 +41,7 @@ use FalconCms\Core\Support\RelativeDates;
 use FalconCms\Core\Support\SettingsExtension;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Routing\Events\Routing;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
@@ -57,6 +58,13 @@ class FalconCmsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // A builder layout is saved exactly as written. Laravel trims every string of a request,
+        // and a layout arrives as nested JSON, so "Published: " before a Post Date lost its space
+        // ("Published:3 hours ago") — on the canvas once reloaded and on the page. Runs before
+        // routing, so it goes by path: the builder's and the builder library's POST requests.
+        TrimStrings::skipWhen(fn ($request) => $request->isMethod('post')
+            && $request->is('admin/falcon-builder/*', 'admin/falcon-builder-library/*'));
+
         Gate::before(function ($user, $ability) {
             return ($user && method_exists($user, 'hasRole') && $user->hasRole('super-admin')) ? true : null;
         });
