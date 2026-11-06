@@ -94,6 +94,52 @@ class CriticalCssTest extends TestCase
         $this->assertStringContainsString('.translate-x-0{', $out);
     }
 
+    public function test_the_bodys_styles_move_to_the_head_in_their_order(): void
+    {
+        $out = $this->optimise($this->page('<nav class="flex">Menu</nav><style id="one">.a{color:red}</style><p>Text</p><style id="two">.a{color:blue}</style>'));
+
+        $head = substr($out, 0, (int) strpos($out, '</head>'));
+        $this->assertStringContainsString('<style id="one">', $head);
+        $this->assertStringContainsString('<style id="two">', $head);
+        $this->assertLessThan(strpos($head, 'id="two"'), strpos($head, 'id="one"'), 'the later rule still wins');
+        $this->assertGreaterThan(strpos($head, 'falcon-critical-css'), strpos($head, 'id="one"'), 'after the compiled rules, as they were');
+        $this->assertStringContainsString('<nav class="flex">Menu</nav><p>Text</p>', $out);
+    }
+
+    public function test_styles_that_are_not_the_pages_own_stay_where_they_are(): void
+    {
+        $kept = [
+            '<template><style id="k">.a{}</style></template>',
+            '<noscript><style id="k">.a{}</style></noscript>',
+            '<svg><style id="k">.a{}</style></svg>',
+            '<textarea><style id="k">.a{}</style></textarea>',
+            '<pre><style id="k">.a{}</style></pre>',
+            '<script>var s = "<style id=\"k\">.a{}</style>";</script>',
+            '<!-- <style id="k">.a{}</style> -->',
+        ];
+        foreach ($kept as $markup) {
+            $out = $this->optimise($this->page('<div class="flex"></div>'.$markup));
+            $this->assertGreaterThan(strpos($out, '</head>'), strpos($out, 'id=', (int) strpos($out, '</head>')), $markup);
+            $this->assertStringContainsString($markup, $out);
+        }
+    }
+
+    public function test_a_style_after_a_stylesheet_in_the_body_keeps_its_place_in_the_cascade(): void
+    {
+        $body = '<style id="before">.a{}</style><link rel="stylesheet" href="/late.css"><style id="after">.a{}</style>';
+        $out = $this->optimise($this->page('<div class="flex"></div>'.$body));
+
+        $headEnd = (int) strpos($out, '</head>');
+        $this->assertLessThan($headEnd, strpos($out, 'id="before"'));
+        $this->assertGreaterThan(strpos($out, '/late.css'), strpos($out, 'id="after"'));
+    }
+
+    public function test_the_styles_stay_in_the_body_with_critical_css_off(): void
+    {
+        $html = $this->page('<style id="one">.a{}</style>');
+        $this->assertSame($html, $this->optimise($html, '0'));
+    }
+
     public function test_off_by_default_and_other_stylesheets_are_left_alone(): void
     {
         $html = $this->page('<div class="flex"></div>');

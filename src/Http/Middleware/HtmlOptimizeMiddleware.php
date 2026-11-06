@@ -25,7 +25,8 @@ use Symfony\Component\HttpFoundation\Response;
  *  - perf_minify_html:  collapses the whitespace between tags.
  *  - perf_inline_icons: swaps the icon libraries' stylesheets for the few rules the page uses.
  *  - perf_local_google_fonts: serves Google Fonts from the site itself, their CSS inline.
- *  - perf_critical_css: the compiled stylesheet's rules for this page inline, the rest later.
+ *  - perf_critical_css: the compiled stylesheet's rules for this page inline, the rest later,
+ *    and the <style> blocks of the body moved up to the head.
  *
  * Only successful, non-admin, HTML GET responses are touched; never JSON, downloads, the admin,
  * or anything inside a logged-in session where correctness matters more than bytes.
@@ -114,6 +115,7 @@ class HtmlOptimizeMiddleware
         }
         if ($critical) {
             $html = $this->criticalCss($html);
+            $html = $this->hoistBodyStyles($html);
         }
         if ($lazy) {
             $html = $this->prioritiseHero($html);
@@ -349,6 +351,49 @@ class HtmlOptimizeMiddleware
         $at = strpos($html, $link[0]);
 
         return $at === false ? $html : substr_replace($html, $replacement, $at, strlen($link[0]));
+    }
+
+    /**
+     * Move the body's <style> blocks to the end of the head, in the order they came.
+     *
+     * Builder elements print their rules beside their markup. A long page is painted while it is
+     * still being read, so a menu or a Motion Visual appeared without its rules and then jumped
+     * when they arrived, which pushed the page down and back up. Everything inside <script>,
+     * <template>, <noscript>, <textarea>, <pre>, <svg> or a comment is left where it is. A style
+     * after a stylesheet in the body stays too: moving it above that file would change which rule
+     * wins.
+     */
+    private function hoistBodyStyles(string $html): string
+    {
+        $headEnd = stripos($html, '</head>');
+        if ($headEnd === false) {
+            return $html;
+        }
+
+        $moved = '';
+        $stopped = false;
+        $body = preg_replace_callback(
+            '#<!--.*?-->|<(script|template|noscript|textarea|pre|svg|style)\b[^>]*>.*?</\1\s*>|<link\b[^>]*>#is',
+            function ($m) use (&$moved, &$stopped) {
+                if (($m[1] ?? '') === '') {
+                    if (stripos($m[0], '<link') === 0 && preg_match('/\brel=["\']?(stylesheet|preload)\b/i', $m[0])) {
+                        $stopped = true;
+                    }
+
+                    return $m[0];
+                }
+                if ($stopped || strtolower($m[1]) !== 'style') {
+                    return $m[0];
+                }
+                $moved .= $m[0];
+
+                return '';
+            },
+            substr($html, $headEnd)
+        );
+
+        // null: the page is too large for the pattern. Nothing is lost by leaving it as it was.
+        return $body === null || $moved === '' ? $html : substr($html, 0, $headEnd).$moved.$body;
     }
 
     /**

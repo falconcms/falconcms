@@ -82,6 +82,9 @@ on or off.
 The stylesheet still downloads in full, after the page has shown, so nothing that relies on it is
 lost. A browser with JavaScript turned off gets the normal stylesheet link.
 
+It also moves the styles that builder elements print in the body up to the head. A long page is
+painted while it is still being read, so a menu could appear without its styles and then jump.
+
 ## Images
 
 - Images from the media library carry their width and height, so the page keeps their space while
