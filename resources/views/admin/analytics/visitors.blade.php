@@ -138,6 +138,7 @@
                             <th>IP Address</th>
                             <th>Country / City</th>
                             <th>Page</th>
+                            <th>Time Spent</th>
                             <th>Referrer</th>
                             <th>Device</th>
                             <th>Browser</th>
@@ -166,13 +167,14 @@
                                 @endif
                             </td>
                             <td class="text-[#1d2327]"><span class="block truncate max-w-[220px]" title="{{ $v->url }}">{{ falcon_visit_page($v->url) }}</span></td>
+                            <td class="whitespace-nowrap">{{ !empty($v->duration_seconds) ? \FalconCms\Core\Support\PageTime::format((int) $v->duration_seconds) : '—' }}</td>
                             <td><span class="block truncate max-w-[160px]" title="{{ $v->referrer }}">{{ $v->referrer ? \Illuminate\Support\Str::of($v->referrer)->after('://')->before('/') : 'Direct' }}</span></td>
                             <td class="capitalize">{{ $v->device_type ?: '—' }}</td>
                             <td>{{ $v->browser ?: '—' }}</td>
                             <td>{{ $v->os ?: '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="9" class="text-center text-[#646970]" style="padding:40px">No visits match this range or filter.</td></tr>
+                        <tr><td colspan="10" class="text-center text-[#646970]" style="padding:40px">No visits match this range or filter.</td></tr>
                     @endforelse
                     </tbody>
                 </table>

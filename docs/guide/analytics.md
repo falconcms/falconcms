@@ -25,6 +25,22 @@ the server's own midnight.
 
 ---
 
+## Time on site
+
+How long visitors stay, for posts, pages, products, custom post types and other public pages:
+
+- **Average Time per Visit**, **Average Time per Page** and **Total Time on Site** for the range;
+- **Time by Page**, with a filter for each content type;
+- **Time Spent** on each row of Recent Visits, the Visitor Log and its CSV. A page served from the
+  page cache or a CDN has no row in the log, so it counts in the totals only.
+
+Time counts while the page is visible and in use. It stops in a background tab, and after two minutes
+with no scroll, click or key press, unless a video or audio is playing. Signed-in users and bots are
+not counted, a visit under a second is not reported, and neither is a 404 page. A new visit starts
+after 30 minutes away. To stop recording, set the `page_time_enabled` option to `0`.
+
+---
+
 ## How a visitor is counted
 
 ::: tip One visitor per day

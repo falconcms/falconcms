@@ -299,6 +299,91 @@
             </div>
         </div>
 
+        <!-- Time on site -->
+        @php
+            $pt = $pageTime ?? ['avg_visit' => 0, 'avg_page' => 0, 'seconds' => 0, 'views' => 0];
+            $ptRows = $pageTimeTop ?? [];
+            $ptType = $pageTimeType ?? '';
+            $ptTypes = $pageTimeTypes ?? [];
+            $ptFormat = fn ($s) => \FalconCms\Core\Support\PageTime::format($s);
+            $ptLabel = fn ($t) => $t === 'other' ? 'Other pages' : ucwords(str_replace(['_', '-'], ' ', $t));
+            $ptMax = collect($ptRows)->max('seconds') ?: 1;
+            $ptWindow = ($isCustom ?? false) ? ['from' => $rangeFrom, 'to' => $rangeTo] : ['range' => $range];
+        @endphp
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-2">
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#2271b1]"><span class="material-symbols-outlined text-[24px]">schedule</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ $ptFormat($pt['avg_visit']) }}</div>
+                        <div class="classic-stat-label">Average Time per Visit</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">across all the pages of a visit</div>
+                    </div>
+                </div>
+            </div>
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#826eb4]"><span class="material-symbols-outlined text-[24px]">hourglass_top</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ $ptFormat($pt['avg_page']) }}</div>
+                        <div class="classic-stat-label">Average Time per Page</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">while the page was visible and in use</div>
+                    </div>
+                </div>
+            </div>
+            <div class="classic-card">
+                <div class="classic-stat-box">
+                    <div class="classic-stat-icon bg-[#46b450]"><span class="material-symbols-outlined text-[24px]">timer</span></div>
+                    <div>
+                        <div class="classic-stat-value">{{ $ptFormat($pt['seconds']) }}</div>
+                        <div class="classic-stat-label">Total Time on Site</div>
+                        <div class="text-[11px] text-[#646970] mt-0.5">from {{ number_format($pt['views']) }} page {{ $pt['views'] === 1 ? 'view' : 'views' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="classic-card" id="time-by-page">
+            <div class="classic-card-header flex-wrap gap-2">
+                <span class="classic-card-title">Time by Page</span>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <a href="{{ route('admin.analytics', $ptWindow) }}#time-by-page" class="range-btn {{ $ptType === '' ? 'active' : '' }}">All</a>
+                    @foreach($ptTypes as $t)
+                        <a href="{{ route('admin.analytics', $ptWindow + ['time_type' => $t]) }}#time-by-page" class="range-btn {{ $ptType === $t ? 'active' : '' }}">{{ $ptLabel($t) }}</a>
+                    @endforeach
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-[12px] text-left">
+                    <thead class="text-[#646970] border-b border-[#f0f0f1]">
+                        <tr>
+                            <th class="px-4 py-2.5 font-semibold">Page</th>
+                            <th class="px-4 py-2.5 font-semibold">Type</th>
+                            <th class="px-4 py-2.5 font-semibold text-right">Views</th>
+                            <th class="px-4 py-2.5 font-semibold text-right">Average Time</th>
+                            <th class="px-4 py-2.5 font-semibold text-right">Total Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($ptRows as $row)
+                            <tr class="border-b border-[#f6f7f7] hover:bg-[#f6f7f7]">
+                                <td class="px-4 py-2.5 text-[#1d2327] min-w-[200px]">
+                                    <span class="block truncate max-w-[340px]" title="{{ $row['url'] }}">{{ $row['label'] }}</span>
+                                    <div class="h-1 mt-1 bg-[#f0f0f1] rounded-full overflow-hidden max-w-[340px]"><div class="h-full rounded-full" style="width:{{ round($row['seconds'] / $ptMax * 100) }}%;background:#2271b1"></div></div>
+                                </td>
+                                <td class="px-4 py-2.5 text-[#646970] whitespace-nowrap">{{ $ptLabel($row['type']) }}</td>
+                                <td class="px-4 py-2.5 text-[#646970] text-right">{{ number_format($row['views']) }}</td>
+                                <td class="px-4 py-2.5 text-[#1d2327] font-semibold text-right whitespace-nowrap">{{ $ptFormat($row['average']) }}</td>
+                                <td class="px-4 py-2.5 text-[#646970] text-right whitespace-nowrap">{{ $ptFormat($row['seconds']) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="px-4 py-6 text-center text-[#646970]">No time recorded yet. It appears as visitors leave pages.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Visitors by Country — dynamic world map -->
         <style>
             #visitor-map svg { width: 100% !important; height: 360px !important; min-height: 360px !important; max-height: none !important; max-width: none !important; min-width: 0 !important; display: block !important; }
@@ -496,6 +581,7 @@
                             <th class="px-4 py-2.5 font-semibold">OS</th>
                             <th class="px-4 py-2.5 font-semibold">IP</th>
                             <th class="px-4 py-2.5 font-semibold">Referrer</th>
+                            <th class="px-4 py-2.5 font-semibold text-right">Time Spent</th>
                             <th class="px-4 py-2.5 font-semibold text-right">When</th>
                         </tr>
                     </thead>
@@ -537,10 +623,11 @@
                                         <span class="text-[#9ca3af]">{{ $refLabel }}</span>
                                     @endif
                                 </td>
+                                <td class="px-4 py-2.5 text-[#646970] text-right whitespace-nowrap">{{ !empty($v->duration_seconds) ? \FalconCms\Core\Support\PageTime::format((int) $v->duration_seconds) : '—' }}</td>
                                 <td class="px-4 py-2.5 text-[#646970] text-right whitespace-nowrap">{{ $v->created_at ? \Illuminate\Support\Carbon::parse($v->created_at)->diffForHumans() : '—' }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="px-4 py-6 text-center text-[#646970]">No visits recorded yet.</td></tr>
+                            <tr><td colspan="8" class="px-4 py-6 text-center text-[#646970]">No visits recorded yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

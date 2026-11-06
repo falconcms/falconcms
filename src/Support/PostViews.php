@@ -130,7 +130,7 @@ final class PostViews
         if ($postId < 1 || !self::on('post_views_enabled')) {
             return false;
         }
-        if ($userAgent === '' || preg_match(self::BOTS, $userAgent)) {
+        if ($userAgent === '' || self::isBot($userAgent)) {
             return false;
         }
         if (!self::trackable($postId)) {
@@ -146,6 +146,11 @@ final class PostViews
         self::increment($postId);
 
         return true;
+    }
+
+    public static function isBot(string $userAgent): bool
+    {
+        return (bool) preg_match(self::BOTS, $userAgent);
     }
 
     /** Add views to a post's total and to today's row. */

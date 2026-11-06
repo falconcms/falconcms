@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $country
  * @property string|null $country_code
  * @property string|null $city
+ * @property int|null $duration_seconds
  * @property Carbon|null $created_at
  */
 class Analytics extends Model
