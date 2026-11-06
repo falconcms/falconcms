@@ -5,7 +5,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.9.1 <Badge type="tip" text="Latest" /> {#v2-9-1}
+## v2.9.2 <Badge type="tip" text="Latest" /> {#v2-9-2}
+
+**Released: 2026-11-07**
+
+A steadier first paint on long pages, and safer dependencies. Released with Pro v1.5.7.
+
+### Fixed
+
+- **The header no longer jumps while a long page loads.** Builder elements print their styles beside
+  their markup, and a long page is painted while it is still being read, so a menu or Motion Visual
+  could appear without its styles and then move. With **Critical CSS** on, these styles now go to the
+  head. See [Critical CSS](/guide/performance#critical-css).
+
+### Security
+
+- **Symfony versions with known advisories are refused**: `symfony/http-foundation`,
+  `symfony/http-kernel` and `symfony/routing` below 7.4.23 or 8.1.11, and `symfony/mime` below 7.4.22
+  or 8.1.10. The dashboard updater brings the patched versions along.
+
+### Changed
+
+- **Manual updates use `composer require falconcms/falconcms -W`.** `composer update` does nothing on
+  a site whose `composer.json` holds an exact version, which is what the dashboard updater writes,
+  and without `-W` Composer can stop on a conflict. See [Upgrading](/guide/upgrade).
+
+### In Pro v1.5.7
+
+- **Falcon Shop Boost 1.0.2:** with Skeletons on, every page animated and repainted on every frame.
+  It no longer does.
+- **Falcon Effects 1.0.3:** a word marked with Highlight Draw did not show on a Title with a text
+  animation or gradient. It now keeps a solid color.
+
+---
+
+## v2.9.1 {#v2-9-1}
 
 **Released: 2026-11-06**
 
