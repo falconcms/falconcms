@@ -91,7 +91,7 @@ Everything below is MIT-licensed and needs no purchase.
 | **Themes** | A WordPress-like, file-based theme system with strict view isolation — frontend views live in `resources/views/themes/{theme}/`, and anything in the root `resources/views/` is blocked from frontend rendering (404). |
 | **Plugins** | Drop-in folders that add admin pages, settings, routes, views, tables and hooks without touching the core. Scaffold one with `php artisan make:plugin`. |
 | **Menus & widgets** | A visual menu builder including mega menus, plus widget areas for sidebars and footer columns. |
-| **Roles & permissions** | Eight seeded roles with granular per-capability permissions, and strict content ownership — Authors and Contributors never reach another user's content. |
+| **Roles & permissions** | Eight seeded roles plus your own, with separate read and write permissions for each section. |
 | **Developer API** | 109 hooks (63 actions, 46 filters), template tags, helper functions, an Admin Menu API, and a REST API for headless use. |
 | **Migration** | A WordPress importer that parses WXR and can be re-run without duplicating anything. |
 

@@ -20,7 +20,6 @@ Navigate to **Admin → Settings → General**.
 | Timezone | `timezone` | `UTC` | PHP timezone identifier |
 | Homepage | `home_page_id` | — | Post ID of your homepage |
 | Posts per page | `posts_per_page` | `10` | Blog archive pagination |
-| Default post status | `default_post_status` | `draft` | draft / pending / published |
 | Comment moderation | `comment_moderation` | `true` | Require approval before showing |
 | Allow registration | `allow_registration` | `false` | Enable public signups |
 

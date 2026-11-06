@@ -113,7 +113,7 @@ features:
 
   - icon: 🔐
     title: Role-Based Access Control
-    details: Granular permissions with 6 predefined roles — Administrator, Editor, Author, Contributor, Subscriber, and User.
+    details: Eight predefined roles plus your own, with separate read and write permissions for each section.
     link: /guide/rbac
     linkText: Read the RBAC Overview
 

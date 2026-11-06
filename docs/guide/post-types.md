@@ -113,11 +113,11 @@ echo $fields['client_name'];
 | Status | Description |
 |---|---|
 | `draft` | Not public, work in progress |
-| `pending` | Awaiting editor review |
+| `pending` | Not public, waiting for review ([Publishing and Review](/guide/rbac#publishing-and-review)) |
 | `published` | Live and visible |
 | `scheduled` | Auto-publishes at `published_at` time |
-| `private` | Only visible to logged-in admins |
-| `trash` | Soft-deleted, recoverable |
+
+Trashing is separate from status: a trashed item is soft-deleted and can be restored.
 
 ### Scheduling Posts
 
