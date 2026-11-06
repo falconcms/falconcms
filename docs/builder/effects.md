@@ -47,6 +47,17 @@ Every effect follows the same four rules:
 | **Entrances** | Entrance Plus: flips, blur-in, wipes, a circle reveal and staggered contents |
 | **Elements** | Reading Progress, Before / After, Page Effects (smooth scroll, page transitions, preloader, custom cursor), Lottie Animation, Flip Card, Text Along Path, 3D Image View |
 
+::: tip Highlight Draw on an animated title
+On a Title with a text animation or gradient, the highlighted words keep a solid color instead: the
+highlight's own text color, or else the title's. The rest of the title animates as usual.
+:::
+
+::: tip Keep pages light
+Effects that draw on every frame cost the most while a visitor is only reading: Particles and Water
+Ripple on a canvas, and Border Animation's Glare, which the browser repaints each frame. Use them on
+one section rather than on every section, or play a border on hover.
+:::
+
 ## Border Animation
 
 ![The builder with a column's Extra tab open: Border Animation set to Sparkling, with its colours and speed, and the spark running round the column in the canvas](/screenshots/effects-builder-border.webp)
