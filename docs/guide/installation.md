@@ -140,7 +140,7 @@ refreshes the OPcache for you. No terminal needed.
 Some hosts disable `exec()` or ship without a CLI Composer. In that case, run:
 
 ```bash
-composer update falconcms/falconcms
+composer require falconcms/falconcms -W
 php artisan falcon:update
 ```
 

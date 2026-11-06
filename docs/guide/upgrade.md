@@ -21,11 +21,16 @@ On hosts where `exec()` is disabled or Composer isn't on the CLI, run:
 
 ```bash
 # 1. Update the package
-composer update falconcms/falconcms
+composer require falconcms/falconcms -W
 
 # 2. Run the update command
 php artisan falcon:update
 ```
+
+Use `require`, not `update`: the dashboard updater writes the exact version into your
+`composer.json`, and `composer update` will not move past it. `-W` also updates the packages
+underneath, including Laravel and Symfony. FalconCMS refuses versions of them with known security
+problems, so without `-W` Composer can stop with a conflict.
 
 `falcon:update` handles everything automatically:
 - Runs new database migrations

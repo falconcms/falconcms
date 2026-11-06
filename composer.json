@@ -21,7 +21,11 @@
     "conflict": {
         "laravel/framework": "<13.30.0",
         "league/commonmark": "<2.10.2",
-        "league/flysystem": "<3.36.0"
+        "league/flysystem": "<3.36.0",
+        "symfony/http-foundation": "<7.4.23 || >=8.0,<8.1.11",
+        "symfony/http-kernel": "<7.4.23 || >=8.0,<8.1.11",
+        "symfony/mime": "<7.4.22 || >=8.0,<8.1.10",
+        "symfony/routing": "<7.4.23 || >=8.0,<8.1.11"
     },
     "autoload": {
         "psr-4": {

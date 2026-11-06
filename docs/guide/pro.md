@@ -105,13 +105,13 @@ refreshes both. To bump only Pro, re-run the install (or use the command below).
 ### Manually
 
 ```bash
-composer update falconcms/pro
+composer require falconcms/pro -W
 ```
 
 Or update both together:
 
 ```bash
-composer update falconcms/falconcms falconcms/pro
+composer require falconcms/falconcms falconcms/pro -W
 ```
 
 ::: info Keep core and Pro in step
