@@ -33,7 +33,7 @@ final class SiteUrlMigrator
         'migrations', 'sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs',
         'password_reset_tokens', 'password_resets', 'personal_access_tokens', 'magic_login_tokens',
         'cms_analytics', 'activity_logs', 'cms_activity_logs', 'cms_404_log', 'cms_web_vitals',
-        'cms_post_view_days', 'falcon_buy_clicks', 'cms_not_found_log', 'cms_seo_page_scores',
+        'cms_post_view_days', 'cms_page_time_days', 'cms_post_reviews', 'cms_post_locks', 'falcon_buy_clicks', 'cms_not_found_log', 'cms_seo_page_scores',
     ];
 
     /** Logs, reports, analytics, Search Console (gsc_*), daily figures, caches and tokens. */

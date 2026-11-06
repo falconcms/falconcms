@@ -3142,11 +3142,11 @@
                     });
                     const data = await response.json();
                     if (data.success) {
-                        showToast('Layout saved successfully!', 'success');
+                        showToast(data.message && data.message !== 'Page layout saved successfully.' ? data.message : 'Layout saved successfully!', 'success');
                         lastSavedLayout = serializedLayout.value;
                         isDirty.value = false;
                     } else {
-                        showToast('Failed to save layout!', 'error');
+                        showToast(data.message || 'Failed to save layout!', 'error');
                     }
                 } catch (e) {
                     console.error('Save failed', e);

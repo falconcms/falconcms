@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Models;
 
 use App\Models\User;
+use FalconCms\Core\Traits\HasEditorialWorkflow;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,11 +32,13 @@ use Illuminate\Support\Carbon;
  * @property int|null $origin_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property array<int, mixed>|string|null $gallery
  * @property-read ProductData|null $shopData
  */
 class Post extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasEditorialWorkflow, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id', 'title', 'slug', 'content', 'excerpt', 'type', 'status',
@@ -109,13 +112,14 @@ class Post extends Model
 
     /**
      * Decide the effective publish status from a publish date, on the SERVER (timezone-safe).
-     * A future publish date ⇒ "scheduled"; a past/now date ⇒ "published". Drafts stay drafts.
+     * A future publish date ⇒ "scheduled"; a past/now date ⇒ "published". Drafts stay drafts, and
+     * work waiting for review stays there: the date a writer picked is a suggestion until approved.
      * This avoids relying on the browser clock, which breaks when the app timezone (UTC) differs
      * from the editor's local timezone (e.g. a +2 min bump still looked "past" to the browser).
      */
     public static function resolveStatusForSchedule(?string $status, $publishedAt): ?string
     {
-        if ($status === 'draft' || empty($publishedAt)) {
+        if (in_array($status, ['draft', 'pending'], true) || empty($publishedAt)) {
             return $status;
         }
         try {

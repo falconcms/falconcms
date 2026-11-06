@@ -603,13 +603,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Revision\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Revision\>\:\:\$content\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: src/Http/Controllers/Admin/PageController.php
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Revision\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Revision\>\:\:\$title\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: src/Http/Controllers/Admin/PageController.php
 
 		-
@@ -687,13 +687,13 @@ parameters:
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Revision\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Revision\>\:\:\$content\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 6
 			path: src/Http/Controllers/Admin/PostController.php
 
 		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\Revision\|Illuminate\\Database\\Eloquent\\Collection\<int, FalconCms\\Core\\Models\\Revision\>\:\:\$title\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: src/Http/Controllers/Admin/PostController.php
 
 		-
@@ -1267,6 +1267,30 @@ parameters:
 			path: src/Models/TaxonomyTerm.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editorial.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editorial.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/Editorial.php
+
+		-
+			message: '#^Method FalconCms\\Core\\Support\\Editorial\:\:reviewers\(\) should return Illuminate\\Support\\Collection\<int, object\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Support/Editorial.php
+
+		-
 			message: '#^Access to an undefined property FalconCms\\Core\\Models\\CustomTaxonomy\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1351,6 +1375,30 @@ parameters:
 			path: src/Support/ExportManager.php
 
 		-
+			message: '#^Access to an undefined property App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/PostChanges.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/PostChanges.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/PostLock.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$username\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Support/PostLock.php
+
+		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isAdmin\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -1361,6 +1409,30 @@ parameters:
 			identifier: property.notFound
 			count: 3
 			path: tests/Application/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 3
+			path: tests/Feature/Admin/EditorialWorkflowTest.php
+
+		-
+			message: '#^Call to an undefined method Symfony\\Component\\Mailer\\Transport\\TransportInterface\:\:messages\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Admin/EditorialWorkflowTest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Feature/Admin/PostChangesTest.php
+
+		-
+			message: '#^Call to an undefined method Symfony\\Component\\Mailer\\Transport\\TransportInterface\:\:messages\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: tests/Feature/Admin/PostChangesTest.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$slug\.$#'

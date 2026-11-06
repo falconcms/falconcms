@@ -84,7 +84,8 @@ class ReadOnlyContentAccessTest extends TestCase
 
     public function test_add_new_opens_the_writes(): void
     {
-        $user = $this->userWith(['manage_posts', 'access_all_posts_posts', 'access_add_new_posts']);
+        // publish_content as well: the post here is live, and changing that takes both.
+        $user = $this->userWith(['manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'publish_content']);
 
         $this->actingAs($user)->get('/admin/posts/create')->assertOk();
         $this->actingAs($user)->get("/admin/posts/{$this->post->id}/edit")->assertOk();
@@ -99,9 +100,11 @@ class ReadOnlyContentAccessTest extends TestCase
         $this->actingAs($author)->get('/admin/posts')->assertOk()->assertSee('Someone elses post');
         $this->actingAs($author)->get("/admin/posts/{$this->post->id}/edit")->assertForbidden();
 
-        Role::where('slug', 'author')->firstOrFail()->permissions()->attach(
-            Permission::firstOrCreate(['slug' => 'access_add_new_posts'], ['name' => 'access_add_new_posts'])->id
-        );
+        foreach (['access_add_new_posts', 'publish_content'] as $slug) {
+            Role::where('slug', 'author')->firstOrFail()->permissions()->syncWithoutDetaching([
+                Permission::firstOrCreate(['slug' => $slug], ['name' => $slug])->id,
+            ]);
+        }
 
         $this->actingAs($author->fresh())->get('/admin/posts')
             ->assertOk()
@@ -122,7 +125,7 @@ class ReadOnlyContentAccessTest extends TestCase
         $this->actingAs($reader)->delete("/admin/pages/{$page->id}")->assertForbidden();
         $this->assertNotNull(Post::find($page->id));
 
-        $writer = $this->userWith(['manage_pages', 'access_all_pages_pages', 'access_add_new_pages'], 'zz-writer');
+        $writer = $this->userWith(['manage_pages', 'access_all_pages_pages', 'access_add_new_pages', 'publish_content'], 'zz-writer');
         $this->actingAs($writer)->get("/admin/pages/{$page->id}/edit")->assertOk();
     }
 
@@ -155,7 +158,7 @@ class ReadOnlyContentAccessTest extends TestCase
         $this->actingAs($user)->get("/admin/pages/{$page->id}/edit")->assertForbidden();
         $this->actingAs($user)->get('/admin/users/create')->assertForbidden();
 
-        $this->userWith(array_merge($read, ['access_add_new_posts', 'access_add_new_pages', 'access_add_new_users']), $slug);
+        $this->userWith(array_merge($read, ['access_add_new_posts', 'access_add_new_pages', 'access_add_new_users', 'publish_content']), $slug);
 
         $this->actingAs($user->fresh())->get("/admin/posts/{$this->post->id}/edit")->assertOk();
         $this->actingAs($user->fresh())->get("/admin/pages/{$page->id}/edit")->assertOk();

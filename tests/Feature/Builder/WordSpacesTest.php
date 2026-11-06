@@ -10,6 +10,7 @@ use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\Role;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\TestCase;
+use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -56,8 +57,8 @@ class WordSpacesTest extends TestCase
 
     public function test_other_requests_are_still_trimmed(): void
     {
-        $this->assertTrue(true === (new \ReflectionClass(\Illuminate\Foundation\Http\Middleware\TrimStrings::class))->hasMethod('skipWhen'));
-        $trim = new \Illuminate\Foundation\Http\Middleware\TrimStrings;
+        $this->assertTrue((new \ReflectionClass(TrimStrings::class))->hasMethod('skipWhen') === true);
+        $trim = new TrimStrings;
         $seen = null;
         $trim->handle(Request::create('/admin/posts', 'POST', ['title' => '  Hello  ']), function ($r) use (&$seen) {
             $seen = $r->input('title');

@@ -360,5 +360,8 @@
         })();
     </script>
     @endif
+    @if(isset($post) && $post instanceof \FalconCms\Core\Models\Post && !isset($builderSaveUrl))
+        @include('falcon-cms::admin.partials.edit-lock', ['post' => $post])
+    @endif
 </body>
 </html>

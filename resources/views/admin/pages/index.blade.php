@@ -22,14 +22,14 @@
     @endif
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-4">
-        <div class="flex items-center text-[13px] text-[#646970]">
+        <div class="flex flex-wrap items-center text-[13px] text-[#646970]">
             <a href="{{ route('admin.pages.index') }}" class="{{ !request('status') ? 'text-black font-semibold' : 'text-[#2271b1]' }}">All <span class="text-[#646970]">({{ $allCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.pages.index', ['status' => 'published']) }}" class="{{ request('status') == 'published' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Published <span class="text-[#646970]">({{ $publishedCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.pages.index', ['status' => 'scheduled']) }}" class="{{ request('status') == 'scheduled' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Scheduled <span class="text-[#646970]">({{ $scheduledCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
-            <a href="{{ route('admin.pages.index', ['status' => 'draft']) }}" class="{{ request('status') == 'draft' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Draft <span class="text-[#646970]">({{ $draftCount }})</span></a>
+            <a href="{{ route('admin.pages.index', ['status' => 'pending']) }}" class="{{ request('status') == 'pending' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Pending Review <span class="text-[#646970]">({{ $pendingCount ?? 0 }})</span></a> <span class="mx-1 text-[#c3c4c7]">|</span> <a href="{{ route('admin.pages.index', ['status' => 'draft']) }}" class="{{ request('status') == 'draft' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Draft <span class="text-[#646970]">({{ $draftCount }})</span></a>
             @if($trashCount > 0)
                 <span class="mx-1 text-[#c3c4c7]">|</span>
                 <a href="{{ route('admin.pages.index', ['status' => 'trash']) }}" class="{{ request('status') == 'trash' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Trash <span class="text-[#646970]">({{ $trashCount }})</span></a>
@@ -62,7 +62,7 @@
                         <option value="delete">Delete Permanently</option>
                     @else
                         <option value="draft">Move to Draft</option>
-                        <option value="published">Publish</option>
+                        @if(\FalconCms\Core\Support\Editorial::canPublish())<option value="published">Publish</option>@endif
                         <option value="trash">Move to Trash</option>
                     @endif
                 </select>
@@ -105,17 +105,17 @@
             @forelse($pages as $idx => $item)
                 @php
                     // Read-only rows (no Add New) link to the page itself.
-                    $rowCanChange = $canWrite ?? true;
-                    $titleUrl = $item->trashed() ? '#' : ($rowCanChange ? route('admin.pages.edit', $item) : get_falcon_permalink($item));
+                    $rowCanChange = ($canWrite ?? true) && \FalconCms\Core\Support\Editorial::canChange($item); $rowLocks ??= \FalconCms\Core\Support\PostLock::holders($pages->pluck('id')->all(), auth()->id()); $rowChanges ??= \FalconCms\Core\Support\PostChanges::forPosts($pages->pluck('id')->all()); $rowIsLive = $item->status === 'published';
+                    $titleUrl = $item->trashed() ? '#' : (($canWrite ?? true) ? route('admin.pages.edit', $item) : get_falcon_permalink($item));
                 @endphp
                 <tr class="{{ $idx % 2 === 0 ? 'bg-[#f6f7f7]' : 'bg-[#fff]' }} group">
                     <td class="wp-table-cell text-center">@if($rowCanChange)<input type="checkbox" name="post_ids[]" value="{{ $item->id }}" class="cb-select-item rounded-sm border-[#8c8f94] text-[#2271b1]">@endif</td>
                     <td class="wp-table-cell align-top text-[14px] text-left">
                         <strong>
                             @if($item->parent_id) <span class="text-[#c3c4c7]">—</span> @endif
-                            <a href="{{ $titleUrl }}" @if(!$rowCanChange && $titleUrl !== '#') target="_blank" @endif class="text-[#2271b1] hover:text-[#135e96]">{{ $item->title }}</a>
+                            <a href="{{ $titleUrl }}" @if(!($canWrite ?? true) && $titleUrl !== '#') target="_blank" @endif class="text-[#2271b1] hover:text-[#135e96]">{{ $item->title }}</a> @isset($rowChanges[$item->id]) <a href="{{ route('admin.posts.changes', $item->id) }}" class="font-normal text-[#996800] hover:underline"> — {{ $rowChanges[$item->id]->status === 'pending' ? 'Changes waiting for review' : 'Unsent changes' }}</a> @endisset
                             @if($item->status === 'draft' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif 
-                            @if($item->status === 'scheduled' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif
+                            @if($item->status === 'scheduled' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif @if($item->status === 'pending' && !$item->trashed()) <span class="font-normal text-[#996800]"> — Pending Review</span> @endif @isset($rowLocks[$item->id]) <span class="font-normal text-[#b32d2e]"> — {{ $rowLocks[$item->id]['name'] }} is editing</span> @endisset
                             @if(is_falcon_homepage($item)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
                             @if(is_falcon_shop_page($item)) <span class="font-normal text-[#646970]"> — Shop Page</span> @endif
                             @if(is_falcon_cart_page($item)) <span class="font-normal text-[#646970]"> — Cart Page</span> @endif
@@ -135,8 +135,15 @@
                                 <a href="{{ route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                 <button type="button" onclick="moveToTrash({{ $item->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> <span class="text-[#c3c4c7]">|</span>
                                 <button type="submit" form="clone-form-{{ $item->id }}" class="text-[#2271b1] hover:underline cursor-pointer">Clone</button> <span class="text-[#c3c4c7]">|</span>
+                                @elseif($canWrite ?? true)
+                                <a href="{{ route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
+                                <button type="submit" form="clone-form-{{ $item->id }}" class="text-[#2271b1] hover:underline cursor-pointer">Clone</button> <span class="text-[#c3c4c7]">|</span>
                                 @endif
+                                @if(!$rowIsLive && ($canWrite ?? true))
+                                <a href="{{ route('admin.falcon-builder.preview', $item->id) }}" target="_blank" class="text-[#2271b1] hover:underline">Preview</a>
+                                @else
                                 <a href="{{ get_falcon_permalink($item) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
+                                @endif
                             @endif
                         </div>
                     </td>

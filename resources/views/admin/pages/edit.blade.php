@@ -35,10 +35,14 @@
     </div>
     @endif
 
+    @php $canPublishItem = \FalconCms\Core\Support\Editorial::canPublish(); @endphp
+    @include('falcon-cms::admin.partials.editorial-banner', ['post' => $page])
+    @include('falcon-cms::admin.partials.edit-lock', ['post' => $page])
+
     <form action="{{ route('admin.pages.update', $page) }}" method="POST" id="page-form" enctype="multipart/form-data">
         @csrf
         @method('PUT')
-        <input type="hidden" name="status" id="status-hidden" value="{{ $page->status }}">
+        <input type="hidden" name="status" id="status-hidden" value="{{ $canPublishItem ? $page->status : 'pending' }}">
         
         <div class="flex flex-col lg:flex-row gap-5">
             <!-- Left Column: Content -->
@@ -232,18 +236,18 @@
                     </div>
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="flex justify-between items-center mb-3">
-                            <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
+                            <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">{{ !$canPublishItem && in_array($page->status, ['published', 'scheduled'], true) ? 'Save Changes for Later' : 'Save Draft' }}</button>
                         </div>
                         <div class="text-[13px] text-[#646970] space-y-3 mb-4">
                             <!-- Status -->
                             <div class="flex items-start">
                                 <svg class="w-4 h-4 mr-1 mt-[2px]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" /></svg> 
                                 <div class="flex-grow">
-                                    Status: <strong class="text-black" id="status-display-text">{{ ucfirst($page->status) }}</strong> <a href="#" class="text-[#2271b1] underline ml-1 toggle-publish-edit" data-target="status-edit">Edit</a>
+                                    Status: <strong class="text-black" id="status-display-text">{{ \FalconCms\Core\Support\Editorial::label($page->status) }}</strong> @if($canPublishItem)<a href="#" class="text-[#2271b1] underline ml-1 toggle-publish-edit" data-target="status-edit">Edit</a>@endif
                                     <div id="status-edit" class="hidden mt-2 p-2 bg-[#f6f7f7] border border-[#dfdfdf]">
                                         <div class="flex space-x-1">
                                             <select id="status-select-ui" class="wp-input text-[13px] py-0 h-[26px] flex-grow">
-                                                <option value="draft" {{ $page->status == 'draft' ? 'selected' : '' }}>Draft</option>
+                                                <option value="draft" {{ $page->status == 'draft' ? 'selected' : '' }}>Draft</option> <option value="pending" {{ $page->status == 'pending' ? 'selected' : '' }}>Pending Review</option>
                                                 <option value="published" {{ $page->status == 'published' ? 'selected' : '' }}>Published</option>
                                                 <option value="scheduled" {{ $page->status == 'scheduled' ? 'selected' : '' }}>Scheduled</option>
                                             </select>
@@ -263,7 +267,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Publish Time -->
+                            <!-- Publish Time -->@unless($canPublishItem)<style>.flex.items-start:has(#publish-display-prefix){display:none}</style>@endunless
                             <div class="flex items-start">
                                 <svg class="w-4 h-4 mr-1 mt-[2px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> 
                                 <div class="flex-grow">
@@ -340,7 +344,7 @@
                     <div class="bg-[#f6f7f7] border-t border-[#dfdfdf] p-2 flex justify-between items-center">
                         <button type="submit" form="trash-form-main" class="text-[#b32d2e] hover:text-[#8a2424] text-[13px] underline bg-transparent border-0 cursor-pointer">Move to Trash</button>
                         <span id="autosave-status" class="text-[11px] text-[#646970] italic mr-auto ml-2"></span>
-                        <button type="submit" id="main-publish-btn" class="wp-btn-primary">Update</button>
+                        <button type="submit" id="main-publish-btn" class="wp-btn-primary">{{ $canPublishItem || $page->status === 'pending' ? 'Update' : (in_array($page->status, ['published', 'scheduled'], true) ? 'Submit Changes for Review' : 'Submit for Review') }}</button>
                     </div>
                 </div>
 

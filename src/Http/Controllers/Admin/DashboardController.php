@@ -16,6 +16,7 @@ use FalconCms\Core\Models\Product;
 use FalconCms\Core\Models\Role;
 use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Services\EcommerceData;
+use FalconCms\Core\Support\PageTime;
 use FalconCms\Core\Support\SettingsExtension;
 use FalconCms\Core\Support\Turnstile;
 use Illuminate\Http\Request;
@@ -1486,12 +1487,23 @@ class DashboardController extends Controller
         // under a heading about a range that closed weeks ago.
         $recent = Analytics::whereBetween('created_at', [$start, $end])->latest()->limit(12)->get();
 
+        // ── Time on site ──────────────────────────────────────────────────
+        // Worked out in days of the site's timezone, as it is recorded; the window is too.
+        $pageTimeTypes = PageTime::types($from, $to);
+        $pageTimeType = (string) request()->query('time_type', '');
+        if (!in_array($pageTimeType, $pageTimeTypes, true)) {
+            $pageTimeType = '';
+        }
+        $pageTime = PageTime::summary($from, $to);
+        $pageTimeTop = PageTime::top($from, $to, $pageTimeType);
+
         return view('falcon-cms::admin.analytics.index', compact(
             'range', 'totalVisits', 'uniqueVisitors', 'pageViews', 'visitsChange', 'today', 'thisMonth',
             'labels', 'visitsSeries', 'uniqueSeries', 'seriesUnit',
             'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'topCountries', 'recent',
             'activeNow', 'newVisitors', 'returningVisitors', 'sessions', 'bounceRate', 'pagesPerSession', 'channels',
-            'visitorsByCountry', 'trafficSources'
+            'visitorsByCountry', 'trafficSources',
+            'pageTime', 'pageTimeTop', 'pageTimeType', 'pageTimeTypes'
         ) + [
             'analyticsLocked' => false,
             'isCustom' => $isCustom,
@@ -1659,6 +1671,14 @@ class DashboardController extends Controller
                 ['label' => 'LinkedIn', 'count' => $pct(0.05), 'domain' => 'linkedin.com'],
             ])->values(),
             'recent' => $recent,
+            'pageTime' => ['avg_visit' => 225, 'avg_page' => 98, 'seconds' => $pageViews * 98, 'views' => $pageViews, 'visits' => $totalVisits],
+            'pageTimeTop' => [
+                ['label' => 'Getting Started', 'type' => 'post', 'url' => '/post/getting-started', 'views' => $pct(0.2), 'seconds' => $pct(0.2) * 245, 'average' => 245],
+                ['label' => 'Pricing', 'type' => 'page', 'url' => '/pricing', 'views' => $pct(0.14), 'seconds' => $pct(0.14) * 132, 'average' => 132],
+                ['label' => 'Classic Tee', 'type' => 'product', 'url' => '/product/classic-tee', 'views' => $pct(0.09), 'seconds' => $pct(0.09) * 87, 'average' => 87],
+            ],
+            'pageTimeType' => '',
+            'pageTimeTypes' => ['page', 'post', 'product'],
         ];
     }
 
@@ -1741,7 +1761,7 @@ class DashboardController extends Controller
 
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Date/Time', 'IP Address', 'Country', 'Country Code', 'City', 'Page', 'Referrer', 'Device', 'Browser', 'OS']);
+            fputcsv($out, ['Date/Time', 'IP Address', 'Country', 'Country Code', 'City', 'Page', 'Referrer', 'Device', 'Browser', 'OS', 'Seconds Spent']);
             $n = 0;
             foreach ($query->cursor() as $v) {
                 fputcsv($out, [
@@ -1755,6 +1775,7 @@ class DashboardController extends Controller
                     $v->device_type,
                     $v->browser,
                     $v->os,
+                    $v->duration_seconds,
                 ]);
                 if (++$n >= 50000) {
                     break; // a hard cap so an unbounded range cannot stream forever

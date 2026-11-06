@@ -591,11 +591,11 @@ class TocTest extends TestCase
         $this->assertStringContainsString("mode = (!stop && columnHasRoom()) ? 'column' : 'dock';", $script);
         $this->assertStringContainsString('var end = stop ? stop.getBoundingClientRect().top', $script);
 
-        $sc = \FalconCms\Core\Services\BuilderShortcodeConverter::jsonToShortcodes((string) json_encode([[
+        $sc = BuilderShortcodeConverter::jsonToShortcodes((string) json_encode([[
             'id' => 'c', 'columns' => [['id' => 'k', 'elements' => [['id' => 'e', 'type' => 'toc', 'settings' => ['stopAt' => 'Conclusion']]]]],
         ]]));
         $this->assertStringContainsString('stop_at="Conclusion"', $sc);
-        $back = json_decode(\FalconCms\Core\Services\BuilderShortcodeConverter::shortcodesToJson($sc), true);
+        $back = json_decode(BuilderShortcodeConverter::shortcodesToJson($sc), true);
         $this->assertSame('Conclusion', $back[0]['columns'][0]['elements'][0]['settings']['stopAt']);
     }
 
@@ -620,14 +620,14 @@ class TocTest extends TestCase
             (preg_match('/data-fc-toc="([^"]*)"/', $this->render(['sticky' => true]), $p) ? $p[1] : ''), ENT_QUOTES, 'UTF-8'), true);
         $this->assertSame(['desktop' => true, 'tablet' => true, 'mobile' => true], $plain['stickyOn']);
 
-        $sc = \FalconCms\Core\Services\BuilderShortcodeConverter::jsonToShortcodes((string) json_encode([[
+        $sc = BuilderShortcodeConverter::jsonToShortcodes((string) json_encode([[
             'id' => 'c', 'columns' => [['id' => 'k', 'elements' => [['id' => 'e', 'type' => 'toc',
                 'settings' => ['sticky' => true, 'stickyTablet' => false, 'stickyMobile' => false]]]]],
         ]]));
         $this->assertStringContainsString('sticky_tablet="no"', $sc);
         $this->assertStringContainsString('sticky_mobile="no"', $sc);
         $this->assertStringNotContainsString('sticky_desktop', $sc);
-        $back = json_decode(\FalconCms\Core\Services\BuilderShortcodeConverter::shortcodesToJson($sc), true);
+        $back = json_decode(BuilderShortcodeConverter::shortcodesToJson($sc), true);
         $settings = $back[0]['columns'][0]['elements'][0]['settings'];
         $this->assertTrue($settings['stickyDesktop']);
         $this->assertFalse($settings['stickyTablet']);

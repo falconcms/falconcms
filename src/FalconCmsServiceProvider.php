@@ -36,6 +36,7 @@ use FalconCms\Core\Support\AdminMenu;
 use FalconCms\Core\Support\CustomFonts\CustomFonts;
 use FalconCms\Core\Support\MotionVisual\MotionVisuals;
 use FalconCms\Core\Support\OffCanvas;
+use FalconCms\Core\Support\PageTime;
 use FalconCms\Core\Support\PluginManager;
 use FalconCms\Core\Support\PostViews;
 use FalconCms\Core\Support\RelativeDates;
@@ -198,6 +199,9 @@ class FalconCmsServiceProvider extends ServiceProvider
             // Post Views dynamic source. Every site has them (they began in Falcon News).
             PostViews::register();
 
+            // How long visitors stay, on every public page.
+            PageTime::register();
+
             // Post Date as "3 hours ago": the footer script that keeps it current on cached pages.
             RelativeDates::register();
 
@@ -357,6 +361,9 @@ class FalconCmsServiceProvider extends ServiceProvider
                     return null; // keep admin/API/default handling
                 }
                 try {
+                    // A missing address is not a page anybody chose to spend time on.
+                    app()->instance('falcon.not_found', true);
+
                     return response()->view(falcon_theme_view('404'), ['exception' => $e], 404);
                 } catch (\Throwable $ex) {
                     return null; // fall back to Laravel's default 404

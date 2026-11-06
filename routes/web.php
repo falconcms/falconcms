@@ -12,6 +12,7 @@ use FalconCms\Core\Http\Controllers\Admin\CustomFieldController;
 use FalconCms\Core\Http\Controllers\Admin\CustomizerController;
 use FalconCms\Core\Http\Controllers\Admin\CustomOptionsController;
 use FalconCms\Core\Http\Controllers\Admin\DashboardController;
+use FalconCms\Core\Http\Controllers\Admin\EditorialController;
 use FalconCms\Core\Http\Controllers\Admin\ExportController;
 use FalconCms\Core\Http\Controllers\Admin\FalconBuilderController;
 use FalconCms\Core\Http\Controllers\Admin\FormController;
@@ -107,6 +108,14 @@ Route::prefix('admin')->name('admin.')->middleware(['web', SecurityHeadersMiddle
 
     Route::get('edit-post', [PostController::class, 'edit'])->name('edit-post');
     Route::post('posts/bulk', [PostController::class, 'bulk'])->name('posts.bulk');
+    // The review workflow and the editors' lock, for every post type.
+    Route::get('posts/review-queue', [EditorialController::class, 'queue'])->name('posts.review-queue');
+    Route::post('posts/{id}/review', [EditorialController::class, 'review'])->name('posts.review')->whereNumber('id');
+    Route::get('posts/{id}/changes', [EditorialController::class, 'changes'])->name('posts.changes')->whereNumber('id');
+    Route::get('posts/{id}/changes/preview', [EditorialController::class, 'previewChanges'])->name('posts.changes.preview')->whereNumber('id');
+    Route::post('posts/{id}/changes', [EditorialController::class, 'decideChanges'])->name('posts.changes.decide')->whereNumber('id');
+    Route::post('posts/{id}/lock', [EditorialController::class, 'lock'])->name('posts.lock')->whereNumber('id');
+    Route::post('posts/{id}/unlock', [EditorialController::class, 'unlock'])->name('posts.unlock')->whereNumber('id');
     Route::post('categories/bulk', [CategoryController::class, 'bulk'])->name('categories.bulk');
     Route::post('tags/bulk', [TagController::class, 'bulk'])->name('tags.bulk');
     Route::post('posts/{post}/restore', [PostController::class, 'restore'])->name('posts.restore')->withTrashed();

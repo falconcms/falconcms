@@ -86,14 +86,28 @@
         #sidebar-backdrop { display: none; position: fixed; inset: 32px 0 0 0; background: rgba(0,0,0,.45); z-index: 998; }
         @media (max-width: 782px) {
             body, body.sidebar-collapsed { padding-left: 0 !important; }
-            /* The sidebar is an off-canvas drawer at phone width, in BOTH its full (240px) and its
-               collapsed (icon-only) state. The collapsed width + icon-only styling come from the
-               global body.sidebar-collapsed rules above, which win here on width, so "Collapse Menu"
-               behaves exactly as on desktop — only the slide-in/out is added for mobile. */
+            /* The sidebar is an off-canvas drawer at phone width, in BOTH its full and its collapsed
+               (icon-only) state. It leaves part of the page showing, so it reads as a drawer and
+               the backdrop is easy to tap. The collapsed width + icon-only styling come from the
+               global body.sidebar-collapsed rules below it, so "Collapse Menu" behaves as on
+               desktop — only the slide-in/out is added for mobile. */
             #adminmenuwrap {
-                width: 240px !important; overflow-x: hidden !important;
+                width: min(200px, 68vw) !important; overflow-x: hidden !important;
                 transform: translateX(-100%); transition: transform .2s ease, width .2s ease; z-index: 999;
+                -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
             }
+            body.sidebar-collapsed #adminmenuwrap { width: 48px !important; }
+            /* Rows a finger can hit, and a long title that wraps instead of being cut off. */
+            #adminmenuwrap .sidebar-item-link { padding-top: 10px; padding-bottom: 10px; }
+            #adminmenuwrap .sidebar-item-link > span { line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+            /* The icon only: a margin on the active item's arrow would pull it in from the edge. */
+            #adminmenuwrap .sidebar-item-link > div:not(.absolute) { margin-right: 10px; flex-shrink: 0; }
+            /* On a phone the bar keeps its icons: the words beside them would run into each other. */
+            .admin-bar-site-label { display: none; }
+            #adminmenuwrap .bg-\[\#2c3338\] ul a { padding-top: 9px; padding-bottom: 9px; }
+            /* A tap goes straight to the section, so a hover menu has nothing to add, and at this
+               width it would run off the screen. */
+            .sidebar-flyout { display: none !important; }
             body.sidebar-mobile-open #adminmenuwrap { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,.45); }
             body.sidebar-mobile-open #sidebar-backdrop { display: block; }
             #mobile-menu-toggle { display: inline-flex !important; }
@@ -144,12 +158,20 @@
                 </a>
                 <a href="/" target="_blank" class="hover:text-[#72aee6] transition px-2 flex items-center space-x-1 whitespace-nowrap">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                    <span>CMS Site</span>
+                    <span class="admin-bar-site-label">CMS Site</span>
                 </a>
             @endif
         </div>
         <div class="flex items-center space-x-4 pr-1 text-sm relative group min-w-0" x-data="{ open: false }">
             {!! do_falcon_action('falcon_admin_bar_right_before') !!}
+            @php $__pendingReviews = \FalconCms\Core\Support\Editorial::ready() && \FalconCms\Core\Support\Editorial::canPublish() ? \FalconCms\Core\Support\Editorial::pendingCount() : 0; @endphp
+            @if($__pendingReviews > 0)
+                <a href="{{ route('admin.posts.review-queue') }}" title="{{ $__pendingReviews }} waiting for review" class="flex items-center gap-1 text-[#c3c4c7] hover:text-[#72aee6] transition whitespace-nowrap flex-shrink-0">
+                    <span class="material-symbols-outlined" style="font-size:18px !important;">rate_review</span>
+                    <span class="hidden sm:inline text-[13px]">Review</span>
+                    <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center leading-none">{{ $__pendingReviews }}</span>
+                </a>
+            @endif
             <button @click="open = !open" class="flex items-center space-x-2 text-[#c3c4c7] group-hover:text-[#72aee6] transition py-1 px-2 focus:outline-none">
                 {{-- One line on a phone: "Howdy," is left out there and a long name is cut short. --}}
                 <span class="flex items-center whitespace-nowrap min-w-0"><span class="hidden sm:inline">Howdy,&nbsp;</span><span class="font-semibold truncate max-w-[120px] sm:max-w-none">{{ auth()->user()->username ?? auth()->user()->name ?? 'Admin' }}</span></span>

@@ -325,7 +325,7 @@ class CodeBlockTest extends TestCase
         // What TinyMCE hands back: the text around the <pre> in paragraphs, the newline
         // after the second line typed as <br>, one indent space as a no-break space.
         $edited = str_replace(
-            ['[falcon_code_block ', '<pre>', '</pre>', "falcon:install\n", "        return"],
+            ['[falcon_code_block ', '<pre>', '</pre>', "falcon:install\n", '        return'],
             ['<p>[falcon_code_block ', '</p><pre>', '</pre><p>', 'falcon:install<br>', "       \u{00A0}return"],
             $shortcode
         );

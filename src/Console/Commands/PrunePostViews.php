@@ -2,6 +2,8 @@
 
 namespace FalconCms\Core\Console\Commands;
 
+use FalconCms\Core\Support\PageTime;
+use FalconCms\Core\Support\PostLock;
 use FalconCms\Core\Support\PostViews;
 use Illuminate\Console\Command;
 
@@ -15,6 +17,8 @@ class PrunePostViews extends Command
     public function handle(): int
     {
         $this->info('Removed '.PostViews::prune().' old daily view rows.');
+        $this->info('Removed '.PageTime::prune().' old daily time rows.');
+        $this->info('Removed '.PostLock::prune().' abandoned edit locks.');
 
         return self::SUCCESS;
     }

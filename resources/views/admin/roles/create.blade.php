@@ -57,6 +57,9 @@
                                                             class="parent-checkbox w-4 h-4 rounded border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1] mr-3">
                                                         <span class="text-[14px] font-semibold text-[#1d2327] group-hover:text-[#2271b1]">{{ $item['title'] }}</span>
                                                     </label>
+                                                    @if(!empty($item['description']))
+                                                        <p class="ml-7 text-[12px] leading-normal text-[#646970]">{{ $item['description'] }}</p>
+                                                    @endif
 
                                                     @if(!empty($item['children']))
                                                         <div class="ml-7 space-y-2 border-l border-[#dcdcde] pl-4">

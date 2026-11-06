@@ -8,7 +8,10 @@ use FalconCms\Core\Models\Page;
 use FalconCms\Core\Models\Redirect;
 use FalconCms\Core\Models\Revision;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use FalconCms\Core\Support\Editorial;
 use FalconCms\Core\Support\MenuAccess;
+use FalconCms\Core\Support\PostChanges;
+use FalconCms\Core\Support\PostLock;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +74,12 @@ class PageController extends Controller
         if (!$this->userCanWritePages()) {
             abort(403, "You do not have permission to {$verb} pages.");
         }
+
+        // An edit by someone who cannot publish waits for review (PostChanges). Everything else
+        // about a live page stays with those who can publish.
+        if ($page && !in_array($verb, ['edit', 'preview'], true) && !Editorial::canChange($page)) {
+            abort(403, 'This page is live. Only someone who can publish may do this.');
+        }
     }
 
     public function index(Request $request)
@@ -126,12 +135,13 @@ class PageController extends Controller
         $publishedCount = (clone $countQuery)->where('status', 'published')->count();
         $draftCount = (clone $countQuery)->where('status', 'draft')->count();
         $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
+        $pendingCount = (clone $countQuery)->where('status', 'pending')->count();
         $trashCount = (clone $countQuery)->onlyTrashed()->count();
 
         // Without Add New the list is read-only: the view hides every control that changes something.
         $canWrite = $this->userCanWritePages();
 
-        return view('falcon-cms::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount', 'canWrite'));
+        return view('falcon-cms::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'pendingCount', 'trashCount', 'canWrite'));
     }
 
     public function create()
@@ -159,7 +169,7 @@ class PageController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
-            'status' => 'required|in:draft,published,scheduled',
+            'status' => 'required|in:draft,pending,published,scheduled',
             'parent_id' => 'nullable|exists:posts,id',
             'menu_order' => 'nullable|integer',
             'template' => 'nullable|string',
@@ -255,6 +265,11 @@ class PageController extends Controller
     {
         $this->authorizePageWrite($page, 'edit');
 
+        // Somebody who cannot publish carries on from their own waiting edits.
+        if (PostChanges::proposing($page)) {
+            PostChanges::overlay($page);
+        }
+
         $allPages = Page::where('id', '!=', $page->id)->orderBy('title')->get();
 
         // Fetch applicable custom field groups for pages
@@ -334,6 +349,7 @@ class PageController extends Controller
     {
         $page = Page::findOrFail($id);
         $this->authorizePageWrite($page, 'edit');
+        PostLock::guard($page);
         $draft = clone $page;
         $draft->title = $request->input('title', $page->title);
         $draft->content = $request->input('content', $page->content);
@@ -347,8 +363,14 @@ class PageController extends Controller
     {
         $page = Page::findOrFail($id);
         $this->authorizePageWrite($page, 'edit');
+        PostLock::guard($page);
         $rev = Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->findOrFail($revisionId);
+        if (PostChanges::proposing($page)) {
+            PostChanges::save($page, ['title' => $rev->title ?: $page->title, 'content' => $rev->content]);
+
+            return redirect()->route('admin.pages.edit', $page)->with('success', 'Sent for review. Readers still see the current version.');
+        }
         Revision::snapshot($page, 'revision');
         $page->update(['title' => $rev->title ?: $page->title, 'content' => $rev->content]);
         Revision::clearAutosave($page);
@@ -361,7 +383,7 @@ class PageController extends Controller
     public function deleteRevision(Request $request, $id, $revisionId)
     {
         $page = Page::findOrFail($id);
-        $this->authorizePageWrite($page, 'edit');
+        $this->authorizePageWrite($page, 'delete revisions of');
         Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->where('id', $revisionId)->delete();
 
@@ -372,7 +394,7 @@ class PageController extends Controller
     public function clearRevisions(Request $request, $id)
     {
         $page = Page::findOrFail($id);
-        $this->authorizePageWrite($page, 'edit');
+        $this->authorizePageWrite($page, 'delete revisions of');
         Revision::where('revisionable_type', $page->getMorphClass())
             ->where('revisionable_id', $page->getKey())->delete();
 
@@ -381,12 +403,22 @@ class PageController extends Controller
 
     public function update(Request $request, Page $page)
     {
-        $this->authorizePageWrite($page, 'update');
+        $this->authorizePageWrite($page, 'edit');
+        PostLock::guard($page);
+
+        // Without the right to publish, an edit to a live page waits for review.
+        if (PostChanges::proposing($page)) {
+            $change = PostChanges::save($page, PostChanges::fromRequest($request, $page), (string) $request->input('status'));
+
+            return back()->with('success', !$change
+                ? 'This matches the live version, so there is nothing to review.'
+                : ($change->status === 'pending' ? 'Your changes were sent for review. Readers still see the current version.' : 'Your changes were saved. They are not live and not yet sent for review.'));
+        }
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
-            'status' => 'required|in:draft,published,scheduled',
+            'status' => 'required|in:draft,pending,published,scheduled',
             'parent_id' => 'nullable|exists:posts,id',
             'menu_order' => 'nullable|integer',
             'template' => 'nullable|string',
@@ -508,6 +540,7 @@ class PageController extends Controller
     public function destroy(Page $page)
     {
         $this->authorizePageWrite($page, 'delete');
+        PostLock::guard($page);
 
         $title = $page->title;
         $page->delete();
@@ -547,10 +580,15 @@ class PageController extends Controller
             return back()->with('error', 'Please select an action and at least one item.');
         }
 
-        // Changing pages takes Add New; the ids are re-read so only real pages are touched.
+        // Changing pages takes Add New; the ids are re-read so only real pages are touched. What
+        // somebody else has open, and what only a publisher may change, drop out of the selection.
+        $locks = PostLock::holders(array_map('intval', (array) $request->input('post_ids')), auth()->id());
         $ids = Page::withTrashed()
             ->whereIn('id', (array) $request->input('post_ids'))
             ->get()
+            ->filter(fn (Page $page) => Editorial::canChange($page)
+                && ($action !== 'published' || Editorial::canPublish())
+                && !isset($locks[$page->id]))
             ->pluck('id')
             ->all();
 

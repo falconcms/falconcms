@@ -233,7 +233,8 @@ class PostActionGuardTest extends TestCase
         // posts, sent a selection holding one of each, trashes the page and leaves the post.
         $role = Role::create(['name' => 'Page Editor', 'slug' => 'page-editor']);
         $permission = Permission::firstOrCreate(['slug' => 'manage_pages'], ['name' => 'Manage Pages']);
-        $role->permissions()->syncWithoutDetaching([$permission->id]);
+        $publish = Permission::firstOrCreate(['slug' => 'publish_content'], ['name' => 'Publish']);
+        $role->permissions()->syncWithoutDetaching([$permission->id, $publish->id]);
 
         $editor = $this->makeUser(['role_id' => $role->id]);
 

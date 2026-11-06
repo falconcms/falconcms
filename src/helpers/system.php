@@ -7,6 +7,7 @@
  */
 
 use Composer\InstalledVersions;
+use FalconCms\Core\Models\Post;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -244,7 +245,7 @@ if (!function_exists('falcon_forget_post_page_cache')) {
     function falcon_forget_post_page_cache($postId): void
     {
         try {
-            $post = \FalconCms\Core\Models\Post::find($postId);
+            $post = Post::find($postId);
             if (!$post || !function_exists('get_falcon_permalink')) {
                 return;
             }
@@ -260,10 +261,10 @@ if (!function_exists('falcon_forget_post_page_cache')) {
             foreach ($roots as $root) {
                 $bare = $root.($path === '/' ? '' : $path);
                 foreach ([$bare, $bare.'/'] as $u) {
-                    \Illuminate\Support\Facades\Cache::forget('page_cache_'.md5($u));
+                    Cache::forget('page_cache_'.md5($u));
                 }
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // A cache that cannot be reached must never break a comment.
         }
     }

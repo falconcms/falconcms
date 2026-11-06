@@ -6,6 +6,7 @@ use FalconCms\Core\Models\Menu;
 use FalconCms\Core\Models\Permission;
 use FalconCms\Core\Models\Role;
 use FalconCms\Core\Support\AdminMenu;
+use FalconCms\Core\Support\Editorial;
 use FalconCms\Core\View\Components\Admin\Sidebar;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -186,6 +187,14 @@ class RoleController extends Controller
                 $dynamicPermissions[$groupName][] = $item;
             }
         }
+
+        // 2a. Publishing is not a menu: it is what separates writing a section from taking it live.
+        $dynamicPermissions['Publishing'][] = [
+            'title' => 'Publish without review',
+            'description' => 'Ticked: this role publishes directly and approves the work of others. Not ticked: everything it writes or edits goes live only after someone approves it.',
+            'slug' => Editorial::PERMISSION,
+            'children' => [],
+        ];
 
         // 2b. Menus a plugin or theme registered in code (falcon_add_menu_page).
         //

@@ -7,6 +7,8 @@ use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\NavigationMenu;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Models\Tag;
+use FalconCms\Core\Support\Editorial;
+use FalconCms\Core\Support\PostChanges;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -284,6 +286,17 @@ class CmsApiController extends Controller
             'slug' => 'sometimes|nullable|string|max:255|unique:posts,slug,'.$post->id,
         ]);
 
+        // Without the right to publish, an edit to something live waits for review like any other.
+        if (PostChanges::proposing($post, $request->user())) {
+            $change = PostChanges::save($post, array_intersect_key($v, array_flip(['title', 'content', 'excerpt'])));
+
+            return response()->json([
+                'success' => true,
+                'pending_review' => (bool) $change,
+                'data' => (new PostResource($post->fresh()->load(['user', 'categories', 'tags'])))->resolve(),
+            ], $change ? 202 : 200);
+        }
+
         $post->update(array_filter($v, fn ($val, $k) => $request->has($k), ARRAY_FILTER_USE_BOTH));
 
         return response()->json([
@@ -298,6 +311,9 @@ class CmsApiController extends Controller
         $post = Post::findOrFail($id);
         if (!$this->canWrite($request->user(), $post->type)) {
             return response()->json(['success' => false, 'message' => 'You do not have permission to delete this item.'], 403);
+        }
+        if (!Editorial::canChange($post, $request->user())) {
+            return response()->json(['success' => false, 'message' => 'This is live. Only someone who can publish may delete it.'], 403);
         }
 
         $post->delete();

@@ -24,7 +24,7 @@ trait RemovesFalconData
             'posts', 'post_types', 'categories', 'tags',
             'navigation_menu_items', 'navigation_menus', 'menus', 'widgets', 'media', 'comments',
             'cms_analytics', 'cms_form_submissions', 'cms_forms', 'cms_languages', 'cms_redirects',
-            'cms_revisions', 'cms_settings',
+            'cms_revisions', 'cms_settings', 'cms_post_locks', 'cms_post_reviews', 'cms_post_changes', 'cms_page_time_days',
             'role_permission', 'role_user', 'permissions', 'roles',
             'activity_logs', 'api_tokens', 'magic_login_tokens', 'blocked_ips',
         ];

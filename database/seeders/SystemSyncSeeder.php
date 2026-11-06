@@ -33,6 +33,7 @@ class SystemSyncSeeder extends Seeder
             ['name' => 'Manage Tools',      'slug' => 'manage_tools'],
             ['name' => 'Manage SEO',        'slug' => 'manage_seo'],
             ['name' => 'Manage Plugins',    'slug' => 'manage_plugins'],
+            ['name' => 'Publish & Review Content', 'slug' => 'publish_content'],
         ];
 
         foreach ($permissions as $p) {
@@ -43,9 +44,9 @@ class SystemSyncSeeder extends Seeder
         $roles = [
             ['name' => 'Super Admin', 'slug' => 'super-admin', 'description' => 'Unrestricted access to all system features.'],
             ['name' => 'Administrator', 'slug' => 'administrator', 'description' => 'Full access to all settings and content.'],
-            ['name' => 'Editor', 'slug' => 'editor', 'description' => 'Can publish and manage posts.'],
-            ['name' => 'Author', 'slug' => 'author', 'description' => 'Can publish and manage their own posts.'],
-            ['name' => 'Contributor', 'slug' => 'contributor', 'description' => 'Can write and manage their own posts but cannot publish them.'],
+            ['name' => 'Editor', 'slug' => 'editor', 'description' => 'Can publish and manage posts, and review the work of others.'],
+            ['name' => 'Author', 'slug' => 'author', 'description' => 'Can write and publish posts.'],
+            ['name' => 'Contributor', 'slug' => 'contributor', 'description' => 'Can write posts and send them for review, but cannot publish them.'],
             ['name' => 'Subscriber', 'slug' => 'subscriber', 'description' => 'Can only manage their profile.'],
             ['name' => 'User', 'slug' => 'user', 'description' => 'Standard user with content management access.'],
             ['name' => 'Customer', 'slug' => 'customer', 'description' => 'Customer who registered via store checkout or account.'],
@@ -102,9 +103,9 @@ class SystemSyncSeeder extends Seeder
         $roleAssignments = [
             'super-admin' => 'all',
             'administrator' => 'all',
-            'editor' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments', 'manage_analytics'],
-            'author' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments'],
-            'contributor' => ['access_dashboard', 'manage_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments'],
+            'editor' => ['publish_content', 'access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments', 'manage_analytics'],
+            'author' => ['publish_content', 'access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments'],
+            'contributor' => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'manage_media', 'access_library_media', 'access_add_new_media', 'access_comments'],
             // Dashboard and its Overview, and nothing else. A subscriber was given
             // manage_users, which put a Users entry in their sidebar that led to a 403 —
             // the menu said they could manage users and every page behind it disagreed.
@@ -114,6 +115,7 @@ class SystemSyncSeeder extends Seeder
             // drew them a Users menu that answered 403.
             'customer' => ['access_dashboard', 'access_overview_dashboard'],
             'user' => [
+                'publish_content',
                 'access_dashboard',
                 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts',
                 'manage_pages', 'access_all_pages_pages', 'access_add_new_pages',

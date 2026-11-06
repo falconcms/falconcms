@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Http\Controllers\Admin;
 
+use FalconCms\Core\Http\Controllers\FrontendController;
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\CustomTaxonomy;
 use FalconCms\Core\Models\FieldGroup;
@@ -16,7 +17,10 @@ use FalconCms\Core\Models\Revision;
 use FalconCms\Core\Models\Tag;
 use FalconCms\Core\Models\TaxonomyTerm;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use FalconCms\Core\Support\Editorial;
 use FalconCms\Core\Support\MenuAccess;
+use FalconCms\Core\Support\PostChanges;
+use FalconCms\Core\Support\PostLock;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +37,10 @@ class PostController extends Controller
         // save, autosave and revision routes skipped it, so anyone allowed into the builder
         // could overwrite any page, post or layout by id.
         $this->authorizePostAction($post, 'edit');
+        // Somebody who cannot publish carries on from their own waiting edits, not the live layout.
+        if (PostChanges::proposing($post)) {
+            PostChanges::overlay($post);
+        }
         $customElements = apply_falcon_filters('falcon_builder_elements', []);
 
         $bodyRaw = get_cms_option('theme_typography_body');
@@ -242,6 +250,15 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $this->authorizePostAction($post, 'edit');
+        PostLock::guard($post);
+
+        if (PostChanges::proposing($post)) {
+            $change = PostChanges::save($post, ['content' => json_encode($request->input('layout')), 'editor_type' => 'builder']);
+
+            return response()->json(['success' => true, 'message' => $change
+                ? 'Your changes were sent for review. Readers still see the current version.'
+                : 'This matches the live version, so there is nothing to review.']);
+        }
 
         // Snapshot the PRIOR state BEFORE overwriting, so restoring the latest revision
         // brings back the version from before this save (true undo).
@@ -265,6 +282,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $this->authorizePostAction($post, 'edit');
+        PostLock::guard($post);
 
         // Build a transient clone-like model carrying the in-progress content (do not persist to post).
         $draft = clone $post;
@@ -307,9 +325,18 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $this->authorizePostAction($post, 'edit');
+        PostLock::guard($post);
         $rev = Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->findOrFail($revisionId);
+
+        // Restoring is an edit like any other: without the right to publish, it goes to review.
+        if (PostChanges::proposing($post)) {
+            PostChanges::save($post, ['content' => $rev->content, 'editor_type' => 'builder']);
+            $layout = json_decode($rev->content, true);
+
+            return response()->json(['success' => true, 'layout' => is_array($layout) ? $layout : [], 'message' => 'Sent for review. Readers still see the current version.']);
+        }
 
         // Preserve the current state as a revision before overwriting.
         Revision::snapshot($post, 'revision');
@@ -328,7 +355,7 @@ class PostController extends Controller
     public function deleteRevisionBuilder($id, $revisionId)
     {
         $post = Post::findOrFail($id);
-        $this->authorizePostAction($post, 'edit');
+        $this->authorizePostAction($post, 'delete revisions of');
         Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->where('id', $revisionId)
@@ -342,6 +369,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $this->authorizePostAction($post, 'edit');
+        PostLock::guard($post);
 
         $draft = clone $post;
         $draft->title = $request->input('title', $post->title);
@@ -360,10 +388,17 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $this->authorizePostAction($post, 'edit');
+        PostLock::guard($post);
 
         $rev = Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
             ->findOrFail($revisionId);
+
+        if (PostChanges::proposing($post)) {
+            PostChanges::save($post, ['title' => $rev->title ?: $post->title, 'content' => $rev->content]);
+
+            return redirect()->route('admin.posts.edit', $post)->with('success', 'Sent for review. Readers still see the current version.');
+        }
 
         Revision::snapshot($post, 'revision'); // preserve current first
         $post->update([
@@ -380,7 +415,7 @@ class PostController extends Controller
     public function deleteRevision(Request $request, $id, $revisionId)
     {
         $post = Post::findOrFail($id);
-        $this->authorizePostAction($post, 'edit');
+        $this->authorizePostAction($post, 'delete revisions of');
 
         Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
@@ -394,7 +429,7 @@ class PostController extends Controller
     public function clearRevisions(Request $request, $id)
     {
         $post = Post::findOrFail($id);
-        $this->authorizePostAction($post, 'edit');
+        $this->authorizePostAction($post, 'delete revisions of');
 
         Revision::where('revisionable_type', $post->getMorphClass())
             ->where('revisionable_id', $post->getKey())
@@ -406,7 +441,8 @@ class PostController extends Controller
     public function ajaxSaveVariations(Request $request, $id)
     {
         $post = Post::findOrFail($id);
-        $this->authorizePostAction($post, 'edit');
+        $this->authorizePostAction($post, 'update');
+        PostLock::guard($post);
         $request->validate([
             'variations' => 'nullable|array',
             'variations.*.price' => 'required|numeric|min:0',
@@ -476,12 +512,12 @@ class PostController extends Controller
     public function previewBuilder($id)
     {
         $post = Post::findOrFail($id);
-        $this->authorizePostAction($post, 'edit');
+        $this->authorizePostAction($post, 'preview');
 
         // The page as visitors will see it, through the theme — a draft included. The old
         // preview view printed the builder JSON, so a draft could not be looked at without
         // publishing it.
-        return app(\FalconCms\Core\Http\Controllers\FrontendController::class)->preview($post);
+        return app(FrontendController::class)->preview($post);
     }
 
     public function __construct()
@@ -603,6 +639,13 @@ class PostController extends Controller
         if (!$this->userCanWriteType($post->type)) {
             abort(403, "You do not have permission to {$verb} ".Str::plural($post->type).'.');
         }
+
+        // Copying or looking at something live changes nothing that readers see, and an edit by
+        // someone who cannot publish waits for review (PostChanges). Everything else, like
+        // deleting it or changing its price, stays with those who can publish.
+        if (!in_array($verb, ['duplicate', 'preview', 'edit'], true) && !Editorial::canChange($post)) {
+            abort(403, 'This is live. Only someone who can publish may do this.');
+        }
     }
 
     /**
@@ -720,6 +763,7 @@ class PostController extends Controller
         $publishedCount = (clone $countQuery)->where('status', 'published')->count();
         $draftCount = (clone $countQuery)->where('status', 'draft')->count();
         $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
+        $pendingCount = (clone $countQuery)->where('status', 'pending')->count();
         $trashCount = (clone $countQuery)->onlyTrashed()->count();
 
         $postType = PostType::where('slug', $type)->first();
@@ -733,7 +777,7 @@ class PostController extends Controller
         // Without Add New the list is read-only: the view hides every control that changes something.
         $canWrite = $this->userCanWriteType($type);
 
-        return view('falcon-cms::admin.posts.index', compact('posts', 'type', 'categories', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount', 'postType', 'assignedTaxonomies', 'overriddenTaxonomies', 'canWrite'));
+        return view('falcon-cms::admin.posts.index', compact('posts', 'type', 'categories', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'pendingCount', 'trashCount', 'postType', 'assignedTaxonomies', 'overriddenTaxonomies', 'canWrite'));
     }
 
     /**
@@ -889,7 +933,7 @@ class PostController extends Controller
             'content' => 'nullable|string',
             'excerpt' => 'nullable|string',
             'type' => 'required|string',
-            'status' => 'required|string|in:draft,published,scheduled',
+            'status' => 'required|string|in:draft,pending,published,scheduled',
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
             'parent_id' => 'nullable|exists:posts,id',
@@ -1261,6 +1305,9 @@ class PostController extends Controller
     {
         $this->authorizePostAction($post, 'edit');
 
+        // Somebody who cannot publish carries on from their own waiting edits.
+        $proposedChange = PostChanges::proposing($post) ? PostChanges::overlay($post) : null;
+
         $locale = request('locale');
         if ($locale && $locale !== app()->getLocale()) {
             $translation = $post->translations()->where('locale', $locale)->first();
@@ -1310,7 +1357,9 @@ class PostController extends Controller
                 $tax->terms = TaxonomyTerm::where('taxonomy_slug', $tax->slug)
                     ->where('cpt_slug', $type)
                     ->get();
-                $tax->selected_ids = $post->taxonomyTerms()->where('taxonomy_slug', $tax->slug)->pluck('taxonomy_terms.id')->toArray();
+                $tax->selected_ids = isset($proposedChange->data['tax_terms'])
+                    ? array_values(array_intersect($tax->terms->pluck('id')->all(), $proposedChange->data['tax_terms']))
+                    : $post->taxonomyTerms()->where('taxonomy_slug', $tax->slug)->pluck('taxonomy_terms.id')->toArray();
                 $assignedTaxonomies[] = $tax;
             }
         }
@@ -1409,7 +1458,17 @@ class PostController extends Controller
     public function update(Request $request, Post $post)
     {
         $type = $post->type;
-        $this->authorizePostAction($post, 'update');
+        $this->authorizePostAction($post, 'edit');
+        PostLock::guard($post);
+
+        // Without the right to publish, an edit to something live waits for review.
+        if (PostChanges::proposing($post)) {
+            $change = PostChanges::save($post, PostChanges::fromRequest($request, $post), (string) $request->input('status'));
+
+            return redirect()->back()->with('success', !$change
+                ? 'This matches the live version, so there is nothing to review.'
+                : ($change->status === 'pending' ? 'Your changes were sent for review. Readers still see the current version.' : 'Your changes were saved. They are not live and not yet sent for review.'));
+        }
 
         $this->validateCustomFields($request);
 
@@ -1421,7 +1480,7 @@ class PostController extends Controller
             'content' => 'nullable|string',
             'excerpt' => 'nullable|string',
             'type' => 'required|string',
-            'status' => 'required|string|in:draft,published,scheduled',
+            'status' => 'required|string|in:draft,pending,published,scheduled',
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
             'parent_id' => 'nullable|exists:posts,id',
@@ -1799,6 +1858,7 @@ class PostController extends Controller
     public function destroy(Post $post)
     {
         $this->authorizePostAction($post, 'delete');
+        PostLock::guard($post);
 
         $type = $post->type;
         $title = $post->title;
@@ -1855,10 +1915,15 @@ class PostController extends Controller
         // otherwise reach content the user cannot open one at a time. Anything they are
         // not allowed to touch is dropped from the selection rather than failing the whole
         // batch, so a legitimate bulk action over a mixed list still does its job.
+        // What somebody else has open, and what only a publisher may change, drop out the same way.
+        $locks = PostLock::holders(array_map('intval', (array) $ids), auth()->id());
         $ids = Post::withTrashed()
             ->whereIn('id', (array) $ids)
             ->get()
-            ->filter(fn (Post $post) => $this->userCanWriteType($post->type))
+            ->filter(fn (Post $post) => $this->userCanWriteType($post->type)
+                && Editorial::canChange($post)
+                && ($action !== 'published' || Editorial::exempt($post->type) || Editorial::canPublish())
+                && !isset($locks[$post->id]))
             ->pluck('id')
             ->all();
 

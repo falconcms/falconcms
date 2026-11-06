@@ -33,7 +33,7 @@ class WordPressImporter
         'publish' => 'published',
         'future' => 'scheduled',
         'draft' => 'draft',
-        'pending' => 'draft',
+        'pending' => 'pending',
         'private' => 'draft',
     ];
 

@@ -29,7 +29,7 @@
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'scheduled']) }}" class="{{ request('status') == 'scheduled' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Scheduled <span class="text-[#646970]">({{ $scheduledCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
-            <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'draft']) }}" class="{{ request('status') == 'draft' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Draft <span class="text-[#646970]">({{ $draftCount }})</span></a>
+            <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'pending']) }}" class="{{ request('status') == 'pending' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Pending Review <span class="text-[#646970]">({{ $pendingCount ?? 0 }})</span></a> <span class="mx-1 text-[#c3c4c7]">|</span> <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'draft']) }}" class="{{ request('status') == 'draft' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Draft <span class="text-[#646970]">({{ $draftCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'trash']) }}" class="{{ request('status') == 'trash' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Trash <span class="text-[#646970]">({{ $trashCount }})</span></a>
         </div>
@@ -63,7 +63,7 @@
                         <option value="delete">Delete Permanently</option>
                     @else
                         <option value="draft">Move to Draft</option>
-                        <option value="published">Publish</option>
+                        @if(\FalconCms\Core\Support\Editorial::canPublish())<option value="published">Publish</option>@endif
                         <option value="trash">Move to Trash</option>
                     @endif
                 </select>
@@ -146,17 +146,17 @@
             @forelse($posts as $idx => $post)
                 @php
                     // Read-only rows (no Add New) link to the post itself.
-                    $rowCanChange = $canWrite ?? true;
+                    $rowCanChange = ($canWrite ?? true) && \FalconCms\Core\Support\Editorial::canChange($post); $rowLocks ??= \FalconCms\Core\Support\PostLock::holders($posts->pluck('id')->all(), auth()->id()); $rowChanges ??= \FalconCms\Core\Support\PostChanges::forPosts($posts->pluck('id')->all()); $rowIsLive = $post->status === 'published';
                     $isViewable = !isset($postType) || $postType->is_public;
-                    $titleUrl = $post->trashed() ? '#' : ($rowCanChange ? route('admin.posts.edit', $post) : ($isViewable ? get_falcon_permalink($post) : '#'));
+                    $titleUrl = $post->trashed() ? '#' : (($canWrite ?? true) ? route('admin.posts.edit', $post) : ($isViewable ? get_falcon_permalink($post) : '#'));
                 @endphp
                 <tr class="{{ $idx % 2 === 0 ? 'bg-[#f6f7f7]' : 'bg-[#fff]' }} group">
                     <td class="wp-table-cell text-center">@if($rowCanChange)<input type="checkbox" name="post_ids[]" value="{{ $post->id }}" class="cb-select-item rounded-sm border-[#8c8f94] text-[#2271b1]">@endif</td>
                     <td class="wp-table-cell align-top text-[14px] text-left">
                         <strong>
-                            <a href="{{ $titleUrl }}" @if(!$rowCanChange && $titleUrl !== '#') target="_blank" @endif class="text-[#2271b1] hover:text-[#135e96]">{{ $post->title }}</a>
+                            <a href="{{ $titleUrl }}" @if(!($canWrite ?? true) && $titleUrl !== '#') target="_blank" @endif class="text-[#2271b1] hover:text-[#135e96]">{{ $post->title }}</a> @isset($rowChanges[$post->id]) <a href="{{ route('admin.posts.changes', $post->id) }}" class="font-normal text-[#996800] hover:underline"> — {{ $rowChanges[$post->id]->status === 'pending' ? 'Changes waiting for review' : 'Unsent changes' }}</a> @endisset
                             @if($post->status === 'draft' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif 
-                            @if($post->status === 'scheduled' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif
+                            @if($post->status === 'scheduled' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif @if($post->status === 'pending' && !$post->trashed()) <span class="font-normal text-[#996800]"> — Pending Review</span> @endif @isset($rowLocks[$post->id]) <span class="font-normal text-[#b32d2e]"> — {{ $rowLocks[$post->id]['name'] }} is editing</span> @endisset
                             @if(is_falcon_homepage($post)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
                             @if($post->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif
                         </strong>
@@ -173,10 +173,17 @@
                                 <button type="button" onclick="moveToTrash({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button>
                                 <span class="text-[#c3c4c7]">|</span>
                                 <button type="submit" form="clone-form-{{ $post->id }}" class="text-[#2271b1] hover:underline cursor-pointer">Clone</button>
+                                @elseif($canWrite ?? true)
+                                <a href="{{ route('admin.posts.edit', $post) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
+                                <button type="submit" form="clone-form-{{ $post->id }}" class="text-[#2271b1] hover:underline cursor-pointer">Clone</button>
                                 @endif
                                 @if($isViewable)
-                                @if($rowCanChange)<span class="text-[#c3c4c7]">|</span>@endif
+                                @if($canWrite ?? true)<span class="text-[#c3c4c7]">|</span>@endif
+                                @if(!$rowIsLive && ($canWrite ?? true))
+                                <a href="{{ route('admin.falcon-builder.preview', $post->id) }}" target="_blank" class="text-[#2271b1] hover:underline">Preview</a>
+                                @else
                                 <a href="{{ get_falcon_permalink($post) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
+                                @endif
                                 @endif
                             @endif
                         </div>
@@ -327,7 +334,7 @@
                     <option value="delete">Delete Permanently</option>
                 @else
                     <option value="draft">Move to Draft</option>
-                    <option value="published">Publish</option>
+                    @if(\FalconCms\Core\Support\Editorial::canPublish())<option value="published">Publish</option>@endif
                     <option value="trash">Move to Trash</option>
                 @endif
             </select>

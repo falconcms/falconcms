@@ -1,6 +1,7 @@
 <?php
 
 use FalconCms\Core\Http\Controllers\Api\V1\CmsApiController;
+use FalconCms\Core\Http\Controllers\PageTimeHitController;
 use FalconCms\Core\Http\Controllers\PostViewHitController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,6 +10,11 @@ use Illuminate\Support\Facades\Route;
 Route::post('falcon/post-views', PostViewHitController::class)
     ->middleware('throttle:120,1')
     ->name('falcon.post-views.hit');
+
+// The time a visitor spent on a page, sent as they leave it. The same rules as the beacon above.
+Route::post('falcon/page-time', PageTimeHitController::class)
+    ->middleware('throttle:120,1')
+    ->name('falcon.page-time.hit');
 
 Route::prefix('api/v1')->middleware(['api', 'throttle:60,1'])->group(function () {
 
