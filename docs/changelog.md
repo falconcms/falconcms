@@ -5,7 +5,40 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.9.0 <Badge type="tip" text="Latest" /> {#v2-9-0}
+## v2.9.1 <Badge type="tip" text="Latest" /> {#v2-9-1}
+
+**Released: 2026-11-06**
+
+A review step before anything goes live, locks so two people do not overwrite each other, and how
+long visitors stay on each page.
+
+### Added
+
+- **Publish without review**, a new permission on the Roles screen. A role without it sends what it
+  writes with **Submit for Review**, and a publish from a bulk action, the API or a plugin becomes
+  **Pending Review**. A role with it sees a **Review** count in the admin bar and chooses **Approve &
+  Publish** or **Request Changes**, with an optional note. Reviewers and writers are emailed at each
+  step. See [Publishing and Review](/guide/rbac#publishing-and-review).
+- **Edits to live content wait for review** for those roles, and readers keep the current version
+  until then. **Review Changes** shows each changed field, live and proposed. Only the changed fields
+  are applied, so another edit made in the meantime is kept.
+- **Edit locks.** Someone opening an item another person is editing is told who has it, on posts,
+  pages and in the builder.
+- **Time on site** on the Analytics page: average time per visit and per page, total time, Time by
+  Page, and Time Spent in Recent Visits, the Visitor Log and its CSV. See
+  [Time on site](/guide/analytics#time-on-site).
+
+### Changed
+
+- **Existing roles keep publishing.** The update gives the new permission to every role that can
+  write, except Contributor, Subscriber and Customer. A new role has it only if you tick it.
+- The Contributor role can now write posts and send them for review.
+- WordPress posts awaiting review stay Pending Review on import instead of becoming drafts.
+- The mobile admin menu is narrower, so more of the page stays in view.
+
+---
+
+## v2.9.0 {#v2-9-0}
 
 **Released: 2026-11-04**
 
