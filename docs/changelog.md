@@ -5,7 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.9.3 <Badge type="tip" text="Latest" /> {#v2-9-3}
+## v2.9.4 <Badge type="tip" text="Latest" /> {#v2-9-4}
+
+**Released: 2026-11-10**
+
+### Fixed
+
+- **Analytics:** removed the "Real visitors only" note above the figures, which printed part of
+  its own template code as text. Counting is unchanged — bots and crawlers are still left out.
+
+---
+
+## v2.9.3 {#v2-9-3}
 
 **Released: 2026-11-10**
 
