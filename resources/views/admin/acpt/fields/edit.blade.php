@@ -1,6 +1,6 @@
 <x-falcon-cms::layouts.admin pro-lock-allow-forms="1" pro-lock-feature="custom_fields">
     <x-falcon-cms::admin.delete-modal />
-    <div class="max-w-5xl mx-auto">
+    <div class="w-full">
         <div class="mb-6 flex justify-between items-center">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Edit Field Group: <span class="font-bold">{{ $fieldGroup->title }}</span></h1>
             <div class="flex gap-2">

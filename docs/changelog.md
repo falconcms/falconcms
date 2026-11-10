@@ -5,7 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.9.4 <Badge type="tip" text="Latest" /> {#v2-9-4}
+## v2.9.5 <Badge type="tip" text="Latest" /> {#v2-9-5}
+
+**Released: 2026-11-10**
+
+### Changed
+
+- **ACPT forms use the full width.** Add / Edit Post Type, Taxonomy and Field Group now fill the
+  screen, and their text boxes and dropdowns stretch across the card instead of stopping at 400px.
+
+---
+
+## v2.9.4 {#v2-9-4}
 
 **Released: 2026-11-10**
 

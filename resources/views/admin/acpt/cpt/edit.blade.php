@@ -2,7 +2,7 @@
     @php
         $advancedOpen = !empty(array_diff($postType->supports ?? [], ['title']));
     @endphp
-    <div class="max-w-[1280px] mx-auto pb-12" x-data="cptForm()">
+    <div class="w-full pb-12" x-data="cptForm()">
         <form action="{{ route('admin.acpt.cpt.update', $postType->id) }}" method="POST">
             @csrf
             @method('PUT')
@@ -18,7 +18,7 @@
                 <!-- Plural Label -->
                 <div class="grid grid-cols-[200px_1fr] items-start">
                     <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Plural Label <span class="text-[#d63638]">*</span></label>
-                    <div class="w-full max-w-[400px]">
+                    <div class="w-full">
                         <input type="text" name="plural_label" x-model="pluralLabel" required class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
                     </div>
                 </div>
@@ -26,7 +26,7 @@
                 <!-- Singular Label -->
                 <div class="grid grid-cols-[200px_1fr] items-start">
                     <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Singular Label <span class="text-[#d63638]">*</span></label>
-                    <div class="w-full max-w-[400px]">
+                    <div class="w-full">
                         <input type="text" name="singular_label" x-model="singularLabel" required class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
                     </div>
                 </div>
@@ -34,7 +34,7 @@
                 <!-- Post Type Key -->
                 <div class="grid grid-cols-[200px_1fr] items-start">
                     <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Post Type Key <span class="text-[#d63638]">*</span></label>
-                    <div class="w-full max-w-[400px]">
+                    <div class="w-full">
                         <input type="text" name="post_type_key" x-model="postTypeKey" required class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
                         <p class="text-[12px] text-[#646970] mt-1">Lower case letters, underscores and dashes only, Max 20 characters.</p>
                     </div>
@@ -109,7 +109,7 @@
                             <label class="text-[13px] font-semibold text-[#2c3338] block">Menu Position</label>
                             <p class="text-[12px] text-[#646970] mt-1">Where this post type sits in the sidebar</p>
                         </div>
-                        <div class="w-full max-w-[400px]">
+                        <div class="w-full">
                             <select name="menu_after" class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-2 rounded-[3px] text-[13px] bg-white">
                                 <option value="">Bottom of the main section</option>
                                 @foreach($menuAnchors as $anchorId => $anchorLabel)

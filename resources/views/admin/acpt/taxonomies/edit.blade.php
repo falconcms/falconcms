@@ -1,5 +1,5 @@
 <x-falcon-cms::layouts.admin title="Edit Taxonomy">
-    <div class="max-w-[1280px] mx-auto pb-12" x-data="taxonomyForm()">
+    <div class="w-full pb-12" x-data="taxonomyForm()">
         <x-falcon-cms::admin.delete-modal />
         <form action="{{ route('admin.acpt.taxonomies.update', $taxonomy->id) }}" method="POST">
             @csrf
@@ -24,7 +24,7 @@
                 <!-- Plural Label -->
                 <div class="grid grid-cols-[200px_1fr] items-start">
                     <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Plural Label <span class="text-[#d63638]">*</span></label>
-                    <div class="w-full max-w-[400px]">
+                    <div class="w-full">
                         <input type="text" name="plural_label" x-model="pluralLabel" required
                             value="{{ old('plural_label', $taxonomy->name) }}"
                             class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
@@ -34,7 +34,7 @@
                 <!-- Singular Label -->
                 <div class="grid grid-cols-[200px_1fr] items-start">
                     <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Singular Label <span class="text-[#d63638]">*</span></label>
-                    <div class="w-full max-w-[400px]">
+                    <div class="w-full">
                         <input type="text" name="singular_label" required
                             value="{{ old('singular_label', $taxonomy->singular_name) }}"
                             class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
@@ -44,7 +44,7 @@
                 <!-- Taxonomy Key -->
                 <div class="grid grid-cols-[200px_1fr] items-start">
                     <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Taxonomy Key <span class="text-[#d63638]">*</span></label>
-                    <div class="w-full max-w-[400px]">
+                    <div class="w-full">
                         <input type="text" name="taxonomy_key" x-model="taxonomyKey" required
                             value="{{ old('taxonomy_key', $taxonomy->slug) }}"
                             class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
@@ -55,7 +55,7 @@
                 <!-- Post Types (Single select) -->
                 <div class="grid grid-cols-[200px_1fr] items-start">
                     <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Post Type <span class="text-[#d63638]">*</span></label>
-                    <div class="w-full max-w-[400px]">
+                    <div class="w-full">
                         @php
                             $pts = $taxonomy->post_types;
                             $selectedPt = is_array($pts) ? reset($pts) : null;
@@ -73,7 +73,7 @@
                 <!-- Style Mode -->
                 <div class="grid grid-cols-[200px_1fr] items-start">
                     <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Style Mode</label>
-                    <div class="w-full max-w-[400px]">
+                    <div class="w-full">
                         <select name="hierarchical" class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
                             <option value="1" @selected($taxonomy->hierarchical)>Hierarchical Taxonomy (Category/Tree structure)</option>
                             <option value="0" @selected(!$taxonomy->hierarchical)>Non-Hierarchical Taxonomy (Tag structure)</option>
