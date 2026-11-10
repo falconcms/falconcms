@@ -218,11 +218,6 @@
             </div>
         </div>
 
-        <!-- Real visitors only: what was left out, so the figures can be read for what they are -->
-        <div class="flex items-start gap-2 mb-3 px-3 py-2 rounded border border-[#c5d9ed] bg-[#f0f6fc] text-[12px] text-[#1d2327]">
-            <span class="material-symbols-outlined text-[16px] text-[#2271b1]">verified_user</span>
-            <span><strong>Real visitors only.</strong> A visit counts once a browser has shown the page to a person — they scrolled, clicked or stayed on it for a few seconds. Bots, crawlers, uptime monitors, automated browsers and pages fetched ahead of a click are not counted@if(($automatedRequests ?? 0) > 0) — <strong>{{ number_format($automatedRequests) }}</strong> such {{ $automatedRequests === 1 ? 'request' : 'requests' }} in this period@endif.</span>
-        </div>
 
         <!-- KPI cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-2">

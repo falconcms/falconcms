@@ -1303,11 +1303,6 @@ class DashboardController extends Controller
         $uniqueVisitors = $visitorsSince($start);
         $totalVisits = $uniqueVisitors;
         $pageViews = Analytics::whereBetween('created_at', [$start, $end])->count();
-        // Requests no real browser confirmed in the same period (bots, scanners, prefetches):
-        // shown, not counted, so a drop in the figures can be read for what it is.
-        $automatedRequests = Analytics::hasHumanColumn()
-            ? Analytics::withoutGlobalScope('human')->where('human', false)->whereBetween('created_at', [$start, $end])->count()
-            : 0;
         $prevVisits = (int) Analytics::whereBetween('created_at', [$prevStart, $prevEnd])
             ->selectRaw("{$countVisitors} as c")->value('c');
         $visitsChange = $prevVisits > 0 ? round((($totalVisits - $prevVisits) / $prevVisits) * 100, 1) : ($totalVisits > 0 ? 100 : 0);
@@ -1508,7 +1503,7 @@ class DashboardController extends Controller
             'browsers', 'devices', 'osDist', 'topPages', 'topReferrers', 'topCountries', 'recent',
             'activeNow', 'newVisitors', 'returningVisitors', 'sessions', 'bounceRate', 'pagesPerSession', 'channels',
             'visitorsByCountry', 'trafficSources',
-            'pageTime', 'pageTimeTop', 'pageTimeType', 'pageTimeTypes', 'automatedRequests'
+            'pageTime', 'pageTimeTop', 'pageTimeType', 'pageTimeTypes'
         ) + [
             'analyticsLocked' => false,
             'isCustom' => $isCustom,
