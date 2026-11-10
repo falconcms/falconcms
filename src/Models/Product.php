@@ -10,6 +10,8 @@ class Product extends Post
 
     protected static function booted()
     {
+        parent::booted();
+
         static::addGlobalScope('product', function (Builder $builder) {
             $builder->where('type', 'product');
         });

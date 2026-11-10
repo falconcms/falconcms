@@ -19,6 +19,7 @@ use FalconCms\Core\Models\TaxonomyTerm;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -305,9 +306,10 @@ class FrontendController extends Controller
             $thirdSegment = request()->segment(3);
 
             if ($thirdSegment) {
-                // URL: /bn/post/slug
+                // URL: /bn/post/slug — or a child page, /bn/parent/child/grandchild, so the
+                // whole rest of the path is kept, not just its third segment.
                 $type = $secondSegment;
-                $postSlug = urldecode($thirdSegment);
+                $postSlug = urldecode(implode('/', array_slice(request()->segments(), 2)));
             } else {
                 // URL: /bn/slug
                 $postSlug = urldecode($secondSegment);
@@ -351,16 +353,36 @@ class FrontendController extends Controller
             }
 
             $postType = PostType::where('slug', $type)->first();
-            // A plugin-owned type (products) is unavailable while its plugin is off.
-            if (!$postType || !$postType->is_active || !$postType->is_public || !falcon_post_type_available($type)) {
-                abort(404);
-            }
+            if (!$postType) {
+                // Not a post type: a child page, /parent-page/child-page. The path has to be the
+                // page's real place in the tree; a page that has moved (or whose parent was
+                // renamed) is found by its own slug and sent to where it lives now.
+                $post = falcon_find_page_by_path($type.'/'.$postSlug, app()->getLocale());
+                if (!$post) {
+                    $moved = Post::where('type', 'page')
+                        ->where('slug', basename($postSlug))
+                        ->where('lang_code', app()->getLocale())
+                        ->where('status', 'published')
+                        ->first();
+                    if ($moved && !($homePageId && $moved->id == $homePageId)) {
+                        $query = request()->getQueryString();
 
-            $post = Post::where('type', $type)
-                ->where('slug', $postSlug)
-                ->where('lang_code', app()->getLocale())
-                ->where('status', 'published')
-                ->firstOrFail();
+                        return redirect(get_falcon_permalink($moved).($query ? '?'.$query : ''), 301);
+                    }
+                    abort(404);
+                }
+            } else {
+                // A plugin-owned type (products) is unavailable while its plugin is off.
+                if (!$postType->is_active || !$postType->is_public || !falcon_post_type_available($type)) {
+                    abort(404);
+                }
+
+                $post = Post::where('type', $type)
+                    ->where('slug', $postSlug)
+                    ->where('lang_code', app()->getLocale())
+                    ->where('status', 'published')
+                    ->firstOrFail();
+            }
         } else {
             // 1. Check if it's a CPT archive first (e.g. /dramas)
             if (!$type) {
@@ -454,7 +476,9 @@ class FrontendController extends Controller
 
         // A post reached by its bare slug (/my-post) lives at /post/my-post: the address every
         // link and its canonical use. Answering at both left Google two copies of each post.
-        if (!$type && $post->type !== 'page' && !($homePageId && $post->id == $homePageId)) {
+        // A page has one address too: a child page reached by its bare slug (/child), or any page
+        // reached through /page/slug, goes to its permalink (/parent/child).
+        if (($post->type === 'page' || !$type) && !($homePageId && $post->id == $homePageId)) {
             $permalink = get_falcon_permalink($post);
             // Paths only, relative to the install (a site in a subfolder): comparing whole URLs
             // could loop forever behind a proxy that changes the scheme.
@@ -939,7 +963,15 @@ class FrontendController extends Controller
                             $msg->to($notifyEmail)->subject($subject);
                         }
                     );
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    // The visitor's message is saved either way, so the form still succeeds — but
+                    // a notification that never left used to vanish without a trace, and the site
+                    // owner had no way to learn that mail was broken. Now it is in the log.
+                    Log::warning('Form notification email could not be sent', [
+                        'form_id' => $form->id,
+                        'to' => $notifyEmail,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
 

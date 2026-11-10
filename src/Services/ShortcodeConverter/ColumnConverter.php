@@ -87,6 +87,7 @@ final class ColumnConverter
         self::attrIf($a, 'html_tag', $s['htmlTag'] ?? null, 'div');
         self::attr($a, 'css_class', $s['cssClass'] ?? null);
         self::attr($a, 'css_id', $s['cssId'] ?? null);
+        self::attr($a, 'admin_label', self::adminLabel($s['adminLabel'] ?? null));
 
         // Colors (responsive)
         self::attrIf($a, 'bg_color', $s['bgColor'] ?? null, 'transparent');
@@ -413,6 +414,7 @@ final class ColumnConverter
             'visibility' => self::visibilityFromAttrs($a),
             'cssClass' => $a['css_class'] ?? null,
             'cssId' => $a['css_id'] ?? null,
+            'adminLabel' => $a['admin_label'] ?? null,
             'textColor' => $a['text_color'] ?? null,
             'bgColor' => $a['bg_color'] ?? 'transparent',
             'bgColorOpacity' => isset($a['bg_opacity']) ? (float) $a['bg_opacity'] : 1,

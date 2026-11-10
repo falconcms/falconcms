@@ -123,6 +123,7 @@ final class ContainerConverter
         self::attrIf($a, 'html_tag', $s['htmlTag'] ?? null, 'div');
         self::attr($a, 'menu_anchor', $s['menuAnchor'] ?? null);
         self::attr($a, 'css_class', $s['cssClass'] ?? null);
+        self::attr($a, 'admin_label', self::adminLabel($s['adminLabel'] ?? null));
         self::attr($a, 'global_id', $s['global_id'] ?? null);
         self::attr($a, 'z_index', $s['zIndex'] ?? null);
         self::respAttr($a, 'z_index', $s, 'zIndex');
@@ -286,6 +287,7 @@ final class ContainerConverter
             'visibility' => self::visibilityFromAttrs($a),
             'status' => $a['status'] ?? 'published',
             'cssClass' => $a['css_class'] ?? null,
+            'adminLabel' => $a['admin_label'] ?? null,
             'global_id' => $a['global_id'] ?? null,
             'linkColor' => $a['link_color'] ?? null,
             'linkColorOpacity' => self::num($a['link_color_opacity'] ?? null) ?? 1,

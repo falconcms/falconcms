@@ -1,7 +1,10 @@
 @php $pcMode = ($postCardMode ?? false); @endphp
 @if($pcMode)
+{{-- The open nested row's container rides above the canvas lock sheet here too: with a column
+     selected (it makes its own stacking context) the row was trapped under the sheet and
+     nothing in it — not even its Finished tick — could be clicked. --}}
 <div class="relative w-full"
-     :class="['lc-' + container.id, getVisibilityClasses(container.settings)]"
+     :class="['lc-' + container.id, getVisibilityClasses(container.settings), nestedDimContainer(ci) ? 'falcon-nested-dim' : '', nestedHostContainer(ci) ? 'falcon-nested-host' : '']"
      :style="containerStyle(container, ci)"
      @click.stop="activeCi = ci"
      @mouseenter="setHover('container', ci); container._bgHover = true"
@@ -11,6 +14,7 @@
      :class="[
         'lc-' + container.id,
         nestedDimContainer(ci) ? 'falcon-nested-dim' : '',
+        nestedHostContainer(ci) ? 'falcon-nested-host' : '',
         (!isPreview && editingCi === ci) ? 'container-active' : '',
         isDragging && dragCi === ci && !isColumnDrag ? 'dragging-no-transition' : 'transition-all',
         dragTarget === 'container-' + ci + '-null-null-null-null' && dragPosition === 'top' ? 'falcon-drop-line falcon-drop-top' : '',
@@ -70,7 +74,7 @@
 
     @if(!$pcMode)
     <!-- Container Handles -->
-    <div v-if="!isPreview" class="container-handles transition-opacity"
+    <div v-if="!isPreview && !nestedLockActive" class="container-handles transition-opacity"
          :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
         <div class="handle-top flex gap-0.5">
             <div class="handle-blue group/hpt" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateY(' + (container.settings.paddingTop || 0) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingTop', ci)">

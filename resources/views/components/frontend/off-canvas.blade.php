@@ -94,7 +94,12 @@
         $s['auto_mobile'] === '1' ? 'mobile' : null,
     ]));
     $auto = $s['trigger'] !== 'none' && OffCanvas::pageMatches($s);
+    // The schedule travels with the panel (epoch ms) because a cached copy of this page can be
+    // served after the window closes or before it opens; the script holds it shut outside it.
+    [$__from, $__until] = OffCanvas::scheduleWindow($s);
     $js = [
+        'from'    => $__from !== null ? $__from * 1000 : null,
+        'until'   => $__until !== null ? $__until * 1000 : null,
         'id'      => $item['id'],
         'lock'    => $s['lock_scroll'] === '1',
         'esc'     => $s['close_esc'] === '1',
@@ -141,9 +146,15 @@
         document.documentElement.classList.toggle('falcon-oc-locked', locked);
     }
 
+    // Inside its schedule? A panel outside it is off — no link, hash or auto rule opens it.
+    function live(c) {
+        var n = Date.now();
+        return !(c.from && n < c.from) && !(c.until && n >= c.until);
+    }
+
     function open(slug, opener) {
         var p = panel(slug);
-        if (!p || p.classList.contains('is-open')) return false;
+        if (!p || p.classList.contains('is-open') || !live(conf(p))) return false;
         p._falconOpener = opener || document.activeElement;
         p.classList.add('is-open');
         p.setAttribute('aria-hidden', 'false');
@@ -262,8 +273,24 @@
         if (stack.length) return; // never stack a popup on top of a panel the visitor opened
         if (open(slugOf(p))) markSeen(c);
     }
+    // setTimeout overflows past ~24.8 days; anything further away waits for a later page view.
+    var MAX_WAIT = 2147483647;
+    function schedule(p) {
+        var c = conf(p), n = Date.now();
+        // Open at its end: close it on the minute, as a switched-off panel would be.
+        if (c.until && c.until > n && c.until - n < MAX_WAIT) {
+            setTimeout(function () { close(p); }, c.until - n);
+        }
+        // Not started yet: arm the auto-open rule when the start comes, on this page view too.
+        if (c.from && c.from > n) {
+            if (c.from - n < MAX_WAIT) setTimeout(function () { arm(p); }, c.from - n + 50);
+            return false;
+        }
+        return live(c);
+    }
     function arm(p) {
         var c = conf(p);
+        if (!live(c)) return;
         if (!c.trigger || c.trigger === 'none') return;
         if ((c.devices || []).indexOf(device()) < 0 || seen(c)) return;
         if (c.trigger === 'load') {
@@ -287,7 +314,9 @@
 
     function init() {
         fromHash();
-        Array.prototype.forEach.call(document.querySelectorAll('.falcon-oc[data-oc]'), arm);
+        Array.prototype.forEach.call(document.querySelectorAll('.falcon-oc[data-oc]'), function (p) {
+            if (schedule(p)) arm(p);
+        });
     }
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
 

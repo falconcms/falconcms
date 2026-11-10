@@ -50,6 +50,8 @@ final class TitleElement extends Element
         self::attrI($a, 'text_stroke_color', $s['textStrokeColor'] ?? null);
         // Overflow
         self::attrI($a, 'text_overflow', $s['textOverflow'] ?? null, 'initial');
+        // Responsive Typography is on unless switched off, so only the opt-out is written.
+        self::attrI($a, 'responsive_typography', (($s['responsiveTypography'] ?? true) === false ? 'no' : null));
         // Text animation (Extra tab) — looping motion on the heading itself
         self::attrTextAnim($a, $s);
         // Link
@@ -133,6 +135,7 @@ final class TitleElement extends Element
             'textStrokeColor' => $a['text_stroke_color'] ?? null,
             // Overflow
             'textOverflow' => $a['text_overflow'] ?? null,
+            'responsiveTypography' => ($a['responsive_typography'] ?? '') !== 'no',
             // Link
             'useLink' => ($a['use_link'] ?? '') === 'yes',
             'linkUrl' => $a['link_url'] ?? null,

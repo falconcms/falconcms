@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Support;
 
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -59,7 +60,14 @@ class OffCanvas
         'auto_desktop' => '1',
         'auto_tablet' => '1',
         'auto_mobile' => '1',
+        // Schedule: "Y-m-d\TH:i" in the site timezone (Settings → General), '' = no limit.
+        // Outside the window the panel is off everywhere — links and auto-open alike.
+        'schedule_start' => '',
+        'schedule_end' => '',
     ];
+
+    /** Holds the next moment a panel's schedule starts or ends (unix seconds), '' = none. */
+    const NEXT_CHANGE_OPTION = 'falcon_off_canvas_next_change';
 
     const POSITIONS = ['left', 'right', 'top', 'bottom', 'center'];
 
@@ -90,6 +98,7 @@ class OffCanvas
     public static function store(array $items): void
     {
         update_cms_option(self::OPTION_KEY, json_encode(array_values($items)));
+        self::rememberNextChange($items);
     }
 
     public static function find(string $id): ?array
@@ -212,6 +221,9 @@ class OffCanvas
         foreach (['shadow', 'overlay', 'close_overlay', 'close_esc', 'close_button', 'lock_scroll',
             'auto_desktop', 'auto_tablet', 'auto_mobile'] as $key) {
             $s[$key] = $flag($s[$key]);
+        }
+        foreach (['schedule_start', 'schedule_end'] as $key) {
+            $s[$key] = self::scheduleValue($s[$key]);
         }
 
         // Tablet and mobile overrides ({key}_tablet, {key}_mobile — the builder's usual naming).
@@ -349,6 +361,132 @@ class OffCanvas
             .$sel.'{--oc-close-size:'.$s['close_size'].'px;}';
     }
 
+    // ── Schedule ────────────────────────────────────────────────────────────
+
+    /**
+     * A schedule time as stored: "2026-11-30T23:59" (what a datetime-local field sends), read
+     * in the site timezone. Seconds are dropped; anything that is not a real date is no limit.
+     */
+    public static function scheduleValue($value): string
+    {
+        $v = is_string($value) ? substr(trim($value), 0, 16) : '';
+        if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})T([01]\d|2[0-3]):([0-5]\d)$/', $v, $m)) {
+            return '';
+        }
+
+        return checkdate((int) $m[2], (int) $m[3], (int) $m[1]) ? $v : '';
+    }
+
+    /** A stored schedule time as a unix timestamp, or null when there is none. */
+    public static function scheduleTimestamp(string $value): ?int
+    {
+        $value = self::scheduleValue($value);
+        if ($value === '') {
+            return null;
+        }
+        try {
+            return Carbon::createFromFormat('Y-m-d\TH:i', $value, cms_timezone())->startOfMinute()->getTimestamp();
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    /** [start, end] as unix timestamps; either may be null (no limit on that side). */
+    public static function scheduleWindow(array $s): array
+    {
+        return [
+            self::scheduleTimestamp((string) ($s['schedule_start'] ?? '')),
+            self::scheduleTimestamp((string) ($s['schedule_end'] ?? '')),
+        ];
+    }
+
+    /**
+     * Where the panel is in its schedule right now.
+     *   always    no schedule set
+     *   scheduled before its start — off until then
+     *   active    inside the window
+     *   ended     its end has passed — off from then on
+     *   invalid   the end is not after the start, so there is no moment it could show
+     */
+    public static function scheduleState(array $s, ?int $now = null): string
+    {
+        [$from, $until] = self::scheduleWindow($s);
+        if ($from === null && $until === null) {
+            return 'always';
+        }
+        if ($from !== null && $until !== null && $until <= $from) {
+            return 'invalid';
+        }
+        $now ??= now()->getTimestamp();
+        if ($until !== null && $now >= $until) {
+            return 'ended';
+        }
+
+        return $from !== null && $now < $from ? 'scheduled' : 'active';
+    }
+
+    /** Is the panel off for good — past its end, or with a window that can never open? */
+    public static function scheduleOver(array $s, ?int $now = null): bool
+    {
+        return in_array(self::scheduleState($s, $now), ['ended', 'invalid'], true);
+    }
+
+    /** The next start or end of any enabled panel after $now, or null. */
+    public static function nextChange(?array $items = null, ?int $now = null): ?int
+    {
+        $now ??= now()->getTimestamp();
+        $next = null;
+        foreach ($items ?? self::all() as $item) {
+            if (!($item['enabled'] ?? true)) {
+                continue;
+            }
+            $s = self::settings($item['config']['settings'] ?? []);
+            if (self::scheduleState($s, $now) === 'invalid') {
+                continue;
+            }
+            foreach (self::scheduleWindow($s) as $at) {
+                if ($at !== null && $at > $now && ($next === null || $at < $next)) {
+                    $next = $at;
+                }
+            }
+        }
+
+        return $next;
+    }
+
+    public static function rememberNextChange(?array $items = null): void
+    {
+        try {
+            $next = self::nextChange($items);
+            if ((string) get_cms_option(self::NEXT_CHANGE_OPTION, '') !== (string) ($next ?? '')) {
+                update_cms_option(self::NEXT_CHANGE_OPTION, (string) ($next ?? ''));
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * Run after a response: once a panel's start or end has passed, the copies of pages kept by
+     * the page cache (and Cloudflare's, through the cache-cleared hook) still hold the panel as
+     * it was, so they are thrown away and the next visitor gets a page drawn with the panel's
+     * new state. The next change is stored before clearing, so this happens once per change.
+     * The browser checks the window itself as well, so a copy served in between cannot open it.
+     */
+    public static function maintainSchedule(?int $now = null): bool
+    {
+        $at = (int) get_cms_option(self::NEXT_CHANGE_OPTION, '0');
+        if ($at <= 0 || ($now ?? now()->getTimestamp()) < $at) {
+            return false;
+        }
+        update_cms_option(self::NEXT_CHANGE_OPTION, (string) (self::nextChange(null, $now) ?? ''));
+        if (function_exists('clear_page_cache')) {
+            clear_page_cache();
+        }
+
+        return true;
+    }
+
     /** A CSS colour we are willing to print into a stylesheet, or null. */
     public static function color($value): ?string
     {
@@ -439,7 +577,11 @@ class OffCanvas
     {
         $pending = [];
         foreach ($items ?? self::all() as $item) {
-            if (($item['enabled'] ?? true) && !empty($item['slug']) && !empty($item['id'])) {
+            // A panel past its scheduled end is off: not drawn at all. One that has not started
+            // yet is drawn, so a page kept by the cache already holds it when the start comes;
+            // the browser keeps it shut until then.
+            if (($item['enabled'] ?? true) && !empty($item['slug']) && !empty($item['id'])
+                && !self::scheduleOver(self::settings($item['config']['settings'] ?? []))) {
                 $pending[$item['id']] = $item;
             }
         }

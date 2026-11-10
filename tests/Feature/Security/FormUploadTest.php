@@ -6,6 +6,8 @@ use FalconCms\Core\Models\Form;
 use FalconCms\Core\Models\FormSubmission;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -39,6 +41,22 @@ class FormUploadTest extends TestCase
     {
         // UploadedFile instances go in the body with the rest; post()'s later args are headers.
         return $this->post('/form-submit', array_merge(['form_id' => $form->id], $data, $files));
+    }
+
+    public function test_a_notification_that_cannot_be_sent_is_logged_and_the_message_still_saved(): void
+    {
+        $form = $this->form([['type' => 'text', 'name' => 'name', 'label' => 'Name']]);
+        $form->update(['settings' => ['success_message' => 'Thanks', 'notify_email' => 'owner@example.test']]);
+        Mail::shouldReceive('send')->once()->andThrow(new \RuntimeException('Connection could not be established with host "smtp.example"'));
+        $log = Log::spy();
+
+        $this->submit($form, ['name' => 'Bob'])->assertOk()->assertJson(['success' => true]);
+
+        $this->assertSame(1, FormSubmission::count(), 'the visitor\'s message is kept');
+        $log->shouldHaveReceived('warning', [
+            \Mockery::on(fn ($msg) => $msg === 'Form notification email could not be sent'),
+            \Mockery::on(fn ($ctx) => $ctx['to'] === 'owner@example.test' && str_contains($ctx['error'], 'smtp.example')),
+        ]);
     }
 
     public function test_a_php_upload_is_rejected(): void

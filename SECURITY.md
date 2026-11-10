@@ -18,8 +18,8 @@ FalconCMS Pro and its bundled plugins follow the same policy for their latest re
 
 1. **GitHub** — open a private report from this repository's
    [Security tab → Report a vulnerability](https://github.com/falconcms/falconcms/security/advisories/new).
-2. **Or** write to us through the [contact page](https://falconcms.com/contact) and ask for a
-   secure channel; do not include exploit details in the first message.
+2. **Or** email support@falconcms.com (or use the [contact page](https://falconcms.com/contact))
+   and ask for a secure channel; do not include exploit details in the first message.
 
 Please include:
 

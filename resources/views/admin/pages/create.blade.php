@@ -286,6 +286,9 @@
                 </div>
 
 
+                <!-- Page Attributes: Parent Page -->
+                @include('falcon-cms::admin.pages.partials.parent-page')
+
                 <!-- Featured Image -->
                 <div class="wp-metabox mb-0">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer"><span>Featured image</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></div>

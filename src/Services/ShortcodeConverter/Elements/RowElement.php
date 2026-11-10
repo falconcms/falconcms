@@ -12,6 +12,11 @@ final class RowElement extends Element
 {
     public static function toShortcode(array $el, $type, $s, string $base, string $vis): string
     {
+        // The Navigator name is the only setting a nested row has besides visibility.
+        $label = self::adminLabel($s['adminLabel'] ?? null);
+        if ($label !== null) {
+            $base = trim($base).' admin_label="'.$label.'"';
+        }
         if (!empty($el['columns'])) {
             $rowCols = [];
             foreach ($el['columns'] as $nestedCol) {
@@ -27,7 +32,7 @@ final class RowElement extends Element
 
     public static function fromShortcode(string $type, array $a, array $vis, string $inner, string $attrStr): ?array
     {
-        $rowObj = ['id' => $a['id'] ?? self::uid(), 'type' => 'row', 'settings' => ['visibility' => $vis]];
+        $rowObj = ['id' => $a['id'] ?? self::uid(), 'type' => 'row', 'settings' => array_filter(['visibility' => $vis, 'adminLabel' => $a['admin_label'] ?? null], fn ($v) => $v !== null)];
         if (!empty(trim($inner))) {
             $nestedCols = ColumnConverter::parseColumns($inner);
             if (!empty($nestedCols)) {

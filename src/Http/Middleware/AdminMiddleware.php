@@ -88,7 +88,7 @@ class AdminMiddleware
         if (optional($user->role)->slug === 'customer') {
             $accountPageId = get_shop_option('shop_account_page_id');
             $accountPage = $accountPageId ? Post::find($accountPageId) : null;
-            $accountUrl = $accountPage ? url('/'.$accountPage->slug) : url('/');
+            $accountUrl = $accountPage ? get_falcon_permalink($accountPage) : url('/');
 
             return redirect($accountUrl);
         }

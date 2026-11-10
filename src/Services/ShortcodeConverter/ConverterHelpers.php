@@ -208,6 +208,19 @@ trait ConverterHelpers
     }
 
     /** Append to attr array (used for section/col attrs) */
+    /**
+     * A Navigator name (Container, Column, Nested Row/Column) as a safe attribute value.
+     *
+     * It is free text typed by the author, so the characters that would end the attribute or the
+     * shortcode (" [ ]) are dropped rather than escaped; empty means "use the default name".
+     */
+    protected static function adminLabel($value): ?string
+    {
+        $label = trim(mb_substr(str_replace(['"', '[', ']', "\r", "\n"], ['', '', '', ' ', ' '], (string) $value), 0, 60));
+
+        return $label === '' ? null : $label;
+    }
+
     protected static function attr(array &$a, string $key, $value): void
     {
         if ($value === null || $value === '') {

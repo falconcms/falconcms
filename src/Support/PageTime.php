@@ -148,14 +148,15 @@ final class PageTime
             return;
         }
 
-        $rows = Analytics::query()->where('ip_address', $ip)->where('created_at', '>=', now()->subHours(6))
+        $rows = Analytics::withoutGlobalScope('human')->where('ip_address', $ip)->where('created_at', '>=', now()->subHours(6))
             ->orderByDesc('id')->limit(20)->get(['id', 'url']);
 
         foreach ($rows as $row) {
             if (self::path((string) parse_url((string) $row->url, PHP_URL_PATH)) === $path) {
-                Analytics::query()->whereKey($row->id)->update([
+                // Time reported by the page's own script is proof of a real browser too.
+                Analytics::withoutGlobalScope('human')->whereKey($row->id)->update([
                     'duration_seconds' => DB::raw('COALESCE(duration_seconds, 0) + '.$seconds),
-                ]);
+                ] + (Analytics::hasHumanColumn() ? ['human' => true] : []));
 
                 return;
             }

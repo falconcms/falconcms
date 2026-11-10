@@ -61,17 +61,20 @@
                             @php
                                 $isHomePage   = is_falcon_homepage($page);
                                 $fullUrl      = $isHomePage ? url('/') : get_falcon_permalink($page);
-                                $displayBase  = $isHomePage ? url('/') : str_replace($page->slug, '', get_falcon_permalink($page));
+                                // Everything before the page's own slug — for a sub-page that includes its
+                                // parents (/parent/). Only the trailing slug is cut: str_replace() also cut
+                                // the same word out of a parent's slug.
+                                $displayBase  = $isHomePage ? url('/') : preg_replace('~'.preg_quote((string) $page->slug, '~').'/?$~u', '', $fullUrl);
                             @endphp
                             @if($isHomePage)
                                 <a id="permalink-full-link" href="{{ $fullUrl }}" target="_blank" class="text-[#2271b1] underline">{{ $fullUrl }}</a>
                             @else
-                                <a id="permalink-full-link" href="{{ $fullUrl }}" target="_blank" class="text-[#2271b1] underline">{{ $displayBase }}<span id="permalink-slug-display" class="font-medium text-[#2271b1]">{{ $page->slug }}</span>/</a>
+                                <a id="permalink-full-link" href="{{ $fullUrl }}" target="_blank" class="text-[#2271b1] underline"><span id="permalink-base-display">{{ $displayBase }}</span><span id="permalink-slug-display" class="font-medium text-[#2271b1]">{{ $page->slug }}</span>/</a>
                             @endif
                             <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 text-[#2271b1] border-[#c3c4c7] font-medium">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970]">{{ $displayBase }}</span>
+                            <span class="text-[#646970]" id="permalink-base-edit">{{ $displayBase }}</span>
                             <input type="text" name="slug" id="slug-input" value="{{ $page->slug }}" class="wp-input text-[13px] h-[24px] px-1 mx-1" style="width: 150px;">/
                             <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1">OK</button>
                             <a href="#" id="cancel-slug-btn" class="text-[#2271b1] hover:underline ml-1">Cancel</a>
@@ -348,6 +351,9 @@
                     </div>
                 </div>
 
+
+                <!-- Page Attributes: Parent Page -->
+                @include('falcon-cms::admin.pages.partials.parent-page')
 
                 <!-- Featured Image -->
                 <div class="wp-metabox mb-0">

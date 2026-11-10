@@ -200,7 +200,7 @@ class CmsApiController extends Controller
                 'title' => $p->title,
                 'slug' => $p->slug,
                 'type' => $p->type,
-                'url' => $p->type === 'product' ? url('product/'.$p->slug) : url($p->slug),
+                'url' => get_falcon_permalink($p),
             ])->values();
 
         return response()->json(['success' => true, 'data' => $results]);

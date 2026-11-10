@@ -30,11 +30,11 @@ class ForeignHostTest extends TestCase
 
     private function visit(string $url): int
     {
-        $before = Analytics::count();
+        $before = Analytics::withoutGlobalScope('human')->count();
         $request = Request::create($url, 'GET', [], [], [], ['HTTP_USER_AGENT' => self::HUMAN]);
         (new TrackVisits)->handle($request, fn () => new Response('ok', 200));
 
-        return Analytics::count() - $before;
+        return Analytics::withoutGlobalScope('human')->count() - $before;
     }
 
     /** Make $url the current request, as the router would. */

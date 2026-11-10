@@ -37,13 +37,13 @@ class VisitTrackingTest extends TestCase
     /** Run one request through the middleware and return how many rows it left behind. */
     private function visit(string $path = '/a-page', string $userAgent = self::HUMAN, int $status = 200): int
     {
-        $before = Analytics::count();
+        $before = Analytics::withoutGlobalScope('human')->count();
 
         $request = Request::create($path, 'GET', [], [], [], ['HTTP_USER_AGENT' => $userAgent]);
 
         (new TrackVisits)->handle($request, fn () => new Response('ok', $status));
 
-        return Analytics::count() - $before;
+        return Analytics::withoutGlobalScope('human')->count() - $before;
     }
 
     public function test_an_anonymous_visitor_is_counted(): void
@@ -59,7 +59,7 @@ class VisitTrackingTest extends TestCase
 
         $this->assertSame(1, $this->visit('/a-page', $long));
 
-        $row = Analytics::latest('id')->first();
+        $row = Analytics::withoutGlobalScope('human')->latest('id')->first();
         $this->assertSame(255, mb_strlen($row->user_agent));
         $this->assertSame('Chrome', $row->browser, 'the parser still reads the whole string');
     }

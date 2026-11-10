@@ -85,8 +85,9 @@
         </div>
 
 
-        <!-- Column Handles -->
-        <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-[1500] transition-opacity"
+        <!-- Column Handles (put away while a nested row is open: at z-1500 they sat, unseen
+             but still catching clicks, over the nested columns inside this column) -->
+        <div v-if="!isPreview && !nestedLockActive" class="absolute inset-0 pointer-events-none z-[1500] transition-opacity"
              :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
             
             <div class="absolute top-0.5 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-0.5 items-start">

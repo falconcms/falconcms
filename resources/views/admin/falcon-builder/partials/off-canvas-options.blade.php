@@ -181,6 +181,32 @@
             </div>
         </div>
 
+        {{-- ── Schedule ── switches the whole panel on and off by date and time (links too) --}}
+        <div class="space-y-4">
+            <div class="{{ $ocHead }}">Schedule</div>
+            @foreach(['schedule_start' => ['Turn On At', 'Empty = on from now'], 'schedule_end' => ['Turn Off At', 'Empty = never turns off']] as $key => [$lbl, $empty])
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="{{ $ocLabel }} !mb-0">{{ $lbl }}</label>
+                    <button type="button" v-if="ocSettings.{{ $key }}" @click="ocSettings.{{ $key }} = ''" class="text-[10px] text-slate-400 hover:text-red-500" title="Clear"><i class="fa fa-times"></i></button>
+                </div>
+                <input type="datetime-local" step="60" v-model.lazy="ocSettings.{{ $key }}" class="{{ $ocInput }}">
+                <p v-if="!ocSettings.{{ $key }}" class="text-[11px] text-slate-400 mt-1">{{ $empty }}</p>
+            </div>
+            @endforeach
+            <div class="flex gap-2 rounded border px-3 py-2 text-[11px] leading-relaxed"
+                 :class="{
+                    'border-slate-200 bg-slate-50 text-slate-500': ocScheduleStatus.tone === 'none',
+                    'border-emerald-200 bg-emerald-50 text-emerald-800': ocScheduleStatus.tone === 'live',
+                    'border-sky-200 bg-sky-50 text-sky-800': ocScheduleStatus.tone === 'waiting',
+                    'border-red-200 bg-red-50 text-red-700': ocScheduleStatus.tone === 'off',
+                 }">
+                <i class="fa mt-0.5" :class="{ none: 'fa-clock', live: 'fa-circle-check', waiting: 'fa-hourglass-half', off: 'fa-circle-xmark' }[ocScheduleStatus.tone]"></i>
+                <span>@{{ ocScheduleStatus.text }}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">Times are in the site's timezone, <strong class="text-slate-500">@{{ ocTimezone }}</strong> (Settings → General). Outside these times the panel is off everywhere — its links do nothing and it never opens by itself — exactly as if its switch in the Library were off. A visitor who has it open at the end sees it close.</p>
+        </div>
+
         {{-- ── Auto Open ── --}}
         <div class="space-y-4">
             <div class="{{ $ocHead }}">Auto Open</div>

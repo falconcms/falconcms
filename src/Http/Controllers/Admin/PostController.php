@@ -145,10 +145,17 @@ class PostController extends Controller
             }
         }
 
+        // The top bar's "View page" link: the live address of a page/post/CPT. A layout section
+        // has no address of its own, so it gets none; an item that is not published yet shows
+        // the link disabled, since its address answers 404 to the public until then.
+        $builderViewUrl = in_array($post->type, $layoutTypes, true) ? null : get_falcon_permalink($post);
+        $builderViewLive = $post->status === 'published';
+
         return view('falcon-cms::admin.falcon-builder.index', compact(
             'post', 'customElements', 'themeBodyFont', 'themeHeadingFont', 'themeNavFont', 'pendingAutosave', 'builderBackUrl',
             'frameHeaderUrl', 'frameTitleBarUrl', 'frameFooterUrl',
-            'frameHeaderEditUrl', 'frameTitleBarEditUrl', 'frameFooterEditUrl'
+            'frameHeaderEditUrl', 'frameTitleBarEditUrl', 'frameFooterEditUrl',
+            'builderViewUrl', 'builderViewLive'
         ));
     }
 

@@ -703,10 +703,159 @@ if (!function_exists('get_falcon_permalink')) {
         }
 
         if ($type === 'page') {
-            return url($langPrefix.'/'.$slug);
+            // A child page lives under its parents: /parent-page/child-page.
+            return url($langPrefix.'/'.falcon_page_path($post));
         }
 
         return url($langPrefix.'/'.$type.'/'.$slug);
+    }
+}
+
+if (!function_exists('falcon_page_ancestors')) {
+    /**
+     * A page's parent pages, from the top down: [grandparent, parent].
+     *
+     * Read once per request and remembered, because a page's permalink — built for every menu
+     * item, link and sitemap row — needs them. A parent that was deleted, or a chain that loops
+     * back on itself (saved by hand in the database), simply ends the chain there, so a broken
+     * parent can never take a page's address down with it.
+     *
+     * @return list<object>
+     */
+    function falcon_page_ancestors($page, int $maxDepth = 10): array
+    {
+        $get = fn ($k) => is_array($page) ? ($page[$k] ?? null) : ($page->$k ?? null);
+        $parentId = (int) $get('parent_id');
+        if ($parentId <= 0) {
+            return [];
+        }
+
+        $memo = function_exists('falcon_request_memo') ? falcon_request_memo('page_parents') : new ArrayObject;
+        $seen = [(int) $get('id') => true];
+        $chain = [];
+        while ($parentId > 0 && count($chain) < $maxDepth && !isset($seen[$parentId])) {
+            $seen[$parentId] = true;
+            if (!$memo->offsetExists($parentId)) {
+                $memo[$parentId] = Post::withoutGlobalScopes()
+                    ->whereNull('deleted_at')
+                    ->where('type', 'page')
+                    ->select('id', 'slug', 'title', 'parent_id', 'lang_code', 'status')
+                    ->find($parentId);
+            }
+            $parent = $memo[$parentId];
+            if (!$parent) {
+                break;
+            }
+            array_unshift($chain, $parent);
+            $parentId = (int) $parent->parent_id;
+        }
+
+        return $chain;
+    }
+}
+
+if (!function_exists('falcon_page_path')) {
+    /** A page's path below the site root: "parent-page/child-page" (no slashes around it). */
+    function falcon_page_path($page): string
+    {
+        $slug = (string) (is_array($page) ? ($page['slug'] ?? '') : ($page->slug ?? ''));
+        $parents = array_map(fn ($p) => (string) $p->slug, falcon_page_ancestors($page));
+
+        return implode('/', array_filter([...$parents, $slug], fn ($s) => $s !== ''));
+    }
+}
+
+if (!function_exists('falcon_find_page_by_path')) {
+    /**
+     * The published page at this path ("about/team/leadership"), or null.
+     *
+     * The last segment names the page (page slugs are unique within a language); the segments
+     * before it have to be its actual parents, so /wrong-parent/team is not /about/team.
+     */
+    function falcon_find_page_by_path(string $path, string $lang): ?Post
+    {
+        $segments = array_values(array_filter(array_map('rawurldecode', explode('/', trim($path, '/'))), fn ($s) => $s !== ''));
+        if (!$segments) {
+            return null;
+        }
+        $page = Post::where('type', 'page')
+            ->where('slug', end($segments))
+            ->where('lang_code', $lang)
+            ->where('status', 'published')
+            ->first();
+
+        return $page && falcon_page_path($page) === implode('/', $segments) ? $page : null;
+    }
+}
+
+if (!function_exists('falcon_page_parent_options')) {
+    /**
+     * The pages one could choose as this page's parent, in tree order, each with its depth —
+     * for the editor's Parent Page box. The page itself and everything below it are left out:
+     * making a page its own ancestor would leave it with no address at all.
+     *
+     * @return list<array{id: int, title: string, depth: int, path: string}>
+     */
+    function falcon_page_parent_options(?Post $page, string $lang): array
+    {
+        $pages = Post::withoutGlobalScopes()->whereNull('deleted_at')
+            ->where('type', 'page')->where('lang_code', $lang)
+            ->orderBy('menu_order')->orderBy('title')
+            ->get(['id', 'title', 'slug', 'parent_id', 'status']);
+
+        $byParent = [];
+        $ids = $pages->pluck('id')->flip();
+        foreach ($pages as $p) {
+            // A parent outside this list (another language, deleted) makes the page a root here.
+            $parent = $p->parent_id && isset($ids[$p->parent_id]) ? (int) $p->parent_id : 0;
+            $byParent[$parent][] = $p;
+        }
+
+        $exclude = $page?->id ? (int) $page->id : null;
+        $out = [];
+        $walk = function (int $parent, int $depth, string $base) use (&$walk, &$out, $byParent, $exclude) {
+            foreach ($byParent[$parent] ?? [] as $p) {
+                if ((int) $p->id === $exclude) {
+                    continue; // skips the page and, with it, its whole subtree
+                }
+                $title = trim((string) $p->title) !== '' ? (string) $p->title : '(no title)';
+                $path = ltrim($base.'/'.$p->slug, '/');
+                $out[] = ['id' => (int) $p->id, 'title' => $title.($p->status !== 'published' ? ' ('.$p->status.')' : ''), 'depth' => $depth, 'path' => $path];
+                if ($depth < 9) {
+                    $walk((int) $p->id, $depth + 1, $path);
+                }
+            }
+        };
+        $walk(0, 0, '');
+
+        return $out;
+    }
+}
+
+if (!function_exists('falcon_page_parent_allowed')) {
+    /**
+     * May $parentId be the parent of $page? It must be another page that is not $page itself or
+     * one of $page's own descendants — either would make the chain loop.
+     */
+    function falcon_page_parent_allowed(?Post $page, int $parentId): bool
+    {
+        $parent = Post::withoutGlobalScopes()->whereNull('deleted_at')->where('type', 'page')->find($parentId);
+        if (!$parent) {
+            return false;
+        }
+        if (!$page || !$page->id) {
+            return true;
+        }
+        if ((int) $parent->id === (int) $page->id) {
+            return false;
+        }
+        foreach (falcon_page_ancestors($parent) as $ancestor) {
+            if ((int) $ancestor->id === (int) $page->id) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 

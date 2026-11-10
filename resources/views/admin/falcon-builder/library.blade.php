@@ -298,6 +298,25 @@
                                 </label>
                             </div>
                             <p class="text-[11px] text-[#9ca3af] mb-2">{{ $oc['created_at'] }}@if($ocEmpty) · <span class="text-[#b26200]">empty — design it</span>@endif</p>
+                            @php
+                                $ocState = \FalconCms\Core\Support\OffCanvas::scheduleState($ocS);
+                                $ocAt = fn ($v) => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $v, cms_timezone())->format('j M Y, H:i');
+                            @endphp
+                            @if($ocState !== 'always')
+                            @php
+                                [$ocTone, $ocIcon, $ocText] = match ($ocState) {
+                                    'scheduled' => ['bg-[#e8f3fc] text-[#135e96]', 'schedule', 'Turns on '.$ocAt($ocS['schedule_start'])],
+                                    'active'    => $ocS['schedule_end'] !== ''
+                                        ? ['bg-[#edfaef] text-[#00752a]', 'timer', 'Turns off '.$ocAt($ocS['schedule_end'])]
+                                        : ['bg-[#edfaef] text-[#00752a]', 'timer', 'On since '.$ocAt($ocS['schedule_start'])],
+                                    'ended'     => ['bg-[#fcf0f1] text-[#b32d2e]', 'timer_off', 'Turned off '.$ocAt($ocS['schedule_end'])],
+                                    default     => ['bg-[#fcf0f1] text-[#b32d2e]', 'error', 'Schedule never opens — check its times'],
+                                };
+                            @endphp
+                            <p class="mb-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold {{ $ocTone }}" title="Schedule, in {{ cms_timezone() }}">
+                                <span class="material-symbols-outlined" style="font-size:12px">{{ $ocIcon }}</span>{{ $ocText }}
+                            </p>
+                            @endif
 
                             <button type="button" onclick="copyOcTrigger(this, '{{ $ocAnchor }}')" title="Copy the trigger link"
                                     class="w-full mb-3 flex items-center justify-between gap-2 px-2 py-1.5 rounded border border-dashed border-[#c3c4c7] bg-[#f9fafb] hover:border-[#2271b1] hover:bg-[#f0f6fb] transition-colors">

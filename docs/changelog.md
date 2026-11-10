@@ -5,7 +5,54 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.9.2 <Badge type="tip" text="Latest" /> {#v2-9-2}
+## v2.9.3 <Badge type="tip" text="Latest" /> {#v2-9-3}
+
+**Released: 2026-11-10**
+
+Parent pages, a visitor log that counts people rather than bots, panels that switch themselves
+off on a date, and a run of builder fixes. Released with Pro v1.5.8.
+
+### Added
+
+- **Parent pages.** A page can sit under another one — **Page Attributes → Parent Page**, between
+  Publish and Featured image — and then lives at `/parent-page/child-page`, as deep as you like.
+  Old addresses (`/child-page`, a wrong parent, a parent renamed later) redirect to the new one, a
+  page cannot be put under itself or its own sub-page, and breadcrumbs list the parents.
+- **Off-canvas schedule.** *Panel Options → Schedule* turns a panel on and off at a date and time
+  in the site timezone — links and auto-open alike. Cached pages stop showing it on the minute,
+  and a visitor who has it open at the end sees it close.
+- **Names in the Navigator.** A container, column, nested row or nested column can be given a
+  name at the top of its settings; the Navigator shows it instead of "Container" / "Column".
+- **View page** in the builder's top bar, between Preview and Save: opens the live page in a new
+  tab (saving clears the page cache, so it shows the update).
+- **Responsive Typography on builder headings.** A Title or Icon Box heading with its own font
+  size now follows *Customizer → Typography → Responsive Typography* too, shrinking on smaller
+  screens; each Title can opt out. Tablet and mobile sizes set on the element still win.
+
+### Changed
+
+- **The visitor log counts real visitors only.** A visit counts once a browser has shown the page
+  to a person — they scrolled, clicked or stayed a few seconds. Bots posing as browsers, crawlers,
+  uptime monitors, automated browsers and pages fetched ahead of a click are left out, and visits
+  served from the page cache, which were missing before, are now counted. Expect lower, truer
+  figures; visits recorded before a browser could confirm them are kept but hidden.
+
+### Fixed
+
+- **Nested columns could not be clicked** in a container with a background effect, a sticky
+  setting or a column selected (Post Card builder included); the Finished/Edit/Close bar no longer
+  sits under the column handles.
+- **A form notification that cannot be sent is now logged** instead of vanishing without a trace.
+- **A page's parent was dropped on save** (the model listed a column that does not exist).
+
+### In Pro v1.5.8
+
+- **Falcon Search Console 1.1.4:** the dashboard widget's page views count real visitors only, as
+  the Analytics dashboard now does.
+
+---
+
+## v2.9.2 {#v2-9-2}
 
 **Released: 2026-11-07**
 

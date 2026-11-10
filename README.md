@@ -389,8 +389,10 @@ Full documentation: **[falconcms.github.io/falconcms](https://falconcms.github.i
 Bug reports, fixes and features are welcome. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers
 the local setup, the test suite and what CI checks before a PR can merge.
 
-Found a security issue? Please email tareqcodex@gmail.com rather than opening a public
-issue.
+Found a security issue? Please report it privately — through the repository's
+[Security tab → Report a vulnerability](https://github.com/falconcms/falconcms/security/advisories/new)
+or by email to support@falconcms.com — rather than opening a public issue. See
+[`SECURITY.md`](SECURITY.md).
 
 ---
 

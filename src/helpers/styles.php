@@ -223,6 +223,39 @@ if (!function_exists('falcon_fluid_font_size')) {
     }
 }
 
+if (!function_exists('falcon_element_fluid_font_size')) {
+    /**
+     * A builder heading's own font size, made fluid by the Customizer's Responsive Typography.
+     *
+     * The theme's fluid rule (layouts/app.blade.php) reaches only headings that leave their size
+     * empty: a size typed into a Title is written inline, and inline style beats the stylesheet,
+     * so on a page built with the builder the Customizer setting seemed to do nothing. This puts
+     * the same clamp() into the inline value itself, read from the same options with the same
+     * floor, so a 58px hero stays 58px from the medium screen up and slides toward the floor
+     * below it. Sizes at or under the floor, and every size while Sensitivity is 0, come back
+     * as written. A per-device size the author set still wins: those are written !important.
+     */
+    function falcon_element_fluid_font_size(string $size): string
+    {
+        $body = json_decode((string) get_cms_option('theme_typography_body'), true);
+        $bodyPx = falcon_css_size_to_px((string) ($body['size'] ?? '15px'), 16.0)['px'] ?? 15.0;
+
+        $fluid = falcon_fluid_font_size(
+            $size,
+            (float) get_cms_option('theme_typography_sensitivity', '0.6'),
+            $bodyPx * (float) get_cms_option('theme_font_size_factor', '1.50'),
+            (int) get_cms_option('theme_small_screen_breakpoint', '800'),
+            (int) get_cms_option('theme_medium_screen_breakpoint', '1100'),
+            $bodyPx
+        );
+
+        // Only a clamp() replaces what the author wrote; otherwise their value is kept untouched
+        // (falcon_fluid_font_size would also rewrite "36" as "36px", and a value it cannot read
+        // is left for the browser to judge, exactly as before).
+        return str_starts_with($fluid, 'clamp(') ? $fluid : $size;
+    }
+}
+
 if (!function_exists('falcon_icon_box_icon_style')) {
     /**
      * The Icon Box's icon, in both of the states it can be in.

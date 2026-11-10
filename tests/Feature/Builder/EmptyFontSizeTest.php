@@ -57,10 +57,11 @@ class EmptyFontSizeTest extends TestCase
         $this->assertStringNotContainsString('font-size: 16px', $this->render('menu', ['menuId' => 0, 'fontSize' => '', 'mobileCollapseBreakpoint' => 'none']));
     }
 
+    /** Responsive Typography off here: with it on, a heading's size is written as a clamp() (ResponsiveTypographyTest). */
     public function test_a_set_or_never_set_size_is_written_as_before(): void
     {
-        $this->assertStringContainsString('font-size: 24px', $this->render('title', ['titleColor' => '#222', 'title' => 'Hi', 'fontSize' => 24]));
-        $this->assertStringContainsString('font-size: 36px', $this->render('title', ['titleColor' => '#222', 'title' => 'Hi']));
+        $this->assertStringContainsString('font-size: 24px', $this->render('title', ['titleColor' => '#222', 'title' => 'Hi', 'fontSize' => 24, 'responsiveTypography' => false]));
+        $this->assertStringContainsString('font-size: 36px', $this->render('title', ['titleColor' => '#222', 'title' => 'Hi', 'responsiveTypography' => false]));
         $this->assertStringContainsString('font-size: 16px', $this->render('button', ['text' => 'Go', 'linkUrl' => '#']));
     }
 

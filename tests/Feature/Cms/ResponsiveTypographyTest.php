@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Tests\Feature\Cms;
 
 use App\Models\User;
+use FalconCms\Core\Services\BuilderShortcodeConverter;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
@@ -150,6 +151,66 @@ class ResponsiveTypographyTest extends TestCase
         // 15 x 2.1 = 31.5, which is above H6 and below H1 — the whole explanation in one line.
         $this->assertStringContainsString('31.5px', $html);
         $this->assertStringContainsString('H6', $html);
+    }
+
+    /** Body 15px, factor 1.8 -> floor 27px; sensitivity 0.78; breakpoints 600 / 1024 — falconcms.com. */
+    private function siteSettings(): void
+    {
+        update_cms_option('theme_typography_body', json_encode(['size' => '15px']));
+        update_cms_option('theme_font_size_factor', '1.8');
+        update_cms_option('theme_typography_sensitivity', '0.78');
+        update_cms_option('theme_small_screen_breakpoint', '600');
+        update_cms_option('theme_medium_screen_breakpoint', '1024');
+        forget_cms_options_cache();
+    }
+
+    private function title(array $settings): string
+    {
+        return view('falcon-cms::frontend.builder.elements.title', ['el' => [
+            'id' => 'rt-title', 'type' => 'title', 'settings' => $settings + ['title' => 'Hello', 'titleColor' => '#222'],
+        ]])->render();
+    }
+
+    public function test_a_builder_title_with_its_own_size_follows_responsive_typography(): void
+    {
+        // Every heading on the home page was a Title with a typed size, written inline, so the
+        // theme's fluid rule never reached one of them and the setting looked broken.
+        $this->siteSettings();
+
+        // 58 - (58 - 27) * 0.78 = 33.82
+        $html = $this->title(['htmlTag' => 'h1', 'fontSize' => 58, 'fontSizeUnit' => 'px']);
+        $this->assertStringContainsString('font-size: clamp(33.82px, calc(33.82px + 24.18 * (100vw - 600px) / 424), 58px)', $html);
+    }
+
+    public function test_a_title_can_opt_out_and_small_or_non_heading_titles_stay_fixed(): void
+    {
+        $this->siteSettings();
+
+        $this->assertStringContainsString('font-size: 58px;', $this->title(
+            ['htmlTag' => 'h1', 'fontSize' => 58, 'responsiveTypography' => false]));
+        // At or under the 27px floor there is nowhere to shrink to.
+        $this->assertStringContainsString('font-size: 24px;', $this->title(['htmlTag' => 'h3', 'fontSize' => 24]));
+        // A <p> styled big is not a heading.
+        $this->assertStringContainsString('font-size: 58px;', $this->title(['htmlTag' => 'p', 'fontSize' => 58]));
+        // An empty size still leaves the heading to the theme's own rule.
+        $this->assertStringNotContainsString('font-size', $this->title(['htmlTag' => 'h2', 'fontSize' => '']));
+    }
+
+    public function test_the_opt_out_survives_the_shortcode_roundtrip(): void
+    {
+        $back = function (array $settings): array {
+            $json = json_encode([[
+                'id' => 'r1', 'settings' => [],
+                'columns' => [['id' => 'c1', 'basis' => '100%', 'basis_tablet' => null, 'basis_mobile' => '100%', 'settings' => [],
+                    'elements' => [['id' => 'e1', 'type' => 'title', 'settings' => $settings + ['title' => 'Hi']]]]],
+            ]]);
+            $sc = BuilderShortcodeConverter::jsonToShortcodes($json);
+
+            return json_decode(BuilderShortcodeConverter::shortcodesToJson($sc), true)[0]['columns'][0]['elements'][0]['settings'];
+        };
+
+        $this->assertFalse($back(['responsiveTypography' => false])['responsiveTypography']);
+        $this->assertTrue($back([])['responsiveTypography']);
     }
 
     public function test_zero_sensitivity_is_reported_as_off_rather_than_as_numbers(): void

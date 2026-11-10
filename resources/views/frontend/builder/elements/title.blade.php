@@ -58,6 +58,12 @@
     // Empty: no font-size, so the heading takes the Customizer's size for its tag.
     $fsRaw = $s['fontSize'] ?? 36;
     $fsCSS = $fsRaw === '' ? null : (preg_match('/[a-zA-Z%]/', (string)$fsRaw) ? (string)$fsRaw : ($fsRaw . ($s['fontSizeUnit'] ?? 'px')));
+    // Headings follow the Customizer's Responsive Typography, unless this one opts out.
+    $htmlTagRaw = $s['htmlTag'] ?? 'h2';
+    if ($fsCSS !== null && ($s['responsiveTypography'] ?? true) !== false
+        && in_array($htmlTagRaw, ['h1','h2','h3','h4','h5','h6'], true)) {
+        $fsCSS = falcon_element_fluid_font_size($fsCSS);
+    }
 
     $titleStyles = array_filter([
         'font-family: ' . ($s['fontFamily'] ?? 'inherit'),

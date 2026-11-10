@@ -159,7 +159,9 @@ class PageController extends Controller
             ->orderBy('order')
             ->get();
 
-        return view('falcon-cms::admin.pages.create', compact('allPages', 'fieldGroups'));
+        $parentOptions = falcon_page_parent_options(null, app()->getLocale());
+
+        return view('falcon-cms::admin.pages.create', compact('allPages', 'fieldGroups', 'parentOptions'));
     }
 
     public function store(Request $request)
@@ -180,6 +182,11 @@ class PageController extends Controller
             'lang_code' => 'nullable|string|max:10',
             'seo' => 'nullable|array',
         ]);
+
+        // A parent must be another page, and not one below this page (that would loop).
+        if (!empty($validated['parent_id']) && !falcon_page_parent_allowed(null, (int) $validated['parent_id'])) {
+            return back()->withErrors(['parent_id' => 'Choose another parent: a page cannot sit under itself or under one of its own sub-pages.'])->withInput();
+        }
 
         $validated['seo_meta'] = $request->input('seo');
         unset($validated['seo']);
@@ -307,7 +314,9 @@ class PageController extends Controller
         } catch (\Throwable $e) {
         }
 
-        return view('falcon-cms::admin.pages.edit', compact('page', 'allPages', 'fieldGroups', 'fieldValues', 'pendingAutosave', 'revisionCount'));
+        $parentOptions = falcon_page_parent_options($page, (string) ($page->lang_code ?: app()->getLocale()));
+
+        return view('falcon-cms::admin.pages.edit', compact('page', 'allPages', 'fieldGroups', 'fieldValues', 'pendingAutosave', 'revisionCount', 'parentOptions'));
     }
 
     /** Full revisions comparison page for a Page — before/after diff + restore. */
@@ -429,6 +438,11 @@ class PageController extends Controller
             'lang_code' => 'nullable|string|max:10',
             'seo' => 'nullable|array',
         ]);
+
+        // A parent must be another page, and not one below this page (that would loop).
+        if (!empty($validated['parent_id']) && !falcon_page_parent_allowed($page, (int) $validated['parent_id'])) {
+            return back()->withErrors(['parent_id' => 'Choose another parent: a page cannot sit under itself or under one of its own sub-pages.'])->withInput();
+        }
 
         $validated['seo_meta'] = $request->input('seo');
         unset($validated['seo']);

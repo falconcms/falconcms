@@ -10,7 +10,13 @@ use Illuminate\Http\Request;
 class TrackVisits
 {
     /** User-agent fragments that identify bots/crawlers we don't want to count as visits. */
-    protected string $botPattern = '/bot|crawl|spider|slurp|mediapartners|bingpreview|facebookexternalhit|whatsapp|telegram|discordbot|skypeuripreview|preview|fetch|monitor|curl|wget|python-requests|go-http|axios|okhttp|headless|phantomjs|lighthouse|pingdom|uptimerobot|statuscake|gtmetrix|semrush|ahrefs|mj12bot|dotbot|petalbot|dataforseo|censys|zgrab|masscan/i';
+    public const BOT_PATTERN = '/bot|crawl|spider|slurp|mediapartners|bingpreview|facebookexternalhit|whatsapp|telegram|discordbot|skypeuripreview|preview|fetch|monitor|curl|wget|python-requests|go-http|axios|okhttp|headless|phantomjs|lighthouse|pingdom|uptimerobot|statuscake|gtmetrix|semrush|ahrefs|mj12bot|dotbot|petalbot|dataforseo|censys|zgrab|masscan|dataprovider|webdriver|selenium|puppeteer|playwright/i';
+
+    /** Is this user agent one we never count (a bot, a crawler, a monitor, or none at all)? */
+    public static function isBot(string $userAgent): bool
+    {
+        return $userAgent === '' || (bool) preg_match(self::BOT_PATTERN, $userAgent);
+    }
 
     public function handle(Request $request, Closure $next)
     {
@@ -46,7 +52,7 @@ class TrackVisits
         $userAgent = (string) $request->header('User-Agent');
 
         // Skip bots/crawlers/monitors so analytics reflect real human traffic.
-        if ($userAgent === '' || preg_match($this->botPattern, $userAgent)) {
+        if (self::isBot($userAgent)) {
             return;
         }
 
@@ -61,17 +67,27 @@ class TrackVisits
             'browser' => UserAgentParser::browser($userAgent),
             'os' => UserAgentParser::os($userAgent),
             'device_type' => UserAgentParser::device($userAgent),
-        ]);
+        ] + (Analytics::hasHumanColumn() ? [
+            // Not counted until the page's own script, in a real browser, confirms the visit
+            // (HumanVisits). Most requests that never confirm are bots posing as Chrome.
+            'human' => false,
+        ] : []));
 
-        // Resolve geo location AFTER the response is sent so it never slows the page.
-        // Cached per IP for 30 days, so each visitor is looked up at most once a month.
-        $ip = $request->ip();
-        app()->terminating(function () use ($row, $ip) {
+        self::resolveGeoLater((int) $row->id, (string) $request->ip());
+    }
+
+    /**
+     * Fill in the visitor's country AFTER the response is sent, so it never slows the page.
+     * Cached per IP for 30 days, so each visitor is looked up at most once a month.
+     */
+    public static function resolveGeoLater(int $rowId, string $ip): void
+    {
+        app()->terminating(function () use ($rowId, $ip) {
             try {
-                $geo = falcon_geoip((string) $ip);
+                $geo = falcon_geoip($ip);
 
                 if (!empty($geo['country'])) {
-                    Analytics::where('id', $row->id)->update([
+                    Analytics::withoutGlobalScope('human')->where('id', $rowId)->update([
                         'country' => $geo['country'],
                         'country_code' => $geo['country_code'] ?: null,
                         'city' => $geo['city'] ?: null,

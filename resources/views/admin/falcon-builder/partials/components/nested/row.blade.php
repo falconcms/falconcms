@@ -203,8 +203,10 @@
                 </div>
 
                 <!-- Nested Column Handles -->
+                {{-- Hidden handles are also `invisible`: at opacity 0 alone they still caught every
+                     click over the middle of the column's top and bottom edges. --}}
                 <div v-if="nestedChrome(el, ci, coli, eli)" class="absolute inset-0 pointer-events-none z-[1500] transition-opacity"
-                     :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                     :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0 invisible' ) : 'hidden'">
                     
                     <div class="absolute top-0.5 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-0.5 items-start">
                         <div class="handle-purple group/nchmt"
@@ -441,8 +443,11 @@
     {{-- Open state: Finished / Edit / Close, sitting on the bottom edge like the
          nested-column bar in Avada. Finished and Close both just collapse it again —
          nothing here touches the row's content or its settings. --}}
+    {{-- Hung just below the row rather than across its bottom edge, where it sat on the
+         nested columns' bottom padding/margin handles (z-1500) and its middle button could
+         not be pressed. z-1600 keeps it above them all the same. --}}
     <div v-if="!isPreview && isNestedRowOpen(el, ci, coli, eli)"
-         class="absolute left-1/2 -translate-x-1/2 -bottom-3 z-[1060] flex items-center bg-[#2271b1] text-white rounded shadow-xl h-7 px-1">
+         class="nested-row-finish absolute left-1/2 -translate-x-1/2 top-full mt-1 z-[1600] flex items-center bg-[#2271b1] text-white rounded shadow-xl h-7 px-1">
         <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/nfin"
              @click.stop="setNestedRowOpen(el, ci, coli, eli, false)">
             <i class="fa fa-check text-[10px]"></i>

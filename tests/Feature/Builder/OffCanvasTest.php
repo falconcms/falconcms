@@ -3,11 +3,13 @@
 namespace FalconCms\Core\Tests\Feature\Builder;
 
 use App\Models\User;
+use Carbon\Carbon;
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Support\OffCanvas;
 use FalconCms\Core\Tests\TestCase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -346,5 +348,135 @@ class OffCanvasTest extends TestCase
         $imported = collect(OffCanvas::all())->firstWhere('slug', 'cart-drawer-2');
         $this->assertNotNull($imported, 'an import gets its own slug');
         $this->assertSame(320, $imported['config']['settings']['width']);
+    }
+
+    // ── Schedule: on and off by date and time ───────────────────────────────
+
+    /** The site runs on Dhaka time (UTC+6), so a wrong timezone shows up as a six-hour error. */
+    private function dhaka(): void
+    {
+        update_cms_option('timezone', 'Asia/Dhaka');
+        forget_cms_options_cache();
+    }
+
+    public function test_schedule_times_are_kept_to_the_minute_and_junk_dropped(): void
+    {
+        $s = OffCanvas::settings(['schedule_start' => '2026-11-01T00:00:45', 'schedule_end' => '2026-02-30T10:00']);
+        $this->assertSame('2026-11-01T00:00', $s['schedule_start']);
+        $this->assertSame('', $s['schedule_end'], '30 February is no date');
+
+        $s = OffCanvas::settings(['schedule_end' => '"><script>', 'schedule_start' => '2026-11-01 25:00']);
+        $this->assertSame(['', ''], [$s['schedule_start'], $s['schedule_end']]);
+        $this->assertSame(['', ''], [OffCanvas::settings([])['schedule_start'], OffCanvas::settings([])['schedule_end']]);
+    }
+
+    public function test_the_times_mean_the_site_timezone(): void
+    {
+        $this->dhaka();
+        // 23:59 on 30 November in Dhaka is 17:59 UTC.
+        $this->assertSame(
+            Carbon::parse('2026-11-30 17:59:00', 'UTC')->getTimestamp(),
+            OffCanvas::scheduleTimestamp('2026-11-30T23:59')
+        );
+    }
+
+    public function test_the_state_follows_the_clock(): void
+    {
+        $this->dhaka();
+        $s = OffCanvas::settings(['schedule_start' => '2026-11-01T00:00', 'schedule_end' => '2026-11-30T23:59']);
+        $at = fn (string $utc) => Carbon::parse($utc, 'UTC')->getTimestamp();
+
+        $this->assertSame('scheduled', OffCanvas::scheduleState($s, $at('2026-10-31 17:59:59')));
+        $this->assertSame('active', OffCanvas::scheduleState($s, $at('2026-10-31 18:00:00')), 'on from the first second');
+        $this->assertSame('active', OffCanvas::scheduleState($s, $at('2026-11-30 17:58:59')));
+        $this->assertSame('ended', OffCanvas::scheduleState($s, $at('2026-11-30 17:59:00')), 'off on the minute');
+
+        $this->assertSame('always', OffCanvas::scheduleState(OffCanvas::settings([])));
+        $this->assertSame('active', OffCanvas::scheduleState(OffCanvas::settings(['schedule_end' => '2099-01-01T00:00'])));
+        $this->assertSame('invalid', OffCanvas::scheduleState(OffCanvas::settings(['schedule_start' => '2026-12-01T00:00', 'schedule_end' => '2026-11-30T23:59'])));
+    }
+
+    public function test_a_panel_past_its_end_is_off_everywhere(): void
+    {
+        $this->dhaka();
+        $this->panel('Promo', ['position' => 'center', 'trigger' => 'load', 'schedule_end' => '2026-11-30T23:59'], 'Thirty percent off');
+        $this->page('<p><a href="#offcanvas-promo">Open</a></p>');
+
+        $this->travelTo(Carbon::parse('2026-11-30 17:58:00', 'UTC'));
+        $html = $this->get('/landing')->assertOk()->assertSee('Thirty percent off', false)->getContent();
+        // The end travels with the panel, so a cached copy of the page is still held shut.
+        preg_match('/id="falcon-oc-promo"[^>]*data-oc="([^"]+)"/', $html, $m);
+        $conf = json_decode(html_entity_decode($m[1] ?? ''), true);
+        $this->assertSame(Carbon::parse('2026-11-30 17:59:00', 'UTC')->getTimestamp() * 1000, $conf['until'] ?? null);
+        $this->assertNull($conf['from']);
+
+        $this->travelTo(Carbon::parse('2026-11-30 18:05:00', 'UTC'));
+        $this->get('/landing')->assertOk()
+            ->assertDontSee('falcon-oc-promo', false)
+            ->assertDontSee('Thirty percent off', false);
+    }
+
+    public function test_a_panel_not_started_yet_is_carried_but_held_shut_until_its_start(): void
+    {
+        $this->dhaka();
+        $this->panel('Promo', ['position' => 'center', 'trigger' => 'load', 'schedule_start' => '2026-12-01T09:00']);
+        $this->page('<p>Nothing links here.</p>');
+
+        $this->travelTo(Carbon::parse('2026-11-20 00:00:00', 'UTC'));
+        $html = $this->get('/landing')->assertOk()->assertSee('id="falcon-oc-promo"', false)->getContent();
+        preg_match('/id="falcon-oc-promo"[^>]*data-oc="([^"]+)"/', $html, $m);
+        $conf = json_decode(html_entity_decode($m[1] ?? ''), true);
+        $this->assertSame(Carbon::parse('2026-12-01 03:00:00', 'UTC')->getTimestamp() * 1000, $conf['from'] ?? null);
+        // The script refuses to open a panel outside its window, whatever asks.
+        $this->assertStringContainsString('!live(conf(p))', $html);
+    }
+
+    public function test_a_window_that_can_never_open_renders_nothing(): void
+    {
+        $this->panel('Promo', ['schedule_start' => '2026-12-01T00:00', 'schedule_end' => '2026-11-30T00:00']);
+        $this->page('<p><a href="#offcanvas-promo">Open</a></p>');
+
+        $this->get('/landing')->assertOk()->assertDontSee('falcon-oc-promo', false);
+    }
+
+    public function test_crossing_a_start_or_end_clears_the_page_cache_once(): void
+    {
+        $this->dhaka();
+        $this->travelTo(Carbon::parse('2026-11-10 00:00:00', 'UTC'));
+        $this->panel('Promo', ['schedule_start' => '2026-11-15T00:00', 'schedule_end' => '2026-11-30T23:59']);
+        $start = Carbon::parse('2026-11-14 18:00:00', 'UTC')->getTimestamp();
+        $end = Carbon::parse('2026-11-30 17:59:00', 'UTC')->getTimestamp();
+        $this->assertSame((string) $start, (string) get_cms_option(OffCanvas::NEXT_CHANGE_OPTION));
+
+        $this->assertFalse(OffCanvas::maintainSchedule($start - 1), 'nothing to do before the start');
+
+        Cache::put('falcon-page-cache-probe', 1, 600);
+        $this->assertTrue(OffCanvas::maintainSchedule($start + 30));
+        $this->assertFalse(Cache::has('falcon-page-cache-probe'), 'the page cache was cleared');
+        forget_cms_options_cache();
+        $this->assertSame((string) $end, (string) get_cms_option(OffCanvas::NEXT_CHANGE_OPTION), 'the end is next');
+        $this->assertFalse(OffCanvas::maintainSchedule($start + 60), 'once per change');
+
+        $this->assertTrue(OffCanvas::maintainSchedule($end));
+        forget_cms_options_cache();
+        $this->assertSame('', (string) get_cms_option(OffCanvas::NEXT_CHANGE_OPTION), 'nothing left to wait for');
+    }
+
+    public function test_the_builder_saves_the_schedule_and_the_library_shows_it(): void
+    {
+        $this->dhaka();
+        $panel = $this->panel('Promo');
+        $this->travelTo(Carbon::parse('2026-11-10 00:00:00', 'UTC'));
+
+        $this->actingAs($this->administrator())
+            ->postJson('/admin/falcon-builder-library/off-canvas/'.$panel['id'].'/settings', ['settings' => ['schedule_end' => '2026-11-30T23:59']])
+            ->assertOk()->assertJsonPath('settings.schedule_end', '2026-11-30T23:59');
+        forget_cms_options_cache();
+
+        $this->actingAs($this->administrator())->get('/admin/falcon-builder-library?tab=off_canvas')
+            ->assertOk()->assertSee('Turns off 30 Nov 2026, 23:59', false);
+
+        $this->actingAs($this->administrator())->get('/admin/falcon-builder-library/off-canvas/'.$panel['id'].'/builder')
+            ->assertOk()->assertSee('timezone: "Asia\/Dhaka"', false)->assertSee('Turn Off At', false);
     }
 }

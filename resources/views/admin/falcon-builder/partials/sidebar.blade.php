@@ -58,7 +58,7 @@
                          @dragend="navDragEnd()"
                          @click="setEditingContext('container', ci)">
                         <i class="fa fa-caret-down text-[10px] text-slate-400"></i>
-                        <span class="text-[14px] font-bold text-[#0091ea] flex-1">Container</span>
+                        <span class="text-[14px] font-bold text-[#0091ea] flex-1">@{{ (cont.settings?.adminLabel || '').trim() || 'Container' }}</span>
                         <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                             <i @click.stop @mousedown.stop class="fa fa-grip-vertical text-[9px] text-slate-300 hover:text-slate-500 cursor-grab" title="Drag to reorder"></i>
                             <i @click.stop="openColumnModal(ci)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Column"></i>
@@ -80,7 +80,7 @@
                              @dragend="navDragEnd()"
                              @click="setEditingContext('column', ci, coli)">
                             <i class="fa fa-caret-down text-[10px] text-slate-500"></i>
-                            <span class="text-[14px] font-semibold text-slate-700 flex-1">Column @{{ formatBasisToFraction(col.basis) }}</span>
+                            <span class="text-[14px] font-semibold text-slate-700 flex-1">@{{ (col.settings?.adminLabel || '').trim() || ('Column ' + formatBasisToFraction(col.basis)) }}</span>
                             <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                 <i @click.stop @mousedown.stop class="fa fa-grip-vertical text-[9px] text-slate-300 hover:text-slate-500 cursor-grab" title="Drag to reorder"></i>
                                 <i @click.stop="openElementModal(ci, coli)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Element"></i>
@@ -124,7 +124,7 @@
                                      @dragend="navDragEnd()"
                                      @click="setEditingContext('nested-row', ci, coli, eli)">
                                     <i class="fa fa-caret-down text-[10px] text-slate-400"></i>
-                                    <span class="text-[14px] font-bold text-slate-600 flex-1">Nested Row</span>
+                                    <span class="text-[14px] font-bold text-slate-600 flex-1">@{{ (el.settings?.adminLabel || '').trim() || 'Nested Row' }}</span>
                                     <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                         <i @click.stop @mousedown.stop class="fa fa-grip-vertical text-[9px] text-slate-300 hover:text-slate-500 cursor-grab" title="Drag to reorder"></i>
                                         <i @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Below"></i>
@@ -145,7 +145,7 @@
                                          @dragend="navDragEnd()"
                                          @click="setEditingContext('nested-column', ci, coli, eli, ncoli)">
                                         <i class="fa fa-caret-down text-[10px] text-slate-500"></i>
-                                        <span class="text-[14px] font-bold text-slate-600 flex-1">Nested Column</span>
+                                        <span class="text-[14px] font-bold text-slate-600 flex-1">@{{ (ncol.settings?.adminLabel || '').trim() || 'Nested Column' }}</span>
                                         <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                             <i @click.stop @mousedown.stop class="fa fa-grip-vertical text-[9px] text-slate-300 hover:text-slate-500 cursor-grab" title="Drag to reorder"></i>
                                             <i @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Nested Element"></i>

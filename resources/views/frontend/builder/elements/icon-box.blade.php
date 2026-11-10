@@ -40,6 +40,10 @@
     $titleTag           = in_array($s['titleTag'] ?? 'h3', ['h1','h2','h3','h4','h5','h6','p','div']) ? ($s['titleTag'] ?? 'h3') : 'h3';
     $titleFontFamily    = $s['titleFontFamily'] ?? 'inherit';
     $titleSize          = getUnitVal($s['titleFontSize'] ?? 20, $s['titleFontSizeUnit'] ?? 'px');
+    // A heading title follows the Customizer's Responsive Typography, as the Title element does.
+    if ($titleSize !== null && $titleSize !== '' && in_array($titleTag, ['h1','h2','h3','h4','h5','h6'], true)) {
+        $titleSize = falcon_element_fluid_font_size((string) $titleSize);
+    }
     $titleWeight        = $s['titleFontWeight'] ?? '600';
     $titleColor         = $s['titleColor']  ?? '#222222';
     $titleGap           = ($s['titleSpacing'] ?? 8) . 'px';

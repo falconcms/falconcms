@@ -102,6 +102,20 @@
             </div>
         </div>
 
+        <!-- Responsive Typography: a heading's font size shrinks on smaller screens, per Customizer -->
+        <div>
+            <label class="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block">Responsive Typography</label>
+            <div class="flex bg-slate-50 border border-slate-100 rounded p-1 w-fit">
+                <button @click="editingElement.settings.responsiveTypography = true"
+                        :class="editingElement.settings.responsiveTypography !== false ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                        class="px-6 py-1.5 text-[11px] font-bold rounded transition-all">On</button>
+                <button @click="editingElement.settings.responsiveTypography = false"
+                        :class="editingElement.settings.responsiveTypography === false ? 'bg-[#2271b1] text-white shadow-md' : 'bg-[#2271b1]/20 text-[#0091ea]'"
+                        class="px-6 py-1.5 text-[11px] font-bold rounded transition-all">Off</button>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1">Shrinks this heading's font size on smaller screens, using Customizer → Typography → Responsive Typography. A Tablet or Mobile size set here always wins.</p>
+        </div>
+
         <div>
             <label class="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block">Text Transform</label>
             <div class="flex bg-slate-50 border border-slate-100 rounded overflow-hidden">

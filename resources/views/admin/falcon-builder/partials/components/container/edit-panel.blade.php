@@ -4,8 +4,10 @@
 @endphp
 <div class="h-full flex flex-col bg-white">
     <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100" v-if="!{{ isset($isNestedRow) && $isNestedRow ? 'true' : 'false' }}">
-        <h3 class="text-[13px] font-bold text-[#444]">{{ $label }}</h3>
+    <!-- Header: the name is editable and is what the Navigator shows; empty = the default name. -->
+    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <input type="text" v-model="{{ $base }}.settings.adminLabel" placeholder="{{ (isset($isNestedRow) && $isNestedRow) ? 'Nested Row' : 'Container' }}"
+               class="flex-1 min-w-0 mr-2 text-[13px] font-bold text-[#444] bg-transparent border border-transparent rounded px-1.5 py-0.5 -ml-1.5 hover:border-slate-200 focus:border-[#0091ea] focus:bg-white focus:outline-none placeholder:text-[#444]" maxlength="60" title="Click to rename — leave empty for the default name">
         <div class="flex gap-2">
             <button class="text-slate-400 hover:text-slate-600"><i class="fa fa-ellipsis-h text-[10px]"></i></button>
             <button @click="activeTab='navigator'; editingContext.type = null" class="text-slate-400 hover:text-red-500"><i class="fa fa-times text-[10px]"></i></button>

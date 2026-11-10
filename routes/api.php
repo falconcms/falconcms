@@ -3,6 +3,7 @@
 use FalconCms\Core\Http\Controllers\Api\V1\CmsApiController;
 use FalconCms\Core\Http\Controllers\PageTimeHitController;
 use FalconCms\Core\Http\Controllers\PostViewHitController;
+use FalconCms\Core\Http\Controllers\VisitConfirmController;
 use Illuminate\Support\Facades\Route;
 
 // The post views beacon: no session, cookies or CSRF — the page that sends it may be a day-old
@@ -15,6 +16,12 @@ Route::post('falcon/post-views', PostViewHitController::class)
 Route::post('falcon/page-time', PageTimeHitController::class)
     ->middleware('throttle:120,1')
     ->name('falcon.page-time.hit');
+
+// A real browser confirming that a person is looking at the page — the visitor log counts only
+// these (HumanVisits). The same rules as the beacons above.
+Route::post('falcon/visit', VisitConfirmController::class)
+    ->middleware('throttle:120,1')
+    ->name('falcon.visit.confirm');
 
 Route::prefix('api/v1')->middleware(['api', 'throttle:60,1'])->group(function () {
 

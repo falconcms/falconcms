@@ -361,6 +361,11 @@
     .falcon-nested-dim * {
         pointer-events: none !important;
     }
+    /* The container of the open nested row rides above the lock sheet (z-900), whatever
+       stacking context it makes of its own — see nestedHostContainer in scripts. */
+    .falcon-nested-host {
+        z-index: 950 !important;
+    }
 
     .column-left-panel {
         position: absolute;

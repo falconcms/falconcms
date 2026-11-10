@@ -96,6 +96,7 @@
             targetOptions: @json($targetPicker['options']),
             targetGroups: @json($targetPicker['optgroups']),
             targetSearchUrl: @json(route('admin.falcon-builder.off-canvas.targets')),
+            timezone: @json(cms_timezone()),
         };
     </script>
 

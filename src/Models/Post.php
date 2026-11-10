@@ -30,6 +30,8 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $seo_meta
  * @property string|null $editor_type
  * @property int|null $origin_id
+ * @property int|null $parent_id
+ * @property int|null $menu_order
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -44,7 +46,9 @@ class Post extends Model
         'user_id', 'title', 'slug', 'content', 'excerpt', 'type', 'status',
         'featured_image', 'gallery', 'seo_meta', 'published_at', 'editor_type',
         'lang_code', 'origin_id', 'template', 'password', 'comment_status',
-        'menu_order', 'post_parent', 'is_sticky',
+        // parent_id is the real column (a page's parent page). 'post_parent' was listed here
+        // instead, a name no column has, so a parent chosen in the editor was dropped on save.
+        'menu_order', 'parent_id', 'post_parent', 'is_sticky',
     ];
 
     protected $casts = [
@@ -52,6 +56,15 @@ class Post extends Model
         'seo_meta' => 'array',
         'gallery' => 'array',
     ];
+
+    protected static function booted()
+    {
+        // Page addresses are built from the parents remembered for the request
+        // (falcon_page_ancestors); a page saved or removed mid-request makes them stale.
+        $forget = static fn () => app()->forgetInstance('falcon.memo.page_parents');
+        static::saved($forget);
+        static::deleted($forget);
+    }
 
     /**
      * Calculate SEO score percentage (0-100)

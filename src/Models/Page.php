@@ -10,6 +10,8 @@ class Page extends Post
 
     protected static function booted()
     {
+        parent::booted(); // Post's hooks (forgetting the remembered page parents on save)
+
         static::addGlobalScope('page', function (Builder $builder) {
             $builder->where('type', 'page');
         });

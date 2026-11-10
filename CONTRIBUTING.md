@@ -110,8 +110,9 @@ Open a [GitHub issue](https://github.com/falconcms/falconcms/issues) with:
 
 ## Security issues
 
-Please don't open a public issue for a security vulnerability. Email
-tareqcodex@gmail.com instead.
+Please don't open a public issue for a security vulnerability. Report it privately
+through the repository's [Security tab → Report a vulnerability](https://github.com/falconcms/falconcms/security/advisories/new),
+or email support@falconcms.com. [`SECURITY.md`](SECURITY.md) has the details.
 
 ## License
 

@@ -215,7 +215,8 @@ export default defineConfig({
         {
           text: 'Changelog',
           items: [
-            { text: 'v2.9.2 (Latest)', link: '/changelog#v2-9-2' },
+            { text: 'v2.9.3 (Latest)', link: '/changelog#v2-9-3' },
+            { text: 'v2.9.2', link: '/changelog#v2-9-2' },
             { text: 'v2.9.1', link: '/changelog#v2-9-1' },
             { text: 'v2.9.0', link: '/changelog#v2-9-0' },
             { text: 'v2.8.19', link: '/changelog#v2-8-19' },

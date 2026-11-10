@@ -43,7 +43,12 @@ final class Breadcrumbs
                     }
                 } catch (Throwable $e) {
                 }
-            } elseif ($type !== 'page') {
+            } elseif ($type === 'page') {
+                // A sub-page: Home › Parent › Child.
+                foreach (falcon_page_ancestors($post) as $parent) {
+                    $items[] = ['title' => (string) $parent->title, 'url' => get_falcon_permalink($parent)];
+                }
+            } else {
                 try {
                     $postType = PostType::where('slug', $type)->first();
                     if ($postType && $postType->is_public) {

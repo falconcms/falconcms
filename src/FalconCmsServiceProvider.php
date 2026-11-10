@@ -34,6 +34,7 @@ use FalconCms\Core\Pro\LicenseGateway;
 use FalconCms\Core\Pro\NullLicenseGateway;
 use FalconCms\Core\Support\AdminMenu;
 use FalconCms\Core\Support\CustomFonts\CustomFonts;
+use FalconCms\Core\Support\HumanVisits;
 use FalconCms\Core\Support\MotionVisual\MotionVisuals;
 use FalconCms\Core\Support\OffCanvas;
 use FalconCms\Core\Support\PageTime;
@@ -201,6 +202,7 @@ class FalconCmsServiceProvider extends ServiceProvider
 
             // How long visitors stay, on every public page.
             PageTime::register();
+            HumanVisits::register();
 
             // Post Date as "3 hours ago": the footer script that keeps it current on cached pages.
             RelativeDates::register();
@@ -319,6 +321,14 @@ class FalconCmsServiceProvider extends ServiceProvider
                         ->whereNotNull('published_at')
                         ->where('published_at', '<=', now())
                         ->update(['status' => 'published']);
+                } catch (\Throwable $e) {
+                    // Never let scheduling maintenance affect the request.
+                }
+
+                // Off-canvas schedules: the first response after a panel starts or ends clears
+                // the page cache, so cached pages stop (or start) carrying it.
+                try {
+                    OffCanvas::maintainSchedule();
                 } catch (\Throwable $e) {
                     // Never let scheduling maintenance affect the request.
                 }

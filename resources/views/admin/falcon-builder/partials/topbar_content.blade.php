@@ -45,6 +45,21 @@
         <div class="topbar-icon" @click="isPreview = !isPreview" title="Preview">
             <i class="fa" :class="isPreview ? 'fa-eye-slash' : 'fa-eye'"></i>
         </div>
+        {{-- View the live page, in a new tab. Saving clears the page cache, so after Save it
+             shows the update; with unsaved changes the icon turns amber and says so. --}}
+        @if(!empty($builderViewUrl))
+            @if(!empty($builderViewLive))
+            <a href="{{ $builderViewUrl }}" target="_blank" rel="noopener" class="topbar-icon"
+               :class="isDirty ? 'text-amber-300' : ''"
+               :title="isDirty ? 'View page — save first: the live page does not have your latest changes yet' : 'View page (opens in a new tab)'">
+                <i class="fa fa-external-link-alt text-sm"></i>
+            </a>
+            @else
+            <span class="topbar-icon opacity-30 cursor-not-allowed" title="Not published yet — publish it to view the live page">
+                <i class="fa fa-external-link-alt text-sm"></i>
+            </span>
+            @endif
+        @endif
         
         <div class="h-6 w-px bg-white/10 mx-1"></div>
         

@@ -2241,7 +2241,7 @@ class ShopFrontendController extends Controller
     {
         $accountPageId = get_shop_option('shop_account_page_id');
         $accountPage = $accountPageId ? Post::find($accountPageId) : null;
-        $accountUrl = $accountPage ? url('/'.$accountPage->slug) : url('/');
+        $accountUrl = $accountPage ? get_falcon_permalink($accountPage) : url('/');
 
         $hash = hash('sha256', $token);
 

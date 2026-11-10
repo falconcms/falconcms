@@ -93,6 +93,52 @@
                     }, 700);
                 }, { deep: true });
             }
+            // Panel schedule (Panel Options → Schedule). The two times are stored as typed —
+            // "2026-11-30T23:59" — and mean that wall-clock time in the SITE timezone, whatever
+            // the editor's own computer is set to, so they are converted with Intl rather than
+            // new Date(), which would read them in the browser's zone.
+            const ocTimezone = (window.falconOffCanvas && window.falconOffCanvas.timezone) || 'UTC';
+            const ocZonedMs = (value) => {
+                const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value || '');
+                if (!m) return null;
+                const wall = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+                let fmt;
+                try {
+                    fmt = new Intl.DateTimeFormat('en-US', { timeZone: ocTimezone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                } catch (e) { return wall; }
+                const offset = (ms) => {
+                    const p = {}; fmt.formatToParts(new Date(ms)).forEach(x => { p[x.type] = +x.value; });
+                    return Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute, p.second) - ms;
+                };
+                // Twice, so a time near a daylight-saving change lands on the right side of it.
+                let ms = wall - offset(wall);
+                return wall - offset(ms);
+            };
+            const ocClock = ref(Date.now());
+            if (ocSettings) setInterval(() => { ocClock.value = Date.now(); }, 30000);
+            const ocWhen = (value) => {
+                const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value || '');
+                if (!m) return '';
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                return (+m[3]) + ' ' + months[+m[2] - 1] + ' ' + m[1] + ', ' + m[4] + ':' + m[5];
+            };
+            const ocIn = (ms) => {
+                const min = Math.max(1, Math.round(ms / 60000));
+                if (min < 60) return min + ' min';
+                const h = Math.round(min / 60);
+                if (h < 48) return h + ' h';
+                return Math.round(h / 24) + ' days';
+            };
+            const ocScheduleStatus = computed(() => {
+                if (!ocSettings) return { tone: 'none', text: '' };
+                const now = ocClock.value;
+                const from = ocZonedMs(ocSettings.schedule_start), until = ocZonedMs(ocSettings.schedule_end);
+                if (from === null && until === null) return { tone: 'none', text: 'No schedule — the panel is on whenever its switch is on.' };
+                if (from !== null && until !== null && until <= from) return { tone: 'off', text: 'Turn Off is not after Turn On, so the panel would never show. Fix one of the two times.' };
+                if (until !== null && now >= until) return { tone: 'off', text: 'Turned off on ' + ocWhen(ocSettings.schedule_end) + ' — hidden from the site.' };
+                if (from !== null && now < from) return { tone: 'waiting', text: 'Off until ' + ocWhen(ocSettings.schedule_start) + ' (in ' + ocIn(from - now) + ')' + (until !== null ? ', then on until ' + ocWhen(ocSettings.schedule_end) + '.' : ', then on.') };
+                return { tone: 'live', text: until !== null ? 'On now — turns off ' + ocWhen(ocSettings.schedule_end) + ' (in ' + ocIn(until - now) + ').' : 'On now, with no end.' };
+            });
             const isPreview = ref(false);
             const isSaving = ref(false);
             const isDirty = ref(false);
@@ -686,6 +732,16 @@
             const nestedDimElement = (ci, coli, eli) =>
                 nestedLockActive.value && ci === openNestedRowAt.value.ci
                 && coli === openNestedRowAt.value.coli && eli !== openNestedRowAt.value.eli;
+            // The container holding the open row is what gets lifted above the lock sheet —
+            // not the row itself. A row can only rise above the sheet from inside its
+            // container when that container makes no stacking context of its own, and any
+            // number of things make one: a Falcon Effects background or particles layer
+            // (isolation: isolate), a sticky position, a z-index setting, a transform. Then the
+            // row's z-index stayed inside the container, the sheet covered the whole row and
+            // nothing in it could be clicked — "nested columns sometimes do not work at all".
+            // Lifting the container works whatever it carries; its other columns are already
+            // dimmed with pointer-events off, so nothing outside the row becomes reachable.
+            const nestedHostContainer = (ci) => nestedLockActive.value && ci === openNestedRowAt.value.ci;
 
             // Is the thing currently being edited inside a nested row that is open?
             // Work in there is held back from the Save button until the Finished tick;
@@ -7821,7 +7877,7 @@
                 libraryTabs, libraryCurrentItems, libraryActiveTabLabel, libraryTabIcon, libraryCanSave,
                 openLibraryModal, saveToLibrary, insertFromLibrary, insertGlobalFromLibrary, deleteFromLibrary,
                 hoveredType, hoveredCi, hoveredColi, hoveredEli, hoveredNcoli, setHover,
-                isNestedRowOpen, setNestedRowOpen, nestedChrome, nestedRowHasContent, nestedLockActive, nestedLocked, nestedDimContainer, nestedDimColumn, nestedDimElement,
+                isNestedRowOpen, setNestedRowOpen, nestedChrome, nestedRowHasContent, nestedLockActive, nestedLocked, nestedDimContainer, nestedDimColumn, nestedDimElement, nestedHostContainer,
                 navDragSrc, navDragOver, navDragStart, navDragEnd, navDragOverHandler, navDrop, navCanDrop,
                 ctxMenu, ctxClipboard, ctxMenuTitle, openCtxMenu, closeCtxMenu, ctxEdit, ctxSave, ctxClone, ctxRemove, ctxCopy, ctxPaste, ctxSaveAsGlobal,
                 canPasteHere, pasteHint, pasteAnchored, clipKind,
@@ -7834,7 +7890,7 @@
                 falconMenusList: window.falconMenusList || {},
                 postCardMode,
                 layoutMode,
-                ocSettings, ocSaveState, ocTargetPicker, ocCanvasFold, ocVal, ocSet, ocOverridden, ocResetDevice,
+                ocSettings, ocSaveState, ocTargetPicker, ocCanvasFold, ocVal, ocSet, ocOverridden, ocResetDevice, ocTimezone, ocScheduleStatus,
                 customElements,
                 getCustomElementPreviewText,
                 getCustomElementPreviewColor,
