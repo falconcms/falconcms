@@ -409,6 +409,11 @@ final class PageAnalyzer
             if ($href === '' || $href[0] === '#' || preg_match('#^(mailto|tel|javascript|data|sms):#i', $href)) {
                 continue;
             }
+            // Cloudflare's Email Obfuscation rewrites mailto links to this address; a browser decodes
+            // it back to the email with JS, so it is a mailto in disguise, not a broken page link.
+            if (preg_match('#^(?:https?:)?(?://[^/]+)?/cdn-cgi/l/email-protection(?:[\#?]|$)#i', $href)) {
+                continue;
+            }
             $absolute = self::absolute($href, $pageUrl);
             $host = strtolower((string) parse_url($absolute, PHP_URL_HOST));
             $text = self::text($match[2]);

@@ -119,6 +119,19 @@ class PageAnalysisTest extends TestCase
         $this->assertSame([['url' => 'https://gone.test/b', 'status' => '404']], $result['broken']);
     }
 
+    public function test_cloudflare_email_protection_links_are_not_reported_broken(): void
+    {
+        Http::fake(['*' => Http::response('', 404)]);
+        $html = $this->page('<h1>Coffee beans</h1><p>Email <a href="/cdn-cgi/l/email-protection#dba8aeab">us</a> or '
+            .'<a href="https://site.test/cdn-cgi/l/email-protection#f2818782">here</a>.</p>');
+
+        $result = PageAnalyzer::analyze($html, ['url' => 'https://site.test/coffee', 'keyword' => 'coffee beans', 'slug' => 'coffee', 'check_links' => true]);
+
+        $this->assertSame('good', $this->check($result, 'broken_links')['status']);
+        $this->assertSame(0, $result['stats']['internal_links']);
+        Http::assertNothingSent();
+    }
+
     public function test_the_editor_endpoint_analyses_an_unpublished_page_from_the_editor(): void
     {
         $this->actingAs($this->makeUser(['role_id' => (int) DB::table('roles')->where('slug', 'administrator')->value('id')]));
