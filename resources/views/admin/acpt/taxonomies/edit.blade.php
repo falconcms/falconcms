@@ -1,5 +1,5 @@
 <x-falcon-cms::layouts.admin title="Edit Taxonomy">
-    <div class="w-full pb-12" x-data="taxonomyForm()">
+    <div class="w-full xl:w-1/2 pb-12" x-data="taxonomyForm()">
         <x-falcon-cms::admin.delete-modal />
         <form action="{{ route('admin.acpt.taxonomies.update', $taxonomy->id) }}" method="POST">
             @csrf

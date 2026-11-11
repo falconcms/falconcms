@@ -2,7 +2,7 @@
     @php
         $advancedOpen = !empty(array_diff($postType->supports ?? [], ['title']));
     @endphp
-    <div class="w-full pb-12" x-data="cptForm()">
+    <div class="w-full xl:w-1/2 pb-12" x-data="cptForm()">
         <form action="{{ route('admin.acpt.cpt.update', $postType->id) }}" method="POST">
             @csrf
             @method('PUT')

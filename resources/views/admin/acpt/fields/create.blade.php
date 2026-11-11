@@ -1,5 +1,5 @@
 <x-falcon-cms::layouts.admin pro-lock-allow-forms="1" pro-lock-feature="custom_fields">
-    <div class="w-full">
+    <div class="w-full xl:w-1/2">
         <div class="mb-6 flex justify-between items-center">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Add New Field Group</h1>
             <div class="flex gap-2">

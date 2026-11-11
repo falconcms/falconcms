@@ -1,5 +1,5 @@
 <x-falcon-cms::layouts.admin title="Add New Taxonomy">
-    <div class="w-full pb-12" x-data="taxonomyForm()">
+    <div class="w-full xl:w-1/2 pb-12" x-data="taxonomyForm()">
         <form action="{{ route('admin.acpt.taxonomies.store') }}" method="POST">
             @csrf
 

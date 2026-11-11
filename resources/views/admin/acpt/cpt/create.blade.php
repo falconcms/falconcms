@@ -1,5 +1,5 @@
 <x-falcon-cms::layouts.admin title="Add New Post Type">
-    <div class="w-full pb-12" x-data="cptForm()">
+    <div class="w-full xl:w-1/2 pb-12" x-data="cptForm()">
         <form action="{{ route('admin.acpt.cpt.store') }}" method="POST">
             @csrf
 
