@@ -43,7 +43,11 @@
                 @if(!empty($expired))
                 <div class="mt-3 pt-3 border-t border-[#cfe8cf] flex items-start gap-2">
                     <span class="material-symbols-outlined text-[#c98a1a]" style="font-size:18px">lock_clock</span>
+                    @if(($plan ?? null) === 'agency')
+                    <p class="text-[12px] text-[#7a663a]"><strong>Update window ended.</strong> All Pro features stay active on this site. The Agency extras (unbranded form notification emails, the multi-site security dashboard) are paused — renew your license to restore them and receive new updates again.</p>
+                    @else
                     <p class="text-[12px] text-[#7a663a]"><strong>Update window ended.</strong> All Pro features stay active on this site — renew your license to receive new updates again.</p>
+                    @endif
                 </div>
                 @elseif(!empty($expiresAt))
                 <p class="mt-3 pt-3 border-t border-[#cfe8cf] text-[12px] text-[#3a6a3a]">Updates included until <strong>{{ \Illuminate\Support\Carbon::parse($expiresAt)->format('M j, Y') }}</strong>.</p>
