@@ -176,6 +176,7 @@ export default defineConfig({
             { text: 'Promotions', link: '/ecommerce/promotions' },
             { text: 'Shop Plugin & Templates', link: '/ecommerce/shop-plugin' },
             { text: 'Wholesale & B2B (Pro)', link: '/wholesale/overview' },
+            { text: 'bKash & Nagad (Pro)', link: '/ecommerce/bd-payments' },
           ]
         },
       ],
