@@ -53,7 +53,7 @@ if (!function_exists('get_falcon_post_content')) {
             if ($cp && $ctxDepth === 0 && function_exists('_falcon_layout_post_context')) {
                 $ctxDepth++;
                 try {
-                    $data += _falcon_layout_post_context($cp);
+                    $data += _falcon_layout_post_context($cp, $layout);
                 } finally {
                     $ctxDepth--;
                 }

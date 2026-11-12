@@ -36,7 +36,7 @@ if (!function_exists('_falcon_render_layout')) {
         // the post-card renderer provides.
         $cp = view()->getShared()['current_post'] ?? null;
         if ($cp) {
-            $data += _falcon_layout_post_context($cp);
+            $data += _falcon_layout_post_context($cp, $layout);
         }
 
         $rendered = view('falcon-cms::frontend.builder.render', $data)->render();
@@ -45,9 +45,89 @@ if (!function_exists('_falcon_render_layout')) {
     }
 }
 
+if (!function_exists('_falcon_layout_needs_post_content')) {
+    /**
+     * Whether a layout shows the current post's rendered content: a Content element, or Post
+     * Meta (its reading time counts the words). Global sections are looked into as well, since
+     * the renderer swaps a container with a global_id for the section's own data.
+     */
+    function _falcon_layout_needs_post_content(array $layout): bool
+    {
+        $json = (string) json_encode($layout);
+        if (preg_match('/"type":"post_(?:content|meta)"/', $json)) {
+            return true;
+        }
+        if (!preg_match_all('/"global_id":"([^"]+)"/', $json, $m)) {
+            return false;
+        }
+        $raw = get_cms_option('falcon_global_sections', get_cms_option('lazy_global_sections', null));
+        foreach ((array) json_decode((string) $raw, true) as $gs) {
+            if (in_array($gs['id'] ?? null, $m[1], true)
+                && preg_match('/"type":"post_(?:content|meta)"/', (string) json_encode($gs['data'] ?? []))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('_falcon_post_context_content')) {
+    /**
+     * The post's rendered content and its plain words, for the post context. Rendered once per
+     * request and post, and in isolation.
+     *
+     * This render is thrown away: only its HTML string is kept. Rendered as part of the page, it
+     * used to spend the page's @once guards and leave @push content behind, so the copy of an
+     * element the visitor actually sees lost its one-time <style> (the blog's pagination showed
+     * as two giant arrows). The view factory's once-guards and stacks are put back afterwards.
+     * It ran again for every Layout section (header, footer, title bar, off-canvas…), so a blog
+     * page queried its posts eight times; it is now kept for the rest of the request.
+     *
+     * @return array{0: string, 1: string}
+     */
+    function _falcon_post_context_content($post): array
+    {
+        $request = app()->bound('request') ? request() : null;
+        $key = 'falcon.post_context.'.($post->getKey() ?? spl_object_id($post));
+        if ($request && $request->attributes->has($key)) {
+            return $request->attributes->get($key);
+        }
+
+        $factory = view();
+        $saved = [];
+        foreach (['renderedOnce', 'pushes', 'prepends'] as $prop) {
+            if (property_exists($factory, $prop)) {
+                $r = new ReflectionProperty($factory, $prop);
+                $saved[$prop] = [$r, $r->getValue($factory)];
+            }
+        }
+        try {
+            $full = function_exists('get_falcon_post_content') ? get_falcon_post_content($post->content ?? '') : (string) ($post->content ?? '');
+        } finally {
+            foreach ($saved as [$r, $value]) {
+                $r->setValue($factory, $value);
+            }
+        }
+        // The words only: strip_tags() alone kept the rendered elements' CSS and scripts.
+        $plain = function_exists('falcon_post_plain_text') ? falcon_post_plain_text($full) : trim(strip_tags($full));
+
+        $result = [(string) $full, (string) $plain];
+        $request?->attributes->set($key, $result);
+
+        return $result;
+    }
+}
+
 if (!function_exists('_falcon_layout_post_context')) {
-    /** Post-context variables consumed by the Post elements (mirrors the card renderer). */
-    function _falcon_layout_post_context($post): array
+    /**
+     * Post-context variables consumed by the Post elements (mirrors the card renderer).
+     *
+     * $layout is what is about to be rendered with this context. The post's full content is
+     * only rendered when that layout shows it (see _falcon_layout_needs_post_content); without
+     * a layout it always is, as before.
+     */
+    function _falcon_layout_post_context($post, ?array $layout = null): array
     {
         if (!$post) {
             return [];
@@ -59,9 +139,9 @@ if (!function_exists('_falcon_layout_post_context')) {
         }
 
         // Full, rendered content for the Content element (builder JSON → HTML, or classic).
-        $fullContent = function_exists('get_falcon_post_content') ? get_falcon_post_content($post->content ?? '') : (string) ($post->content ?? '');
-        // The words only: strip_tags() alone kept the rendered elements' CSS and scripts.
-        $plain = function_exists('falcon_post_plain_text') ? falcon_post_plain_text($fullContent) : trim(strip_tags($fullContent));
+        [$fullContent, $plain] = ($layout === null || _falcon_layout_needs_post_content($layout))
+            ? _falcon_post_context_content($post)
+            : ['', ''];
         $excerpt = $post->excerpt ?? (mb_strlen($plain) > 160 ? mb_substr($plain, 0, 160).'…' : $plain);
 
         return [
