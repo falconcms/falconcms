@@ -149,19 +149,14 @@
             <!-- Border Radius -->
             <div>
                 <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wide block mb-2">BORDER RADIUS</label>
-                {{-- One field per corner, as on a container. An empty corner shows (and uses)
-                     the single radius an older image was saved with. --}}
-                <div class="grid grid-cols-2 gap-1">
-                    <div v-for="(label, key) in {'TopLeft': 'T/L', 'TopRight': 'T/R', 'BottomRight': 'B/R', 'BottomLeft': 'B/L'}" :key="key">
-                        <label class="block text-[7px] font-bold text-slate-400 mb-1 uppercase tracking-wider text-center">@{{ label }}</label>
-                        <div class="flex border border-slate-200 rounded overflow-hidden focus-within:ring-1 focus-within:ring-[#0091ea]/20 focus-within:border-[#0091ea]">
-                            <input type="number" min="0" v-model.number="editingElement.settings['borderRadius' + key]" class="w-full h-8 px-1 text-[11px] text-center border-none focus:ring-0" :placeholder="editingElement.settings.borderRadius || 0">
-                            <select v-model="editingElement.settings['borderRadius' + key + 'Unit']" class="bg-slate-50 border-l border-slate-200 text-[9px] px-1 focus:ring-0 border-none outline-none cursor-pointer text-center">
-                                <option value="px">px</option>
-                                <option value="rem">rem</option>
-                                <option value="%">%</option>
-                            </select>
-                        </div>
+                {{-- One text box per corner, like the Margin boxes: "24", "24px", "1rem", "50%".
+                     Stored as before (borderRadiusTopLeft + borderRadiusTopLeftUnit), so saved
+                     images render unchanged. An empty corner shows (and uses) the single radius
+                     an older image was saved with; a negative one is ignored (invalid CSS). --}}
+                <div class="grid grid-cols-2 gap-2">
+                    <div v-for="(label, key) in {'TopLeft': 'Top Left', 'TopRight': 'Top Right', 'BottomRight': 'Bottom Right', 'BottomLeft': 'Bottom Left'}" :key="key" class="flex flex-col gap-1">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">@{{ label }}</label>
+                        <input type="text" :value="spDisplay(editingElement.settings, 'borderRadius' + key, 'desktop')" @input="spInput(editingElement.settings, 'borderRadius' + key, 'desktop', $event.target.value)" :placeholder="Number(editingElement.settings.borderRadius) > 0 ? spDisplay(editingElement.settings, 'borderRadius', 'desktop') : '0'" title="Any CSS size: 12, 12px, 1rem, 50%" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
                     </div>
                 </div>
             </div>

@@ -107,16 +107,21 @@ if (!function_exists('falcon_corner_radius')) {
      */
     function falcon_corner_radius(array $s, $legacy = null): ?string
     {
+        // A negative radius is not valid CSS: one negative corner made the browser drop the whole
+        // border-radius, so the other corners were square too. Older images were saved with a
+        // single radius of -15, which every empty corner took. A negative value counts as unset.
+        $unset = fn ($v) => $v === null || $v === '' || (is_numeric($v) && (float) $v < 0);
+
         $all = $s['borderRadius'] ?? null;
-        if ($all === null || $all === '') {
+        if ($unset($all)) {
             $all = $legacy;
         }
-        $allCss = ($all === null || $all === '') ? '0' : (is_numeric($all) ? $all.($s['borderRadiusUnit'] ?? 'px') : (string) $all);
+        $allCss = $unset($all) ? '0' : (is_numeric($all) ? $all.($s['borderRadiusUnit'] ?? 'px') : (string) $all);
 
         $corners = [];
         foreach (['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'] as $corner) {
             $v = $s['borderRadius'.$corner] ?? null;
-            $corners[] = ($v === null || $v === '') ? $allCss : (is_numeric($v) ? $v.($s['borderRadius'.$corner.'Unit'] ?? 'px') : (string) $v);
+            $corners[] = $unset($v) ? $allCss : (is_numeric($v) ? $v.($s['borderRadius'.$corner.'Unit'] ?? 'px') : (string) $v);
         }
 
         return array_filter($corners, fn ($c) => (float) $c != 0) ? implode(' ', $corners) : null;

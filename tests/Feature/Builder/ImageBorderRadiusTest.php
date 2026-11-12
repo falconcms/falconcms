@@ -38,6 +38,30 @@ class ImageBorderRadiusTest extends TestCase
         $this->assertStringContainsString('border-radius:0px 12px 12px 12px;', $this->render(['borderRadius' => 12, 'borderRadiusTopLeft' => 0]));
     }
 
+    /**
+     * A post card image on falconcms.com had 24 on its top corners and an old single radius of
+     * -15: "24px 24px -15px -15px" is invalid CSS, so the browser dropped it and no corner was
+     * rounded. A negative value counts as unset.
+     */
+    public function test_a_negative_radius_is_ignored_instead_of_breaking_the_others(): void
+    {
+        $html = $this->render(['borderRadius' => -15, 'borderRadiusTopLeft' => 24, 'borderRadiusTopRight' => 24]);
+        $this->assertStringContainsString('border-radius:24px 24px 0 0;', $html);
+        $this->assertStringNotContainsString('-15px', $html);
+
+        $this->assertStringNotContainsString('border-radius:', $this->render(['borderRadius' => -15]));
+        $this->assertStringContainsString('border-radius:0 12px 0 0;', $this->render(['borderRadiusTopLeft' => -3, 'borderRadiusTopRight' => 12]));
+    }
+
+    public function test_the_corner_fields_are_text_boxes_without_a_unit_menu(): void
+    {
+        $panel = file_get_contents(dirname(__DIR__, 3).'/resources/views/admin/falcon-builder/partials/components/elements/image-design.blade.php');
+        $block = substr($panel, strpos($panel, 'BORDER RADIUS'), 1600);
+
+        $this->assertStringContainsString("spInput(editingElement.settings, 'borderRadius' + key", $block);
+        $this->assertStringNotContainsString('<select', substr($block, 0, strpos($block, 'Border Settings') ?: 1600));
+    }
+
     public function test_no_radius_writes_none(): void
     {
         $this->assertStringNotContainsString('border-radius:', $this->render([]));

@@ -4831,11 +4831,13 @@
              */
             const cornerRadius = (s, legacy) => {
                 s = s || {};
-                const all = (s.borderRadius === undefined || s.borderRadius === null || s.borderRadius === '') ? legacy : s.borderRadius;
-                const allCss = getUnitVal(all ?? 0, s.borderRadiusUnit || 'px') || '0';
+                // A negative radius is invalid CSS and counts as unset, as in PHP.
+                const unset = (v) => v === undefined || v === null || v === '' || (!isNaN(v) && Number(v) < 0);
+                const all = unset(s.borderRadius) ? legacy : s.borderRadius;
+                const allCss = unset(all) ? '0' : (getUnitVal(all, s.borderRadiusUnit || 'px') || '0');
                 return ['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'].map(c => {
                     const v = s['borderRadius' + c];
-                    return (v === undefined || v === null || v === '') ? allCss : getUnitVal(v, s['borderRadius' + c + 'Unit'] || 'px');
+                    return unset(v) ? allCss : getUnitVal(v, s['borderRadius' + c + 'Unit'] || 'px');
                 }).join(' ');
             };
 
