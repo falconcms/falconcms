@@ -8,11 +8,11 @@
     $currentDesc = $siteDesc;
     $currentImage = $defaultImage ? asset('storage/' . $defaultImage) : null;
     // The address without its query string, so sorted, filtered and tracked copies (?orderby=,
-    // ?color=, ?utm_source=) all name the one page. Except ?page=: page 2 of an archive lists other
-    // posts than page 1, and Google asks each page of a series to name itself.
-    $pageNumber = (int) request()->query('page', 1);
+    // ?color=, ?utm_source=) all name the one page. Except the page of a list (?page=, or a
+    // builder grid's ?cp_xxxxxxxx=): page 2 lists other posts than page 1, and Google asks each
+    // page of a series to name itself.
     // /index.php is the front controller, not a page: it named itself as a second home page.
-    $canonical = preg_replace('#/index\.php(?=/|$)#', '', url()->current()).($pageNumber > 1 ? '?page='.$pageNumber : '');
+    $canonical = preg_replace('#/index\.php(?=/|$)#', '', url()->current()).falcon_canonical_page_query(request()->query());
     $type = 'website';
     $noindex = false;
     $nofollow = false;

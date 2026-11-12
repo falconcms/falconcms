@@ -423,6 +423,62 @@ if (!function_exists('the_falcon_pagination')) {
     }
 }
 
+if (!function_exists('falcon_grid_page_param')) {
+    /**
+     * The query parameter a builder post grid pages with.
+     *
+     * The first paginated grid of a single page or post uses the plain `page` (/blog?page=2):
+     * that is what visitors expect, and the canonical keeps it. Any other grid on the same page
+     * gets its own `cp_` + 8 hex characters, from the element's id, so two grids never move
+     * each other. It used to be cp_ + a hash of all the grid's settings for every grid: an ugly
+     * address that changed whenever a colour or a spacing changed, which turned every link to
+     * page 2 into page 1.
+     *
+     * A grid keeps its name for the whole request, so a second render of the same content (the
+     * post context) gets the same answer. On an archive the theme's own list pages with `page`,
+     * so there every grid takes a cp_ name.
+     */
+    function falcon_grid_page_param(?string $elementId): string
+    {
+        $key = 'cp_'.substr(md5((string) $elementId), 0, 8);
+        $request = app()->bound('request') ? request() : null;
+        if (!$request || $elementId === null || $elementId === '') {
+            return $key;
+        }
+
+        $taken = $request->attributes->get('falcon.grid_page_params', []);
+        if (isset($taken[$elementId])) {
+            return $taken[$elementId];
+        }
+
+        $single = (view()->getShared()['current_post'] ?? null) !== null;
+        $taken[$elementId] = ($single && !in_array('page', $taken, true)) ? 'page' : $key;
+        $request->attributes->set('falcon.grid_page_params', $taken);
+
+        return $taken[$elementId];
+    }
+}
+
+if (!function_exists('falcon_canonical_page_query')) {
+    /**
+     * The part of the query string a canonical address keeps: the page of a paginated list
+     * (`page`, or a builder grid's own `cp_xxxxxxxx`) when it is past page 1. Everything else
+     * (sorting, filters, tracking) names the same page and is dropped.
+     */
+    function falcon_canonical_page_query(array $query): string
+    {
+        $keep = [];
+        foreach ($query as $name => $value) {
+            if (($name === 'page' || preg_match('/^cp_[0-9a-f]{8}$/', (string) $name)) && is_scalar($value) && (int) $value > 1) {
+                $keep[$name] = (int) $value;
+            }
+        }
+        ksort($keep);
+
+        return $keep ? '?'.http_build_query($keep) : '';
+    }
+}
+
 if (!function_exists('the_falcon_loop')) {
     function the_falcon_loop($args = [], $view = 'falcon-cms::frontend.loop')
     {

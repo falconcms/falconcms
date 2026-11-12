@@ -15,6 +15,14 @@ class FrontendPagination
 {
     public const VIEW = 'falcon-cms::components.frontend.pagination';
 
+    /**
+     * Request attribute: old builder-grid page parameters found in this request, old => new.
+     * A grid paged with ?cp_ + a hash of its settings; it now pages with ?page= or ?cp_ + its
+     * element id's hash (falcon_grid_page_param). Only the rendered grid knows its old name,
+     * so the redirect is decided here, after the page is rendered.
+     */
+    public const RENAMED = 'falcon.grid_page_renamed';
+
     public function handle(Request $request, Closure $next)
     {
         if (!$request->is('admin', 'admin/*', 'api/*')) {
@@ -22,6 +30,21 @@ class FrontendPagination
             Paginator::defaultSimpleView(self::VIEW);
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        $renamed = $request->attributes->get(self::RENAMED);
+        if ($renamed && $request->isMethod('get') && !$request->ajax() && $response->getStatusCode() === 200) {
+            $query = $request->query();
+            foreach ($renamed as $old => $new) {
+                if (array_key_exists($old, $query)) {
+                    $query[$new] = $query[$old];
+                    unset($query[$old]);
+                }
+            }
+
+            return redirect()->to($request->url().($query ? '?'.http_build_query($query) : ''), 301);
+        }
+
+        return $response;
     }
 }

@@ -87,8 +87,18 @@
     // Pagination
     $paginationType = $s['pagination_type'] ?? 'none';
     if ($paginationType !== 'none') {
-        $pageParam = 'cp_' . substr(md5($gridId), 0, 8);
-        $currentPage = max(1, (int)request()->input($pageParam, 1));
+        // ?page=2 for the page's first grid, else cp_ + the element id's hash (see
+        // falcon_grid_page_param). The name grids had before, a hash of all their settings,
+        // is still read, so a link to page 2 from before keeps opening page 2.
+        $pageParam = falcon_grid_page_param($el['id'] ?? null);
+        $legacyParam = 'cp_' . substr(md5($gridId), 0, 8);
+        $currentPage = max(1, (int) request()->query($pageParam, request()->query($legacyParam, 1)));
+        // An old link: FrontendPagination answers it with a permanent redirect to the new
+        // address once the page is rendered, so search engines keep one copy of each page.
+        if ($legacyParam !== $pageParam && request()->query($legacyParam) !== null && request()->query($pageParam) === null) {
+            request()->attributes->set(\FalconCms\Core\Http\Middleware\FrontendPagination::RENAMED,
+                request()->attributes->get(\FalconCms\Core\Http\Middleware\FrontendPagination::RENAMED, []) + [$legacyParam => $pageParam]);
+        }
         \Illuminate\Pagination\Paginator::currentPageResolver(fn() => $currentPage);
         $queryArgs['paginate']   = true;
         $queryArgs['page_name']  = $pageParam;
