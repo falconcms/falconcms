@@ -8,6 +8,7 @@
 
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Services\BuilderShortcodeConverter;
+use Illuminate\Http\Request;
 
 if (!function_exists('_falcon_parse_builder_layout')) {
     function _falcon_parse_builder_layout(string $raw): ?array
@@ -692,5 +693,30 @@ if (!function_exists('falcon_sticky_end_attributes')) {
         }
 
         return ' data-sticky-end="'.e($mode).'" data-sticky-end-value="'.e((string) $value).'" data-sticky-top="'.$top.'"';
+    }
+}
+
+if (!function_exists('falcon_builder_payload')) {
+    /**
+     * A builder layout from a JSON request body, exactly as the builder sent it.
+     *
+     * The builder posts its layout as nested JSON, and Laravel's ConvertEmptyStringsToNull
+     * middleware turns every empty string in it into null. In a layout that is not the
+     * same thing: '' is a value the author chose ("Solid + Outline" clears the second
+     * button's background so it is transparent), null is "never set" and takes the
+     * default. So the outline button was saved with no background, and the page drew
+     * it dark while the canvas, which never went through the request, showed it right.
+     * Reading the raw body keeps the empty strings; anything else falls back to input().
+     */
+    function falcon_builder_payload(Request $request, string $key, $default = null)
+    {
+        if ($request->isJson()) {
+            $raw = json_decode((string) $request->getContent(), true);
+            if (is_array($raw) && array_key_exists($key, $raw)) {
+                return $raw[$key];
+            }
+        }
+
+        return $request->input($key, $default);
     }
 }

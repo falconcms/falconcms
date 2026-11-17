@@ -1164,3 +1164,7 @@
 {{-- Extra tab → Text Animation. The same stylesheet the published page loads, so the
      canvas preview is the animation itself rather than an approximation of it. --}}
 @include('falcon-cms::components.frontend.text-anim-styles')
+
+{{-- Dual Button. Also the published page's stylesheet, so hover, the joined corners and
+     the connector preview as they will render. --}}
+@include('falcon-cms::components.frontend.dual-button-styles')

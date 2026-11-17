@@ -176,6 +176,29 @@ button already fills the row, so *Alignment* moves the label inside the button i
 Set per device, like the other responsive controls.
 :::
 
+### Dual Button <Badge type="warning" text="Pro" />
+Two calls to action that belong together — "Start free / See pricing", "Download / Read the
+docs" — drawn as one pair. With no gap the two join into a single shape with an optional badge
+("OR", "VS") on the seam; with a gap they sit side by side.
+
+**Content:**
+- Each button: label, link URL, same tab / new tab, an icon before or after the label
+- Clear a button's label and icon and only the other one is drawn
+- **Connector** — the badge between the two, and its text
+- **Layout** — alignment per device, gap (`0` joins the pair), same width for both, fill the
+  column's width, and **Stack** one above the other on mobile, or on tablet and mobile
+
+**Design:**
+- **Start from a look** — *Joined*, *Solid + Outline*, *Pill*, *Solid + Text*. A look only fills
+  in the colours, gap and corners below; everything stays editable.
+- Per button: background, text and border colour, and the same three on hover. A colour left
+  empty is an answer: no background is transparent (an outline or text button), no border
+  colour follows the background, and an empty hover colour keeps the resting one.
+- Connector badge: background, text colour, size
+- Border width, corner radius (`999` makes a pill; a joined pair rounds only its outer corners),
+  icon gap, and a hover effect (*Lift* or *Grow*)
+- Padding and margin per device; typography
+
 ### Card <Badge type="warning" text="Pro" />
 A content card with image, title, description, and optional button.
 

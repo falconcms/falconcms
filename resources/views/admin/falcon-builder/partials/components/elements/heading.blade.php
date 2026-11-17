@@ -19,6 +19,7 @@
             padding: '0',
             textAlign: getResponsiveVal(el.settings, 'textAlign', device) || 'left',
             fontSize: fontSizeVal(el.settings.fontSize, el.settings.fontSizeUnit || 'px', '30px'),
+            fontFamily: el.settings.fontFamily || 'inherit',
             fontWeight: el.settings.fontWeight || '700',
             lineHeight: el.settings.lineHeight || '1.2',
             letterSpacing: getUnitVal(el.settings.letterSpacing, el.settings.letterSpacingUnit),

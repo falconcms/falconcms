@@ -2,6 +2,7 @@
 
 namespace FalconCms\Core\Tests\Feature\Performance;
 
+use App\Models\User;
 use FalconCms\Core\Http\Middleware\HtmlOptimizeMiddleware;
 use FalconCms\Core\Http\Middleware\PageCacheMiddleware;
 use FalconCms\Core\Support\LocalGoogleFonts;
@@ -9,6 +10,7 @@ use FalconCms\Core\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -84,6 +86,46 @@ class LocalGoogleFontsTest extends TestCase
         // after the response: the copy is made
         app()->terminate();
         $this->assertNotNull(LocalGoogleFonts::css(self::URL));
+    }
+
+    /**
+     * Someone who edits the site, checking a page right after saving a new font, gets the
+     * local copy made on their own request. Google's stand-in link is refused by a policy
+     * that allows fonts only from the site (Falcon Security, enforce mode), so they saw the
+     * fallback font until they reloaded.
+     */
+    public function test_an_editor_gets_the_copy_made_at_once_so_a_new_font_shows_first_time(): void
+    {
+        $this->fakeGoogle();
+        $this->actingAs($this->userWithRole('administrator'));
+
+        $response = $this->optimise($this->page());
+
+        $this->assertStringContainsString('<style class="falcon-local-fonts">@font-face', $response->getContent());
+        $this->assertStringNotContainsString('fonts.googleapis.com/css2', $response->getContent());
+        $this->assertFalse($response->headers->has(HtmlOptimizeMiddleware::PROVISIONAL_HEADER));
+    }
+
+    public function test_a_shop_customer_is_a_visitor_and_never_waits_for_a_download(): void
+    {
+        $this->fakeGoogle();
+        if (!DB::table('roles')->where('slug', 'customer')->exists()) {
+            DB::table('roles')->insert(['name' => 'Customer', 'slug' => 'customer', 'created_at' => now(), 'updated_at' => now()]);
+        }
+        $this->actingAs($this->userWithRole('customer'));
+
+        $response = $this->optimise($this->page());
+
+        $this->assertStringContainsString('fonts.googleapis.com/css2', $response->getContent());
+        Http::assertNothingSent();
+    }
+
+    private function userWithRole(string $slug): User
+    {
+        return User::forceCreate([
+            'name' => ucfirst($slug), 'email' => uniqid($slug).'@example.test', 'password' => 'x',
+            'role_id' => (int) DB::table('roles')->where('slug', $slug)->value('id'),
+        ]);
     }
 
     public function test_after_that_the_fonts_are_inline_and_google_is_never_contacted(): void

@@ -218,11 +218,11 @@ function renderLazyMenuItemsResponsive($items, $grouped, $mainStyle, $subStyle, 
     $menuWeightStr = $menuWeights ? implode(';', $menuWeights) : '400;700';
 @endphp
 
-@if(count($fontsToLoad) > 0)
-    @foreach($fontsToLoad as $font)
-        {{-- '@' is kept inside the expression: Blade reads @{{ as an escape and would print the braces verbatim. --}}
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', trim($font, "'\"")) }}:wght{{ '@'.$menuWeightStr }}&display=swap">
-    @endforeach
+{{-- One request through the shared builder, which strips the quotes, leaves out an uploaded
+     (Custom) font and drops a system font — Google answers 400 for a family it does not have. --}}
+@php $menuFontUrl = $fontsToLoad ? falcon_google_font_url($fontsToLoad, $menuWeightStr) : ''; @endphp
+@if($menuFontUrl !== '')
+    <link rel="stylesheet" href="{{ $menuFontUrl }}">
 @endif
 
 @php

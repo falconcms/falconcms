@@ -5,7 +5,63 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.9.5 <Badge type="tip" text="Latest" /> {#v2-9-5}
+## v2.9.6 <Badge type="tip" text="Latest" /> {#v2-9-6}
+
+**Released: 2026-11-17**
+
+A new Dual Button element, fonts that reach the page however they are named, and a builder save
+that keeps exactly what you set. Released with Pro v1.5.9.
+
+### Added
+
+- **Dual Button** <Badge type="warning" text="Pro" /> — two calls to action as one pair, joined
+  with an "OR" badge or side by side. Four looks to start from (Joined, Solid + Outline, Pill,
+  Solid + Text); the one in use stays marked in the Design tab, also after a reload, and lets go
+  once a colour is changed by hand. Colours, border, corners, padding, typography, stacking per
+  device and a hover effect; each button has its own text, link, icon and dynamic source.
+- **Form notification emails reply to the visitor.** "Reply" in the inbox now answers the email
+  address the visitor typed into the form instead of the site's no-reply sender.
+
+### Fixed
+
+- **Fonts with a number in their name now show.** 52 Google fonts — Baloo Da 2, Source Sans 3,
+  Exo 2, Press Start 2P and others — were written without quotes, which CSS does not accept, so
+  the text fell back to the theme font in the builder and on the page. Every font field of every
+  element now writes a valid font-family, content saved before included.
+- **Every font loads in the builder after a reload,** not only an element's main one: a Counter
+  label, an Icon Box title, a Dual Button, any typography control showed the fallback font until
+  it was picked again. Fonts in a pasted element or an inserted template load too.
+- **Fonts in Post Card and Post Grid templates, global sections and off-canvas panels** are loaded
+  on the page — once per grid, not once per post.
+- **Heading:** the Design tab's font family, weight, line height, colour and text transform reach
+  the page, and the font family shows in the builder.
+- **Code Block:** its default monospace font (and a typed one) applies on the page again.
+- **A cleared setting stays cleared when saved.** The builder's save turned every empty value into
+  "never set", so a Dual Button "Solid + Outline" or "Solid + Text" lost its transparent background
+  and showed dark on the page. Pages, header and footer layouts, Post Cards, Mega Menus, Off-canvas
+  panels and global sections all keep it now. *A Dual Button saved before needs its look chosen
+  once more and saved.*
+- **Saving clears the page cache everywhere:** a Post Card, Mega Menu, Off-canvas or global section
+  save now shows on the site at once, as a page save already did.
+- **A new font shows on the first look after saving** with *Host Google Fonts Locally* on: for
+  someone signed in to edit the site, the local copy is made on that request instead of after it.
+- **Post grids** page with `?page=2` (other grids on the page with a short fixed name), the
+  canonical keeps the page, and old links redirect.
+- **Image corners:** a negative radius counts as unset, so the other corners still apply; the four
+  corner fields are text boxes like Margin.
+- **The viewed post is rendered once, and only when a layout shows it** — on /blog that was eight
+  renders, and the blog's pagination lost its styles.
+- **Site Analysis** skips Cloudflare's email-protection links instead of reporting them broken.
+- **ACPT forms:** half width on large screens, left aligned.
+- **License page:** says that an expired Agency licence pauses the Agency extras.
+
+### Docs
+
+- New guide: **bKash & Nagad** (Falcon Bangladesh Payments, Pro).
+
+---
+
+## v2.9.5 {#v2-9-5}
 
 **Released: 2026-11-10**
 

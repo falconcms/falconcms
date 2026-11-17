@@ -1374,6 +1374,11 @@
                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.post-comments-content')
                             </div>
 
+                            <!-- ══ DUAL BUTTON ELEMENT ══ -->
+                            <div v-else-if="editingElement?.type === 'dual_button'" class="space-y-8">
+                                @include('falcon-cms::admin.falcon-builder.partials.components.elements.dual-button-content')
+                            </div>
+
                             <!-- ══ PREVIOUS / NEXT ELEMENT ══ -->
                             <div v-else-if="editingElement?.type === 'prev_next'" class="space-y-8">
                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.prev-next-content')
@@ -3715,6 +3720,11 @@
                              <!-- Design Settings for Comments -->
                              <div v-else-if="editingElement?.type === 'post_comments'" class="space-y-6 pb-10">
                                  @include('falcon-cms::admin.falcon-builder.partials.components.elements.post-comments-design')
+                             </div>
+
+                             <!-- Design Settings for Dual Button -->
+                             <div v-else-if="editingElement?.type === 'dual_button'" class="space-y-6 pb-10">
+                                 @include('falcon-cms::admin.falcon-builder.partials.components.elements.dual-button-design')
                              </div>
 
                              <!-- Design Settings for Previous / Next -->

@@ -45,6 +45,7 @@ class BuilderShortcodeConverter
         'title' => Elements\TitleElement::class,
         'text' => Elements\TextElement::class,
         'button' => Elements\ButtonElement::class,
+        'dual_button' => Elements\DualButtonElement::class,
         'image' => Elements\ImageElement::class,
         'spacer' => Elements\SpacerElement::class,
         'table' => Elements\TableElement::class,

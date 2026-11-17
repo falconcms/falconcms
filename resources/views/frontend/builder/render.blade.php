@@ -80,7 +80,40 @@
             foreach ($decoded as $gs) { $globalSectionsMap[$gs['id']] = $gs; }
         }
     }
+
+    // Dual Button: its stylesheet ships only with a layout that has one. A global section
+    // is swapped in below, so the ones this layout points at are looked through as well.
+    $needsDualButtonCss = \FalconCms\Core\Support\DualButton::layoutUses($layout ?? []);
+    if (!$needsDualButtonCss && $globalSectionsMap) {
+        foreach (($layout ?? []) as $container) {
+            $gsId = $container['settings']['global_id'] ?? null;
+            if ($gsId && \FalconCms\Core\Support\DualButton::layoutUses($globalSectionsMap[$gsId]['data'] ?? null)) {
+                $needsDualButtonCss = true;
+                break;
+            }
+        }
+    }
+
+    // Fonts the page <head> does not load: a Post Card / Post Grid template drawn inside this
+    // layout, a global section swapped in below, a card preview in the builder. One record per
+    // top-level render, handed down to the layouts drawn inside it (an object, so the cards of
+    // a grid share it), keeps a grid from linking its card's font once per post.
+    if (!(isset($__falconFontsSeen) && $__falconFontsSeen instanceof \ArrayObject)) {
+        $__falconFontsSeen = new \ArrayObject();
+    }
+    $__fontPost  = view()->getShared()['current_post'] ?? null;
+    $__fontLinks = falcon_builder_font_links($layout ?? [], $__falconFontsSeen, $__fontPost);
+    foreach (($layout ?? []) as $__fontContainer) {
+        $__fontGs = $__fontContainer['settings']['global_id'] ?? null;
+        if ($__fontGs && !empty($globalSectionsMap[$__fontGs]['data'])) {
+            $__fontLinks .= falcon_builder_font_links([$globalSectionsMap[$__fontGs]['data']], $__falconFontsSeen, $__fontPost);
+        }
+    }
 @endphp
+{!! $__fontLinks !!}
+@if($needsDualButtonCss)
+@include('falcon-cms::components.frontend.dual-button-styles')
+@endif
 
 @if(!empty($layout))
     @foreach($layout as $container)

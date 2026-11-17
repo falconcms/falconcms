@@ -155,6 +155,7 @@ Names below are exactly what the picker calls them, so what you read here is wha
 | Element | What it does |
 |---|---|
 | **Button** | Call to action — solid, outline or ghost |
+| **Dual Button** <Badge type="warning" text="Pro" /> | Two calls to action as one pair — joined with an "OR" badge, or side by side |
 | **Spacer** | Vertical space, set per device |
 | **Section Separator** | Shape divider between sections — waves, tilts, curves, or your own SVG |
 | **Icon Box** <Badge type="warning" text="Pro" /> | Icon with a title and description, icon above or beside |

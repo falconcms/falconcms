@@ -21,6 +21,10 @@ use Throwable;
  * keeps Google's link and schedules the download for after its response has been sent. Every
  * request after that gets the local copy. A failed download keeps Google's link and is retried
  * an hour later, so a page can never lose its fonts over this.
+ *
+ * The one exception is someone who edits the site (signed in, not a shop customer): their
+ * request makes the copy at once, so a font chosen in the builder shows on the first look
+ * after saving — see HtmlOptimizeMiddleware::localGoogleFonts().
  */
 class LocalGoogleFonts
 {

@@ -833,6 +833,7 @@
             // then the Google Fonts database (mirrors the Customizer list).
             const BUILDER_FONTS = @json(array_merge(\FalconCms\Core\Support\CustomFonts\CustomFonts::catalog(), falcon_google_fonts()));
             const CUSTOM_FONT_FAMILIES = new Set(BUILDER_FONTS.filter(f => f.fallback).map(f => f.family.toLowerCase()));
+            const GOOGLE_FONT_FAMILIES = new Set(BUILDER_FONTS.filter(f => !f.fallback).map(f => f.family.toLowerCase()));
 
             const builderFontGroups = BUILDER_FONTS.reduce((acc, font) => {
                 if (!acc[font.category]) acc[font.category] = [];
@@ -934,6 +935,9 @@
                 // An uploaded font is already declared on this screen (builder-data); Google does
                 // not have it and would answer 400.
                 if (CUSTOM_FONT_FAMILIES.has(name.toLowerCase())) return;
+                // Nor does it have a system font (Arial, a typed code-block stack): skip the
+                // request instead of collecting a 400 for it.
+                if (GOOGLE_FONT_FAMILIES.size && !GOOGLE_FONT_FAMILIES.has(name.toLowerCase())) return;
                 const linkId = 'bfont-' + name.replace(/\s+/g, '-').toLowerCase();
                 if (document.getElementById(linkId)) return;
                 const link = document.createElement('link');
@@ -943,10 +947,35 @@
                 document.head.appendChild(link);
             };
 
+            // Every font a layout uses, loaded — found by key name exactly as the page does it
+            // (get_falcon_builder_fonts / falcon_is_font_key): fontFamily, family, *FontFamily,
+            // *_family. Only `settings.fontFamily` used to be looked at, so after a reload every
+            // other font (an Icon Box title, a Counter label, a Dual Button, any typography
+            // control) showed in the fallback font until it was picked again.
+            // With fix = true a bare name that CSS cannot read ("Baloo Da 2, sans-serif") is
+            // also quoted in place — see fcFontCss().
+            const fcIsFontKey = (k) => typeof k === 'string'
+                && (k === 'fontFamily' || k === 'family' || k.endsWith('FontFamily') || k.endsWith('_family'));
+            const fcLoadLayoutFonts = (node, fix, depth = 0) => {
+                if (!node || typeof node !== 'object' || depth > 60) return;
+                if (Array.isArray(node)) { node.forEach(n => fcLoadLayoutFonts(n, fix, depth + 1)); return; }
+                for (const k of Object.keys(node)) {
+                    const v = node[k];
+                    if (v && typeof v === 'object') { fcLoadLayoutFonts(v, fix, depth + 1); continue; }
+                    if (typeof v !== 'string' || v === '' || !fcIsFontKey(k)) continue;
+                    if (fix) {
+                        const css = fcFontCss(v);
+                        if (css !== v) node[k] = css;
+                    }
+                    loadBuilderFont(node[k]);
+                }
+            };
+
             const availableElements = [
                 { type: 'accordion', name: 'Accordion', icon: 'fa fa-list-ul' },
                 { type: 'card', name: 'Card', icon: 'fa fa-th-large' },
                 { type: 'counter', name: 'Counter', icon: 'fa fa-hashtag' },
+                { type: 'dual_button', name: 'Dual Button', icon: 'fa fa-arrow-right-arrow-left' },
                 { type: 'html', name: 'HTML Block', icon: 'fa fa-code' },
                 { type: 'code_block', name: 'Code Block', icon: 'fa fa-terminal' },
                 { type: 'table', name: 'Table', icon: 'fa fa-table' },
@@ -991,7 +1020,7 @@
                 return known ? known.name : String(type).replace(/_/g, ' ');
             };
 
-            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc', 'prev_next', 'instagram_feed'];
+            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc', 'prev_next', 'instagram_feed', 'dual_button'];
             const isElementPro   = (type) => proElementTypes.includes(type);
             const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
 
@@ -1689,34 +1718,10 @@
                 // Enable dirty tracking after initial load settles (setTimeout = macro-task, runs after Vue's watcher micro-tasks)
                 setTimeout(() => { 
                     _trackLayoutDirty = true; 
-                    console.log('Builder initialized, scanning for fonts...');
-                    
-                    // Recursively load all fonts used in the layout
-                    const scanForFonts = (items) => {
-                        if (!items || !Array.isArray(items)) return;
-                        items.forEach(item => {
-                            // Check if it's an element with fontFamily
-                            if (item.settings && item.settings.fontFamily && item.settings.fontFamily !== 'inherit') {
-                                console.log('Loading font for element:', item.settings.fontFamily);
-                                loadBuilderFont(item.settings.fontFamily);
-                            }
-                            
-                            // Check columns (for containers or rows)
-                            if (item.columns && Array.isArray(item.columns)) {
-                                item.columns.forEach(col => {
-                                    // Columns themselves might have fonts in the future, but for now we check their elements
-                                    if (col.elements) scanForFonts(col.elements);
-                                });
-                            }
-
-                            // Check nested elements (if any other type has them)
-                            if (item.elements && Array.isArray(item.elements)) {
-                                scanForFonts(item.elements);
-                            }
-                        });
-                    };
-
-                    scanForFonts(layout.value);
+                    // Every font in the layout, loaded — and any bare name CSS cannot read
+                    // quoted, before the saved-state snapshot below so it does not count as
+                    // an unsaved change.
+                    fcLoadLayoutFonts(layout.value, true);
 
                     // Auto-fetch previews for all card elements so canvas shows correct post type after reload
                     const scanForCards = (items) => {
@@ -1759,6 +1764,14 @@
                 if (_historyStack.length > MAX_HISTORY) _historyStack.shift();
                 historyIndex.value = _historyStack.length - 1;
             }, { deep: true, flush: 'sync' });
+
+            // Fonts that arrive after the first load — a pasted element, a template or global
+            // section dropped in, an undo — load as well, not only ones picked in a panel.
+            let _fcFontScanTimer = null;
+            watch(serializedLayout, () => {
+                clearTimeout(_fcFontScanTimer);
+                _fcFontScanTimer = setTimeout(() => fcLoadLayoutFonts(layout.value, false), 400);
+            });
 
             // Watch isPreview to directly control layout via DOM
             watch(isPreview, (val) => {
@@ -6128,6 +6141,155 @@
                 return 'No other published pages of this type to step through.';
             }
 
+            // ── Dual Button ──────────────────────────────────────────────────────
+            // Canvas preview — mirrors
+            //   resources/views/frontend/builder/elements/dual-button.blade.php
+            //
+            // The canvas draws the page's markup under the page's stylesheet (included by
+            // styles.blade.php), so there are no style rules here to keep in step — only
+            // the copying of settings into classes and custom properties, driven by the
+            // same tables FalconCms\Core\Support\DualButton gives the server. Each helper
+            // names the PHP method it mirrors.
+            // One call with no commas in it: the json directive reads a comma as the start
+            // of its own options, so the table is assembled on the PHP side.
+            const FC_DB = @json(\FalconCms\Core\Support\DualButton::builderConfig());
+            // One button's dynamic-source settings, created on first use. The picker writes
+            // its options under fixed names, so each button gets an object of its own —
+            // see DualButton::dynamic(). Called from clicks only, never while drawing.
+            const fcDbDyn = (el, side) => {
+                const s = el.settings;
+                if (!s[side + 'Dynamic'] || typeof s[side + 'Dynamic'] !== 'object' || Array.isArray(s[side + 'Dynamic'])) {
+                    s[side + 'Dynamic'] = {};
+                }
+                return s[side + 'Dynamic'];
+            };
+
+            // DualButton::get() — the saved value, or the default when never set.
+            const fcDbGet = (s, key) => (s && s[key] !== undefined && s[key] !== null)
+                ? s[key] : (FC_DB.fields[key] ? FC_DB.fields[key][1] : null);
+
+            // DualButton::cssValue()
+            const fcDbCssValue = (value, kind) => {
+                const v = String(value === undefined || value === null ? '' : value).trim();
+                if (v === '') return '';
+                if (kind === 'size' && !isNaN(v)) return Math.max(0, Number(v)) + 'px';
+                return v.replace(/[^A-Za-z0-9#(),.%\s_\/+*-]/g, '').trim();
+            };
+
+            // DualButton::buttons() — a button with neither label nor icon is not drawn.
+            const fcDbButtons = (el) => {
+                const s = el.settings || {};
+                const out = [];
+                for (const side of ['primary', 'secondary']) {
+                    // A dynamic label previews with the builder's sample of that source.
+                    const dyn = s[side + 'Dynamic'];
+                    const sample = (dyn && dyn.dynamic_source) ? String(dynSrcPreview(dyn) || '').trim() : '';
+                    const text = sample !== '' ? sample : String(fcDbGet(s, side + 'Text')).trim();
+                    const icon = String(fcDbGet(s, side + 'Icon')).replace(/[^A-Za-z0-9 _:-]/g, '').trim();
+                    if (text === '' && icon === '') continue;
+                    out.push({ side, text, icon, iconPosition: fcDbGet(s, side + 'IconPosition') === 'right' ? 'right' : 'left' });
+                }
+                return out;
+            };
+
+            // DualButton::connector()
+            const fcDbConnector = (el) => {
+                const s = el.settings || {};
+                if (fcDbButtons(el).length < 2 || !fcDbGet(s, 'showConnector')) return '';
+                return String(fcDbGet(s, 'connectorText')).trim();
+            };
+
+            // DualButton::classes(), given the canvas's device: the page stacks through a
+            // media query, the canvas by being told which device it is showing.
+            const fcDbClasses = (el) => {
+                const s = el.settings || {};
+                const classes = ['fdb'];
+                const gap = String(fcDbGet(s, 'gap')).trim();
+                if (gap === '' || (parseFloat(gap) === 0 && /^[0-9.]+[a-z%]*$/i.test(gap))) classes.push('fdb--joined');
+                if (fcDbGet(s, 'equalWidth')) classes.push('fdb--equal');
+                if (fcDbGet(s, 'fullWidth')) classes.push('fdb--full');
+                const hover = fcDbGet(s, 'hoverEffect');
+                if (hover === 'lift' || hover === 'grow') classes.push('fdb--' + hover);
+                const stack = fcDbGet(s, 'stackOn');
+                if ((stack === 'mobile' && device.value === 'mobile') || (stack === 'tablet' && device.value !== 'desktop')) {
+                    classes.push('fdb--stacked');
+                }
+                return classes;
+            };
+
+            // DualButton::vars() plus the margins and typography the page writes beside
+            // them, resolved for the device being previewed.
+            const fcDbStyle = (el) => {
+                const s = el.settings || {};
+                const dev = device.value;
+                const style = { width: '100%' };
+                const box = (key, fallback) => {
+                    const raw = getResponsiveVal(s, key, dev);
+                    return fcDbCssValue(getUnitVal(
+                        (raw === undefined || raw === null || raw === '') ? fallback : raw,
+                        getResponsiveVal(s, key + 'Unit', dev) || 'px'
+                    ));
+                };
+                for (const side in FC_DB.margin) {
+                    style['margin' + side] = box('margin' + side, FC_DB.margin[side]);
+                }
+                for (const key in FC_DB.vars) {
+                    // Border width, corners and icon gap can differ per device; the page
+                    // writes those as media queries, the canvas reads the device's value.
+                    let raw = fcDbGet(s, key);
+                    if (FC_DB.responsive.includes(key) && dev !== 'desktop') {
+                        const r = getResponsiveVal(s, key, dev);
+                        if (r !== undefined && r !== null && r !== '') raw = r;
+                    }
+                    const value = fcDbCssValue(raw, FC_DB.vars[key][1]);
+                    if (value !== '') style[FC_DB.vars[key][0]] = value;
+                }
+                for (const side in FC_DB.padding) {
+                    style[FC_DB.padding[side][0]] = box('padding' + side, FC_DB.padding[side][1]);
+                }
+                style['--fdb-justify'] = FC_DB.alignments[getResponsiveVal(s, 'align', dev) || fcDbGet(s, 'align')] || 'center';
+                return Object.assign(style, fcTblTypo(el, 'db'));
+            };
+
+            // A look from the Design tab: ordinary settings written once. Nothing records
+            // which look was chosen, so each value stays the author's to change.
+            const fcDbApplyPreset = (el, slug) => {
+                const preset = FC_DB.presets[slug];
+                if (!el || !el.settings || !preset) return;
+                for (const key in preset) {
+                    if (key !== 'name') el.settings[key] = preset[key];
+                }
+            };
+            // Which look the element is wearing, worked out from its settings rather than
+            // remembered: every value a look writes has to match. So the choice shows again
+            // after a reload, and once a colour is changed by hand no look claims it.
+            // Saved numbers may come back as strings, so values are compared as text.
+            const fcDbActivePreset = (el) => {
+                const s = (el && el.settings) || {};
+                for (const slug in FC_DB.presets) {
+                    const preset = FC_DB.presets[slug];
+                    let match = true;
+                    for (const key in preset) {
+                        if (key === 'name') continue;
+                        if (String(fcDbGet(s, key)).trim().toLowerCase() !== String(preset[key]).trim().toLowerCase()) { match = false; break; }
+                    }
+                    if (match) return slug;
+                }
+                return '';
+            };
+            // One half of a look's thumbnail in the Design tab.
+            const fcDbPresetSwatch = (preset, side) => {
+                const first = side === 'primary';
+                const r = Math.min(12, preset.radius) + 'px';
+                const joined = !preset.gap;
+                return {
+                    flex: '1 1 0',
+                    background: preset[side + 'Bg'] || 'transparent',
+                    border: '2px solid ' + (preset[side + 'BorderColor'] || preset[side + 'Bg'] || 'transparent'),
+                    borderRadius: joined ? (first ? r + ' 0 0 ' + r : '0 ' + r + ' ' + r + ' 0') : r,
+                };
+            };
+
             // ── Code Block ───────────────────────────────────────────────────────
             // Canvas preview — mirrors
             // resources/views/frontend/builder/elements/code-block.blade.php.
@@ -6827,6 +6989,9 @@
                             visibility: { mobile: true, tablet: true, desktop: true }
                         } : {}),
                         ...(type === 'text' ? { content: '<p>New text here...</p>' } : {}),
+                        // Every default comes from DualButton::defaults(), the list the
+                        // page and the shortcode converter read as well.
+                        ...(type === 'dual_button' ? JSON.parse(JSON.stringify(FC_DB.defaults)) : {}),
                         ...(type === 'button' ? {
                             text: 'Click Me', url: '#', style: 'primary',
                             buttonStyle: 'default',
@@ -7841,6 +8006,8 @@
                 fcCalVariantOptions: FC_CAL_VARIANT_OPTIONS, fcCalPresetOptions: FC_CAL_PRESET_OPTIONS,
                 fcTocPresetOptions: FC_TOC_PRESET_OPTIONS, fcTocLevels: FC_TOC_LEVELS,
                 fcPnPresetOptions: FC_PN_PRESET_OPTIONS,
+                fcDbPresets: FC_DB.presets, fcDbDyn,
+                fcDbButtons, fcDbConnector, fcDbClasses, fcDbStyle, fcDbApplyPreset, fcDbActivePreset, fcDbPresetSwatch,
                 fcCalVal, fcCalTitle, fcCalIcon, fcCalShowIcon, fcCalBody, fcCalBodyCss, fcCalScopeId,
                 fcCalVariantIcon, fcCalVariantAccent, fcCalColorPreview,
                 fcCalOuterStyle, fcCalHeadStyle, fcCalTitleStyle, fcCalIconStyle, fcCalChevStyle, fcCalBodyStyle,
@@ -7964,6 +8131,30 @@
 
     // Reusable searchable font-family picker — same look as the old native select, plus a
     // search box (like the Customizer / Slider). Used by every element's typography control.
+    // falcon_css_font_family() — a font-family value made valid CSS. A family name that is
+    // not a plain run of identifiers goes in quotes: "Baloo Da 2", "Source Sans 3", "Exo 2"
+    // and the other Google fonts with a word starting in a digit are invalid bare, so the
+    // browser dropped the whole declaration and showed the fallback font. Generic families
+    // and CSS-wide keywords stay bare. Mirrors the PHP, character for character.
+    function fcFontCss(value) {
+        const v = String(value === undefined || value === null ? '' : value).trim();
+        if (v === '') return '';
+        const bare = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'serif', 'sans-serif',
+            'monospace', 'cursive', 'fantasy', 'system-ui', 'ui-serif', 'ui-sans-serif', 'ui-monospace',
+            'ui-rounded', 'emoji', 'math', 'fangsong', '-apple-system', 'blinkmacsystemfont'];
+        const out = [];
+        for (let part of (v.match(/"[^"]*"|'[^']*'|[^,]+/g) || [])) {
+            part = part.trim();
+            const quoted = part !== '' && (part[0] === '"' || part[0] === "'");
+            let name = quoted ? part.slice(1, -1) : part;
+            name = name.replace(/['"\;{}<>\u0000-\u001F]/g, '').replace(/\s+/g, ' ').trim();
+            if (name === '') continue;
+            const plain = name.split(' ').every(w => /^-?[A-Za-z_\u0080-\uFFFF][A-Za-z0-9_\u0080-\uFFFF-]*$/.test(w));
+            out.push((bare.includes(name.toLowerCase()) || (plain && !quoted)) ? name : "'" + name + "'");
+        }
+        return out.join(', ');
+    }
+
     __builderApp.component('font-select', {
         props: {
             modelValue: { default: 'inherit' },
@@ -7974,8 +8165,9 @@
         data() { return { open: false, q: '' }; },
         computed: {
             defaultLabel() { return this.themeFont ? 'Default (' + this.themeFont + ')' : 'Default'; },
-            label() { const v = this.modelValue; return (!v || v === 'inherit') ? this.defaultLabel : String(v).split(',')[0]; },
-            selectedFamily() { const v = this.modelValue; return (!v || v === 'inherit') ? '' : String(v).split(',')[0]; },
+            // A saved value may carry quotes ('Baloo Da 2', sans-serif); the name is what shows.
+            label() { const v = this.modelValue; return (!v || v === 'inherit') ? this.defaultLabel : this.familyOf(v); },
+            selectedFamily() { const v = this.modelValue; return (!v || v === 'inherit') ? '' : this.familyOf(v); },
             filtered() {
                 const q = (this.q || '').toLowerCase().trim(); const out = {}; let shown = 0;
                 for (const cat in this.fontGroups) {
@@ -7990,8 +8182,9 @@
         methods: {
             toggle() { this.open = !this.open; if (this.open) this.$nextTick(() => this.$refs.q && this.$refs.q.focus()); },
             close() { this.open = false; this.q = ''; },
+            familyOf(v) { return String(v).split(',')[0].trim().replace(/^['"]|['"]$/g, ''); },
             fbOf(f) { return f.fallback || (f.category === 'Monospace' ? 'monospace' : (f.category === 'Serif' ? 'serif' : 'sans-serif')); },
-            pick(f) { const val = f.family + ', ' + this.fbOf(f); this.$emit('update:modelValue', val); this.$emit('change', val); this.close(); },
+            pick(f) { const val = fcFontCss(f.family + ', ' + this.fbOf(f)); this.$emit('update:modelValue', val); this.$emit('change', val); this.close(); },
             pickDefault() { this.$emit('update:modelValue', 'inherit'); this.$emit('change', 'inherit'); this.close(); }
         },
         template: `

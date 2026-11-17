@@ -260,7 +260,7 @@ class PostController extends Controller
         PostLock::guard($post);
 
         if (PostChanges::proposing($post)) {
-            $change = PostChanges::save($post, ['content' => json_encode($request->input('layout')), 'editor_type' => 'builder']);
+            $change = PostChanges::save($post, ['content' => json_encode(falcon_builder_payload($request, 'layout')), 'editor_type' => 'builder']);
 
             return response()->json(['success' => true, 'message' => $change
                 ? 'Your changes were sent for review. Readers still see the current version.'
@@ -272,7 +272,7 @@ class PostController extends Controller
         Revision::snapshot($post, 'revision');
 
         $post->update([
-            'content' => json_encode($request->input('layout')),
+            'content' => json_encode(falcon_builder_payload($request, 'layout')),
             'editor_type' => 'builder',
         ]);
         Revision::clearAutosave($post);
@@ -293,7 +293,7 @@ class PostController extends Controller
 
         // Build a transient clone-like model carrying the in-progress content (do not persist to post).
         $draft = clone $post;
-        $draft->content = json_encode($request->input('layout'));
+        $draft->content = json_encode(falcon_builder_payload($request, 'layout'));
 
         $rev = Revision::snapshot($draft, 'autosave');
 

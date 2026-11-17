@@ -19,6 +19,15 @@
     $letterSpacingCSS = isset($s['letterSpacing']) && $s['letterSpacing'] !== ''
         ? 'letter-spacing:' . $s['letterSpacing'] . ($s['letterSpacingUnit'] ?? 'px') . ';'
         : '';
+    // The rest of the Design tab's typography. Each is written only when set, so a heading
+    // saved before keeps the classes' look (bold, tight, slate) exactly as it was.
+    $typoCSS = '';
+    $hdFamily = trim((string) ($s['fontFamily'] ?? ''));
+    if ($hdFamily !== '' && $hdFamily !== 'inherit') $typoCSS .= 'font-family:' . $hdFamily . ';';
+    if (isset($s['fontWeight']) && $s['fontWeight'] !== '') $typoCSS .= 'font-weight:' . $s['fontWeight'] . ';';
+    if (isset($s['lineHeight']) && $s['lineHeight'] !== '') $typoCSS .= 'line-height:' . $s['lineHeight'] . ';';
+    if (isset($s['color']) && $s['color'] !== '') $typoCSS .= 'color:' . $s['color'] . ';';
+    if (!empty($s['textTransform']) && $s['textTransform'] !== 'none') $typoCSS .= 'text-transform:' . $s['textTransform'] . ';';
 
     // Outer wrapper styles (applied only when setting is explicitly saved)
     $outerStyle = '';
@@ -53,7 +62,7 @@
      @if(!empty($s['cssId'])) id="{{ $s['cssId'] }}" @endif
      style="{{ $outerStyle }}">
     @php $headingTag = in_array($s['tag'] ?? 'h2', ['h1','h2','h3','h4','h5','h6','div','p','span']) ? ($s['tag'] ?? 'h2') : 'h2'; @endphp
-    <{{ $headingTag }} style="text-align:{{ $s['textAlign'] ?? 'left' }};margin:0;padding:0;{{ $fontSizeCSS }}{{ $letterSpacingCSS }}" class="text-slate-800 font-bold leading-tight">
+    <{{ $headingTag }} style="text-align:{{ $s['textAlign'] ?? 'left' }};margin:0;padding:0;{{ $fontSizeCSS }}{{ $letterSpacingCSS }}{{ $typoCSS }}" class="text-slate-800 font-bold leading-tight">
         {{ $s['title'] ?? 'New Heading' }}
     </{{ $headingTag }}>
 </div>

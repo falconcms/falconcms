@@ -292,12 +292,23 @@ class HtmlOptimizeMiddleware
         }
 
         $complete = true;
+        // Someone who edits the site, looking at a page right after a save, gets the copy made
+        // there and then (within a few seconds), so a new font shows the first time. The
+        // stand-in keeps Google's link, and a Content-Security-Policy that allows fonts only
+        // from this site (Falcon Security, enforce mode) refuses it: the page showed the
+        // fallback font until it was reloaded. Visitors still never wait for a download.
+        $user = auth()->user();
+        $editor = $user !== null && optional($user->role)->slug !== 'customer';
+        $deadline = microtime(true) + 8.0;
         $html = preg_replace_callback('#<link\b[^>]*\bhref=["\']((?:https?:)?//fonts\.googleapis\.com/css2?\?[^"\']+)["\'][^>]*>#i',
-            function ($m) use (&$complete) {
+            function ($m) use (&$complete, $editor, $deadline) {
                 if (!preg_match('/\brel=["\']?stylesheet/i', $m[0])) {
                     return $m[0]; // a preconnect or preload; dealt with below
                 }
                 $css = LocalGoogleFonts::css($m[1]);
+                if ($css === null && $editor && microtime(true) < $deadline && LocalGoogleFonts::download($m[1])) {
+                    $css = LocalGoogleFonts::css($m[1]);
+                }
                 if ($css === null) {
                     LocalGoogleFonts::scheduleDownload($m[1]);
                     $complete = false;

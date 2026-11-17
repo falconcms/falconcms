@@ -956,11 +956,40 @@ class FrontendController extends Controller
                     $introText = $tplData['intro'] ?? 'You have received a new submission. Review the details below to follow up promptly.';
                     $footerText = $tplData['footer'] ?? 'This is an automated notification — no reply is needed.';
 
+                    // Reply-To = the visitor's email, so hitting "Reply" in the inbox answers the
+                    // visitor instead of bouncing off the site's noreply@ sender address.
+                    $replyTo = null;
+                    $emailFieldNames = [];
+                    foreach ($form->fields ?? [] as $f) {
+                        if (($f['type'] ?? null) === 'email' && !empty($f['name'])) {
+                            $emailFieldNames[] = $f['name'];
+                        }
+                    }
+                    foreach ($emailFieldNames as $name) {
+                        $candidate = is_string($data[$name] ?? null) ? trim($data[$name]) : '';
+                        if (filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                            $replyTo = $candidate;
+                            break;
+                        }
+                    }
+                    if (!$replyTo) {
+                        foreach ($data as $key => $value) {
+                            if (is_string($value) && stripos((string) $key, 'email') !== false
+                                && filter_var(trim($value), FILTER_VALIDATE_EMAIL)) {
+                                $replyTo = trim($value);
+                                break;
+                            }
+                        }
+                    }
+
                     Mail::send(
                         'falcon-cms::emails.form.notification',
                         compact('form', 'rows', 'submittedAt', 'ip', 'introText', 'footerText'),
-                        function ($msg) use ($notifyEmail, $subject) {
+                        function ($msg) use ($notifyEmail, $subject, $replyTo) {
                             $msg->to($notifyEmail)->subject($subject);
+                            if ($replyTo) {
+                                $msg->replyTo($replyTo);
+                            }
                         }
                     );
                 } catch (\Throwable $e) {

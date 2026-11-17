@@ -17,23 +17,20 @@
     $bpMed = (int) get_cms_option('theme_medium_screen_breakpoint', '1100');
 
     // The page's <head> loaded fonts and icon sets for what it could see at the time; the
-    // panels render after it, so whatever they use beyond that is linked from here.
+    // panels render after it. Their fonts are linked by the builder renderer itself
+    // (falcon_builder_font_links), their icon sets from here.
     $__ocPanels = [];
-    $__ocFonts = [];
     foreach ($panels as $__p) {
         $__layout = $__p['config']['layout'] ?? [];
-        $__ocFonts = array_merge($__ocFonts, get_falcon_builder_fonts($__layout));
         $__ocPanels[] = [
             'item' => $__p,
             's'    => OffCanvas::settings($__p['config']['settings'] ?? []),
             'html' => is_array($__layout) && $__layout ? _falcon_render_layout($__layout) : '',
         ];
     }
-    $__ocFontUrl = $__ocFonts ? falcon_google_font_url(array_unique($__ocFonts)) : '';
     $__ocIcons = function_exists('falcon_icon_set_links')
         ? falcon_icon_set_links(implode('', array_column($__ocPanels, 'html'))) : [];
 @endphp
-@if($__ocFontUrl)<link rel="stylesheet" href="{{ $__ocFontUrl }}">@endif
 @foreach($__ocIcons as $__ocIcon)<link rel="stylesheet" href="{{ $__ocIcon }}">@endforeach
 
 @once

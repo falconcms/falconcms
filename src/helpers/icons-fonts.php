@@ -430,8 +430,7 @@ if (!function_exists('get_falcon_builder_fonts')) {
             if (!is_string($key) || !is_string($value) || $value === '') {
                 continue;
             }
-            if ($key !== 'fontFamily' && $key !== 'family'
-                && !str_ends_with($key, 'FontFamily') && !str_ends_with($key, '_family')) {
+            if (!falcon_is_font_key($key)) {
                 continue;
             }
 
@@ -501,6 +500,222 @@ if (!function_exists('get_falcon_builder_font_weights')) {
         }
 
         return array_values(array_unique($weights));
+    }
+}
+
+if (!function_exists('falcon_is_font_key')) {
+    /**
+     * Whether a settings key holds a font family — the same rule get_falcon_builder_fonts()
+     * uses: `fontFamily`, `family`, `*FontFamily` or `*_family`.
+     */
+    function falcon_is_font_key($key): bool
+    {
+        return is_string($key) && ($key === 'fontFamily' || $key === 'family'
+            || str_ends_with($key, 'FontFamily') || str_ends_with($key, '_family'));
+    }
+}
+
+if (!function_exists('falcon_css_font_family')) {
+    /**
+     * A font-family value made valid CSS: every family name that is not a plain run of
+     * identifiers is put in quotes.
+     *
+     * The font pickers save "Name, fallback" without quotes. That is fine for "Open Sans",
+     * but a name with a word that starts with a digit — "Baloo Da 2", "Source Sans 3",
+     * "Exo 2", "Press Start 2P", 52 Google fonts in all — is not a valid unquoted family, so
+     * the browser threw the whole declaration away and the text fell back to the inherited
+     * font, in the builder and on the page alike.
+     *
+     * Quotes come out as single quotes, which survive both a double-quoted style="" attribute
+     * (raw or escaped) and a <style> block printed raw. Characters that could end the
+     * declaration, the attribute or the <style> element are dropped. Generic families and
+     * CSS-wide keywords stay bare — quoted they would name a font called "serif".
+     */
+    function falcon_css_font_family($value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+        static $bare = ['inherit', 'initial', 'unset', 'revert', 'revert-layer', 'serif', 'sans-serif',
+            'monospace', 'cursive', 'fantasy', 'system-ui', 'ui-serif', 'ui-sans-serif', 'ui-monospace',
+            'ui-rounded', 'emoji', 'math', 'fangsong', '-apple-system', 'blinkmacsystemfont'];
+
+        preg_match_all('/"[^"]*"|\'[^\']*\'|[^,]+/', $value, $m);
+        $out = [];
+        foreach ($m[0] as $part) {
+            $part = trim($part);
+            $quoted = $part !== '' && ($part[0] === '"' || $part[0] === "'");
+            $name = $quoted ? substr($part, 1, -1) : $part;
+            $name = trim(preg_replace('/\s+/u', ' ', preg_replace('/[\'"\\\\;{}<>\x00-\x1F]/u', '', $name) ?? '') ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $plain = true;
+            foreach (explode(' ', $name) as $word) {
+                if (!preg_match('/^-?[A-Za-z_\x{80}-\x{10FFFF}][A-Za-z0-9_\x{80}-\x{10FFFF}-]*$/u', $word)) {
+                    $plain = false;
+                    break;
+                }
+            }
+            $isBare = in_array(mb_strtolower($name), $bare, true);
+            $out[] = ($isBare || ($plain && !$quoted)) ? $name : "'".$name."'";
+        }
+
+        return implode(', ', $out);
+    }
+}
+
+if (!function_exists('falcon_css_font_settings')) {
+    /**
+     * Every font-family value in an element's settings run through falcon_css_font_family(),
+     * nested settings included. Done once where an element is rendered, so all of its
+     * templates — and every way they print the value — get a valid font-family.
+     *
+     * @param  array<string|int, mixed>  $settings
+     * @return array<string|int, mixed>
+     */
+    function falcon_css_font_settings(array $settings): array
+    {
+        foreach ($settings as $key => $value) {
+            if (is_array($value)) {
+                $settings[$key] = falcon_css_font_settings($value);
+            } elseif (is_string($value) && $value !== '' && falcon_is_font_key($key)) {
+                $settings[$key] = falcon_css_font_family($value);
+            }
+        }
+
+        return $settings;
+    }
+}
+
+if (!function_exists('falcon_page_head_fonts')) {
+    /**
+     * The fonts the theme's <head> loads for a page: the Customizer typography, the post's
+     * own builder content and the assigned Layout sections. Worked out once per request, so
+     * the head and every builder render on the page agree on it.
+     *
+     * @return array{families: array<int,string>, weights: array<int,int>}
+     */
+    function falcon_page_head_fonts($post = null): array
+    {
+        $cacheKey = 'falcon_page_head_fonts.'.($post->id ?? '0');
+        $attrs = request()->attributes;
+        if ($attrs->has($cacheKey)) {
+            return $attrs->get($cacheKey);
+        }
+
+        $body = json_decode((string) get_cms_option('theme_typography_body'), true) ?: ['family' => 'Inter', 'variant' => '400'];
+        $h1 = json_decode((string) get_cms_option('theme_typography_h1'), true);
+        $nav = json_decode((string) get_cms_option('theme_typography_nav'), true);
+        $mega = get_cms_option('theme_mega_menu_enabled', '0') === '1'
+            ? (json_decode((string) get_cms_option('theme_mega_menu_typo', ''), true) ?: [])
+            : [];
+
+        $families = [$body['family'] ?? 'Inter'];
+        foreach ([$h1, $nav, $mega] as $t) {
+            if (isset($t['family'])) {
+                $families[] = $t['family'];
+            }
+        }
+        $weights = [400, 700];
+        foreach ([$body, $h1, $nav, $mega] as $t) {
+            if (!empty($t['variant'])) {
+                $weights[] = (int) $t['variant'];
+            }
+        }
+        foreach (['h2', 'h3', 'h4', 'h5', 'h6'] as $h) {
+            $ht = json_decode((string) get_cms_option('theme_typography_'.$h), true);
+            if (!empty($ht['variant'])) {
+                $weights[] = (int) $ht['variant'];
+            }
+        }
+
+        $collect = function ($content) use (&$families, &$weights) {
+            if (empty($content)) {
+                return;
+            }
+            $layout = is_string($content) ? json_decode($content, true) : $content;
+            if (is_array($layout)) {
+                $families = array_merge($families, get_falcon_builder_fonts($layout));
+                $weights = array_merge($weights, get_falcon_builder_font_weights($layout));
+            }
+        };
+        if ($post && !empty($post->content)) {
+            $isBuilder = ($post->editor_type ?? null) === 'builder'
+                || (is_string($post->content) && (str_starts_with($post->content, '[') || str_starts_with($post->content, '{')));
+            if ($isBuilder) {
+                $collect($post->content);
+            }
+        }
+        // Layout sections, via the resolver that returns the section POST — get_falcon_header()
+        // and friends return already-rendered HTML, which has no layout JSON to read fonts from.
+        if (function_exists('falcon_layout_assigned_section')) {
+            foreach ([['header', 'falcon_header'], ['footer', 'falcon_footer'],
+                ['page_title_bar', 'falcon_ptb'], ['content', 'falcon_content']] as [$slot, $type]) {
+                $section = falcon_layout_assigned_section($slot, $type);
+                if ($section) {
+                    $collect($section->content ?? null);
+                }
+            }
+        }
+
+        $weights = array_values(array_unique(array_filter($weights, fn ($w) => $w >= 100 && $w <= 900)));
+        sort($weights);
+        $result = ['families' => array_values(array_unique(array_filter($families))), 'weights' => $weights];
+        $attrs->set($cacheKey, $result);
+
+        return $result;
+    }
+}
+
+if (!function_exists('falcon_builder_font_links')) {
+    /**
+     * A stylesheet link for the Google fonts a builder layout uses that the page's <head>
+     * has not loaded, or '' when there are none.
+     *
+     * The head reads the fonts of the post and its Layout sections. A layout drawn from
+     * somewhere else — a Post Card or Post Grid template, a global section, a card preview
+     * in the builder — was never part of that, so a font picked inside it was shown in the
+     * theme font instead. $seen keeps one render from asking for the same family twice
+     * (a grid draws its card layout once per post).
+     */
+    function falcon_builder_font_links($layout, ?ArrayObject $seen = null, $post = null): string
+    {
+        if (!is_array($layout) || !$layout) {
+            return '';
+        }
+        $families = get_falcon_builder_fonts($layout);
+        if (!$families) {
+            return '';
+        }
+        $weights = array_merge([400, 700], get_falcon_builder_font_weights($layout));
+        $weights = array_values(array_unique(array_filter($weights, fn ($w) => $w >= 100 && $w <= 900)));
+        sort($weights);
+
+        $head = falcon_page_head_fonts($post);
+        $inHead = array_flip(array_map('mb_strtolower', $head['families']));
+        $headHasWeights = !array_diff($weights, $head['weights']);
+
+        $need = [];
+        foreach ($families as $family) {
+            $key = mb_strtolower($family);
+            if (($seen && isset($seen[$key])) || (isset($inHead[$key]) && $headHasWeights)) {
+                continue;
+            }
+            $need[] = $family;
+        }
+        if (!$need) {
+            return '';
+        }
+        $url = falcon_google_font_url($need, implode(';', $weights));
+        if ($seen) {
+            foreach ($need as $family) {
+                $seen[mb_strtolower($family)] = true;
+            }
+        }
+
+        return $url === '' ? '' : '<link rel="stylesheet" href="'.e($url).'">';
     }
 }
 

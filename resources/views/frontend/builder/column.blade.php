@@ -668,6 +668,11 @@
                         $__elView    = \Illuminate\Support\Facades\View::exists($__viewExact) ? $__viewExact
                                      : (\Illuminate\Support\Facades\View::exists($__viewDash) ? $__viewDash : null);
                         $__customDef = $__customBuilderDefs[$__elType] ?? null;
+                        // Font names like "Baloo Da 2" or "Source Sans 3" are only valid CSS in
+                        // quotes; the pickers saved them bare. Fixed here, once, for every template.
+                        if (!empty($el['settings']) && is_array($el['settings'])) {
+                            $el['settings'] = falcon_css_font_settings($el['settings']);
+                        }
                     @endphp
                     @php
                         $__elVisCondition = $el['settings']['vis_condition'] ?? '';

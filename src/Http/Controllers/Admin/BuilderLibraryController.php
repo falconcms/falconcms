@@ -154,11 +154,13 @@ class BuilderLibraryController extends Controller
         $menus = $this->getMegaMenus();
         foreach ($menus as &$menu) {
             if ($menu['id'] === $id) {
-                $menu['config']['layout'] = $request->input('layout');
+                $menu['config']['layout'] = falcon_builder_payload($request, 'layout');
                 break;
             }
         }
         update_cms_option(self::MEGA_MENUS_KEY, json_encode($menus));
+        // Pages that show this layout are cached; drop them so the save is live at once.
+        clear_page_cache();
 
         return response()->json(['success' => true]);
     }
@@ -261,11 +263,13 @@ class BuilderLibraryController extends Controller
         $cards = $this->getPostCards();
         foreach ($cards as &$card) {
             if ($card['id'] === $id) {
-                $card['config']['layout'] = $request->input('layout');
+                $card['config']['layout'] = falcon_builder_payload($request, 'layout');
                 break;
             }
         }
         update_cms_option('falcon_post_cards', json_encode($cards));
+        // Pages that show this layout are cached; drop them so the save is live at once.
+        clear_page_cache();
 
         return response()->json(['success' => true]);
     }
@@ -447,10 +451,14 @@ class BuilderLibraryController extends Controller
     {
         $request->validate(['layout' => 'present|array']);
         $found = OffCanvas::modify($id, function ($panel) use ($request) {
-            $panel['config']['layout'] = $request->input('layout', []);
+            $panel['config']['layout'] = falcon_builder_payload($request, 'layout', []);
 
             return $panel;
         });
+        if ($found) {
+            // Pages that show this panel are cached; drop them so the save is live at once.
+            clear_page_cache();
+        }
 
         return response()->json(['success' => $found], $found ? 200 : 404);
     }
@@ -660,7 +668,7 @@ class BuilderLibraryController extends Controller
             'id' => (string) Str::uuid(),
             'name' => $request->input('name'),
             'created_at' => now()->format('Y-m-d H:i'),
-            'data' => $request->input('data'),
+            'data' => falcon_builder_payload($request, 'data'),
         ];
 
         array_unshift($library[$type], $item);
@@ -700,7 +708,7 @@ class BuilderLibraryController extends Controller
         $section = [
             'id' => (string) Str::uuid(),
             'name' => $request->input('name'),
-            'data' => $request->input('data'),
+            'data' => falcon_builder_payload($request, 'data'),
             'created_at' => now()->format('Y-m-d H:i'),
         ];
         array_unshift($sections, $section);
@@ -718,12 +726,14 @@ class BuilderLibraryController extends Controller
                     $section['name'] = $request->input('name');
                 }
                 if ($request->has('data')) {
-                    $section['data'] = $request->input('data');
+                    $section['data'] = falcon_builder_payload($request, 'data');
                 }
                 break;
             }
         }
         update_cms_option(self::GLOBAL_SECTIONS_KEY, json_encode($sections));
+        // Pages that show this layout are cached; drop them so the save is live at once.
+        clear_page_cache();
 
         return response()->json(['success' => true]);
     }

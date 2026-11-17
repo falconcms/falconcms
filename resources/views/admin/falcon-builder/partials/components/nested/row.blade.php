@@ -287,7 +287,7 @@
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'top' ? 'falcon-drop-line falcon-drop-top' : '',
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'bottom' ? 'falcon-drop-line falcon-drop-bottom' : ''
                      ]"
-                     :style="(nestedEl.type === 'row' || nestedEl.type === 'section_separator' || nestedEl.type === 'code_block' || nestedEl.type === 'table' || nestedEl.type === 'callout' || nestedEl.type === 'toc' || nestedEl.type === 'heading' || nestedEl.type === 'prev_next' || nestedEl.type === 'post_comments') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
+                     :style="(nestedEl.type === 'row' || nestedEl.type === 'section_separator' || nestedEl.type === 'code_block' || nestedEl.type === 'table' || nestedEl.type === 'callout' || nestedEl.type === 'toc' || nestedEl.type === 'heading' || nestedEl.type === 'prev_next' || nestedEl.type === 'post_comments' || nestedEl.type === 'dual_button') ? { width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' } : (nestedEl.type === 'spacer' ? { flexGrow: nestedEl.settings.flexGrow || 0 } : { display: 'flex', flexDirection: 'column', fontSize: '1rem', lineHeight: '0' })"
                      :data-fc-node="'nested-element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli"
                      v-bind="fcCanvasAttrs(nestedEl)"
                      @dragover="onDragOver($event, 'element', ci, coli, eli, ncoli, nestedEli)"
@@ -307,6 +307,7 @@
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.text')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.image')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.button')
+                            @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.dual-button')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.video')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.spacer')
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.section-separator')
@@ -331,7 +332,7 @@
                             @includeIf('falcon-cms::admin.falcon-builder.partials.components.elements.ticker')
                             <!-- Custom Registered Blocks — convention-based live preview (excludes built-in types) -->
                             @php
-                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','code_block','table','callout','toc','prev_next','post_comments','row']";
+                            $builtInTypesNested = "['text_block','special_text','text','button','image','menu','title','heading','spacer','html','counter','star_rating','gallery','accordion','icon_box','content_box','icon_list','tabs','video','card','post_grid','post_content','post_meta','product_meta','ticker','section_separator','code_block','table','callout','toc','prev_next','post_comments','dual_button','row']";
                             @endphp
                             <div v-if="customElements[el.type] !== undefined && !{!! $builtInTypesNested !!}.includes(el.type)"
                                  :style="[{ width: '100%' }, getCustomElementRender(el).wrapperStyle, getCanvasVisibilityStyle(el.settings)]"

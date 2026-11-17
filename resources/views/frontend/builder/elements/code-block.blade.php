@@ -67,7 +67,10 @@
     $radius       = (int) ($s['borderRadius'] ?? 10);
     $padding      = falcon_padding_sides($s, 'padding', 18, 'padding');
     $borderWidth  = (int) ($s['borderWidth'] ?? 1);
-    $fontFamily   = trim((string) ($s['fontFamily'] ?? '')) ?: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
+    // Printed raw inside the <style> below: escaped, the quotes in the default stack came out
+    // as &quot; and the browser dropped the whole font-family. falcon_css_font_family() leaves
+    // nothing that could end the declaration or the element.
+    $fontFamily   = falcon_css_font_family(trim((string) ($s['fontFamily'] ?? '')) ?: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace');
 
     $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
     $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
@@ -103,7 +106,7 @@
             border-radius: {{ $radius }}px;
             overflow: hidden;
             position: relative;
-            font-family: {{ $fontFamily }};
+            font-family: {!! $fontFamily !!};
         }
         #{{ $uid }} .fc-code-chrome {
             display: flex; align-items: center; gap: 10px;
@@ -160,7 +163,7 @@
             position: absolute; top: {{ $showChrome ? 6 : 10 }}px; right: 10px; z-index: 2;
             display: inline-flex; align-items: center; gap: 6px;
             padding: 5px 10px;
-            font: 600 11.5px/1 {{ $fontFamily }};
+            font: 600 11.5px/1 {!! $fontFamily !!};
             color: var(--fc-chrome-text);
             background: var(--fc-chrome);
             border: 1px solid var(--fc-border);
