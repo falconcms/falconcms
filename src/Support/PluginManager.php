@@ -767,6 +767,10 @@ class PluginManager
         File::deleteDirectory($temp);
         $this->manifests = null; // force re-discovery
 
+        // An administrator put these files here on purpose (Falcon Security takes them into its
+        // scan baseline, so a plugin installed here is not reported as new PHP files).
+        do_falcon_action('falcon_plugin_installed', $slug, $target);
+
         return $this->result(true, ($data['name'] ?? $slug).' installed. Activate it to enable.') + ['slug' => $slug];
     }
 

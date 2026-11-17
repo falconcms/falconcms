@@ -160,6 +160,31 @@ class SiteHealthTest extends TestCase
         }
     }
 
+    /**
+     * The breached-password check sends the first five characters of a password's SHA-1 to
+     * Have I Been Pwned (k-anonymity): SHA-1 is what that API needs and nothing is stored, so it
+     * is not weak password hashing. Falcon Security does exactly this, and the finding came back
+     * on every scan. A sha1/md5 of a password anywhere else is still reported.
+     */
+    public function test_a_breached_password_check_is_not_weak_password_hashing(): void
+    {
+        $dir = base_path('app/SiteHealthProbe');
+        @mkdir($dir, 0777, true);
+        $check = $dir.'/BreachCheck.php';
+        $weak = $dir.'/WeakHash.php';
+        file_put_contents($check, "<?php\n\$sha1 = strtoupper(sha1(\$password));\nHttp::get('https://api.pwnedpasswords.com/range/'.substr(\$sha1, 0, 5));\n");
+        file_put_contents($weak, "<?php\n\$user->password = md5(\$password);\n");
+        try {
+            $found = collect(SiteHealth::asyncTest('code_scan')[0]['details']['findings'] ?? [])
+                ->where('title', 'Weak password hashing');
+            $this->assertSame(['app/SiteHealthProbe/WeakHash.php'], $found->pluck('file')->values()->all());
+        } finally {
+            @unlink($check);
+            @unlink($weak);
+            @rmdir($dir);
+        }
+    }
+
     public function test_the_error_log_groups_recent_errors(): void
     {
         $log = storage_path('logs/site-health-probe.log');

@@ -705,6 +705,18 @@ class SiteHealth
         return false;
     }
 
+    /**
+     * md5/sha1 of a password that is not a password hash: the breached-password check. Have I
+     * Been Pwned's range API is asked with the first five characters of the password's SHA-1
+     * (k-anonymity); SHA-1 is what the service needs, and nothing is stored. Falcon Security's
+     * PasswordPolicy does exactly this, so the finding came back on every scan of every site
+     * running it. Recognised by the file asking that API, not by the line alone.
+     */
+    private static function breachCheckFile(string $fileText): bool
+    {
+        return stripos($fileText, 'api.pwnedpasswords.com/range') !== false;
+    }
+
     /** Folders of the site's own code: everything an owner or developer writes, nothing Composer installs. */
     public static function scanRoots(): array
     {
@@ -733,7 +745,9 @@ class SiteHealth
                 }
                 $rel = ltrim(str_replace('\\', '/', substr($file->getPathname(), strlen(base_path()))), '/');
                 $isConfig = str_starts_with($rel, 'config/');
-                foreach (file($file->getPathname(), FILE_IGNORE_NEW_LINES) ?: [] as $i => $line) {
+                $lines = file($file->getPathname(), FILE_IGNORE_NEW_LINES) ?: [];
+                $breachCheck = null; // worked out only when a weak-hash line turns up
+                foreach ($lines as $i => $line) {
                     $trim = ltrim($line);
                     if ($trim === '' || str_starts_with($trim, '//') || str_starts_with($trim, '*') || str_starts_with($trim, '#') || str_starts_with($trim, '{{--')) {
                         continue;
@@ -743,10 +757,17 @@ class SiteHealth
                         if ($isConfig && $title !== 'Hard-coded credential') {
                             continue;
                         }
-                        if (preg_match($re, $line) && !($title === 'Hard-coded credential' && self::harmlessCredentialLine($line))) {
-                            $findings[] = ['severity' => $sev, 'title' => $title, 'why' => $why, 'file' => $rel, 'line' => $i + 1, 'code' => Str::limit(trim($line), 180)];
-                            break;
+                        if (!preg_match($re, $line) || ($title === 'Hard-coded credential' && self::harmlessCredentialLine($line))) {
+                            continue;
                         }
+                        if ($title === 'Weak password hashing') {
+                            $breachCheck ??= self::breachCheckFile(implode("\n", $lines));
+                            if ($breachCheck) {
+                                continue;
+                            }
+                        }
+                        $findings[] = ['severity' => $sev, 'title' => $title, 'why' => $why, 'file' => $rel, 'line' => $i + 1, 'code' => Str::limit(trim($line), 180)];
+                        break;
                     }
                 }
             }
