@@ -7,6 +7,7 @@ use FalconCms\Core\Support\CompiledCssCoverage;
 use FalconCms\Core\Support\CriticalCss;
 use FalconCms\Core\Support\LocalGoogleFonts;
 use FalconCms\Core\Support\LucideIcons;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
@@ -297,8 +298,10 @@ class HtmlOptimizeMiddleware
         // stand-in keeps Google's link, and a Content-Security-Policy that allows fonts only
         // from this site (Falcon Security, enforce mode) refuses it: the page showed the
         // fallback font until it was reloaded. Visitors still never wait for a download.
+        // getAttribute() also resolves the role relation; the guard's contract does not know it.
         $user = auth()->user();
-        $editor = $user !== null && optional($user->role)->slug !== 'customer';
+        $editor = $user instanceof Model
+            && optional($user->getAttribute('role'))->slug !== 'customer';
         $deadline = microtime(true) + 8.0;
         $html = preg_replace_callback('#<link\b[^>]*\bhref=["\']((?:https?:)?//fonts\.googleapis\.com/css2?\?[^"\']+)["\'][^>]*>#i',
             function ($m) use (&$complete, $editor, $deadline) {

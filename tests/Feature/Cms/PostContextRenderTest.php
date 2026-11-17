@@ -4,7 +4,6 @@ namespace FalconCms\Core\Tests\Feature\Cms;
 
 use FalconCms\Core\Models\Post;
 use FalconCms\Core\Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
