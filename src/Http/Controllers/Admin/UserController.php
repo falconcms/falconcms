@@ -100,6 +100,13 @@ class UserController extends Controller
         if (Role::whereIn('id', $roles)->where('slug', 'super-admin')->exists() && !auth()->user()->hasRole('super-admin')) {
             return redirect()->back()->with('error', 'Only a Super Admin can assign the Super Admin role.')->withInput();
         }
+        // Only an administrator can create an administrator: user management alone must not be
+        // a way to mint one (editing a user's roles already needs isAdmin(), see update()).
+        $creator = auth()->user();
+        $creatorIsAdmin = $creator !== null && method_exists($creator, 'isAdmin') && $creator->isAdmin();
+        if (!$creatorIsAdmin && Role::whereIn('id', $roles)->whereIn('slug', Role::ADMIN_SLUGS)->exists()) {
+            return redirect()->back()->with('error', 'Only an administrator can assign an administrator role.')->withInput();
+        }
 
         $user = User::create([
             'username' => $validated['username'],

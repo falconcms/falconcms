@@ -21,6 +21,20 @@ class Role extends Model
 {
     protected $fillable = ['name', 'slug', 'description'];
 
+    /**
+     * Role slugs that make their holders administrators (HasCmsPermissions::isAdmin,
+     * AdminMiddleware). Reserved: no role may be created with one or re-slugged to one from
+     * the Roles screen, and a role that has one keeps it. "admin" is a legacy alias that no
+     * FalconCMS version seeds; it stays recognised so an installation that created such a
+     * role by hand keeps working, but it can no longer be minted to gain administrator access.
+     */
+    public const ADMIN_SLUGS = ['super-admin', 'administrator', 'admin'];
+
+    public static function isAdminSlug(?string $slug): bool
+    {
+        return in_array((string) $slug, self::ADMIN_SLUGS, true);
+    }
+
     public function permissions()
     {
         return $this->belongsToMany(Permission::class, 'role_permission');

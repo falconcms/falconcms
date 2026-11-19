@@ -41,10 +41,21 @@ class RoleController extends Controller
         ]);
 
         $validated['slug'] = Str::slug($validated['slug']);
+        // The administrator slugs are reserved (Role::ADMIN_SLUGS): a role created with one
+        // would make everyone who holds it an administrator. Checked after Str::slug, so
+        // "Admin" or " ADMIN " cannot slip past, and uniqueness is checked on the final slug.
+        if ($error = $this->slugError($validated['slug'], null)) {
+            return redirect()->back()->withErrors(['slug' => $error])->withInput();
+        }
+        $requested = array_values(array_unique(array_map('strval', (array) $request->input('permissions', []))));
+        if ($error = $this->permissionError(null, $requested)) {
+            return redirect()->back()->withErrors(['permissions' => $error])->withInput();
+        }
+
         $role = Role::create($validated);
 
         if ($request->has('permissions')) {
-            $this->syncPermissions($role, $request->permissions);
+            $this->syncPermissions($role, $requested);
         }
 
         return redirect()->route('admin.roles.index')->with('success', 'Role created successfully.');
@@ -87,20 +98,28 @@ class RoleController extends Controller
         ]);
 
         $validated['slug'] = Str::slug($validated['slug']);
-        // Administrators are known by these slugs (never by a role's id), so the system roles
-        // keep theirs: renaming one is fine, re-slugging it would take every admin's access.
-        if (in_array($role->slug, ['administrator', 'super-admin'], true)) {
+        // Administrators are known by these slugs (never by a role's id), so a role that has one
+        // keeps it: renaming one is fine, re-slugging it would take every admin's access. And no
+        // other role may take one (Role::ADMIN_SLUGS), or editing a role would mint administrators.
+        if (Role::isAdminSlug($role->slug)) {
             $validated['slug'] = $role->slug;
+        } elseif ($error = $this->slugError($validated['slug'], $role->id)) {
+            return redirect()->back()->withErrors(['slug' => $error])->withInput();
         }
-        $role->update($validated);
 
         // Grants for a switched-off plugin's menus are not on the form, so they never come back
         // in the request; carry them over, or saving a role while the shop is off would take
         // its shop access away for good.
-        $this->syncPermissions($role, array_merge(
+        $requested = array_values(array_unique(array_map('strval', array_merge(
             (array) $request->input('permissions', []),
             array_intersect($role->permissions->pluck('slug')->all(), $this->unavailableMenuPermissions())
-        ));
+        ))));
+        if ($error = $this->permissionError($role, $requested)) {
+            return redirect()->back()->withErrors(['permissions' => $error])->withInput();
+        }
+
+        $role->update($validated);
+        $this->syncPermissions($role, $requested);
 
         return redirect()->route('admin.roles.edit', $role)->with('success', 'Role updated successfully.');
     }
@@ -131,6 +150,82 @@ class RoleController extends Controller
         return $slugs;
     }
 
+    /** Why a slug may not be used for a role (reserved administrator slug, taken), or null. */
+    protected function slugError(string $slug, ?int $exceptRoleId): ?string
+    {
+        if ($slug === '') {
+            return 'The slug must contain letters or digits.';
+        }
+        if (Role::isAdminSlug($slug)) {
+            return "\"{$slug}\" is reserved: roles with that slug are administrators.";
+        }
+        if (Role::where('slug', $slug)->when($exceptRoleId, fn ($q) => $q->whereKeyNot($exceptRoleId))->exists()) {
+            return 'The slug has already been taken.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Every permission the Roles screen can grant: exactly what it offers (menus, the
+     * Publishing permission, menus registered in code through falcon_add_menu_page, custom
+     * options pages), plus the grants of menus whose plugin is switched off. Anything else in a
+     * request is not a permission this screen knows, and is refused rather than created.
+     *
+     * @return array<string, true>
+     */
+    protected function registeredPermissions(): array
+    {
+        $slugs = [];
+        $walk = function (array $items) use (&$walk, &$slugs) {
+            foreach ($items as $item) {
+                if (!empty($item['slug'])) {
+                    $slugs[(string) $item['slug']] = true;
+                }
+                $walk((array) ($item['children'] ?? []));
+            }
+        };
+        foreach ($this->getDynamicPermissions()['dynamicPermissions'] as $items) {
+            $walk((array) $items);
+        }
+        foreach ($this->unavailableMenuPermissions() as $slug) {
+            $slugs[(string) $slug] = true;
+        }
+
+        return $slugs;
+    }
+
+    /**
+     * Why a permission set may not be saved, or null:
+     *  - a slug the Roles screen does not offer (and the role does not already hold);
+     *  - for anyone but an administrator: a permission being added that they do not hold
+     *    themselves. A role manager could otherwise hand any role (their own included) the
+     *    plugin installer, the role editor's own reach, or anything else, and so become an
+     *    administrator in all but name.
+     */
+    protected function permissionError(?Role $role, array $requested): ?string
+    {
+        $current = $role ? $role->permissions->pluck('slug')->map(fn ($s) => (string) $s)->all() : [];
+        $registered = $this->registeredPermissions();
+        $unknown = array_values(array_filter($requested, fn ($slug) => !isset($registered[$slug]) && !in_array($slug, $current, true)));
+        if ($unknown !== []) {
+            return 'Unknown permission: '.implode(', ', array_slice($unknown, 0, 10)).'. Nothing was saved.';
+        }
+
+        $editor = auth()->user();
+        $editorIsAdmin = $editor !== null && method_exists($editor, 'isAdmin') && $editor->isAdmin();
+        if ($editor && !$editorIsAdmin) {
+            $added = array_diff($requested, $current);
+            $notHeld = array_values(array_filter($added, fn ($slug) => !$editor->hasPermission($slug)));
+            if ($notHeld !== []) {
+                return 'You can only grant permissions you hold yourself: '.implode(', ', array_slice($notHeld, 0, 10)).'. Nothing was saved.';
+            }
+        }
+
+        return null;
+    }
+
+    /** Only ever called with slugs permissionError() accepted. */
     protected function syncPermissions(Role $role, array $permissionSlugs)
     {
         $ids = [];
