@@ -819,7 +819,7 @@ parameters:
 		-
 			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasRole\(\)\.$#'
 			identifier: method.notFound
-			count: 6
+			count: 5
 			path: src/Http/Controllers/Admin/UserController.php
 
 		-

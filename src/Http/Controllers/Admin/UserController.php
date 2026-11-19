@@ -226,6 +226,23 @@ class UserController extends Controller
             : null;
     }
 
+    /**
+     * Why the signed-in user may not delete, block or unblock $user, or null. The same rules as
+     * editing it: a Super Admin account only by a Super Admin, and anyone else's only when its
+     * roles (main and extra) are ones the actor could have given it (accountError). Deleting or
+     * blocking the site's administrators would otherwise be a way to take the site from them.
+     */
+    protected function targetError(User $user, string $action): ?string
+    {
+        if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
+            return "You cannot {$action} a Super Admin account.";
+        }
+
+        return $this->accountError($user) !== null
+            ? "You cannot {$action} this account: it holds a role or permissions you do not hold yourself."
+            : null;
+    }
+
     public function destroy(Request $request, User $user)
     {
         if (!auth()->user()->hasPermission('manage_users')) {
@@ -235,8 +252,8 @@ class UserController extends Controller
             return redirect()->route('admin.users.index')->with('error', 'You cannot delete your own account.');
         }
 
-        if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
-            return redirect()->route('admin.users.index')->with('error', 'You cannot delete a Super Admin account.');
+        if ($error = $this->targetError($user, 'delete')) {
+            return redirect()->route('admin.users.index')->with('error', $error);
         }
 
         $deleteOption = $request->input('delete_option', 'delete'); // 'delete' or 'reassign'
@@ -277,12 +294,14 @@ class UserController extends Controller
             return redirect()->route('admin.users.index')->with('error', 'You cannot block your own account.');
         }
 
-        if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
-            return redirect()->route('admin.users.index')->with('error', 'You cannot block a Super Admin account.');
-        }
-
         // If user is temporarily blocked, or permanently blocked, we toggle it
         $isCurrentlyBlocked = $user->is_blocked || ($user->blocked_until && $user->blocked_until->isFuture());
+
+        // Blocking and unblocking alike: unblocking a stronger account someone else blocked is
+        // as much a change to it as blocking it.
+        if ($error = $this->targetError($user, $isCurrentlyBlocked ? 'unblock' : 'block')) {
+            return redirect()->route('admin.users.index')->with('error', $error);
+        }
 
         if ($isCurrentlyBlocked) {
             // Unblock
@@ -310,7 +329,7 @@ class UserController extends Controller
             abort(403);
         }
 
-        $ids = $request->ids;
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) $request->input('ids', [])))));
         $action = $request->action;
 
         if (empty($ids) || $action === 'Bulk Actions') {
@@ -318,7 +337,18 @@ class UserController extends Controller
         }
 
         // Prevent self-deletion/blocking
-        $ids = array_diff($ids, [auth()->id()]);
+        $ids = array_values(array_diff($ids, [(int) auth()->id()]));
+
+        // Every selected account is checked before any is changed: one the actor may not delete,
+        // block or unblock (targetError) refuses the whole request, so a mixed selection never
+        // goes half-way.
+        if (in_array($action, ['delete', 'block', 'unblock'], true)) {
+            foreach (User::whereIn('id', $ids)->get() as $target) {
+                if ($error = $this->targetError($target, $action)) {
+                    return redirect()->back()->with('error', $error.' Nothing was changed.');
+                }
+            }
+        }
 
         if ($action === 'delete') {
             $users = User::whereIn('id', $ids)->get();

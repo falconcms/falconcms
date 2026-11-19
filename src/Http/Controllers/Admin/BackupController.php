@@ -24,6 +24,15 @@ class BackupController extends Controller
         }
     }
 
+    /** Restoring: administrators and Super Admins only (by their main or an extra role). */
+    private function checkRestoreAccess(): void
+    {
+        $u = auth()->user();
+        if (!$u || !method_exists($u, 'isAdmin') || !$u->isAdmin()) {
+            abort(403, 'Only an administrator can restore a backup.');
+        }
+    }
+
     /**
      * Whether this connection can be dumped and restored as SQL.
      *
@@ -371,6 +380,10 @@ class BackupController extends Controller
     public function restore($filename)
     {
         $this->checkAccess();
+        // A restore replaces the database — users, roles and permissions with it — so it is an
+        // administrator's alone. The backup permissions (or Settings, or Tools) still list,
+        // make, download, upload and delete backups; they never put one back.
+        $this->checkRestoreAccess();
         @set_time_limit(0);
         // A full restore outlives the browser's patience. When the tab gave up (nginx 499)
         // PHP stopped after the database and never put the media files back.
