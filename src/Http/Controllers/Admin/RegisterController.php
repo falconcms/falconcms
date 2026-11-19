@@ -4,7 +4,7 @@ namespace FalconCms\Core\Http\Controllers\Admin;
 
 use App\Models\User;
 use FalconCms\Core\Mail\EmailVerificationMail;
-use FalconCms\Core\Models\Role;
+use FalconCms\Core\Support\PublicRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -60,11 +60,24 @@ class RegisterController extends Controller
             return back()->withErrors(['email' => $turnstile])->withInput($request->except('password', 'password_confirmation'));
         }
 
-        // Assign the role configured in Settings → "New User Default Role",
-        // falling back to subscriber if it is unset or no longer exists.
-        $defaultRoleSlug = get_cms_option('default_role', 'subscriber');
-        $defaultRole = Role::where('slug', $defaultRoleSlug)->first()
-            ?: Role::where('slug', 'subscriber')->first();
+        // The role configured in Settings → "New User Default Role", judged now by what it
+        // grants now (PublicRegistration): never an administrator role, never one holding a
+        // privileged permission. An unsafe or missing role falls back to Subscriber only if
+        // Subscriber passes the same test; with no safe role nobody is registered.
+        $choice = PublicRegistration::resolve();
+        if ($choice['problem'] !== null) {
+            Log::warning('Public registration did not use the configured default role.', [
+                'configured_role' => $choice['configured'],
+                'reason' => $choice['problem'],
+                'used_role' => $choice['role']?->getAttribute('slug'),
+            ]);
+        }
+        $defaultRole = $choice['role'];
+        if (!$defaultRole) {
+            return back()
+                ->withErrors(['email' => 'Registration is not available right now. Please contact the site administrator.'])
+                ->withInput($request->except('password', 'password_confirmation'));
+        }
 
         // Site setting (Settings → Membership): require email verification before login?
         $requireVerification = falcon_email_verification_required();
@@ -74,7 +87,7 @@ class RegisterController extends Controller
             'username' => $this->uniqueUsername($request->email),
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $defaultRole ? $defaultRole->id : null,
+            'role_id' => $defaultRole->getKey(),
         ]);
 
         // Verification disabled → mark the account verified (so it stays valid even

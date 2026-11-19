@@ -1442,16 +1442,42 @@ class CustomizerController extends Controller
         return $info ? response()->json($info) : response()->json(['message' => 'Not a font from the Media Library.'], 404);
     }
 
+    /**
+     * The settings an export carries and an import may write: every Customizer field that
+     * save() stores (no headings, notes, buttons, custom-font lists or secret fields), minus
+     * any key that decides access or holds a secret (falcon_is_sensitive_option, protected
+     * options included). A plugin adds fields through falcon_customizer_sections, so a field
+     * named after such a key is refused here even though the Customizer lists it.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function importableFields(): array
+    {
+        $nonDataTypes = ['heading', 'info', 'action_button', 'custom_fonts'];
+        $fields = [];
+        foreach ($this->sections() as $sec) {
+            foreach ((array) ($sec['fields'] ?? []) as $key => $field) {
+                $key = (string) $key;
+                $field = (array) $field;
+                if ($key === '' || in_array($field['type'] ?? '', $nonDataTypes, true) || !empty($field['secret'])
+                    || falcon_is_sensitive_option($key)) {
+                    continue;
+                }
+                $fields[$key] = $field;
+            }
+        }
+
+        return $fields;
+    }
+
     public function export()
     {
         if (!auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
 
-        $keys = [];
-        foreach ($this->sections() as $sec) {
-            $keys = array_merge($keys, array_keys($sec['fields']));
-        }
+        // Exactly what import() accepts, so an exported file always imports cleanly.
+        $keys = array_merge(array_keys($this->importableFields()), [CustomFonts::OPTION]);
 
         $settings = DB::table('cms_settings')
             ->whereIn('key', $keys)
@@ -1478,17 +1504,62 @@ class CustomizerController extends Controller
             $json = file_get_contents($request->file('import_file')->getRealPath());
             $data = json_decode($json, true);
 
-            if (!$data || !is_array($data)) {
+            // An export is one flat object of setting => value. A list, or anything else, is not.
+            if (!$data || !is_array($data) || array_is_list($data)) {
                 return redirect()->back()->with('error', 'Invalid JSON file.');
             }
 
+            // Only the Customizer's own fields, as save() would store them. Before, every key in
+            // the file was written to cms_settings — the default role, registration, licence
+            // state, anything — so an import was a way around every screen that checks them.
+            $fields = $this->importableFields();
+            $imported = 0;
+            $ignored = 0;
+            $fontNotes = [];
             foreach ($data as $key => $val) {
-                DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $val]);
+                $key = (string) $key;
+                // Typography → Custom Font: exported as the stored JSON list, imported the way
+                // save() takes it, through CustomFonts' own checks (Media Library fonts only).
+                if ($key === CustomFonts::OPTION) {
+                    $list = is_string($val) ? json_decode($val, true) : null;
+                    if (is_array($list) && array_is_list($list)) {
+                        $fontNotes = CustomFonts::save($list);
+                        $imported++;
+                    } else {
+                        $ignored++;
+                    }
+
+                    continue;
+                }
+                // Unknown keys, and nested values (an export never has them), are left out.
+                if (!isset($fields[$key]) || is_array($val) || is_object($val)) {
+                    $ignored++;
+
+                    continue;
+                }
+                $field = $fields[$key];
+                $value = match (true) {
+                    $val === null => null,
+                    is_bool($val) => $val ? '1' : '0',
+                    default => (string) $val,
+                };
+                // The same rule as save(): a switch this server cannot support stays off.
+                if (($field['unavailable'] ?? '') !== '' && ($field['type'] ?? '') === 'toggle') {
+                    $value = '0';
+                }
+                DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value]);
+                $imported++;
             }
 
             forget_cms_options_cache();
 
-            return redirect()->back()->with('success', 'Settings imported successfully.');
+            if ($imported === 0) {
+                return redirect()->back()->with('error', 'Nothing was imported: the file has no Customizer settings.');
+            }
+
+            return redirect()->back()->with('success', 'Settings imported successfully.'
+                .($ignored ? " {$ignored} entr".($ignored === 1 ? 'y was' : 'ies were').' not Customizer settings and were skipped.' : '')
+                .($fontNotes ? ' Custom fonts: '.implode(' ', $fontNotes) : ''));
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Import failed: '.$e->getMessage());
         }

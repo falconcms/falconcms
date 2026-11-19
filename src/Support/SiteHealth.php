@@ -63,7 +63,7 @@ class SiteHealth
             'appDebug', 'appKey', 'https', 'sessionCookie', 'exposedFiles', 'publicPhpFiles',
             'writableDirs', 'storageLink', 'envPermissions',
             'cacheDriver', 'queueDriver', 'mailer', 'productionCaches', 'maintenance',
-            'timezone', 'proLicense',
+            'timezone', 'proLicense', 'publicRegistration',
         ] as $method) {
             try {
                 foreach ((array) self::$method() as $result) {
@@ -524,6 +524,35 @@ class SiteHealth
             : self::result('timezone', 'No site timezone is set', self::RECOMMENDED, 'Site',
                 'Scheduled posts and order times are shown in UTC, which is probably not your local time.',
                 'Choose your timezone under Settings → General.')];
+    }
+
+    /**
+     * The role the public registration form gives (PublicRegistration). Registration itself
+     * re-checks the role every time; this only says ahead of time what it will find.
+     */
+    private static function publicRegistration(): array
+    {
+        $open = get_cms_option('users_can_register', '0') === '1';
+        $choice = PublicRegistration::resolve();
+        $where = 'Settings → General → New User Default Role';
+
+        if ($choice['problem'] === null) {
+            return [$open
+                ? self::result('public_registration', 'Public registration gives a safe role', self::GOOD, 'Security',
+                    'New accounts get the "'.$choice['configured'].'" role, which holds no administrator or privileged permission.')
+                : self::result('public_registration', 'Public registration is off', self::GOOD, 'Security',
+                    'Nobody can create an account from the registration form.')];
+        }
+
+        if ($choice['role'] === null) {
+            return [self::result('public_registration', $open ? 'Public registration refuses every new account' : 'No safe role for public registration', $open ? self::CRITICAL : self::RECOMMENDED, 'Security',
+                $choice['problem'].' The fallback "'.PublicRegistration::FALLBACK.'" role is missing or not safe either, so the registration form creates no accounts'.($open ? '.' : ' if it is switched on.'),
+                'Choose a role without privileged permissions under '.$where.', or remove those permissions from it under Users → Roles.')];
+        }
+
+        return [self::result('public_registration', 'The default role for new accounts is not safe', $open ? self::CRITICAL : self::RECOMMENDED, 'Security',
+            $choice['problem'].' New accounts get the "'.$choice['role']->getAttribute('slug').'" role instead'.($open ? '.' : ' if registration is switched on.'),
+            'Choose a role without privileged permissions under '.$where.'.')];
     }
 
     private static function proLicense(): array

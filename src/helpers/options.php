@@ -177,6 +177,56 @@ if (!function_exists('falcon_is_protected_option')) {
     }
 }
 
+if (!function_exists('falcon_is_sensitive_option')) {
+    /**
+     * Option keys that decide who gets in and what they may do, or hold a secret. A bulk or
+     * file-driven write that is not their own screen (the Customizer import, for one) must
+     * never set them, whatever the payload claims: each has a screen of its own that checks
+     * the value (Settings → General checks the default role against the person saving it).
+     *
+     * Covers every protected option ({@see falcon_is_protected_option()}) as well, so a caller
+     * that asks this one is never weaker than one that asks that.
+     */
+    function falcon_is_sensitive_option($key): bool
+    {
+        $key = strtolower(trim((string) $key));
+        if ($key === '' || falcon_is_protected_option($key)) {
+            return $key !== '';
+        }
+
+        $exact = [
+            // Registration and sign-in: who may create an account, with which role, and where.
+            'default_role', 'users_can_register', 'require_email_verification',
+            'login_url', 'register_url', 'magic_login_enabled', 'allow_multi_device', 'max_devices',
+            // The REST API switch and the address the site's notices go to.
+            'enable_rest_api', 'admin_email',
+            // Which theme's code runs.
+            'active_theme',
+            // Which roles may use the AI writer (and spend the site's API credit).
+            'ai_writer_roles',
+        ];
+        if (in_array($key, $exact, true)) {
+            return true;
+        }
+
+        // Licence/Pro state, Falcon Security's settings, Turnstile (bot check on the sign-in
+        // and registration forms), Search Console credentials.
+        foreach (['falcon_license', 'falcon_freemium', 'falcon_grandfathered', 'security_', 'turnstile_', 'gsc_'] as $prefix) {
+            if (str_starts_with($key, $prefix)) {
+                return true;
+            }
+        }
+        // Credentials by name: API keys, secrets, passwords, tokens.
+        foreach (['_key', '_secret', '_password', '_token', '_credentials'] as $suffix) {
+            if (str_ends_with($key, $suffix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('falcon_request_memo')) {
     /**
      * A scratchpad that lives exactly as long as the application instance does.
