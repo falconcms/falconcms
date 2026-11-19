@@ -100,12 +100,11 @@ class UserController extends Controller
         if (Role::whereIn('id', $roles)->where('slug', 'super-admin')->exists() && !auth()->user()->hasRole('super-admin')) {
             return redirect()->back()->with('error', 'Only a Super Admin can assign the Super Admin role.')->withInput();
         }
-        // Only an administrator can create an administrator: user management alone must not be
-        // a way to mint one (editing a user's roles already needs isAdmin(), see update()).
-        $creator = auth()->user();
-        $creatorIsAdmin = $creator !== null && method_exists($creator, 'isAdmin') && $creator->isAdmin();
-        if (!$creatorIsAdmin && Role::whereIn('id', $roles)->whereIn('slug', Role::ADMIN_SLUGS)->exists()) {
-            return redirect()->back()->with('error', 'Only an administrator can assign an administrator role.')->withInput();
+        // User management alone must not be a way to mint a stronger account: a non-admin may
+        // give no administrator role, and no roles (primary and extra together) that grant a
+        // permission they do not hold themselves (Role::assignmentError).
+        if ($error = Role::assignmentError(auth()->user(), $roles)) {
+            return redirect()->back()->with('error', $error)->withInput();
         }
 
         $user = User::create([
@@ -134,6 +133,9 @@ class UserController extends Controller
         if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
             return redirect()->route('admin.users.index')->with('error', 'You do not have permission to edit a Super Admin.');
         }
+        if ($error = $this->accountError($user)) {
+            return redirect()->route('admin.users.index')->with('error', $error);
+        }
 
         $roles = Role::all();
 
@@ -144,6 +146,11 @@ class UserController extends Controller
     {
         if (!auth()->user()->hasPermission('manage_users') && auth()->id() !== $user->id) {
             abort(403);
+        }
+        // Checked before anything is validated or saved: a password or email change on a
+        // stronger account is a way into it.
+        if ($error = $this->accountError($user)) {
+            return redirect()->route('admin.users.index')->with('error', $error);
         }
 
         $canManageRoles = auth()->user()->isAdmin();
@@ -180,6 +187,11 @@ class UserController extends Controller
                 && !auth()->user()->hasRole('super-admin')) {
                 return redirect()->back()->with('error', 'Only a Super Admin can assign the Super Admin role.')->withInput();
             }
+            // Only administrators reach this branch today, for whom it passes; it keeps the
+            // rule in force should role changes ever be opened to user managers.
+            if ($error = Role::assignmentError(auth()->user(), $roles)) {
+                return redirect()->back()->with('error', $error)->withInput();
+            }
         } else {
             $roles = $user->cmsRoleIds();
         }
@@ -194,6 +206,24 @@ class UserController extends Controller
         falcon_log_activity('updated', "Updated user profile: {$user->name}", $user);
 
         return redirect()->route('admin.users.edit', $user)->with('success', 'User updated successfully.');
+    }
+
+    /**
+     * Why the signed-in user may not edit $user's account, or null. Their own account is
+     * always theirs to edit (their roles stay as they are, see update()). Anyone else's only
+     * if its roles are ones the editor could have given it (Role::assignmentError): changing
+     * the password or email of a stronger account would be a way into that account.
+     */
+    protected function accountError(User $user): ?string
+    {
+        $actor = auth()->user();
+        if ($actor === null || (int) $actor->getAuthIdentifier() === (int) $user->getKey()) {
+            return null;
+        }
+
+        return Role::assignmentError($actor, $user->cmsRoleIds()) !== null
+            ? 'You cannot edit this account: it holds a role or permissions you do not hold yourself.'
+            : null;
     }
 
     public function destroy(Request $request, User $user)

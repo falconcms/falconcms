@@ -653,6 +653,18 @@ class DashboardController extends Controller
         }
         $data = $request->except('_token');
 
+        // Accounts from the public registration form get this role, so choosing it is
+        // assigning it: the same rule as the Users screen (Role::assignmentError). Checked
+        // only when it changes, so saving other settings never trips over a role an
+        // administrator chose.
+        if (array_key_exists('default_role', $data)
+            && (string) $data['default_role'] !== (string) get_cms_option('default_role', 'subscriber')) {
+            $defaultRole = Role::where('slug', (string) $data['default_role'])->first();
+            if ($defaultRole && ($error = Role::assignmentError(auth()->user(), [$defaultRole->id]))) {
+                return redirect()->back()->with('error', 'New User Default Role: '.$error)->withInput();
+            }
+        }
+
         // Handle Checkboxes
         $data['users_can_register'] = $request->has('users_can_register') ? '1' : '0';
         $data['require_email_verification'] = $request->has('require_email_verification') ? '1' : '0';

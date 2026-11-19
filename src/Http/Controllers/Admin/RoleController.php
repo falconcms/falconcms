@@ -336,7 +336,9 @@ class RoleController extends Controller
 
     public function destroy(Role $role)
     {
-        if (in_array($role->slug, ['administrator', 'super-admin', 'subscriber'])) {
+        // The administrator slugs (Role::ADMIN_SLUGS, legacy "admin" included) and the
+        // default role for new accounts are system roles.
+        if (Role::isAdminSlug($role->slug) || $role->slug === 'subscriber') {
             return redirect()->route('admin.roles.index')->with('error', 'Cannot delete system roles.');
         }
 
