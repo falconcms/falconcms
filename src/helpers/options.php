@@ -189,9 +189,40 @@ if (!function_exists('falcon_is_sensitive_option')) {
      */
     function falcon_is_sensitive_option($key): bool
     {
+        return in_array(falcon_option_guard($key), ['protected', 'access', 'secret'], true);
+    }
+}
+
+if (!function_exists('falcon_option_guard')) {
+    /**
+     * What kind of guarded option a key is, or null for an ordinary setting:
+     *
+     *  - 'protected': licence and Pro state ({@see falcon_is_protected_option()}). Never written
+     *    from settings input at all; their own services write them.
+     *  - 'access': decides who gets in and what they may do (registration, sign-in, the REST API,
+     *    the active theme, Falcon Security, Turnstile, licence/freemium state). Only the screen
+     *    that owns one, with its own checks, may write it.
+     *  - 'code': printed unescaped into every page (head and footer scripts, raw HTML, custom
+     *    CSS). The Customizer owns them; anything else that wrote one would put script in front
+     *    of every visitor and every signed-in administrator.
+     *  - 'secret': a credential by name (API keys, secrets, passwords, tokens, Search Console).
+     *    A screen may write the ones it declares; nothing writes them in bulk.
+     *
+     * {@see falcon_is_sensitive_option()} is protected + access + secret, as it always was.
+     */
+    function falcon_option_guard($key): ?string
+    {
         $key = strtolower(trim((string) $key));
-        if ($key === '' || falcon_is_protected_option($key)) {
-            return $key !== '';
+        if ($key === '') {
+            return null;
+        }
+        if (falcon_is_protected_option($key)) {
+            return 'protected';
+        }
+
+        $code = ['theme_head_script', 'theme_footer_script', 'theme_head_html', 'header_ad_code', 'theme_custom_css', 'theme_footer_copyright'];
+        if (in_array($key, $code, true)) {
+            return 'code';
         }
 
         $exact = [
@@ -206,24 +237,79 @@ if (!function_exists('falcon_is_sensitive_option')) {
             'ai_writer_roles',
         ];
         if (in_array($key, $exact, true)) {
-            return true;
+            return 'access';
         }
 
-        // Licence/Pro state, Falcon Security's settings, Turnstile (bot check on the sign-in
-        // and registration forms), Search Console credentials.
-        foreach (['falcon_license', 'falcon_freemium', 'falcon_grandfathered', 'security_', 'turnstile_', 'gsc_'] as $prefix) {
+        // Licence/Pro state, Falcon Security's settings (the lockdown included), Turnstile (bot
+        // check on the sign-in and registration forms).
+        foreach (['falcon_license', 'falcon_freemium', 'falcon_grandfathered', 'security_', 'turnstile_'] as $prefix) {
             if (str_starts_with($key, $prefix)) {
-                return true;
+                return 'access';
             }
         }
-        // Credentials by name: API keys, secrets, passwords, tokens.
+        // Search Console credentials, and credentials by name: API keys, secrets, passwords, tokens.
+        if (str_starts_with($key, 'gsc_')) {
+            return 'secret';
+        }
         foreach (['_key', '_secret', '_password', '_token', '_credentials'] as $suffix) {
             if (str_ends_with($key, $suffix)) {
-                return true;
+                return 'secret';
             }
         }
 
-        return false;
+        return null;
+    }
+}
+
+if (!function_exists('falcon_settings_screen_write')) {
+    /**
+     * What a settings screen may write from a request, decided before anything is written.
+     *
+     * $posted is the request's settings (key => value). $declared names every key the screen
+     * stores (its own fields, fields registered for it, keys plugins declare for it). $owned
+     * names the 'access' keys the screen itself is responsible for, with its own checks.
+     *
+     * Refused outright (error set, nothing may be written): a protected or code key, an access
+     * key the screen does not own, a malformed key, or a nested value for a key not allowed
+     * one. Left out (listed in ignored): keys the screen does not declare. Never accepted
+     * because a request named them.
+     *
+     * @param  array<array-key, mixed>  $posted
+     * @param  array<int, string>  $declared
+     * @param  array<int, string>  $owned
+     * @param  array<int, string>  $arrayKeys  keys whose value may be a list (multiselect, tags, repeater)
+     * @return array{error: ?string, data: array<string, mixed>, ignored: list<string>}
+     */
+    function falcon_settings_screen_write(array $posted, array $declared, array $owned = [], array $arrayKeys = []): array
+    {
+        $declared = array_fill_keys(array_map('strval', $declared), true);
+        $owned = array_fill_keys(array_map('strval', $owned), true);
+        $arrayKeys = array_fill_keys(array_map('strval', $arrayKeys), true);
+        $data = [];
+        $ignored = [];
+        $refuse = fn (string $why) => ['error' => $why.' Nothing was saved.', 'data' => [], 'ignored' => []];
+
+        foreach ($posted as $key => $value) {
+            $key = (string) $key;
+            if (!preg_match('/^[A-Za-z0-9_\-]{1,191}$/', $key)) {
+                return $refuse('"'.mb_substr($key, 0, 60).'" is not a setting name.');
+            }
+            $guard = falcon_option_guard($key);
+            if ($guard === 'protected' || $guard === 'code' || ($guard === 'access' && !isset($owned[$key]))) {
+                return $refuse("\"{$key}\" cannot be changed from this screen.");
+            }
+            if (!isset($declared[$key])) {
+                $ignored[] = $key;
+
+                continue;
+            }
+            if ((is_array($value) && !isset($arrayKeys[$key])) || is_object($value)) {
+                return $refuse("\"{$key}\" takes a single value.");
+            }
+            $data[$key] = $value;
+        }
+
+        return ['error' => null, 'data' => $data, 'ignored' => $ignored];
     }
 }
 

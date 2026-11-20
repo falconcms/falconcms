@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -646,17 +647,134 @@ class DashboardController extends Controller
         return view('falcon-cms::admin.settings.index', compact('pages', 'settings', 'roles'));
     }
 
+    /**
+     * The access settings Settings → General (and its API tab) owns and checks itself: who may
+     * register and with which role (Role::assignmentError on a changed default role), the
+     * sign-in and registration addresses, the Pro sign-in options (falcon_pro_editable), the
+     * REST API switch and the administration email. Every other access setting has its own
+     * screen and is refused here (falcon_settings_screen_write).
+     */
+    private const GENERAL_OWNED_ACCESS = [
+        'users_can_register', 'require_email_verification', 'default_role', 'login_url', 'register_url',
+        'allow_multi_device', 'max_devices', 'magic_login_enabled', 'enable_rest_api', 'admin_email',
+    ];
+
+    /**
+     * Every key Settings → General and Settings → API store: their own fields, fields themes and
+     * plugins register for them (falcon_add_settings_field, screen general or api), and keys a
+     * plugin that prints its own inputs declares (falcon_general_settings_fields).
+     *
+     * @return array{0: list<string>, 1: list<string>} [declared keys, keys that take a list]
+     */
+    private function generalSettingsFields(): array
+    {
+        $declared = [
+            'site_title', 'tagline', 'admin_email', 'timezone', 'home_page_id', 'blog_page_id',
+            'login_theme', 'registration_theme', 'users_can_register', 'require_email_verification',
+            'register_url', 'login_url', 'default_role', 'allow_multi_device', 'max_devices', 'magic_login_enabled',
+            'activity_log_enabled', 'activity_log_autoprune', 'activity_log_retention', 'activity_log_prune_before',
+            'enable_rest_api',
+        ];
+
+        return $this->withRegisteredFields($declared, ['general', 'api'], 'falcon_general_settings_fields');
+    }
+
+    /**
+     * Every key SEO → Settings stores: its own fields, the sitemap and plugin checkboxes, the
+     * taxonomy bases, fields registered for it (falcon_add_settings_field, screen seo), and keys
+     * plugins that print their own inputs declare (falcon_seo_settings_fields).
+     *
+     * @param  list<string>  $checkboxes
+     * @return array{0: list<string>, 1: list<string>}
+     */
+    private function seoSettingsFields(array $checkboxes): array
+    {
+        $declared = array_merge([
+            'robots_txt', 'seo_default_image', 'seo_separator', 'twitter_card_type', 'twitter_handle',
+            'category_base', 'tag_base', 'product_category_base', 'product_tag_base',
+        ], $checkboxes);
+
+        return $this->withRegisteredFields($declared, ['seo'], 'falcon_seo_settings_fields');
+    }
+
+    /**
+     * @param  list<string>  $declared
+     * @param  list<string>  $screens
+     * @return array{0: list<string>, 1: list<string>}
+     */
+    private function withRegisteredFields(array $declared, array $screens, string $filter): array
+    {
+        $arrayKeys = [];
+        $ext = app(SettingsExtension::class);
+        foreach ($screens as $screen) {
+            foreach ($ext->inlineFields($screen) as $field) {
+                $name = (string) ($field['name'] ?? '');
+                if ($name === '') {
+                    continue;
+                }
+                $declared[] = $name;
+                if (in_array($field['type'] ?? 'text', ['multiselect', 'tags', 'repeater'], true)) {
+                    $arrayKeys[] = $name;
+                }
+            }
+        }
+        foreach ((array) apply_falcon_filters($filter, []) as $key) {
+            if (is_string($key) && $key !== '') {
+                $declared[] = $key;
+            }
+        }
+
+        return [array_values(array_unique($declared)), array_values(array_unique($arrayKeys))];
+    }
+
+    /** @param  list<string>  $ignored */
+    private function logIgnoredSettings(string $screen, array $ignored): void
+    {
+        if ($ignored !== []) {
+            Log::info("Settings ({$screen}): fields this screen does not store were not saved.", ['keys' => array_slice($ignored, 0, 50)]);
+        }
+    }
+
     public function updateSettings(Request $request)
     {
         if (!auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
-        $data = $request->except('_token');
+        // Only the settings this screen stores (General and API post here), checked before
+        // anything is written: never licence state, a script or raw-HTML option, or an access
+        // setting another screen owns (Falcon Security, the active theme, Turnstile…), however
+        // the request names it. Holding manage_settings is not a way around those screens.
+        [$declared, $arrayKeys] = $this->generalSettingsFields();
+        $write = falcon_settings_screen_write($request->except(['_token', 'activity_log_form', 'settings_screen']), $declared, self::GENERAL_OWNED_ACCESS, $arrayKeys);
+        if ($write['error'] !== null) {
+            return redirect()->back()->with('error', $write['error'])->withInput();
+        }
+        $this->logIgnoredSettings('general', $write['ignored']);
+        $data = $write['data'];
+
+        // Sign-in, registration, the REST API and the administration email decide who gets in:
+        // an administrator's (or Super Admin's) alone. manage_settings keeps every other
+        // General setting. The screen does not offer them to anyone else, and a request that
+        // names one anyway is refused whole.
+        $user = auth()->user();
+        $isAdmin = $user !== null && method_exists($user, 'isAdmin') && $user->isAdmin();
+        $sentAccess = array_values(array_intersect(self::GENERAL_OWNED_ACCESS, array_keys($data)));
+        if (!$isAdmin && $sentAccess !== []) {
+            return redirect()->back()->with('error', 'Only an administrator can change '.implode(', ', $sentAccess).'. Nothing was saved.')->withInput();
+        }
+
+        // Which form was sent. General and API both post here, and an unticked box posts
+        // nothing, so each screen's boxes are read as "off" only when that screen sent the
+        // request. Before the marker, the General form was known by its activity log field.
+        $screen = (string) $request->input('settings_screen', '');
+        if (!in_array($screen, ['general', 'api'], true)) {
+            $screen = $request->has('activity_log_form') ? 'general' : '';
+        }
 
         // Accounts from the public registration form get this role, so choosing it is
         // assigning it: the same rule as the Users screen (Role::assignmentError). Checked
-        // only when it changes, so saving other settings never trips over a role an
-        // administrator chose.
+        // only when it changes. Only administrators reach it today, for whom it passes; it
+        // keeps the rule in force should the setting ever be opened to others.
         if (array_key_exists('default_role', $data)
             && (string) $data['default_role'] !== (string) get_cms_option('default_role', 'subscriber')) {
             $defaultRole = Role::where('slug', (string) $data['default_role'])->first();
@@ -665,14 +783,30 @@ class DashboardController extends Controller
             }
         }
 
-        // Handle Checkboxes
-        $data['users_can_register'] = $request->has('users_can_register') ? '1' : '0';
-        $data['require_email_verification'] = $request->has('require_email_verification') ? '1' : '0';
+        // Checkboxes: each screen's own, read as on/off only when that screen was sent. Without
+        // a known screen, a box that was sent is read as on/off and one that was not is left.
+        // The access boxes only for an administrator (the others were refused above).
+        $boxes = [
+            'general' => $isAdmin ? ['users_can_register', 'require_email_verification'] : [],
+            'api' => $isAdmin ? ['enable_rest_api'] : [],
+        ];
+        if ($isAdmin && falcon_pro_editable('advanced_login')) {
+            $boxes['general'][] = 'allow_multi_device';
+            $boxes['general'][] = 'magic_login_enabled';
+        }
+        foreach ($boxes[$screen] ?? [] as $box) {
+            $data[$box] = $request->has($box) ? '1' : '0';
+        }
+        foreach (['users_can_register', 'require_email_verification', 'allow_multi_device', 'magic_login_enabled', 'enable_rest_api'] as $box) {
+            if (array_key_exists($box, $data) && !in_array($box, $boxes[$screen] ?? [], true)) {
+                $data[$box] = $request->boolean($box) ? '1' : '0';
+            }
+        }
 
         // Activity log switches only exist on the General tab, so only take them when
         // that form is the one being submitted — every other settings screen posts
         // through here too, and would otherwise read a missing checkbox as "off".
-        if ($request->has('activity_log_form')) {
+        if ($screen === 'general') {
             $data['activity_log_enabled'] = $request->has('activity_log_enabled') ? '1' : '0';
             $data['activity_log_autoprune'] = $request->has('activity_log_autoprune') ? '1' : '0';
 
@@ -706,17 +840,8 @@ class DashboardController extends Controller
         // Multi-device Login & Magic Login are Pro features. Only accept changes to them
         // when the site can edit Pro features; otherwise preserve the stored values so a
         // locked (or crafted) request can never enable them.
-        if (falcon_pro_editable('advanced_login')) {
-            $data['allow_multi_device'] = $request->has('allow_multi_device') ? '1' : '0';
-            $data['magic_login_enabled'] = $request->has('magic_login_enabled') ? '1' : '0';
-        } else {
+        if (!falcon_pro_editable('advanced_login')) {
             unset($data['allow_multi_device'], $data['magic_login_enabled'], $data['max_devices']);
-        }
-
-        if ($request->has('enable_rest_api')) {
-            $data['enable_rest_api'] = '1';
-        } elseif ($request->is('*/settings/api')) {
-            $data['enable_rest_api'] = '0';
         }
 
         // Sanitize Slugs
@@ -801,22 +926,39 @@ class DashboardController extends Controller
             abort(403);
         }
 
-        $data = $request->except('_token');
-
         // Handle Sitemap Checkboxes — all active post types + taxonomies
         // Plugins name the checkboxes of the sections they add (an unticked box posts nothing).
         $checkboxes = array_merge(['sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow'],
             (array) apply_falcon_filters('falcon_seo_settings_checkboxes', []));
-
-        // ...and may change what is saved (Falcon SEO stores its API key encrypted).
-        $data = (array) apply_falcon_filters('falcon_seo_settings_data', $data, $request);
-
         try {
             $slugs = PostType::where('is_active', true)->pluck('slug');
             foreach ($slugs as $slug) {
                 $checkboxes[] = 'sitemap_include_'.$slug;
             }
         } catch (\Exception $e) {
+        }
+        $checkboxes = array_values(array_filter(array_map('strval', $checkboxes)));
+
+        // Only SEO settings, checked before anything is written. SEO Settings is open to roles
+        // that are not administrators (access_seo_settings), so a request naming a script option
+        // (theme_footer_script), Falcon Security's settings, the default role or anything else
+        // the SEO screen does not store is refused whole. Keys it does not declare are left out.
+        [$declared, $arrayKeys] = $this->seoSettingsFields($checkboxes);
+        $write = falcon_settings_screen_write($request->except('_token'), $declared, [], $arrayKeys);
+        if ($write['error'] !== null) {
+            return redirect()->back()->with('error', $write['error'])->withInput();
+        }
+        $this->logIgnoredSettings('seo', $write['ignored']);
+
+        // ...and may change what is saved (Falcon SEO stores its API key encrypted). A filter is
+        // server code reading the request on purpose (Falcon News turns its ticked lists into
+        // values), so what it adds is kept, but it is held to the same line as the request.
+        $data = (array) apply_falcon_filters('falcon_seo_settings_data', $write['data'], $request);
+        foreach (array_keys($data) as $key) {
+            $guard = falcon_option_guard($key);
+            if (!preg_match('/^[A-Za-z0-9_\-]{1,191}$/', (string) $key) || in_array($guard, ['protected', 'code', 'access'], true)) {
+                return redirect()->back()->with('error', '"'.mb_substr((string) $key, 0, 60).'" cannot be changed from this screen. Nothing was saved.')->withInput();
+            }
         }
 
         foreach ($checkboxes as $box) {

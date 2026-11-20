@@ -221,6 +221,20 @@ class SeoServiceProvider extends ServiceProvider
             'indexnow_enabled', 'seo_large_image_preview', 'ai_block_training', 'ai_block_search', 'seo_404_log', 'seo_hide_site', 'keyword_autocomplete',
             Pro::REPORT_ENABLED,
         ]));
+        // The other fields the plugin's sections print (SEO → Settings stores only declared keys).
+        add_falcon_filter('falcon_seo_settings_fields', function ($keys) {
+            $keys = (array) $keys;
+            foreach (ApiKeys::SERVICES as [$option]) {
+                $keys[] = $option;
+                $keys[] = $option.'_remove';
+            }
+
+            return array_merge($keys, [
+                'seo_org_type', 'seo_org_name', 'seo_org_logo', 'seo_org_email', 'seo_org_phone', 'seo_org_street',
+                'seo_org_city', 'seo_org_region', 'seo_org_postal_code', 'seo_org_country', 'seo_org_price_range', 'seo_org_same_as',
+                'keyword_country', 'keyword_language', Pro::DATAFORSEO_LOGIN, Pro::REPORT_TO,
+            ]);
+        });
         // Every outside service's key: encrypted, kept when the field is empty, refused when it is not a key.
         add_falcon_filter('falcon_seo_settings_data', [ApiKeys::class, 'save']);
 

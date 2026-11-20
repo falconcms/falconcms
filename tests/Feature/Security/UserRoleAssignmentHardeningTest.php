@@ -239,23 +239,27 @@ class UserRoleAssignmentHardeningTest extends TestCase
         $plugins = $this->role('plugin-people', ['manage_plugins']);
         $settingsManager = $this->manager(['manage_settings', 'access_general_settings']);
 
-        foreach (['plugin-people', 'administrator'] as $slug) {
-            $this->actingAs($settingsManager)->post('/admin/settings', ['site_title' => 'Site', 'default_role' => $slug])->assertSessionHas('error');
+        DB::table('cms_settings')->updateOrInsert(['key' => 'site_title'], ['value' => 'Original']);
+        forget_cms_options_cache();
+
+        // The default role is an administrator's setting alone (approved 2026-11-19): a
+        // non-admin settings manager cannot set it, not to a stronger role, not to an
+        // administrator role, not even to a role within their own permissions, and not to the
+        // value it already has. The request is refused whole: the site title rides along unsaved.
+        $this->role('writers', ['manage_posts']);
+        foreach (['plugin-people', 'administrator', 'writers', 'subscriber'] as $slug) {
+            $this->actingAs($settingsManager)->post('/admin/settings', ['site_title' => 'Changed', 'default_role' => $slug])
+                ->assertSessionHas('error', fn ($m) => str_contains((string) $m, 'Only an administrator'));
             forget_cms_options_cache();
             $this->assertSame('subscriber', get_cms_option('default_role'), "non-admin set default_role {$slug}");
+            $this->assertSame('Original', get_cms_option('site_title'), 'a refused request saved part of itself');
         }
-
-        // Within their own permissions: allowed.
-        $this->role('writers', ['manage_posts']);
-        $this->actingAs($settingsManager)->post('/admin/settings', ['site_title' => 'Site', 'default_role' => 'writers'])->assertSessionMissing('error');
-        forget_cms_options_cache();
-        $this->assertSame('writers', get_cms_option('default_role'));
 
         // An administrator's choice stands, and does not block the manager's other settings.
         $this->actingAs($this->admin())->post('/admin/settings', ['site_title' => 'Site', 'default_role' => 'plugin-people'])->assertSessionMissing('error');
         forget_cms_options_cache();
         $this->assertSame('plugin-people', get_cms_option('default_role'));
-        $this->actingAs($settingsManager)->post('/admin/settings', ['site_title' => 'Renamed site', 'default_role' => 'plugin-people'])->assertSessionMissing('error');
+        $this->actingAs($settingsManager)->post('/admin/settings', ['site_title' => 'Renamed site'])->assertSessionMissing('error');
         forget_cms_options_cache();
         $this->assertSame('Renamed site', get_cms_option('site_title'));
         $this->assertSame($plugins->slug, get_cms_option('default_role'));

@@ -12,8 +12,22 @@
             </div>
         @endif
 
+        @php
+            // Sign-in, registration and the administration email are an administrator's to change
+            // (DashboardController::updateSettings refuses them from anyone else). Disabled fields
+            // are not sent, so everyone else can still save the rest of the page.
+            $falconUser = auth()->user();
+            $accessLocked = !($falconUser && method_exists($falconUser, 'isAdmin') && $falconUser->isAdmin());
+        @endphp
+
         <form action="{{ route('admin.settings.update') }}" method="POST" class="max-w-[800px]">
             @csrf
+            <input type="hidden" name="settings_screen" value="general">
+            @if($accessLocked)
+                <div class="bg-[#fcf9e8] border-l-4 border-[#dba617] p-3 mb-2 text-[13px] text-[#1d2327]">
+                    The administration email, registration and sign-in settings can only be changed by an administrator.
+                </div>
+            @endif
             {!! do_falcon_action('falcon_settings_form_top') !!}
 
             <table class="w-full border-separate border-spacing-y-6">
@@ -49,7 +63,7 @@
                             Address</label>
                     </th>
                     <td>
-                        <input type="email" name="admin_email" id="admin_email"
+                        <input type="email" name="admin_email" id="admin_email" @disabled($accessLocked)
                             value="{{ $settings['admin_email'] ?? auth()->user()->email }}"
                             class="wp-input w-[400px] h-8 shadow-sm mb-1">
                         <p class="text-[12px] text-[#646970]">This address is used for admin purposes.</p>
@@ -122,7 +136,7 @@
                     </th>
                     <td>
                         <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="users_can_register" id="users_can_register"
+                            <input type="checkbox" name="users_can_register" id="users_can_register" @disabled($accessLocked)
                                 class="w-4 h-4 mr-2"
                                 {{ ($settings['users_can_register'] ?? '0') == '1' ? 'checked' : '' }}>
                             <span class="text-[14px] text-[#1d2327]">Anyone can register</span>
@@ -137,7 +151,7 @@
                     </th>
                     <td>
                         <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="require_email_verification" id="require_email_verification"
+                            <input type="checkbox" name="require_email_verification" id="require_email_verification" @disabled($accessLocked)
                                 class="w-4 h-4 mr-2"
                                 {{ falcon_email_verification_required() ? 'checked' : '' }}>
                             <span class="text-[14px] text-[#1d2327]">Require email verification before users can sign in</span>
@@ -187,7 +201,7 @@
                     <td>
                         <div class="flex items-center gap-2">
                             <span class="text-[#646970] text-[13px]">{{ url('/') }}/</span>
-                            <input type="text" name="register_url" id="register_url"
+                            <input type="text" name="register_url" id="register_url" @disabled($accessLocked)
                                 value="{{ $settings['register_url'] ?? 'lazy-register' }}"
                                 class="wp-input w-[280px] h-8 shadow-sm">
                         </div>
@@ -201,7 +215,7 @@
                     <td>
                         <div class="flex items-center gap-2">
                             <span class="text-[#646970] text-[13px]">{{ url('/') }}/</span>
-                            <input type="text" name="login_url" id="login_url"
+                            <input type="text" name="login_url" id="login_url" @disabled($accessLocked)
                                 value="{{ $settings['login_url'] ?? 'lazy-admin' }}"
                                 class="wp-input w-[280px] h-8 shadow-sm">
                         </div>
@@ -215,7 +229,7 @@
                             Role</label>
                     </th>
                     <td>
-                        <select name="default_role" id="default_role" class="wp-input w-[200px] h-8 py-0">
+                        <select name="default_role" id="default_role" @disabled($accessLocked) class="wp-input w-[200px] h-8 py-0">
                             @foreach($roles as $role)
                                 <option value="{{ $role->slug }}"
                                     {{ ($settings['default_role'] ?? 'subscriber') == $role->slug ? 'selected' : '' }}>
@@ -237,7 +251,7 @@
                     </th>
                     <td>
                         <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="allow_multi_device" id="allow_multi_device"
+                            <input type="checkbox" name="allow_multi_device" id="allow_multi_device" @disabled($accessLocked)
                                 class="w-4 h-4 mr-2 pro-login-lock"
                                 {{ ($settings['allow_multi_device'] ?? '0') == '1' ? 'checked' : '' }}>
                             <span class="text-[14px] text-[#1d2327]">Limit the number of devices per account</span>
@@ -251,7 +265,7 @@
                         <label for="max_devices" class="text-[14px] font-semibold text-[#1d2327]">Max devices allowed</label>
                     </th>
                     <td>
-                        <input type="number" name="max_devices" id="max_devices"
+                        <input type="number" name="max_devices" id="max_devices" @disabled($accessLocked)
                             value="{{ $settings['max_devices'] ?? '3' }}" min="1"
                             class="wp-input w-[100px] h-8 shadow-sm mb-1">
                         <p class="text-[12px] text-[#646970]">Maximum number of devices a user can be logged in on at once. (Default: 3)</p>
@@ -267,7 +281,7 @@
                     </th>
                     <td>
                         <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="magic_login_enabled" id="magic_login_enabled"
+                            <input type="checkbox" name="magic_login_enabled" id="magic_login_enabled" @disabled($accessLocked)
                                 class="w-4 h-4 mr-2 pro-login-lock"
                                 {{ ($settings['magic_login_enabled'] ?? '0') == '1' ? 'checked' : '' }}>
                             <span class="text-[14px] text-[#1d2327]">Enable passwordless login via magic link (sent to email)</span>

@@ -13,9 +13,15 @@
         @endif
 
         <div class="max-w-[800px]">
+            @php
+                // The REST API switch is an administrator's to change (DashboardController::updateSettings).
+                $falconUser = auth()->user();
+                $accessLocked = !($falconUser && method_exists($falconUser, 'isAdmin') && $falconUser->isAdmin());
+            @endphp
             <form action="{{ route('admin.settings.update') }}" method="POST">
                 @csrf
-                
+                <input type="hidden" name="settings_screen" value="api">
+
                 <h3 class="text-[18px] font-medium text-[#1d2327] mb-4">REST API Configuration</h3>
                 
                 <table class="w-full border-separate border-spacing-y-6">
@@ -25,9 +31,12 @@
                         </th>
                         <td>
                             <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" name="enable_rest_api" value="1" {{ ($settings['enable_rest_api'] ?? '1') == '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
+                                <input type="checkbox" name="enable_rest_api" value="1" {{ ($settings['enable_rest_api'] ?? '1') == '1' ? 'checked' : '' }} @disabled($accessLocked) class="w-4 h-4 mr-2">
                                 <span class="text-[14px] text-[#1d2327]">Allow external access to CMS data via JSON API</span>
                             </label>
+                            @if($accessLocked)
+                                <p class="text-[12px] text-[#646970] mt-1">Only an administrator can switch the REST API on or off.</p>
+                            @endif
                         </td>
                     </tr>
                 </table>
