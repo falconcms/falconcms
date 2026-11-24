@@ -9,22 +9,14 @@
     </select>
 </div>
 
-<!-- Type -->
-<div class="grid grid-cols-2 gap-2">
-    <div>
-        <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Font size</label>
-        <input type="text" v-model="editingElement.settings.fontSize" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-    </div>
-    <div>
-        <label class="text-[8px] font-bold text-slate-400 uppercase mb-1 block">Line height</label>
-        <input type="text" v-model="editingElement.settings.lineHeight" class="w-full border border-slate-200 rounded px-2 py-2 text-[12px] text-center focus:outline-none focus:border-[#0091ea]">
-    </div>
-</div>
-
-<div>
-    <label class="text-[12px] font-bold text-[#333] block mb-2">Font family</label>
-    <input type="text" v-model="editingElement.settings.fontFamily"
-           class="wp-input w-full" placeholder="Leave empty for the system monospace stack">
+{{-- Typography — the shared control every element uses (prefix cb). A block saved
+     with the old Font size / Line height / Font family fields has them moved in when it
+     is opened (fcCodeTypoMigrate), so it keeps its look. Default family = the system
+     monospace stack; empty size = the Customizer's body size. --}}
+<div class="space-y-4">
+    <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Typography</div>
+    @include('falcon-cms::admin.falcon-builder.partials.components.fields.typography', ['prefix' => 'cb', 'defaultFont' => "'Monospace'"])
+    <p class="text-[11px] text-slate-500">Font family left on Default uses a monospace font. Font size left empty follows the site's body text size.</p>
 </div>
 
 <!-- Padding: one box per side, any CSS size (was one px box: padding) -->

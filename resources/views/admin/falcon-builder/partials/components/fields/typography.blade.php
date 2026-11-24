@@ -1,5 +1,6 @@
 {{-- Reusable Typography control — identical design to the Title element.
-     Variable: $prefix (settings key prefix). Binds to:
+     Variables: $prefix (settings key prefix); $defaultFont (optional JS expression naming
+     what "Default" means for this element — the theme's body font when not given). Binds to:
        {prefix}_family, {prefix}_weight, {prefix}_size, {prefix}_line_height,
        {prefix}_letter_spacing, {prefix}_transform
 --}}
@@ -7,7 +8,7 @@
     {{-- Font Family --}}
     <div>
         <label class="text-[9px] font-bold text-slate-400 uppercase mb-1.5 block">Font Family</label>
-        <font-select v-model="editingElement.settings.{{ $prefix }}_family" @change="loadBuilderFont($event)" :font-groups="builderFontGroups" :theme-font="themeBodyFont"></font-select>
+        <font-select v-model="editingElement.settings.{{ $prefix }}_family" @change="loadBuilderFont($event)" :font-groups="builderFontGroups" :theme-font="{{ $defaultFont ?? 'themeBodyFont' }}"></font-select>
     </div>
 
     {{-- Font Weight --}}

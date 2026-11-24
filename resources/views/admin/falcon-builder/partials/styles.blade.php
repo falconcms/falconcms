@@ -1168,3 +1168,8 @@
 {{-- Dual Button. Also the published page's stylesheet, so hover, the joined corners and
      the connector preview as they will render. --}}
 @include('falcon-cms::components.frontend.dual-button-styles')
+
+{{-- Countdown. The page's own ticking script: the canvas preview of a countdown is its
+     server-rendered template, and this makes it count. It never hides itself or leaves
+     the builder at zero there (the template marks a preview). --}}
+@include('falcon-cms::components.frontend.countdown-runtime')

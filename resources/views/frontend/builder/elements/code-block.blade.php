@@ -57,20 +57,18 @@
     $typeCaret    = ($s['typeCaret'] ?? true) !== false;
 
     // ── Box ──────────────────────────────────────────────────────────────────
-    // Any CSS size, as every Font Size field takes ("15px", "0.9rem"); a bare number is px.
-    // Empty follows the Customizer's body size. Written as inherit, not left out: a <pre> in a
-    // monospace face would otherwise drop to the browser's smaller monospace size. Never set
-    // (a block saved before) keeps the 14px it always had.
-    $fontSize     = !array_key_exists('fontSize', $s) || $s['fontSize'] === null ? '14px' : ($s['fontSize'] === '' ? 'inherit' : getUnitVal($s['fontSize'], 'px'));
-    // As typed: a bare number is a multiplier, "22px" or "1.6em" a length.
-    $lineHeight   = (($s['lineHeight'] ?? '') === '') ? 1.7 : trim((string) $s['lineHeight']);
+    // Typography is the shared control (cb_family, cb_size …), with the three fields older
+    // blocks had (fontFamily, fontSize, lineHeight) still read until the block is opened
+    // in the builder — CodeHighlighter::typography() has the rules. The family comes back
+    // made valid CSS and is printed raw inside the <style> below: escaped, the quotes in the
+    // default stack came out as &quot; and the browser dropped the whole font-family.
+    $typo         = CodeHighlighter::typography($s);
+    $fontSize     = $typo['size'];
+    $lineHeight   = $typo['lineHeight'];
+    $fontFamily   = $typo['family'];
     $radius       = (int) ($s['borderRadius'] ?? 10);
     $padding      = falcon_padding_sides($s, 'padding', 18, 'padding');
     $borderWidth  = (int) ($s['borderWidth'] ?? 1);
-    // Printed raw inside the <style> below: escaped, the quotes in the default stack came out
-    // as &quot; and the browser dropped the whole font-family. falcon_css_font_family() leaves
-    // nothing that could end the declaration or the element.
-    $fontFamily   = falcon_css_font_family(trim((string) ($s['fontFamily'] ?? '')) ?: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace');
 
     $marginTop    = getUnitVal($s['marginTop'] ?? 0, $s['marginTopUnit'] ?? 'px');
     $marginBottom = getUnitVal($s['marginBottom'] ?? 0, $s['marginBottomUnit'] ?? 'px');
@@ -136,6 +134,9 @@
             font-family: inherit;
             font-size: {{ $fontSize }};
             line-height: {{ $lineHeight }};
+            @if($typo['weight'] !== '') font-weight: {{ $typo['weight'] }}; @endif
+            @if($typo['letterSpacing'] !== '') letter-spacing: {{ $typo['letterSpacing'] }}; @endif
+            @if($typo['transform'] !== '') text-transform: {{ $typo['transform'] }}; @endif
             tab-size: 4;
             background: none;
             border: 0;

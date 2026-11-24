@@ -171,6 +171,8 @@ Names below are exactly what the picker calls them, so what you read here is wha
 | **Tabs** <Badge type="warning" text="Pro" /> | Tabbed panels |
 | **Counter** <Badge type="warning" text="Pro" /> | Number that counts up when it scrolls into view |
 | **Star Rating** <Badge type="warning" text="Pro" /> | Star display, 0–5 |
+| **Countdown** <Badge type="warning" text="Pro" /> | Counts down to a date, a set time per visitor, or a time each day — boxes, circles, flip clock or minimal |
+| **Social Share** <Badge type="warning" text="Pro" /> | Share buttons for the page or post it is on — inline or floating at the side of the screen |
 
 ### Navigation
 
