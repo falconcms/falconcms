@@ -5,7 +5,76 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.9.6 <Badge type="tip" text="Latest" /> {#v2-9-6}
+## v2.9.7 <Badge type="tip" text="Latest" /> {#v2-9-7}
+
+**Released: 2026-11-25**
+
+A security release for users, roles and settings: nobody can make, change or sign in as an account
+stronger than their own, strangers never get a privileged role, and each settings screen writes only
+its own settings. Update soon, and read the upgrade notes below.
+
+### Security
+
+- **Administrator role names are reserved.** `super-admin`, `administrator` and `admin` cannot be
+  used for a new role or given to an existing one by renaming (also when typed as "Admin"). A role
+  that already holds one keeps it.
+- **Roles hand out only real permissions.** The Roles screen accepts only the permissions it offers
+  (or the role already holds), and someone who is not an administrator can add only permissions
+  they hold themselves.
+- **No account stronger than the one that makes it.** Someone who is not an administrator cannot
+  give an administrator role, or any set of roles (main and extra roles together) that grants a
+  permission they do not hold. Only an administrator creates administrator accounts. The same rule
+  covers editing another account's password or email, deleting, blocking and unblocking (bulk
+  actions included), and choosing the default role for new accounts.
+- **Public registration never gives a privileged role.** The role is checked at every sign-up: never
+  an administrator role, never one holding user, role, settings, plugin, theme, Customizer, update,
+  licence or backup permissions. An unsafe role falls back to Subscriber only if Subscriber is safe;
+  otherwise the form creates no account. Site Health says which case applies.
+- **Subscriber and Customer no longer hold user management.** Older installs gave both roles
+  `manage_users`, which opened nothing but now makes registration refuse them. An update removes it,
+  **only when the role holds exactly** Dashboard, Your Profile (both entries) and `manage_users`, and
+  removes nothing else. A role with any other permission was set by an administrator and is left as
+  it is; Site Health then shows how to untick "Users" under **Users → Roles**.
+- **Settings managers who are not administrators can no longer change code or access settings.**
+  Settings → General and SEO → Settings save only the settings they show; a request naming a script
+  or raw-HTML option, licence state, Falcon Security's settings or the active theme is refused whole.
+  Registration and sign-in options, the default role, the REST API switch, the admin email and the
+  AI writer roles are for administrators only. The same holds for fields that plugins and themes add
+  (settings tabs, options pages, Integrations, SEO checkboxes): their own API keys save as before.
+- **Customizer import** writes only the Customizer's own settings, never licence, access or secret
+  values.
+- **Restoring a database backup** is for administrators only.
+
+### Fixed
+
+- **Deleting a user no longer deletes their content by mistake.** With "Attribute all content to"
+  chosen but no existing user picked, every post of the user was deleted. Now nothing is deleted
+  unless a real, different account receives the content; an error never shows database details.
+- **Saving API settings** no longer switches off the registration and sign-in options of
+  Settings → General, and the REST API can be switched off again.
+- **Site Health** no longer reports the breached-password check (Have I Been Pwned) as weak password
+  hashing.
+
+### For developers
+
+- New action `falcon_plugin_installed($slug, $dir)` after a plugin is installed from a zip.
+- New filters `falcon_privileged_permissions` (add permissions registration must refuse),
+  `falcon_general_settings_fields` and `falcon_seo_settings_fields` (declare the settings a plugin
+  adds to those screens). New helper `falcon_registered_field_writable($name, $user)`.
+
+### Upgrade notes
+
+- Run the update as usual; it includes one migration (Subscriber/Customer, above).
+- A settings manager who is not an administrator who used to change registration, sign-in, REST API
+  or script settings now needs an administrator for that.
+- With public registration on, make sure the default role does not hold `manage_users` or another
+  privileged permission — Site Health shows it.
+- Falcon Security 1.1.5 <Badge type="warning" text="Pro" /> needs this version for Temporary Access
+  by someone who is not an administrator; on an older core it allows only administrators.
+
+---
+
+## v2.9.6 {#v2-9-6}
 
 **Released: 2026-11-17**
 
