@@ -5,7 +5,43 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) — vers
 
 ---
 
-## v2.9.7 <Badge type="tip" text="Latest" /> {#v2-9-7}
+## v2.9.8 <Badge type="tip" text="Latest" /> {#v2-9-8}
+
+**Released: 2026-11-25**
+
+Two new Pro builder elements, Countdown and Social Share, the shared typography control on the
+Code Block, and guide pages for features that only had release notes.
+
+### Added
+
+- **Countdown** <Badge type="warning" text="Pro" />: a timer to a deadline, for launches, sales and
+  offers. Count to a date and time, to a set time from each visitor's first visit (evergreen), or to
+  a time of day on the weekdays you pick. Four designs: Boxes, Circles, Flip clock and Minimal. At
+  zero it shows a message, hides, goes to another page or stays at zero. The page is drawn with the
+  right numbers already in it, and a page served from the cache still counts from the real time.
+  See [Elements](/builder/elements#countdown).
+- **Social Share** <Badge type="warning" text="Pro" />: buttons that share the page they are on,
+  or the post of a Post Card. 14 networks, plus Copy link, Print and the device's own share menu.
+  Filled, Outline, Round icons or Minimal; in place or floating at the edge of the screen. Every
+  button is a real link, so sharing works without JavaScript. See
+  [Elements](/builder/elements#social-share).
+- **Guide pages** for [Custom Fonts](/guide/custom-fonts), [Motion Visual](/builder/motion-visual),
+  [Off-Canvas Panels](/builder/off-canvas) and [parent pages](/guide/post-types#parent-pages).
+
+### Changed
+
+- **Code Block** uses the same typography control as the other elements. Blocks saved with the
+  old font fields keep their look and move to the new fields when you open them.
+
+### For developers
+
+- Custom element fields can use the types `datetime`, `time` and `visual_select`, and a colour field
+  can say what an empty value means (`hint`).
+- The builder canvas retries a server preview once when the server answers with an error.
+
+---
+
+## v2.9.7 {#v2-9-7}
 
 **Released: 2026-11-25**
 
