@@ -3,6 +3,7 @@
 namespace FalconCms\Core\Support;
 
 use Carbon\Carbon;
+use FalconCms\Core\Models\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -567,8 +568,8 @@ class SiteHealth
         $steps = [];
         try {
             foreach (['subscriber', 'customer'] as $slug) {
-                $role = \FalconCms\Core\Models\Role::where('slug', $slug)->first();
-                if ($role && in_array('manage_users', \FalconCms\Core\Models\Role::permissionSlugsFor([(int) $role->getKey()]), true)) {
+                $role = Role::where('slug', $slug)->first();
+                if ($role && in_array('manage_users', Role::permissionSlugsFor([(int) $role->getKey()]), true)) {
                     $steps[] = 'Users → Roles → edit "'.$role->getAttribute('name').'" → untick "Users" (user management; keep "Your Profile") → Update Role.';
                 }
             }
