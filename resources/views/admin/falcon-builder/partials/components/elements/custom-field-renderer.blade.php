@@ -182,7 +182,9 @@
 {{-- ── COLOR ────────────────────────────────────────────────────────────────── --}}
 @elseif(in_array($ft, ['color', 'colorpicker', 'colorpickeralpha']))
 <div>
-    @include('falcon-cms::admin.falcon-builder.partials.components.fields.color', ['key' => $fieldKey, 'label' => $fieldLabel, 'default' => $field['default'] ?? '#000000'])
+    {{-- 'hint' is what an empty colour means (a design's own colour); without one the
+         field's default stands in, as before. --}}
+    @include('falcon-cms::admin.falcon-builder.partials.components.fields.color', ['key' => $fieldKey, 'label' => $fieldLabel, 'default' => $field['hint'] ?? ($field['default'] ?? '#000000')])
     @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
 </div>
 
@@ -316,6 +318,46 @@
     </div>
     <input type="date" v-model="editingElement.settings.{{ $fieldKey }}"
            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+    @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
+</div>
+
+{{-- ── DATE + TIME / TIME ──────────────────────────────────────────────────────
+     Stored as the input gives it: "2026-12-31T18:00" and "17:00". The element decides
+     which timezone they are read in (the Countdown uses the site's). --}}
+@elseif($ft === 'datetime' || $ft === 'time')
+<div>
+    <div class="flex justify-between items-center mb-3">
+        <label class="text-[12px] font-bold text-[#333]">{{ $fieldLabel }}</label>
+    </div>
+    <input type="{{ $ft === 'datetime' ? 'datetime-local' : 'time' }}" v-model="editingElement.settings.{{ $fieldKey }}"
+           class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+    @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
+</div>
+
+{{-- ── VISUAL SELECT (a choice of designs as cards) ────────────────────────────
+     options: value => ['label' => …, 'icon' => 'fa …'] (or value => label). --}}
+@elseif($ft === 'visual_select')
+<div>
+    <div class="flex justify-between items-center mb-3">
+        <label class="text-[12px] font-bold text-[#333]">{{ $fieldLabel }}</label>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+        @foreach($field['options'] ?? [] as $optVal => $opt)
+        @php
+            $optLabel = is_array($opt) ? ($opt['label'] ?? $optVal) : $opt;
+            $optIcon  = is_array($opt) ? ($opt['icon'] ?? '') : '';
+        @endphp
+        <button type="button" @click="editingElement.settings.{{ $fieldKey }} = '{{ $optVal }}'"
+                :aria-pressed="editingElement.settings.{{ $fieldKey }} === '{{ $optVal }}' ? 'true' : 'false'"
+                :class="editingElement.settings.{{ $fieldKey }} === '{{ $optVal }}'
+                    ? 'border-[#0091ea] bg-[#e6f4fb] ring-1 ring-[#0091ea] text-[#0091ea]'
+                    : 'border-slate-200 text-slate-600 hover:border-[#0091ea]'"
+                class="border rounded px-2 py-3 transition-colors flex flex-col items-center gap-1.5">
+            @if($optIcon)<i class="{{ $optIcon }} text-[18px]" aria-hidden="true"></i>@endif
+            <span class="text-[11px] font-semibold">{{ $optLabel }}</span>
+        </button>
+        @endforeach
+    </div>
     @if($fieldDesc)<p class="text-[10px] text-slate-400 mt-1">{{ $fieldDesc }}</p>@endif
 </div>
 

@@ -1020,7 +1020,7 @@
                 return known ? known.name : String(type).replace(/_/g, ' ');
             };
 
-            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc', 'prev_next', 'instagram_feed', 'dual_button'];
+            const proElementTypes = ['accordion', 'counter', 'tabs', 'gallery', 'ticker', 'breadcrumb', 'star_rating', 'html', 'card', 'advanced_search', 'icon_box', 'content_box', 'icon_list', 'menu', 'table', 'code_block', 'callout', 'toc', 'prev_next', 'instagram_feed', 'dual_button', 'countdown', 'social_share'];
             const isElementPro   = (type) => proElementTypes.includes(type);
             const elementLocked  = (type) => isElementPro(type) && !window.falconBuilderPro;
 
@@ -1318,7 +1318,7 @@
             const ceServerPreview = reactive({});   // el.id → { sig, html }
             const _ceServerPending = {};            // el.id → sig being fetched (not reactive on purpose)
             const _ceServerTimers = {};
-            const fetchCeServerPreview = async (el, sig) => {
+            const fetchCeServerPreview = async (el, sig, attempt = 1) => {
                 try {
                     const res = await fetch('{{ route("admin.falcon-builder.element-preview") }}', {
                         method: 'POST',
@@ -1327,6 +1327,13 @@
                     });
                     const data = await res.json().catch(() => ({}));
                     if (_ceServerPending[el.id] !== sig) return; // settings moved on while this was in flight
+                    // A page with several of these asks for all of them at once, and a server
+                    // can drop one of a burst (a 5xx). One quiet retry, before showing
+                    // "Preview unavailable"; a 404 (no such element) is final.
+                    if (!data.success && res.status >= 500 && attempt < 2) {
+                        setTimeout(() => fetchCeServerPreview(el, sig, attempt + 1), 400);
+                        return;
+                    }
                     const parts = data.success ? splitCardPreviewCss(data.html) : { html: '', css: '' };
                     applyCardPreviewCss('ce-' + el.id, parts.css);
                     ceServerPreview[el.id] = { sig, html: parts.html || '<div style="padding:18px;text-align:center;color:#94a3b8;font-size:13px;">Preview unavailable</div>' };
@@ -3362,6 +3369,10 @@
                     nextTick(() => fcCodePlayPreview(editingElement.value));
                 }
             );
+
+            // Opening an older Code Block moves its own font fields into the shared
+            // typography control (see fcCodeTypoMigrate).
+            watch(() => editingElement.value, (el) => fcCodeTypoMigrate(el), { immediate: true });
 
             // Dynamic font variants for the selected title element's font
             const titleFontVariants = computed(() => {
@@ -6410,6 +6421,49 @@
                 };
             }
 
+            // CodeHighlighter::typography() — the shared typography control (cb_*), with the
+            // three fields older blocks had read until fcCodeTypoMigrate() moves them in.
+            function fcCodeTypo(el) {
+                const s = el.settings || {};
+                const str = (v) => (v === undefined || v === null) ? '' : String(v).trim();
+                const migrated = Object.prototype.hasOwnProperty.call(s, 'cb_size');
+                let family = str(s.cb_family);
+                if (family === '' || family.toLowerCase() === 'inherit') family = migrated ? '' : str(s.fontFamily);
+                if (family === '' || family.toLowerCase() === 'inherit') family = FC_MONO;
+                let size = migrated ? str(s.cb_size)
+                    : ((s.fontSize === undefined || s.fontSize === null) ? '14px' : str(s.fontSize));
+                size = (size === '' || size.toLowerCase() === 'inherit') ? 'inherit' : (/^-?[0-9.]+$/.test(size) ? size + 'px' : size);
+                let lh = str(s.cb_line_height);
+                if (lh === '' && !migrated) lh = str(s.lineHeight);
+                const ls = str(s.cb_letter_spacing);
+                const tr = str(s.cb_transform);
+                return {
+                    family: fcFontCss(family), size, lineHeight: lh === '' ? '1.7' : lh,
+                    weight: str(s.cb_weight),
+                    letterSpacing: ls === '' ? '' : (/^-?[0-9.]+$/.test(ls) ? ls + 'px' : ls),
+                    transform: ['uppercase', 'lowercase', 'capitalize'].includes(tr) ? tr : '',
+                };
+            }
+
+            // A block saved with the old Font size / Line height / Font family fields gets
+            // them moved into the shared control's keys when it is opened, so the Design tab
+            // shows what the block actually uses. Done once per block: cb_size being present
+            // is the sign it has moved (CodeHighlighter::typography reads the same sign).
+            function fcCodeTypoMigrate(el) {
+                if (!el || el.type !== 'code_block' || !el.settings) return;
+                const s = el.settings;
+                if (Object.prototype.hasOwnProperty.call(s, 'cb_size')) return;
+                s.cb_size = (s.fontSize === undefined || s.fontSize === null) ? '14px' : String(s.fontSize).trim();
+                if (s.cb_size.toLowerCase() === 'inherit') s.cb_size = '';
+                if (s.cb_line_height === undefined || s.cb_line_height === null || s.cb_line_height === '') {
+                    s.cb_line_height = (s.lineHeight === undefined || s.lineHeight === null) ? '' : String(s.lineHeight).trim();
+                }
+                if (!s.cb_family || s.cb_family === 'inherit') s.cb_family = s.fontFamily || '';
+                delete s.fontSize;
+                delete s.lineHeight;
+                delete s.fontFamily;
+            }
+
             function fcCodeShellStyle(el) {
                 const s = el.settings || {}, t = fcCodeTheme(el);
                 return {
@@ -6418,7 +6472,7 @@
                     border: (s.borderWidth != null ? s.borderWidth : 1) + 'px solid ' + t.border,
                     borderRadius: (s.borderRadius != null ? s.borderRadius : 10) + 'px',
                     overflow: 'hidden',
-                    fontFamily: s.fontFamily || FC_MONO,
+                    fontFamily: fcCodeTypo(el).family,
                 };
             }
 
@@ -6442,8 +6496,11 @@
                 return {
                     margin: '0', padding: padSides(s, 'padding', 18, 'padding'), background: 'none', border: '0',
                     color: t.fg, fontFamily: 'inherit',
-                    fontSize: fontSizeVal(s.fontSize, 'px', 14) || 'inherit',
-                    lineHeight: String(s.lineHeight || 1.7),
+                    fontSize: fcCodeTypo(el).size,
+                    lineHeight: fcCodeTypo(el).lineHeight,
+                    fontWeight: fcCodeTypo(el).weight || undefined,
+                    letterSpacing: fcCodeTypo(el).letterSpacing || undefined,
+                    textTransform: fcCodeTypo(el).transform || undefined,
                     tabSize: '4',
                 };
             }
@@ -6487,7 +6544,7 @@
                     position: 'absolute', top: (s.showChrome ? 6 : 10) + 'px', right: '10px', zIndex: 2,
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
                     padding: '5px 10px', borderRadius: '5px',
-                    font: '600 11.5px/1 ' + (s.fontFamily || FC_MONO),
+                    font: '600 11.5px/1 ' + fcCodeTypo(el).family,
                     color: t.chromeText, background: t.chrome,
                     border: '1px solid ' + t.border,
                     pointerEvents: 'none',
@@ -7195,7 +7252,10 @@
                             showLineNumbers: true, startLine: 1, highlightLines: '', wrapLines: false, maxHeight: 0,
                             showCopy: true, copyLabel: 'Copy', copiedLabel: 'Copied!',
                             typeMode: 'none', typeSpeed: 30, typeStart: 'view', typeCaret: true,
-                            fontSize: '', lineHeight: 1.7, fontFamily: '',
+                            // The shared typography control. Empty size follows the
+                            // Customizer's body size; Default family is monospace.
+                            cb_family: '', cb_weight: '', cb_size: '', cb_line_height: '1.7',
+                            cb_letter_spacing: '', cb_transform: '',
                             padding: 18, borderRadius: 10, borderWidth: 1,
                             marginTop: 0, marginTopUnit: 'px',
                             marginBottom: 0, marginBottomUnit: 'px',

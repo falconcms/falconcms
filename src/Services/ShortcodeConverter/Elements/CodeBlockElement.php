@@ -9,6 +9,9 @@ use FalconCms\Core\Services\ShortcodeConverter\Element;
  */
 final class CodeBlockElement extends Element
 {
+    /** The shared typography control's keys besides size, written as cb_<key>. */
+    private const TYPO = ['family', 'weight', 'line_height', 'letter_spacing', 'transform'];
+
     public static function toShortcode(array $el, $type, $s, string $base, string $vis): string
     {
         $a = $base;
@@ -33,6 +36,13 @@ final class CodeBlockElement extends Element
         self::fontAttr($a, 'font_size', $s['fontSize'] ?? null, 14);
         self::attrI($a, 'line_height', $s['lineHeight'] ?? null, 1.7);
         self::attrI($a, 'font_family', $s['fontFamily'] ?? null);
+        // Typography, the shared control (prefix cb). cb_size keeps an empty value: present
+        // and empty follows the body size, while absent marks a block that still has the
+        // three fields above (CodeHighlighter::typography).
+        self::attrKeepEmpty($a, 'cb_size', $s, 'cb_size');
+        foreach (self::TYPO as $key) {
+            self::attrI($a, 'cb_'.$key, $s['cb_'.$key] ?? null);
+        }
         self::attrI($a, 'padding', $s['padding'] ?? null, 18);
         self::sidesAttr($a, 'padding', $s, 'padding');
         self::attrI($a, 'radius', $s['borderRadius'] ?? null, 10);
@@ -81,6 +91,28 @@ final class CodeBlockElement extends Element
         }
 
         return '[falcon_code_block '.trim($a).$vis.']'.$escaped.'[/falcon_code_block]';
+    }
+
+    /**
+     * The typography keys that were written, and only those: cb_size present (even empty)
+     * is what tells a block on the shared control from an older one.
+     *
+     * @param  array<string, string>  $a
+     * @return array<string, string>
+     */
+    private static function typoIn(array $a): array
+    {
+        $out = [];
+        if (array_key_exists('cb_size', $a)) {
+            $out['cb_size'] = (string) $a['cb_size'];
+        }
+        foreach (self::TYPO as $key) {
+            if (isset($a['cb_'.$key]) && $a['cb_'.$key] !== '') {
+                $out['cb_'.$key] = (string) $a['cb_'.$key];
+            }
+        }
+
+        return $out;
     }
 
     public static function fromShortcode(string $type, array $a, array $vis, string $inner, string $attrStr): ?array
@@ -153,6 +185,6 @@ final class CodeBlockElement extends Element
             'cssClass' => $a['css_class'] ?? null,
             'cssId' => $a['css_id'] ?? null,
             'visibility' => $vis,
-        ]];
+        ] + self::typoIn($a)];
     }
 }

@@ -287,6 +287,68 @@ class CodeHighlighter
         return array_map(static fn ($t) => $t['name'], self::themes());
     }
 
+    /** The font a code block uses when none is chosen. */
+    public const MONO_STACK = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
+
+    /**
+     * A Code Block's typography, as CSS values.
+     *
+     * The Design tab uses the shared typography control (cb_family, cb_weight, cb_size,
+     * cb_line_height, cb_letter_spacing, cb_transform), as every other element does. Blocks
+     * saved before it had three fields of their own — fontFamily, fontSize, lineHeight —
+     * and the builder moves those into the cb_ keys when such a block is opened. Until it
+     * is, they are read here, so a published block keeps its look either way.
+     *
+     * Whether a block has moved is told by cb_size being present at all; its three states
+     * mean what the old fontSize's did:
+     *   - present and empty: follow the Customizer's body size (written as inherit: a <pre>
+     *     in a monospace face would otherwise drop to the browser's smaller size);
+     *   - absent, and no old fontSize either: 14px, what blocks always had;
+     *   - a value: that size, a bare number in px.
+     *
+     * Mirrored by fcCodeTypo() in the builder's scripts.
+     *
+     * @param  array<string, mixed>  $s
+     * @return array{family: string, size: string, lineHeight: string, weight: string, letterSpacing: string, transform: string}
+     */
+    public static function typography(array $s): array
+    {
+        $str = static fn ($v) => trim((string) ($v ?? ''));
+        $migrated = array_key_exists('cb_size', $s);
+
+        $family = $str($s['cb_family'] ?? '');
+        if ($family === '' || strtolower($family) === 'inherit') {
+            $family = $migrated ? '' : $str($s['fontFamily'] ?? '');
+        }
+        $family = falcon_css_font_family($family !== '' && strtolower($family) !== 'inherit' ? $family : self::MONO_STACK);
+
+        if ($migrated) {
+            $size = $str($s['cb_size']);
+        } else {
+            $size = array_key_exists('fontSize', $s) && $s['fontSize'] !== null ? $str($s['fontSize']) : '14px';
+        }
+        $size = $size === '' || strtolower($size) === 'inherit' ? 'inherit' : DualButton::cssValue(is_numeric($size) ? $size.'px' : $size);
+
+        // As typed: a bare number is a multiplier, "22px" or "1.6em" a length.
+        $lineHeight = $str($s['cb_line_height'] ?? '');
+        if ($lineHeight === '' && !$migrated) {
+            $lineHeight = $str($s['lineHeight'] ?? '');
+        }
+        $lineHeight = DualButton::cssValue($lineHeight === '' ? '1.7' : $lineHeight);
+
+        $letter = $str($s['cb_letter_spacing'] ?? '');
+        $transform = $str($s['cb_transform'] ?? '');
+
+        return [
+            'family' => $family,
+            'size' => $size !== '' ? $size : 'inherit',
+            'lineHeight' => $lineHeight !== '' ? $lineHeight : '1.7',
+            'weight' => preg_replace('/[^a-z0-9]/i', '', $str($s['cb_weight'] ?? '')) ?? '',
+            'letterSpacing' => $letter === '' ? '' : DualButton::cssValue(is_numeric($letter) ? $letter.'px' : $letter),
+            'transform' => in_array($transform, ['uppercase', 'lowercase', 'capitalize'], true) ? $transform : '',
+        ];
+    }
+
     /**
      * Turn "3, 7-9" into [3, 7, 8, 9]. Anything unparseable is skipped rather than
      * throwing: this comes from a text field an editor typed into.

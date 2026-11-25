@@ -147,6 +147,44 @@ Tabbed content panels.
 - Tab alignment (left, center, right)
 - Style (underline / pill / border)
 
+### Countdown <Badge type="warning" text="Pro" />
+A timer that counts down to a deadline, for launches, sales and offers.
+
+**Count down to:**
+- **A date and time** — one deadline for everyone, read in the site's timezone (Settings → General).
+- **A set time from each visitor's first visit** (evergreen) — for example 1 day. It starts when a visitor first sees it and is remembered in their browser, so reloading the page does not start it again. When it runs out it can stay ended for that visitor or start again on their next visit.
+- **A time of day, every day** — for example "order before 17:00 for same-day shipping", on the weekdays you tick. After the time passes it counts to the next one.
+
+**Settings:**
+- Units to show (days, hours, minutes, seconds). A unit left out is carried by the one before it: without Days, Hours can read 50.
+- Labels below, above, short beside the number (`5d 04h`) or hidden; the label text; leading zeros
+- At zero: show a message, hide the countdown, go to another page, or stay at zero
+- Design: **Boxes**, **Circles** (a ring per unit that empties as time runs out), **Flip clock** or **Minimal**
+- Size, size on phones, space between, separator (`:`), corners, ring thickness
+- Colours for numbers, labels, boxes, rings and the separator; typography for numbers, labels and the message; margin
+
+The page is drawn with the right numbers already in it, so it reads correctly before any script runs, and a page served from the page cache still counts from the real time. In the builder the preview ticks too, but never hides itself or leaves the page.
+
+### Social Share <Badge type="warning" text="Pro" />
+Buttons that share a page to social networks: Facebook, X, LinkedIn, WhatsApp, Telegram, Pinterest, Reddit, Tumblr, Threads, Bluesky, email, Copy link, Print, and **More** (the device's own share menu, shown only where the browser has one).
+
+**What it shares** is worked out where the element is drawn:
+- In a page, a header, a footer or a Layout: the page that is open.
+- Inside a Post Card (Card, Post Grid): that card's post.
+- Or always the home page, or a link you enter.
+
+The share text is the page's title unless you write your own; X can add hashtags and a "via" username. Pinterest uses the post's featured image (or the site's default social image).
+
+**Settings:**
+- Design: **Filled**, **Outline**, **Round icons** or **Minimal**; each network's own colour or your colours (with hover colours)
+- Network names or icons only; an optional heading such as "Share this:"
+- Position: where it is placed, or **floating** at the left or right edge of the screen (a bar along the bottom on phones)
+- Side by side or stacked, fit the text or share the full width, alignment per device, size, shape, spacing
+- Share windows open in a small popup or a new tab
+- Heading and button typography; margin
+
+Every button is a real link, so sharing works with JavaScript off; the script adds the popup, Copy link (with a "Link copied!" message), Print and the share menu.
+
 ---
 
 ## Layout Elements

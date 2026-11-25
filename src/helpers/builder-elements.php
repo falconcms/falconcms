@@ -11,7 +11,9 @@
 
 use FalconCms\Core\Models\Category;
 use FalconCms\Core\Models\PostType;
+use FalconCms\Core\Support\Countdown;
 use FalconCms\Core\Support\InstagramFeedElement;
+use FalconCms\Core\Support\SocialShare;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -587,3 +589,9 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
  * Register the Instagram Feed element (Pro), connected under Appearance → Customizer → Instagram.
  */
 add_falcon_filter('falcon_builder_elements', [InstagramFeedElement::class, 'register']);
+
+/**
+ * Register the Countdown and Social Share elements (Pro).
+ */
+add_falcon_filter('falcon_builder_elements', [Countdown::class, 'register']);
+add_falcon_filter('falcon_builder_elements', [SocialShare::class, 'register']);
