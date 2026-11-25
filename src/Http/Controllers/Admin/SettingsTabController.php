@@ -39,7 +39,7 @@ class SettingsTabController extends Controller
 
         foreach ($registered as $field) {
             $name = $field['name'];
-            if (falcon_is_protected_option($name)) {
+            if (!falcon_registered_field_writable($name, $request->user())) {
                 continue;
             }
             $type = $field['type'] ?? 'text';

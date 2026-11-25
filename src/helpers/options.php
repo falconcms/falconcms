@@ -261,6 +261,35 @@ if (!function_exists('falcon_option_guard')) {
     }
 }
 
+if (!function_exists('falcon_registered_field_writable')) {
+    /**
+     * Whether a field registered in code (a settings tab, an options page, an inline field of a
+     * native screen) may be written by this user. The field's name comes from code, not the
+     * request, but the screen may be open to someone who is not an administrator, so a field
+     * named after a guarded option must not hand that option to them:
+     *
+     *  - 'protected' (licence and Pro state): never.
+     *  - 'code' or 'access': only an administrator.
+     *  - 'secret' and ordinary options: yes, as before (a plugin's own API key saves here).
+     */
+    function falcon_registered_field_writable($name, $user = null): bool
+    {
+        if (trim((string) $name) === '') {
+            return false;
+        }
+
+        $guard = falcon_option_guard($name);
+        if ($guard === 'protected') {
+            return false;
+        }
+        if ($guard === 'code' || $guard === 'access') {
+            return is_object($user) && method_exists($user, 'isAdmin') && $user->isAdmin();
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('falcon_settings_screen_write')) {
     /**
      * What a settings screen may write from a request, decided before anything is written.

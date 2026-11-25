@@ -172,8 +172,9 @@ class SettingsExtension
     {
         foreach ($this->inlineFields($screen) as $field) {
             $name = $field['name'];
-            // A registered field must not be able to overwrite internal/licensing keys.
-            if (falcon_is_protected_option($name)) {
+            // A registered field must not be able to overwrite internal/licensing keys, nor give
+            // a non-administrator an access or code option (falcon_registered_field_writable).
+            if (!falcon_registered_field_writable($name, $request->user())) {
                 continue;
             }
             $type = $field['type'] ?? 'text';

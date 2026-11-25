@@ -34,7 +34,7 @@ class OptionsPageController extends Controller
 
         foreach ($this->fieldsOf($page) as $field) {
             $name = $field['name'] ?? null;
-            if (!$name || falcon_is_protected_option($name)) {
+            if (!$name || !falcon_registered_field_writable($name, $request->user())) {
                 continue;
             }
 

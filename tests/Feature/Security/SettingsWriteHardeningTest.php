@@ -5,6 +5,7 @@ namespace FalconCms\Core\Tests\Feature\Security;
 use App\Models\User;
 use FalconCms\Core\Database\Seeders\MenuSeeder;
 use FalconCms\Core\Pro\LicenseGateway;
+use FalconCms\Core\Support\AdminMenu;
 use FalconCms\Core\Tests\Concerns\MakesShopFixtures;
 use FalconCms\Core\Tests\Doubles\LicensedGateway;
 use FalconCms\Core\Tests\TestCase;
@@ -549,6 +550,93 @@ class SettingsWriteHardeningTest extends TestCase
             ->assertRedirect();
 
         $this->assertUntouched(['security_lockdown', 'default_role', 'falcon_license_key']);
+    }
+
+    /**
+     * Fields registered in code under a guarded option's name. The name comes from code, but the
+     * screen may be open to a non-administrator: before, only the licence keys were skipped.
+     *
+     * @return array<string, string>
+     */
+    private function guardedFieldPost(): array
+    {
+        return [
+            'default_role' => 'editor',                       // access
+            'theme_footer_script' => '<script>1</script>',    // code
+            'falcon_license_key' => 'FORGED',                  // protected
+            'myplugin_api_key' => 'plugin-secret',             // secret: the plugin's own key
+            'myplugin_note' => 'hello',                        // ordinary
+        ];
+    }
+
+    private function registerGuardedFields(array $where): void
+    {
+        foreach (array_keys($this->guardedFieldPost()) as $name) {
+            falcon_add_settings_field(['id' => $name, 'label' => $name] + $where);
+        }
+    }
+
+    private function assertGuardedFieldsSaved(bool $byAdmin): void
+    {
+        $this->assertSame('plugin-secret', $this->option('myplugin_api_key'), 'a plugin\'s own API key still saves');
+        $this->assertSame('hello', $this->option('myplugin_note'));
+        $this->assertUntouched(['falcon_license_key']);
+        if ($byAdmin) {
+            $this->assertSame('editor', $this->option('default_role'));
+            $this->assertSame('<script>1</script>', $this->option('theme_footer_script'));
+        } else {
+            $this->assertUntouched(['default_role', 'theme_footer_script']);
+        }
+    }
+
+    public static function fieldWriters(): array
+    {
+        return ['a settings manager' => [false], 'an administrator' => [true]];
+    }
+
+    #[DataProvider('fieldWriters')]
+    public function test_a_settings_tab_field_named_after_a_guarded_option(bool $byAdmin): void
+    {
+        falcon_add_settings_tab(['id' => 'extras', 'label' => 'Extras']);
+        $this->registerGuardedFields(['tab' => 'extras']);
+
+        $this->actingAs($byAdmin ? $this->admin() : $this->settingsManager())->from('/admin/settings/extras')
+            ->post('/admin/settings/extras', $this->guardedFieldPost())->assertRedirect();
+
+        $this->assertGuardedFieldsSaved($byAdmin);
+    }
+
+    #[DataProvider('fieldWriters')]
+    public function test_an_integrations_field_named_after_a_guarded_option(bool $byAdmin): void
+    {
+        $this->registerGuardedFields(['screen' => 'integrations']);
+
+        $user = $byAdmin ? $this->admin()
+            : $this->makeUser(['role_id' => $this->role('integrations-manager', ['access_dashboard', 'manage_settings', 'access_integrations_settings'])]);
+        $this->actingAs($user)->from('/admin/settings/integrations')
+            ->post('/admin/settings/integrations', $this->guardedFieldPost())->assertRedirect();
+
+        $this->assertGuardedFieldsSaved($byAdmin);
+    }
+
+    #[DataProvider('fieldWriters')]
+    public function test_an_options_page_field_named_after_a_guarded_option(bool $byAdmin): void
+    {
+        // A fresh registry: it fires the registration hook once and caches.
+        $registry = new AdminMenu;
+        $this->app->instance(AdminMenu::class, $registry);
+        $registry->addOptionsPage([
+            'slug' => 'myplugin',
+            'menu_title' => 'My Plugin',
+            'fields' => array_map(fn ($name) => ['name' => $name, 'label' => $name, 'type' => 'text'], array_keys($this->guardedFieldPost())),
+        ]);
+
+        $user = $byAdmin ? $this->admin()
+            : $this->makeUser(['role_id' => $this->role('options-manager', ['access_dashboard', 'manage_settings', 'manage_options_myplugin'])]);
+        $this->actingAs($user)->from('/admin/options/myplugin')
+            ->post('/admin/options/myplugin', $this->guardedFieldPost())->assertRedirect()->assertSessionMissing('error');
+
+        $this->assertGuardedFieldsSaved($byAdmin);
     }
 
     public function test_a_settings_tab_and_integrations_write_only_their_registered_fields(): void
