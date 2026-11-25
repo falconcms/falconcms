@@ -544,15 +544,39 @@ class SiteHealth
                     'Nobody can create an account from the registration form.')];
         }
 
+        $manageUsersFix = self::profileRolesManageUsersFix();
+
         if ($choice['role'] === null) {
             return [self::result('public_registration', $open ? 'Public registration refuses every new account' : 'No safe role for public registration', $open ? self::CRITICAL : self::RECOMMENDED, 'Security',
                 $choice['problem'].' The fallback "'.PublicRegistration::FALLBACK.'" role is missing or not safe either, so the registration form creates no accounts'.($open ? '.' : ' if it is switched on.'),
-                'Choose a role without privileged permissions under '.$where.', or remove those permissions from it under Users → Roles.')];
+                'Choose a role without privileged permissions under '.$where.', or remove those permissions from it under Users → Roles.'.$manageUsersFix)];
         }
 
         return [self::result('public_registration', 'The default role for new accounts is not safe', $open ? self::CRITICAL : self::RECOMMENDED, 'Security',
             $choice['problem'].' New accounts get the "'.$choice['role']->getAttribute('slug').'" role instead'.($open ? '.' : ' if registration is switched on.'),
-            'Choose a role without privileged permissions under '.$where.'.')];
+            'Choose a role without privileged permissions under '.$where.'.'.$manageUsersFix)];
+    }
+
+    /**
+     * Older installs gave Subscriber and Customer `manage_users` (user management), which opens
+     * nothing for them but makes public registration refuse the role. A migration removes it
+     * only from the untouched seeded set; a role an administrator has changed is fixed by hand.
+     */
+    private static function profileRolesManageUsersFix(): string
+    {
+        $steps = [];
+        try {
+            foreach (['subscriber', 'customer'] as $slug) {
+                $role = \FalconCms\Core\Models\Role::where('slug', $slug)->first();
+                if ($role && in_array('manage_users', \FalconCms\Core\Models\Role::permissionSlugsFor([(int) $role->getKey()]), true)) {
+                    $steps[] = 'Users → Roles → edit "'.$role->getAttribute('name').'" → untick "Users" (user management; keep "Your Profile") → Update Role.';
+                }
+            }
+        } catch (Throwable $e) {
+            return '';
+        }
+
+        return $steps === [] ? '' : ' To take user management away from the roles that still hold it: '.implode(' ', $steps);
     }
 
     private static function proLicense(): array
