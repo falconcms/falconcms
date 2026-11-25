@@ -254,6 +254,25 @@ class SettingsWriteHardeningTest extends TestCase
         $this->assertSame('|', $this->option('seo_separator'));
     }
 
+    public function test_a_plugin_checkbox_named_after_a_foreign_option_is_never_written(): void
+    {
+        // A checkbox is saved whether or not it is posted (unticked = 0). Before, a plugin naming
+        // default_role or security_lockdown here let SEO staff overwrite them just by saving.
+        add_falcon_filter('falcon_seo_settings_checkboxes', fn ($boxes) => array_merge((array) $boxes, ['default_role', 'security_lockdown', 'seo_breadcrumbs']));
+
+        $this->seoSave($this->seoUser(), ['seo_separator' => '|', 'seo_breadcrumbs' => '1', 'noindex' => '1'])
+            ->assertSessionMissing('error');
+        $this->assertUntouched(['default_role', 'security_lockdown']);
+        $this->assertSame('|', $this->option('seo_separator'));
+        $this->assertSame('1', $this->option('seo_breadcrumbs'), 'a plugin\'s own checkbox still saves');
+        $this->assertSame('1', $this->option('noindex'));
+        $this->assertSame('0', $this->option('sitemap_include_tags'), 'an unticked box is still saved off');
+
+        // Posting them ticked changes nothing either.
+        $this->seoSave($this->seoUser(), ['seo_separator' => '+', 'default_role' => '1', 'security_lockdown' => '1']);
+        $this->assertUntouched(['default_role', 'security_lockdown']);
+    }
+
     public function test_fields_registered_for_the_seo_screen_save_there(): void
     {
         falcon_add_settings_field(['id' => 'gsc_token', 'label' => 'Search Console', 'screen' => 'seo']);

@@ -939,6 +939,15 @@ class DashboardController extends Controller
         }
         $checkboxes = array_values(array_filter(array_map('strval', $checkboxes)));
 
+        // A checkbox is written whether or not it was posted (unticked = 0), so a plugin that
+        // names a protected, code or access option here would let anyone with SEO Settings
+        // switch it off. Such names are a plugin mistake: they are left out and logged.
+        $refused = array_values(array_filter($checkboxes, fn ($box) => in_array(falcon_option_guard($box), ['protected', 'code', 'access'], true)));
+        if ($refused !== []) {
+            Log::warning('SEO settings: checkboxes registered for options this screen may not change were ignored.', ['keys' => array_slice($refused, 0, 50)]);
+            $checkboxes = array_values(array_diff($checkboxes, $refused));
+        }
+
         // Only SEO settings, checked before anything is written. SEO Settings is open to roles
         // that are not administrators (access_seo_settings), so a request naming a script option
         // (theme_footer_script), Falcon Security's settings, the default role or anything else
