@@ -101,6 +101,7 @@ export default defineConfig({
             { text: 'Menus', link: '/guide/menus' },
             { text: 'Widgets', link: '/guide/widgets' },
             { text: 'Media Library', link: '/guide/media' },
+            { text: 'Custom Fonts', link: '/guide/custom-fonts' },
             { text: 'Forms', link: '/guide/forms' },
             { text: 'Multi-language', link: '/guide/multilang' },
             { text: 'SEO', link: '/guide/seo' },
@@ -147,6 +148,8 @@ export default defineConfig({
             { text: 'Device Visibility', link: '/builder/visibility' },
             { text: 'Global Sections', link: '/builder/global-sections' },
             { text: 'Library', link: '/builder/library' },
+            { text: 'Motion Visual', link: '/builder/motion-visual' },
+            { text: 'Off-Canvas Panels (Pro)', link: '/builder/off-canvas' },
             { text: 'Effects (Pro)', link: '/builder/effects' },
           ]
         },

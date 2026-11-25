@@ -19,6 +19,17 @@ Static pages with full builder support. Each page can use a template and the dra
 - **Frontend URL:** `/{slug}` (e.g., `/about-us`)
 - **Builder:** Full Falcon Builder support
 
+#### Parent pages <Badge type="tip" text="2.9.3" /> {#parent-pages}
+
+A page can sit under another page. In the page editor, choose the parent under **Page
+Attributes → Parent Page**, between Publish and Featured image. The page then lives at
+`/parent-page/child-page`, and you can nest pages as deep as you like.
+
+- **Old addresses redirect.** `/child-page`, an address with the wrong parent, and the address
+  from before a parent was renamed all redirect to the current one.
+- **No loops.** A page cannot be put under itself or under one of its own sub-pages.
+- **Breadcrumbs** list the parent pages.
+
 ![The page editor](/screenshots/page-editor.webp)
 
 *The editor for a page: title and permalink, a Rich Editor / Page Builder switch, publish controls, featured image, and the SEO panel below.*

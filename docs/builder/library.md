@@ -37,6 +37,9 @@ From the Column Select modal:
 - **Delete** any saved item with the 🗑️ button
 - Library items are shared across all pages
 
+The **Falcon Builder → Library** screen also holds Post Cards, Mega Menus and
+[Off-Canvas panels](/builder/off-canvas) (Pro), each on its own tab.
+
 ## Library vs Global Sections
 
 | Feature | Library | Global Section |
