@@ -256,12 +256,29 @@ class UserController extends Controller
             return redirect()->route('admin.users.index')->with('error', $error);
         }
 
-        $deleteOption = $request->input('delete_option', 'delete'); // 'delete' or 'reassign'
-        $reassignTo = $request->input('reassign_to');
+        // 'delete' (the default) or 'reassign'. Anything else, or a reassignment without a real
+        // other account to receive the content, refuses the whole request: before, an empty or
+        // missing reassign_to fell through to the branch that deletes every post of the user.
+        $deleteOption = $request->input('delete_option', 'delete');
+        if (!in_array($deleteOption, ['delete', 'reassign'], true)) {
+            return redirect()->route('admin.users.index')->with('error', 'Choose whether to delete or reassign the content. Nothing was deleted.');
+        }
+
+        $reassignTo = null;
+        if ($deleteOption === 'reassign') {
+            $raw = $request->input('reassign_to');
+            $reassignTo = is_scalar($raw) && ctype_digit((string) $raw) ? (int) $raw : 0;
+            if ($reassignTo <= 0 || !User::whereKey($reassignTo)->exists()) {
+                return redirect()->route('admin.users.index')->with('error', 'Choose an existing user to receive the content. Nothing was deleted.');
+            }
+            if ($reassignTo === (int) $user->id) {
+                return redirect()->route('admin.users.index')->with('error', 'The content cannot be given to the user being deleted. Nothing was deleted.');
+            }
+        }
 
         DB::beginTransaction();
         try {
-            if ($deleteOption === 'reassign' && $reassignTo) {
+            if ($deleteOption === 'reassign') {
                 // Migrate all posts, pages, and CPTs to the new user
                 DB::table('posts')->where('user_id', $user->id)->update(['user_id' => $reassignTo]);
                 falcon_log_activity('updated', "Migrated content from deleted user {$user->name} to user ID: {$reassignTo}", $user);
@@ -280,8 +297,9 @@ class UserController extends Controller
             return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
+            report($e);
 
-            return redirect()->route('admin.users.index')->with('error', 'An error occurred while deleting the user: '.$e->getMessage());
+            return redirect()->route('admin.users.index')->with('error', 'The user could not be deleted. Nothing was changed.');
         }
     }
 
